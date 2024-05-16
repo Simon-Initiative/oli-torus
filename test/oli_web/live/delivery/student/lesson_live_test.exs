@@ -109,10 +109,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Exploration 1",
         content: %{
-          model: [],
-          advancedDelivery: true,
-          displayApplicationChrome: false,
-          additionalStylesheets: [
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false,
+          "additionalStylesheets" => [
             "/css/delivery_adaptive_themes_default_light.css"
           ]
         }
@@ -125,10 +125,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         max_attempts: 5,
         title: "Graded Adaptive Page",
         content: %{
-          model: [],
-          advancedDelivery: true,
-          displayApplicationChrome: false,
-          additionalStylesheets: [
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false,
+          "additionalStylesheets" => [
             "/css/delivery_adaptive_themes_default_light.css"
           ]
         }
@@ -336,7 +336,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   end
 
   describe "student" do
-    setup [:user_conn, :create_elixir_project]
+    setup [:setup_tags, :user_conn, :create_elixir_project]
 
     test "can not access when not enrolled to course", %{
       conn: conn,
@@ -438,16 +438,34 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, html} =
-        live(
-          conn,
-          live_view_adaptive_lesson_live_route(section.slug, graded_adaptive_page_revision.slug)
-        )
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page_revision.slug))
 
       assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-      # It loads the adaptive themes
-      assert html =~ "/css/delivery_adaptive_themes_default_light.css"
+    end
+
+    @tag isolation: "serializable"
+    test "can begin an attempt from the prologue view on graded adaptive pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page_revision.slug))
+
+      view
+      |> element("button[id='begin_attempt_button']", "Begin 1st Attempt")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}"
+      )
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
@@ -713,6 +731,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
     end
 
+    @tag isolation: "serializable"
     test "can begin a new attempt from prologue (and its ordinal numbering is correct)", %{
       conn: conn,
       user: user,
@@ -736,6 +755,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
+
+      view
+      |> element("button[id='begin_attempt_button']")
+      |> render_click()
+
+      refute has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
+      assert has_element?(view, ~s{svg[role=spinner]})
     end
 
     test "can see page info on header", %{

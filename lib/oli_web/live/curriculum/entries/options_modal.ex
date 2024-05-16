@@ -61,7 +61,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
   attr(:redirect_url, :string, required: true)
   attr(:revision, :map, required: true)
-  attr(:changeset, :map, required: true)
+  attr(:form, :map, required: false)
   attr(:project, :map, required: true)
   attr(:project_hierarchy, :map, required: true)
   attr(:validate, :string, required: true)
@@ -88,8 +88,8 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             onEditTarget: "#intro_content_step",
             editMode: true,
             value:
-              (fetch_field(@changeset, :intro_content) &&
-                 fetch_field(@changeset, :intro_content)["children"]) || [],
+              (fetch_field(@form.source, :intro_content) &&
+                 fetch_field(@form.source, :intro_content)["children"]) || [],
             fixedToolbar: true,
             allowBlockElements: false
           },
@@ -184,7 +184,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               entry={entry}
               class={[
                 "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
-                if(fetch_field(@changeset, @step) == "uploaded_one",
+                if(fetch_field(@form.source, @step) == "uploaded_one",
                   do: "!outline-[7px] outline-blue-400"
                 )
               ]}
@@ -206,7 +206,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               <video
                 class={[
                   "object-cover h-[162px] w-[288px] mx-auto rounded-lg cursor-pointer outline outline-1 outline-gray-200 shadow-lg",
-                  if(fetch_field(@changeset, @step) == "uploaded_one",
+                  if(fetch_field(@form.source, @step) == "uploaded_one",
                     do: "!outline-[7px] outline-blue-400"
                   )
                 ]}
@@ -236,7 +236,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           :if={@step == :poster_image}
           url={url}
           target={@myself}
-          is_selected={get_filename(url) == get_filename(fetch_field(@changeset, @step))}
+          is_selected={get_filename(url) == get_filename(fetch_field(@form.source, @step))}
         />
 
         <.video_card
@@ -260,7 +260,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 @intro_video_form.source,
                 :url
               )
-            ) == valid_youtube_to_embed_url(fetch_field(@changeset, @step))
+            ) == valid_youtube_to_embed_url(fetch_field(@form.source, @step))
           }
         />
 
@@ -270,7 +270,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           url={url}
           target={@myself}
           is_youtube_link={is_youtube_link(url)}
-          is_selected={get_filename(url) == get_filename(fetch_field(@changeset, @step))}
+          is_selected={get_filename(url) == get_filename(fetch_field(@form.source, @step))}
         />
       </div>
 
@@ -285,7 +285,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <div class="hidden">
             <.live_file_input upload={@uploads[@step]} />
           </div>
-          <div :if={fetch_field(@changeset, @step) == "uploaded_one"}>
+          <div :if={fetch_field(@form.source, @step) == "uploaded_one"}>
             <%= for entry <- @uploads[@step].entries do %>
               <progress :if={entry.valid? and entry.progress != 100} value={entry.progress} max="100">
                 <%= entry.progress %>%
@@ -311,7 +311,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-disable-with="Selecting..."
           class="btn btn-primary"
           phx-click={
-            if fetch_field(@changeset, @step) == "uploaded_one",
+            if fetch_field(@form.source, @step) == "uploaded_one",
               do: JS.push("consume-uploaded") |> JS.push("change_step"),
               else: "change_step"
           }
@@ -320,7 +320,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           phx-target={@myself}
           disabled={
             !can_submit_resource_selection?(
-              fetch_field(@changeset, @step),
+              fetch_field(@form.source, @step),
               @uploads[@step].entries
             )
           }
@@ -336,7 +336,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
     ~H"""
     <div>
       <.form
-        for={@changeset}
+        for={@form}
         id="revision-settings-form"
         phx-change={@validate}
         phx-submit={@submit}
@@ -347,14 +347,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             <div>
               <div class="form-group">
                 <label for="title">Title</label>
-                <.input
-                  id="title"
-                  name="revision[title]"
-                  class="form-control"
-                  aria-describedby="title_description"
-                  placeholder="Title"
-                  value={fetch_field(@changeset, :title)}
-                />
+                <.input type="text" field={@form[:title]} class="form-control" />
                 <small id="title_description" class="form-text text-muted">
                   The title is used to identify this <%= resource_type_label(@revision) %>.
                 </small>
@@ -363,12 +356,8 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 <label for="grading_type">Grading Type</label>
                 <.input
                   type="select"
-                  name="revision[graded]"
-                  id="grading_type"
-                  aria-describedby="grading_type_description"
-                  placeholder="Grading Type"
                   class="form-control custom-select"
-                  value={fetch_field(@changeset, :graded)}
+                  field={@form[:graded]}
                   options={[{"Graded Assessment", "true"}, {"Ungraded Practice Page", "false"}]}
                 />
                 <small id="grading_type_description" class="form-text text-muted">
@@ -379,38 +368,35 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               <div class="form-group">
                 <label>Explanation Strategy</label>
                 <div class="flex gap-2">
-                  <.input
-                    type="select"
-                    name="revision[explanation_strategy][type]"
-                    class="form-control custom-select w-full"
-                    aria-describedby="explanation_strategy_description"
-                    placeholder="Explanation Strategy"
-                    value={Map.get(fetch_field(@changeset, :explanation_strategy) || %{}, :type)}
-                    options={
-                      Enum.map(
-                        ExplanationStrategy.types(),
-                        &{Oli.Utils.snake_case_to_friendly(&1), &1}
-                      )
-                    }
-                  />
-                  <%= case Map.get(fetch_field(@changeset, :explanation_strategy) || %{}, :type) do %>
-                    <% :after_set_num_attempts -> %>
-                      <div class="ml-2">
-                        <.input
-                          name="revision[explanation_strategy][set_num_attempts]"
-                          type="number"
-                          class="form-control"
-                          placeholder="# of Attempts"
-                          value={
-                            Map.get(
-                              fetch_field(@changeset, :explanation_strategy),
-                              :set_num_attempts
-                            )
-                          }
-                        />
-                      </div>
-                    <% _ -> %>
-                  <% end %>
+                  <.inputs_for :let={es} field={@form[:explanation_strategy]}>
+                    <.input
+                      type="select"
+                      name="revision[explanation_strategy][type]"
+                      class="form-control custom-select w-full"
+                      aria-describedby="explanation_strategy_description"
+                      placeholder="Explanation Strategy"
+                      field={es[:type]}
+                      options={
+                        Enum.map(
+                          ExplanationStrategy.types(),
+                          &{Oli.Utils.snake_case_to_friendly(&1), &1}
+                        )
+                      }
+                    />
+                    <%= case Map.get(@form[:explanation_strategy].value || %{}, :type) do %>
+                      <% :after_set_num_attempts -> %>
+                        <div class="ml-2">
+                          <.input
+                            name="revision[explanation_strategy][set_num_attempts]"
+                            type="number"
+                            class="form-control"
+                            placeholder="# of Attempts"
+                            field={es[:set_num_attempts]}
+                          />
+                        </div>
+                      <% _ -> %>
+                    <% end %>
+                  </.inputs_for>
                 </div>
                 <small id="explanation_strategy_description" class="form-text text-muted">
                   Explanation strategy determines how activity explanations will be shown to learners.
@@ -419,15 +405,10 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             </div>
             <.poster_image_selection
               target={@myself}
-              poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
-              delete_button_enabled={
-                fetch_field(@changeset, :poster_image) not in [nil, @default_poster_image]
-              }
+              poster_image={@form[:poster_image].value || @default_poster_image}
+              delete_button_enabled={@form[:poster_image].value not in [nil, @default_poster_image]}
             />
-            <.intro_video_selection
-              target={@myself}
-              intro_video={fetch_field(@changeset, :intro_video)}
-            />
+            <.intro_video_selection target={@myself} intro_video={@form[:intro_video].value} />
           </div>
 
           <div class="form-group">
@@ -438,16 +419,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               name="revision[max_attempts]"
               aria-describedby="number_of_attempts_description"
               placeholder="Number of Attempts"
-              disabled={is_disabled(@changeset, @revision)}
+              disabled={is_disabled(@form, @revision)}
               class="form-control custom-select"
-              value={fetch_field(@changeset, :max_attempts) || 0}
+              field={@form[:max_attempts] || 0}
               options={@attempt_options}
             />
             <small id="number_of_attempts_description" class="form-text text-muted">
               Graded assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.
             </small>
           </div>
-
           <div class="form-group">
             <label for="duration_minutes">Suggested Duration (minutes)</label>
             <.input
@@ -458,13 +438,12 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               name="revision[duration_minutes]"
               class="form-control"
               aria-describedby="duration_description"
-              value={fetch_field(@changeset, :duration_minutes)}
+              field={@form[:duration_minutes]}
             />
             <small id="duration_description" class="form-text text-muted">
               A suggested time in minutes that the page should take a student to complete.
             </small>
           </div>
-
           <div class="form-group">
             <label for="scoring_strategy_id">Scoring Strategy</label>
             <.input
@@ -473,9 +452,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               name="revision[scoring_strategy_id]"
               aria-describedby="scoring_strategy_description"
               placeholder="Scoring Strategy"
-              disabled={is_disabled(@changeset, @revision)}
+              disabled={is_disabled(@form, @revision)}
               class="form-control custom-select"
-              value={fetch_field(@changeset, :scoring_strategy_id)}
+              field={@form[:scoring_strategy_id]}
               options={
                 Enum.map(
                   ScoringStrategy.get_types(),
@@ -496,9 +475,9 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               name="revision[retake_mode]"
               aria-describedby="retake_mode_description"
               placeholder="Retake Mode"
-              disabled={is_disabled(@changeset, @revision)}
+              disabled={is_disabled(@form, @revision)}
               class="form-control custom-select"
-              value={fetch_field(@changeset, :retake_mode)}
+              field={@form[:retake_mode]}
               options={[
                 {"Normal: Students answer all questions in each attempt", :normal},
                 {"Targeted: Students answer only incorrect questions from previous attempts",
@@ -512,25 +491,25 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
           <div class="form-group">
             <label for="purpose">Purpose</label>
-            <.input
-              type="select"
-              id="purpose"
-              name="revision[purpose]"
-              placeholder="Purpose"
-              class="form-control custom-select"
-              value={fetch_field(@changeset, :purpose)}
-              options={[
+            <%= select(
+              @form,
+              :purpose,
+              [
                 {"Foundation", :foundation},
                 {"Deliberate Practice", :deliberate_practice},
                 {"Exploration", :application}
-              ]}
-            />
+              ],
+              prompt: "Purpose",
+              class: "form-control custom-select"
+            ) %>
           </div>
 
           <div class="form-group">
             <label>Related Resource</label>
             <%= live_component(HierarchySelector,
-              disabled: !@revision.graded && is_foundation(@changeset, @revision),
+              disabled:
+                !@revision.graded &&
+                  is_foundation(@form, @revision),
               field_name: "revision[relates_to][]",
               id: "related-resources-selector",
               items: @project_hierarchy.children,
@@ -540,31 +519,20 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         <% else %>
           <div class="form-group">
             <label for="title">Title</label>
-            <.input
-              id="title"
-              name="revision[title]"
-              class="form-control"
-              aria-describedby="title_description"
-              placeholder="Title"
-              value={fetch_field(@changeset, :title)}
-            />
+            <.input type="text" field={@form[:title]} class="form-control" />
             <small id="title_description" class="form-text text-muted">
               The title is used to identify this <%= resource_type_label(@revision) %>.
             </small>
           </div>
           <div class="form-group">
             <label for="introduction_content">Introduction content</label>
-            <input
-              type="hidden"
-              name="revision[intro_content]"
-              value={fetch_field(@changeset, :intro_content) || %{}}
-            />
+            <.input type="hidden" name="revision[intro_content]" field={@form[:intro_content] || %{}} />
             <div class="form-control overflow-hidden truncate-form-control">
-              <div :if={fetch_field(@changeset, :intro_content) not in [nil, "", %{}]}>
+              <div :if={fetch_field(@form.source, :intro_content) not in [nil, "", %{}]}>
                 <%= Phoenix.HTML.raw(
                   Oli.Rendering.Content.render(
                     %Oli.Rendering.Context{},
-                    fetch_field(@changeset, :intro_content)[
+                    fetch_field(@form.source, :intro_content)[
                       "children"
                     ],
                     Oli.Rendering.Content.Html
@@ -586,21 +554,28 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           <div class="flex gap-10 justify-center">
             <.poster_image_selection
               target={@myself}
-              poster_image={fetch_field(@changeset, :poster_image) || @default_poster_image}
+              poster_image={fetch_field(@form.source, :poster_image) || @default_poster_image}
               delete_button_enabled={
-                fetch_field(@changeset, :poster_image) not in [nil, @default_poster_image]
+                fetch_field(@form.source, :poster_image) not in [nil, @default_poster_image]
               }
             />
             <.intro_video_selection
               target={@myself}
-              intro_video={fetch_field(@changeset, :intro_video)}
+              intro_video={fetch_field(@form.source, :intro_video)}
             />
           </div>
         <% end %>
-
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" phx-click={@cancel}>Cancel</button>
-          <button type="submit" phx-disable-with="Saving..." class="btn btn-primary">Save</button>
+
+          <button
+            type="submit"
+            disabled={@form.errors != []}
+            phx-disable-with="Saving..."
+            class="btn btn-primary"
+          >
+            Save
+          </button>
         </div>
       </.form>
     </div>
@@ -844,16 +819,17 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "cancel"}, socket) do
-    %{changeset: changeset, step: step} = socket.assigns
+    %{form: %{source: changeset}, step: step} = socket.assigns
 
-    changeset =
+    form =
       changeset
       |> Ecto.Changeset.delete_change(step)
+      |> to_form()
 
     {:noreply,
      socket
      |> maybe_cancel_not_consumed_uploads(step)
-     |> assign(step: :general, changeset: changeset)}
+     |> assign(step: :general, form: form)}
   end
 
   def handle_event("change_step", %{"target_step" => "general", "action" => "save"}, socket) do
@@ -861,26 +837,33 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   end
 
   def handle_event("select-resource", %{"url" => url}, socket) do
-    changeset = Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, url)
+    form =
+      Ecto.Changeset.put_change(socket.assigns.form.source, socket.assigns.step, url)
+      |> to_form()
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, form: form)}
   end
 
   def handle_event("validate-upload", _params, socket) do
-    changeset =
-      Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, "uploaded_one")
+    form =
+      Ecto.Changeset.put_change(socket.assigns.form.source, socket.assigns.step, "uploaded_one")
+      |> to_form()
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, form: form)}
   end
 
   def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    changeset = Ecto.Changeset.delete_change(socket.assigns.changeset, socket.assigns.step)
+    form =
+      Ecto.Changeset.delete_change(socket.assigns.form.source, socket.assigns.step)
+      |> to_form()
 
-    {:noreply, cancel_upload(socket, socket.assigns.step, ref) |> assign(changeset: changeset)}
+    {:noreply,
+     cancel_upload(socket, socket.assigns.step, ref)
+     |> assign(form: form)}
   end
 
   def handle_event("consume-uploaded", _params, socket) do
-    %{step: step, project: project, changeset: changeset} = socket.assigns
+    %{step: step, project: project, form: %{source: changeset}} = socket.assigns
 
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
@@ -894,21 +877,23 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
         S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
       end)
 
-    changeset =
+    form =
       Ecto.Changeset.put_change(changeset, step, hd(uploaded_files))
+      |> to_form()
 
-    {:noreply, assign(socket, :changeset, changeset)}
+    {:noreply, assign(socket, form: form)}
   end
 
   def handle_event("clear-resource", %{"resource_name" => resource_name}, socket) do
-    changeset =
+    form =
       Ecto.Changeset.put_change(
-        socket.assigns.changeset,
+        socket.assigns.form.source,
         String.to_existing_atom(resource_name),
         nil
       )
+      |> to_form()
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, form: form)}
   end
 
   def handle_event(
@@ -924,36 +909,42 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       |> to_form()
 
     if intro_video_form.source.valid? do
-      changeset =
-        Ecto.Changeset.put_change(socket.assigns.changeset, socket.assigns.step, youtube_url)
+      form =
+        Ecto.Changeset.put_change(socket.assigns.form.source, socket.assigns.step, youtube_url)
+        |> to_form()
 
-      {:noreply, assign(socket, intro_video_form: intro_video_form, changeset: changeset)}
+      {:noreply,
+       assign(socket,
+         intro_video_form: intro_video_form,
+         form: form
+       )}
     else
       {:noreply, assign(socket, intro_video_form: intro_video_form)}
     end
   end
 
   def handle_event("intro_content_change", %{"values" => intro_content}, socket) do
-    changeset =
-      Ecto.Changeset.put_change(socket.assigns.changeset, :intro_content, %{
+    form =
+      Ecto.Changeset.put_change(socket.assigns.form.source, :intro_content, %{
         "type" => "p",
         "children" => intro_content
       })
+      |> to_form()
 
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, form: form)}
   end
 
-  defp is_foundation(changeset, revision) do
-    if !is_nil(changeset.changes |> Map.get(:purpose)) do
-      changeset.changes.purpose == :foundation
+  defp is_foundation(form, revision) do
+    if !is_nil(form.source.changes |> Map.get(:purpose)) do
+      form.source.changes.purpose == :foundation
     else
       revision.purpose == :foundation
     end
   end
 
-  defp is_disabled(changeset, revision) do
-    if !is_nil(changeset.changes[:graded]) do
-      !changeset.changes[:graded]
+  defp is_disabled(form, revision) do
+    if !is_nil(form.source.changes[:graded]) do
+      !form.source.changes[:graded]
     else
       !revision.graded
     end
@@ -1099,7 +1090,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
              maybe_list_all_youtube_resource_urls(socket.assigns.project.slug, resource_name) do
         list_selected_resource_first(
           youtube_resource_urls ++ s3_resource_urls,
-          fetch_field(socket.assigns.changeset, resource_name)
+          fetch_field(socket.assigns.form.source, resource_name)
         )
       end
 
