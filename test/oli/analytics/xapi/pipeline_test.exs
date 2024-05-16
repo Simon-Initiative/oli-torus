@@ -1,8 +1,10 @@
 defmodule Oli.Analytics.XAPI.PipelineTest do
+
   use Oli.DataCase
 
   alias Oli.Analytics.XAPI.UploadPipeline
   alias Oli.Analytics.XAPI.StatementBundle
+  alias Oli.Analytics.XAPI.QueueProducer
 
   def make_bundle(data) do
     %StatementBundle{
@@ -50,7 +52,7 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
 
       # verify the QueueProducer.enqueue_from_storage reads and converts
       # to StatementBundle correctly
-      [%StatementBundle{body: body}] = Oli.Analytics.XAPI.QueueProducer.enqueue_from_storage()
+      [%StatementBundle{body: body}] = QueueProducer.enqueue_from_storage()
       assert body == "fail"
     end
 
@@ -76,5 +78,62 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       assert File.read!("./test_bundles/1.jsonl") == "1\n1"
       assert File.read!("./test_bundles/2.jsonl") == "2\n2"
     end
+
+    test "verify that a stopped pipeline drains the QueueProducer" do
+
+      Broadway.start_link(__MODULE__,
+        name: :dummy_pipeline,
+        producer: [
+          module: {Oli.Analytics.XAPI.QueueProducer, []},
+          transformer: {__MODULE__, :transform, []}
+        ],
+        processors: [
+          default: [concurrency: 1, max_demand: 1]
+        ],
+        batchers: [
+          default: [
+            concurrency: 1,
+            batch_size: 1
+          ]
+        ]
+      )
+
+      producer_name = Broadway.producer_names(:dummy_pipeline) |> hd
+
+      # Async call to the producer
+      GenStage.cast(producer_name, {:insert, make_bundle("1")})
+      GenStage.cast(producer_name, {:insert, make_bundle("2")})
+
+      # wait for the producer to receive the first message
+      Process.sleep(100)
+
+      # stop the pipeline, which should trigger the draining of the queue
+      Broadway.stop(:dummy_pipeline)
+
+      # verify that the QueueProducer was drained
+      items = Oli.Repo.all(Oli.Analytics.XAPI.PendingUpload)
+      assert length(items) == 1
+
+    end
+  end
+
+  def transform(event, _opts) do
+    %Broadway.Message{
+      data: event,
+      acknowledger: Broadway.NoopAcknowledger.init()
+    }
+  end
+
+  def handle_message(_, %Broadway.Message{} = message, _) do
+
+    # Simulate a stalled processer by sleeping for 2 seconds, which
+    # will leave 1 item sitting in the producer queue
+    Process.sleep(2_000)
+
+    message
+  end
+
+  def handle_batch(:default, messages, _batch_info, _context) do
+    messages
   end
 end

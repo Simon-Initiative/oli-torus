@@ -27,12 +27,14 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
     {:producer, initial_state}
   end
 
-  # This is the public API for enqueuing a statement bundle
+  ###
+  # The client facing API for enqueuing a statement bundle
   # to be uploaded to S3.  Everything else in this module faces
   # the Broadway pipeline.
   def enqueue(%StatementBundle{} = bundle) do
     GenStage.cast(Oli.Analytics.XAPI.QueueProducer, {:insert, bundle})
   end
+  ###
 
   def handle_cast({:insert, bundle}, state) do
     state = %{state | queue: [bundle | state.queue]}
@@ -51,12 +53,15 @@ defmodule Oli.Analytics.XAPI.QueueProducer do
   end
 
   defp handle_receive_messages(%{demand: demand, queue: queue} = state) when demand > 0 do
+
+    Utils.record_pipeline_stats(%{queue_size: state.queue_size, demand: demand})
+
     {remaining, to_send} = Enum.split(queue, -demand)
     satisfied_count = Enum.count(to_send)
-    demand = demand - satisfied_count
 
-    Utils.record_pipeline_stats(%{queue_size: Enum.count(remaining), demand: demand})
     Logger.debug("Satisfying demand of #{demand} with #{satisfied_count}")
+
+    demand = demand - satisfied_count
 
     {:noreply, to_send,
      %{state | demand: demand, queue: remaining, queue_size: Enum.count(remaining)}}
