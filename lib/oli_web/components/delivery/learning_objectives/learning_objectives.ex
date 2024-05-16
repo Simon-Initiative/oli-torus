@@ -1,11 +1,12 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.{PagedTable, SearchInput}
-  alias Phoenix.LiveView.JS
-  alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -118,18 +119,15 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
         <%= if @total_count > 0 do %>
           <div id="objectives-table">
-            <PagedTable.render
+            <InstructorDashboardPagedTable.render
               table_model={@table_model}
-              page_change={JS.push("paged_table_page_change", target: @myself)}
-              sort={JS.push("paged_table_sort", target: @myself)}
               total_count={@total_count}
               offset={@params.offset}
               limit={@params.limit}
-              additional_table_class="instructor_dashboard_table"
-              show_bottom_paging={false}
-              render_top_info={false}
+              sort={JS.push("paged_table_sort", target: @myself)}
               limit_change={JS.push("paged_table_limit_change", target: @myself)}
-              show_limit_change={true}
+              selection_change={JS.push("paged_table_selection_change", target: @myself)}
+              page_change={JS.push("paged_table_page_change", target: @myself)}
             />
           </div>
         <% else %>
