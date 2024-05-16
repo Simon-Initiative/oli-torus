@@ -6,7 +6,6 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core
   alias Lti_1p3.Tool.ContextRoles
-  alias OliWeb.Router.Helpers, as: Routes
 
   def insert_resource_attempt(resource_access, revision_id, attrs) do
     Core.create_resource_attempt(
@@ -62,7 +61,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
       assert html_response(conn, 200) =~ "Page one"
     end
@@ -86,7 +85,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
       assert html_response(conn, 403) =~
                "You are trying to access a resource that is gated by the following condition"
@@ -118,7 +117,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
       assert html_response(conn, 403) =~
                "You are trying to access a resource that is gated by the following condition"
@@ -159,7 +158,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
       assert html_response(conn, 403) =~
                "You are trying to access a resource that is gated by the following condition"
@@ -191,7 +190,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
       assert html_response(conn, 403) =~
                "You are trying to access a resource that is gated by the following condition"
@@ -237,10 +236,9 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
-      assert html_response(conn, 200) =~ "Attempt 1 of 2"
-      assert html_response(conn, 200) =~ "Page one is scheduled to end"
+      assert html_response(conn, 200) =~ "Attempts 1/2"
     end
 
     test "allows student to resume an active attempt with :allows_review policy and active attempt present",
@@ -275,7 +273,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
       assert html_response(conn, 200) =~ "Page one"
     end
