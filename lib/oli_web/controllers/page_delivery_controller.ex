@@ -349,16 +349,9 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
-    user = conn.assigns.current_user
-    section = conn.assigns.section
-    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-
-    if Sections.is_enrolled?(user.id, section_slug) do
-      PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
-      |> render_page(conn, section_slug, false)
-    else
-      render(conn, "not_authorized.html")
-    end
+    # redirect request to old page view to the new lesson live view
+    conn
+    |> redirect(to: ~p"/sections/#{section_slug}/lesson/#{revision_slug}")
   end
 
   def render_content_html(

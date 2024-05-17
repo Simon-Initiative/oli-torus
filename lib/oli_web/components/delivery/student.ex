@@ -230,17 +230,17 @@ defmodule OliWeb.Components.Delivery.Student do
     ~H"""
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
-        <div class="flex flex-row gap-1 text-xs font-semibold">
+        <div class="flex flex-row gap-1 text-xs font-semibold text-green-700 dark:text-green-500">
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
           <div class="w-4 h-4 relative"><Icons.star /></div>
 
-          <div role="attempt score" class="text-emerald-600 tracking-tight">
+          <div role="attempt score" class="tracking-tight">
             <%= Float.round(@attempt.score, 2) %>
           </div>
           <div class="text-emerald-600">
             /
           </div>
-          <div role="attempt out of" class="text-emerald-600 tracking-tight">
+          <div role="attempt out of" class="tracking-tight">
             <%= Float.round(@attempt.out_of, 2) %>
           </div>
         </div>
@@ -283,6 +283,8 @@ defmodule OliWeb.Components.Delivery.Student do
     end
   end
 
+  attr :effective_settings, :map, required: true
+
   defp time_remaining(%{effective_settings: %{end_date: nil}} = assigns) do
     ~H"""
 
@@ -300,9 +302,24 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
-  defp format_time_remaining(effective_settings) do
+  @doc """
+  Calculates the time remaining from the current moment until a specified end date and formats it as "HH:MM:SS".
+
+  ## Parameters
+  - `effective_settings`: A map containing the `end_date` as a `DateTime`.
+
+  ## Returns
+  - A string representing the formatted time remaining as "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
+
+  ## Examples
+      iex> format_time_remaining(%{end_date: Timex.shift(Timex.now(), seconds: 3661)})
+      "01:01:01"
+  """
+
+  @spec format_time_remaining(map()) :: String.t()
+  def format_time_remaining(effective_settings) do
     # Get the current time
-    current_time = Timex.now()
+    current_time = Oli.DateTime.utc_now()
 
     # Calculate the difference in seconds, clamp negative values to 0
     diff_seconds =
@@ -327,4 +344,28 @@ defmodule OliWeb.Components.Delivery.Student do
        |> Integer.to_string()
        |> String.pad_leading(2, "0"))
   end
+
+  attr :graded, :boolean, default: false
+  attr :duration_minutes, :integer
+
+  def duration_in_minutes(assigns) do
+    ~H"""
+    <div class="ml-auto items-center gap-1.5 flex">
+      <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
+        <Icons.clock />
+      </div>
+      <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
+        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
+          <%= parse_minutes(@duration_minutes) %>
+          <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
+            min
+          </span>
+        </span>
+      </div>
+    </div>
+    """
+  end
+
+  defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
+  defp parse_minutes(minutes), do: minutes
 end

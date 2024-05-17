@@ -101,7 +101,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     ~H"""
     <div>
       <a
-        class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black"}"}
+        class={"ml-8 #{if @has_score? and @perc < 40, do: "text-red-500", else: "text-black dark:text-gray-300"}"}
         data-score-check={if @has_score? and @perc < 40, do: "false", else: "true"}
         href={
           Routes.live_path(
@@ -137,7 +137,10 @@ defmodule OliWeb.Grades.GradebookTableModel do
     assigns = Map.merge(assigns, %{disapproved_count: disapproved_count, row: row})
 
     ~H"""
-    <div class="ml-8" data-score-check={if @disapproved_count > 0, do: "false", else: "true"}>
+    <div
+      class="ml-8 text-gray-800 dark:text-gray-300"
+      data-score-check={if @disapproved_count > 0, do: "false", else: "true"}
+    >
       <%= OliWeb.Common.Utils.name(@row.user) %>
     </div>
     """
@@ -269,7 +272,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
       ~H"""
       <a
-        class={if @perc < 50, do: "text-red-500", else: "text-black"}
+        class={if @perc < 50, do: "text-red-500", else: "text-black dark:text-gray-300"}
         href={
           Routes.live_path(
             OliWeb.Endpoint,

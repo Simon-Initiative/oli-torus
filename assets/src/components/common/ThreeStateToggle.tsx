@@ -9,7 +9,11 @@ export const ThreeStateToggle = ({
   className,
   children,
 }: PropsWithChildren<ThreeStateToggleProps>) => {
-  return <div className={classNames('flex flex-row whitespace-nowrap', className)}>{children}</div>;
+  return (
+    <div className={classNames('flex flex-row gap-2.5 whitespace-nowrap', className)}>
+      {children}
+    </div>
+  );
 };
 
 interface ToggleOptionProps {
@@ -36,8 +40,8 @@ export const ToggleOption = ({
       <label
         htmlFor={id}
         className={classNames(
-          checked && '!bg-gray-600 !text-white',
-          'px-3 py-2 border-t border-b border-l last:border-r border-gray-500 text-gray-500 cursor-pointer first-of-type:rounded-l last-of-type:rounded-r hover:bg-gray-200 dark:hover:bg-gray-700',
+          checked && 'dark:!bg-slate-800 dark:!border-zinc-400 !border-black/90 bg-gray-400',
+          'w-7 h-7 p-1 rounded-md border dark:border-zinc-600 border-black/70 justify-center items-center gap-2.5 inline-flex cursor-pointer',
         )}
       >
         {children}

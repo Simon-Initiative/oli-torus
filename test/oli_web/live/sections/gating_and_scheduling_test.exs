@@ -611,6 +611,22 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       assert view
              |> element("input[phx-value-change=\"change-min-score\"]")
+
+      # change select option to "progress"
+      view
+      |> element("select[phx-change=\"select-condition\"]")
+      |> render_change(%{"value" => "progress"})
+
+      assert view
+             |> element("label[for=\"source\"]")
+             |> render() =~
+               "Resource That Must Has Progress"
+
+      assert view
+             |> element("input[phx-click=\"toggle-min-score\"]")
+
+      assert view
+             |> element("input[phx-value-change=\"change-min-score\"]")
     end
   end
 

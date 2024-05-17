@@ -14,7 +14,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       OliWeb.Endpoint,
       OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
       section_slug,
-      :reports,
+      :insights,
       :content,
       params
     )
@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Freports%2Fcontent"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights%2Fcontent"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_content_route(section.slug))
@@ -253,7 +253,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Endpoint,
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
-                 :reports,
+                 :insights,
                  :content,
                  %{container_id: unit1_resource.id}
                ),
@@ -261,7 +261,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Endpoint,
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
-                 :reports,
+                 :insights,
                  :content,
                  %{container_id: unit2_resource.id}
                )
@@ -306,7 +306,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Endpoint,
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
-                 :reports,
+                 :insights,
                  :content,
                  %{container_id: unit1_resource.id}
                ),
@@ -314,7 +314,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Endpoint,
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
-                 :reports,
+                 :insights,
                  :content,
                  %{container_id: unit2_resource.id}
                )
@@ -386,7 +386,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Endpoint,
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
-                 :reports,
+                 :insights,
                  :content,
                  %{page_id: page1.id}
                ),
@@ -394,7 +394,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  OliWeb.Endpoint,
                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
                  section.slug,
-                 :reports,
+                 :insights,
                  :content,
                  %{page_id: page2.id}
                )

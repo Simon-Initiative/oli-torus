@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.Student.ReviewLive do
   use OliWeb, :live_view
 
-  on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
+  on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   import OliWeb.Delivery.Student.Utils,

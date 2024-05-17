@@ -525,7 +525,7 @@ defmodule Oli.Resources.Collaboration do
   @doc """
   Returns the list of unread replies for a user.
   """
-  def get_unread_reply_counts_for_root_discussions(user_id, root_section_resource_resource_id) do
+  def get_unread_reply_counts_for_root_discussions(user_id, root_curriculum_resource_id) do
     from(
       p in Post,
       left_join: urp in UserReadPost,
@@ -533,7 +533,7 @@ defmodule Oli.Resources.Collaboration do
       # ignore replies that were created by the user
       where:
         not is_nil(p.thread_root_id) and is_nil(urp.post_id) and
-          p.resource_id == ^root_section_resource_resource_id and p.user_id != ^user_id,
+          p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
       group_by: p.thread_root_id,
       select: %{
         thread_root_id: p.thread_root_id,
@@ -549,7 +549,7 @@ defmodule Oli.Resources.Collaboration do
   def list_root_posts_for_section(
         user_id,
         section_id,
-        root_section_resource_resource_id,
+        root_curriculum_resource_id,
         limit,
         offset,
         sort_by,
@@ -599,9 +599,9 @@ defmodule Oli.Resources.Collaboration do
         left_join: reactions in assoc(post, :reactions),
         where:
           post.section_id == ^section_id and post.visibility == :public and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)) and
-            post.resource_id == ^root_section_resource_resource_id and
+            post.resource_id == ^root_curriculum_resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
         order_by: ^order_clause,
         limit: ^limit,
@@ -1047,6 +1047,22 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Soft deletes a single post with the given id.
+
+  ## Examples
+
+      iex> delete_post(post)
+      {number, nil | returned data}` where number is the number of deleted entries
+  """
+  def soft_delete_post(post_id) do
+    from(
+      p in Post,
+      where: p.id == ^post_id
+    )
+    |> Repo.update_all(set: [status: :deleted])
+  end
+
+  @doc """
   Delete a post or a set of posts.
 
   ## Examples
@@ -1163,7 +1179,7 @@ defmodule Oli.Resources.Collaboration do
         where:
           post.section_id == ^section_id and post.resource_id == ^resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_point_block_id,
         where: ^filter_by_visibility,
@@ -1248,7 +1264,7 @@ defmodule Oli.Resources.Collaboration do
         left_join: user in assoc(post, :user),
         where:
           post.section_id == ^section_id and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)),
         where: ^filter_by_resource_id,
         where: ^filter_by_point_block_id,
@@ -1371,7 +1387,7 @@ defmodule Oli.Resources.Collaboration do
       where:
         post.section_id == ^section_id and post.resource_id == ^resource_id and
           is_nil(post.parent_post_id) and is_nil(post.thread_root_id) and
-          (post.status in [:approved, :archived] or
+          (post.status in [:approved, :archived, :deleted] or
              (post.status == :submitted and post.user_id == ^user_id)),
       where: ^filter_by_visibility,
       group_by: post.annotated_block_id,
@@ -1392,7 +1408,7 @@ defmodule Oli.Resources.Collaboration do
         left_join: reactions in assoc(post, :reactions),
         where:
           post.parent_post_id == ^post_id and
-            (post.status in [:approved, :archived] or
+            (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)),
         order_by: [asc: :updated_at],
         preload: [user: user, reactions: reactions],

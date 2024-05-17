@@ -5,6 +5,7 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
 
   alias Oli.Delivery.Sections
   alias Oli.Resources.Collaboration
+  alias Oli.Publishing.DeliveryResolver
 
   def on_mount(:default, _params, _session, socket) do
     %{current_user: current_user, section: section} = socket.assigns
@@ -12,6 +13,7 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
     badges =
       %{}
       |> load_discussions_badge(section, current_user)
+      |> dbg()
 
     dbg(badges)
 
@@ -22,13 +24,13 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
 
   defp load_discussions_badge(badges, section, user) do
     # Load the discussions badge
-    root_section_resource_resource_id =
-      Sections.get_root_section_resource_resource_id(section)
+    %{resource_id: root_curriculum_resource_id} =
+      DeliveryResolver.root_container(section.slug)
 
     unread_replies_count =
       Collaboration.get_unread_reply_counts_for_root_discussions(
         user.id,
-        root_section_resource_resource_id
+        root_curriculum_resource_id
       )
       |> Enum.reduce(0, fn %{count: count}, acc -> acc + count end)
 
