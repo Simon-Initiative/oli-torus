@@ -18,7 +18,8 @@ defmodule Oli.Delivery.Gating.GatingCondition do
         :schedule,
         :always_open,
         :started,
-        :finished
+        :finished,
+        :progress
       ]
 
     # The ways in which this gate affects access to graded resources
