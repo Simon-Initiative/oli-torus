@@ -18,6 +18,7 @@ import {
   createSurvey,
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
+import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
 
 interface Props {
@@ -103,7 +104,7 @@ export const NonActivities: React.FC<Props> = ({
           onHoverEnd={() => onResetTip()}
           key={'report'}
           disabled={false}
-          onClick={() => addReport(onAddItem, index)}
+          onClick={() => addReport(onAddItem, index, resourceContext.projectSlug)}
         />
         <ResourceChoice
           icon="window-restore"
@@ -150,9 +151,34 @@ const addSurvey = (onAddItem: AddCallback, index: number[]) => {
   document.body.click();
 };
 
-const addReport = (onAddItem: AddCallback, index: number[]) => {
-  onAddItem(createReport(), index);
+const addReport = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
+  let activitiesWithReport: ActivityWithReportOption[];
   document.body.click();
+  window.oliDispatch(
+    modalActions.display(
+      <SelectModal
+        title="Select Activity"
+        description="Select an Activity that generates reports"
+        onFetchOptions={() =>
+          Persistence.activitiesWithReport(projectSlug).then((result) => {
+            if (result.type === 'success') {
+              activitiesWithReport = result.activities;
+              console.log(activitiesWithReport);
+              return result.activities.map((o) => ({ value: o.id, title: o.title }));
+            } else {
+              throw result.message;
+            }
+          })
+        }
+        onDone={(activityId: string) => {
+          window.oliDispatch(modalActions.dismiss());
+          const ac = activitiesWithReport.find((a) => a.id === activityId);
+          if (ac) onAddItem(createReport(ac), index);
+        }}
+        onCancel={() => window.oliDispatch(modalActions.dismiss())}
+      />,
+    ),
+  );
 };
 
 const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: string) => {

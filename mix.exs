@@ -210,7 +210,8 @@ defmodule Oli.MixProject do
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},
-      {:xml_builder, "~> 2.1.1"}
+      {:xml_builder, "~> 2.1.1"},
+      {:contex, "~> 0.5.0"}
     ]
   end
 

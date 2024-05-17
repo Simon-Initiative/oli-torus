@@ -9,7 +9,7 @@ defmodule Oli.Rendering.Report.Markdown do
 
   @behaviour Oli.Rendering.Report
 
-  def survey(_context, next, _) do
+  def report(_context, next, _) do
     [
       "---\n",
       "##### Report\n",

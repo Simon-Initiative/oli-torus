@@ -1,6 +1,7 @@
 defmodule OliWeb.Api.ResourceController do
   use OliWeb, :controller
 
+  import Oli.Authoring.Editing.Utils
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
@@ -80,15 +81,36 @@ defmodule OliWeb.Api.ResourceController do
   end
 
   def with_report(conn, %{"project" => project_slug}) do
-    case Resources.alternatives_groups(
-           project_slug,
-           Oli.Publishing.AuthoringResolver
-         ) do
-      {:ok, alternatives} ->
-        json(conn, %{"type" => "success", "alternatives" => alternatives})
+    author = conn.assigns[:current_author]
 
-      _ ->
-        error(conn, 404, "failed to resolve alternatives groups")
+    with {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project) do
+      activities = Resources.get_report_activities(project.id)
+
+      publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
+
+      parent_pages = Oli.Publishing.determine_parent_pages(publication_id)
+
+      activities =
+        Enum.map(activities, fn a ->
+          %{
+            id: a.id,
+            title: a.title,
+            type: a.type,
+            page:
+              case Map.get(parent_pages, a.id) do
+                nil ->
+                  ""
+
+                %{title: _title, slug: slug} ->
+                  Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, slug)
+              end
+          }
+        end)
+
+      json(conn, %{"type" => "success", "activities" => activities})
+    else
+      _ -> error(conn, 404, "failed to resolve alternatives groups")
     end
   end
 

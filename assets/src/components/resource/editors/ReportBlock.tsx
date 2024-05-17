@@ -43,13 +43,13 @@ export const ReportBlock = ({
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
       <div>
-      <button
-            key="add"
-            className={classNames('btn btn-sm', styles.option)}
-            onClick={onSelectActivity}
-          >
-            <i className="fas fa-plus"></i>
-          </button>
+        {/* <button
+          key="add"
+          className={classNames('btn btn-sm', styles.option)}
+          onClick={onSelectActivity}
+        >
+          <i className="fas fa-plus"></i>
+        </button> */}
       </div>
       <div>{children}</div>
     </div>

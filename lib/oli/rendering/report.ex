@@ -9,7 +9,7 @@ defmodule Oli.Rendering.Report do
   @type next :: (-> String.t())
 
   @callback report(%Context{}, next, %{}) :: [any()]
-  @callback elements(%Context{}, []) :: [any()]
+  # @callback elements(%Context{}, []) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """

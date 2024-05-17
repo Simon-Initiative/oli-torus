@@ -6,6 +6,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
+import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import guid from 'utils/guid';
 import { getDefaultTextDirection } from 'utils/useDefaultTextDirection';
@@ -251,13 +252,16 @@ export const createSurvey = (
   children,
 });
 
-export const createReport = (
-  children: Immutable.List<ResourceContent> = Immutable.List(),
-): ReportContent => ({
+export const createReport = (ac: ActivityWithReportOption): ReportContent => ({
   type: 'report',
   id: guid(),
   title: undefined,
-  children,
+  children: [],
+  resource_id: ac.id,
+  activity_slug: ac.slug,
+  activity_title: ac.title,
+  activity_type: ac.type,
+  parent_page: ac.page,
 });
 
 export const createBreak = (): Break => ({
@@ -345,7 +349,12 @@ export interface ReportContent {
   type: 'report';
   id: string;
   title: string | undefined;
-  children: Immutable.List<ResourceContent>;
+  children: [];
+  resource_id: string;
+  activity_type: string;
+  activity_slug: string;
+  activity_title: string;
+  parent_page?: string;
 }
 
 export interface Break {

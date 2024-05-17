@@ -9,7 +9,7 @@ defmodule Oli.Rendering.Report.Plaintext do
 
   @behaviour Oli.Rendering.Report
 
-  def survey(%Context{} = _context, next, %{"id" => id}) do
+  def report(%Context{} = _context, next, %{"id" => id}) do
     [
       "[Report #{id}          ]",
       next.(),

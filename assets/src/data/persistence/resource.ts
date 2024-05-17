@@ -75,8 +75,17 @@ export function alternatives(projectSlug: ProjectSlug) {
   return makeRequest<AlternativesGroupsReceived>(params);
 }
 
-export type ActivityWithReportOption = {id: string; type: string; slug: string; prompt?: string; page?: string}
-export type ActivitiesWithReportReceived = { type: 'success'; activities: ActivityWithReportOption[] };
+export type ActivityWithReportOption = {
+  id: string;
+  type: string;
+  slug: string;
+  title: string;
+  page?: string;
+};
+export type ActivitiesWithReportReceived = {
+  type: 'success';
+  activities: ActivityWithReportOption[];
+};
 
 // Requests all activities that generate reports
 export function activitiesWithReport(projectSlug: ProjectSlug) {

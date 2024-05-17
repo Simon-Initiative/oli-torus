@@ -1,6 +1,5 @@
 import React from 'react';
-import { ReportContent, ResourceContent } from 'data/content/resource';
-import { AddResource } from './AddResource';
+import { ReportContent } from 'data/content/resource';
 import {
   Description,
   Icon,
@@ -9,7 +8,10 @@ import {
   resourceGroupTitle,
 } from './OutlineItem';
 import { ReportBlock } from './ReportBlock';
-import { EditorProps, createEditor } from './createEditor';
+import { EditorProps } from './createEditor';
+
+// import { SelectModal } from 'components/modal/SelectModal';
+// import { modalActions } from 'actions/modal';
 
 interface ReportEditorProps extends EditorProps {
   contentItem: ReportContent;
@@ -40,42 +42,41 @@ export const ReportEditor = ({
   onRegisterNewObjective,
   onRegisterNewTag,
 }: ReportEditorProps) => {
-  
-  const onEditChild = (child: ResourceContent) => {
-    const updatedContent = {
-      ...contentItem,
-      children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
-    };
-    onEdit(updatedContent);
-  };
+  // const onEditChild = (child: ResourceContent) => {
+  //   const updatedContent = {
+  //     ...contentItem,
+  //     children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
+  //   };
+  //   onEdit(updatedContent);
+  // };
 
-  const showCreateAlternativeModal = () =>
-    window.oliDispatch(
-      modalActions.display(
-        <SelectModal
-          title="Select Alternative"
-          description="Select Alternative"
-          onFetchOptions={() => {
-            return Promise.resolve(
-              alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
-            );
-          }}
-          onDone={(optionId: string) => {
-            window.oliDispatch(modalActions.dismiss());
+  // const showCreateReportsModal = () =>
+  //   window.oliDispatch(
+  //     modalActions.display(
+  //       <SelectModal
+  //         title="Select Alternative"
+  //         description="Select Alternative"
+  //         onFetchOptions={() => {
+  //           return Promise.resolve(
+  //             alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
+  //           );
+  //         }}
+  //         onDone={(optionId: string) => {
+  //           window.oliDispatch(modalActions.dismiss());
 
-            const newAlt = createAlternative(optionId);
-            const update = {
-              ...contentItem,
-              children: contentItem.children.push(newAlt),
-            };
+  //           const newAlt = createAlternative(optionId);
+  //           const update = {
+  //             ...contentItem,
+  //             children: contentItem.children.push(newAlt),
+  //           };
 
-            onEdit(update);
-            setActiveOption(newAlt);
-          }}
-          onCancel={() => window.oliDispatch(modalActions.dismiss())}
-        />,
-      ),
-    );
+  //           onEdit(update);
+  //           setActiveOption(newAlt);
+  //         }}
+  //         onCancel={() => window.oliDispatch(modalActions.dismiss())}
+  //       />,
+  //     ),
+  //   );
 
   return (
     <ReportBlock
@@ -85,58 +86,8 @@ export const ReportEditor = ({
       onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
     >
-      {contentItem.children.map((c, childIndex) => {
-        return (
-          <div key={c.id}>
-            <AddResource
-              onRegisterNewObjective={onRegisterNewObjective}
-              index={[...index, childIndex]}
-              parents={[...parents, contentItem]}
-              editMode={editMode}
-              editorMap={editorMap}
-              resourceContext={resourceContext}
-              featureFlags={featureFlags}
-              onAddItem={onAddItem}
-            />
-            {createEditor({
-              resourceContext,
-              contentItem: c,
-              index: [...index, childIndex],
-              parents: [...parents, contentItem],
-              activities,
-              editMode,
-              resourceSlug,
-              projectSlug,
-              graded,
-              objectivesMap,
-              allObjectives,
-              allTags,
-              editorMap,
-              canRemove,
-              featureFlags,
-              contentBreaksExist,
-              onEdit: onEditChild,
-              onEditActivity,
-              onRemove,
-              onPostUndoable,
-              onRegisterNewObjective,
-              onRegisterNewTag,
-              onAddItem,
-            })}
-          </div>
-        );
-      })}
-
-      {/* <AddResource
-        index={[...index, contentItem.children.size + 1]}
-        parents={[...parents, contentItem]}
-        editMode={editMode}
-        editorMap={editorMap}
-        resourceContext={resourceContext}
-        featureFlags={featureFlags}
-        onAddItem={onAddItem}
-        onRegisterNewObjective={onRegisterNewObjective}
-      /> */}
+      <div>{contentItem.activity_title}</div>
+      
     </ReportBlock>
   );
 };
@@ -151,9 +102,7 @@ export const ReportOutlineItem = (props: ReportOutlineItemProps) => {
   return (
     <OutlineGroup {...props}>
       <Icon iconName="fas fa-poll" />
-      <Description title={resourceGroupTitle(contentItem)}>
-        {contentItem.children.size} items
-      </Description>
+      <Description title={resourceGroupTitle(contentItem)}>items</Description>
     </OutlineGroup>
   );
 };
