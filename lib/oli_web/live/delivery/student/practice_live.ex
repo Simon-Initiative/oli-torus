@@ -11,6 +11,10 @@ defmodule OliWeb.Delivery.Student.PracticeLive do
     {:ok, assign(socket, active_tab: :practice, practices_by_container: practices_by_container)}
   end
 
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <.hero_banner class="bg-practice">

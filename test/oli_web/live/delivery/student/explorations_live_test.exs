@@ -154,7 +154,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
       |> element("div[id=exploration_card_#{exploration_1.id}] a", "Let's Begin")
       |> render_click()
 
-      assert_redirected(view, ~p"/sections/#{section.slug}/lesson/#{exploration_1.slug}")
+      assert_redirected(
+        view,
+        "/sections/#{section.slug}/lesson/#{exploration_1.slug}?request_path=%2Fsections%2F#{section.slug}%2Fexplorations"
+      )
 
       # the redirected page will show the prologue or go directly to the exploration
       # if there is an attempt in progress

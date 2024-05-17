@@ -6,16 +6,16 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections}
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
-  alias OliWeb.Components.Delivery.Schedule
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
 
-    schedule_for_current_week =
-      Sections.get_schedule_for_current_week(section, current_user_id)
+    schedule_for_current_week_and_next_week =
+      Sections.get_schedule_for_current_and_next_week(section, current_user_id)
 
     # Use the root container revision to store the intro message for the course
     intro_message =
@@ -50,8 +50,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     {:ok,
      assign(socket,
        active_tab: :index,
-       schedule_for_current_week: schedule_for_current_week,
+       schedule_for_current_week_and_next_week: schedule_for_current_week_and_next_week,
        section_slug: section.slug,
+       section_start_date: section.start_date,
        historical_graded_attempt_summary: nil,
        has_visited_section:
          Sections.has_visited_section(section, socket.assigns[:current_user],
@@ -64,6 +65,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
      )}
   end
 
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <.header_banner
@@ -74,35 +79,38 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       intro_message={@intro_message}
     />
-    <div class="w-full h-96 relative bg-stone-950 dark:text-white">
+    <div class="w-full h-full relative bg-stone-950 dark:text-white">
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
         <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
         <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
-          <div class="w-full h-fit overflow-y-auto p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+          <div class="w-full h-fit overflow-y-auto p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
             <div class="flex-col justify-start items-start gap-7 inline-flex grow">
-              <div class="justify-start items-start gap-2.5 inline-flex">
+              <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
                 <div class="text-2xl font-bold leading-loose tracking-tight">
                   Upcoming Agenda
                 </div>
+                <.link
+                  href={
+                    Utils.schedule_live_path(
+                      @section_slug,
+                      request_path: ~p"/sections/#{@section_slug}"
+                    )
+                  }
+                  class="hover:no-underline"
+                >
+                  <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
+                    View full schedule
+                  </div>
+                </.link>
               </div>
-              <div class="justify-start items-center gap-1 inline-flex self-stretch">
-                <div class="text-base font-normal tracking-tight grow">
-                  <%= case @schedule_for_current_week do %>
-                    <% {week, schedule_ranges} -> %>
-                      <Schedule.week
-                        ctx={@ctx}
-                        week_number={week}
-                        show_border={false}
-                        schedule_ranges={schedule_ranges}
-                        section_slug={@section_slug}
-                        historical_graded_attempt_summary={@historical_graded_attempt_summary}
-                        request_path={~p"/sections/#{@section_slug}"}
-                      />
-                    <% _ -> %>
-                      <div class="text-xl">No schedule for this week.</div>
-                  <% end %>
-                </div>
-              </div>
+              <.live_component
+                module={ScheduleComponent}
+                ctx={@ctx}
+                id="schedule_component"
+                schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}
+                section_start_date={@section_start_date}
+                section_slug={@section_slug}
+              />
             </div>
           </div>
         </div>
@@ -292,7 +300,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp course_progress(assigns) do
     ~H"""
     <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-      <div class="w-full h-96 p-6 bg-zinc-900 bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+      <div class="w-full h-96 p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
         <div class="flex-col justify-start items-start gap-5 inline-flex grow">
           <div class="justify-start items-start gap-2.5 inline-flex">
             <div class="text-2xl font-bold leading-loose tracking-tight">

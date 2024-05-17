@@ -4,18 +4,28 @@ defmodule OliWeb.Common.PowTest do
   import Oli.Factory
 
   alias Oli.Accounts
-  alias Oli.Accounts.User
+  alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
 
   @user_email "testing@example.edu"
+  @author_email "author@example.edu"
 
   @user_form_attrs %{
     email: @user_email,
     email_confirmation: @user_email,
     given_name: "me",
     family_name: "too",
+    password: "passingby",
+    password_confirmation: "passingby"
+  }
+
+  @author_form_attrs %{
+    email: @author_email,
+    email_confirmation: @author_email,
+    given_name: "author",
+    family_name: "example",
     password: "passingby",
     password_confirmation: "passingby"
   }
@@ -272,6 +282,31 @@ defmodule OliWeb.Common.PowTest do
                Accounts.get_user_by(%{email: @user_email})
     end
 
+    test "a flash message is shown when the user is already registered",
+         %{conn: conn} do
+      insert(:user, %{email: @user_email, email_confirmed_at: nil})
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                age_verified: "true"
+              }),
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert conn.assigns.flash["info"] ==
+               "To continue, check #{@user_email} for a confirmation email.\n\nIf you don’t receive this email, check your Spam folder or verify that #{@user_email} is correct.\n\nYou can close this tab if you received the email.\n"
+
+      assert %User{email: @user_email} =
+               Accounts.get_user_by(%{email: @user_email})
+    end
+
     test "shows auth providers sign in buttons", %{conn: conn} do
       conn =
         conn
@@ -353,6 +388,31 @@ defmodule OliWeb.Common.PowTest do
       assert Monocle.we_see_exactly(response, 1, attribute: "or")
       assert response =~ "Continue with Github"
       assert response =~ "div class=\"github-auth-container\""
+    end
+
+    test "a flash message is shown when the author is already registered",
+         %{conn: conn} do
+      insert(:author, %{email: @author_email, email_confirmed_at: nil})
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.authoring_pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@author_form_attrs, %{
+                age_verified: "true"
+              }),
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert conn.assigns.flash["info"] ==
+               "To continue, check #{@author_email} for a confirmation email.\n\nIf you don’t receive this email, check your Spam folder or verify that #{@author_email} is correct.\n\nYou can close this tab if you received the email.\n"
+
+      assert %Author{email: @author_email} =
+               Accounts.get_author_by_email(@author_email)
     end
   end
 

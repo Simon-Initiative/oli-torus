@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.Post
   alias Oli.Delivery.Sections
+  alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Delivery.Student.Lesson.Annotations
@@ -29,14 +30,23 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           "collab_space_discussion_#{socket.assigns.section.slug}"
         )
 
-    root_section_resource_resource_id =
-      Sections.get_root_section_resource_resource_id(socket.assigns.section)
+    %{resource_id: root_curriculum_resource_id} =
+      DeliveryResolver.root_container(section.slug)
+
+    course_collab_space_config =
+      Collaboration.get_course_collab_space_config(section.root_section_resource_id)
+
+    course_discussions_enabled? =
+      case course_collab_space_config do
+        %Collaboration.CollabSpaceConfig{status: :enabled} -> true
+        _ -> false
+      end
 
     {posts, more_posts_exist?} =
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        root_section_resource_resource_id,
+        root_curriculum_resource_id,
         @default_params
       )
 
@@ -55,15 +65,13 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         posts: posts,
         notes: notes,
         expanded_posts: %{},
-        course_collab_space_config:
-          Collaboration.get_course_collab_space_config(
-            socket.assigns.section.root_section_resource_id
-          ),
+        course_collab_space_config: course_collab_space_config,
         post_params: @default_params,
         note_params: @default_params,
         more_posts_exist?: more_posts_exist?,
         more_notes_exist?: more_notes_exist?,
-        root_section_resource_resource_id: root_section_resource_resource_id,
+        root_curriculum_resource_id: root_curriculum_resource_id,
+        course_discussions_enabled?: course_discussions_enabled?,
         posts_search_term: "",
         posts_search_results: nil,
         notes_search_term: "",
@@ -71,6 +79,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       )
       |> assign_new_discussion_form()
     }
+  end
+
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
@@ -89,7 +101,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        socket.assigns.root_section_resource_resource_id,
+        socket.assigns.root_curriculum_resource_id,
         updated_post_params
       )
 
@@ -139,7 +151,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       Map.merge(attrs, %{
         "user_id" => socket.assigns.current_user.id,
         "section_id" => socket.assigns.section.id,
-        "resource_id" => socket.assigns.root_section_resource_resource_id,
+        "resource_id" => socket.assigns.root_curriculum_resource_id,
         "status" =>
           if(socket.assigns.course_collab_space_config.auto_accept,
             do: :approved,
@@ -211,7 +223,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       current_user: current_user,
       section: section,
       course_collab_space_config: course_collab_space_config,
-      root_section_resource_resource_id: root_section_resource_resource_id
+      root_curriculum_resource_id: root_curriculum_resource_id
     } = socket.assigns
 
     parent_post_id = String.to_integer(parent_post_id)
@@ -226,7 +238,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       status: status,
       user_id: current_user.id,
       section_id: section.id,
-      resource_id: root_section_resource_resource_id,
+      resource_id: root_curriculum_resource_id,
       anonymous: params["anonymous"] == "true",
       visibility: :public,
       content: %Collaboration.PostContent{message: value},
@@ -333,7 +345,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
-        socket.assigns.root_section_resource_resource_id,
+        socket.assigns.root_curriculum_resource_id,
         updated_post_params
       )
 
@@ -385,14 +397,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   def handle_event("search_posts", %{"search_term" => search_term}, socket) do
     %{
       current_user: current_user,
-      root_section_resource_resource_id: root_section_resource_resource_id,
+      root_curriculum_resource_id: root_curriculum_resource_id,
       section: section
     } = socket.assigns
 
     async_search(
       section.id,
       current_user.id,
-      root_section_resource_resource_id,
+      root_curriculum_resource_id,
       :public,
       search_term
     )
@@ -411,14 +423,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   def handle_event("search_notes", %{"search_term" => search_term}, socket) do
     %{
       current_user: current_user,
-      root_section_resource_resource_id: root_section_resource_resource_id,
+      root_curriculum_resource_id: root_curriculum_resource_id,
       section: section
     } = socket.assigns
 
     async_search(
       section.id,
       current_user.id,
-      root_section_resource_resource_id,
+      root_curriculum_resource_id,
       :private,
       search_term
     )
@@ -517,13 +529,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <Annotations.delete_post_modal />
 
     <.hero_banner class="bg-discussions">
-      <h1 class="text-4xl md:text-6xl mb-8">Discussions</h1>
+      <h1 class="text-4xl md:text-6xl mb-8">Notes</h1>
     </.hero_banner>
     <div
       id="discussions_content"
       class="overflow-x-scroll md:overflow-x-auto flex flex-col py-6 px-16 mb-10 gap-6 items-start"
     >
       <.posts_section
+        :if={@course_discussions_enabled?}
         posts={@posts}
         ctx={@ctx}
         section_slug={@section.slug}
@@ -661,7 +674,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           <div role="posts list" class="w-full">
             <%= for post <- @posts do %>
               <div class="mb-3">
-                <Annotations.post class="bg-white" post={post} current_user={@ctx.user} />
+                <Annotations.post
+                  class="bg-white dark:bg-gray-900"
+                  post={post}
+                  current_user={@ctx.user}
+                />
               </div>
             <% end %>
             <div :if={@posts == []} class="flex p-4 text-center w-full">
@@ -704,7 +721,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
       <div role="notes header" class="flex justify-between items-center w-full self-stretch">
         <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          Notes
+          My Notes
         </h3>
       </div>
 
@@ -716,7 +733,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <%= for post <- @notes do %>
               <div class="mb-3">
                 <Annotations.post
-                  class="bg-white"
+                  class="bg-white dark:bg-gray-900"
                   post={post}
                   current_user={@ctx.user}
                   go_to_post_href={~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"}
@@ -857,14 +874,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp get_posts(
          current_user_id,
          section_id,
-         root_section_resource_resource_id,
+         root_curriculum_resource_id,
          post_params
        ) do
     {posts, more_posts_exist?} =
       Collaboration.list_root_posts_for_section(
         current_user_id,
         section_id,
-        root_section_resource_resource_id,
+        root_curriculum_resource_id,
         post_params.limit,
         post_params.offset,
         post_params.sort_by,
@@ -954,7 +971,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp async_search(
          section_id,
          current_user_id,
-         root_section_resource_resource_id,
+         root_curriculum_resource_id,
          visibility,
          search_term
        ) do
@@ -962,7 +979,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       search_results =
         Collaboration.search_posts_for_user_in_point_block(
           section_id,
-          if(visibility == :public, do: root_section_resource_resource_id, else: nil),
+          if(visibility == :public, do: root_curriculum_resource_id, else: nil),
           current_user_id,
           visibility,
           nil,

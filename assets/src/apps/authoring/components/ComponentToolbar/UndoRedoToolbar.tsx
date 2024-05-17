@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { redo } from 'apps/authoring/store/history/actions/redo';
 import { undo } from 'apps/authoring/store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from 'apps/authoring/store/history/slice';
+import { useKeyDown } from 'hooks/useKeyDown';
 import { selectPaths } from '../../store/app/slice';
 
 const UndoRedoToolbar: React.FC = () => {
@@ -20,6 +21,9 @@ const UndoRedoToolbar: React.FC = () => {
   const handleRedo = () => {
     dispatch(redo(null));
   };
+
+  useKeyDown(handleUndo, ['KeyZ'], { ctrlKey: true });
+  useKeyDown(handleRedo, ['KeyY'], { ctrlKey: true });
 
   return (
     <>

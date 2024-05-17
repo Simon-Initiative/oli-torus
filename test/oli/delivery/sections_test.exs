@@ -20,11 +20,26 @@ defmodule Oli.Delivery.SectionsTest do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
+  alias Lti_1p3.Tool.ContextRoles
 
-  defp set_progress(section_id, resource_id, user_id, progress) do
-    {:ok, _resource_access} =
+  defp set_progress(
+         section_id,
+         resource_id,
+         user_id,
+         progress,
+         revision,
+         attempt_state \\ :evaluated
+       ) do
+    {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
       |> Core.update_resource_access(%{progress: progress})
+
+    insert(:resource_attempt, %{
+      resource_access: resource_access,
+      revision: revision,
+      lifecycle_state: attempt_state,
+      date_submitted: if(attempt_state == :evaluated, do: ~U[2024-05-16 20:00:00Z], else: nil)
+    })
   end
 
   defp initiate_activity_attempt(
@@ -88,6 +103,12 @@ defmodule Oli.Delivery.SectionsTest do
         purpose: :application
       )
 
+    page_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 4"
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -103,11 +124,23 @@ defmodule Oli.Delivery.SectionsTest do
         title: "Configure your setup"
       })
 
+    deleted_module_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [],
+        title: "Deleted Module",
+        deleted: true
+      })
+
     ## units...
     unit_1_revision =
       insert(:revision, %{
         resource_type_id: ResourceType.get_id_by_type("container"),
-        children: [module_1_revision.resource_id, module_2_revision.resource_id],
+        children: [
+          module_1_revision.resource_id,
+          module_2_revision.resource_id,
+          deleted_module_revision.resource_id
+        ],
         title: "Introduction"
       })
 
@@ -126,7 +159,8 @@ defmodule Oli.Delivery.SectionsTest do
           "type" => "p"
         },
         children: [
-          unit_1_revision.resource_id
+          unit_1_revision.resource_id,
+          page_4_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -136,8 +170,10 @@ defmodule Oli.Delivery.SectionsTest do
         page_1_revision,
         page_2_revision,
         page_3_revision,
+        page_4_revision,
         module_1_revision,
         module_2_revision,
+        deleted_module_revision,
         unit_1_revision,
         container_revision
       ]
@@ -218,8 +254,10 @@ defmodule Oli.Delivery.SectionsTest do
       page_1: page_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
+      page_4: page_4_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
+      deleted_module: deleted_module_revision,
       unit_1: unit_1_revision,
       container_revision: container_revision
     }
@@ -1043,6 +1081,8 @@ defmodule Oli.Delivery.SectionsTest do
       page4: page4,
       page5: page5
     } do
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
       unit1_resource_id = unit1.resource_id
       page3_resource_id = page3.resource_id
       page4_resource_id = page4.resource_id
@@ -1057,8 +1097,8 @@ defmodule Oli.Delivery.SectionsTest do
                       {{~U[2023-01-25 23:59:59Z], ~U[2023-01-27 23:59:59Z]},
                        [
                          %ScheduledContainerGroup{
-                           container_id: ^unit1_resource_id,
-                           container_label: "Unit 1",
+                           unit_id: ^unit1_resource_id,
+                           unit_label: "Unit 1",
                            graded: true,
                            progress: nil,
                            resources: [
@@ -1092,8 +1132,8 @@ defmodule Oli.Delivery.SectionsTest do
                      {{~U[2023-02-01 23:59:59Z], ~U[2023-02-04 23:59:59Z]},
                       [
                         %ScheduledContainerGroup{
-                          container_id: ^unit1_resource_id,
-                          container_label: "Unit 1",
+                          unit_id: ^unit1_resource_id,
+                          unit_label: "Unit 1",
                           graded: true,
                           progress: nil,
                           resources: [
@@ -1123,8 +1163,8 @@ defmodule Oli.Delivery.SectionsTest do
                      {{~U[2023-02-06 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
                       [
                         %ScheduledContainerGroup{
-                          container_id: ^unit1_resource_id,
-                          container_label: "Unit 1",
+                          unit_id: ^unit1_resource_id,
+                          unit_label: "Unit 1",
                           graded: true,
                           progress: nil,
                           resources: [
@@ -1727,11 +1767,11 @@ defmodule Oli.Delivery.SectionsTest do
 
       # Initiate attempt for page 1
       initiate_activity_attempt(page_1, user, section)
-      set_progress(section.id, page_1.resource_id, user.id, 1.0)
+      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
 
       # Initiate attempt for page 3
       initiate_activity_attempt(page_3, user, section)
-      set_progress(section.id, page_3.resource_id, user.id, 0.9)
+      set_progress(section.id, page_3.resource_id, user.id, 0.9, page_3)
 
       page = Sections.get_last_open_and_unfinished_page(section, user.id)
 
@@ -1755,6 +1795,173 @@ defmodule Oli.Delivery.SectionsTest do
       page = Sections.get_nearest_upcoming_lesson(section)
 
       assert page.slug == page_3.slug
+    end
+  end
+
+  describe "fetch_all_modules/1" do
+    setup [:create_elixir_project]
+
+    test "returns all non-deleted modules for the specified section slug",
+         %{
+           section: section,
+           module_1: module_1,
+           module_2: module_2,
+           deleted_module: deleted_module
+         } do
+      result = Sections.fetch_all_modules(section.slug) |> Enum.map(& &1.id)
+      assert length(result) == 2
+
+      # Deleted module is not returned
+      refute deleted_module.id in result
+
+      # Module 1 and Module 2 are returned
+      assert module_1.id in result
+      assert module_2.id in result
+    end
+
+    test "returns an empty list when there are no matching revisions" do
+      assert Sections.fetch_all_modules("non-existent-section") == []
+    end
+  end
+
+  describe "get_ordered_containers_per_page/1" do
+    setup [:create_elixir_project]
+
+    test "fetches and orders containers by numbering level", %{section: section} = context do
+      result = Sections.get_ordered_containers_per_page(section.slug)
+      # There are exactly 4 pages
+      assert length(result) == 4
+
+      # Page 1 and Page 2 have same containers
+      for {_, page} <- Map.take(context, [:page_1, :page_2]) do
+        assert Enum.find(result, fn pc -> pc[:page_id] == page.resource_id end) == %{
+                 page_id: page.resource_id,
+                 containers: [
+                   %{
+                     "id" => context.unit_1.resource_id,
+                     "title" => context.unit_1.title,
+                     "numbering_level" => 1
+                   },
+                   %{
+                     "id" => context.module_1.resource_id,
+                     "title" => context.module_1.title,
+                     "numbering_level" => 2
+                   }
+                 ]
+               }
+      end
+
+      # Page 3
+      assert Enum.find(result, fn pc -> pc[:page_id] == context.page_3.resource_id end) == %{
+               page_id: context.page_3.resource_id,
+               containers: [
+                 %{
+                   "id" => context.unit_1.resource_id,
+                   "title" => context.unit_1.title,
+                   "numbering_level" => 1
+                 },
+                 %{
+                   "id" => context.module_2.resource_id,
+                   "title" => context.module_2.title,
+                   "numbering_level" => 2
+                 }
+               ]
+             }
+
+      # Page 4 (in root container)
+      refute Enum.member?(result, fn pc -> pc[:page_id] == context.page_4.resource_id end)
+    end
+
+    test "returns an empty list for non-existent sections", %{section: _section} do
+      assert Sections.get_ordered_containers_per_page("non-existent-section") == []
+    end
+  end
+
+  describe "container_titles/1" do
+    setup [:create_elixir_project]
+
+    test "returns a map of resource IDs to titles for container resources", %{
+      section: section,
+      module_1: module_1,
+      module_2: module_2,
+      unit_1: unit_1,
+      container_revision: root_container
+    } do
+      expected_map = %{
+        root_container.resource_id => root_container.title,
+        unit_1.resource_id => unit_1.title,
+        module_1.resource_id => module_1.title,
+        module_2.resource_id => module_2.title
+      }
+
+      result = Sections.container_titles(section.slug)
+      assert result == expected_map
+    end
+
+    test "returns an empty map when there are no container resources" do
+      assert Sections.container_titles("non-existent-section") == %{}
+    end
+  end
+
+  describe "get_last_attempt_per_page_id/2" do
+    setup do
+      data = create_elixir_project(%{})
+
+      # Enroll student
+      user = insert(:user)
+      Sections.enroll(user.id, data.section.id, [ContextRoles.get_role(:context_learner)])
+
+      # Create attempts for resources
+      set_progress(
+        data.section.id,
+        data.page_1.resource_id,
+        user.id,
+        1.0,
+        data.page_1,
+        :evaluated
+      )
+
+      set_progress(
+        data.section.id,
+        data.page_2.resource_id,
+        user.id,
+        1.0,
+        data.page_2,
+        :evaluated
+      )
+
+      # Newer attempt
+      set_progress(data.section.id, data.page_2.resource_id, user.id, 0.5, data.page_2, :active)
+
+      Map.put(data, :user, user)
+    end
+
+    test "fetches the latest attempt for each resource within a section", %{
+      section: section,
+      user: user,
+      page_1: page_1,
+      page_2: page_2
+    } do
+      result = Sections.get_last_attempt_per_page_id(section.slug, user.id)
+      assert length(result) == 2
+      # Check that the results contain the latest attempt states and ids
+      assert Enum.any?(result, fn {id, %{state: state}} ->
+               id == page_1.resource_id and state == :evaluated
+             end)
+
+      # Check that only the latest attempts are returned
+      assert Enum.any?(result, fn {id, %{state: state}} ->
+               id == page_2.resource_id and state == :active
+             end)
+    end
+
+    test "returns an empty list when there are no attempts for the user", %{section: section} do
+      invalid_user_id = -1
+      assert Sections.get_last_attempt_per_page_id(section.slug, invalid_user_id) == []
+    end
+
+    test "returns an empty list when section does not exist", %{user: user} do
+      assert Sections.get_last_attempt_per_page_id("invalid_section", user.id) == []
     end
   end
 end

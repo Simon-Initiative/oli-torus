@@ -12,6 +12,7 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
+import { useKeyDown } from 'hooks/useKeyDown';
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
@@ -392,6 +393,13 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     },
     [dragSize, isDragging, selectedPartId],
   );
+
+  useKeyDown(() => setShowConfirmDelete(true), ['Delete', 'Backspace'], {}, []);
+  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true }, [
+    selectedPartAndCapabilities,
+    parts,
+    handleCopyComponent,
+  ]);
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>

@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
   use OliWeb, :html
 
   alias Oli.Rendering.Content
+  alias OliWeb.Delivery.Student.Utils
 
   attr :dark, :boolean, default: false
   attr :practice, :map
@@ -36,7 +37,9 @@ defmodule OliWeb.Components.Delivery.DeliberatePractice do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/page/#{practice.slug}"
     else
-      ~p"/sections/#{section_slug}/page/#{practice.slug}"
+      Utils.lesson_live_path(section_slug, practice.slug,
+        request_path: ~p"/sections/#{section_slug}/practice"
+      )
     end
   end
 
