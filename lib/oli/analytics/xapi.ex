@@ -4,10 +4,8 @@ defmodule Oli.Analytics.XAPI do
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit(%StatementBundle{} = bundle) do
-
     # if we are in :test mode, do nothing
     if Mix.env() != :test do
-
       producer =
         Oli.Analytics.XAPI.UploadPipeline
         |> Broadway.producer_names()
