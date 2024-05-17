@@ -179,7 +179,7 @@ defmodule OliWeb.Delivery.Student.Utils do
       <:subtitle>
         This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page.
       </:subtitle>
-      <div class="mb-11 text-white text-base font-bold font-['Inter'] leading-normal">
+      <div class="mb-11 text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
         LEARNING PROFICIENCY SCALE
       </div>
       <div class="flex-col justify-start items-center gap-[50px] flex">
@@ -191,11 +191,11 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="mt-[2px] ml-1 w-6 h-6 scale-125">
               <Icons.proficiency proficiency={proficiency} />
             </div>
-            <div class="text-white text-base font-bold font-['Inter'] leading-normal">
+            <div class="text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
               <%= name %>
             </div>
           </div>
-          <div class="text-white text-base font-normal font-['Inter'] leading-normal">
+          <div class="text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal">
             <%= description %>
           </div>
         </div>
