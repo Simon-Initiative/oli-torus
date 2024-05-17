@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
     StudentResponse
   }
 
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias Oli.Repo
 
   alias Oli.Publishing.DeliveryResolver
@@ -112,7 +113,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
             </form>
           </div>
         </div>
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}

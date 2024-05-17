@@ -141,10 +141,14 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
-          sort={JS.push("paged_table_sort", target: @myself)}
-          limit_change={JS.push("paged_table_limit_change", target: @myself)}
-          selection_change={JS.push("paged_table_selection_change", target: @myself)}
           page_change={JS.push("paged_table_page_change", target: @myself)}
+          selection_change={JS.push("paged_table_selection_change", target: @myself)}
+          sort={JS.push("paged_table_sort", target: @myself)}
+          additional_table_class="instructor_dashboard_table"
+          allow_selection={true}
+          show_bottom_paging={false}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          show_limit_change={true}
         />
       </div>
 

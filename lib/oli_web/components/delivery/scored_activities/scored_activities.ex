@@ -20,6 +20,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
 
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.PagedTable
   alias OliWeb.Common.PagingParams
   alias OliWeb.Common.Params
@@ -214,7 +215,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           </div>
         </div>
 
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}

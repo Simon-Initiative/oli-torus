@@ -119,10 +119,12 @@ defmodule OliWeb.Components.Delivery.Content do
           total_count={@total_count}
           offset={@params.offset}
           limit={@params.limit}
+          render_top_info={false}
+          additional_table_class="instructor_dashboard_table"
           sort={JS.push("paged_table_sort", target: @myself)}
-          limit_change={JS.push("paged_table_limit_change", target: @myself)}
-          selection_change={JS.push("paged_table_selection_change", target: @myself)}
           page_change={JS.push("paged_table_page_change", target: @myself)}
+          limit_change={JS.push("paged_table_limit_change", target: @myself)}
+          show_limit_change={true}
         />
       </div>
     </div>
