@@ -82,7 +82,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               <i class="fa-solid fa-download ml-1" /> Download
             </a>
           </div>
-          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end overflow-hidden">
             <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
               <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
                 <small class="torus-small uppercase">
@@ -134,7 +134,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             />
           </div>
         <% else %>
-          <h6 class="text-center py-4">There are no objectives to show</h6>
+          <h6 class="text-center py-4 bg-white dark:bg-gray-800">There are no objectives to show</h6>
         <% end %>
       </div>
     </div>
