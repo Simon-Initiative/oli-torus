@@ -171,6 +171,37 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
+        %{ctx: _} = assigns,
+        %GatingCondition{
+          type: :progress,
+          data: %GatingConditionData{
+            minimum_percentage: nil
+          }
+        },
+        _
+      ) do
+    ~H"""
+    <div>
+      A resource must be completed
+    </div>
+    """
+  end
+
+  def render_details_column(
+        %{ctx: _} = assigns,
+        %GatingCondition{
+          type: :progress
+        },
+        _
+      ) do
+    ~H"""
+    <div>
+      A resource must be completed with a minimum of progress
+    </div>
+    """
+  end
+
+  def render_details_column(
         %{ctx: _ctx} = assigns,
         %GatingCondition{
           type: :always_open
