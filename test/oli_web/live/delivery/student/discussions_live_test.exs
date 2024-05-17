@@ -137,7 +137,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
     section =
       insert(:section,
         base_project: project,
-        title: "The best course ever!"
+        title: "The best course ever!",
+        contains_discussions: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -430,6 +431,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       refute render(view) =~ "This is a reply to the first discussion"
 
       toggle_post_replies(view, course_discussion.id)
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
 
       assert render(view) =~ "My first discussion"
       assert render(view) =~ "This is a reply to the first discussion"

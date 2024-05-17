@@ -10,6 +10,7 @@ config :oli,
   aws_client: Oli.Test.MockAws,
   openai_client: Oli.Test.MockOpenAIClient,
   date_time_module: Oli.Test.DateTimeMock,
+  date_module: Oli.Test.DateMock,
   slack_webhook_url: nil,
   branding: [
     name: "OLI Torus Test",
@@ -17,6 +18,14 @@ config :oli,
     logo_dark: "/images/oli_torus_logo_dark.png",
     favicons: "/favicons"
   ]
+
+config :oli, :xapi_upload_pipeline,
+  producer_module: Broadway.DummyProducer,
+  uploader_module: Oli.Analytics.XAPI.FileWriterUploader,
+  batcher_concurrency: 1,
+  batch_size: 10,
+  batch_timeout: 100,
+  processor_concurrency: 1
 
 # Configure your database
 config :oli, Oli.Repo,

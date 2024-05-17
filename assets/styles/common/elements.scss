@@ -603,5 +603,10 @@ html.dark {
       color: var(--color-body-color-dark);
       background: var(--color-gray-900);
     }
+
+    .highlighted-annotation-point-block {
+      background-color: #fdeccf3a;
+      outline: 2px solid #fdeccf3a;
+    }
   }
 }

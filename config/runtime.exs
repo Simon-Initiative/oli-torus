@@ -158,6 +158,12 @@ if config_env() == :prod do
       get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
+  config :oli, :xapi_upload_pipeline,
+    batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
+    batch_size: get_env_as_integer.("XAPI_BATCH_SIZE", "50"),
+    batch_timeout: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "5000"),
+    processor_concurrency: get_env_as_integer.("XAPI_PROCESSOR_CONCURRENCY", "2")
+
   default_description = """
   The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
   As a leader in higher education's innovation of online learning, we're a growing research and production project exploring effective approaches since the early 2000s.
