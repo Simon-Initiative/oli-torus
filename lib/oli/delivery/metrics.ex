@@ -1170,7 +1170,7 @@ defmodule Oli.Delivery.Metrics do
       }
   """
   @spec proficiency_for_student_per_learning_objective(
-          section :: Oli.Delivery.Sections.Section.t(),
+          section :: %Oli.Delivery.Sections.Section{},
           student_id :: integer
         ) :: map
   def proficiency_for_student_per_learning_objective(

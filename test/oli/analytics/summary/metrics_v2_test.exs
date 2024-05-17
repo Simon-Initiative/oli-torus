@@ -12,6 +12,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
         |> Seeder.create_section()
         |> Seeder.add_objective("objective one", :o1)
         |> Seeder.add_objective("objective two", :o2)
+        |> Seeder.add_objective("objective three", :o3)
         |> Seeder.add_activity(%{title: "one", content: %{}}, :a1)
         |> Seeder.add_activity(%{title: "two", content: %{}}, :a2)
         |> Seeder.add_user(%{}, :user1)
@@ -130,6 +131,37 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       results = Metrics.proficiency_per_student_across(section)
       assert Map.keys(results) |> Enum.count() == 2
       assert %{^user1_id => "High", ^user2_id => "Low"} = results
+    end
+
+    test "proficiency_for_student_per_learning_objective/2", %{
+      user1: user1,
+      user2: user2,
+      section: section,
+      o1: o1,
+      o2: o2,
+      o3: o3
+    } do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+
+      id = o1.resource.id
+      id2 = o2.resource.id
+      id3 = o3.resource.id
+
+      [
+        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 2, 6, 1, 1, 0],
+        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 2, 6, 1, 3, 2],
+        [-1, -1, section.id, user1.id, id3, nil, objective_type_id, 2, 6, 1, 3, 3],
+        [-1, -1, section.id, user2.id, id, nil, objective_type_id, 2, 4, 0, 1, 1],
+        [-1, -1, section.id, user2.id, id2, nil, objective_type_id, 2, 4, 0, 4, 2]
+      ]
+      |> Enum.each(fn v -> add_resource_summary(v) end)
+
+      results = Metrics.proficiency_for_student_per_learning_objective(section, user1.id)
+      assert Map.keys(results) |> Enum.count() == 3
+      assert Map.get(results, id) == "Low"
+      assert Map.get(results, id2) == "Medium"
+      assert Map.get(results, id3) == "High"
     end
   end
 
