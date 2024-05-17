@@ -4,12 +4,17 @@ defmodule Oli.Analytics.XAPI do
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit(%StatementBundle{} = bundle) do
-    producer =
-      Oli.Analytics.XAPI.UploadPipeline
-      |> Broadway.producer_names()
-      |> Enum.random()
 
-    GenStage.cast(producer, {:insert, bundle})
+    # if we are in :test mode, do nothing
+    if Mix.env() != :test do
+
+      producer =
+        Oli.Analytics.XAPI.UploadPipeline
+        |> Broadway.producer_names()
+        |> Enum.random()
+
+      GenStage.cast(producer, {:insert, bundle})
+    end
   end
 
   def emit(category, events) when is_list(events) do
