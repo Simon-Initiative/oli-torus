@@ -7,7 +7,7 @@ defmodule OliWeb.Pow.AuthorContext do
     repo: Oli.Repo,
     user: Oli.Accounts.Author
 
-  alias Oli.Repo
+  alias Oli.{Repo, Utils}
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias OliWeb.Router.Helpers, as: Routes
@@ -42,9 +42,14 @@ defmodule OliWeb.Pow.AuthorContext do
               "Account already exists",
               "account_already_exists.html",
               %{
-                url: Routes.authoring_pow_session_path(OliWeb.Endpoint, :new),
+                url:
+                  Utils.ensure_absolute_url(
+                    Routes.authoring_pow_session_path(OliWeb.Endpoint, :new)
+                  ),
                 forgot_password:
-                  Routes.authoring_pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
+                  Utils.ensure_absolute_url(
+                    Routes.authoring_pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
+                  )
               }
             )
             |> Oli.Mailer.deliver_now()
