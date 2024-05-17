@@ -1,10 +1,12 @@
 defmodule OliWeb.Components.Delivery.Students do
+  alias OliWeb.Common.InstructorDashboardPagedTable
   use OliWeb, :live_component
 
   alias Phoenix.LiveView.JS
 
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.{PagedTable, SearchInput, Params, Utils}
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -293,7 +295,7 @@ defmodule OliWeb.Components.Delivery.Students do
           </div>
         </div>
 
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}

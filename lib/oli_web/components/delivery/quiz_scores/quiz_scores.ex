@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.{PagedTable, Params, SearchInput}
   alias OliWeb.Grades.GradebookTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -96,7 +97,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         </div>
 
         <%= if @total_count > 0 do %>
-          <PagedTable.render
+          <InstructorDashboardPagedTable.render
             table_model={@grades_table_model}
             total_count={@total_count}
             offset={@params.offset}
