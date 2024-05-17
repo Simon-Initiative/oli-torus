@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Page
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Phoenix.LiveView.JS
@@ -115,9 +116,15 @@ defmodule OliWeb.Delivery.Student.Utils do
             <span class="text-neutral-700 dark:text-neutral-300 text-base font-bold font-['Inter'] leading-normal">
               LEARNING OBJECTIVES &
             </span>
-            <span class="text-blue-600 text-base font-bold font-['Inter'] leading-normal">
+            <span
+              phx-click={Modal.show_modal("proficiency_explanation_modal")}
+              class="text-blue-600 text-base font-bold font-['Inter'] leading-normal hover:underline hover:underline-offset-2 cursor-pointer"
+            >
               PROFICIENCY
             </span>
+            <div class="h-0">
+              <.proficiency_explanation_modal />
+            </div>
           </div>
         </div>
         <div
@@ -144,6 +151,56 @@ defmodule OliWeb.Delivery.Student.Utils do
         </div>
       </div>
     </div>
+    """
+  end
+
+  def proficiency_explanation_modal(assigns) do
+    assigns =
+      assign(assigns, %{
+        proficiency_levels: [
+          {"Not enough data", "Not enough information",
+           "You haven’t completed enough activities for the system to calculate learning proficiency."},
+          {"Low", "Beginning Proficiency",
+           "You’re beginning to understand key ideas, but there is room to grow."},
+          {"Medium", "Growing Proficiency",
+           "Your understanding and skills are clearly strengthening and expanding."},
+          {"High", "Establishing Proficiency",
+           "You know the material well enough to apply it in different contexts."}
+        ]
+      })
+
+    ~H"""
+    <Modal.student_delivery_modal
+      id="proficiency_explanation_modal"
+      class="lg:!w-3/4 xl:!w-2/3"
+      body_class=""
+    >
+      <:title>Measuring Learning Proficiency</:title>
+      <:subtitle>
+        This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page.
+      </:subtitle>
+      <div class="mb-11 text-white text-base font-bold font-['Inter'] leading-normal">
+        LEARNING PROFICIENCY SCALE
+      </div>
+      <div class="flex-col justify-start items-center gap-[50px] flex">
+        <div
+          :for={{proficiency, name, description} <- @proficiency_levels}
+          class="flex-col justify-start items-start gap-[15px] flex w-full"
+        >
+          <div class="justify-start items-start gap-2.5 inline-flex">
+            <div class="mt-[2px] ml-1 w-6 h-6 scale-125">
+              <Icons.proficiency proficiency={proficiency} />
+            </div>
+            <div class="text-white text-base font-bold font-['Inter'] leading-normal">
+              <%= name %>
+            </div>
+          </div>
+          <div class="text-white text-base font-normal font-['Inter'] leading-normal">
+            <%= description %>
+          </div>
+        </div>
+      </div>
+    </Modal.student_delivery_modal>
     """
   end
 
