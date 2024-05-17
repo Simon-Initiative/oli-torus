@@ -3,7 +3,6 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
 
   import Phoenix.Component, only: [assign: 2]
 
-  alias Oli.Delivery.Sections
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.DeliveryResolver
 
@@ -13,7 +12,6 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
     badges =
       %{}
       |> load_discussions_badge(section, current_user)
-      |> dbg()
 
     dbg(badges)
 
@@ -27,16 +25,29 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
     %{resource_id: root_curriculum_resource_id} =
       DeliveryResolver.root_container(section.slug)
 
-    unread_replies_count =
-      Collaboration.get_unread_reply_counts_for_root_discussions(
-        user.id,
-        root_curriculum_resource_id
-      )
-      |> Enum.reduce(0, fn %{count: count}, acc -> acc + count end)
+    course_collab_space_config =
+      Collaboration.get_course_collab_space_config(section.root_section_resource_id)
 
-    case unread_replies_count do
-      0 -> badges
-      _ -> Map.put(badges, :discussions, unread_replies_count)
+    course_discussions_enabled? =
+      case course_collab_space_config do
+        %Collaboration.CollabSpaceConfig{status: :enabled} -> true
+        _ -> false
+      end
+
+    if course_discussions_enabled? do
+      unread_replies_count =
+        Collaboration.get_unread_reply_counts_for_root_discussions(
+          user.id,
+          root_curriculum_resource_id
+        )
+        |> Enum.reduce(0, fn %{count: count}, acc -> acc + count end)
+
+      case unread_replies_count do
+        0 -> badges
+        _ -> Map.put(badges, :discussions, unread_replies_count)
+      end
+    else
+      badges
     end
   end
 end

@@ -375,14 +375,18 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div
           :if={@sidebar_expanded}
           class={[
-            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight",
+            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight flex-1 flex flex-row justify-between",
             if(@is_active, do: "!font-semibold dark:!text-white !text-black/90")
           ]}
         >
-          <%= render_slot(@text) %>
+          <div>
+            <%= render_slot(@text) %>
+          </div>
 
           <%= if @badge do %>
-            <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+            <div>
+              <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+            </div>
           <% end %>
         </div>
       </div>
