@@ -4186,6 +4186,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 0.75rem;
 }
 
+.top-3\.5 {
+  top: 0.875rem;
+}
+
 .top-4 {
   top: 1rem;
 }
@@ -4877,6 +4881,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 0.75rem;
 }
 
+.h-3\.5 {
+  height: 0.875rem;
+}
+
 .h-3\/5 {
   height: 60%;
 }
@@ -5071,6 +5079,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[calc\(100vh-56px\)\] {
   height: calc(100vh - 56px);
+}
+
+.h-auto {
+  height: auto;
 }
 
 .h-fit {
@@ -5873,6 +5885,10 @@ table.table-striped tbody tr:nth-child(even) {
   align-items: baseline;
 }
 
+.items-stretch {
+  align-items: stretch;
+}
+
 .justify-start {
   justify-content: flex-start;
 }
@@ -6566,6 +6582,14 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(255 255 255 / var(--tw-border-opacity));
 }
 
+.border-white\/\[\.1\] {
+  border-color: rgb(255 255 255 / .1);
+}
+
+.border-white\/\[\.6\] {
+  border-color: rgb(255 255 255 / .6);
+}
+
 .border-yellow-500 {
   --tw-border-opacity: 1;
   border-color: rgb(247 174 50 / var(--tw-border-opacity));
@@ -6624,6 +6648,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#1C1A20\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(28 26 32 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#1E9531\] {
   --tw-bg-opacity: 1;
   background-color: rgb(30 149 49 / var(--tw-bg-opacity));
@@ -6637,6 +6666,27 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#2f3147\] {
   --tw-bg-opacity: 1;
   background-color: rgb(47 49 71 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#3959B8\]\/\[\.25\] {
+  background-color: rgb(57 89 184 / .25);
+}
+
+.bg-\[\#3E7981\]\/\[\.25\] {
+  background-color: rgb(62 121 129 / .25);
+}
+
+.bg-\[\#5798f8\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(87 152 248 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#815499\]\/\[\.25\] {
+  background-color: rgb(129 84 153 / .25);
+}
+
+.bg-\[\#B87439\]\/\[\.25\] {
+  background-color: rgb(184 116 57 / .25);
 }
 
 .bg-\[\#dcdef6\] {
@@ -6664,6 +6714,18 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-black\/5 {
   background-color: rgb(0 0 0 / 0.05);
+}
+
+.bg-black\/\[\.07\] {
+  background-color: rgb(0 0 0 / .07);
+}
+
+.bg-black\/\[\.1\] {
+  background-color: rgb(0 0 0 / .1);
+}
+
+.bg-black\/\[0\.1\] {
+  background-color: rgb(0 0 0 / 0.1);
 }
 
 .bg-blue-100 {
@@ -6960,6 +7022,10 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.bg-white\/\[\.15\] {
+  background-color: rgb(255 255 255 / .15);
 }
 
 .bg-yellow-100 {
@@ -7462,6 +7528,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 0.75rem;
 }
 
+.py-3\.5 {
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+}
+
 .py-4 {
   padding-top: 1rem;
   padding-bottom: 1rem;
@@ -7522,6 +7593,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 6px;
 }
 
+.py-px {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
 .pb-0 {
   padding-bottom: 0px;
 }
@@ -7560,6 +7636,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-6 {
   padding-bottom: 1.5rem;
+}
+
+.pb-7 {
+  padding-bottom: 1.75rem;
 }
 
 .pb-\[60px\] {
@@ -7612,6 +7692,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-5 {
   padding-left: 1.25rem;
+}
+
+.pl-7 {
+  padding-left: 1.75rem;
 }
 
 .pl-8 {
@@ -7700,6 +7784,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-1 {
   padding-top: 0.25rem;
+}
+
+.pt-12 {
+  padding-top: 3rem;
 }
 
 .pt-2 {
@@ -8073,6 +8161,10 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.05em;
 }
 
+.tracking-widest {
+  letter-spacing: 0.1em;
+}
+
 .\!text-black\/90 {
   color: rgb(0 0 0 / 0.9) !important;
 }
@@ -8085,6 +8177,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#0CAF61\] {
   --tw-text-opacity: 1;
   color: rgb(12 175 97 / var(--tw-text-opacity));
+}
+
+.text-\[\#3399FF\] {
+  --tw-text-opacity: 1;
+  color: rgb(51 153 255 / var(--tw-text-opacity));
 }
 
 .text-\[18xl\] {
@@ -8177,6 +8274,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-emerald-600 {
   --tw-text-opacity: 1;
   color: rgb(5 150 105 / var(--tw-text-opacity));
+}
+
+.text-fuchsia-700 {
+  --tw-text-opacity: 1;
+  color: rgb(162 28 175 / var(--tw-text-opacity));
 }
 
 .text-gray-100 {
@@ -8327,6 +8429,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(203 213 225 / var(--tw-text-opacity));
 }
 
+.text-teal-700 {
+  --tw-text-opacity: 1;
+  color: rgb(15 118 110 / var(--tw-text-opacity));
+}
+
 .text-warning {
   --tw-text-opacity: 1;
   color: rgb(243 156 18 / var(--tw-text-opacity));
@@ -8365,6 +8472,14 @@ table.table-striped tbody tr:nth-child(even) {
 .text-zinc-600 {
   --tw-text-opacity: 1;
   color: rgb(82 82 91 / var(--tw-text-opacity));
+}
+
+.text-opacity-60 {
+  --tw-text-opacity: 0.6;
+}
+
+.text-opacity-90 {
+  --tw-text-opacity: 0.9;
 }
 
 .underline {
@@ -11890,6 +12005,36 @@ https://tailwindcss.com/docs/utility-first
   left: 0px;
 }
 
+.before\:left-0::before {
+  content: var(--tw-content);
+  left: 0px;
+}
+
+.before\:top-0::before {
+  content: var(--tw-content);
+  top: 0px;
+}
+
+.before\:z-10::before {
+  content: var(--tw-content);
+  z-index: 10;
+}
+
+.before\:h-full::before {
+  content: var(--tw-content);
+  height: 100%;
+}
+
+.before\:w-0::before {
+  content: var(--tw-content);
+  width: 0px;
+}
+
+.before\:w-0\.5::before {
+  content: var(--tw-content);
+  width: 0.125rem;
+}
+
 .before\:-translate-x-full::before {
   content: var(--tw-content);
   --tw-translate-x: -100%;
@@ -11906,6 +12051,12 @@ https://tailwindcss.com/docs/utility-first
 .before\:animate-\[shimmer_2s_infinite\]::before {
   content: var(--tw-content);
   animation: shimmer 2s infinite;
+}
+
+.before\:bg-\[\#FF8F40\]::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 143 64 / var(--tw-bg-opacity));
 }
 
 .before\:bg-gradient-to-r::before {
@@ -11929,6 +12080,11 @@ https://tailwindcss.com/docs/utility-first
 .before\:to-transparent::before {
   content: var(--tw-content);
   --tw-gradient-to: transparent;
+}
+
+.before\:content-\[\'\'\]::before {
+  --tw-content: '';
+  content: var(--tw-content);
 }
 
 .first\:rounded-l-lg:first-child {
@@ -12034,6 +12190,10 @@ https://tailwindcss.com/docs/utility-first
   border-bottom-width: 4px;
 }
 
+.hover\:border-none:hover {
+  border-style: none;
+}
+
 .hover\:border-delivery-primary-200:hover {
   --tw-border-opacity: 1;
   border-color: rgb(206 231 255 / var(--tw-border-opacity));
@@ -12047,6 +12207,10 @@ https://tailwindcss.com/docs/utility-first
 .hover\:border-red-500:hover {
   --tw-border-opacity: 1;
   border-color: rgb(239 68 68 / var(--tw-border-opacity));
+}
+
+.hover\:border-transparent:hover {
+  border-color: transparent;
 }
 
 .hover\:border-white\/50:hover {
@@ -12069,6 +12233,14 @@ https://tailwindcss.com/docs/utility-first
 .hover\:bg-\[\#33181A\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(51 24 26 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-black\/\[\.1\]:hover {
+  background-color: rgb(0 0 0 / .1);
+}
+
+.hover\:bg-black\/\[\.2\]:hover {
+  background-color: rgb(0 0 0 / .2);
 }
 
 .hover\:bg-blue-500:hover {
@@ -12316,6 +12488,10 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-yellow-600:hover {
   --tw-text-opacity: 1;
   color: rgb(232 149 9 / var(--tw-text-opacity));
+}
+
+.hover\:text-opacity-80:hover {
+  --tw-text-opacity: 0.8;
 }
 
 .hover\:underline:hover {
@@ -12954,6 +13130,10 @@ https://tailwindcss.com/docs/utility-first
   border-color: rgb(255 255 255 / 0.2);
 }
 
+.dark .dark\:border-white\/\[0\.06\] {
+  border-color: rgb(255 255 255 / 0.06);
+}
+
 .dark .dark\:border-zinc-600 {
   --tw-border-opacity: 1;
   border-color: rgb(82 82 91 / var(--tw-border-opacity));
@@ -12989,6 +13169,10 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(30 41 59 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .dark\:bg-\[\#030105\]\/\[\.15\] {
+  background-color: rgb(3 1 5 / .15);
+}
+
 .dark .dark\:bg-\[\#0A0A17\] {
   --tw-bg-opacity: 1;
   background-color: rgb(10 10 23 / var(--tw-bg-opacity));
@@ -13002,6 +13186,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:bg-\[\#0F0D0F\] {
   --tw-bg-opacity: 1;
   background-color: rgb(15 13 15 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-\[\#0F6CF5\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#242533\] {
@@ -13192,6 +13381,18 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(255 255 255 / 0.05);
 }
 
+.dark .dark\:bg-white\/\[\.02\] {
+  background-color: rgb(255 255 255 / .02);
+}
+
+.dark .dark\:bg-white\/\[\.08\] {
+  background-color: rgb(255 255 255 / .08);
+}
+
+.dark .dark\:bg-white\/\[0\.1\] {
+  background-color: rgb(255 255 255 / 0.1);
+}
+
 .dark .dark\:bg-yellow-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(232 149 9 / var(--tw-bg-opacity));
@@ -13287,6 +13488,16 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(105 105 116 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#6DD1DF\] {
+  --tw-text-opacity: 1;
+  color: rgb(109 209 223 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#8CBCFF\] {
+  --tw-text-opacity: 1;
+  color: rgb(140 188 255 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#BAB8BF\] {
   --tw-text-opacity: 1;
   color: rgb(186 184 191 / var(--tw-text-opacity));
@@ -13300,6 +13511,16 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-\[\#DDD\] {
   --tw-text-opacity: 1;
   color: rgb(221 221 221 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#EC8CFF\] {
+  --tw-text-opacity: 1;
+  color: rgb(236 140 255 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#FF8F40\] {
+  --tw-text-opacity: 1;
+  color: rgb(255 143 64 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-black {
@@ -13385,6 +13606,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-gray-800 {
   --tw-text-opacity: 1;
   color: rgb(38 38 38 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-green-500 {
+  --tw-text-opacity: 1;
+  color: rgb(34 197 94 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-green-600 {
@@ -13483,6 +13709,10 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(115 115 115 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:hover\:border-white\/\[0\.02\]:hover {
+  border-color: rgb(255 255 255 / 0.02);
+}
+
 .dark .dark\:hover\:\!bg-gray-900:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(23 23 23 / var(--tw-bg-opacity)) !important;
@@ -13539,6 +13769,14 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:hover\:bg-white\/5:hover {
   background-color: rgb(255 255 255 / 0.05);
+}
+
+.dark .dark\:hover\:bg-white\/\[\.06\]:hover {
+  background-color: rgb(255 255 255 / .06);
+}
+
+.dark .dark\:hover\:bg-white\/\[\.12\]:hover {
+  background-color: rgb(255 255 255 / .12);
 }
 
 .dark .dark\:hover\:bg-yellow-500:hover {
