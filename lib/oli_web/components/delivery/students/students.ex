@@ -7,7 +7,9 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
   alias OliWeb.Common.InstructorDashboardPagedTable
-  alias OliWeb.Common.{PagedTable, SearchInput, Params, Utils}
+  alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.Utils
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
 

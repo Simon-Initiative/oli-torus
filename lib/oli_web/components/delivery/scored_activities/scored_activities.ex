@@ -21,7 +21,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Resources.Revision
 
   alias OliWeb.Common.InstructorDashboardPagedTable
-  alias OliWeb.Common.PagedTable
   alias OliWeb.Common.PagingParams
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput

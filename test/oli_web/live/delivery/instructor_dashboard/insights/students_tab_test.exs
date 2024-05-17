@@ -335,8 +335,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert student_for_tr_1 =~ "Jr, Neymar"
       assert student_for_tr_2 =~ "Di Maria, Angelito"
 
-      assert element(view, "#header_paging > div:first-child") |> render() =~
-               "Showing result 3 - 4 of 4 total"
+      assert element(view, "#footer_paging > div:first-child") |> render() =~
+               "3 - 4 of 4 results"
 
       assert element(view, "li.page-item.active a", "2")
       refute render(view) =~ "Suarez, Luis"
@@ -594,7 +594,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       # Change page size from default (20) to 2
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "2"})
 
       [student_for_tr_1, student_for_tr_2] =
@@ -662,7 +662,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       # Change page size from 2 to 1
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "1"})
 
       [student_for_tr_3] =

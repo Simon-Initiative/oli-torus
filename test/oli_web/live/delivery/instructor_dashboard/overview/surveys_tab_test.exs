@@ -1828,7 +1828,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
       # Change page size from default (20) to 2
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "2"})
 
       [a0, a1] = table_as_list_of_maps(view)
@@ -1859,7 +1859,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
 
       # Change page size from 2 to 1
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "1"})
 
       [a2] = table_as_list_of_maps(view)

@@ -3,9 +3,11 @@ defmodule OliWeb.Components.Delivery.QuizScores do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
-  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Repo.Paging
+  alias Oli.Repo.Sorting
   alias OliWeb.Common.InstructorDashboardPagedTable
-  alias OliWeb.Common.{PagedTable, Params, SearchInput}
+  alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
   alias OliWeb.Grades.GradebookTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS

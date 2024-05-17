@@ -4,41 +4,28 @@ defmodule OliWeb.Components.Delivery.Surveys do
   import Ecto.Query
   alias Oli.Accounts.User
 
-  alias Oli.Analytics.Summary.{
-    ResourcePartResponse,
-    ResourceSummary,
-    ResponseSummary,
-    StudentResponse
-  }
-
-  alias OliWeb.Common.InstructorDashboardPagedTable
-  alias Oli.Repo
-
-  alias Oli.Publishing.DeliveryResolver
-
-  alias OliWeb.Delivery.Surveys.{
-    SurveysAssessmentsTableModel
-  }
-
-  alias OliWeb.Common.Params
-  alias Phoenix.LiveView.JS
-  alias OliWeb.Common.{PagedTable, SearchInput}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Table.SortableTableModel
+  alias Oli.Analytics.Summary.ResourcePartResponse
+  alias Oli.Analytics.Summary.ResourceSummary
+  alias Oli.Analytics.Summary.ResponseSummary
+  alias Oli.Analytics.Summary.StudentResponse
   alias Oli.Delivery.Attempts.Core
-  alias OliWeb.ManualGrading.RenderedActivity
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Publishing.DeliveryResolver
   alias Oli.Repo
   alias Oli.Resources.ResourceType
-
-  alias Oli.Delivery.Attempts.Core.{
-    ResourceAccess,
-    ResourceAttempt,
-    ActivityAttempt
-  }
-
-  alias Oli.Delivery.Sections.Section
-
   alias Oli.Resources.Revision
+
+  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel
+  alias OliWeb.ManualGrading.RenderedActivity
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
