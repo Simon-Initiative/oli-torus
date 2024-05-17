@@ -1,7 +1,6 @@
 defmodule Oli.Analytics.Summary.MetricsV2Test do
   use Oli.DataCase
 
-  alias Oli.Analytics.Summary
   alias Oli.Delivery.Sections.ContainedPage
   alias Oli.Delivery.Metrics
 
@@ -163,22 +162,5 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.get(results, id2) == "Medium"
       assert Map.get(results, id3) == "High"
     end
-  end
-
-  defp add_resource_summary([prj, pub, section, user, resource, part, type, nc, na, nh, nfa, nfac]) do
-    Summary.create_resource_summary(%{
-      project_id: prj,
-      publication_id: pub,
-      section_id: section,
-      user_id: user,
-      resource_id: resource,
-      part_id: part,
-      resource_type_id: type,
-      num_correct: nc,
-      num_attempts: na,
-      num_hints: nh,
-      num_first_attempts: nfa,
-      num_first_attempts_correct: nfac
-    })
   end
 end

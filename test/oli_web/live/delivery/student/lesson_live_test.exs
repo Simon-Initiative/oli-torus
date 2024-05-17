@@ -81,6 +81,18 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "this is the second objective"
       )
 
+    objective_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "this is the third objective"
+      )
+
+    objective_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "this is the forth objective"
+      )
+
     ## pages...
     page_1_revision =
       insert(:revision,
@@ -140,7 +152,12 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "Page 2",
         duration_minutes: 15,
         objectives: %{
-          "attached" => [objective_1_revision.resource_id, objective_2_revision.resource_id]
+          "attached" => [
+            objective_1_revision.resource_id,
+            objective_2_revision.resource_id,
+            objective_3_revision.resource_id,
+            objective_4_revision.resource_id
+          ]
         }
       )
 
@@ -241,6 +258,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       [
         objective_1_revision,
         objective_2_revision,
+        objective_3_revision,
+        objective_4_revision,
         page_1_revision,
         exploration_1_revision,
         graded_adaptive_page_revision,
@@ -303,6 +322,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     %{
       section: section,
+      objective_1: objective_1_revision,
+      objective_2: objective_2_revision,
+      objective_3: objective_3_revision,
+      objective_4: objective_4_revision,
       page_1: page_1_revision,
       exploration_1: exploration_1_revision,
       graded_adaptive_page_revision: graded_adaptive_page_revision,
@@ -780,8 +803,72 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
-      assert has_element?(view, ~s{div[role="objective 1"]}, "this is the first objective")
-      assert has_element?(view, ~s{div[role="objective 2"]}, "this is the second objective")
+    end
+
+    test "can see learning objectives and proficiency on page header", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2,
+      objective_1: objective_1,
+      objective_2: objective_2,
+      objective_3: objective_3,
+      objective_4: objective_4
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      o1 = objective_1.resource_id
+      o2 = objective_2.resource_id
+      o3 = objective_3.resource_id
+      o4 = objective_4.resource_id
+
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      [
+        # objective records
+        [-1, -1, section.id, user.id, o1, nil, objective_type_id, 2, 6, 1, 4, 1],
+        [-1, -1, section.id, user.id, o2, nil, objective_type_id, 2, 6, 1, 4, 3],
+        [-1, -1, section.id, user.id, o3, nil, objective_type_id, 2, 6, 1, 4, 4]
+      ]
+      |> Enum.each(&add_resource_summary(&1))
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+
+      assert has_element?(view, ~s{div[role="objective 1 title"]}, "this is the first objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 1"] svg[role="beginning proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
+
+      assert has_element?(view, ~s{div[role="objective 2 title"]}, "this is the second objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 2"] svg[role="growing proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
+
+      assert has_element?(view, ~s{div[role="objective 3 title"]}, "this is the third objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 3"] svg[role="establishing proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o3}_tooltip"]}, "Establishing Proficiency")
+
+      assert has_element?(view, ~s{div[role="objective 4 title"]}, "this is the forth objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 4"] svg[role="no data proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o4}_tooltip"]}, "Not enough information")
     end
 
     test "can navigate between pages and updates references in the request path", %{

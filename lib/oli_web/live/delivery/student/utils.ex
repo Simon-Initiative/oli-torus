@@ -132,7 +132,10 @@ defmodule OliWeb.Delivery.Student.Utils do
                 <div class="w-5 text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
                   L<%= index %>
                 </div>
-                <div class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]">
+                <div
+                  role={"objective #{index} title"}
+                  class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
+                >
                   <%= objective.title %>
                 </div>
               </div>
