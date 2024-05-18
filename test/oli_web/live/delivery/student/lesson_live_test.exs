@@ -820,6 +820,34 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
     end
 
+    test "can see proficiency explanation modal", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+
+      # if we render_click() on PROFICIENCY to show the modal, a JS command should be triggered.
+      # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
+      # The workaround is to directly assert on the content of the modal
+
+      assert has_element?(
+               view,
+               "#proficiency_explanation_modal h1",
+               "Measuring Learning Proficiency"
+             )
+
+      assert has_element?(
+               view,
+               "#proficiency_explanation_modal p",
+               "This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page."
+             )
+    end
+
     test "can see learning objectives and proficiency on page header", %{
       conn: conn,
       user: user,
