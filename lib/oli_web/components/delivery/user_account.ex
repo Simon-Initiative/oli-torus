@@ -24,7 +24,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div class="relative">
       <button
         id={@id}
-        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-primary-800 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-800 dark:focus:outline-zinc-600 #{@class}"}
+        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
         <.user_icon ctx={@ctx} />
@@ -55,14 +55,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       in: {"ease-out duration-300", "opacity-0 top-[40px]", "opacity-100"},
       out: {"ease-out duration-300", "opacity-100", "opacity-0 top-[40px]"}
     )
-    |> JS.remove_class("dark:bg-black bg-delivery-header", to: "#header")
-    |> JS.add_class("dark:!bg-[#0F0D0F] !bg-gray-100", to: "#header")
-  end
-
-  def reset_header_color(js \\ %JS{}) do
-    js
-    |> JS.add_class("dark:bg-black bg-delivery-header", to: "#header")
-    |> JS.remove_class("dark:!bg-[#0F0D0F] !bg-gray-100", to: "#header")
   end
 
   attr(:id, :string, required: true)
@@ -139,7 +131,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <div
       id={@id}
-      phx-click-away={JS.hide() |> reset_header_color()}
+      phx-click-away={JS.hide()}
       class={"hidden absolute top-[51px] -right-[9px] z-50 p-[10px] whitespace-nowrap bg-gray-100 border-gray-300 w-[220px] dark:bg-[#0F0D0F] rounded-xl border dark:border-zinc-800 #{@class}"}
     >
       <ul>
@@ -183,7 +175,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
       _method ->
         ~H"""
-        <%= link to: @href, method: @method, class: "w-[190px] text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-[#33181A] hover:border-red-500", target: @target do %>
+        <%= link to: @href, method: @method, class: "w-[190px] text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
