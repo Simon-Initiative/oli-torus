@@ -4,7 +4,7 @@ defmodule Oli.Analytics.XAPI do
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit(%StatementBundle{} = bundle) do
-   config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
+    config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
 
     if !Keyword.get(config, :suppress_event_emitting, false) do
       producer =
