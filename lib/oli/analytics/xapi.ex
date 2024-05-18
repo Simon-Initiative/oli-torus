@@ -4,8 +4,7 @@ defmodule Oli.Analytics.XAPI do
   @chars "abcdefghijklmnopqrstuvwxyz1234567890" |> String.split("", trim: true)
 
   def emit(%StatementBundle{} = bundle) do
-
-    config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
+   config = Application.fetch_env!(:oli, :xapi_upload_pipeline)
 
     if !Keyword.get(config, :suppress_event_emitting, false) do
       producer =
@@ -15,7 +14,6 @@ defmodule Oli.Analytics.XAPI do
 
       GenStage.cast(producer, {:insert, bundle})
     end
-
   end
 
   def emit(category, events) when is_list(events) do
