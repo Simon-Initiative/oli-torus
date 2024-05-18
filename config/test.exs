@@ -25,7 +25,8 @@ config :oli, :xapi_upload_pipeline,
   batcher_concurrency: 1,
   batch_size: 10,
   batch_timeout: 100,
-  processor_concurrency: 1
+  processor_concurrency: 1,
+  suppress_event_emitting: true
 
 # Configure your database
 config :oli, Oli.Repo,
