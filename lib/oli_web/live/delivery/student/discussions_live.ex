@@ -81,6 +81,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     }
   end
 
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
     updated_post_params =
       Map.merge(socket.assigns.post_params, %{

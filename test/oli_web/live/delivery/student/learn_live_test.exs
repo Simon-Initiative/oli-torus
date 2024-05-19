@@ -2604,7 +2604,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                ~s{a[href="/sections/#{section.slug}/discussions?sidebar_expanded=true"]},
-               "Discussions"
+               "Notes"
              )
     end
 
