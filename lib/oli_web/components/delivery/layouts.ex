@@ -13,6 +13,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
+  alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
 
@@ -87,14 +88,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
+  attr(:sidebar_expanded, :boolean, default: true)
   attr(:preview_mode, :boolean)
 
   def sidebar_nav(assigns) do
     ~H"""
     <div>
-      <nav
-        id="desktop-nav-menu"
-        class="
+      <nav id="desktop-nav-menu" class={["
         fixed
         z-50
         w-full
@@ -235,14 +235,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        :if={@section.contains_discussions}
         id="discussions_nav_link"
         href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
-        <:text>Discussions</:text>
+        <:text>Notes</:text>
       </.nav_link>
 
       <.nav_link
@@ -270,75 +269,75 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  defp path_for(:index, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:index, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview"
     else
-      ~p"/sections/#{section_slug}"
+      ~p"/sections/#{section_slug}?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:index, _section, _preview_mode) do
+  defp path_for(:index, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:learn, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:learn, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/learn"
     else
-      ~p"/sections/#{section_slug}/learn"
+      ~p"/sections/#{section_slug}/learn?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:learn, _section, _preview_mode) do
+  defp path_for(:learn, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:discussions, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/discussions"
     else
-      ~p"/sections/#{section_slug}/discussions"
+      ~p"/sections/#{section_slug}/discussions?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:discussions, _section, _preview_mode) do
+  defp path_for(:discussions, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/assignments"
     else
-      ~p"/sections/#{section_slug}/assignments"
+      ~p"/sections/#{section_slug}/assignments?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:schedule, _section, _preview_mode) do
+  defp path_for(:schedule, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:explorations, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/explorations"
     else
-      ~p"/sections/#{section_slug}/explorations"
+      ~p"/sections/#{section_slug}/explorations?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:explorations, _section, _preview_mode) do
+  defp path_for(:explorations, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
-  defp path_for(:practice, %Section{slug: section_slug}, preview_mode) do
+  defp path_for(:practice, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/practice"
     else
-      ~p"/sections/#{section_slug}/practice"
+      ~p"/sections/#{section_slug}/practice?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
-  defp path_for(:practice, _section, _preview_mode) do
+  defp path_for(:practice, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 
@@ -379,16 +378,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </div>
     </.link>
     """
-  end
-
-  defp nav_link_class(is_active) do
-    case is_active do
-      true ->
-        "px-6 py-4 text-current hover:no-underline hover:text-delivery-primary font-bold bg-gray-50 dark:bg-gray-800"
-
-      false ->
-        "px-6 py-4 text-current hover:no-underline hover:text-delivery-primary"
-    end
   end
 
   attr(:section, Section)
