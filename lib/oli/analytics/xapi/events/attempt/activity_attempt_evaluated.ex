@@ -1,5 +1,6 @@
-defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
-  alias Oli.Analytics.Summary.Context
+defmodule Oli.Analytics.XAPI.Events.Attempt.ActivityAttemptEvaluated do
+  alias Oli.Analytics.XAPI.Events.Context
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
 
   def new(
         %Context{
@@ -9,13 +10,19 @@ defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
           project_id: project_id,
           publication_id: publication_id
         },
-        %{
+        %ActivityAttempt{
           attempt_guid: attempt_guid,
           attempt_number: attempt_number,
-          resource_id: page_id,
           score: score,
           out_of: out_of,
-          date_evaluated: timestamp
+          date_evaluated: timestamp,
+          resource_id: activity_id,
+          revision_id: activity_revision_id
+        },
+        %{
+          attempt_guid: page_attempt_guid,
+          attempt_number: page_attempt_number,
+          resource_id: page_id
         }
       ) do
     %{
@@ -33,12 +40,12 @@ defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
         }
       },
       "object" => %{
-        "id" => "#{host_name}/page_attempt/#{attempt_guid}}",
+        "id" => "#{host_name}/activity_attempt/#{attempt_guid}}",
         "definition" => %{
           "name" => %{
-            "en-US" => "Page Attempt"
+            "en-US" => "Activity Attempt"
           },
-          "type" => "http://oli.cmu.edu/extensions/page_attempt"
+          "type" => "http://oli.cmu.edu/extensions/activity_attempt"
         },
         "objectType" => "Activity"
       },
@@ -59,12 +66,16 @@ defmodule Oli.Analytics.Summary.XAPI.PageAttemptEvaluated do
       },
       "context" => %{
         "extensions" => %{
-          "http://oli.cmu.edu/extensions/page_attempt_number" => attempt_number,
-          "http://oli.cmu.edu/extensions/page_attempt_guid" => attempt_guid,
+          "http://oli.cmu.edu/extensions/activity_attempt_number" => attempt_number,
+          "http://oli.cmu.edu/extensions/page_attempt_number" => page_attempt_number,
+          "http://oli.cmu.edu/extensions/activity_attempt_guid" => attempt_guid,
+          "http://oli.cmu.edu/extensions/page_attempt_guid" => page_attempt_guid,
           "http://oli.cmu.edu/extensions/section_id" => section_id,
           "http://oli.cmu.edu/extensions/project_id" => project_id,
           "http://oli.cmu.edu/extensions/publication_id" => publication_id,
-          "http://oli.cmu.edu/extensions/page_id" => page_id
+          "http://oli.cmu.edu/extensions/page_id" => page_id,
+          "http://oli.cmu.edu/extensions/activity_id" => activity_id,
+          "http://oli.cmu.edu/extensions/activity_revision_id" => activity_revision_id
         }
       },
       "timestamp" => timestamp
