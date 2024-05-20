@@ -26,8 +26,6 @@ defmodule OliWeb.Common.Paging do
         assigns.has_shorter_label
       )
 
-    params |> IO.inspect(label: "--- params ---")
-
     assigns =
       assigns
       |> assign(:params, params)
