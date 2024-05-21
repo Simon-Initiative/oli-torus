@@ -22,7 +22,7 @@ defmodule Oli.Analytics.ByPage do
   defp get_base_query(project_slug, activity_pages, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(
+        DeliveryResolver.revisions_by_section_ids(
           filtered_sections,
           ResourceType.id_for_page()
         )
@@ -35,9 +35,9 @@ defmodule Oli.Analytics.ByPage do
 
     subquery_activity =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(
+        DeliveryResolver.revisions_by_section_ids(
           filtered_sections,
-          ResourceType.id_for_page()
+          ResourceType.id_for_activity()
         )
       else
         Publishing.query_unpublished_revisions_by_type(
@@ -62,8 +62,7 @@ defmodule Oli.Analytics.ByPage do
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty
       },
-      preload: [:resource_type],
-      distinct: [activity]
+      preload: [:resource_type]
     )
   end
 
