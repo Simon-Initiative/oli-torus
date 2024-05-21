@@ -577,6 +577,25 @@ defmodule Oli.Resources.Collaboration do
              [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
              post.updated_at
            )}
+
+        {"unread", sort_order} ->
+          [
+            {sort_order,
+             dynamic(
+               [_post, _sr, _spp, _pr, _rev, _user, replies, read_replies, urp, _reactions],
+               fragment(
+                 "case when ? > ? or ? then 1 else 0 end",
+                 coalesce(replies.count, 0),
+                 coalesce(read_replies.count, 0),
+                 is_nil(urp.id)
+               )
+             )},
+            {sort_order,
+             dynamic(
+               [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
+               post.updated_at
+             )}
+          ]
       end
 
     results =
@@ -596,6 +615,8 @@ defmodule Oli.Resources.Collaboration do
         on: replies.thread_root_id == post.id,
         left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
         left_join: reactions in assoc(post, :reactions),
         where:
           post.section_id == ^section_id and post.visibility == :public and
@@ -614,7 +635,8 @@ defmodule Oli.Resources.Collaboration do
           post: %{
             post
             | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0)
+              read_replies_count: coalesce(read_replies.count, 0),
+              is_read: not is_nil(urp.id)
           },
           total_count: over(count(post.id))
         }
@@ -672,10 +694,6 @@ defmodule Oli.Resources.Collaboration do
         on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
-        left_join: replies in subquery(replies_subquery()),
-        on: replies.thread_root_id == post.id,
-        left_join: read_replies in subquery(read_replies_subquery(user_id)),
-        on: read_replies.thread_root_id == post.id,
         where:
           post.section_id == ^section_id and post.visibility == :private and
             post.user_id == ^user_id,
@@ -688,9 +706,7 @@ defmodule Oli.Resources.Collaboration do
         select: %{
           post: %{
             post
-            | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0),
-              resource_slug: rev.slug
+            | resource_slug: rev.slug
           },
           total_count: over(count(post.id))
         }

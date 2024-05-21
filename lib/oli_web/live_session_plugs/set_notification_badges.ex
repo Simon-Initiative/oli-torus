@@ -9,18 +9,12 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
   def on_mount(:default, _params, _session, socket) do
     %{current_user: current_user, section: section} = socket.assigns
 
-    badges =
-      %{}
-      |> load_discussions_badge(section, current_user)
-
-    dbg(badges)
-
-    {:cont, assign(socket, notification_badges: badges)}
+    {:cont, socket |> maybe_load_discussions_badge(section, current_user)}
   end
 
-  defp load_discussions_badge(badges, _, user) when is_nil(user), do: badges
+  defp maybe_load_discussions_badge(socket, _, user) when is_nil(user), do: socket
 
-  defp load_discussions_badge(badges, section, user) do
+  defp maybe_load_discussions_badge(socket, section, user) do
     # Load the discussions badge
     %{resource_id: root_curriculum_resource_id} =
       DeliveryResolver.root_container(section.slug)
@@ -42,12 +36,20 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
         )
         |> Enum.reduce(0, fn %{count: count}, acc -> acc + count end)
 
+      notification_badges = Map.get(socket.assigns, :notification_badges, %{})
+
       case unread_replies_count do
-        0 -> badges
-        _ -> Map.put(badges, :discussions, unread_replies_count)
+        0 ->
+          socket
+
+        _ ->
+          assign(socket,
+            notification_badges: Map.put(notification_badges, :discussions, unread_replies_count),
+            has_unread_discussions: true
+          )
       end
     else
-      badges
+      socket
     end
   end
 end
