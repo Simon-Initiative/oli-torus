@@ -447,9 +447,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  defp left_bar_color(:assignment), do: "before:bg-[#FF8F40]"
-  defp left_bar_color(:practice), do: "before:bg-[#8CBCFF]"
-  defp left_bar_color(:exploration), do: "before:bg-[#EC8CFF]"
+  defp left_bar_color(:checkpoint), do: "before:bg-checkpoint"
+  defp left_bar_color(:practice), do: "before:bg-practice"
+  defp left_bar_color(:exploration), do: "before:bg-exploration"
   defp left_bar_color(_), do: ""
 
   defp item_bg_color(true = _completed),
@@ -517,7 +517,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div
             role="countdown"
             class={[
-              if(@lesson.purpose == :application, do: "text-[#EC8CFF]", else: "text-[#FF8F40]"),
+              if(@lesson.purpose == :application, do: "text-exploration", else: "text-checkpoint"),
               "text-xs font-normal"
             ]}
           >
@@ -551,7 +551,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="opacity-50 text-white text-xs font-normal">
           Time Remaining:
         </div>
-        <div role="countdown" class="text-[#8CBCFF] text-xs font-normal">
+        <div role="countdown" class="text-practice text-xs font-normal">
           <%= Student.format_time_remaining(@lesson.end_date) %>
         </div>
       </div>

@@ -375,7 +375,7 @@ defmodule OliWeb.Components.Delivery.Student do
   def resource_type(%{type: :exploration} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-fuchsia-700 dark:text-[#EC8CFF] bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-fuchsia-700 dark:text-exploration bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.world />
@@ -391,10 +391,10 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
-  def resource_type(%{type: :assignment} = assigns) do
+  def resource_type(%{type: :checkpoint} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-yellow-700 dark:text-[#FF8F40] bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-yellow-700 dark:text-checkpoint bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.transparent_flag />
@@ -413,7 +413,7 @@ defmodule OliWeb.Components.Delivery.Student do
   def resource_type(%{type: :practice} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-blue-700 dark:text-[#8CBCFF] bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-blue-700 dark:text-practice bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.clipboard />
@@ -449,7 +449,7 @@ defmodule OliWeb.Components.Delivery.Student do
   end
 
   def type_from_resource(%{type: :exploration}), do: :exploration
-  def type_from_resource(%{graded: true}), do: :assignment
+  def type_from_resource(%{graded: true}), do: :checkpoint
   def type_from_resource(%{graded: false}), do: :practice
   def type_from_resource(_), do: :lesson
 end

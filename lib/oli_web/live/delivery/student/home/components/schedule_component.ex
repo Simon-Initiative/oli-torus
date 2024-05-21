@@ -188,7 +188,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp maybe_assignment_left_bar(true),
     do:
-      "relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:bg-[#FF8F40] before:z-10"
+      "relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:bg-checkpoint before:z-10"
 
   defp maybe_assignment_left_bar(_), do: ""
 
