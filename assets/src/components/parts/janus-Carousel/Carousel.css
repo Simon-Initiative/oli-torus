@@ -1,3 +1,12 @@
+/*------------------------------------------
+    Janus Image  Carousel
+-----------------------------------------*/
+@import 'swiper/css';
+@import 'swiper/css/navigation';
+@import 'swiper/css/pagination';
+@import 'swiper/css/scrollbar';
+@import 'swiper/css/zoom';
+
 .janus-image-carousel div {
   display: unset;
   margin-top: unset;

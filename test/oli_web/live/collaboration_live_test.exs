@@ -276,23 +276,6 @@ defmodule OliWeb.CollaborationLiveTest do
     end
   end
 
-  describe "user cannot access collab space config when is logged in as a instructor but is not preview" do
-    setup [:user_conn, :create_project_and_section]
-
-    test "returns just the page when accessing the view", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_revision: page_revision
-    } do
-      enroll_user_to_section(user, section, :context_instructor)
-      ensure_user_visit(user, section)
-
-      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
-      refute html_response(conn, 200) =~ "<div class=\"card-title h5\">Collaborative Space</div>"
-    end
-  end
-
   describe "user cannot access when is logged in as an author but is not a system admin or author of the project" do
     setup [:author_conn, :create_project_and_section]
 

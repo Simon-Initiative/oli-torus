@@ -381,6 +381,50 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     """
   end
 
+  def render_condition_options(%{gating_condition: %{type: :progress}} = assigns) do
+    assigns = assign(assigns, :data, assigns.gating_condition.data)
+
+    ~H"""
+    <div class="form-group">
+      <label for="source">Resource That Must Has Progress</label>
+      <div class="input-group mb-3">
+        <input
+          type="text"
+          id="source"
+          readonly
+          class="form-control"
+          placeholder="Select a source resource..."
+          aria-label="resource-title"
+          aria-describedby="basic-addon2"
+          phx-click="show-ungraded-picker"
+          {maybe_source_value(assigns)}
+        />
+        <div class="input-group-append">
+          <button class="btn btn-outline-primary" type="button" phx-click="show-ungraded-picker">
+            Select
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="flex flex-row items-center w-full gap-x-2 mb-4 mt-2">
+      <div class="sm:col-span-2 w-full">
+        <input
+          type="number"
+          class="form-control"
+          id="min-score-value"
+          disabled={assigns.gating_condition.data[:resource_id] == nil}
+          min="0"
+          max="100"
+          value={value_from_min_score(@data)}
+          phx-hook="TextInputListener"
+          phx-value-change="change_min_score"
+        />
+      </div>
+      <label for="min-score-value" class="sm:col-span-1 col-form-label">%</label>
+    </div>
+    """
+  end
+
   def render_condition_options(%{gating_condition: %{type: :always_open}} = assigns) do
     ~H"""
     <div class="alert alert-secondary" role="alert">

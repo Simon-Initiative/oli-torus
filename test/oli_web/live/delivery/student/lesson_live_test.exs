@@ -109,10 +109,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Exploration 1",
         content: %{
-          model: [],
-          advancedDelivery: true,
-          displayApplicationChrome: false,
-          additionalStylesheets: [
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false,
+          "additionalStylesheets" => [
             "/css/delivery_adaptive_themes_default_light.css"
           ]
         }
@@ -125,10 +125,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         max_attempts: 5,
         title: "Graded Adaptive Page",
         content: %{
-          model: [],
-          advancedDelivery: true,
-          displayApplicationChrome: false,
-          additionalStylesheets: [
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false,
+          "additionalStylesheets" => [
             "/css/delivery_adaptive_themes_default_light.css"
           ]
         }
@@ -253,7 +253,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         container_revision
       ]
 
-    # asociate resources to project
+    # associate resources to project
     Enum.each(all_revisions, fn revision ->
       insert(:project_resource, %{
         project_id: project.id,
@@ -301,6 +301,21 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       end_date: ~U[2023-11-14 20:00:00Z]
     })
 
+    # enable collaboration spaces for all pages in the section
+    {_total_page_count, _section_resources} =
+      Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
+        section.slug,
+        %Oli.Resources.Collaboration.CollabSpaceConfig{
+          status: :enabled,
+          threaded: true,
+          auto_accept: true,
+          show_full_history: true,
+          anonymous_posting: true,
+          participation_min_replies: 0,
+          participation_min_posts: 0
+        }
+      )
+
     %{
       section: section,
       page_1: page_1_revision,
@@ -336,7 +351,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   end
 
   describe "student" do
-    setup [:user_conn, :create_elixir_project]
+    setup [:setup_tags, :user_conn, :create_elixir_project]
 
     test "can not access when not enrolled to course", %{
       conn: conn,
@@ -438,16 +453,34 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, html} =
-        live(
-          conn,
-          live_view_adaptive_lesson_live_route(section.slug, graded_adaptive_page_revision.slug)
-        )
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page_revision.slug))
 
       assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-      # It loads the adaptive themes
-      assert html =~ "/css/delivery_adaptive_themes_default_light.css"
+    end
+
+    @tag isolation: "serializable"
+    test "can begin an attempt from the prologue view on graded adaptive pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page_revision.slug))
+
+      view
+      |> element("button[id='begin_attempt_button']", "Begin 1st Attempt")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}"
+      )
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
@@ -713,6 +746,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
     end
 
+    @tag isolation: "serializable"
     test "can begin a new attempt from prologue (and its ordinal numbering is correct)", %{
       conn: conn,
       user: user,
@@ -736,6 +770,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              )
 
       assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
+
+      view
+      |> element("button[id='begin_attempt_button']")
+      |> render_click()
+
+      refute has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
+      assert has_element?(view, ~s{svg[role=spinner]})
     end
 
     test "can see page info on header", %{
@@ -994,6 +1035,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
+      Oli.Resources.Collaboration.disable_all_page_collab_spaces_for_section(section.slug)
+
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert not has_element?(
@@ -1008,8 +1051,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       user: user,
       page_1: page_1
     } do
-      enable_collaborative_spaces(%{section: section})
-
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -1037,7 +1078,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   end
 
   describe "annotations panel" do
-    setup [:user_conn, :create_elixir_project, :enable_collaborative_spaces]
+    setup [:user_conn, :create_elixir_project]
 
     test "is toggled open when toolbar button is clicked", %{
       conn: conn,
@@ -1104,7 +1145,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       view
-      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -1150,7 +1191,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> render_click
 
       view
-      |> element(~s{button[phx-click='select_tab'][phx-value-tab='all_notes']})
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -1189,21 +1230,5 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   defp react_to_post(post, user, reaction) do
     Oli.Resources.Collaboration.toggle_reaction(post.id, user.id, reaction)
-  end
-
-  defp enable_collaborative_spaces(%{section: section}) do
-    course_collab_space_config =
-      Oli.Resources.Collaboration.get_course_collab_space_config(section.root_section_resource_id)
-      |> Map.from_struct()
-      |> Map.merge(%{status: :enabled})
-
-    %{resource_id: resource_id} = Oli.Publishing.DeliveryResolver.root_container(section.slug)
-
-    Oli.Delivery.Sections.get_section_resource(section.id, resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      collab_space_config: course_collab_space_config
-    })
-
-    %{}
   end
 end

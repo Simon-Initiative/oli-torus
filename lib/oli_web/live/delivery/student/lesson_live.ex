@@ -4,6 +4,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, scripts: 1]
 
+  import Ecto.Query
+
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
@@ -20,14 +22,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   require Logger
 
-  on_mount {OliWeb.LiveSessionPlugs.InitPage, :page_context}
+  on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    course_collab_space_config =
-      Collaboration.get_course_collab_space_config(
-        socket.assigns.section.root_section_resource_id
-      )
+    %{current_user: current_user, section: section} = socket.assigns
+
+    is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
@@ -36,17 +37,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.section,
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
-        course_collab_space_config,
-        :private,
+        socket.assigns.page_context,
+        if(is_instructor, do: :public, else: :private),
         nil
       )
     end
 
+    emit_page_viewed_event(socket)
+
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> annotations_assigns(course_collab_space_config)
-     |> assign(course_collab_space_config: course_collab_space_config)}
+     |> annotations_assigns(socket.assigns.page_context, is_instructor)
+     |> assign(is_instructor: is_instructor)}
   end
 
   def mount(
@@ -54,6 +57,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         _session,
         %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
       ) do
+    emit_page_viewed_event(socket)
+
     {:ok,
      socket
      |> assign_html_and_scripts()
@@ -66,6 +71,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}}} =
           socket
       ) do
+    emit_page_viewed_event(socket)
+
     {:ok,
      socket
      |> assign_scripts()
@@ -207,7 +214,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("toggle_annotation_point", params, socket) do
-    %{annotations: %{selected_point: selected_point}} = socket.assigns
+    %{is_instructor: is_instructor, annotations: %{selected_point: selected_point}} =
+      socket.assigns
 
     point_marker_id =
       case params do
@@ -221,8 +229,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.section,
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
-        socket.assigns.course_collab_space_config,
-        visibility_for_active_tab(socket.assigns.annotations.active_tab),
+        socket.assigns.page_context,
+        visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         nil
       )
 
@@ -236,8 +244,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.section,
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
-        socket.assigns.course_collab_space_config,
-        visibility_for_active_tab(socket.assigns.annotations.active_tab),
+        socket.assigns.page_context,
+        visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         point_marker_id
       )
 
@@ -263,6 +271,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def handle_event("create_annotation", %{"content" => value} = params, socket) do
     %{
       current_user: current_user,
+      is_instructor: is_instructor,
       section: section,
       page_context: page_context,
       annotations: %{
@@ -285,7 +294,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
       anonymous: params["anonymous"] == "true",
-      visibility: visibility_for_active_tab(active_tab),
+      visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value}
     }
 
@@ -302,10 +311,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("select_tab", %{"tab" => tab}, socket) do
+    %{is_instructor: is_instructor} = socket.assigns
+
     tab =
       case tab do
         "my_notes" -> :my_notes
-        "all_notes" -> :all_notes
+        "class_notes" -> :class_notes
         _ -> :my_notes
       end
 
@@ -326,7 +337,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         section,
         resource_id,
         current_user,
-        visibility_for_active_tab(tab),
+        visibility_for_active_tab(tab, is_instructor),
         selected_point,
         search_term
       )
@@ -339,8 +350,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         socket.assigns.section,
         socket.assigns.page_context.page.resource_id,
         socket.assigns.current_user,
-        socket.assigns.course_collab_space_config,
-        visibility_for_active_tab(tab),
+        socket.assigns.page_context,
+        visibility_for_active_tab(tab, is_instructor),
         socket.assigns.annotations.selected_point
       )
 
@@ -452,6 +463,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     %{
       current_user: current_user,
+      is_instructor: is_instructor,
       section: section,
       page_context: page_context,
       annotations: %{
@@ -474,7 +486,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
       anonymous: params["anonymous"] == "true",
-      visibility: visibility_for_active_tab(active_tab),
+      visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value},
       parent_post_id: parent_post_id,
       thread_root_id: parent_post_id
@@ -502,6 +514,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def handle_event("search", %{"search_term" => search_term}, socket) do
     %{
       current_user: current_user,
+      is_instructor: is_instructor,
       section: section,
       page_context: %{
         page: %{resource_id: resource_id}
@@ -516,7 +529,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       section,
       resource_id,
       current_user,
-      visibility_for_active_tab(active_tab),
+      visibility_for_active_tab(active_tab, is_instructor),
       selected_point,
       search_term
     )
@@ -537,7 +550,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       section: section,
       page_context: page_context,
       current_user: current_user,
-      course_collab_space_config: course_collab_space_config,
+      is_instructor: is_instructor,
       annotations: %{
         active_tab: active_tab
       }
@@ -553,8 +566,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       section,
       page_context.page.resource_id,
       current_user,
-      course_collab_space_config,
-      visibility_for_active_tab(active_tab),
+      page_context,
+      visibility_for_active_tab(active_tab, is_instructor),
       point_marker_id,
       String.to_integer(post_id)
     )
@@ -567,13 +580,36 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      )}
   end
 
+  def handle_event(
+        "set_delete_post_id",
+        %{"post-id" => post_id, "visibility" => visibility},
+        socket
+      ) do
+    {:noreply,
+     assign_annotations(socket,
+       delete_post_id: {String.to_existing_atom(visibility), String.to_integer(post_id)}
+     )}
+  end
+
+  def handle_event("delete_post", _params, socket) do
+    %{annotations: %{delete_post_id: {_visibility, post_id}}} = socket.assigns
+
+    case Collaboration.soft_delete_post(post_id) do
+      {1, _} ->
+        {:noreply, mark_post_deleted(socket, post_id)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete note")}
+    end
+  end
+
   # handle assigns directly from async tasks
   def handle_info({ref, result}, socket) do
     Process.demonitor(ref, [:flush])
 
     case result do
       {:assign_annotations, annotations} ->
-        {:noreply, assign_annotations(socket, Enum.into(annotations, socket.assigns.annotations))}
+        {:noreply, assign_annotations(socket, annotations)}
 
       {:assign_post_replies, {parent_post_id, replies}} ->
         {:noreply, update_post_replies(socket, parent_post_id, replies, fn _ -> replies end)}
@@ -589,6 +625,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <Annotations.delete_post_modal />
+
     <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
       <:header>
         <.page_header
@@ -631,9 +669,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       <:sidebar>
         <Annotations.panel
+          section_slug={@section.slug}
           create_new_annotation={@annotations.create_new_annotation}
           annotations={@annotations.posts}
           current_user={@current_user}
+          is_instructor={@is_instructor}
           active_tab={@annotations.active_tab}
           search_results={@annotations.search_results}
           search_term={@annotations.search_term}
@@ -804,18 +844,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: view, begin_attempt?: false} = assigns)
       when view in [:graded_page, :adaptive_chromeless] do
     ~H"""
-    <Modal.modal id="password_attempt_modal" class="w-1/2">
-      <:title>Provide Assessment Password</:title>
-      <.form
-        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
-        for={%{}}
-        class="flex flex-col gap-6"
-        id="password_attempt_form"
-      >
-        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
-        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
-      </.form>
-    </Modal.modal>
+    <.password_attempt_modal />
+
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
         <.page_header
@@ -837,6 +867,23 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </div>
     </div>
+    """
+  end
+
+  defp password_attempt_modal(assigns) do
+    ~H"""
+    <Modal.modal id="password_attempt_modal" class="w-1/2">
+      <:title>Provide Assessment Password</:title>
+      <.form
+        phx-submit={JS.push("begin_attempt") |> Modal.hide_modal("password_attempt_modal")}
+        for={%{}}
+        class="flex flex-col gap-6"
+        id="password_attempt_form"
+      >
+        <input id="password_attempt_input" type="password" name="password" field={:password} value="" />
+        <.button type="submit" class="mx-auto btn btn-primary">Begin</.button>
+      </.form>
+    </Modal.modal>
     """
   end
 
@@ -936,7 +983,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         )
       }
       class={[
-        "cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
+        "mb-24 cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight",
         if(!@allow_attempt?, do: "opacity-50 dark:opacity-20 disabled !cursor-not-allowed")
       ]}
     >
@@ -964,22 +1011,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <div class="w-[92px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] uppercase leading-normal tracking-wide">
           Attempt <%= @index %>:
         </div>
-        <div class="py-1 justify-end items-center gap-1.5 flex">
+        <div class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500">
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div class="justify-end items-center gap-1 flex">
-            <div
-              role="attempt score"
-              class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight"
-            >
+            <div role="attempt score" class="text-xs font-semibold tracking-tight">
               <%= Float.round(@attempt.score, 2) %>
             </div>
-            <div class="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-[4px]">
+            <div class="text-xs font-semibold tracking-[4px]">
               /
             </div>
-            <div
-              role="attempt out of"
-              lass="text-emerald-600 text-xs font-semibold font-['Open Sans'] tracking-tight"
-            >
+            <div role="attempt out of" lass="text-xs font-semibold tracking-tight">
               <%= Float.round(@attempt.out_of, 2) %>
             </div>
           </div>
@@ -1063,6 +1104,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket.assigns.current_user,
           socket.assigns.datashop_session_id
         )
+
+      emit_page_viewed_event(socket)
 
       {:noreply,
        socket
@@ -1165,9 +1208,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
-  defp annotations_assigns(socket, course_collab_space_config) do
-    case course_collab_space_config do
-      %CollabSpaceConfig{status: :enabled} ->
+  defp annotations_assigns(socket, page_context, is_instructor) do
+    case page_context do
+      %PageContext{
+        collab_space_config: %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept}
+      } ->
         assign(socket,
           annotations: %{
             show_sidebar: false,
@@ -1175,16 +1220,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             selected_point: nil,
             post_counts: nil,
             posts: nil,
-            active_tab: :my_notes,
+            active_tab: if(is_instructor, do: :class_notes, else: :my_notes),
             create_new_annotation: false,
-            auto_approve_annotations: course_collab_space_config.auto_accept,
+            auto_approve_annotations: auto_accept,
             search_results: nil,
-            search_term: ""
+            search_term: "",
+            delete_post_id: nil
           }
         )
 
       _ ->
-        socket
+        assign(socket, annotations: nil)
     end
   end
 
@@ -1192,15 +1238,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          section,
          resource_id,
          current_user,
-         course_collab_space_config,
+         page_context,
          visibility,
          point_block_id,
          load_replies_for_post_id \\ nil
        ) do
     if current_user do
       Task.async(fn ->
-        case course_collab_space_config do
-          %CollabSpaceConfig{status: :enabled} ->
+        case page_context do
+          %PageContext{
+            collab_space_config: %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept}
+          } ->
             # load post counts
             post_counts =
               Collaboration.list_post_counts_for_user_in_section(
@@ -1245,7 +1293,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
              %{
                post_counts: post_counts,
                posts: posts,
-               auto_approve_annotations: course_collab_space_config.auto_accept
+               auto_approve_annotations: auto_accept
              }}
 
           _ ->
@@ -1291,9 +1339,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assign(socket, annotations: Enum.into(annotations, socket.assigns.annotations))
   end
 
-  defp visibility_for_active_tab(:all_notes), do: :public
-  defp visibility_for_active_tab(:my_notes), do: :private
-  defp visibility_for_active_tab(_), do: :private
+  defp visibility_for_active_tab(_, true), do: :public
+  defp visibility_for_active_tab(:class_notes, _is_instructor), do: :public
+  defp visibility_for_active_tab(:my_notes, _is_instructor), do: :private
+  defp visibility_for_active_tab(_, _is_instructor), do: :private
 
   defp optimistically_add_post(socket, selected_point, post) do
     %{posts: posts, post_counts: post_counts} = socket.assigns.annotations
@@ -1312,7 +1361,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     socket
     |> assign_annotations(
       posts:
-        Enum.map(posts, fn post ->
+        Annotations.find_and_update_post(posts, parent_post_id, fn post ->
           if post.id == parent_post_id do
             %Collaboration.Post{
               post
@@ -1342,6 +1391,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
+  defp mark_post_deleted(socket, post_id) do
+    %{posts: posts} = socket.assigns.annotations
+
+    socket
+    |> assign_annotations(
+      posts:
+        Annotations.find_and_update_post(posts, post_id, fn post ->
+          %Collaboration.Post{post | status: :deleted}
+        end)
+    )
+  end
+
   defp check_gating_conditions(section, user, resource_id) do
     case Oli.Delivery.Gating.blocked_by(section, user, resource_id) do
       [] -> :ok
@@ -1353,4 +1414,75 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     do: {:redirect, ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"}
 
   defp maybe_redirect_adaptive(_, _, _), do: :ok
+
+  defp emit_page_viewed_event(socket) do
+    section = socket.assigns.section
+    context = socket.assigns.page_context
+
+    page_sub_type =
+      if Map.get(context.page.content, "advancedDelivery", false) do
+        "advanced"
+      else
+        "basic"
+      end
+
+    {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
+
+    emit_page_viewed_helper(
+      %Oli.Analytics.Summary.Context{
+        user_id: socket.assigns.current_user.id,
+        host_name: host_name(),
+        section_id: section.id,
+        project_id: project_id,
+        publication_id: publication_id
+      },
+      %{
+        attempt_guid: hd(context.resource_attempts).attempt_guid,
+        attempt_number: hd(context.resource_attempts).attempt_number,
+        resource_id: context.page.resource_id,
+        timestamp: DateTime.utc_now(),
+        page_sub_type: page_sub_type
+      }
+    )
+  end
+
+  defp emit_page_viewed_helper(
+         %Oli.Analytics.Summary.Context{} = context,
+         %{
+           attempt_guid: _page_attempt_guid,
+           attempt_number: _page_attempt_number,
+           resource_id: _page_id,
+           timestamp: _timestamp,
+           page_sub_type: _page_sub_type
+         } = page_details
+       ) do
+    event = Oli.Analytics.Summary.XAPI.PageViewed.new(context, page_details)
+    Oli.Analytics.XAPI.emit(:page_viewed, event)
+  end
+
+  defp get_project_and_publication_ids(section_id, revision_id) do
+    # From the SectionProjectPublication table, get the project_id and publication_id
+    # where a published resource exists for revision_id
+    # and the section_id matches the section_id
+
+    query =
+      from sp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        join: pr in Oli.Publishing.PublishedResource,
+        on: pr.publication_id == sp.publication_id,
+        where: sp.section_id == ^section_id and pr.revision_id == ^revision_id,
+        select: {sp.project_id, sp.publication_id}
+
+    # Return nil if somehow we cannot resolve this resource.  This is just a guaranteed that
+    # we can never throw an error here
+    case Oli.Repo.all(query) do
+      [] -> {nil, nil}
+      other -> hd(other)
+    end
+  end
+
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
+  end
 end

@@ -1,12 +1,12 @@
 defmodule OliWeb.Components.Delivery.Schedule do
   use OliWeb, :html
 
-  alias OliWeb.Common.SessionContext
-  alias OliWeb.Components.Delivery.Student
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Sections.{ScheduledContainerGroup, ScheduledSectionResource}
-  alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Components.Delivery.Student
   alias OliWeb.Icons
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
@@ -48,7 +48,8 @@ defmodule OliWeb.Components.Delivery.Schedule do
               <%= render_date_range(date_range, @ctx) %>
             </div>
 
-            <%= for %ScheduledContainerGroup{container_label: container_label, graded: graded, progress: container_progress, resources: scheduled_resources} <- container_groups do %>
+            <%= for %ScheduledContainerGroup{module_label: module_label, unit_label: unit_label, graded: graded, progress: container_progress, resources: scheduled_resources} <- container_groups do %>
+              <% container_label = module_label || unit_label %>
               <div class="flex flex-row">
                 <div class="flex flex-col mr-4 md:w-64">
                   <div class="flex flex-row">
@@ -155,55 +156,13 @@ defmodule OliWeb.Components.Delivery.Schedule do
         <% @purpose == :application -> %>
           <Icons.exploration />
         <% @graded && @progress == 100 -> %>
-          <<<<<<< HEAD <Icons.square_checked /> =======
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            class="fill-[#0caf61] group-[.past-start]:fill-[#89c8aa] dark:group-[.past-start]:fill-[#085c36]"
-          >
-            <path d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z" />
-            <path d="M11.7 16.025L6 10.325L7.425 8.9L11.7 13.175L20.875 4L22.3 5.425L11.7 16.025Z" />
-          </svg>
-          >>>>>>> master
+          <Icons.square_checked />
         <% @graded -> %>
           <Icons.flag />
         <% @progress == 100 -> %>
-          <<<<<<< HEAD <Icons.check progress={1.0} />
+          <Icons.check progress={1.0} />
         <% true -> %>
-          <Icons.bullet /> =======
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="25"
-            height="24"
-            viewBox="0 0 25 24"
-            fill="none"
-            role="completed check icon"
-          >
-            <path
-              d="M10.0496 17.9996L4.34961 12.2996L5.77461 10.8746L10.0496 15.1496L19.2246 5.97461L20.6496 7.39961L10.0496 17.9996Z"
-              class="fill-[#0caf61] group-[.past-start]:fill-[#89c8aa] dark:group-[.past-start]:fill-[#085c36]"
-            />
-          </svg>
-        <% true -> %>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="m-2"
-            width="8"
-            height="8"
-            viewBox="0 0 8 8"
-            fill="none"
-          >
-            <circle
-              cx="4"
-              cy="4"
-              r="4"
-              class="fill-gray-700 dark:fill-white group-[.past-start]:fill-gray-400 dark:group-[.past-start]:fill-gray-700"
-            />
-          </svg>
-          >>>>>>> master
+          <Icons.bullet />
       <% end %>
     </div>
     """

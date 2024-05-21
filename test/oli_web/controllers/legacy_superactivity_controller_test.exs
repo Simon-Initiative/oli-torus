@@ -35,7 +35,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       Activities.list_activity_registrations()
 
-      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+      conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
 
       activity_attempt = Attempts.get_activity_attempt_by(resource_id: activity_id)
 

@@ -40,6 +40,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Resources
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
+  alias OliWeb.Curriculum.Container.ContainerLiveHelpers
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -231,21 +232,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
-    %{container: container, project: project} =
+    %{container: container, project: project, children: children} =
       socket.assigns
 
-    revision = Enum.find(socket.assigns.children, fn r -> r.slug == slug end)
-
-    options_modal_assigns = %{
-      id: "options_#{slug}",
-      redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
-      revision: revision,
-      changeset: Resources.change_revision(revision),
-      title: "#{resource_type_label(revision) |> String.capitalize()} Options"
-    }
+    redirect_url = ContainerLiveHelpers.build_redirect_url(socket, project.slug, container.slug)
 
     {:noreply,
-     assign(socket, options_modal_assigns: options_modal_assigns)
+     assign(socket,
+       options_modal_assigns:
+         ContainerLiveHelpers.build_option_modal_assigns(redirect_url, children, slug)
+     )
      |> push_event("js-exec", %{
        to: "#options-modal-assigns-trigger",
        attr: "data-show_modal"
@@ -263,15 +259,16 @@ defmodule OliWeb.Curriculum.ContainerLive do
       revision
       |> Resources.change_revision(revision_params)
       |> Map.put(:action, :validate)
+      |> to_form()
 
-    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | changeset: changeset})}
+    {:noreply, assign(socket, options_modal_assigns: %{modal_assigns | form: changeset})}
   end
 
   def handle_event("save-options", %{"revision" => revision_params}, socket) do
     %{options_modal_assigns: %{redirect_url: redirect_url, revision: revision}, project: project} =
       socket.assigns
 
-    revision_params = decode_revision_params(revision_params)
+    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
       {:ok, _} ->
@@ -291,17 +288,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   def handle_event("show_move_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project} = socket.assigns
 
-    hierarchy = AuthoringResolver.full_hierarchy(project.slug)
-    node = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == slug end)
-    active = Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == container.slug end)
-
-    modal_assigns = %{
-      id: "move_#{slug}",
-      node: node,
-      hierarchy: hierarchy,
-      from_container: active,
-      active: active
-    }
+    modal_assigns = ContainerLiveHelpers.build_modal_assigns(container.slug, project.slug, slug)
 
     modal = fn assigns ->
       ~H"""
@@ -839,42 +826,5 @@ defmodule OliWeb.Curriculum.ContainerLive do
       {published_resource.resource_id, published_resource.author}
     end)
     |> Enum.into(%{})
-  end
-
-  defp decode_revision_params(revision_params) do
-    revision_params
-    |> maybe_decode_explanation_strategy
-    |> maybe_decode_intro_content
-  end
-
-  defp maybe_decode_explanation_strategy(revision_params) do
-    case revision_params do
-      %{"explanation_strategy" => %{"type" => "none"}} ->
-        Map.put(revision_params, "explanation_strategy", nil)
-
-      _ ->
-        revision_params
-    end
-  end
-
-  defp maybe_decode_intro_content(revision_params) do
-    case revision_params do
-      %{"intro_content" => intro_content} when intro_content in ["", nil] ->
-        Map.put(
-          revision_params,
-          "intro_content",
-          %{}
-        )
-
-      %{"intro_content" => intro_content} ->
-        Map.put(
-          revision_params,
-          "intro_content",
-          Jason.decode!(intro_content)
-        )
-
-      _ ->
-        revision_params
-    end
   end
 end

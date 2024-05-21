@@ -28,10 +28,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                live(conn, instructor_dashboard_path(section.slug, :overview))
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Freports"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, instructor_dashboard_path(section.slug, :reports))
+               live(conn, instructor_dashboard_path(section.slug, :insights))
 
       redirect_path =
         "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fmanage"
@@ -60,7 +60,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                live(conn, instructor_dashboard_path(section.slug, :overview))
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, instructor_dashboard_path(section.slug, :reports))
+               live(conn, instructor_dashboard_path(section.slug, :insights))
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :manage))
@@ -80,13 +80,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
                live(conn, instructor_dashboard_path(section.slug, :overview))
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
-               live(conn, instructor_dashboard_path(section.slug, :reports))
+               live(conn, instructor_dashboard_path(section.slug, :insights))
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :manage))
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :discussions))
+    end
+
+    test "ensures instructors have access to the top navigation menu bar on vertical scroll", %{
+      conn: conn,
+      instructor: instructor,
+      section: section
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :overview))
+
+      assert view
+             |> has_element?(".bg-delivery-instructor-dashboard-header.sticky.top-0.z-50")
     end
 
     test "if enrolled, can access the overview page with the course content tab as the default tab",
@@ -100,30 +112,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :overview))
 
       assert has_element?(view, "a.active", "Course Content")
-      assert has_element?(view, "a", "Scored Activities")
-      refute has_element?(view, "a.active", "Scored Activities")
+      assert has_element?(view, "a", "Students")
+      refute has_element?(view, "a.active", "Students")
+      assert has_element?(view, "a", "Quiz Scores")
+      refute has_element?(view, "a.active", "Quiz Scores")
       assert has_element?(view, "a", "Recommended Actions")
       refute has_element?(view, "a.active", "Recommended Actions")
     end
 
-    test "if enrolled, can access the reports page with the content tab as the default tab", %{
+    test "if enrolled, can access the insights page with the content tab as the default tab", %{
       instructor: instructor,
       section: section,
       conn: conn
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :reports))
+      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :insights))
 
       assert has_element?(view, "a.active", "Content")
-      assert has_element?(view, "a", "Students")
-      refute has_element?(view, "a.active", "Students")
       assert has_element?(view, "a", "Learning Objectives")
       refute has_element?(view, "a.active", "Learning Objectives")
-      assert has_element?(view, "a", "Quiz Scores")
-      refute has_element?(view, "a.active", "Quiz Scores")
-      assert has_element?(view, "a", "Course Discussion")
-      refute has_element?(view, "a.active", "Course Discussion")
+      assert has_element?(view, "a", "Scored Activities")
+      refute has_element?(view, "a.active", "Scored Activities")
+      assert has_element?(view, "a", "Practice Activities")
+      refute has_element?(view, "a.active", "Practice Activities")
+      assert has_element?(view, "a", "Surveys")
+      refute has_element?(view, "a.active", "Surveys")
     end
 
     test "if enrolled, can access the mange page", %{
@@ -165,7 +179,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
             OliWeb.Endpoint,
             OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
             section.slug,
-            :reports,
+            :insights,
             "invalid_tab",
             %{}
           )

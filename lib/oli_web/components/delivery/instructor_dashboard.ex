@@ -169,7 +169,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def header(assigns) do
     ~H"""
-    <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
+    <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600 sticky top-0 z-50">
       <div class="container mx-auto flex flex-row">
         <div class="flex items-center">
           <a
@@ -188,10 +188,10 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             Overview
           </.header_link>
           <.header_link
-            path={header_link_path(@section, :reports, @preview_mode)}
-            active={is_active?(@view, :reports)}
+            path={header_link_path(@section, :insights, @preview_mode)}
+            active={is_active?(@view, :insights)}
           >
-            Reports
+            Insights
           </.header_link>
           <.header_link
             path={header_link_path(@section, :manage, @preview_mode)}

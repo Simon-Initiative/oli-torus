@@ -64,6 +64,10 @@ config :oli,
   always_use_persistent_login_sessions: false,
   log_incomplete_requests: true
 
+config :oli, :xapi_upload_pipeline,
+  producer_module: Oli.Analytics.XAPI.QueueProducer,
+  uploader_module: Oli.Analytics.XAPI.Uploader
+
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
     nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator
@@ -157,7 +161,6 @@ config :oli, Oban,
     default: 10,
     snapshots: 20,
     embeddings: 1,
-    s3_uploader: 20,
     selections: 2,
     updates: 10,
     grades: 30,

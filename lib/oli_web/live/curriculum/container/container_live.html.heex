@@ -17,12 +17,12 @@
       id="modal_content"
       redirect_url={@options_modal_assigns.redirect_url}
       revision={@options_modal_assigns.revision}
-      changeset={@options_modal_assigns.changeset}
       project={@project}
       project_hierarchy={@project_hierarchy}
       validate={JS.push("validate-options")}
       submit={JS.push("save-options")}
       cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+      form={@options_modal_assigns.form}
     />
   <% end %>
   <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
