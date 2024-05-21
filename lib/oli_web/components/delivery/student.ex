@@ -204,7 +204,7 @@ defmodule OliWeb.Components.Delivery.Student do
         </div>
         <.time_remaining
           :if={has_end_date?(@effective_settings)}
-          effective_settings={@effective_settings}
+          end_date={@effective_settings.end_date}
         />
       </div>
       <div class="flex flex-row justify-end">
@@ -283,9 +283,9 @@ defmodule OliWeb.Components.Delivery.Student do
     end
   end
 
-  attr :effective_settings, :map, required: true
+  attr :end_date, :string, required: true
 
-  defp time_remaining(%{effective_settings: %{end_date: nil}} = assigns) do
+  defp time_remaining(%{end_date: nil} = assigns) do
     ~H"""
 
     """
@@ -297,7 +297,7 @@ defmodule OliWeb.Components.Delivery.Student do
       <span class="text-xs text-gray-500 mr-1">
         Time Remaining:
       </span>
-      <%= format_time_remaining(@effective_settings) %>
+      <%= format_time_remaining(@end_date) %>
     </div>
     """
   end
@@ -306,24 +306,24 @@ defmodule OliWeb.Components.Delivery.Student do
   Calculates the time remaining from the current moment until a specified end date and formats it as "HH:MM:SS".
 
   ## Parameters
-  - `effective_settings`: A map containing the `end_date` as a `DateTime`.
+  - `end_date`: The resource `end_date` as a `DateTime`.
 
   ## Returns
   - A string representing the formatted time remaining as "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
 
   ## Examples
-      iex> format_time_remaining(%{end_date: Timex.shift(Timex.now(), seconds: 3661)})
+      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 3661))
       "01:01:01"
   """
 
-  @spec format_time_remaining(map()) :: String.t()
-  def format_time_remaining(effective_settings) do
+  @spec format_time_remaining(DateTime.t()) :: String.t()
+  def format_time_remaining(end_date) do
     # Get the current time
     current_time = Oli.DateTime.utc_now()
 
     # Calculate the difference in seconds, clamp negative values to 0
     diff_seconds =
-      Timex.diff(effective_settings.end_date, current_time, :seconds)
+      Timex.diff(end_date, current_time, :seconds)
       |> max(0)
 
     # Calculate hours, minutes and seconds
@@ -368,4 +368,88 @@ defmodule OliWeb.Components.Delivery.Student do
 
   defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
   defp parse_minutes(minutes), do: minutes
+
+  attr :type, :atom, required: true
+  attr :long, :boolean, default: true
+
+  def resource_type(%{type: :exploration} = assigns) do
+    ~H"""
+    <div role="resource_type" class="justify-start items-start flex">
+      <div class="px-3 py-1 text-fuchsia-700 dark:text-[#EC8CFF] bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+        <div class="w-5 h-5 relative opacity-80">
+          <div class="w-3 h-3.5 absolute">
+            <Icons.world />
+          </div>
+        </div>
+        <div :if={@long} class="pr-1 justify-center items-center gap-2.5 flex">
+          <div class="text-sm font-semibold tracking-tight">
+            Exploration
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def resource_type(%{type: :assignment} = assigns) do
+    ~H"""
+    <div role="resource_type" class="justify-start items-start flex">
+      <div class="px-3 py-1 text-yellow-700 dark:text-[#FF8F40] bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+        <div class="w-5 h-5 relative opacity-80">
+          <div class="w-3 h-3.5 absolute">
+            <Icons.transparent_flag />
+          </div>
+        </div>
+        <div :if={@long} class="pr-1 justify-center items-center gap-2.5 flex">
+          <div class="text-sm font-semibold tracking-tight">
+            Assignment
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def resource_type(%{type: :practice} = assigns) do
+    ~H"""
+    <div role="resource_type" class="justify-start items-start flex">
+      <div class="px-3 py-1 text-blue-700 dark:text-[#8CBCFF] bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+        <div class="w-5 h-5 relative opacity-80">
+          <div class="w-3 h-3.5 absolute">
+            <Icons.clipboard />
+          </div>
+        </div>
+        <div :if={@long} class="pr-1 justify-center items-center gap-2.5 flex">
+          <div class="text-sm font-semibold tracking-tight">
+            Practice
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def resource_type(%{type: :lesson} = assigns) do
+    ~H"""
+    <div role="resource_type" class="justify-start items-start flex">
+      <div class="px-3 py-1 text-teal-700 dark:text-[#6DD1DF] bg-[#3E7981]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+        <div class="w-5 h-5 relative opacity-80">
+          <div class="w-3 h-3.5 absolute">
+            <Icons.book />
+          </div>
+        </div>
+        <div :if={@long} class="pr-1 opacity-80 justify-center items-center gap-2.5 flex">
+          <div class="text-sm font-semibold tracking-tight">
+            Lesson
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def type_from_resource(%{type: :exploration}), do: :exploration
+  def type_from_resource(%{graded: true}), do: :assignment
+  def type_from_resource(%{graded: false}), do: :practice
+  def type_from_resource(_), do: :lesson
 end

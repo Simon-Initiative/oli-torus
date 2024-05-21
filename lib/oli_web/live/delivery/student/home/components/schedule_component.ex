@@ -103,20 +103,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             </div>
           </div>
         </div>
-        <div role="resource_type" class="justify-start items-start flex">
-          <div class="px-3 py-1 text-teal-700 dark:text-[#6DD1DF] bg-[#3E7981]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
-            <div class="w-5 h-5 relative opacity-80">
-              <div class="w-3 h-3.5 absolute">
-                <Icons.book />
-              </div>
-            </div>
-            <div class="pr-1 opacity-80 justify-center items-center gap-2.5 flex">
-              <div class="text-sm font-semibold tracking-tight">
-                Lesson
-              </div>
-            </div>
-          </div>
-        </div>
+        <Student.resource_type type={:lesson} />
       </div>
 
       <.schedule_item_details
@@ -174,7 +161,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               </div>
             </div>
           </div>
-          <.resource_type resource={@resource} />
+          <Student.resource_type type={Student.type_from_resource(@resource)} />
         </div>
 
         <.schedule_item_details
@@ -204,63 +191,6 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       "relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:bg-[#FF8F40] before:z-10"
 
   defp maybe_assignment_left_bar(_), do: ""
-
-  defp resource_type(%{resource: %{purpose: :application}} = assigns) do
-    ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-fuchsia-700 dark:text-[#EC8CFF] bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
-        <div class="w-5 h-5 relative opacity-80">
-          <div class="w-3 h-3.5 absolute">
-            <Icons.world />
-          </div>
-        </div>
-        <div class="pr-1 justify-center items-center gap-2.5 flex">
-          <div class="text-sm font-semibold tracking-tight">
-            Exploration
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  defp resource_type(%{resource: %{graded: true}} = assigns) do
-    ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-yellow-700 dark:text-[#FF8F40] bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
-        <div class="w-5 h-5 relative opacity-80">
-          <div class="w-3 h-3.5 absolute">
-            <Icons.transparent_flag />
-          </div>
-        </div>
-        <div class="pr-1 justify-center items-center gap-2.5 flex">
-          <div class="text-sm font-semibold tracking-tight">
-            Assignment
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  defp resource_type(%{resource: %{graded: false}} = assigns) do
-    ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-blue-700 dark:text-[#8CBCFF] bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
-        <div class="w-5 h-5 relative opacity-80">
-          <div class="w-3 h-3.5 absolute">
-            <Icons.clipboard />
-          </div>
-        </div>
-        <div class="pr-1 justify-center items-center gap-2.5 flex">
-          <div class="text-sm font-semibold tracking-tight">
-            Practice
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
 
   attr :item_id, :string, required: true
   attr :item_type, :atom, required: true
@@ -292,13 +222,13 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
             <div class="w-4 h-4 relative"><Icons.star /></div>
             <div class="text-sm font-semibold tracking-tight">
-              <%= parse_score(@resource.raw_avg_score[:score]) %>
+              <%= Utils.parse_score(@resource.raw_avg_score[:score]) %>
             </div>
             <div class="text-sm font-semibold tracking-widest">
               /
             </div>
             <div class="text-sm font-semibold tracking-tight">
-              <%= parse_score(@resource.raw_avg_score[:out_of]) %>
+              <%= Utils.parse_score(@resource.raw_avg_score[:out_of]) %>
             </div>
           </div>
         </div>
@@ -321,7 +251,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               Time Remaining:
             </div>
             <div class="dark:text-white text-xs font-semibold">
-              <%= Student.format_time_remaining(@resource.effective_settings) %>
+              <%= Student.format_time_remaining(@resource.effective_settings.end_date) %>
             </div>
           </div>
         </div>
@@ -362,7 +292,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             <%= if @completed do %>
               Completed
             <% else %>
-              <%= days_difference(hd(@resources)) %>
+              <%= Utils.days_difference(hd(@resources).end_date) %>
             <% end %>
           </div>
           <Icons.check :if={@completed} progress={1.0} />
@@ -461,27 +391,6 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp max_attempts(%{max_attempts: 0}), do: "∞"
   defp max_attempts(%{max_attempts: max_attempts}), do: max_attempts
 
-  defp days_difference(resource) do
-    days = resource.end_date |> DateTime.to_date() |> Timex.diff(Oli.Date.utc_today(), :days)
-
-    case days do
-      0 ->
-        "Due Today"
-
-      1 ->
-        "1 day left"
-
-      -1 ->
-        "Past Due"
-
-      days when days < 0 ->
-        "Past Due by #{abs(days)} days"
-
-      days ->
-        "#{days} days left"
-    end
-  end
-
   defp this_or_next_week(week_range) do
     {week_start, _} = week_range
 
@@ -517,16 +426,6 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     case effective_settings.end_date do
       nil -> false
       _ -> true
-    end
-  end
-
-  defp parse_score(score) do
-    score = Float.round(score, 2)
-
-    if trunc(score) == score do
-      trunc(score)
-    else
-      score
     end
   end
 end
