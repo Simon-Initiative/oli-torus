@@ -48,6 +48,7 @@ npm-debug.log
 
 # Since we are building assets from assets/ we ignore priv/static
 /priv/static/
+/test_bundles/
 
 # Ignore generated flame graph stack files
 /_flame_graph_stacks/

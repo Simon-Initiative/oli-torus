@@ -425,4 +425,15 @@ defmodule Oli.Resources do
     )
     |> Repo.one()
   end
+
+  @doc """
+  Returns a list of revisions for the given resource ids.
+  """
+  def get_revisions_by_resource_id(resource_ids) do
+    from(r in Revision,
+      where: r.resource_id in ^resource_ids,
+      select: r
+    )
+    |> Repo.all()
+  end
 end

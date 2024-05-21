@@ -916,5 +916,106 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :proficiency, :string
+
+  def proficiency(%{proficiency: "Not enough data"} = assigns) do
+    ~H"""
+    <svg
+      role="no data proficiency icon"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        class="dark:stroke-[#747474] stroke-gray-700"
+        d="M8 8C8 7.20435 8.36875 6.44129 9.02513 5.87868C9.6815 5.31607 10.5717 5 11.5 5H12.5C13.4283 5 14.3185 5.31607 14.9749 5.87868C15.6313 6.44129 16 7.20435 16 8C16.0368 8.64925 15.8617 9.2929 15.501 9.83398C15.1402 10.3751 14.6135 10.7843 14 11C13.3865 11.2876 12.8598 11.8333 12.499 12.5547C12.1383 13.2761 11.9632 14.1343 12 15M12 19V19.01"
+        stroke="#747474"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def proficiency(%{proficiency: "Low"} = assigns) do
+    ~H"""
+    <svg
+      role="beginning proficiency icon"
+      width="19"
+      height="20"
+      viewBox="0 0 19 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        class="dark:stroke-[#9B6DFF] stroke-[#7C40FF]"
+        x="1"
+        y="1"
+        width="16.9474"
+        height="18"
+        rx="2"
+        stroke-width="2"
+      />
+      <path
+        class="dark:fill-[#9B6DFF] fill-[#7C40FF]"
+        d="M0 13.334H18.3333V17.0007C18.3333 18.6575 16.9902 20.0007 15.3333 20.0007H3C1.34315 20.0007 0 18.6575 0 17.0007V13.334Z"
+      />
+    </svg>
+    """
+  end
+
+  def proficiency(%{proficiency: "Medium"} = assigns) do
+    ~H"""
+    <svg
+      role="growing proficiency icon"
+      width="19"
+      height="20"
+      viewBox="0 0 19 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        class="dark:stroke-[#7C40FF] stroke-[#651FFF]"
+        x="1"
+        y="1"
+        width="16.9474"
+        height="18"
+        rx="2"
+        stroke-width="2"
+      />
+      <path
+        d="M0 7.5H18.3333V17C18.3333 18.6569 16.9902 20 15.3333 20H3C1.34315 20 0 18.6569 0 17V7.5Z"
+        class="dark:fill-[#7C40FF] fill-[#651FFF]"
+      />
+    </svg>
+    """
+  end
+
+  def proficiency(%{proficiency: "High"} = assigns) do
+    ~H"""
+    <svg
+      role="establishing proficiency icon"
+      width="19"
+      height="21"
+      viewBox="0 0 19 21"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect
+        class="dark:stroke-[#651FFF] dark:fill-[#651FFF] stroke-[#5104f7] fill-[#5104f7]"
+        x="1"
+        y="1.5"
+        width="16.9474"
+        height="18"
+        rx="2"
+        stroke-width="2"
+      />
+    </svg>
+    """
+  end
+
   ########## Studend Delivery Icons (end) ##########
 end
