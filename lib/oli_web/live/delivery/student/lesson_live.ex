@@ -9,8 +9,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.{Sections, Settings}
+  alias Oli.Resources
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Common.FormatDateTime
@@ -27,7 +29,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
     %{current_user: current_user, section: section} = socket.assigns
-
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
@@ -49,7 +50,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
      socket
      |> assign_html_and_scripts()
      |> annotations_assigns(socket.assigns.page_context, is_instructor)
-     |> assign(is_instructor: is_instructor)}
+     |> assign(is_instructor: is_instructor)
+     |> assign_objectives()}
   end
 
   def mount(
@@ -62,7 +64,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> assign(begin_attempt?: false)}
+     |> assign(begin_attempt?: false)
+     |> assign_objectives()}
   end
 
   def mount(
@@ -93,7 +96,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_scripts()
-     |> assign(begin_attempt?: false)}
+     |> assign(begin_attempt?: false)
+     |> assign_objectives()}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
@@ -633,6 +637,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           page_context={@page_context}
           ctx={@ctx}
           index={@current_page["index"]}
+          objectives={@objectives}
           container_label={Utils.get_container_label(@current_page["id"], @section)}
         />
       </:header>
@@ -695,6 +700,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
+            objectives={@objectives}
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
@@ -726,6 +732,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
+            objectives={@objectives}
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
@@ -794,6 +801,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
+            objectives={@objectives}
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
@@ -847,14 +855,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <.password_attempt_modal />
 
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
-      <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
+      <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}
           ctx={@ctx}
+          objectives={@objectives}
           index={@current_page["index"]}
           container_label={Utils.get_container_label(@current_page["id"], @section)}
         />
-        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200">
+        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mb-10">
         </div>
         <.attempts_summary
           page_context={@page_context}
@@ -1156,6 +1165,40 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     assign(socket,
       html: Utils.build_html(socket.assigns, :delivery)
     )
+  end
+
+  defp assign_objectives(socket) do
+    %{page_context: %{page: page}, current_user: current_user, section: section} =
+      socket.assigns
+
+    objectives =
+      case page.objectives["attached"] do
+        objective_ids when objective_ids in [nil, []] ->
+          []
+
+        objective_resource_ids ->
+          student_proficiency_per_learning_objective =
+            Metrics.proficiency_for_student_per_learning_objective(
+              section,
+              current_user.id
+            )
+
+          Resources.get_revisions_by_resource_id(objective_resource_ids)
+          |> Enum.map(fn rev ->
+            %{
+              resource_id: rev.resource_id,
+              title: rev.title,
+              proficiency:
+                Map.get(
+                  student_proficiency_per_learning_objective,
+                  rev.resource_id,
+                  "Not enough data"
+                )
+            }
+          end)
+      end
+
+    assign(socket, objectives: objectives)
   end
 
   defp get_max_attempts(%{effective_settings: %{max_attempts: 0}} = _page_context),
