@@ -22,17 +22,20 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
+    %{resource_id: root_curriculum_resource_id} =
+      DeliveryResolver.root_container(section.slug)
+
     if connected?(socket) do
       Phoenix.PubSub.subscribe(
         Oli.PubSub,
         "collab_space_discussion_#{socket.assigns.section.slug}"
       )
 
-      # clear_unread_replies(current_user.id, section.id)
+      Collaboration.mark_course_discussions_and_replies_read(
+        current_user.id,
+        root_curriculum_resource_id
+      )
     end
-
-    %{resource_id: root_curriculum_resource_id} =
-      DeliveryResolver.root_container(section.slug)
 
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(section.root_section_resource_id)

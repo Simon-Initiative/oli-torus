@@ -9,7 +9,9 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
   def on_mount(:default, _params, _session, socket) do
     %{current_user: current_user, section: section} = socket.assigns
 
-    {:cont, socket |> maybe_load_discussions_badge(section, current_user)}
+    {:cont,
+     assign(socket, notification_badges: %{})
+     |> maybe_load_discussions_badge(section, current_user)}
   end
 
   defp maybe_load_discussions_badge(socket, _, user) when is_nil(user), do: socket

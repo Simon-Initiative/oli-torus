@@ -582,12 +582,12 @@ defmodule Oli.Resources.Collaboration do
           [
             {sort_order,
              dynamic(
-               [_post, _sr, _spp, _pr, _rev, _user, replies, read_replies, urp, _reactions],
+               [post, _sr, _spp, _pr, _rev, _user, replies, read_replies, urp, _reactions],
                fragment(
                  "case when ? > ? or ? then 1 else 0 end",
                  coalesce(replies.count, 0),
                  coalesce(read_replies.count, 0),
-                 is_nil(urp.id)
+                 is_nil(urp.id) and post.user_id != ^user_id
                )
              )},
             {sort_order,
@@ -636,7 +636,7 @@ defmodule Oli.Resources.Collaboration do
             post
             | replies_count: coalesce(replies.count, 0),
               read_replies_count: coalesce(read_replies.count, 0),
-              is_read: not is_nil(urp.id)
+              is_read: not (is_nil(urp.id) and post.user_id != ^user_id)
           },
           total_count: over(count(post.id))
         }
@@ -1468,5 +1468,34 @@ defmodule Oli.Resources.Collaboration do
 
   def delete_reaction(%UserReactionPost{} = reaction) do
     Repo.delete(reaction)
+  end
+
+  def mark_course_discussions_and_replies_read(user_id, root_curriculum_resource_id) do
+    now = DateTime.utc_now(:second)
+
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id and urp.user_id == ^user_id,
+      where:
+        is_nil(urp.id) and
+          p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
+      select: p.id
+    )
+    |> Repo.all()
+    |> Enum.map(fn post_id ->
+      %{
+        post_id: post_id,
+        user_id: user_id,
+        inserted_at: now,
+        updated_at: now
+      }
+    end)
+    |> then(fn posts ->
+      Repo.insert_all(UserReadPost, posts,
+        on_conflict: {:replace, [:updated_at]},
+        conflict_target: [:post_id, :user_id]
+      )
+    end)
   end
 end
