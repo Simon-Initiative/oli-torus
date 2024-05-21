@@ -87,7 +87,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       intro_message={@intro_message}
     />
-    <div class="w-full h-full relative bg-stone-950 dark:text-white">
+    <div
+      id="schedule-view"
+      class="w-full h-full relative bg-stone-950 dark:text-white"
+      phx-hook="Countdown"
+    >
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
         <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
           <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
@@ -510,7 +514,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="opacity-50 text-white text-xs font-normal">
             Time Remaining:
           </div>
-          <div class="text-orange-400 text-xs font-normal">
+          <div
+            role="countdown"
+            class={[
+              if(@lesson.purpose == :application, do: "text-[#EC8CFF]", else: "text-[#FF8F40]"),
+              "text-xs font-normal"
+            ]}
+          >
             <%= Student.format_time_remaining(@lesson.end_date) %>
           </div>
         </div>
@@ -541,7 +551,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="opacity-50 text-white text-xs font-normal">
           Time Remaining:
         </div>
-        <div class="text-orange-400 text-xs font-normal">
+        <div role="countdown" class="text-[#8CBCFF] text-xs font-normal">
           <%= Student.format_time_remaining(@lesson.end_date) %>
         </div>
       </div>

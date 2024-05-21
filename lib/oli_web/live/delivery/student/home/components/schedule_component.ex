@@ -250,7 +250,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             <div class="dark:text-white text-opacity-60 text-xs font-semibold ">
               Time Remaining:
             </div>
-            <div class="dark:text-white text-xs font-semibold">
+            <div role="countdown" class="dark:text-white text-xs font-semibold">
               <%= Student.format_time_remaining(@resource.effective_settings.end_date) %>
             </div>
           </div>
