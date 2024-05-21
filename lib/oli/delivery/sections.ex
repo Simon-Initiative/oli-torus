@@ -2336,7 +2336,7 @@ defmodule Oli.Delivery.Sections do
       create_nonstructural_section_resources(section.id, [publication_id],
         skip_resource_ids: processed_ids,
         required_survey_resource_id: survey_id,
-        list_children_activity_ids: []
+        reference_activity_ids: []
       )
 
       root_section_resource_id = section_resources_by_resource_id[root_resource_id].id
@@ -2824,13 +2824,13 @@ defmodule Oli.Delivery.Sections do
         |> select([p], p.required_survey_resource_id)
         |> Repo.one()
 
-      list_children_activity_ids = build_list_children_activity_ids(hierarchy.children)
+      reference_activity_ids = build_reference_activity_ids(hierarchy.children)
 
       if length(processed_resource_ids) != 1 do
         create_nonstructural_section_resources(section_id, publication_ids,
           skip_resource_ids: processed_resource_ids,
           required_survey_resource_id: survey_id,
-          list_children_activity_ids: list_children_activity_ids
+          reference_activity_ids: reference_activity_ids
         )
       end
 
@@ -2844,9 +2844,9 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  defp build_list_children_activity_ids([]), do: []
+  defp build_reference_activity_ids([]), do: []
 
-  defp build_list_children_activity_ids(children_activities) do
+  defp build_reference_activity_ids(children_activities) do
     tuple_of_children_activities =
       process_activity_ids(children_activities)
 
@@ -3308,8 +3308,6 @@ defmodule Oli.Delivery.Sections do
         {:ok}
       end)
 
-    IO.inspect(result, label: "diferencesss")
-
     Logger.info(
       "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
     )
@@ -3695,12 +3693,11 @@ defmodule Oli.Delivery.Sections do
   defp create_nonstructural_section_resources(section_id, publication_ids,
          skip_resource_ids: skip_resource_ids,
          required_survey_resource_id: required_survey_resource_id,
-         list_children_activity_ids: list_children_activity_ids
+         reference_activity_ids: reference_activity_ids
        ) do
     published_resources_by_resource_id =
-      build_published_resources_by_resource_id(publication_ids, list_children_activity_ids)
+      build_published_resources_by_resource_id(publication_ids, reference_activity_ids)
 
-    IO.inspect(published_resources_by_resource_id, label: "wetree")
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     # determine which pages are unreachable from the hierarchy, taking into account
