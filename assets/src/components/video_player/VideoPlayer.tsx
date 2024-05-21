@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useRef } from 'react';
+import React, { ReactNode, useCallback, useRef, useState, useEffect } from 'react';
 import {
   BigPlayButton,
   ControlBar,
@@ -10,6 +10,7 @@ import {
   ProgressControl,
   TimeDivider,
 } from 'video-react';
+import * as XAPI from 'data/persistence/xapi';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import * as ContentModel from '../../data/content/model/elements/types';
 import { useCommandTarget } from '../editing/elements/command_button/useCommandTarget';
@@ -21,6 +22,12 @@ import { PlayButton } from './VideoPlayButton';
 
 const startEndCueRegex = /startcuepoint=([0-9.]+);endcuepoint=([0-9.]+)/;
 const startCueRegex = /startcuepoint=([0-9.]+)/;
+
+export const formatSegments = (segments: { start: number; end: number | null }[]) => {
+  return segments.map((segment) => {
+    return `${segment.start}[.]${segment.end || ''}`;
+  }).join('[,]');
+};
 
 export const parseVideoPlayCommand = (command: string) => {
   if (startEndCueRegex.test(command)) {
@@ -53,18 +60,44 @@ interface VideoInterface {
   seek: (time: number) => void;
 }
 
+const calculateProgress = (segments: { start: number; end: number | null }[], duration: number) => {
+  let total = 0;
+  segments.forEach((segment) => {
+    if (segment.end) {
+      total += segment.end - segment.start;
+    }
+  });
+
+  return total / duration;
+};
+
 export const VideoPlayer: React.FC<{
   video: ContentModel.Video;
+  pageAttemptGuid: string;
   pointMarkerContext?: PointMarkerContext;
   children?: ReactNode;
-}> = React.memo(({ video, pointMarkerContext, children }) => {
+}> = React.memo(({ video, pointMarkerContext, children, pageAttemptGuid }) => {
   const playerRef = useRef(null);
   const pauseAtPosition = useRef(-1);
+  const [seekFrom, setSeekFrom] = useState(0);
+  const [segments, setSegments] = useState([] as { start: number; end: number | null }[]);
+  const segmentsRef = useRef(segments);
+  const seekFromRef = useRef(seekFrom);
+
   const sizeAttributes = isValidSize(video)
     ? { width: video.width, height: video.height, fluid: false }
     : { fluid: true };
 
   const hasCaptions = video.captions && video.captions.length > 0;
+
+  // Update segmentsRef whenever segments change
+  useEffect(() => {
+    segmentsRef.current = segments;
+  }, [segments]);
+
+  useEffect(() => {
+    seekFromRef.current = seekFrom;
+  }, [seekFrom]);
 
   const onPlayer = useCallback((player) => {
     playerRef.current = player;
@@ -73,7 +106,8 @@ export const VideoPlayer: React.FC<{
       return;
     }
     // This handles stopping at the correct point if a cue-point command previously came in with an end-timestamp set.
-    player.subscribeToStateChange((state: PlayerState) => {
+    player.subscribeToStateChange((state: PlayerState, prev: PlayerState) => {
+
       if (
         pauseAtPosition.current > 0 &&
         state.hasStarted &&
@@ -81,6 +115,106 @@ export const VideoPlayer: React.FC<{
       ) {
         pauseAtPosition.current = -1;
         player.pause();
+      }
+
+      if (state.seekingTime !== 0 && prev.seekingTime === 0) {
+
+        const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
+
+        if (lastSegment) {
+          lastSegment.end = state.seekingTime;
+          segmentsRef.current[segmentsRef.current.length - 1] = lastSegment;
+          setSegments(segmentsRef.current);
+        }
+
+        setSeekFrom(prev.currentTime);
+
+      } else if (!state.seeking && prev.seeking) {
+        const segment = {start: state.currentTime, end: null};
+        setSegments([...segmentsRef.current, segment]);
+
+        XAPI.emit_delivery({
+          type: 'video_seeked',
+          category: 'video',
+          event_type: 'seeked',
+          page_attempt_guid: pageAttemptGuid,
+          video_url: state.currentSrc,
+          video_title: state.currentSrc,
+          video_seek_to: state.currentTime,
+          video_seek_from: seekFromRef.current,
+          content_element_id: video.id,
+        } as XAPI.VideoSeekedEvent)
+
+      } else if (state.ended && !prev.ended) {
+
+        const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
+        if (lastSegment) {
+          lastSegment.end = state.currentTime;
+        }
+        const segments = segmentsRef.current;
+        segments[segments.length - 1] = lastSegment;
+
+        const progress = calculateProgress(segments, state.duration);
+
+        // Emit completed event
+        XAPI.emit_delivery({
+          type: 'video_completed',
+          category: 'video',
+          event_type: 'completed',
+          page_attempt_guid: pageAttemptGuid,
+          video_url: state.currentSrc,
+          video_title: state.currentSrc,
+          video_length: state.duration,
+          video_played_segments: formatSegments(segments),
+          video_progress: progress,
+          video_time: state.currentTime,
+          content_element_id: video.id,
+        } as XAPI.VideoCompletedEvent)
+      } else if (state.paused && !prev.paused) {
+
+        const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
+        let segmentsStr = "";
+
+        if (lastSegment) {
+          lastSegment.end = state.currentTime;
+          const segments = segmentsRef.current;
+          segments[segments.length - 1] = lastSegment;
+          setSegments(segments);
+          segmentsStr = formatSegments(segments);
+        }
+
+        // Emit paused event
+        XAPI.emit_delivery({
+          type: 'video_paused',
+          category: 'video',
+          event_type: 'paused',
+          page_attempt_guid: pageAttemptGuid,
+          video_url: state.currentSrc,
+          video_title: state.currentSrc,
+          video_length: state.duration,
+          video_played_segments: segmentsStr,
+          video_progress: state.duration / state.currentTime,
+          video_time: state.currentTime,
+          content_element_id: video.id,
+        } as XAPI.VideoPausedEvent)
+
+      } else if (!state.paused && prev.paused) {
+
+        const segment = {start: state.currentTime, end: null};
+        setSegments([...segmentsRef.current, segment]);
+
+        // Emit played event
+        XAPI.emit_delivery({
+          type: 'video_played',
+          category: 'video',
+          event_type: 'played',
+          page_attempt_guid: pageAttemptGuid,
+          video_url: state.currentSrc,
+          video_title: state.currentSrc,
+          video_length: state.duration,
+          video_play_time: state.currentTime,
+          content_element_id: video.id,
+        } as XAPI.VideoPlayedEvent)
       }
     });
   }, []);
