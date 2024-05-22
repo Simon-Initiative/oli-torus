@@ -492,7 +492,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
           <.link
             href={
-              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+              resource_navigation_url(
+                @previous_page,
+                @section_slug,
+                assigns[:request_path],
+                assigns[:selected_view]
+              )
             }
             class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
           >
@@ -514,7 +519,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
           <.link
-            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            href={
+              resource_navigation_url(
+                @next_page,
+                @section_slug,
+                assigns[:request_path],
+                assigns[:selected_view]
+              )
+            }
             class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
           >
             <.right_arrow />
