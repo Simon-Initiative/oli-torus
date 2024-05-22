@@ -28,6 +28,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     latest_lessons = Sections.get_last_completed_or_started_pages(section, current_user_id, 3)
     upcoming_lessons = Sections.get_nearest_upcoming_lessons(section, current_user_id, 3)
 
+    page_ids = Enum.map(upcoming_lessons ++ latest_lessons, & &1.resource_id)
+    containers_per_page = build_containers_per_page(section.slug, page_ids)
+
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Enum.map(
         [
@@ -67,6 +70,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
        nearest_upcoming_lesson: nearest_upcoming_lesson,
        upcoming_lessons: upcoming_lessons,
        latest_lessons: latest_lessons,
+       containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
        intro_message: intro_message,
        assignments_tab: :upcoming
@@ -125,6 +129,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             latest_lessons={@latest_lessons}
             section_slug={@section_slug}
             assignments_tab={@assignments_tab}
+            containers_per_page={@containers_per_page}
           />
         </div>
 
@@ -354,6 +359,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:latest_lessons, :list, default: [])
   attr(:section_slug, :string, required: true)
   attr(:assignments_tab, :atom, required: true)
+  attr(:containers_per_page, :map, required: true)
 
   defp assignments(assigns) do
     lessons =
@@ -400,6 +406,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               :for={lesson <- @lessons}
               upcoming={@assignments_tab == :upcoming}
               lesson={lesson}
+              containers={@containers_per_page[lesson.resource_id] || []}
               section_slug={@section_slug}
             />
           <% end %>
@@ -421,12 +428,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:lesson, :map, required: true)
   attr(:upcoming, :boolean, required: true)
   attr(:section_slug, :string, required: true)
+  attr(:containers, :list, required: true)
 
   defp lesson_card(assigns) do
     assigns =
       Map.merge(assigns, %{
         lesson_type: Student.type_from_resource(assigns.lesson),
-        completed: !assigns.upcoming and completed_lesson?(assigns.lesson)
+        completed: !assigns.upcoming and completed_lesson?(assigns.lesson),
+        unit: Enum.find(assigns.containers, fn c -> c["numbering_level"] == 1 end),
+        module: Enum.find(assigns.containers, fn c -> c["numbering_level"] == 2 end)
       })
 
     ~H"""
@@ -447,13 +457,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
             <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
               <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                Unit 4
+                <%= @unit["label"] %>
               </div>
 
-              <div class="flex items-center gap-2">
+              <div :if={@module} class="flex items-center gap-2">
                 <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
                 <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
-                  Module 11
+                  <%= @module["label"] %>
                 </div>
               </div>
             </div>
@@ -685,4 +695,22 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts
+
+  defp build_containers_per_page(section_slug, page_ids) do
+    containers_label_map =
+      Sections.get_ordered_container_labels(section_slug, short_label: true)
+      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
+        Map.put(acc, container_id, label)
+      end)
+
+    add_label_to_containers =
+      &Enum.map(&1, fn container ->
+        Map.put(container, "label", containers_label_map[container["id"]])
+      end)
+
+    Sections.get_ordered_containers_per_page(section_slug, page_ids)
+    |> Enum.reduce(%{}, fn elem, acc ->
+      Map.put(acc, elem[:page_id], add_label_to_containers.(elem[:containers]))
+    end)
+  end
 end

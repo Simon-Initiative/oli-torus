@@ -1485,11 +1485,16 @@ defmodule Oli.Delivery.Sections do
       [%{page_id: 1, containers: [%{id: 10, title: "Introduction", numbering_level: 1}]}]
   """
 
-  @spec get_ordered_containers_per_page(String.t()) :: [
+  @spec get_ordered_containers_per_page(String.t(), list(integer())) :: [
           %{page_id: integer(), containers: list(map())}
         ]
-  def get_ordered_containers_per_page(section_slug) do
+  def get_ordered_containers_per_page(section_slug, page_ids \\ []) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    pages_filter =
+      if Enum.empty?(page_ids),
+        do: true,
+        else: dynamic([_sr, _s, _spp, _pr, _rev, cp], cp.page_id in ^page_ids)
 
     from(
       [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -1498,6 +1503,7 @@ defmodule Oli.Delivery.Sections do
       where:
         rev.deleted == false and s.slug == ^section_slug and
           rev.resource_type_id == ^container_type_id,
+      where: ^pages_filter,
       group_by: [cp.page_id],
       select: %{
         page_id: cp.page_id,
