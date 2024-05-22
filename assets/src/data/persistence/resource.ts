@@ -64,6 +64,8 @@ export type AlternativesGroup = {
   options: AlternativesGroupOption[];
 };
 export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
+export type ExperimentReceived = { type: 'success'; experiment: { resource_id: number } };
+export type HasExperimentReceived = { type: 'success'; has_experiment: boolean };
 
 // Requests all alternative groups for a given project or section
 export function alternatives(projectSlug: ProjectSlug) {
@@ -73,6 +75,24 @@ export function alternatives(projectSlug: ProjectSlug) {
   };
 
   return makeRequest<AlternativesGroupsReceived>(params);
+}
+
+export function experiment(projectSlug: ProjectSlug) {
+  const params = {
+    method: 'GET',
+    url: `/project/${projectSlug}/experiment`,
+  };
+
+  return makeRequest<ExperimentReceived>(params);
+}
+
+export function hasExperiment(projectSlug: ProjectSlug) {
+  const params = {
+    method: 'GET',
+    url: `/project/${projectSlug}/has_experiment`,
+  };
+
+  return makeRequest<HasExperimentReceived>(params);
 }
 
 function traverseContent(o: any, func: any) {

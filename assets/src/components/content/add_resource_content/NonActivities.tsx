@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
@@ -38,6 +38,15 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
+  const [disabled, setDisabled] = useState(true);
+
+  useEffect(() => {
+    Persistence.hasExperiment(resourceContext.projectSlug)
+      .then(result => {
+        setDisabled("has_experiment" in result ? !result.has_experiment : true);
+      })
+  }, [])
+
   return (
     <div className="d-flex flex-column">
       <div className="resource-choice-header">Content types</div>
@@ -112,8 +121,8 @@ export const NonActivities: React.FC<Props> = ({
           onHoverStart={() => onSetTip('A/B Testing is not yet supported')}
           onHoverEnd={() => onResetTip()}
           key={'ab-test'}
-          disabled={true}
-          onClick={() => true}
+          disabled={disabled}
+          onClick={() => addABTest(onAddItem, index, resourceContext.projectSlug)}
         />
       </div>
     </div>
@@ -167,4 +176,16 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
       />,
     ),
   );
+};
+
+const addABTest = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
+  Persistence.experiment(projectSlug)
+    .then(result => {
+      if (result.type === 'success') {
+        onAddItem(createAlternatives(result.experiment.resource_id, 'upgrade_decision_point'), index);
+      } else {
+        throw result.message;
+      }
+    })
+  document.body.click();
 };

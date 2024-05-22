@@ -35,4 +35,16 @@ defmodule Oli.Authoring.Experiments do
     )
     |> Repo.one()
   end
+
+  def has_experiment(project_slug) do
+    from(pr in PublishedResource,
+      join: revision in Revision,
+      on: revision.id == pr.revision_id,
+      where: pr.publication_id in subquery(project_working_publication(project_slug)),
+      where: fragment("?->>'strategy' = ?", revision.content, @experiment_id),
+      where: revision.resource_type_id == @alternatives_type_id,
+      select: revision
+    )
+    |> Repo.exists?()
+  end
 end

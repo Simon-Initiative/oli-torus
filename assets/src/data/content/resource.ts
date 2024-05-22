@@ -280,7 +280,10 @@ export interface ActivityReference {
 
 export type GroupLayout = 'vertical' | 'deck';
 
-export type AlternativesStrategy = 'select_all' | 'user_section_preference';
+export type AlternativesStrategy =
+  | 'select_all'
+  | 'user_section_preference'
+  | 'upgrade_decision_point';
 
 export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
 
