@@ -77,6 +77,31 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     {:noreply, socket}
   end
 
+  def handle_event(
+        "load_historical_graded_attempt_summary",
+        %{"page_revision_slug" => page_revision_slug},
+        socket
+      ) do
+    %{section: section, current_user: current_user} = socket.assigns
+
+    historical_graded_attempt_summary =
+      Attempts.get_historical_graded_attempt_summary(section, page_revision_slug, current_user.id)
+
+    {:noreply,
+     assign(socket, historical_graded_attempt_summary: historical_graded_attempt_summary)}
+  end
+
+  def handle_event("clear_historical_graded_attempt_summary", _params, socket) do
+    {:noreply, assign(socket, historical_graded_attempt_summary: nil)}
+  end
+
+  def handle_event("toggle_assignments_tab", _params, socket) do
+    case socket.assigns.assignments_tab do
+      :upcoming -> {:noreply, assign(socket, assignments_tab: :latest)}
+      :latest -> {:noreply, assign(socket, assignments_tab: :upcoming)}
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <.header_banner
@@ -341,18 +366,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     ~H"""
     <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
-      <div class="flex-col justify-start items-start gap-5 flex grow">
-        <div class="justify-start items-start gap-2.5 flex">
+      <div class="w-full flex-col justify-start items-start gap-5 flex grow">
+        <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
           <div class="text-2xl font-bold leading-loose tracking-tight">
             My Assignments
           </div>
         </div>
-        <div class="w-full dark:text-white h-6 justify-start items-start gap-3.5 flex">
+        <div class="w-full h-fit overflow-hidden dark:text-white justify-start items-start gap-3.5 flex xl:flex-row flex-col">
           <button
             phx-click="toggle_assignments_tab"
             class={assignments_tab_class(@assignments_tab, :upcoming)}
           >
-            <div class="w-24 text-lg tracking-tight font-bold whitespace-nowrap">
+            <div class="pr-1 text-lg tracking-tight font-bold whitespace-nowrap">
               Upcoming
             </div>
           </button>
@@ -363,7 +388,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             <div class="grow shrink basis-0 text-lg tracking-tight font-bold">Latest</div>
           </button>
         </div>
-        <div class="w-full flex-col justify-start items-start gap-2.5 flex">
+        <div class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
           <%= if Enum.empty?(@lessons) do %>
             <div class="w-80 h-16 flex-col justify-start items-start gap-2.5 flex">
               <div class="w-80 text-white text-base font-normal font-sans tracking-[0.32px] break-words">
@@ -447,9 +472,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  defp left_bar_color(:checkpoint), do: "before:bg-checkpoint"
-  defp left_bar_color(:practice), do: "before:bg-practice"
-  defp left_bar_color(:exploration), do: "before:bg-exploration"
+  defp left_bar_color(:checkpoint), do: "before:bg-checkpoint dark:before:bg-checkpoint-dark"
+  defp left_bar_color(:practice), do: "before:bg-practice dark:before:bg-practice-dark"
+  defp left_bar_color(:exploration), do: "before:bg-exploration dark:before:bg-exploration-dark"
   defp left_bar_color(_), do: ""
 
   defp item_bg_color(true = _completed),
@@ -458,7 +483,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp item_bg_color(false = _completed),
     do:
-      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:border-none"
+      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
 
   attr :lesson, :map, required: true
   attr :upcoming, :boolean, required: true
@@ -511,13 +536,16 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           :if={@lesson.end_date}
           class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
         >
-          <div class="opacity-50 text-white text-xs font-normal">
+          <div class="opacity-50 text-black dark:text-white text-xs font-normal">
             Time Remaining:
           </div>
           <div
             role="countdown"
             class={[
-              if(@lesson.purpose == :application, do: "text-exploration", else: "text-checkpoint"),
+              if(@lesson.purpose == :application,
+                do: "text-exploration dark:text-exploration-dark",
+                else: "text-checkpoint dark:text-checkpoint-dark"
+              ),
               "text-xs font-normal"
             ]}
           >
@@ -548,10 +576,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
       <div :if={@lesson.end_date} class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex">
-        <div class="opacity-50 text-white text-xs font-normal">
+        <div class="opacity-50 text-black dark:text-white text-xs font-normal">
           Time Remaining:
         </div>
-        <div role="countdown" class="text-practice text-xs font-normal">
+        <div role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
           <%= Student.format_time_remaining(@lesson.end_date) %>
         </div>
       </div>
@@ -604,31 +632,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
     </div>
     """
-  end
-
-  def handle_event(
-        "load_historical_graded_attempt_summary",
-        %{"page_revision_slug" => page_revision_slug},
-        socket
-      ) do
-    %{section: section, current_user: current_user} = socket.assigns
-
-    historical_graded_attempt_summary =
-      Attempts.get_historical_graded_attempt_summary(section, page_revision_slug, current_user.id)
-
-    {:noreply,
-     assign(socket, historical_graded_attempt_summary: historical_graded_attempt_summary)}
-  end
-
-  def handle_event("clear_historical_graded_attempt_summary", _params, socket) do
-    {:noreply, assign(socket, historical_graded_attempt_summary: nil)}
-  end
-
-  def handle_event("toggle_assignments_tab", _params, socket) do
-    case socket.assigns.assignments_tab do
-      :upcoming -> {:noreply, assign(socket, assignments_tab: :latest)}
-      :latest -> {:noreply, assign(socket, assignments_tab: :upcoming)}
-    end
   end
 
   defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"

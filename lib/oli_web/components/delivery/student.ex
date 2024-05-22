@@ -375,7 +375,7 @@ defmodule OliWeb.Components.Delivery.Student do
   def resource_type(%{type: :exploration} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-fuchsia-700 dark:text-exploration bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-exploration dark:text-exploration-dark bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.world />
@@ -394,7 +394,7 @@ defmodule OliWeb.Components.Delivery.Student do
   def resource_type(%{type: :checkpoint} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-yellow-700 dark:text-checkpoint bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-checkpoint dark:text-checkpoint-dark bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.transparent_flag />
@@ -413,7 +413,7 @@ defmodule OliWeb.Components.Delivery.Student do
   def resource_type(%{type: :practice} = assigns) do
     ~H"""
     <div role="resource_type" class="justify-start items-start flex">
-      <div class="px-3 py-1 text-blue-700 dark:text-practice bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
+      <div class="px-3 py-1 text-practice dark:text-practice-dark bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
             <Icons.clipboard />

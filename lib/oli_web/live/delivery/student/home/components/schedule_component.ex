@@ -184,7 +184,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
 
   defp item_bg_color(false = _completed),
     do:
-      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:border-none"
+      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
 
   defp maybe_assignment_left_bar(true),
     do:
