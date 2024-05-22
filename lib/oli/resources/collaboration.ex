@@ -1413,6 +1413,17 @@ defmodule Oli.Resources.Collaboration do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Returns the list of replies for a post.
+
+  ## Examples
+
+      iex> list_replies_for_post(1, 1)
+      [%Post{status: :approved}, ...]
+
+      iex> list_replies_for_post(2, 2)
+      []
+  """
   def list_replies_for_post(user_id, post_id) do
     Repo.all(
       from(
@@ -1435,6 +1446,17 @@ defmodule Oli.Resources.Collaboration do
     |> summarize_reactions(user_id)
   end
 
+  @doc """
+  Toggles a reaction to a post by a user. Returns a tuple with a resulting reaction count offset.
+
+  ## Examples
+
+      iex> toggle_reaction(1, 1, "like")
+      {:ok, 1}
+
+      iex> toggle_reaction(1, 1, "like")
+      {:ok, -1}
+  """
   def toggle_reaction(post_id, user_id, reaction) do
     case get_reaction(post_id, user_id, reaction) do
       nil ->
@@ -1457,19 +1479,51 @@ defmodule Oli.Resources.Collaboration do
     end
   end
 
+  @doc """
+  Returns the reaction to a post by a user.
+
+  ## Examples
+
+      iex> get_reaction(1, 1, "like")
+      %UserReactionPost{}
+  """
   def get_reaction(post_id, user_id, reaction) do
     Repo.get_by(UserReactionPost, post_id: post_id, user_id: user_id, reaction: reaction)
   end
 
+  @doc """
+  Creates a reaction.
+
+  ## Examples
+
+      iex> create_reaction(1, 1, "like")
+      {:ok, %UserReactionPost{}}
+  """
   def create_reaction(post_id, user_id, reaction) do
     %UserReactionPost{post_id: post_id, user_id: user_id, reaction: reaction}
     |> Repo.insert()
   end
 
+  @doc """
+  Deletes a reaction.
+
+  ## Examples
+
+      iex> delete_reaction(reaction)
+      {:ok, 1}
+  """
   def delete_reaction(%UserReactionPost{} = reaction) do
     Repo.delete(reaction)
   end
 
+  @doc """
+  Marks the given course discussions and replies as read for the given user.
+
+  ## Examples
+
+      iex> mark_course_discussions_and_replies_read(1, 1)
+      {:ok, 1}
+  """
   def mark_course_discussions_and_replies_read(user_id, root_curriculum_resource_id) do
     now = DateTime.utc_now(:second)
 
