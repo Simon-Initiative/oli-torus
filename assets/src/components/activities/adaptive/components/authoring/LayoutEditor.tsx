@@ -394,8 +394,17 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     [dragSize, isDragging, selectedPartId],
   );
 
-  useKeyDown(() => setShowConfirmDelete(true), ['Delete', 'Backspace'], {}, []);
-  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true }, [
+  useKeyDown(
+    () => {
+      if (selectedPartAndCapabilities && !configurePartId.length) {
+        setShowConfirmDelete(true);
+      }
+    },
+    ['Delete', 'Backspace'],
+    {},
+    [selectedPartAndCapabilities, configurePartId],
+  );
+  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true, metaKey: true }, [
     selectedPartAndCapabilities,
     parts,
     handleCopyComponent,

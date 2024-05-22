@@ -11,7 +11,7 @@ export function useKeyDown(
 
     const ctrlMatch = ctrlRequired === undefined || ctrlKey === ctrlRequired;
     const metaMatch = metaRequired === undefined || metaKey === metaRequired;
-    if (ctrlMatch && metaMatch && keyCodes.includes(code)) {
+    if ((ctrlMatch || metaMatch) && keyCodes.includes(code)) {
       callback();
     }
   };
