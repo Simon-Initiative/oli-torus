@@ -5,6 +5,17 @@ export type EmitEventResult = Ok | ServerError;
 
 export type XAPIEvent = VideoPlayedEvent | VideoPausedEvent | VideoCompletedEvent | VideoSeekedEvent;
 
+export type PlayedSegment = {
+  start: number;
+  end: number | null;
+};
+
+export const formatSegments = (segments: PlayedSegment[]) => {
+  return segments.map((segment) => {
+    return `${segment.start}[.]${segment.end || ''}`;
+  }).join('[,]');
+};
+
 export interface VideoPausedEvent {
   type: 'video_paused';
   category: "video";

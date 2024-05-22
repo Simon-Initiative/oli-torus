@@ -8,6 +8,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
 import { WriterContext, defaultWriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import * as XAPI from 'data/persistence/xapi';
 
 interface Player {
   seekTo: (time: number) => void;
@@ -26,8 +27,12 @@ export const YoutubePlayer: React.FC<{
 }> = ({ video, children, authorMode, context, pointMarkerContext }) => {
   const stopInterval = useRef<number | undefined>();
   const [videoTarget, setVideoTarget] = useState<Player | null>(null);
+  const segments = useRef<XAPI.PlayedSegment[]>([]);
+  const url = useRef<string>('');
+  const duration = useRef<number>(0);
   const pauseAtPosition = useRef(video.endTime || -1);
   const videoId = video.src || CUTE_OTTERS;
+  const youTubeRef = useRef<YouTube>(null);
   context = context || defaultWriterContext();
 
   const opts: Options = authorMode
@@ -53,6 +58,11 @@ export const YoutubePlayer: React.FC<{
 
   const onReady = useCallback((event) => {
     setVideoTarget(event.target);
+
+    (youTubeRef.current as any).getInternalPlayer().getDuration().then((d: number) => {
+      duration.current = d;
+    });
+    (youTubeRef.current as any).getInternalPlayer().getVideoUrl().then((u: string) => url.current = u);
   }, []);
 
   const stopAtTime = useCallback(() => {
@@ -83,6 +93,65 @@ export const YoutubePlayer: React.FC<{
       }
     }
   }, [authorMode, video.endTime, video.startTime, videoTarget]);
+
+  const onStateChange = (e: any) => {
+    if (!videoTarget) return;
+
+    switch(e.data) {
+      case 0:
+        XAPI.emit_delivery({
+          type: 'video_completed',
+          category: 'video',
+          event_type: 'completed',
+          page_attempt_guid: context.resourceAttemptGuid,
+          video_url: url.current,
+          video_title: url.current,
+          video_length: duration.current,
+          video_played_segments: XAPI.formatSegments(segments.current),
+          video_progress: duration.current / videoTarget.getCurrentTime(),
+          video_time: videoTarget.getCurrentTime(),
+          content_element_id: video.id,
+        } as XAPI.VideoCompletedEvent)
+        break;
+      case 1:
+
+        const segment = {start: videoTarget.getCurrentTime(), end: null};
+        segments.current.push(segment);
+
+        XAPI.emit_delivery({
+          type: 'video_played',
+          category: 'video',
+          event_type: 'played',
+          page_attempt_guid: context.resourceAttemptGuid,
+          video_url: url.current,
+          video_title: url.current,
+          video_length: duration.current,
+          video_play_time: videoTarget.getCurrentTime(),
+          content_element_id: video.id,
+        } as XAPI.VideoPlayedEvent)
+        break;
+      case 2:
+
+        const lastSegment = segments.current[segments.current.length - 1];
+        lastSegment.end = videoTarget.getCurrentTime();
+        segments.current[segments.current.length - 1] = lastSegment;
+
+        XAPI.emit_delivery({
+          type: 'video_paused',
+          category: 'video',
+          event_type: 'paused',
+          page_attempt_guid: context.resourceAttemptGuid,
+          video_url: url.current,
+          video_title: url.current,
+          video_length: duration.current,
+          video_played_segments: XAPI.formatSegments(segments.current),
+          video_progress: duration.current / videoTarget.getCurrentTime(),
+          video_time: videoTarget.getCurrentTime(),
+          content_element_id: video.id,
+        } as XAPI.VideoPausedEvent)
+        break;
+    }
+  };
 
   const onCommandReceived = useCallback(
     (message: string) => {
@@ -124,10 +193,12 @@ export const YoutubePlayer: React.FC<{
         {...maybePointMarkerAttr(video, pointMarkerContext)}
       >
         <YouTube
+          ref={youTubeRef}
           className="embed-responsive-item"
           videoId={videoId}
           opts={opts}
           onReady={onReady}
+          onStateChange={onStateChange}
         />
       </div>
       {!authorMode && video.caption && (

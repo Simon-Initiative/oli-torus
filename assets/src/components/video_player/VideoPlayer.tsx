@@ -23,12 +23,6 @@ import { PlayButton } from './VideoPlayButton';
 const startEndCueRegex = /startcuepoint=([0-9.]+);endcuepoint=([0-9.]+)/;
 const startCueRegex = /startcuepoint=([0-9.]+)/;
 
-export const formatSegments = (segments: { start: number; end: number | null }[]) => {
-  return segments.map((segment) => {
-    return `${segment.start}[.]${segment.end || ''}`;
-  }).join('[,]');
-};
-
 export const parseVideoPlayCommand = (command: string) => {
   if (startEndCueRegex.test(command)) {
     const matches = command.match(startEndCueRegex);
@@ -80,7 +74,7 @@ export const VideoPlayer: React.FC<{
   const playerRef = useRef(null);
   const pauseAtPosition = useRef(-1);
   const [seekFrom, setSeekFrom] = useState(0);
-  const [segments, setSegments] = useState([] as { start: number; end: number | null }[]);
+  const [segments, setSegments] = useState([] as XAPI.PlayedSegment[]);
   const segmentsRef = useRef(segments);
   const seekFromRef = useRef(seekFrom);
 
@@ -165,7 +159,7 @@ export const VideoPlayer: React.FC<{
           video_url: state.currentSrc,
           video_title: state.currentSrc,
           video_length: state.duration,
-          video_played_segments: formatSegments(segments),
+          video_played_segments: XAPI.formatSegments(segments),
           video_progress: progress,
           video_time: state.currentTime,
           content_element_id: video.id,
@@ -180,7 +174,7 @@ export const VideoPlayer: React.FC<{
           const segments = segmentsRef.current;
           segments[segments.length - 1] = lastSegment;
           setSegments(segments);
-          segmentsStr = formatSegments(segments);
+          segmentsStr = XAPI.formatSegments(segments);
         }
 
         // Emit paused event
