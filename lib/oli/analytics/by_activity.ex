@@ -18,7 +18,7 @@ defmodule Oli.Analytics.ByActivity do
   defp get_base_query(project_slug, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_filter_by_section_ids(
+        DeliveryResolver.revisions_by_section_ids(
           filtered_sections,
           ResourceType.id_for_activity()
         )
@@ -39,7 +39,6 @@ defmodule Oli.Analytics.ByActivity do
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty
       },
-      preload: [:resource_type],
-      distinct: [activity]
+      preload: [:resource_type]
   end
 end

@@ -263,7 +263,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
-  def revisions_filter_by_section_ids(section_ids, resource_type_id) do
+  def revisions_by_section_ids(section_ids, resource_type_id) do
     from(sr in SectionResource,
       join: s in Section,
       on: s.id == sr.section_id,
@@ -277,7 +277,8 @@ defmodule Oli.Publishing.DeliveryResolver do
       join: rev in Revision,
       on: rev.id == pr.revision_id,
       where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
-      select: rev
+      select: rev,
+      distinct: [rev]
     )
   end
 

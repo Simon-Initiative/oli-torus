@@ -9,7 +9,9 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Metrics
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Resources
   alias OliWeb.Delivery.Student.Utils
 
   def mount(
@@ -31,6 +33,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         |> assign(page_context: page_context)
         |> assign(page_revision: page_revision)
         |> assign_html_and_scripts()
+        |> assign_objectives()
       else
         socket
         |> put_flash(:error, "You are not allowed to review this attempt.")
@@ -38,6 +41,40 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
       end
 
     {:ok, socket}
+  end
+
+  defp assign_objectives(socket) do
+    %{page_context: %{page: page}, current_user: current_user, section: section} =
+      socket.assigns
+
+    objectives =
+      case page.objectives["attached"] do
+        objective_ids when objective_ids in [nil, []] ->
+          []
+
+        objective_resource_ids ->
+          student_proficiency_per_learning_objective =
+            Metrics.proficiency_for_student_per_learning_objective(
+              section,
+              current_user.id
+            )
+
+          Resources.get_revisions_by_resource_id(objective_resource_ids)
+          |> Enum.map(fn rev ->
+            %{
+              resource_id: rev.resource_id,
+              title: rev.title,
+              proficiency:
+                Map.get(
+                  student_proficiency_per_learning_objective,
+                  rev.resource_id,
+                  "Not enough data"
+                )
+            }
+          end)
+      end
+
+    assign(socket, objectives: objectives)
   end
 
   defp review_allowed?(page_context),
@@ -59,6 +96,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             page_context={@page_context}
             ctx={@ctx}
             index={@current_page["index"]}
+            objectives={@objectives}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
           <div id="eventIntercept" phx-update="ignore" class="content" role="page_content">

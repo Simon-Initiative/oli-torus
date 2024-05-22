@@ -11,18 +11,21 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias Oli.Delivery.Sections
   alias Oli.Rendering.Page
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Phoenix.LiveView.JS
 
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
+  attr :objectives, :list
   attr :index, :string
   attr :container_label, :string
   attr :has_assignments?, :boolean
 
   def page_header(assigns) do
     ~H"""
-    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full">
+    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full mb-16">
       <div class="flex-col justify-start items-start gap-3 flex w-full">
         <div class="self-stretch flex-col justify-start items-start flex">
           <div class="self-stretch justify-between items-center inline-flex">
@@ -104,28 +107,44 @@ defmodule OliWeb.Delivery.Student.Utils do
         </div>
       </div>
       <div
-        :if={@page_context.objectives not in [nil, []]}
-        class="flex-col justify-start items-start gap-3 flex w-full"
+        :if={@objectives != []}
+        class="flex-col justify-start items-start gap-3 flex w-full mt-4"
         role="page objectives"
       >
-        <div class="self-stretch justify-start items-start gap-6 inline-flex">
-          <div class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
-            Learning objectives
+        <div class="self-stretch justify-start items-start gap-6 inline-flex mb-6">
+          <div>
+            <span class="text-neutral-700 dark:text-neutral-300 text-base font-bold font-['Inter'] leading-normal">
+              LEARNING OBJECTIVES &
+            </span>
+            <span
+              phx-click={Modal.show_modal("proficiency_explanation_modal")}
+              class="text-blue-600 text-base font-bold font-['Inter'] leading-normal hover:underline hover:underline-offset-2 cursor-pointer"
+            >
+              PROFICIENCY
+            </span>
+            <div class="h-0">
+              <.proficiency_explanation_modal />
+            </div>
           </div>
-          <div class="hidden text-blue-500 text-sm font-semibold font-['Open Sans']">View More</div>
         </div>
         <div
-          :for={{objective, index} <- Enum.with_index(@page_context.objectives, 1)}
-          class="self-stretch flex-col justify-start items-start flex"
+          :for={{objective, index} <- Enum.with_index(@objectives, 1)}
+          class="self-stretch flex-col justify-start items-start flex ml-6"
           role={"objective #{index}"}
         >
-          <div class="self-stretch py-1 justify-start items-start inline-flex">
-            <div class="grow shrink basis-0 h-6 justify-start items-start flex">
-              <div class="w-[30px] opacity-40 dark:text-white text-xs font-bold font-['Open Sans'] leading-normal">
-                L<%= index %>
-              </div>
-              <div class="grow shrink basis-0 opacity-80 dark:text-white text-sm font-normal font-['Open Sans'] leading-normal">
-                <%= objective %>
+          <div class="relative h-[21px] justify-start items-center gap-[19px] inline-flex">
+            <.proficiency_icon_with_tooltip objective={objective} />
+            <div class="justify-start items-start gap-3.5 flex">
+              <div class="justify-start items-start gap-[17px] flex">
+                <div class="w-5 text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
+                  L<%= index %>
+                </div>
+                <div
+                  role={"objective #{index} title"}
+                  class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
+                >
+                  <%= objective.title %>
+                </div>
               </div>
             </div>
           </div>
@@ -134,6 +153,85 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     """
   end
+
+  def proficiency_explanation_modal(assigns) do
+    assigns =
+      assign(assigns, %{
+        proficiency_levels: [
+          {"Not enough data", "Not enough information",
+           "You haven’t completed enough activities for the system to calculate learning proficiency."},
+          {"Low", "Beginning Proficiency",
+           "You’re beginning to understand key ideas, but there is room to grow."},
+          {"Medium", "Growing Proficiency",
+           "Your understanding and skills are clearly strengthening and expanding."},
+          {"High", "Establishing Proficiency",
+           "You know the material well enough to apply it in different contexts."}
+        ]
+      })
+
+    ~H"""
+    <Modal.student_delivery_modal
+      id="proficiency_explanation_modal"
+      class="lg:!w-3/4 xl:!w-2/3"
+      body_class=""
+    >
+      <:title>Measuring Learning Proficiency</:title>
+      <:subtitle>
+        This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page.
+      </:subtitle>
+      <div class="mb-11 text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
+        LEARNING PROFICIENCY SCALE
+      </div>
+      <div class="flex-col justify-start items-center gap-[50px] flex">
+        <div
+          :for={{proficiency, name, description} <- @proficiency_levels}
+          class="flex-col justify-start items-start gap-[15px] flex w-full"
+        >
+          <div class="justify-start items-start gap-2.5 inline-flex">
+            <div class="mt-[2px] ml-1 w-6 h-6 scale-125">
+              <Icons.proficiency proficiency={proficiency} />
+            </div>
+            <div class="text-zinc-700 dark:text-white text-base font-bold font-['Inter'] leading-normal">
+              <%= name %>
+            </div>
+          </div>
+          <div class="text-zinc-700 dark:text-white text-base font-normal font-['Inter'] leading-normal">
+            <%= description %>
+          </div>
+        </div>
+      </div>
+    </Modal.student_delivery_modal>
+    """
+  end
+
+  attr :objective, :map
+
+  defp proficiency_icon_with_tooltip(assigns) do
+    ~H"""
+    <div
+      class="absolute top-0 left-0 z-10 w-6 h-6 cursor-pointer"
+      xphx-mouseover={JS.show(to: "#objective_#{@objective.resource_id}_tooltip")}
+      xphx-mouseout={JS.hide(to: "#objective_#{@objective.resource_id}_tooltip")}
+    >
+    </div>
+    <div class="w-6 h-6 flex items-center justify-center">
+      <Icons.proficiency proficiency={@objective.proficiency} />
+    </div>
+    <div
+      id={"objective_#{@objective.resource_id}_tooltip"}
+      class="hidden absolute h-[57px] px-6 pt-[15px] pb-6 -top-[20px] -left-6 text-gray-800 dark:text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-gray-300 dark:bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-start gap-4 -translate-x-full"
+    >
+      <%= proficiency_to_text(@objective.proficiency) %>
+      <div class="absolute h-[40px] w-2 bg-gray-300 dark:bg-white top-2 right-0 z-20"></div>
+      <Icons.filled_chevron_up class="absolute -right-[13px] top-[16px] fill-gray-300 dark:fill-white z-10 rotate-90 scale-150 stroke-1.5 stroke-gray-700" />
+    </div>
+    """
+  end
+
+  defp proficiency_to_text("Not enough data"), do: "Not enough information"
+  defp proficiency_to_text("Low"), do: "Beginning Proficiency"
+  defp proficiency_to_text("Medium"), do: "Growing Proficiency"
+  defp proficiency_to_text("High"), do: "Establishing Proficiency"
 
   attr :scripts, :list
   attr :user_token, :string
