@@ -41,11 +41,10 @@ export const NonActivities: React.FC<Props> = ({
   const [disabled, setDisabled] = useState(true);
 
   useEffect(() => {
-    Persistence.hasExperiment(resourceContext.projectSlug)
-      .then(result => {
-        setDisabled("has_experiment" in result ? !result.has_experiment : true);
-      })
-  }, [])
+    Persistence.hasExperiment(resourceContext.projectSlug).then((result) => {
+      setDisabled('has_experiment' in result ? !result.has_experiment : true);
+    });
+  }, []);
 
   return (
     <div className="d-flex flex-column">
@@ -179,13 +178,12 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
 };
 
 const addABTest = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
-  Persistence.experiment(projectSlug)
-    .then(result => {
-      if (result.type === 'success') {
-        onAddItem(createAlternatives(result.experiment.resource_id, 'upgrade_decision_point'), index);
-      } else {
-        throw result.message;
-      }
-    })
+  Persistence.experiment(projectSlug).then((result) => {
+    if (result.type === 'success') {
+      onAddItem(createAlternatives(result.experiment.resource_id, 'upgrade_decision_point'), index);
+    } else {
+      throw result.message;
+    }
+  });
   document.body.click();
 };
