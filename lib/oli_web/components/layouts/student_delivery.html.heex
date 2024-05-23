@@ -15,7 +15,7 @@
       section={@section}
       active_tab={assigns[:active_tab]}
       preview_mode={@preview_mode}
-      notification_badges={@notification_badges}
+      notification_badges={assigns[:notification_badges] || %{}}
       sidebar_expanded={@sidebar_expanded}
     />
     <div class={[

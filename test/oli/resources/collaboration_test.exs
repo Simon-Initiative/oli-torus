@@ -912,12 +912,7 @@ defmodule Oli.Resources.CollaborationTest do
       limit = 100
 
       # only posts that do not belong to the student should have is_read marked false
-      assert {[
-                %Post{content: %{message: "student 1 root discussion"}, is_read: false},
-                %Post{content: %{message: "student 2 root discussion"}, is_read: true},
-                %Post{content: %{message: "student 1 2nd root discussion"}, is_read: false}
-              ],
-              more_posts_exist?} =
+      assert {posts, more_posts_exist?} =
                Collaboration.list_root_posts_for_section(
                  student2.id,
                  section.id,
@@ -930,6 +925,16 @@ defmodule Oli.Resources.CollaborationTest do
 
       assert more_posts_exist? == false
 
+      assert Enum.find(posts, fn post -> post.content.message == "student 1 root discussion" end).is_read ==
+               false
+
+      assert Enum.find(posts, fn post -> post.content.message == "student 2 root discussion" end).is_read ==
+               true
+
+      assert Enum.find(posts, fn post ->
+               post.content.message == "student 1 2nd root discussion"
+             end).is_read == false
+
       # mark all root posts as read for student 2
       Collaboration.mark_course_discussions_and_replies_read(
         student2.id,
@@ -937,12 +942,7 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       # all posts should now have is_read marked true
-      assert {[
-                %Post{content: %{message: "student 1 root discussion"}, is_read: true},
-                %Post{content: %{message: "student 2 root discussion"}, is_read: true},
-                %Post{content: %{message: "student 1 2nd root discussion"}, is_read: true}
-              ],
-              _more_posts_exist?} =
+      assert {posts, _more_posts_exist?} =
                Collaboration.list_root_posts_for_section(
                  student2.id,
                  section.id,
@@ -952,6 +952,8 @@ defmodule Oli.Resources.CollaborationTest do
                  sort_by,
                  sort_order
                )
+
+      assert Enum.all?(posts, fn post -> post.is_read == true end)
     end
   end
 

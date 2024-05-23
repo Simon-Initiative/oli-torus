@@ -6,15 +6,21 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.DeliveryResolver
 
-  def on_mount(:default, _params, _session, socket) do
-    %{current_user: current_user, section: section} = socket.assigns
-
+  def on_mount(
+        :default,
+        _params,
+        _session,
+        %{assigns: %{current_user: current_user, section: section}} = socket
+      ) do
     {:cont,
      assign(socket, notification_badges: %{})
      |> maybe_load_discussions_badge(section, current_user)}
   end
 
-  defp maybe_load_discussions_badge(socket, _, user) when is_nil(user), do: socket
+  def on_mount(:default, _params, _session, socket), do: {:cont, socket}
+
+  defp maybe_load_discussions_badge(socket, nil, _user), do: socket
+  defp maybe_load_discussions_badge(socket, _section, nil), do: socket
 
   defp maybe_load_discussions_badge(socket, section, user) do
     # Load the discussions badge
