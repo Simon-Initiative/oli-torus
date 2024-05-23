@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Seeder
 
   defp live_view_content_route(section_slug, params \\ %{}) do
     Routes.live_path(
@@ -73,7 +74,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
              )
 
       # Content tab content gets rendered
-      assert has_element?(view, ~s{form[id=container-select-form]})
+      assert has_element?(view, ~s{button[id=filter_units_button]})
+      assert has_element?(view, ~s{button[id=filter_modules_button]})
     end
 
     test "content table gets rendered considering the given url params given a section with units and modules",
@@ -86,7 +88,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         mod1_pages: mod1_pages,
         unit1_resource: unit1_resource,
         unit2_resource: unit2_resource
-      } = Oli.Seeder.base_project_with_larger_hierarchy()
+      } = Seeder.base_project_with_larger_hierarchy()
 
       [page_1, _page_2, _page_3] = mod1_pages
 
@@ -267,15 +269,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                )
              ]
 
-      ### both "units" and "modules" options are shown to user in dropdown
+      ### both "units" and "modules" buttons are shown to user
       options_for_select =
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{#container_select option})
-        |> Floki.attribute("value")
+        |> Floki.find(~s{button[phx-click="filter_container"]})
+        |> Floki.attribute("phx-value-filter")
 
-      assert options_for_select == ["modules", "units"]
+      assert options_for_select == ["units", "modules"]
     end
 
     test "content table given a section with only units",
@@ -287,7 +289,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         unit1_resource: unit1_resource,
         unit2_resource: unit2_resource,
         section: section
-      } = Oli.Seeder.base_project_with_units()
+      } = Seeder.base_project_with_units()
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
@@ -320,15 +322,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                )
              ]
 
-      ### only "units" option is shown to user in dropdown
-      options_for_select =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{#container_select option})
-        |> Floki.attribute("value")
-
-      assert options_for_select == ["units"]
+      ### "units" button is selected
+      assert has_element?(view, "button.bg-blue-500", "Units")
+      refute has_element?(view, "button.bg-white", "Units")
+      assert has_element?(view, "button.bg-white", "Modules")
+      refute has_element?(view, "button.bg-blue-500", "Modules")
     end
 
     test "content table gets rendered given a section with only pages",
@@ -420,16 +418,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
                  %{page_id: page3.id}
                )
              ]
-
-      ### only "pages" option is shown to user in dropdown
-      options_for_select =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{#container_select option})
-        |> Floki.attribute("value")
-
-      assert options_for_select == ["pages"]
     end
 
     test "content tab shows the container details view when a student is clicked on the contents table",
@@ -440,7 +428,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       %{
         section: section,
         mod1_pages: mod1_pages
-      } = Oli.Seeder.base_project_with_larger_hierarchy()
+      } = Seeder.base_project_with_larger_hierarchy()
 
       [page_1, _page_2, _page_3] = mod1_pages
 
@@ -505,6 +493,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert has_element?(view, "tbody tr td", "Valverde, Federico")
       assert has_element?(view, "tbody tr td", "Bentancur, Rodrigo")
       assert has_element?(view, "tbody tr td", "Lugano, Diego")
+    end
+
+    test "buttons to select containers works as expected", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{section: section} = Seeder.base_project_with_larger_hierarchy()
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      ## filtering by modules
+      element(view, "#filter_modules_button") |> render_click()
+
+      assert has_element?(view, "button.bg-blue-500", "Modules")
+
+      [module_for_tr_1, module_for_tr_2, module_for_tr_3] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert module_for_tr_1 =~ "Module 1"
+      assert module_for_tr_2 =~ "Module 2"
+      assert module_for_tr_3 =~ "Module 3"
+
+      ## filtering by units
+      element(view, "#filter_units_button") |> render_click()
+
+      assert has_element?(view, "button.bg-blue-500", "Units")
+
+      [unit_for_tr_1, unit_for_tr_2] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert unit_for_tr_1 =~ "Unit 1"
+      assert unit_for_tr_2 =~ "Unit 2"
     end
   end
 
