@@ -117,17 +117,30 @@ export const Scroller = {
 
         const sliderPaddingLeft = parseInt(getComputedStyle(unit_slider).paddingLeft);
         const sliderPaddingRight = parseInt(getComputedStyle(unit_slider).paddingRight);
+        const sliderMarginLeft = parseInt(getComputedStyle(unit_slider).marginLeft);
+        const sliderMarginRight = parseInt(getComputedStyle(unit_slider).marginRight);
+        const cardPaddingLeft = parseInt(getComputedStyle(target_card).paddingLeft);
+        const cardPaddingRight = parseInt(getComputedStyle(target_card).paddingRight);
         const cardMarginLeft = parseInt(getComputedStyle(target_card).marginLeft);
         const cardMarginRight = parseInt(getComputedStyle(target_card).marginRight);
 
         const adjustedSliderWidth =
-          unit_slider.clientWidth - sliderPaddingLeft - sliderPaddingRight;
-        const adjustedCardWidth = target_card.clientWidth + cardMarginLeft + cardMarginRight;
+          unit_slider.clientWidth -
+          sliderPaddingLeft -
+          sliderPaddingRight -
+          sliderMarginLeft -
+          sliderMarginRight;
+        const adjustedCardWidth =
+          target_card.clientWidth +
+          cardMarginLeft +
+          cardMarginRight +
+          cardPaddingLeft +
+          cardPaddingRight;
 
         const sliderCenter = adjustedSliderWidth / 2;
         const cardCenter = adjustedCardWidth / 2;
 
-        const scrollLeft = target_card.offsetLeft - sliderCenter + cardCenter - sliderPaddingLeft;
+        const scrollLeft = target_card.offsetLeft - sliderCenter + cardCenter - 3;
 
         // Scroll to the position
         unit_slider.scrollTo({
