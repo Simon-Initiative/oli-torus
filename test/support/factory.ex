@@ -4,6 +4,7 @@ defmodule Oli.Factory do
   alias Oli.Accounts.VrUserAgent
   alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
+  alias Oli.Analytics.Summary.ResourceSummary
 
   alias Oli.Authoring.Course.{
     Family,
@@ -649,6 +650,13 @@ defmodule Oli.Factory do
       is_instructor: false,
       is_student: true,
       effective_settings: %Oli.Delivery.Settings.Combined{}
+    }
+  end
+
+  def resource_summary_factory() do
+    %ResourceSummary{
+      num_correct: 5,
+      num_attempts: 10
     }
   end
 

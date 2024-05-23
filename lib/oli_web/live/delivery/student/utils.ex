@@ -507,7 +507,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   - Either a floating-point number or an integer, depending on whether rounding results in a whole number.
 
   ## Examples:
-      iex> parse_score(84.235)
+      iex> parse_score(84.236)
       84.24
       iex> parse_score(85.00)
       85

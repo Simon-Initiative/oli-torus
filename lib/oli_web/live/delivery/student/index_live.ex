@@ -380,6 +380,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
         <div class="w-full h-fit overflow-hidden dark:text-white justify-start items-start gap-3.5 flex xl:flex-row flex-col">
           <button
+            id="upcoming_tab"
             phx-click="toggle_assignments_tab"
             class={assignments_tab_class(@assignments_tab, :upcoming)}
           >
@@ -388,16 +389,17 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </div>
           </button>
           <button
+            id="latest_tab"
             phx-click="toggle_assignments_tab"
             class={assignments_tab_class(@assignments_tab, :latest)}
           >
             <div class="grow shrink basis-0 text-lg tracking-tight font-bold">Latest</div>
           </button>
         </div>
-        <div class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
+        <div role="assignments" class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
           <%= if Enum.empty?(@lessons) do %>
-            <div class="w-80 h-16 flex-col justify-start items-start gap-2.5 flex">
-              <div class="w-80 text-white text-base font-normal font-sans tracking-[0.32px] break-words">
+            <div role="message" class="w-80 h-16 flex-col justify-start items-start gap-2.5 flex">
+              <div class="w-80 dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
                 <%= empty_assignments_message(@assignments_tab) %>
               </div>
             </div>
@@ -566,13 +568,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       <div class="justify-end items-end gap-2.5 flex ml-auto">
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="w-4 h-4 relative"><Icons.star /></div>
-          <div class="text-sm font-semibold tracking-tight">
+          <div role="score" class="text-sm font-semibold tracking-tight">
             <%= Utils.parse_score(@lesson.score) %>
           </div>
           <div class="text-sm font-semibold tracking-widest">
             /
           </div>
-          <div class="text-sm font-semibold tracking-tight">
+          <div role="out_of" class="text-sm font-semibold tracking-tight">
             <%= Utils.parse_score(@lesson.out_of) %>
           </div>
         </div>

@@ -28,24 +28,47 @@ defmodule Oli.Delivery.SectionsTest do
          user_id,
          progress,
          revision,
-         attempt_state \\ :evaluated
+         opts \\ [attempt_state: :evaluated]
        ) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
       |> Core.update_resource_access(%{progress: progress})
 
-    insert(:resource_attempt, %{
-      resource_access: resource_access,
-      revision: revision,
-      lifecycle_state: attempt_state,
-      date_submitted: if(attempt_state == :evaluated, do: ~U[2024-05-16 20:00:00Z], else: nil)
+    attempt_attrs =
+      case opts[:updated_at] do
+        nil ->
+          %{}
+
+        updated_at ->
+          Ecto.Changeset.change(resource_access, updated_at: updated_at)
+          |> Oli.Repo.update()
+
+          %{updated_at: updated_at}
+      end
+
+    insert(
+      :resource_attempt,
+      Map.merge(attempt_attrs, %{
+        resource_access: resource_access,
+        revision: revision,
+        lifecycle_state: opts[:attempt_state],
+        date_submitted:
+          if(opts[:attempt_state] == :evaluated, do: ~U[2024-05-16 20:00:00Z], else: nil)
+      })
+    )
+
+    insert(:resource_summary, %{
+      resource_id: resource_id,
+      section_id: section_id,
+      user_id: user_id
     })
   end
 
-  defp initiate_activity_attempt(
+  defp initiate_resource_attempt(
          page,
          student,
-         section
+         section,
+         attempt_updated_at \\ nil
        ) do
     resource_access =
       case Oli.Repo.get_by(
@@ -65,13 +88,22 @@ defmodule Oli.Delivery.SectionsTest do
           ra
       end
 
-    insert(:resource_attempt, %{
-      resource_access: resource_access,
-      revision: page,
-      lifecycle_state: :active,
-      score: 0,
-      out_of: 1
-    })
+    attempt_attrs =
+      case attempt_updated_at do
+        nil -> %{}
+        updated_at -> %{updated_at: updated_at}
+      end
+
+    insert(
+      :resource_attempt,
+      Map.merge(attempt_attrs, %{
+        resource_access: resource_access,
+        revision: page,
+        lifecycle_state: :active,
+        score: 0,
+        out_of: 1
+      })
+    )
   end
 
   defp create_elixir_project(_) do
@@ -1766,11 +1798,11 @@ defmodule Oli.Delivery.SectionsTest do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
       # Initiate attempt for page 1
-      initiate_activity_attempt(page_1, user, section)
+      initiate_resource_attempt(page_1, user, section)
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
 
       # Initiate attempt for page 3
-      initiate_activity_attempt(page_3, user, section)
+      initiate_resource_attempt(page_3, user, section)
       set_progress(section.id, page_3.resource_id, user.id, 0.9, page_3)
 
       page = Sections.get_last_open_and_unfinished_page(section, user.id)
@@ -1780,21 +1812,28 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_nearest_upcoming_lesson/2" do
+  describe "get_nearest_upcoming_lessons/3" do
     setup [:create_elixir_project]
 
-    test "returns nil if there are no upcoming lessons", %{section: section} do
+    test "returns empty list if there are no upcoming lessons", %{section: section} do
       stub_current_time(~U[2024-01-01 00:00:00Z])
-
-      refute Sections.get_nearest_upcoming_lesson(section)
+      assert Sections.get_nearest_upcoming_lessons(section, insert(:user).id, 1) == []
     end
 
     test "returns the nearest upcoming lesson", %{section: section, page_3: page_3} do
       stub_current_time(~U[2023-11-03 00:00:00Z])
 
-      page = Sections.get_nearest_upcoming_lesson(section)
+      [page] = Sections.get_nearest_upcoming_lessons(section, insert(:user).id, 1)
 
       assert page.slug == page_3.slug
+    end
+
+    test "returns empty list if all lessons are in progress", %{section: section, page_3: page_3} do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+      user = insert(:user)
+      set_progress(section.id, page_3.resource_id, user.id, 0.5, page_3)
+
+      assert Sections.get_nearest_upcoming_lessons(section, user.id, 1) == []
     end
   end
 
@@ -1872,6 +1911,34 @@ defmodule Oli.Delivery.SectionsTest do
       refute Enum.member?(result, fn pc -> pc[:page_id] == context.page_4.resource_id end)
     end
 
+    test "fetches only specified page ids",
+         %{section: section, page_1: page_1} = context do
+      result = Sections.get_ordered_containers_per_page(section.slug, [page_1.resource_id])
+      assert length(result) == 1
+
+      # Only Page 1 is returned
+      assert Enum.find(result, fn pc -> pc[:page_id] == page_1.resource_id end) == %{
+               page_id: page_1.resource_id,
+               containers: [
+                 %{
+                   "id" => context.unit_1.resource_id,
+                   "title" => context.unit_1.title,
+                   "numbering_level" => 1
+                 },
+                 %{
+                   "id" => context.module_1.resource_id,
+                   "title" => context.module_1.title,
+                   "numbering_level" => 2
+                 }
+               ]
+             }
+
+      # Pages 2, 3 and 4 are not returned
+      for {_, page} <- Map.take(context, [:page_2, :page_3, :page_4]) do
+        refute Enum.member?(result, fn pc -> pc[:page_id] == page.resource_id end)
+      end
+    end
+
     test "returns an empty list for non-existent sections", %{section: _section} do
       assert Sections.get_ordered_containers_per_page("non-existent-section") == []
     end
@@ -1903,6 +1970,68 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_last_completed_or_started_pages/3" do
+    setup [:create_elixir_project]
+
+    test "returns empty list if there are no completed or started pages", %{section: section} do
+      assert Sections.get_last_completed_or_started_pages(section, insert(:user).id, 3) == []
+    end
+
+    test "returns last completed or started pages", %{
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      user = insert(:user)
+
+      stub_current_time(~U[2024-04-22 20:00:00Z])
+
+      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1,
+        attempt_state: :evaluated,
+        updated_at: ~U[2024-04-22 20:00:00Z]
+      )
+
+      stub_current_time(~U[2024-04-22 21:00:00Z])
+
+      set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2,
+        attempt_state: :evaluated,
+        updated_at: ~U[2024-04-22 21:00:00Z]
+      )
+
+      set_progress(section.id, page_3.resource_id, user.id, 0.3, page_3,
+        attempt_state: :evaluated,
+        updated_at: ~U[2024-04-22 22:00:00Z]
+      )
+
+      set_progress(section.id, page_4.resource_id, user.id, 0.5, page_4,
+        attempt_state: :evaluated,
+        updated_at: ~U[2024-04-22 22:30:00Z]
+      )
+
+      # Insert active resource attempt for Page 4
+      initiate_resource_attempt(page_4, user, section, ~U[2024-04-22 23:00:00Z])
+
+      [last_page, second_last_page] =
+        Sections.get_last_completed_or_started_pages(section, user.id, 2)
+
+      # Returns Page 4 since it is the last started page
+      assert last_page.slug == page_4.slug
+      assert last_page.progress == 0.5
+      assert last_page.score == 5.0
+      assert last_page.out_of == 10.0
+      assert last_page.last_attempt_state == :active
+
+      # Returns Page 3 since it is the second last completed page
+      assert second_last_page.slug == page_3.slug
+      assert second_last_page.progress == 0.3
+      assert second_last_page.score == 5.0
+      assert second_last_page.out_of == 10.0
+      assert second_last_page.last_attempt_state == :evaluated
+    end
+  end
+
   describe "get_last_attempt_per_page_id/2" do
     setup do
       data = create_elixir_project(%{})
@@ -1918,7 +2047,7 @@ defmodule Oli.Delivery.SectionsTest do
         user.id,
         1.0,
         data.page_1,
-        :evaluated
+        attempt_state: :evaluated
       )
 
       set_progress(
@@ -1927,11 +2056,13 @@ defmodule Oli.Delivery.SectionsTest do
         user.id,
         1.0,
         data.page_2,
-        :evaluated
+        attempt_state: :evaluated
       )
 
       # Newer attempt
-      set_progress(data.section.id, data.page_2.resource_id, user.id, 0.5, data.page_2, :active)
+      set_progress(data.section.id, data.page_2.resource_id, user.id, 0.5, data.page_2,
+        attempt_state: :active
+      )
 
       Map.put(data, :user, user)
     end

@@ -374,7 +374,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :exploration} = assigns) do
     ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
+    <div role="resource_type" aria-label="exploration" class="justify-start items-start flex">
       <div class="px-3 py-1 text-exploration dark:text-exploration-dark bg-[#815499]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -393,7 +393,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :checkpoint} = assigns) do
     ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
+    <div role="resource_type" aria-label="checkpoint" class="justify-start items-start flex">
       <div class="px-3 py-1 text-checkpoint dark:text-checkpoint-dark bg-[#B87439]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -412,7 +412,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :practice} = assigns) do
     ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
+    <div role="resource_type" aria-label="practice" class="justify-start items-start flex">
       <div class="px-3 py-1 text-practice dark:text-practice-dark bg-[#3959B8]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -431,7 +431,7 @@ defmodule OliWeb.Components.Delivery.Student do
 
   def resource_type(%{type: :lesson} = assigns) do
     ~H"""
-    <div role="resource_type" class="justify-start items-start flex">
+    <div role="resource_type" aria-label="reading" class="justify-start items-start flex">
       <div class="px-3 py-1 text-teal-700 dark:text-[#6DD1DF] bg-[#3E7981]/[.25] rounded-3xl justify-center items-center gap-1.5 flex">
         <div class="w-5 h-5 relative opacity-80">
           <div class="w-3 h-3.5 absolute">
@@ -448,7 +448,7 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
-  def type_from_resource(%{type: :exploration}), do: :exploration
+  def type_from_resource(%{purpose: :application}), do: :exploration
   def type_from_resource(%{graded: true}), do: :checkpoint
   def type_from_resource(%{graded: false}), do: :practice
   def type_from_resource(_), do: :lesson
