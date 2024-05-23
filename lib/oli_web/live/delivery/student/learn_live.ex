@@ -557,6 +557,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> assign(selected_module_per_unit_resource_id: selected_module_per_unit_resource_id)
     |> update(:units, fn units -> [selected_unit | units] end)
     |> maybe_scroll_y_to_unit(unit_resource_id, expand_module?)
+    |> maybe_scroll_x_to_card_in_slider(unit_resource_id, module_resource_id, expand_module?)
     |> push_event("hide-or-show-buttons-on-sliders", %{
       unit_resource_ids:
         Enum.map(
@@ -888,7 +889,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             role="slider"
             phx-hook="SliderScroll"
             data-resource_id={@unit["resource_id"]}
-            class="overflow-x-scroll overflow-y-hidden h-[187px] pt-[5px] px-[5px] scrollbar-hide"
+            class="overflow-y-hidden h-[187px] pt-[5px] px-[5px] scrollbar-hide"
           >
             <.custom_focus_wrap
               id={"slider_focus_wrap_#{@unit["resource_id"]}"}
@@ -1892,12 +1893,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-type={if @is_page, do: "page", else: "module"}
       class={[
         "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
-        if(!@is_page, do: "slider-card"),
         if(@selected, do: "outline outline-[3px]")
       ]}
       role={"card_#{@module_index}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
+      aria-expanded={Kernel.to_string(@selected)}
     >
       <div
         xphx-mouseover={JS.show(to: "#card_badge_details_#{@card["resource_id"]}")}
@@ -2443,7 +2444,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp maybe_scroll_y_to_unit(socket, _unit_resource_id, false), do: socket
 
   defp maybe_scroll_y_to_unit(socket, unit_resource_id, true) do
-    push_event(socket, "scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+    push_event(socket, "scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
+  end
+
+  _docp = """
+    When a user expands a module card we want to autoscroll in the X direction to get
+    that card (if possible) centered in the slider.
+    When a user collapses a module card, we do not want to autoscroll in the X.
+  """
+
+  def maybe_scroll_x_to_card_in_slider(socket, _unit_resource_id, _module_resource_id, false),
+    do: socket
+
+  def maybe_scroll_x_to_card_in_slider(socket, unit_resource_id, module_resource_id, true) do
+    push_event(socket, "scroll-x-to-card-in-slider", %{
+      card_id: "module_#{module_resource_id}",
+      unit_resource_id: unit_resource_id
+    })
   end
 
   _docp = """
