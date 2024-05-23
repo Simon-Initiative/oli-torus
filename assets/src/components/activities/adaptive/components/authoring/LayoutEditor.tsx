@@ -400,7 +400,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         setShowConfirmDelete(true);
       }
     },
-    ['Delete', ' Backspace'],
+    ['Delete', 'Backspace'],
     {},
     [selectedPartAndCapabilities, configurePartId],
   );
