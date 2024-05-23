@@ -349,12 +349,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      )}
   end
 
+  @doc """
+  This event handler is responsible for toggling the module (expand or collapse it).
+  It requires the unit and the module resource_id of the card that should be toggled.
+  It accepts a third optional parameter `force_auto_scroll?` which is a boolean that, in case of being true,
+  it will force to autoscroll Y to the unit.
+  """
+
   def handle_event(
-        "select_module",
-        %{"unit_resource_id" => unit_resource_id, "module_resource_id" => module_resource_id},
+        "toggle_module",
+        %{"unit_resource_id" => unit_resource_id, "module_resource_id" => module_resource_id} =
+          params,
         socket
       ) do
-    {:noreply, select_module(socket, unit_resource_id, module_resource_id)}
+    force_auto_scroll? = params["force_auto_scroll?"] == "true"
+
+    {:noreply, toggle_module(socket, unit_resource_id, module_resource_id, force_auto_scroll?)}
   end
 
   def handle_event("navigate_to_resource", %{"slug" => _} = values, socket),
@@ -429,7 +439,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       "module" ->
         {
           :noreply,
-          select_module(socket, params["unit_resource_id"], params["module_resource_id"])
+          toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
           |> push_event("js-exec", %{
             to: "##{params["type"]}_#{params["module_resource_id"]}",
             attr: "data-enter-event"
@@ -488,7 +498,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   ## Tab navigation end ##
 
-  defp select_module(socket, unit_resource_id, module_resource_id) do
+  defp toggle_module(socket, unit_resource_id, module_resource_id, force_auto_scroll? \\ false) do
     unit_resource_id = String.to_integer(unit_resource_id)
     module_resource_id = String.to_integer(module_resource_id)
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
@@ -505,7 +515,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         unit_resource_id
       )
 
-    {selected_module_per_unit_resource_id, expand_module?} =
+    {selected_module_per_unit_resource_id, auto_scroll?} =
       case current_selected_module_for_unit do
         nil ->
           {Map.merge(socket.assigns.selected_module_per_unit_resource_id, %{
@@ -553,13 +563,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           end
       end
 
+    # The default behaviour for a collapsed module is not to autoscroll to the unit,
+    # except we explicitely required it (e.g. when collapsing the module through the "collapse module" botton)
+    auto_scroll? = force_auto_scroll? || auto_scroll?
+
     send(self(), :gc)
 
     socket
     |> assign(selected_module_per_unit_resource_id: selected_module_per_unit_resource_id)
     |> update(:units, fn units -> [selected_unit | units] end)
-    |> maybe_scroll_y_to_unit(unit_resource_id, expand_module?)
-    |> maybe_scroll_x_to_card_in_slider(unit_resource_id, module_resource_id, expand_module?)
+    |> maybe_scroll_y_to_unit(unit_resource_id, auto_scroll?)
+    |> maybe_scroll_x_to_card_in_slider(unit_resource_id, module_resource_id, auto_scroll?)
     |> push_event("hide-or-show-buttons-on-sliders", %{
       unit_resource_ids:
         Enum.map(
@@ -590,13 +604,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      )}
   end
 
-  def select_module(js \\ %JS{}, unit_resource_id) do
+  def toggle_module(js \\ %JS{}, unit_resource_id) do
     js
     |> JS.hide(
       to: "#selected_module_in_unit_#{unit_resource_id}",
       transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
     )
-    |> JS.push("select_module")
+    |> JS.push("toggle_module")
   end
 
   def handle_info(:gc, socket) do
@@ -1051,7 +1065,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         <div
           role="module index"
-          class="flex flex-col max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex w-full"
+          class="flex flex-col max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
         >
           <div class="w-full">
             <% module =
@@ -1085,14 +1099,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             />
           </div>
         </div>
-        <div role="collapse_bar" class="flex items-center justify-center py-[6px] px-[10px] mt-6">
-          <span class="w-1/2 rounded-lg h-[2px] bg-gray-600/10 dark:bg-[#D9D9D9] dark:bg-opacity-10">
-          </span>
-          <div class="text-gray-600/10 dark:text-[#D9D9D9] dark:text-opacity-10 flex items-center justify-center px-[44px]">
-            <Icons.up_arrow />
-          </div>
-          <span class="w-1/2 rounded-lg h-[2px] bg-gray-600/10 dark:bg-[#D9D9D9] dark:bg-opacity-10">
-          </span>
+        <div role="collapse_bar" class="w-full px-2.5 justify-center items-center inline-flex">
+          <div class="grow shrink basis-0 h-px bg-white/20"></div>
+          <button
+            phx-click="toggle_module"
+            phx-value-unit_resource_id={@unit["resource_id"]}
+            phx-value-module_resource_id={module["resource_id"]}
+            phx-value-force_auto_scroll?="true"
+            class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-white opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex"
+          >
+            <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
+              Collapse Module
+            </div>
+            <Icons.chevron_down class="w-4 h-4 opacity-90 rotate-180" />
+          </button>
+          <div class="grow shrink basis-0 h-px bg-white/20"></div>
         </div>
       </.custom_focus_wrap>
     </div>
@@ -1889,7 +1910,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-click={
         if @is_page,
           do: "navigate_to_resource",
-          else: "select_module"
+          else: "toggle_module"
       }
       phx-keydown="card_keydown"
       phx-value-unit_resource_id={@unit_resource_id}
