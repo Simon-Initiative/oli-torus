@@ -113,7 +113,7 @@ const AddComponentToolbar: React.FC<{
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
   };
 
-  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true, metaKey: true }, [copiedPart]);
+  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
 
   return (
     <Fragment>
