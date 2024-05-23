@@ -1312,8 +1312,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-click="toggle_completed_pages"
         phx-value-module_resource_id={@module["resource_id"]}
       >
-        <div class="w-7 h-8 py-1 flex gap-2.5">
-          <Icons.filled_chevron_up class={if @show_completed_pages, do: "", else: "rotate-180"} />
+        <div class="w-8 h-8 flex justify-center items-center">
+          <Icons.visible :if={!@show_completed_pages} />
+          <Icons.hidden :if={@show_completed_pages} />
         </div>
 
         <div class="flex gap-1.5">
