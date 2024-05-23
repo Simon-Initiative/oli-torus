@@ -678,7 +678,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       student_visited_pages: student_visited_pages,
       student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
       student_progress_per_resource_id: student_progress_per_resource_id,
-      section: %{id: section_id}
+      section: %{id: _section_id}
     } = assigns
 
     units_with_metrics =
