@@ -404,7 +404,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     {},
     [selectedPartAndCapabilities, configurePartId],
   );
-  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true, metaKey: true }, [
+  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true }, [
     selectedPartAndCapabilities,
     parts,
     handleCopyComponent,
