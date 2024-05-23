@@ -176,7 +176,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           post
           | replies_count: 0,
             read_replies_count: 0,
-            is_read: true,
+            is_read: false,
             reaction_summaries: %{},
             replies: nil
         }
@@ -187,7 +187,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             Phoenix.PubSub.broadcast(
               Oli.PubSub,
               "collab_space_discussion_#{socket.assigns.section.slug}",
-              {:discussion_created, %Post{new_post | is_read: false}}
+              {:discussion_created, new_post}
             )
 
         {:noreply,
@@ -476,11 +476,21 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   def handle_info({:discussion_created, new_post}, socket) do
+    new_post = %{
+      new_post
+      | is_read: new_post.user_id == socket.assigns.current_user.id
+    }
+
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
 
   def handle_info({:reply_posted, new_post}, socket) do
     %{posts: posts} = socket.assigns
+
+    new_post = %{
+      new_post
+      | is_read: new_post.user_id == socket.assigns.current_user.id
+    }
 
     {:noreply,
      assign(socket,

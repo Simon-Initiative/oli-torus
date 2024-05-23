@@ -532,7 +532,7 @@ defmodule Oli.Resources.Collaboration do
       on: urp.post_id == p.id,
       # ignore replies that were created by the user
       where:
-        not is_nil(p.thread_root_id) and is_nil(urp.post_id) and
+        is_nil(urp.post_id) and
           p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
       group_by: p.thread_root_id,
       select: %{

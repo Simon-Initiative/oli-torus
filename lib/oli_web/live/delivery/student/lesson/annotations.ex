@@ -446,7 +446,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <div class="flex flex-row">
           <div
             :if={
-              (@post.visibility == :public && !@post.is_read) ||
+              (@show_unread_badge && @post.visibility == :public && !@post.is_read) ||
                 (@show_unread_badge && @post.replies_count > @post.read_replies_count)
             }
             class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
