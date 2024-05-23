@@ -520,7 +520,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                  socket.assigns.student_raw_avg_score_per_page_id,
                  socket.assigns.student_progress_per_resource_id
                )
-               |> fetch_learning_objectives(socket.assigns.section.id)
+             # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+             #  |> fetch_learning_objectives(socket.assigns.section.id)
            }), true}
 
         current_module ->
@@ -546,7 +547,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                    socket.assigns.student_raw_avg_score_per_page_id,
                    socket.assigns.student_progress_per_resource_id
                  )
-                 |> fetch_learning_objectives(socket.assigns.section.id)
+               # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+               #  |> fetch_learning_objectives(socket.assigns.section.id)
              }), true}
           end
       end
@@ -674,7 +676,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_raw_avg_score_per_page_id,
           student_progress_per_resource_id
         )
-        |> fetch_learning_objectives(section_id)
+
+        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+        # |> fetch_learning_objectives(section_id)
       end)
 
     assigns =
@@ -1337,7 +1341,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={"index_for_#{@module["resource_id"]}"}
       class="relative flex flex-col gap-[25px] items-start"
     >
-      <div
+      <%!-- This learning objectives tooltip was hidden in ticket NG-201 but will be reactivated with NG23-199 --%>
+
+      <%!-- <div
         :if={@module["learning_objectives"] != []}
         phx-click-away={JS.hide(to: "#learning_objectives_#{@module["resource_id"]}")}
         class="hidden flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute top-[35px] left-0 z-50"
@@ -1377,12 +1383,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="hidden items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
         phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
       >
-        <%!-- This button was hidden in ticket NG-201 but will be reactivated with NG23-199 --%>
         <Icons.learning_objectives class="fill-black dark:fill-white" />
         <h3 class="text-[16px] leading-[22px] font-semibold dark:text-white">
           Introduction and Learning Objectives
         </h3>
-      </button>
+      </button> --%>
       <.intro_video_item
         :if={module_has_intro_video(@module)}
         duration_minutes={@module["duration_minutes"]}
@@ -2485,7 +2490,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_raw_avg_score_per_page_id,
           student_progress_per_resource_id
         )
-        |> fetch_learning_objectives(section.id)
+
+        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+        # |> fetch_learning_objectives(section.id)
       end)
 
     socket
@@ -2565,19 +2572,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
-  defp fetch_learning_objectives(module, section_id) do
-    Map.merge(module, %{
-      "learning_objectives" =>
-        Sections.get_learning_objectives_for_container_id(
-          section_id,
-          module["resource_id"]
-        )
-    })
-  end
+  # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+
+  # defp fetch_learning_objectives(module, section_id) do
+  #   Map.merge(module, %{
+  #     "learning_objectives" =>
+  #       Sections.get_learning_objectives_for_container_id(
+  #         section_id,
+  #         module["resource_id"]
+  #       )
+  #   })
+  # end
 
   defp merge_target_module_as_selected(
          selected_module_per_unit_resource_id,
-         section,
+         _section,
          student_visited_pages,
          module_resource_id,
          unit_resource_id,
@@ -2599,7 +2608,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             student_raw_avg_score_per_page_id,
             student_progress_per_resource_id
           )
-          |> fetch_learning_objectives(section.id)
+        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
+        # |> fetch_learning_objectives(section.id)
       }
     )
   end
