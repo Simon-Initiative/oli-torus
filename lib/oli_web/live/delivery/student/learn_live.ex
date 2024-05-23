@@ -176,7 +176,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "unit_#{resource_id}",
-          offset: 80,
+          offset: 25,
           pulse: true,
           pulse_delay: 500
         })
@@ -208,7 +208,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               socket.assigns.student_progress_per_resource_id
             )
         )
-        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{resource_id}",
           scroll_delay: 300,
@@ -223,7 +223,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "top_level_page_#{resource_id}",
-          offset: 80,
+          offset: 25,
           pulse: true,
           pulse_delay: 500
         })
@@ -240,7 +240,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           )["resource_id"]
 
         socket
-        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "page_#{resource_id}",
           scroll_delay: 300,
@@ -283,7 +283,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               socket.assigns.student_progress_per_resource_id
             )
         )
-        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 80})
+        |> push_event("scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
         |> push_event("scroll-x-to-card-in-slider", %{
           card_id: "module_#{module_resource_id}",
           scroll_delay: 300,
