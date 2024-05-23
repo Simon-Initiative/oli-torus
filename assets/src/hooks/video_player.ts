@@ -1,11 +1,93 @@
+import * as XAPI from 'data/persistence/xapi'
+
 export const VideoPlayer = {
   mounted() {
     const cloudVideo = document.getElementById('cloud_video') as HTMLVideoElement;
     const youtubeIframe = document.getElementById('youtube_video') as HTMLIFrameElement;
     const videoWrapper = document.getElementById('student_video_wrapper') as HTMLDivElement;
 
+    const metadata = {
+      sectionId: null,
+      resourceId: null,
+      segments: []
+    } as any;
+
+    const getSectionId = () => metadata.sectionId as any;
+    const getResourceId = () => metadata.resourceId as any;
+
+    cloudVideo.onplaying = () => {
+      const segment = {start: cloudVideo.currentTime, end: null};
+      metadata.segments = [...metadata.segments, segment];
+
+      const event: XAPI.VideoPlayedEvent = {
+        type: 'video_played',
+        category: 'video',
+        event_type: 'played',
+        video_url: cloudVideo.src,
+        video_title: cloudVideo.src,
+        video_length: cloudVideo.duration,
+        video_play_time: cloudVideo.currentTime,
+        content_element_id: getResourceId() + '',
+      };
+      const key: XAPI.IntroVideoKey = { type: 'intro_video_key', resource_id: getResourceId(), section_id: getSectionId() };
+      XAPI.emit_delivery(key, event);
+    };
+
+    cloudVideo.onpause = () => {
+
+      const lastSegment = metadata.segments[metadata.segments.length - 1];
+      if (lastSegment) {
+        lastSegment.end = cloudVideo.currentTime;
+      }
+      const segments = metadata.segments;
+      segments[segments.length - 1] = lastSegment;
+
+      const event: XAPI.VideoPausedEvent = {
+        type: 'video_paused',
+        category: 'video',
+        event_type: 'paused',
+        video_url: cloudVideo.src,
+        video_title: cloudVideo.src,
+        video_length: cloudVideo.duration,
+        video_played_segments: XAPI.formatSegments(segments),
+        video_time: cloudVideo.currentTime,
+        video_progress: XAPI.calculateProgress(segments, cloudVideo.duration),
+        content_element_id: getResourceId() + '',
+      };
+      const key: XAPI.IntroVideoKey = { type: 'intro_video_key', resource_id: getResourceId(), section_id: getSectionId() };
+      XAPI.emit_delivery(key, event);
+    };
+
+    cloudVideo.onended = () => {
+
+      const lastSegment = metadata.segments[metadata.segments.length - 1];
+      if (lastSegment) {
+        lastSegment.end = cloudVideo.currentTime;
+      }
+      const segments = metadata.segments;
+      segments[segments.length - 1] = lastSegment;
+
+      const event: XAPI.VideoCompletedEvent = {
+        type: 'video_completed',
+        category: 'video',
+        event_type: 'completed',
+        video_url: cloudVideo.src,
+        video_title: cloudVideo.src,
+        video_length: cloudVideo.duration,
+        video_played_segments: XAPI.formatSegments(segments),
+        video_time: cloudVideo.currentTime,
+        video_progress: XAPI.calculateProgress(segments, cloudVideo.duration),
+        content_element_id: getResourceId() + '',
+      };
+      const key: XAPI.IntroVideoKey = { type: 'intro_video_key', resource_id: getResourceId(), section_id: getSectionId() };
+      XAPI.emit_delivery(key, event);
+    };
+
     window.addEventListener('phx:play_video', (e) => {
       const videoUrl = (e as CustomEvent).detail.video_url;
+
+      metadata.sectionId = (e as CustomEvent).detail.section_id;
+      metadata.resourceId = (e as CustomEvent).detail.module_resource_id;
 
       videoWrapper.classList.remove('hidden');
       if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {

@@ -70,7 +70,7 @@ defmodule Oli.Analytics.XAPI do
     "category" => "video",
     "event_type" => event_type,
     "host_name" => host_name,
-    "page_attempt_guid" => page_attempt_guid
+    "key" => %{ "page_attempt_guid" => page_attempt_guid}
   } = event, expected_user_id) when event_type in ["played", "paused", "completed", "seeked"] do
 
     # From the page_attempt_guid, we can issue a single query to get
@@ -131,6 +131,69 @@ defmodule Oli.Analytics.XAPI do
 
       _ ->
         {:error, "user id mismatch"}
+
+    end
+
+  end
+
+  def construct_bundle(%{
+    "category" => "video",
+    "event_type" => event_type,
+    "host_name" => host_name,
+    "key" => %{ "resource_id" => resource_id, "section_id" => section_id}
+  } = event, expected_user_id) when event_type in ["played", "paused", "completed", "seeked"] do
+
+    query = from s in Oli.Delivery.Sections.Section,
+      join: spp in Oli.Delivery.Sections.SectionsProjectsPublications, on: s.id == spp.section_id,
+      join: sr in Oli.Delivery.Sections.SectionResource, on: s.id == sr.section_id,
+      join: e in Oli.Delivery.Sections.Enrollment, on: s.id == e.section_id,
+      where: sr.resource_id == ^resource_id and e.user_id == ^expected_user_id and s.id == ^section_id,
+      select: {sr.project_id, spp.publication_id}
+
+    case Oli.Repo.one(query) do
+      nil ->
+        {:error, "section resource not found"}
+
+      {project_id, publication_id} ->
+
+        context = %Context{
+          user_id: expected_user_id,
+          host_name: host_name,
+          section_id: section_id,
+          project_id: project_id,
+          publication_id: publication_id
+        }
+
+        details = Enum.reduce(event, %{}, fn {k, v}, acc ->
+          if MapSet.member?(@valid_video_attrs, k) do
+            Map.put(acc, String.to_atom(k), v)
+          else
+            acc
+          end
+        end)
+        |> Map.merge(%{
+          attempt_guid: nil,
+          attempt_number: nil,
+          resource_id: resource_id,
+          timestamp: DateTime.utc_now()
+        })
+
+        event = case event_type do
+          "played" -> Oli.Analytics.XAPI.Events.Video.Played.new(context, details)
+          "paused" -> Oli.Analytics.XAPI.Events.Video.Paused.new(context, details)
+          "completed" -> Oli.Analytics.XAPI.Events.Video.Completed.new(context, details)
+          "seeked" -> Oli.Analytics.XAPI.Events.Video.Seeked.new(context, details)
+        end
+
+        content_element_id = Map.get(details, :content_element_id, "unknown")
+
+        {:ok, %StatementBundle{
+          body: [event] |> Oli.Analytics.Common.to_jsonlines(),
+          bundle_id: create_bundle_id([resource_id, section_id, content_element_id, random_string(10)]),
+          partition_id: context.section_id,
+          category: :video,
+          partition: :section
+        }}
 
     end
 

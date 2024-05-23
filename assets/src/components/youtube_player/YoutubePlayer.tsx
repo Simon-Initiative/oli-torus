@@ -99,16 +99,18 @@ export const YoutubePlayer: React.FC<{
 
     switch(e.data) {
       case 0:
-        XAPI.emit_delivery({
+          XAPI.emit_delivery({
+            type: 'page_video_key',
+            page_attempt_guid: context.resourceAttemptGuid as any,
+          }, {
           type: 'video_completed',
           category: 'video',
           event_type: 'completed',
-          page_attempt_guid: context.resourceAttemptGuid,
           video_url: url.current,
           video_title: url.current,
           video_length: duration.current,
           video_played_segments: XAPI.formatSegments(segments.current),
-          video_progress: duration.current / videoTarget.getCurrentTime(),
+          video_progress: XAPI.calculateProgress(segments.current, duration.current),
           video_time: videoTarget.getCurrentTime(),
           content_element_id: video.id,
         } as XAPI.VideoCompletedEvent)
@@ -119,10 +121,12 @@ export const YoutubePlayer: React.FC<{
         segments.current.push(segment);
 
         XAPI.emit_delivery({
+            type: 'page_video_key',
+            page_attempt_guid: context.resourceAttemptGuid as any,
+          }, {
           type: 'video_played',
           category: 'video',
           event_type: 'played',
-          page_attempt_guid: context.resourceAttemptGuid,
           video_url: url.current,
           video_title: url.current,
           video_length: duration.current,
@@ -137,15 +141,17 @@ export const YoutubePlayer: React.FC<{
         segments.current[segments.current.length - 1] = lastSegment;
 
         XAPI.emit_delivery({
+            type: 'page_video_key',
+            page_attempt_guid: context.resourceAttemptGuid as any,
+          }, {
           type: 'video_paused',
           category: 'video',
           event_type: 'paused',
-          page_attempt_guid: context.resourceAttemptGuid,
           video_url: url.current,
           video_title: url.current,
           video_length: duration.current,
           video_played_segments: XAPI.formatSegments(segments.current),
-          video_progress: duration.current / videoTarget.getCurrentTime(),
+          video_progress: XAPI.calculateProgress(segments.current, duration.current),
           video_time: videoTarget.getCurrentTime(),
           content_element_id: video.id,
         } as XAPI.VideoPausedEvent)

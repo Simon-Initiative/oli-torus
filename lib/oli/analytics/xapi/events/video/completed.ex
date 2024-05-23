@@ -64,7 +64,7 @@ defmodule Oli.Analytics.XAPI.Events.Video.Completed do
           "http://oli.cmu.edu/extensions/section_id" => section_id,
           "http://oli.cmu.edu/extensions/project_id" => project_id,
           "http://oli.cmu.edu/extensions/publication_id" => publication_id,
-          "http://oli.cmu.edu/extensions/page_id" => page_id,
+          "http://oli.cmu.edu/extensions/resource_id" => page_id,
           "http://oli.cmu.edu/extensions/content_element_id" => content_element_id,
           "https://w3id.org/xapi/video/extensions/completion-threshold" => "1.0",
           "https://w3id.org/xapi/video/extensions/length" => video_length

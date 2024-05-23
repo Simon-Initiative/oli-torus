@@ -54,16 +54,6 @@ interface VideoInterface {
   seek: (time: number) => void;
 }
 
-const calculateProgress = (segments: { start: number; end: number | null }[], duration: number) => {
-  let total = 0;
-  segments.forEach((segment) => {
-    if (segment.end) {
-      total += segment.end - segment.start;
-    }
-  });
-
-  return total / duration;
-};
 
 export const VideoPlayer: React.FC<{
   video: ContentModel.Video;
@@ -128,10 +118,12 @@ export const VideoPlayer: React.FC<{
         setSegments([...segmentsRef.current, segment]);
 
         XAPI.emit_delivery({
+          type: 'page_video_key',
+          page_attempt_guid: pageAttemptGuid,
+        }, {
           type: 'video_seeked',
           category: 'video',
           event_type: 'seeked',
-          page_attempt_guid: pageAttemptGuid,
           video_url: state.currentSrc,
           video_title: state.currentSrc,
           video_seek_to: state.currentTime,
@@ -148,14 +140,16 @@ export const VideoPlayer: React.FC<{
         const segments = segmentsRef.current;
         segments[segments.length - 1] = lastSegment;
 
-        const progress = calculateProgress(segments, state.duration);
+        const progress = XAPI.calculateProgress(segments, state.duration);
 
         // Emit completed event
         XAPI.emit_delivery({
+            type: 'page_video_key',
+            page_attempt_guid: pageAttemptGuid,
+          }, {
           type: 'video_completed',
           category: 'video',
           event_type: 'completed',
-          page_attempt_guid: pageAttemptGuid,
           video_url: state.currentSrc,
           video_title: state.currentSrc,
           video_length: state.duration,
@@ -179,15 +173,17 @@ export const VideoPlayer: React.FC<{
 
         // Emit paused event
         XAPI.emit_delivery({
+            type: 'page_video_key',
+            page_attempt_guid: pageAttemptGuid,
+          }, {
           type: 'video_paused',
           category: 'video',
           event_type: 'paused',
-          page_attempt_guid: pageAttemptGuid,
           video_url: state.currentSrc,
           video_title: state.currentSrc,
           video_length: state.duration,
           video_played_segments: segmentsStr,
-          video_progress: state.duration / state.currentTime,
+          video_progress: XAPI.calculateProgress(segments, state.duration),
           video_time: state.currentTime,
           content_element_id: video.id,
         } as XAPI.VideoPausedEvent)
@@ -199,10 +195,12 @@ export const VideoPlayer: React.FC<{
 
         // Emit played event
         XAPI.emit_delivery({
+            type: 'page_video_key',
+            page_attempt_guid: pageAttemptGuid,
+          }, {
           type: 'video_played',
           category: 'video',
           event_type: 'played',
-          page_attempt_guid: pageAttemptGuid,
           video_url: state.currentSrc,
           video_title: state.currentSrc,
           video_length: state.duration,

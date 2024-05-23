@@ -3,6 +3,7 @@ import { Ok, ServerError, makeRequest } from './common';
 
 export type EmitEventResult = Ok | ServerError;
 
+export type VideoKey = PageVideoKey | IntroVideoKey;
 export type XAPIEvent = VideoPlayedEvent | VideoPausedEvent | VideoCompletedEvent | VideoSeekedEvent;
 
 export type PlayedSegment = {
@@ -16,11 +17,32 @@ export const formatSegments = (segments: PlayedSegment[]) => {
   }).join('[,]');
 };
 
+export const calculateProgress = (segments: { start: number; end: number | null }[], duration: number) => {
+  let total = 0;
+  segments.forEach((segment) => {
+    if (segment.end) {
+      total += segment.end - segment.start;
+    }
+  });
+
+  return total / duration;
+};
+
+export interface PageVideoKey {
+  type: 'page_video_key';
+  page_attempt_guid: string;
+}
+
+export interface IntroVideoKey {
+  type: 'intro_video_key';
+  resource_id: number;
+  section_id: number;
+}
+
 export interface VideoPausedEvent {
   type: 'video_paused';
   category: "video";
   event_type: "paused";
-  page_attempt_guid: string;
   video_url: string;
   video_title: string;
   video_length: number;
@@ -34,7 +56,6 @@ export interface VideoPlayedEvent {
   type: 'video_played';
   category: "video";
   event_type: "played";
-  page_attempt_guid: string;
   video_url: string;
   video_title: string;
   video_length: number;
@@ -46,7 +67,6 @@ export interface VideoCompletedEvent {
   type: 'video_completed';
   category: "video";
   event_type: "completed";
-  page_attempt_guid: string;
   video_url: string;
   video_title: string;
   video_length: number;
@@ -60,7 +80,6 @@ export interface VideoSeekedEvent {
   type: 'video_seeked';
   category: "video";
   event_type: "seeked";
-  page_attempt_guid: string;
   video_url: string;
   video_title: string;
   video_seek_to: number;
@@ -69,12 +88,13 @@ export interface VideoSeekedEvent {
 };
 
 export function emit_delivery(
+  key: VideoKey,
   event: XAPIEvent,
 ): Promise<EmitEventResult> {
   const params = {
     url: `/xapi/delivery`,
     method: 'POST',
-    body: JSON.stringify({"event": event})
+    body: JSON.stringify({"event": event, "key": key})
   };
   return makeRequest<EmitEventResult>(params);
 }
