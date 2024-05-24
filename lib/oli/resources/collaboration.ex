@@ -523,12 +523,33 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
+  Returns the list of unread replies for a user.
+  """
+  def get_unread_reply_counts_for_root_discussions(user_id, root_curriculum_resource_id) do
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id,
+      # ignore replies that were created by the user
+      where:
+        is_nil(urp.post_id) and
+          p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
+      group_by: p.thread_root_id,
+      select: %{
+        thread_root_id: p.thread_root_id,
+        count: count(p.id)
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Returns the list of root posts for a section.
   """
   def list_root_posts_for_section(
         user_id,
         section_id,
-        root_section_resource_resource_id,
+        root_curriculum_resource_id,
         limit,
         offset,
         sort_by,
@@ -556,6 +577,25 @@ defmodule Oli.Resources.Collaboration do
              [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
              post.updated_at
            )}
+
+        {"unread", sort_order} ->
+          [
+            {sort_order,
+             dynamic(
+               [post, _sr, _spp, _pr, _rev, _user, replies, read_replies, urp, _reactions],
+               fragment(
+                 "case when ? > ? or ? then 1 else 0 end",
+                 coalesce(replies.count, 0),
+                 coalesce(read_replies.count, 0),
+                 is_nil(urp.id) and post.user_id != ^user_id
+               )
+             )},
+            {sort_order,
+             dynamic(
+               [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
+               post.updated_at
+             )}
+          ]
       end
 
     results =
@@ -575,12 +615,14 @@ defmodule Oli.Resources.Collaboration do
         on: replies.thread_root_id == post.id,
         left_join: read_replies in subquery(read_replies_subquery(user_id)),
         on: read_replies.thread_root_id == post.id,
+        left_join: urp in UserReadPost,
+        on: urp.post_id == post.id and urp.user_id == ^user_id,
         left_join: reactions in assoc(post, :reactions),
         where:
           post.section_id == ^section_id and post.visibility == :public and
             (post.status in [:approved, :archived, :deleted] or
                (post.status == :submitted and post.user_id == ^user_id)) and
-            post.resource_id == ^root_section_resource_resource_id and
+            post.resource_id == ^root_curriculum_resource_id and
             is_nil(post.parent_post_id) and is_nil(post.thread_root_id),
         order_by: ^order_clause,
         limit: ^limit,
@@ -593,7 +635,8 @@ defmodule Oli.Resources.Collaboration do
           post: %{
             post
             | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0)
+              read_replies_count: coalesce(read_replies.count, 0),
+              is_read: not (is_nil(urp.id) and post.user_id != ^user_id)
           },
           total_count: over(count(post.id))
         }
@@ -651,10 +694,6 @@ defmodule Oli.Resources.Collaboration do
         on: rev.id == pr.revision_id,
         join: user in User,
         on: post.user_id == user.id,
-        left_join: replies in subquery(replies_subquery()),
-        on: replies.thread_root_id == post.id,
-        left_join: read_replies in subquery(read_replies_subquery(user_id)),
-        on: read_replies.thread_root_id == post.id,
         where:
           post.section_id == ^section_id and post.visibility == :private and
             post.user_id == ^user_id,
@@ -667,9 +706,7 @@ defmodule Oli.Resources.Collaboration do
         select: %{
           post: %{
             post
-            | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0),
-              resource_slug: rev.slug
+            | resource_slug: rev.slug
           },
           total_count: over(count(post.id))
         }
@@ -1376,6 +1413,17 @@ defmodule Oli.Resources.Collaboration do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Returns the list of replies for a post.
+
+  ## Examples
+
+      iex> list_replies_for_post(1, 1)
+      [%Post{status: :approved}, ...]
+
+      iex> list_replies_for_post(2, 2)
+      []
+  """
   def list_replies_for_post(user_id, post_id) do
     Repo.all(
       from(
@@ -1398,6 +1446,17 @@ defmodule Oli.Resources.Collaboration do
     |> summarize_reactions(user_id)
   end
 
+  @doc """
+  Toggles a reaction to a post by a user. Returns a tuple with a resulting reaction count offset.
+
+  ## Examples
+
+      iex> toggle_reaction(1, 1, "like")
+      {:ok, 1}
+
+      iex> toggle_reaction(1, 1, "like")
+      {:ok, -1}
+  """
   def toggle_reaction(post_id, user_id, reaction) do
     case get_reaction(post_id, user_id, reaction) do
       nil ->
@@ -1420,16 +1479,77 @@ defmodule Oli.Resources.Collaboration do
     end
   end
 
+  @doc """
+  Returns the reaction to a post by a user.
+
+  ## Examples
+
+      iex> get_reaction(1, 1, "like")
+      %UserReactionPost{}
+  """
   def get_reaction(post_id, user_id, reaction) do
     Repo.get_by(UserReactionPost, post_id: post_id, user_id: user_id, reaction: reaction)
   end
 
+  @doc """
+  Creates a reaction.
+
+  ## Examples
+
+      iex> create_reaction(1, 1, "like")
+      {:ok, %UserReactionPost{}}
+  """
   def create_reaction(post_id, user_id, reaction) do
     %UserReactionPost{post_id: post_id, user_id: user_id, reaction: reaction}
     |> Repo.insert()
   end
 
+  @doc """
+  Deletes a reaction.
+
+  ## Examples
+
+      iex> delete_reaction(reaction)
+      {:ok, 1}
+  """
   def delete_reaction(%UserReactionPost{} = reaction) do
     Repo.delete(reaction)
+  end
+
+  @doc """
+  Marks the given course discussions and replies as read for the given user.
+
+  ## Examples
+
+      iex> mark_course_discussions_and_replies_read(1, 1)
+      {:ok, 1}
+  """
+  def mark_course_discussions_and_replies_read(user_id, root_curriculum_resource_id) do
+    now = DateTime.utc_now(:second)
+
+    from(
+      p in Post,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == p.id and urp.user_id == ^user_id,
+      where:
+        is_nil(urp.id) and
+          p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
+      select: p.id
+    )
+    |> Repo.all()
+    |> Enum.map(fn post_id ->
+      %{
+        post_id: post_id,
+        user_id: user_id,
+        inserted_at: now,
+        updated_at: now
+      }
+    end)
+    |> then(fn posts ->
+      Repo.insert_all(UserReadPost, posts,
+        on_conflict: {:replace, [:updated_at]},
+        conflict_target: [:post_id, :user_id]
+      )
+    end)
   end
 end
