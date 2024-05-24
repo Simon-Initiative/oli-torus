@@ -302,10 +302,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Past Due")
 
-      # Displays Reading group in Unit 1 > Module 1 (contains Graded 2 and Practice 1)
+      # Displays Lesson group in Unit 1 > Module 1 (contains Graded 2 and Practice 1)
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Unit 1")
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Module 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="resource_type"]}, "Reading")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="resource_type"]}, "Lesson")
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="title"]}, "Module 1")
 
       assert has_element?(
@@ -351,7 +351,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Complete Practice 2
       set_progress(section.id, practice_2.resource_id, user.id, 1.0, practice_2)
 
-      # Complete Reading group
+      # Complete Lesson group
       set_progress(section.id, graded_2.resource_id, user.id, 1.0, graded_2)
       set_progress(section.id, practice_1.resource_id, user.id, 1.0, practice_1)
 
@@ -369,7 +369,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       # Practice 2 is completed
       assert has_element?(lcd, ~s{#schedule_item_2_2 div[role="details"]}, "Completed")
 
-      # Reading group is completed
+      # Lesson group is completed
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Completed")
     end
 
@@ -410,7 +410,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "Time Remaining")
     end
 
-    test "it expands a reading group", %{
+    test "it expands a lesson group", %{
       conn: conn,
       section: section,
       user: user,
@@ -419,7 +419,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
     } do
       stub_current_time(~U[2024-05-07 20:00:00Z])
 
-      # Complete Practice 1 (inside Reading group)
+      # Complete Practice 1 (inside Lesson group)
       set_progress(section.id, practice_1.resource_id, user.id, 1.0, practice_1)
 
       schedule_for_current_week_and_next_week =
