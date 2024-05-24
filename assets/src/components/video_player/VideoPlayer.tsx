@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useRef, useState, useEffect } from 'react';
+import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
   BigPlayButton,
   ControlBar,
@@ -10,8 +10,8 @@ import {
   ProgressControl,
   TimeDivider,
 } from 'video-react';
-import * as XAPI from 'data/persistence/xapi';
 import { PointMarkerContext, maybePointMarkerAttr } from 'data/content/utils';
+import * as XAPI from 'data/persistence/xapi';
 import * as ContentModel from '../../data/content/model/elements/types';
 import { useCommandTarget } from '../editing/elements/command_button/useCommandTarget';
 import { ClosedCaptionButton } from './ClosedCaptionButton';
@@ -54,7 +54,6 @@ interface VideoInterface {
   seek: (time: number) => void;
 }
 
-
 export const VideoPlayer: React.FC<{
   video: ContentModel.Video;
   pageAttemptGuid: string;
@@ -91,7 +90,6 @@ export const VideoPlayer: React.FC<{
     }
     // This handles stopping at the correct point if a cue-point command previously came in with an end-timestamp set.
     player.subscribeToStateChange((state: PlayerState, prev: PlayerState) => {
-
       if (
         pauseAtPosition.current > 0 &&
         state.hasStarted &&
@@ -102,7 +100,6 @@ export const VideoPlayer: React.FC<{
       }
 
       if (state.seekingTime !== 0 && prev.seekingTime === 0) {
-
         const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
 
         if (lastSegment) {
@@ -112,27 +109,27 @@ export const VideoPlayer: React.FC<{
         }
 
         setSeekFrom(prev.currentTime);
-
       } else if (!state.seeking && prev.seeking) {
-        const segment = {start: state.currentTime, end: null};
+        const segment = { start: state.currentTime, end: null };
         setSegments([...segmentsRef.current, segment]);
 
-        XAPI.emit_delivery({
-          type: 'page_video_key',
-          page_attempt_guid: pageAttemptGuid,
-        }, {
-          type: 'video_seeked',
-          category: 'video',
-          event_type: 'seeked',
-          video_url: state.currentSrc,
-          video_title: state.currentSrc,
-          video_seek_to: state.currentTime,
-          video_seek_from: seekFromRef.current,
-          content_element_id: video.id,
-        } as XAPI.VideoSeekedEvent)
-
+        XAPI.emit_delivery(
+          {
+            type: 'page_video_key',
+            page_attempt_guid: pageAttemptGuid,
+          },
+          {
+            type: 'video_seeked',
+            category: 'video',
+            event_type: 'seeked',
+            video_url: state.currentSrc,
+            video_title: state.currentSrc,
+            video_seek_to: state.currentTime,
+            video_seek_from: seekFromRef.current,
+            content_element_id: video.id,
+          } as XAPI.VideoSeekedEvent,
+        );
       } else if (state.ended && !prev.ended) {
-
         const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
         if (lastSegment) {
           lastSegment.end = state.currentTime;
@@ -143,25 +140,27 @@ export const VideoPlayer: React.FC<{
         const progress = XAPI.calculateProgress(segments, state.duration);
 
         // Emit completed event
-        XAPI.emit_delivery({
+        XAPI.emit_delivery(
+          {
             type: 'page_video_key',
             page_attempt_guid: pageAttemptGuid,
-          }, {
-          type: 'video_completed',
-          category: 'video',
-          event_type: 'completed',
-          video_url: state.currentSrc,
-          video_title: state.currentSrc,
-          video_length: state.duration,
-          video_played_segments: XAPI.formatSegments(segments),
-          video_progress: progress,
-          video_time: state.currentTime,
-          content_element_id: video.id,
-        } as XAPI.VideoCompletedEvent)
+          },
+          {
+            type: 'video_completed',
+            category: 'video',
+            event_type: 'completed',
+            video_url: state.currentSrc,
+            video_title: state.currentSrc,
+            video_length: state.duration,
+            video_played_segments: XAPI.formatSegments(segments),
+            video_progress: progress,
+            video_time: state.currentTime,
+            content_element_id: video.id,
+          } as XAPI.VideoCompletedEvent,
+        );
       } else if (state.paused && !prev.paused) {
-
         const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
-        let segmentsStr = "";
+        let segmentsStr = '';
 
         if (lastSegment) {
           lastSegment.end = state.currentTime;
@@ -172,41 +171,45 @@ export const VideoPlayer: React.FC<{
         }
 
         // Emit paused event
-        XAPI.emit_delivery({
+        XAPI.emit_delivery(
+          {
             type: 'page_video_key',
             page_attempt_guid: pageAttemptGuid,
-          }, {
-          type: 'video_paused',
-          category: 'video',
-          event_type: 'paused',
-          video_url: state.currentSrc,
-          video_title: state.currentSrc,
-          video_length: state.duration,
-          video_played_segments: segmentsStr,
-          video_progress: XAPI.calculateProgress(segments, state.duration),
-          video_time: state.currentTime,
-          content_element_id: video.id,
-        } as XAPI.VideoPausedEvent)
-
+          },
+          {
+            type: 'video_paused',
+            category: 'video',
+            event_type: 'paused',
+            video_url: state.currentSrc,
+            video_title: state.currentSrc,
+            video_length: state.duration,
+            video_played_segments: segmentsStr,
+            video_progress: XAPI.calculateProgress(segments, state.duration),
+            video_time: state.currentTime,
+            content_element_id: video.id,
+          } as XAPI.VideoPausedEvent,
+        );
       } else if (!state.paused && prev.paused) {
-
-        const segment = {start: state.currentTime, end: null};
+        const segment = { start: state.currentTime, end: null };
         setSegments([...segmentsRef.current, segment]);
 
         // Emit played event
-        XAPI.emit_delivery({
+        XAPI.emit_delivery(
+          {
             type: 'page_video_key',
             page_attempt_guid: pageAttemptGuid,
-          }, {
-          type: 'video_played',
-          category: 'video',
-          event_type: 'played',
-          video_url: state.currentSrc,
-          video_title: state.currentSrc,
-          video_length: state.duration,
-          video_play_time: state.currentTime,
-          content_element_id: video.id,
-        } as XAPI.VideoPlayedEvent)
+          },
+          {
+            type: 'video_played',
+            category: 'video',
+            event_type: 'played',
+            video_url: state.currentSrc,
+            video_title: state.currentSrc,
+            video_length: state.duration,
+            video_play_time: state.currentTime,
+            content_element_id: video.id,
+          } as XAPI.VideoPlayedEvent,
+        );
       }
     });
   }, []);

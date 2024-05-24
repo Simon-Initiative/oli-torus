@@ -1,4 +1,4 @@
-import * as XAPI from 'data/persistence/xapi'
+import * as XAPI from 'data/persistence/xapi';
 
 export const VideoPlayer = {
   mounted() {
@@ -9,14 +9,14 @@ export const VideoPlayer = {
     const metadata = {
       sectionId: null,
       resourceId: null,
-      segments: []
+      segments: [],
     } as any;
 
     const getSectionId = () => metadata.sectionId as any;
     const getResourceId = () => metadata.resourceId as any;
 
     cloudVideo.onplaying = () => {
-      const segment = {start: cloudVideo.currentTime, end: null};
+      const segment = { start: cloudVideo.currentTime, end: null };
       metadata.segments = [...metadata.segments, segment];
 
       const event: XAPI.VideoPlayedEvent = {
@@ -29,12 +29,15 @@ export const VideoPlayer = {
         video_play_time: cloudVideo.currentTime,
         content_element_id: getResourceId() + '',
       };
-      const key: XAPI.IntroVideoKey = { type: 'intro_video_key', resource_id: getResourceId(), section_id: getSectionId() };
+      const key: XAPI.IntroVideoKey = {
+        type: 'intro_video_key',
+        resource_id: getResourceId(),
+        section_id: getSectionId(),
+      };
       XAPI.emit_delivery(key, event);
     };
 
     cloudVideo.onpause = () => {
-
       const lastSegment = metadata.segments[metadata.segments.length - 1];
       if (lastSegment) {
         lastSegment.end = cloudVideo.currentTime;
@@ -54,12 +57,15 @@ export const VideoPlayer = {
         video_progress: XAPI.calculateProgress(segments, cloudVideo.duration),
         content_element_id: getResourceId() + '',
       };
-      const key: XAPI.IntroVideoKey = { type: 'intro_video_key', resource_id: getResourceId(), section_id: getSectionId() };
+      const key: XAPI.IntroVideoKey = {
+        type: 'intro_video_key',
+        resource_id: getResourceId(),
+        section_id: getSectionId(),
+      };
       XAPI.emit_delivery(key, event);
     };
 
     cloudVideo.onended = () => {
-
       const lastSegment = metadata.segments[metadata.segments.length - 1];
       if (lastSegment) {
         lastSegment.end = cloudVideo.currentTime;
@@ -79,7 +85,11 @@ export const VideoPlayer = {
         video_progress: XAPI.calculateProgress(segments, cloudVideo.duration),
         content_element_id: getResourceId() + '',
       };
-      const key: XAPI.IntroVideoKey = { type: 'intro_video_key', resource_id: getResourceId(), section_id: getSectionId() };
+      const key: XAPI.IntroVideoKey = {
+        type: 'intro_video_key',
+        resource_id: getResourceId(),
+        section_id: getSectionId(),
+      };
       XAPI.emit_delivery(key, event);
     };
 
