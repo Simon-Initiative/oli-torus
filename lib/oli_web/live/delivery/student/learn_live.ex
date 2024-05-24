@@ -351,9 +351,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   @doc """
   This event handler is responsible for toggling the module (expand or collapse it).
-  It requires the unit and the module resource_id of the card that should be toggled.
-  It accepts a third optional parameter `force_auto_scroll?` which is a boolean that, in case of being true,
-  it will force to autoscroll Y to the unit.
+  Params:
+    - `unit_resource_id` (required): the resource_id of the unit that contains the module.
+    - `module_resource_id` (required): the resource_id of the module that should be toggled.
+    - `force_auto_scroll?` (optional): a boolean that, in case of being true, it will force to autoscroll Y to the unit (defaults to false).
+    - `scroll_behavior` (optional): the scroll behavior to be used when scrolling to the unit (defaults to "smooth").
+    - `pulse_target_id` (optional): the id of the element that should be pulsed after the module is expanded (defaults to nil).
   """
 
   def handle_event(
@@ -364,7 +367,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ) do
     force_auto_scroll? = params["force_auto_scroll?"] == "true"
 
-    {:noreply, toggle_module(socket, unit_resource_id, module_resource_id, force_auto_scroll?)}
+    {:noreply,
+     do_toggle_module(
+       socket,
+       unit_resource_id,
+       module_resource_id,
+       force_auto_scroll?,
+       params["scroll_behavior"],
+       params["pulse_target_id"]
+     )}
   end
 
   def handle_event("navigate_to_resource", %{"slug" => _} = values, socket),
@@ -439,7 +450,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       "module" ->
         {
           :noreply,
-          toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
+          do_toggle_module(socket, params["unit_resource_id"], params["module_resource_id"])
           |> push_event("js-exec", %{
             to: "##{params["type"]}_#{params["module_resource_id"]}",
             attr: "data-enter-event"
@@ -498,7 +509,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   ## Tab navigation end ##
 
-  defp toggle_module(socket, unit_resource_id, module_resource_id, force_auto_scroll? \\ false) do
+  defp do_toggle_module(
+         socket,
+         unit_resource_id,
+         module_resource_id,
+         force_auto_scroll? \\ false,
+         scroll_behavior \\ "smooth",
+         pulse_target_id \\ nil
+       ) do
     unit_resource_id = String.to_integer(unit_resource_id)
     module_resource_id = String.to_integer(module_resource_id)
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
@@ -572,8 +590,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     socket
     |> assign(selected_module_per_unit_resource_id: selected_module_per_unit_resource_id)
     |> update(:units, fn units -> [selected_unit | units] end)
-    |> maybe_scroll_y_to_unit(unit_resource_id, auto_scroll?)
+    |> maybe_scroll_y_to_unit(unit_resource_id, auto_scroll?, scroll_behavior)
     |> maybe_scroll_x_to_card_in_slider(unit_resource_id, module_resource_id, auto_scroll?)
+    |> maybe_pulse_target(pulse_target_id)
     |> push_event("hide-or-show-buttons-on-sliders", %{
       unit_resource_ids:
         Enum.map(
@@ -609,6 +628,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> JS.hide(
       to: "#selected_module_in_unit_#{unit_resource_id}",
       transition: {"ease-out duration-500", "opacity-100", "opacity-0"}
+    )
+    |> JS.push("toggle_module")
+  end
+
+  def collapse_module(js \\ %JS{}, unit_resource_id) do
+    js
+    |> JS.hide(
+      to: "#selected_module_in_unit_#{unit_resource_id}",
+      transition:
+        {"ease-out duration-700", "opacity-100 scale-100 translate-y-0",
+         "opacity-0 -translate-y-full"}
     )
     |> JS.push("toggle_module")
   end
@@ -936,180 +966,184 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
       </div>
-      <.custom_focus_wrap
-        :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
-        class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
-        role="module_details"
-        id={"selected_module_in_unit_#{@unit["resource_id"]}"}
-        data-animate={
-          JS.show(
-            to: "#selected_module_in_unit_#{@unit["resource_id"]}",
-            display: "flex",
-            transition: {"ease-out duration-1000", "opacity-0", "opacity-100"}
-          )
-        }
-        phx-window-keydown={
-          leave_module(
-            @unit["resource_id"],
-            @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"]
-          )
-          |> JS.dispatch("click",
-            to:
-              "#module_#{@selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"]}"
-          )
-        }
-        phx-key="Escape"
-      >
-        <div
-          role="expanded module header"
-          class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
-        >
-          <div class="justify-start items-start gap-1 inline-flex">
-            <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
-              Module <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                "numbering"
-              ]["index"] %>
-            </div>
-          </div>
-          <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
-            <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-              "title"
-            ] %>
-          </h2>
-          <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
-            Due: <%= format_date(
-              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                "section_resource"
-              ].end_date,
-              @ctx,
-              "{WDshort} {Mshort} {D}, {YYYY}"
-            ) %>
-          </span>
-        </div>
-        <div
-          :if={
-            Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-              "intro_content"
-            ][
-              "children"
-            ]
+      <div class="overflow-hidden">
+        <.custom_focus_wrap
+          :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
+          class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
+          role="module_details"
+          id={"selected_module_in_unit_#{@unit["resource_id"]}"}
+          data-animate={
+            JS.show(
+              to: "#selected_module_in_unit_#{@unit["resource_id"]}",
+              display: "flex",
+              transition: {"ease-out duration-1000", "opacity-0", "opacity-100"}
+            )
           }
-          id={"module_intro_contentin_unit_#{@unit["resource_id"]}"}
-          role="module intro content"
-          class="max-w-[760px] w-full pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
+          phx-window-keydown={
+            leave_module(
+              @unit["resource_id"],
+              @selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"]
+            )
+            |> JS.dispatch("click",
+              to:
+                "#module_#{@selected_module_per_unit_resource_id[@unit["resource_id"]]["resource_id"]}"
+            )
+          }
+          phx-key="Escape"
         >
-          <div class="flex flex-col opacity-80">
-            <span
-              data-toggle_read_more_button_id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
-              phx-hook="ToggleReadMore"
-              id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
-              class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
-              style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
-            >
-              <%= render_intro_content(
+          <div
+            role="expanded module header"
+            class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
+          >
+            <div class="justify-start items-start gap-1 inline-flex">
+              <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
+                Module <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                  "numbering"
+                ]["index"] %>
+              </div>
+            </div>
+            <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
+              <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                "title"
+              ] %>
+            </h2>
+            <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
+              Due: <%= format_date(
                 Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                  "intro_content"
-                ][
-                  "children"
-                ]
+                  "section_resource"
+                ].end_date,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
               ) %>
             </span>
-            <div
-              id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
-              class="ml-auto"
-            >
-              <button
-                id={"read_more_module_intro_in_unit_#{@unit["resource_id"]}"}
-                phx-click={
-                  JS.remove_attribute("style",
-                    to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
-                  )
-                  |> JS.toggle(to: "#read_less_module_intro_in_unit_#{@unit["resource_id"]}")
-                  |> JS.toggle()
-                }
-                class="text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
-              >
-                Read more
-              </button>
-              <button
-                id={"read_less_module_intro_in_unit_#{@unit["resource_id"]}"}
-                phx-click={
-                  JS.set_attribute(
-                    {"style",
-                     "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
-                    to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
-                  )
-                  |> JS.toggle(to: "#read_more_module_intro_in_unit_#{@unit["resource_id"]}")
-                  |> JS.toggle()
-                }
-                class="hidden text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
-              >
-                Read less
-              </button>
-            </div>
           </div>
-        </div>
-        <button
-          :if={@assistant_enabled}
-          phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
-          class="h-[39px] p-2.5 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 dark:bg-blue-700 dark:hover:bg-opacity-60 dark:focus:bg-opacity-60 rounded text-white text-sm font-semibold font-['Open Sans'] tracking-tight"
-        >
-          Let's discuss?
-        </button>
-
-        <div
-          role="module index"
-          class="flex flex-col max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
-        >
-          <div class="w-full">
-            <% module =
-              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
-            <.module_content_header
-              module={module}
-              page_metrics={
-                get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
-              }
-              show_completed_pages={
-                get_in(
-                  @display_props_per_module_id,
-                  [module["resource_id"], :show_completed_pages],
-                  true
-                )
-              }
-            />
-            <.module_index
-              module={module}
-              student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
-              student_progress_per_resource_id={@student_progress_per_resource_id}
-              student_end_date_exceptions_per_resource_id={
-                @student_end_date_exceptions_per_resource_id
-              }
-              ctx={@ctx}
-              student_id={@student_id}
-              intro_video_viewed={
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
-              }
-              display_props_per_module_id={@display_props_per_module_id}
-            />
-          </div>
-        </div>
-        <div role="collapse_bar" class="w-full px-2.5 justify-center items-center inline-flex">
-          <div class="grow shrink basis-0 h-px bg-white/20"></div>
-          <button
-            phx-click="toggle_module"
-            phx-value-unit_resource_id={@unit["resource_id"]}
-            phx-value-module_resource_id={module["resource_id"]}
-            phx-value-force_auto_scroll?="true"
-            class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-white opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex"
+          <div
+            :if={
+              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                "intro_content"
+              ][
+                "children"
+              ]
+            }
+            id={"module_intro_contentin_unit_#{@unit["resource_id"]}"}
+            role="module intro content"
+            class="max-w-[760px] w-full pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
           >
-            <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
-              Collapse Module
+            <div class="flex flex-col opacity-80">
+              <span
+                data-toggle_read_more_button_id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
+                phx-hook="ToggleReadMore"
+                id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
+                class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
+                style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
+              >
+                <%= render_intro_content(
+                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                    "intro_content"
+                  ][
+                    "children"
+                  ]
+                ) %>
+              </span>
+              <div
+                id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
+                class="ml-auto"
+              >
+                <button
+                  id={"read_more_module_intro_in_unit_#{@unit["resource_id"]}"}
+                  phx-click={
+                    JS.remove_attribute("style",
+                      to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
+                    )
+                    |> JS.toggle(to: "#read_less_module_intro_in_unit_#{@unit["resource_id"]}")
+                    |> JS.toggle()
+                  }
+                  class="text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+                >
+                  Read more
+                </button>
+                <button
+                  id={"read_less_module_intro_in_unit_#{@unit["resource_id"]}"}
+                  phx-click={
+                    JS.set_attribute(
+                      {"style",
+                       "display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"},
+                      to: "#selected_module_in_unit_#{@unit["resource_id"]}_intro_content"
+                    )
+                    |> JS.toggle(to: "#read_more_module_intro_in_unit_#{@unit["resource_id"]}")
+                    |> JS.toggle()
+                  }
+                  class="hidden text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+                >
+                  Read less
+                </button>
+              </div>
             </div>
-            <Icons.chevron_down class="w-4 h-4 opacity-90 rotate-180" />
+          </div>
+          <button
+            :if={@assistant_enabled}
+            phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
+            class="h-[39px] p-2.5 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 dark:bg-blue-700 dark:hover:bg-opacity-60 dark:focus:bg-opacity-60 rounded text-white text-sm font-semibold font-['Open Sans'] tracking-tight"
+          >
+            Let's discuss?
           </button>
-          <div class="grow shrink basis-0 h-px bg-white/20"></div>
-        </div>
-      </.custom_focus_wrap>
+
+          <div
+            role="module index"
+            class="flex flex-col max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
+          >
+            <div class="w-full">
+              <% module =
+                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
+              <.module_content_header
+                module={module}
+                page_metrics={
+                  get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
+                }
+                show_completed_pages={
+                  get_in(
+                    @display_props_per_module_id,
+                    [module["resource_id"], :show_completed_pages],
+                    true
+                  )
+                }
+              />
+              <.module_index
+                module={module}
+                student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+                student_progress_per_resource_id={@student_progress_per_resource_id}
+                student_end_date_exceptions_per_resource_id={
+                  @student_end_date_exceptions_per_resource_id
+                }
+                ctx={@ctx}
+                student_id={@student_id}
+                intro_video_viewed={
+                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
+                }
+                display_props_per_module_id={@display_props_per_module_id}
+              />
+            </div>
+          </div>
+          <div role="collapse_bar" class="w-full px-2.5 justify-center items-center inline-flex">
+            <div class="grow shrink basis-0 h-px bg-white/20"></div>
+            <button
+              phx-click={collapse_module(@unit["resource_id"])}
+              phx-value-unit_resource_id={@unit["resource_id"]}
+              phx-value-module_resource_id={module["resource_id"]}
+              phx-value-force_auto_scroll?="true"
+              phx-value-scroll_behavior="auto"
+              phx-value-pulse_target_id={"module_#{module["resource_id"]}"}
+              class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-white opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex"
+            >
+              <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
+                Collapse Module
+              </div>
+              <Icons.chevron_down class="w-4 h-4 opacity-90 rotate-180" />
+            </button>
+            <div class="grow shrink basis-0 h-px bg-white/20"></div>
+          </div>
+        </.custom_focus_wrap>
+      </div>
     </div>
     """
   end
@@ -1905,7 +1939,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-click={
         if @is_page,
           do: "navigate_to_resource",
-          else: "toggle_module"
+          else: toggle_module(@unit_resource_id)
       }
       phx-keydown="card_keydown"
       phx-value-unit_resource_id={@unit_resource_id}
@@ -2462,10 +2496,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     direction to focus on the unit that contains that card.
   """
 
-  defp maybe_scroll_y_to_unit(socket, _unit_resource_id, false), do: socket
+  defp maybe_scroll_y_to_unit(socket, _unit_resource_id, false, _scroll_behavior), do: socket
 
-  defp maybe_scroll_y_to_unit(socket, unit_resource_id, true) do
-    push_event(socket, "scroll-y-to-target", %{id: "unit_#{unit_resource_id}", offset: 25})
+  defp maybe_scroll_y_to_unit(socket, unit_resource_id, true, scroll_behavior) do
+    push_event(socket, "scroll-y-to-target", %{
+      id: "unit_#{unit_resource_id}",
+      offset: 25,
+      scroll_behavior: scroll_behavior
+    })
   end
 
   _docp = """
@@ -2481,6 +2519,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     push_event(socket, "scroll-x-to-card-in-slider", %{
       card_id: "module_#{module_resource_id}",
       unit_resource_id: unit_resource_id
+    })
+  end
+
+  def maybe_pulse_target(socket, nil) do
+    IO.puts("por NO pushear evento!")
+    socket
+  end
+
+  def maybe_pulse_target(socket, target_id) do
+    IO.puts("por pushear evento!")
+
+    push_event(socket, "pulse-target", %{
+      target_id: target_id
     })
   end
 

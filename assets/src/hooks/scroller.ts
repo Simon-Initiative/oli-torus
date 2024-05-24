@@ -90,15 +90,26 @@ export const Scroller = {
 
     window.addEventListener('phx:scroll-y-to-target', (e: Event) => {
       const el = document.getElementById((e as CustomEvent).detail.id);
+      const scrollBehavior = (e as CustomEvent).detail.scroll_behavior || 'smooth';
       const offset = (e as CustomEvent).detail.offset || 0;
       if (el) {
-        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+        window.scrollTo({ top: el.offsetTop - offset, behavior: scrollBehavior });
 
         if ((e as CustomEvent).detail.pulse == true) {
           setTimeout(() => {
             el.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
           }, (e as CustomEvent).detail.pulse_delay || 300);
         }
+      }
+    });
+
+    window.addEventListener('phx:pulse-target', (e: Event) => {
+      console.log('estoy en el handler correcto');
+      const target = document.getElementById((e as CustomEvent).detail.target_id);
+
+      console.log((e as CustomEvent).detail.target_id);
+      if (target) {
+        target.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)1]');
       }
     });
 
