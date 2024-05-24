@@ -108,7 +108,8 @@ export const YoutubePlayer: React.FC<{
         XAPI.emit_delivery(
           {
             type: 'page_video_key',
-            page_attempt_guid: context.resourceAttemptGuid as any,
+            page_attempt_guid:
+              context?.resourceAttemptGuid !== undefined ? context?.resourceAttemptGuid : '',
           },
           {
             type: 'video_completed',
@@ -131,7 +132,8 @@ export const YoutubePlayer: React.FC<{
         XAPI.emit_delivery(
           {
             type: 'page_video_key',
-            page_attempt_guid: context.resourceAttemptGuid as any,
+            page_attempt_guid:
+              context?.resourceAttemptGuid !== undefined ? context?.resourceAttemptGuid : '',
           },
           {
             type: 'video_played',
@@ -153,7 +155,8 @@ export const YoutubePlayer: React.FC<{
         XAPI.emit_delivery(
           {
             type: 'page_video_key',
-            page_attempt_guid: context.resourceAttemptGuid as any,
+            page_attempt_guid:
+              context?.resourceAttemptGuid !== undefined ? context?.resourceAttemptGuid : '',
           },
           {
             type: 'video_paused',

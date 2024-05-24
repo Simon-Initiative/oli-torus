@@ -99,6 +99,11 @@ export const VideoPlayer: React.FC<{
         player.pause();
       }
 
+      // In an authoring context, just stop here, we don't want to emit xAPI events
+      if (pageAttemptGuid === '') {
+        return;
+      }
+
       if (state.seekingTime !== 0 && prev.seekingTime === 0) {
         const lastSegment = segmentsRef.current[segmentsRef.current.length - 1];
 
