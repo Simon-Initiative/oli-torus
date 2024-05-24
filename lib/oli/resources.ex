@@ -157,7 +157,13 @@ defmodule Oli.Resources do
   end
 
   # returns a list of resource ids that refer to activity references in a page
-  def activity_references(%Revision{content: content} = _page) do
+  def activity_references(%Revision{content: content} = _page),
+    do: activity_references_from_content(content)
+
+  def activity_references(%{content: content} = _page),
+    do: activity_references_from_content(content)
+
+  defp activity_references_from_content(content) do
     Oli.Resources.PageContent.flat_filter(content, &(&1["type"] == "activity-reference"))
     |> Enum.map(& &1["activity_id"])
   end
