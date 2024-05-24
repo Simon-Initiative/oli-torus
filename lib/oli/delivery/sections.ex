@@ -4472,16 +4472,30 @@ defmodule Oli.Delivery.Sections do
 
     objectives =
       from([rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug))
-      |> join_contained_objectives(section.v25_migration)
       |> where([rev: rev, s: s], rev.deleted == false and rev.resource_type_id == ^objective_id)
       |> group_by([rev: rev], [rev.title, rev.resource_id, rev.children])
-      |> select([rev: rev, co: co], %{
+      |> select([rev: rev], %{
         title: rev.title,
         resource_id: rev.resource_id,
-        children: rev.children,
-        container_ids: fragment("array_agg(DISTINCT ?)", co.container_id)
+        children: rev.children
       })
       |> Repo.all()
+
+    objective_to_container_ids_map =
+      from(co in ContainedObjective)
+      |> where([co], co.section_id == ^section.id)
+      |> select([co], co)
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn co, acc ->
+        Map.update(acc, co.objective_id, [co.container_id], &(&1 ++ [co.container_id]))
+      end)
+
+    objectives =
+      Enum.map(objectives, fn obj ->
+        Map.merge(obj, %{
+          container_ids: Map.get(objective_to_container_ids_map, obj.resource_id, [])
+        })
+      end)
 
     lookup_map =
       Enum.reduce(objectives, %{}, fn obj, acc ->
@@ -4564,30 +4578,6 @@ defmodule Oli.Delivery.Sections do
       end
     end)
   end
-
-  _docp = """
-    Join to take into account sections that have already created the contained objectives.
-    This will filter out any objective directly attached to a page, and will only consider objectives attached to activities.
-  """
-
-  defp join_contained_objectives(query, :done),
-    do:
-      join(query, :inner, [rev: rev], co in ContainedObjective,
-        as: :co,
-        on: co.objective_id == rev.resource_id
-      )
-
-  _docp = """
-    Join to take into account sections that have no contained objectives yet.
-    This will still return objectives attached to pages but not to activities, just to be consistent with how it used to work until we migrate all sections.
-  """
-
-  defp join_contained_objectives(query, _),
-    do:
-      join(query, :left, [rev: rev], co in ContainedObjective,
-        as: :co,
-        on: co.objective_id == rev.resource_id
-      )
 
   @doc """
   Maps each resource with its parent container label, being the label (if any) like
