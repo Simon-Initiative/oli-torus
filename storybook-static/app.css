@@ -4118,6 +4118,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: -10px;
 }
 
+.left-\[100\.52px\] {
+  left: 100.52px;
+}
+
 .left-\[1250px\] {
   left: 1250px;
 }
@@ -4456,6 +4460,11 @@ table.table-striped tbody tr:nth-child(even) {
 .my-6 {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+.my-7 {
+  margin-top: 1.75rem;
+  margin-bottom: 1.75rem;
 }
 
 .my-8 {
@@ -5466,6 +5475,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 56px;
 }
 
+.w-\[6\.5rem\] {
+  width: 6.5rem;
+}
+
 .w-\[600px\] {
   width: 600px;
 }
@@ -6382,8 +6395,16 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-left-radius: 52px;
 }
 
+.rounded-bl-lg {
+  border-bottom-left-radius: 0.5rem;
+}
+
 .rounded-bl-xl {
   border-bottom-left-radius: 0.75rem;
+}
+
+.rounded-br-lg {
+  border-bottom-right-radius: 0.5rem;
 }
 
 .rounded-br-xl {
@@ -6394,8 +6415,16 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-left-radius: 52px;
 }
 
+.rounded-tl-lg {
+  border-top-left-radius: 0.5rem;
+}
+
 .rounded-tl-xl {
   border-top-left-radius: 0.75rem;
+}
+
+.rounded-tr-lg {
+  border-top-right-radius: 0.5rem;
 }
 
 .rounded-tr-xl {
@@ -8644,10 +8673,6 @@ table.table-striped tbody tr:nth-child(even) {
 .no-underline {
   -webkit-text-decoration-line: none;
           text-decoration-line: none;
-}
-
-.underline-offset-4 {
-  text-underline-offset: 4px;
 }
 
 .antialiased {
@@ -12700,10 +12725,6 @@ https://tailwindcss.com/docs/utility-first
 .focus\:mx-0:focus {
   margin-left: 0px;
   margin-right: 0px;
-}
-
-.focus\:\!border-none:focus {
-  border-style: none !important;
 }
 
 .focus\:border-delivery-primary-200:focus {
