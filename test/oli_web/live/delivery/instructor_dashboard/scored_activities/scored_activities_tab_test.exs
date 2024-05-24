@@ -1329,6 +1329,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       |> element("table tbody tr:nth-of-type(1) a")
       |> render_click(%{id: page_5.id})
 
+      assert view |> element("button", "Back to Activities") |> has_element?()
+
       url =
         live_view_scored_activities_route(section.slug, %{
           assessment_id: page_5.id
