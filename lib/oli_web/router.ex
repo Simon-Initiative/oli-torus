@@ -710,7 +710,6 @@ defmodule OliWeb.Router do
     post("/", Api.XAPIController, :emit)
   end
 
-
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
     pipe_through([:api, :delivery_protected])

@@ -65,7 +65,8 @@ defmodule Oli.Analytics.XAPI.Events.Video.Seeked do
           "http://oli.cmu.edu/extensions/content_element_id" => content_element_id
         }
       },
-      "timestamp" => timestamp
+      "timestamp" => timestamp,
+      "registration" => "#{section_id}-#{page_id}-#{content_element_id}"
     }
   end
 end

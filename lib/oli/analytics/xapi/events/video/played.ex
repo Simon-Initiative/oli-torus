@@ -65,7 +65,8 @@ defmodule Oli.Analytics.XAPI.Events.Video.Played do
           "https://w3id.org/xapi/video/extensions/length" => video_length
         }
       },
-      "timestamp" => timestamp
+      "timestamp" => timestamp,
+      "registration" => "#{section_id}-#{page_id}-#{content_element_id}"
     }
   end
 end

@@ -15,9 +15,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Activities
+  alias Oli.Analytics.XAPI.Events.Context
 
   alias Oli.Analytics.Summary.{
-    Context,
     AttemptGroup
   }
 

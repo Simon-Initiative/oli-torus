@@ -82,7 +82,6 @@ defmodule Oli.Rendering.Content.Html do
   def img_inline(%Context{} = _context, _, _e), do: ""
 
   def video(%Context{} = context, _, attrs) do
-
     {:safe, video_player} =
       OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
         "video" => attrs,

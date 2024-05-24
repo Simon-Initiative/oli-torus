@@ -339,7 +339,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      socket
      |> assign(viewed_intro_video_resource_ids: updated_viewed_videos)
      |> update(:units, fn units -> [selected_unit | units] end)
-     |> push_event("play_video", %{"video_url" => video_url, "section_id" => section_id, "module_resource_id" => resource_id})}
+     |> push_event("play_video", %{
+       "video_url" => video_url,
+       "section_id" => section_id,
+       "module_resource_id" => resource_id
+     })}
   end
 
   def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
@@ -400,11 +404,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("intro_card_keydown", params, socket) do
     case params["key"] do
       "Enter" ->
-        {:noreply, push_event(socket, "play_video", %{
-          "video_url" => params["video_url"],
-          "module_resource_id" => params["card_resource_id"],
-          "section_id" => params["section_id"]
-        })}
+        {:noreply,
+         push_event(socket, "play_video", %{
+           "video_url" => params["video_url"],
+           "module_resource_id" => params["card_resource_id"],
+           "section_id" => params["section_id"]
+         })}
 
       "Escape" ->
         {:noreply,
@@ -757,6 +762,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   attr :unit, :map
+  attr :section, :map
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :student_progress_per_resource_id, :map
   attr :student_raw_avg_score_per_page_id, :map
@@ -1115,6 +1121,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex flex-col mt-6">
           <.outline_row
             :for={row <- @row["children"]}
+            section={@section}
             row={row}
             type={child_type(row)}
             student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -1138,6 +1145,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="flex flex-col mt-6">
           <.outline_row
+            section={@section}
             row={@row}
             type={:page}
             student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -1187,6 +1195,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
         <.outline_row
           :for={row <- @row["children"]}
+          section={@section}
           row={row}
           type={child_type(row)}
           student_progress_per_resource_id={@student_progress_per_resource_id}
