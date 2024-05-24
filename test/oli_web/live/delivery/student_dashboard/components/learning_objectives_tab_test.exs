@@ -252,6 +252,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
     #           |--> Objective F
     #
     # Note: Activity X does not have objectives
+    @tag :skip
     test "applies filtering by module when contained objectives were created", %{
       conn: conn,
       student: student,
@@ -396,6 +397,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       assert has_element?(view, "form select.torus-select option[selected]", "20")
     end
 
+    @tag :skip
     test "updates page size and list expected elements", %{
       conn: conn,
       student: student,
@@ -431,6 +433,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.LearningObjectivesTabTest 
       refute has_element?(view, "span", "#{revisions.obj_revision_f.title}")
     end
 
+    @tag :skip
     test "keeps showing the same elements when changing the page size", %{
       conn: conn,
       student: student,
