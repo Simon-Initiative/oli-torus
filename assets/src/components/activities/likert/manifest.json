@@ -5,6 +5,7 @@
   "description": "A question type that collects input from one or more Likert scales",
   "icon": "sliders-h",
   "allowClientEvaluation": false,
+  "generatesReport": true,
   "delivery": {
     "element": "oli-likert-delivery",
     "entry": "./delivery-entry.ts"

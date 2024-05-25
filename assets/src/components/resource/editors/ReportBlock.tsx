@@ -29,7 +29,7 @@ export const ReportBlock = ({
     <div id={`resource-editor-${contentItem.id}`} className={classNames(styles.surveyBlock)}>
       <div className={styles.surveyBlockHeader}>
         <div className="self-center">
-          <i className="fas fa-poll la-lg"></i>
+          <i className="fas fa-area-chart la-lg"></i>
         </div>
         <TextEditor
           label="Edit Report Title"

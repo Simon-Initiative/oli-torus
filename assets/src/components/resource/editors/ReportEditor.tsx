@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import { ReportContent } from 'data/content/resource';
+import * as Persistence from 'data/persistence/resource';
+import { ActivityWithReportOption } from 'data/persistence/resource';
 import {
   Description,
   Icon,
@@ -10,73 +13,109 @@ import {
 import { ReportBlock } from './ReportBlock';
 import { EditorProps } from './createEditor';
 
-// import { SelectModal } from 'components/modal/SelectModal';
-// import { modalActions } from 'actions/modal';
+export enum ActivitiesWithReportType {
+  REQUEST,
+  SUCCESS,
+  FAILURE,
+}
+
+type ActivitiesWithReportState =
+  | { type: ActivitiesWithReportType.REQUEST }
+  | {
+      type: ActivitiesWithReportType.SUCCESS;
+      activities: ActivityWithReportOption[];
+      selected: ActivityWithReportOption;
+    }
+  | { type: ActivitiesWithReportType.FAILURE; error: string };
 
 interface ReportEditorProps extends EditorProps {
   contentItem: ReportContent;
 }
 
 export const ReportEditor = ({
-  resourceContext,
   editMode,
-  projectSlug,
-  resourceSlug,
   contentItem,
-  index,
-  parents,
-  activities,
-  allObjectives,
-  allTags,
+  projectSlug,
   canRemove,
-  editorMap,
-  objectivesMap,
-  graded,
-  featureFlags,
-  contentBreaksExist,
   onEdit,
-  onEditActivity,
-  onAddItem,
   onRemove,
-  onPostUndoable,
-  onRegisterNewObjective,
-  onRegisterNewTag,
 }: ReportEditorProps) => {
-  // const onEditChild = (child: ResourceContent) => {
-  //   const updatedContent = {
-  //     ...contentItem,
-  //     children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
-  //   };
-  //   onEdit(updatedContent);
-  // };
+  const [activitiesWithReportState, setActivitiesWithReportState] =
+    useState<ActivitiesWithReportState>({
+      type: ActivitiesWithReportType.REQUEST,
+    });
 
-  // const showCreateReportsModal = () =>
-  //   window.oliDispatch(
-  //     modalActions.display(
-  //       <SelectModal
-  //         title="Select Alternative"
-  //         description="Select Alternative"
-  //         onFetchOptions={() => {
-  //           return Promise.resolve(
-  //             alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
-  //           );
-  //         }}
-  //         onDone={(optionId: string) => {
-  //           window.oliDispatch(modalActions.dismiss());
+  useEffect(() => {
+    Persistence.activitiesWithReport(projectSlug)
+      .then((result) => {
+        if (result.type === 'success') {
+          const value = result.activities.find((a) => a.id === contentItem.activityId);
+          if (value) {
+            setActivitiesWithReportState({
+              type: ActivitiesWithReportType.SUCCESS,
+              activities: result.activities,
+              selected: value,
+            });
+          } else {
+            setActivitiesWithReportState({
+              type: ActivitiesWithReportType.FAILURE,
+              error: 'activity cannot be found',
+            });
+          }
+        } else {
+          setActivitiesWithReportState({
+            type: ActivitiesWithReportType.FAILURE,
+            error: result.message,
+          });
+        }
+      })
+      .catch(({ message }) =>
+        setActivitiesWithReportState({
+          type: ActivitiesWithReportType.FAILURE,
+          error: message,
+        }),
+      );
+  }, []);
 
-  //           const newAlt = createAlternative(optionId);
-  //           const update = {
-  //             ...contentItem,
-  //             children: contentItem.children.push(newAlt),
-  //           };
-
-  //           onEdit(update);
-  //           setActiveOption(newAlt);
-  //         }}
-  //         onCancel={() => window.oliDispatch(modalActions.dismiss())}
-  //       />,
-  //     ),
-  //   );
+  const displayActivity = () => {
+    switch (activitiesWithReportState.type) {
+      case ActivitiesWithReportType.REQUEST:
+        return (
+          <LoadingSpinner size={LoadingSpinnerSize.Medium} align="left">
+            Loading
+          </LoadingSpinner>
+        );
+      case ActivitiesWithReportType.SUCCESS:
+        return (
+          <dl className="text-gray-900 divide-y divide-gray-200 dark:text-white dark:divide-gray-700">
+            <div className="flex flex-col pb-2">
+              <dt className="mb-1 text-gray-500 dark:text-gray-400">Activity Title</dt>
+              <dd className="font-semibold">{activitiesWithReportState.selected.title}</dd>
+            </div>
+            {activitiesWithReportState.selected.page && (
+              <div className="flex flex-col py-2">
+                <dt className="mb-1 text-gray-500 dark:text-gray-400">Parent Page</dt>
+                <dd className="font-semibold">
+                  <a href={activitiesWithReportState.selected.page.url} title="parent page">
+                    {activitiesWithReportState.selected.page.title}
+                  </a>
+                </dd>
+              </div>
+            )}
+            <div className="flex flex-col pt-2">
+              <dt className="mb-1 text-gray-500 dark:text-gray-400">Activity Type</dt>
+              <dd className="font-semibold">{activitiesWithReportState.selected.type}</dd>
+            </div>
+          </dl>
+        );
+      case ActivitiesWithReportType.FAILURE:
+        return (
+          <LoadingSpinner failed size={LoadingSpinnerSize.Medium} align="left">
+            An error occurred
+          </LoadingSpinner>
+        );
+    }
+  };
 
   return (
     <ReportBlock
@@ -86,8 +125,7 @@ export const ReportEditor = ({
       onRemove={() => onRemove(contentItem.id)}
       onEdit={onEdit}
     >
-      <div>{contentItem.activity_title}</div>
-      
+      {displayActivity()}
     </ReportBlock>
   );
 };
@@ -101,7 +139,7 @@ export const ReportOutlineItem = (props: ReportOutlineItemProps) => {
 
   return (
     <OutlineGroup {...props}>
-      <Icon iconName="fas fa-poll" />
+      <Icon iconName="fas fa-area-chart" />
       <Description title={resourceGroupTitle(contentItem)}>items</Description>
     </OutlineGroup>
   );

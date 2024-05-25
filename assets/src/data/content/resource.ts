@@ -257,11 +257,11 @@ export const createReport = (ac: ActivityWithReportOption): ReportContent => ({
   id: guid(),
   title: undefined,
   children: [],
-  resource_id: ac.id,
-  activity_slug: ac.slug,
-  activity_title: ac.title,
-  activity_type: ac.type,
-  parent_page: ac.page,
+  activityId: ac.id,
+  // activitySlug: ac.slug,
+  // activityTitle: ac.title,
+  // activityType: ac.type,
+  // parentPage: ac.page,
 });
 
 export const createBreak = (): Break => ({
@@ -350,11 +350,11 @@ export interface ReportContent {
   id: string;
   title: string | undefined;
   children: [];
-  resource_id: string;
-  activity_type: string;
-  activity_slug: string;
-  activity_title: string;
-  parent_page?: string;
+  activityId: string;
+  // activityType: string;
+  // activitySlug: string;
+  // activityTitle: string;
+  // parentPage?: ParentPage;
 }
 
 export interface Break {

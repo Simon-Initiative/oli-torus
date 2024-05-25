@@ -75,12 +75,17 @@ export function alternatives(projectSlug: ProjectSlug) {
   return makeRequest<AlternativesGroupsReceived>(params);
 }
 
+export type ParentPage = {
+  title: string;
+  url: string;
+};
+
 export type ActivityWithReportOption = {
   id: string;
   type: string;
   slug: string;
   title: string;
-  page?: string;
+  page?: ParentPage;
 };
 export type ActivitiesWithReportReceived = {
   type: 'success';

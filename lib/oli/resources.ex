@@ -442,7 +442,7 @@ defmodule Oli.Resources do
       |> where(
         [rev, _, pub, proj, reg],
         proj.id == ^project_id and is_nil(pub.published) and
-          reg.slug == "oli_likert"
+          reg.generates_report == true
       )
       |> select([rev, _, _, _, reg], %{
         id: rev.resource_id,

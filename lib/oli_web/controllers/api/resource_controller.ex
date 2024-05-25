@@ -100,10 +100,13 @@ defmodule OliWeb.Api.ResourceController do
             page:
               case Map.get(parent_pages, a.id) do
                 nil ->
-                  ""
+                  nil
 
-                %{title: _title, slug: slug} ->
-                  Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, slug)
+                %{title: title, slug: slug} ->
+                  %{
+                    title: title,
+                    url: Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, slug)
+                  }
               end
           }
         end)

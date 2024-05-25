@@ -4,7 +4,7 @@ defmodule Oli.Rendering.Report.Html do
   """
 
   alias Oli.Rendering.Context
-  alias Oli.Rendering.Elements
+  # alias Oli.Rendering.Elements
   alias Oli.Rendering.Error
 
   @behaviour Oli.Rendering.Report
@@ -19,7 +19,7 @@ defmodule Oli.Rendering.Report.Html do
       |> Contex.Plot.to_svg()
 
     output = elem(output, 1)
-    
+
     [
       ~s|<div id="#{id}" class="survey"><div class="survey-label">Report</div><div class="content-purpose-content content">|,
       output,
