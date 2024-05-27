@@ -384,12 +384,12 @@ defmodule OliWeb.Delivery.Student.Utils do
       bib_app_params: page_context.bib_revisions,
       historical_attempts: page_context.historical_attempts,
       learning_language: Sections.get_section_attributes(section).learning_language,
-      effective_settings: page_context.effective_settings
+      effective_settings: page_context.effective_settings,
       # when migrating from page_delivery_controller this key-values were found
       # to apparently not be used by the page template:
       #   project_slug: base_project_slug,
       #   submitted_surveys: submitted_surveys,
-      #   resource_attempt: hd(context.resource_attempts)
+      resource_attempt: hd(page_context.resource_attempts)
     }
 
     attempt_content = get_attempt_content(page_context)

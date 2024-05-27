@@ -16,7 +16,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   }
 
   alias Oli.Analytics.Common.Pipeline
-  alias Oli.Analytics.Summary.XAPI.StatementFactory
+  alias Oli.Analytics.XAPI.StatementFactory
 
   @moduledoc """
   An Oban worker driven snapshot creator.  Snapshot creation jobs take a section slug and a collection of

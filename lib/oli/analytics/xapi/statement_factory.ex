@@ -1,7 +1,7 @@
-defmodule Oli.Analytics.Summary.XAPI.StatementFactory do
+defmodule Oli.Analytics.XAPI.StatementFactory do
   alias Oli.Analytics.Summary.AttemptGroup
 
-  alias Oli.Analytics.Summary.XAPI.{
+  alias Oli.Analytics.XAPI.Events.Attempt.{
     PageAttemptEvaluated,
     PartAttemptEvaluated,
     ActivityAttemptEvaluated

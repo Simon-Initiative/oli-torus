@@ -1,4 +1,4 @@
-defmodule Oli.Analytics.Summary.Context do
+defmodule Oli.Analytics.XAPI.Events.Context do
   @enforce_keys [
     :user_id,
     :host_name,
