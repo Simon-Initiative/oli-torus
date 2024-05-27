@@ -527,20 +527,25 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   defp get_activities(
          current_assessment,
          %Section{analytics_version: :v2} = section,
-         student_ids
+         _student_ids
        ) do
-    activity_ids =
-      Oli.Resources.activity_references(current_assessment) |> IO.inspect(label: "activity_ids")
+    activity_type_1 =
+      Oli.Resources.activity_references(current_assessment)
+
+    activity_type_2 = get_resource_summary_id_by_page(current_assessment.resource_id, section.id)
+
+    all_activity_ids =
+      Enum.uniq(activity_type_1 ++ activity_type_2)
 
     activities =
       from(rs in ResourceSummary,
         join: aa in ActivityAttempt,
         on: aa.resource_id == rs.resource_id,
-        where:
-          rs.section_id == ^section.id and rs.user_id in ^student_ids and
-            rs.resource_id in ^activity_ids,
         join: rev in Revision,
         on: aa.revision_id == rev.id,
+        where: rs.section_id == ^section.id,
+        where: rs.user_id == -1,
+        where: rs.resource_id in ^all_activity_ids,
         group_by: [rev.resource_id, rev.id, rs.num_attempts],
         select: {
           rev,
@@ -591,6 +596,22 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       end)
 
     add_objective_mapper(activities, section.slug)
+  end
+
+  defp get_resource_summary_id_by_page(page_id, section_id) do
+    from(rs in ResourceSummary,
+      join: aa in ActivityAttempt,
+      on: aa.resource_id == rs.resource_id,
+      join: rev in Revision,
+      on: aa.revision_id == rev.id,
+      where: rs.section_id == ^section_id,
+      where: rs.resource_id == ^page_id,
+      where: rs.project_id == -1,
+      where: rs.publication_id == -1,
+      group_by: [rev.resource_id, rev.id, rs.num_attempts],
+      select: rev.id
+    )
+    |> Repo.all()
   end
 
   defp add_objective_mapper(activities, section_slug) do
