@@ -219,6 +219,61 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
+  def handle_event("show-ungraded-picker", _, socket) do
+    %{section: section} = socket.assigns
+
+    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    root = hierarchy
+
+    filter_items_fn =
+      case socket.assigns.gating_condition.resource_id do
+        nil ->
+          fn items ->
+            Enum.filter(
+              items,
+              &((&1.uuid != root.uuid and
+                   (&1.revision.resource_type_id ==
+                      Oli.Resources.ResourceType.id_for_page() and
+                      !&1.revision.graded)) or
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.id_for_container())
+            )
+          end
+
+        resource_id ->
+          fn items ->
+            Enum.filter(
+              items,
+              &((&1.uuid != root.uuid and
+                   &1.revision.resource_id != resource_id and
+                   (&1.revision.resource_type_id ==
+                      Oli.Resources.ResourceType.id_for_page() and
+                      !&1.revision.graded)) or
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.id_for_container())
+            )
+          end
+      end
+
+    modal_assigns = %{
+      id: "select_resource",
+      hierarchy: hierarchy,
+      active: root,
+      selection: nil,
+      filter_items_fn: filter_items_fn,
+      on_select: "select_source",
+      on_cancel: "cancel_select_resource"
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <SelectResourceModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
   def handle_event("show-all-picker", _, socket) do
     %{section: section} = socket.assigns
 

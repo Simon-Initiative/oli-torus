@@ -317,18 +317,11 @@ defmodule OliWeb.Components.Delivery.Utils do
       |> DateTime.to_date()
       |> Date.beginning_of_week(week_start_date)
 
-    case Date.diff(
-           DateTime.to_date(resource_datetime),
-           course_first_sunday
-         ) do
-      0 ->
-        1
-
-      day_diff ->
-        (day_diff / 7)
-        |> Float.ceil()
-        |> trunc()
-    end
+    resource_datetime
+    |> DateTime.to_date()
+    |> Date.diff(course_first_sunday)
+    |> Integer.floor_div(7)
+    |> Kernel.+(1)
   end
 
   def get_resource_scheduled_date(resource_id, scheduled_dates, ctx) do

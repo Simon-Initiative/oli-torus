@@ -32,15 +32,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header(assigns) do
     ~H"""
-    <div class={[
-      "fixed z-50 w-full md:pl-[225px] h-14 border-b border-white/5 flex flex-row bg-delivery-header dark:bg-delivery-header-dark shadow-sm",
-      if(!@sidebar_expanded, do: "md:!pl-[95px]")
-    ]}>
-      <div class="flex items-center flex-grow-1 p-2">
+    <div
+      id="header"
+      class={[
+        "fixed z-50 w-full md:pl-[226px] py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
+        if(!@sidebar_expanded, do: "md:!pl-[95px]")
+      ]}
+    >
+      <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
-      <div class="flex items-center p-2 ml-auto">
-        <div class={if @force_show_user_menu, do: "block", else: "hidden md:block"}>
+      <div class="justify-end items-center flex">
+        <div class={
+          if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
+        }>
           <UserAccount.menu
             id="user-account-menu"
             ctx={@ctx}
@@ -48,6 +53,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             is_system_admin={@is_system_admin}
           />
         </div>
+      </div>
+      <div class="flex items-center p-2 ml-auto">
         <button
           class={[
             "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
@@ -83,6 +90,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_tab, :atom)
   attr(:sidebar_expanded, :boolean, default: true)
   attr(:preview_mode, :boolean)
+  attr :notification_badges, :map, default: %{}
 
   def sidebar_nav(assigns) do
     ~H"""
@@ -105,7 +113,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="w-full">
           <div
             class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-white/5",
+              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
               if(!@sidebar_expanded, do: "w-14")
             ]}
             tab-index="0"
@@ -128,6 +136,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             section={@section}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
+            notification_badges={@notification_badges}
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
@@ -172,6 +181,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
+  attr(:notification_badges, :map, default: %{})
   attr(:sidebar_expanded, :boolean, default: true)
 
   def sidebar_toggler(assigns) do
@@ -193,6 +203,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean, default: true)
+  attr(:notification_badges, :map, default: %{})
 
   def sidebar_links(assigns) do
     ~H"""
@@ -228,14 +239,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        :if={@section.contains_discussions}
         id="discussions_nav_link"
         href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
+        badge={Map.get(@notification_badges, :discussions)}
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
-        <:text>Discussions</:text>
+        <:text>Notes</:text>
       </.nav_link>
 
       <.nav_link
@@ -343,6 +354,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   slot :icon, required: true
   attr :sidebar_expanded, :boolean, default: true
   attr :id, :string
+  attr :badge, :integer, default: nil
 
   def nav_link(assigns) do
     ~H"""
@@ -363,11 +375,19 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div
           :if={@sidebar_expanded}
           class={[
-            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight",
+            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight flex-1 flex flex-row justify-between",
             if(@is_active, do: "!font-semibold dark:!text-white !text-black/90")
           ]}
         >
-          <%= render_slot(@text) %>
+          <div>
+            <%= render_slot(@text) %>
+          </div>
+
+          <%= if @badge do %>
+            <div>
+              <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+            </div>
+          <% end %>
         </div>
       </div>
     </.link>
@@ -472,7 +492,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
           <.link
             href={
-              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+              resource_navigation_url(
+                @previous_page,
+                @section_slug,
+                assigns[:request_path],
+                assigns[:selected_view]
+              )
             }
             class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
           >
@@ -494,7 +519,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
           <.link
-            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            href={
+              resource_navigation_url(
+                @next_page,
+                @section_slug,
+                assigns[:request_path],
+                assigns[:selected_view]
+              )
+            }
             class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
           >
             <.right_arrow />

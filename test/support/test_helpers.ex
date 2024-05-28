@@ -7,6 +7,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Accounts
   alias Oli.Accounts.{Author, AuthorPreferences, User}
   alias Oli.Activities
+  alias Oli.Analytics.Summary
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -27,6 +28,7 @@ defmodule Oli.TestHelpers do
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
   Mox.defmock(Oli.Test.MockOpenAIClient, for: Oli.OpenAIClient)
   Mox.defmock(Oli.Test.DateTimeMock, for: Oli.DateTime)
+  Mox.defmock(Oli.Test.DateMock, for: Oli.Date)
 
   defmodule CustomDispatcher do
     @moduledoc """
@@ -49,6 +51,7 @@ defmodule Oli.TestHelpers do
 
   def stub_current_time(now) do
     Mox.stub(Oli.Test.DateTimeMock, :utc_now, fn -> now end)
+    Mox.stub(Oli.Test.DateMock, :utc_today, fn -> DateTime.to_date(now) end)
   end
 
   def yesterday() do
@@ -3469,6 +3472,23 @@ defmodule Oli.TestHelpers do
     |> Enum.map(& &1.id)
     |> Enum.concat(container_revision.children)
     |> set_container_children(container_resource, container_revision, publication)
+  end
+
+  def add_resource_summary([prj, pub, section, user, resource, part, type, nc, na, nh, nfa, nfac]) do
+    Summary.create_resource_summary(%{
+      project_id: prj,
+      publication_id: pub,
+      section_id: section,
+      user_id: user,
+      resource_id: resource,
+      part_id: part,
+      resource_type_id: type,
+      num_correct: nc,
+      num_attempts: na,
+      num_hints: nh,
+      num_first_attempts: nfa,
+      num_first_attempts_correct: nfac
+    })
   end
 
   defp set_container_children(children, container, container_revision, publication) do

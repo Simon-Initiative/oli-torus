@@ -1,12 +1,12 @@
 defmodule OliWeb.Components.Delivery.Schedule do
   use OliWeb, :html
 
-  alias OliWeb.Common.SessionContext
-  alias OliWeb.Components.Delivery.Student
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Sections.{ScheduledContainerGroup, ScheduledSectionResource}
-  alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Components.Delivery.Student
   alias OliWeb.Icons
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:ctx, SessionContext, required: true)
   attr(:week_number, :integer, required: true)
@@ -48,7 +48,8 @@ defmodule OliWeb.Components.Delivery.Schedule do
               <%= render_date_range(date_range, @ctx) %>
             </div>
 
-            <%= for %ScheduledContainerGroup{container_label: container_label, graded: graded, progress: container_progress, resources: scheduled_resources} <- container_groups do %>
+            <%= for %ScheduledContainerGroup{module_label: module_label, unit_label: unit_label, graded: graded, progress: container_progress, resources: scheduled_resources} <- container_groups do %>
+              <% container_label = module_label || unit_label %>
               <div class="flex flex-row">
                 <div class="flex flex-col mr-4 md:w-64">
                   <div class="flex flex-row">

@@ -70,29 +70,33 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col gap-2 mb-10">
+    <div class="flex flex-col mb-10">
+      <div class="w-full h-9 relative my-7">
+        <button
+          id="filter_units_button"
+          class={"w-[6.5rem] h-9 left-0 top-0 absolute rounded-tl-lg rounded-bl-lg border border-slate-300 #{set_button_background(@params.container_filter_by, :units)} text-xs #{set_button_text(@params.container_filter_by, :units)}"}
+          phx-click="filter_container"
+          phx-value-filter="units"
+          phx-target={@myself}
+        >
+          Units
+        </button>
+        <button
+          id="filter_modules_button"
+          class={"w-28 h-9 left-[100.52px] top-0 absolute rounded-tr-lg rounded-br-lg border border-slate-300 #{set_button_background(@params.container_filter_by, :modules)} text-xs #{set_button_text(@params.container_filter_by, :modules)}"}
+          phx-click="filter_container"
+          phx-value-filter="modules"
+          phx-target={@myself}
+        >
+          Modules
+        </button>
+      </div>
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div
           style="min-height: 83px;"
           class="flex justify-between gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
         >
           <div>
-            <.form
-              for={%{}}
-              id="container-select-form"
-              phx-change="filter_container"
-              phx-target={@myself}
-              class="mr-auto mb-2"
-            >
-              <.input
-                type="select"
-                name="container_type"
-                id="container_select"
-                options={@options_for_container_select}
-                value={@params.container_filter_by}
-                class="text-delivery-body-color text-xl font-bold tracking-wide pl-0 underline underline-offset-4 border-none focus:!border-none"
-              />
-            </.form>
             <a
               href={
                 Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug,
@@ -131,18 +135,14 @@ defmodule OliWeb.Components.Delivery.Content do
     """
   end
 
-  def handle_event(
-        "filter_container",
-        %{"_target" => ["container_type"], "container_type" => container_type},
-        socket
-      ) do
+  def handle_event("filter_container", %{"filter" => filter}, socket) do
     {:noreply,
      push_patch(socket,
        to:
          route_for(
            socket,
            %{
-             container_filter_by: container_type,
+             container_filter_by: filter,
              text_search: @default_params.text_search
            },
            socket.assigns.patch_url_type
@@ -358,4 +358,14 @@ defmodule OliWeb.Components.Delivery.Content do
       update_params(socket.assigns.params, new_params)
     )
   end
+
+  defp set_button_background(container_filter_by, filter),
+    do: if(container_filter_by == filter, do: "bg-blue-500 dark:bg-gray-800", else: "bg-white")
+
+  defp set_button_text(container_filter_by, filter),
+    do:
+      if(container_filter_by == filter,
+        do: "text-white font-bold",
+        else: "text-zinc-700 font-normal"
+      )
 end

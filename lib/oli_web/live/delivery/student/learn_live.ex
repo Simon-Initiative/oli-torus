@@ -302,6 +302,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         %{
           "video_url" => video_url,
           "module_resource_id" => resource_id,
+          "section_id" => section_id,
           "is_intro_video" => is_intro_video
         },
         socket
@@ -338,7 +339,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      socket
      |> assign(viewed_intro_video_resource_ids: updated_viewed_videos)
      |> update(:units, fn units -> [selected_unit | units] end)
-     |> push_event("play_video", %{"video_url" => video_url})}
+     |> push_event("play_video", %{
+       "video_url" => video_url,
+       "section_id" => section_id,
+       "module_resource_id" => resource_id
+     })}
   end
 
   def handle_event("change_selected_view", %{"selected_view" => selected_view}, socket) do
@@ -399,7 +404,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_event("intro_card_keydown", params, socket) do
     case params["key"] do
       "Enter" ->
-        {:noreply, push_event(socket, "play_video", %{"video_url" => params["video_url"]})}
+        {:noreply,
+         push_event(socket, "play_video", %{
+           "video_url" => params["video_url"],
+           "module_resource_id" => params["card_resource_id"],
+           "section_id" => params["section_id"]
+         })}
 
       "Escape" ->
         {:noreply,
@@ -695,6 +705,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.outline_row
           :for={row <- @units}
           row={row}
+          section={@section}
           type={child_type(row)}
           student_progress_per_resource_id={@student_progress_per_resource_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
@@ -721,6 +732,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           :for={unit <- @units}
           unit={unit}
           ctx={@ctx}
+          section={@section}
           student_progress_per_resource_id={@student_progress_per_resource_id}
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
@@ -750,6 +762,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   attr :unit, :map
+  attr :section, :map
   attr :ctx, :map, doc: "the context is needed to format the date considering the user's timezone"
   attr :student_progress_per_resource_id, :map
   attr :student_raw_avg_score_per_page_id, :map
@@ -897,6 +910,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             >
               <.intro_video_card
                 :if={@unit["intro_video"]}
+                section={@section}
                 video_url={@unit["intro_video"]}
                 duration_minutes={@unit["duration_minutes"]}
                 card_resource_id={@unit["resource_id"]}
@@ -1066,6 +1080,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             />
             <.module_index
               module={module}
+              section={@section}
               student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
               student_progress_per_resource_id={@student_progress_per_resource_id}
               student_end_date_exceptions_per_resource_id={
@@ -1106,6 +1121,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="flex flex-col mt-6">
           <.outline_row
             :for={row <- @row["children"]}
+            section={@section}
             row={row}
             type={child_type(row)}
             student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -1129,6 +1145,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="flex flex-col mt-6">
           <.outline_row
+            section={@section}
             row={@row}
             type={:page}
             student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -1170,6 +1187,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <.intro_video_item
           :if={@type == :module and module_has_intro_video(@row)}
           duration_minutes={@row["duration_minutes"]}
+          section={@section}
           module_resource_id={@row["resource_id"]}
           video_url={@row["intro_video"]}
           intro_video_viewed={@row["resource_id"] in @viewed_intro_video_resource_ids}
@@ -1177,6 +1195,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
         <.outline_row
           :for={row <- @row["children"]}
+          section={@section}
           row={row}
           type={child_type(row)}
           student_progress_per_resource_id={@student_progress_per_resource_id}
@@ -1243,7 +1262,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <%= "#{@row["title"]}" %>
               </span>
 
-              <.duration_in_minutes
+              <Student.duration_in_minutes
                 duration_minutes={@row["duration_minutes"]}
                 graded={@row["graded"]}
               />
@@ -1303,6 +1322,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
+  attr :section, :any
   attr :module, :map
   attr :student_raw_avg_score_per_page_id, :map
   attr :student_end_date_exceptions_per_resource_id, :map
@@ -1373,9 +1393,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <button
         :if={@module["learning_objectives"] != []}
         role="module learning objectives"
-        class="flex items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
+        class="hidden items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
         phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
       >
+        <%!-- This button was hidden in ticket NG-201 but will be reactivated with NG23-199 --%>
         <Icons.learning_objectives class="fill-black dark:fill-white" />
         <h3 class="text-[16px] leading-[22px] font-semibold dark:text-white">
           Introduction and Learning Objectives
@@ -1383,6 +1404,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </button>
       <.intro_video_item
         :if={module_has_intro_video(@module)}
+        section={@section}
         duration_minutes={@module["duration_minutes"]}
         module_resource_id={@module["resource_id"]}
         video_url={@module["intro_video"]}
@@ -1609,7 +1631,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{@title}" %>
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
+            <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
@@ -1623,27 +1645,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     """
   end
 
-  attr :graded, :boolean, default: false
-  attr :duration_minutes, :integer
-
-  def duration_in_minutes(assigns) do
-    ~H"""
-    <div class="ml-auto items-center gap-1.5 flex">
-      <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
-        <Icons.clock />
-      </div>
-      <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
-        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
-          <%= parse_minutes(@duration_minutes) %>
-          <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
-            min
-          </span>
-        </span>
-      </div>
-    </div>
-    """
-  end
-
+  attr :section, :any
   attr :duration_minutes, :integer
   attr :module_resource_id, :integer
   attr :intro_video_viewed, :boolean
@@ -1657,6 +1659,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 font-normal hover:font-medium focus:font-medium"
       id={"intro_video_for_module_#{@module_resource_id}"}
       phx-click="play_video"
+      phx-value-section_id={@section.id}
       phx-value-module_resource_id={@module_resource_id}
       phx-value-video_url={@video_url}
       phx-value-is_intro_video="false"
@@ -1691,7 +1694,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               Introduction
             </span>
 
-            <.duration_in_minutes duration_minutes={@duration_minutes} />
+            <Student.duration_in_minutes duration_minutes={@duration_minutes} />
           </div>
         </div>
       </div>
@@ -1737,6 +1740,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  attr :section, :any
   attr :title, :string, default: "INTRO"
   attr :video_url, :string
   attr :card_resource_id, :string
@@ -1753,8 +1757,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
       phx-value-card_resource_id={@card_resource_id}
+      phx-value-section_id={@section.id}
       data-event={leave_unit(@card_resource_id)}
       phx-click="play_video"
+      phx-value-section_id={@section.id}
       phx-value-video_url={@video_url}
       phx-value-module_resource_id={@card_resource_id}
       phx-value-is_intro_video="true"
@@ -1818,9 +1824,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       role="intro_video_card"
       phx-keydown="intro_card_keydown"
       phx-value-video_url={@video_url}
+      phx-value-section_id={@section.id}
       phx-value-card_resource_id={@card_resource_id}
       data-event={leave_unit(@card_resource_id)}
       phx-click="play_video"
+      phx-value-section_id={@section.id}
       phx-value-video_url={@video_url}
       phx-value-module_resource_id={@card_resource_id}
       phx-value-is_intro_video="true"
@@ -2424,9 +2432,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> round()
     |> trunc()
   end
-
-  defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
-  defp parse_minutes(minutes), do: minutes
 
   defp async_calculate_student_metrics_and_enable_slider_buttons(
          liveview_pid,

@@ -703,6 +703,13 @@ defmodule OliWeb.Router do
     delete("/:post_id", Api.DirectedDiscussionController, :delete_post)
   end
 
+  # Delivery facing XAPI endpoints
+  scope "/api/v1/xapi/delivery", OliWeb do
+    pipe_through([:api, :delivery_protected])
+
+    post("/", Api.XAPIController, :emit)
+  end
+
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -965,7 +972,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
-          OliWeb.LiveSessionPlugs.RequireEnrollment
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetNotificationBadges
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1266,7 +1274,10 @@ defmodule OliWeb.Router do
     live_dashboard("/dashboard",
       metrics: {OliWeb.Telemetry, :non_distributed_metrics},
       ecto_repos: [Oli.Repo],
-      session: {__MODULE__, :with_session, []}
+      session: {__MODULE__, :with_session, []},
+      additional_pages: [
+        broadway: {BroadwayDashboard, pipelines: [Oli.Analytics.XAPI.UploadPipeline]}
+      ]
     )
 
     resources("/platform_instances", PlatformInstanceController)
@@ -1404,6 +1415,7 @@ defmodule OliWeb.Router do
       pipe_through([:reject_content_or_account_admin])
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
+      live("/xapi", Admin.UploadPipelineView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
       # Authoring Activity Management

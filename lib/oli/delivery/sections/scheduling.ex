@@ -56,7 +56,8 @@ defmodule Oli.Delivery.Sections.Scheduling do
         resource_type_id: rev.resource_type_id,
         graded: rev.graded,
         purpose: rev.purpose,
-        revision_slug: rev.slug
+        revision_slug: rev.slug,
+        duration_minutes: rev.duration_minutes
       })
 
     Repo.all(query)

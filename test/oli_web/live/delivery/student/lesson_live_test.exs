@@ -81,6 +81,18 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "this is the second objective"
       )
 
+    objective_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "this is the third objective"
+      )
+
+    objective_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("objective"),
+        title: "this is the forth objective"
+      )
+
     ## pages...
     page_1_revision =
       insert(:revision,
@@ -140,7 +152,12 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "Page 2",
         duration_minutes: 15,
         objectives: %{
-          "attached" => [objective_1_revision.resource_id, objective_2_revision.resource_id]
+          "attached" => [
+            objective_1_revision.resource_id,
+            objective_2_revision.resource_id,
+            objective_3_revision.resource_id,
+            objective_4_revision.resource_id
+          ]
         }
       )
 
@@ -241,6 +258,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       [
         objective_1_revision,
         objective_2_revision,
+        objective_3_revision,
+        objective_4_revision,
         page_1_revision,
         exploration_1_revision,
         graded_adaptive_page_revision,
@@ -253,7 +272,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         container_revision
       ]
 
-    # asociate resources to project
+    # associate resources to project
     Enum.each(all_revisions, fn revision ->
       insert(:project_resource, %{
         project_id: project.id,
@@ -301,8 +320,27 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       end_date: ~U[2023-11-14 20:00:00Z]
     })
 
+    # enable collaboration spaces for all pages in the section
+    {_total_page_count, _section_resources} =
+      Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
+        section.slug,
+        %Oli.Resources.Collaboration.CollabSpaceConfig{
+          status: :enabled,
+          threaded: true,
+          auto_accept: true,
+          show_full_history: true,
+          anonymous_posting: true,
+          participation_min_replies: 0,
+          participation_min_posts: 0
+        }
+      )
+
     %{
       section: section,
+      objective_1: objective_1_revision,
+      objective_2: objective_2_revision,
+      objective_3: objective_3_revision,
+      objective_4: objective_4_revision,
       page_1: page_1_revision,
       exploration_1: exploration_1_revision,
       graded_adaptive_page_revision: graded_adaptive_page_revision,
@@ -780,8 +818,100 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
-      assert has_element?(view, ~s{div[role="objective 1"]}, "this is the first objective")
-      assert has_element?(view, ~s{div[role="objective 2"]}, "this is the second objective")
+    end
+
+    test "can see proficiency explanation modal", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+
+      # if we render_click() on PROFICIENCY to show the modal, a JS command should be triggered.
+      # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
+      # The workaround is to directly assert on the content of the modal
+
+      assert has_element?(
+               view,
+               "#proficiency_explanation_modal h1",
+               "Measuring Learning Proficiency"
+             )
+
+      assert has_element?(
+               view,
+               "#proficiency_explanation_modal p",
+               "This course contains several learning objectives. As you continue the course, you will receive an estimate of your understanding of each objective. This estimate takes into account the activities you complete on each page."
+             )
+    end
+
+    test "can see learning objectives and proficiency on page header", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_2: page_2,
+      objective_1: objective_1,
+      objective_2: objective_2,
+      objective_3: objective_3,
+      objective_4: objective_4
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      o1 = objective_1.resource_id
+      o2 = objective_2.resource_id
+      o3 = objective_3.resource_id
+      o4 = objective_4.resource_id
+
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+      [
+        # objective records
+        [-1, -1, section.id, user.id, o1, nil, objective_type_id, 2, 6, 1, 4, 1],
+        [-1, -1, section.id, user.id, o2, nil, objective_type_id, 2, 6, 1, 4, 3],
+        [-1, -1, section.id, user.id, o3, nil, objective_type_id, 2, 6, 1, 4, 4]
+      ]
+      |> Enum.each(&add_resource_summary(&1))
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+
+      assert has_element?(view, ~s{div[role="objective 1 title"]}, "this is the first objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 1"] svg[role="beginning proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
+
+      assert has_element?(view, ~s{div[role="objective 2 title"]}, "this is the second objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 2"] svg[role="growing proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
+
+      assert has_element?(view, ~s{div[role="objective 3 title"]}, "this is the third objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 3"] svg[role="establishing proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o3}_tooltip"]}, "Establishing Proficiency")
+
+      assert has_element?(view, ~s{div[role="objective 4 title"]}, "this is the forth objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective 4"] svg[role="no data proficiency icon"]}
+             )
+
+      assert has_element?(view, ~s{div[id="objective_#{o4}_tooltip"]}, "Not enough information")
     end
 
     test "can navigate between pages and updates references in the request path", %{
@@ -1020,6 +1150,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
+      Oli.Resources.Collaboration.disable_all_page_collab_spaces_for_section(section.slug)
+
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert not has_element?(
@@ -1034,8 +1166,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       user: user,
       page_1: page_1
     } do
-      enable_collaborative_spaces(%{section: section})
-
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
@@ -1063,7 +1193,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   end
 
   describe "annotations panel" do
-    setup [:user_conn, :create_elixir_project, :enable_collaborative_spaces]
+    setup [:user_conn, :create_elixir_project]
 
     test "is toggled open when toolbar button is clicked", %{
       conn: conn,
@@ -1215,21 +1345,5 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   defp react_to_post(post, user, reaction) do
     Oli.Resources.Collaboration.toggle_reaction(post.id, user.id, reaction)
-  end
-
-  defp enable_collaborative_spaces(%{section: section}) do
-    course_collab_space_config =
-      Oli.Resources.Collaboration.get_course_collab_space_config(section.root_section_resource_id)
-      |> Map.from_struct()
-      |> Map.merge(%{status: :enabled})
-
-    %{resource_id: resource_id} = Oli.Publishing.DeliveryResolver.root_container(section.slug)
-
-    Oli.Delivery.Sections.get_section_resource(section.id, resource_id)
-    |> Oli.Delivery.Sections.update_section_resource(%{
-      collab_space_config: course_collab_space_config
-    })
-
-    %{}
   end
 end

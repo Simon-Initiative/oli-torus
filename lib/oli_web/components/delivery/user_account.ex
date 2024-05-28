@@ -24,34 +24,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div class="relative">
       <button
         id={@id}
-        class={"
-          flex
-          flex-row
-          px-3
-          items-center
-          rounded-lg
-          focus:outline-none
-          pointer
-          hover:bg-gray-100
-          dark:hover:bg-gray-700
-          active:bg-gray-200
-          dark:active:bg-gray-600
-          focus:bg-gray-100
-          dark:focus:bg-gray-700
-          #{@class}
-        "}
+        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <div class="mr-2 block">
-          <div class={
-            if !@is_system_admin, do: "text-xs sm:text-base py-2 whitespace-nowrap", else: ""
-          }>
-            <%= username(@ctx) %>
-          </div>
-          <div :if={@is_system_admin} class="text-xs text-right uppercase font-bold text-yellow">
-            Admin
-          </div>
-        </div>
         <.user_icon ctx={@ctx} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
@@ -91,6 +66,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.maybe_menu_item_open_admin_panel is_system_admin={@is_system_admin} />
     <.menu_item_edit_author_account author={@ctx.author} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
+    <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_link
@@ -114,6 +90,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </.menu_item_link>
     <.menu_divider />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
+    <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_link
@@ -131,6 +108,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def guest_menu_items(assigns) do
     ~H"""
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
+    <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_link href={
@@ -138,7 +116,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     }>
       Create account or sign in
     </.menu_item_link>
-    <.menu_item_link href={signout_path(@ctx)}>
+    <.menu_divider />
+    <.menu_item_link href={signout_path(@ctx)} method={:delete}>
       <%= if @ctx.user.guest, do: "Leave course", else: "Sign out" %>
     </.menu_item_link>
     """
@@ -153,7 +132,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div
       id={@id}
       phx-click-away={JS.hide()}
-      class={"hidden absolute top-[50px] right-0 z-50 whitespace-nowrap bg-white dark:bg-black p-2 rounded-lg shadow-lg #{@class}"}
+      class={"hidden absolute top-[51px] -right-[9px] z-50 p-[10px] whitespace-nowrap bg-gray-100 border-gray-300 w-[220px] dark:bg-[#0F0D0F] rounded-xl border dark:border-zinc-800 #{@class}"}
     >
       <ul>
         <%= render_slot(@inner_block) %>
@@ -166,7 +145,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item(assigns) do
     ~H"""
-    <li class="block py-2 px-4 first:rounded-t last:rounded-b">
+    <li class="block p-1">
       <%= render_slot(@inner_block) %>
     </li>
     """
@@ -174,8 +153,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_divider(assigns) do
     ~H"""
-    <li class="block w-full">
-      <hr class="border-t border-gray-100 dark:border-gray-700" />
+    <li class="py-[4px]">
+      <div class="h-0 border border-t border-gray-200 dark:border-zinc-800"></div>
     </li>
     """
   end
@@ -189,14 +168,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     case assigns[:method] do
       nil ->
         ~H"""
-        <%= link to: @href, class: "block py-2 px-4 hover:no-underline text-body-color dark:text-body-color-dark hover:text-body-color hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer first:rounded-t last:rounded-b", target: @target do %>
+        <%= link to: @href, class: "w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-200 cursor-pointer", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
 
       _method ->
         ~H"""
-        <%= link to: @href, method: @method, class: "block py-2 px-4 hover:no-underline text-body-color dark:text-body-color-dark hover:text-body-color hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer first:rounded-t last:rounded-b", target: @target do %>
+        <%= link to: @href, method: @method, class: "w-[190px] text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
@@ -221,6 +200,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
             Link authoring account
           </.menu_item_link>
+          <.menu_divider />
         <% end %>
       <% linked_author_account_email -> %>
         <.menu_item>
@@ -275,7 +255,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def menu_item_dark_mode_selector(assigns) do
     ~H"""
     <.menu_item>
-      <div class="text-xs font-semibold mb-1">Dark Mode</div>
+      <div class="dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px]">THEME</div>
       <div>
         <%= React.component(
           @ctx,
@@ -296,8 +276,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def menu_item_timezone_selector(assigns) do
     ~H"""
     <.menu_item>
-      <div class="text-xs font-semibold mb-1">Timezone</div>
-      <div class="w-64">
+      <div class="dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px]">TIMEZONE</div>
+      <div class="w-[190px]">
         <Timezone.select id={@id} ctx={@ctx} />
       </div>
     </.menu_item>
@@ -324,29 +304,27 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <%= case @ctx do %>
       <% %SessionContext{user: user} when user != nil -> %>
-        <.user_picture_icon picture={user.picture} />
+        <.user_picture_icon user={user} />
       <% %SessionContext{author: author} when author != nil -> %>
-        <.user_picture_icon picture={author.picture} />
+        <.user_picture_icon user={author} />
       <% _ -> %>
         <.default_user_icon />
     <% end %>
     """
   end
 
-  attr(:picture, :string, default: nil)
+  attr(:user, :map)
 
   def user_picture_icon(assigns) do
     ~H"""
-    <%= case @picture do %>
+    <%= case @user.picture do %>
       <% nil -> %>
-        <div class="self-center">
-          <div class="max-w-[28px] rounded-full">
-            <i class="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
-          </div>
+        <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
+          <%= to_initials(@user) %>
         </div>
       <% picture -> %>
-        <div class="self-center">
-          <img src={picture} referrerpolicy="no-referrer" class="rounded-full max-w-[28px]" />
+        <div class="flex justify-center items-center">
+          <img src={picture} referrerpolicy="no-referrer" class="rounded-full h-8 w-8" />
         </div>
     <% end %>
     """
@@ -355,8 +333,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def default_user_icon(assigns) do
     ~H"""
     <div class="self-center">
-      <div class="max-w-[28px] rounded-full">
-        <i class="fa-solid fa-circle-user fa-2xl mt-[-1px] ml-[-1px] text-gray-600"></i>
+      <div class="h-8 w-8 rounded-full flex justify-center items-center">
+        <i class="fa-solid fa-circle-user fa-2xl mt-[1px] text-gray-600"></i>
       </div>
     </div>
     """
@@ -421,4 +399,16 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         Routes.session_path(OliWeb.Endpoint, :signout, type: :user)
     end
   end
+
+  defp to_initials(%{name: nil}), do: "G"
+
+  defp to_initials(%{name: name}) do
+    name
+    |> String.split(" ")
+    |> Enum.take(2)
+    |> Enum.map(&String.slice(&1, 0..0))
+    |> Enum.join()
+  end
+
+  defp to_initials(_), do: "?"
 end
