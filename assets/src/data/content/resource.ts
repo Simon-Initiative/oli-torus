@@ -351,10 +351,6 @@ export interface ReportContent {
   title: string | undefined;
   children: [];
   activityId: string;
-  // activityType: string;
-  // activitySlug: string;
-  // activityTitle: string;
-  // parentPage?: ParentPage;
 }
 
 export interface Break {

@@ -4,22 +4,17 @@ defmodule Oli.Rendering.Report.Markdown do
   """
 
   alias Oli.Rendering.Context
-  alias Oli.Rendering.Elements
   alias Oli.Rendering.Error
 
   @behaviour Oli.Rendering.Report
 
-  def report(_context, next, _) do
+  def report(_context, _) do
     [
       "---\n",
-      "##### Report\n",
-      next.(),
+      "##### Activity Report\n",
+
       "---\n"
     ]
-  end
-
-  def elements(%Context{} = context, elements) do
-    Elements.render(context, elements, Elements.Markdown)
   end
 
   def error(%Context{} = context, element, error) do

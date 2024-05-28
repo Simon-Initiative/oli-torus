@@ -6,10 +6,7 @@ defmodule Oli.Rendering.Report do
 
   alias Oli.Rendering.Context
 
-  @type next :: (-> String.t())
-
-  @callback report(%Context{}, next, %{}) :: [any()]
-  # @callback elements(%Context{}, []) :: [any()]
+  @callback report(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -17,24 +14,10 @@ defmodule Oli.Rendering.Report do
   """
   def render(
         %Context{} = context,
-        %{"type" => "report", "id" => id, "children" => children} = element,
+        %{"type" => "report"} = element,
         writer
       ) do
-    pagination_mode = Map.get(element, "paginationMode", "normal")
-
-    next = fn ->
-      writer.elements(
-        %Context{
-          context
-          | report_id: id,
-            pagination_mode: pagination_mode,
-            is_annotation_level: true
-        },
-        children
-      )
-    end
-
-    writer.report(%Context{context | is_annotation_level: true}, next, element)
+    writer.report(context, element)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors

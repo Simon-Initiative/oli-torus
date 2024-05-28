@@ -9,20 +9,20 @@ defmodule Oli.Rendering.Report.Html do
 
   @behaviour Oli.Rendering.Report
 
-  def report(%Context{} = _context, _next, %{"id" => id}) do
-    data = [["Apples", 10], ["Bananas", 12], ["Pears", 2]]
+  def report(%Context{} = context, %{"id" => id} = element) do
 
-    output =
-      data
-      |> Contex.Dataset.new()
-      |> Contex.Plot.new(Contex.BarChart, 600, 400)
-      |> Contex.Plot.to_svg()
+    IO.inspect(context)
+    report_provider = Module.concat([Oli, Activities, Reports, Providers, OliLikert])
 
-    output = elem(output, 1)
+    report =
+      case Oli.Activities.Reports.Renderer.render(report_provider, context, element) do
+        {:ok, report} -> report
+        _ -> "Report not ready"
+      end
 
     [
       ~s|<div id="#{id}" class="survey"><div class="survey-label">Report</div><div class="content-purpose-content content">|,
-      output,
+      report,
       "</div></div>\n"
     ]
   end
@@ -34,4 +34,5 @@ defmodule Oli.Rendering.Report.Html do
   def error(%Context{} = context, element, error) do
     Error.render(context, element, error, Error.Html)
   end
+
 end
