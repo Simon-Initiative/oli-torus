@@ -705,6 +705,13 @@ defmodule OliWeb.Router do
     delete("/:post_id", Api.DirectedDiscussionController, :delete_post)
   end
 
+  # Delivery facing XAPI endpoints
+  scope "/api/v1/xapi/delivery", OliWeb do
+    pipe_through([:api, :delivery_protected])
+
+    post("/", Api.XAPIController, :emit)
+  end
+
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -967,7 +974,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
-          OliWeb.LiveSessionPlugs.RequireEnrollment
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetNotificationBadges
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)

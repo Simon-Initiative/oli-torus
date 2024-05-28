@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
                "Content"
              )
 
-      assert has_element?(view, "option", "Units")
+      assert has_element?(view, "button[id=\"filter_units_button\"]", "Units")
     end
 
     test "gets sorted by module through url query params", %{
@@ -215,10 +215,10 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
         view
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{#container_select option})
-        |> Floki.attribute("value")
+        |> Floki.find(~s{button[phx-click="filter_container"]})
+        |> Floki.attribute("phx-value-filter")
 
-      assert options_for_select == ["modules", "units"]
+      assert options_for_select == ["units", "modules"]
     end
   end
 

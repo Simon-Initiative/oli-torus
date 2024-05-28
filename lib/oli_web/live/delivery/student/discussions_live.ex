@@ -13,7 +13,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   @default_params %{
     sort_by: "date",
     sort_order: :desc,
-    filter_by: "all",
     offset: 0,
     limit: 5
   }
@@ -23,15 +22,20 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
-    if connected?(socket),
-      do:
-        Phoenix.PubSub.subscribe(
-          Oli.PubSub,
-          "collab_space_discussion_#{socket.assigns.section.slug}"
-        )
-
     %{resource_id: root_curriculum_resource_id} =
       DeliveryResolver.root_container(section.slug)
+
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(
+        Oli.PubSub,
+        "collab_space_discussion_#{socket.assigns.section.slug}"
+      )
+
+      Collaboration.mark_course_discussions_and_replies_read(
+        current_user.id,
+        root_curriculum_resource_id
+      )
+    end
 
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(section.root_section_resource_id)
@@ -42,12 +46,18 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         _ -> false
       end
 
+    default_posts_params =
+      case socket.assigns[:has_unread_discussions] do
+        true -> Map.merge(@default_params, %{sort_by: "unread", sort_order: :desc})
+        _ -> @default_params
+      end
+
     {posts, more_posts_exist?} =
       get_posts(
         socket.assigns.current_user.id,
         socket.assigns.section.id,
         root_curriculum_resource_id,
-        @default_params
+        default_posts_params
       )
 
     {notes, more_notes_exist?} =
@@ -66,7 +76,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         notes: notes,
         expanded_posts: %{},
         course_collab_space_config: course_collab_space_config,
-        post_params: @default_params,
+        post_params: default_posts_params,
         note_params: @default_params,
         more_posts_exist?: more_posts_exist?,
         more_notes_exist?: more_notes_exist?,
@@ -166,7 +176,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           post
           | replies_count: 0,
             read_replies_count: 0,
-            is_read: true,
+            is_read: false,
             reaction_summaries: %{},
             replies: nil
         }
@@ -177,7 +187,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             Phoenix.PubSub.broadcast(
               Oli.PubSub,
               "collab_space_discussion_#{socket.assigns.section.slug}",
-              {:discussion_created, %Post{new_post | is_read: false}}
+              {:discussion_created, new_post}
             )
 
         {:noreply,
@@ -465,20 +475,22 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
-  def handle_info({:discussion_created, _new_post}, socket)
-      when socket.assigns.post_params.filter_by in ["my_activity", "page_discussions"] do
-    # new broadcasted post should not be added to the UI if the user is filtering by "my activity"
-    # since the new post belongs to another user and the current user has not yet interacted/replied to it.
-    # The same applies to "page_discussions" since the new broadcasted posts belong to course discussions.
-    {:noreply, socket}
-  end
-
   def handle_info({:discussion_created, new_post}, socket) do
+    new_post = %{
+      new_post
+      | is_read: new_post.user_id == socket.assigns.current_user.id
+    }
+
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
 
   def handle_info({:reply_posted, new_post}, socket) do
     %{posts: posts} = socket.assigns
+
+    new_post = %{
+      new_post
+      | is_read: new_post.user_id == socket.assigns.current_user.id
+    }
 
     {:noreply,
      assign(socket,
@@ -678,6 +690,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                   class="bg-white dark:bg-gray-900"
                   post={post}
                   current_user={@ctx.user}
+                  show_unread_badge={true}
                 />
               </div>
             <% end %>
@@ -792,6 +805,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           class="inline-flex"
           button_class="rounded-[3px] py-[10px] px-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
           options={[
+            %{
+              text: "Unread",
+              on_click: JS.push("sort_posts", value: %{sort_by: "unread"}),
+              icon: sort_by_icon(@post_params.sort_by == "unread", @post_params.sort_order),
+              class:
+                if(@post_params.sort_by == "unread",
+                  do: "font-bold dark:font-extrabold",
+                  else: "dark:font-light"
+                )
+            },
             %{
               text: "Date",
               on_click: JS.push("sort_posts", value: %{sort_by: "date"}),

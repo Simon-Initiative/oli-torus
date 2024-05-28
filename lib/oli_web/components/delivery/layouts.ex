@@ -90,6 +90,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_tab, :atom)
   attr(:sidebar_expanded, :boolean, default: true)
   attr(:preview_mode, :boolean)
+  attr :notification_badges, :map, default: %{}
 
   def sidebar_nav(assigns) do
     ~H"""
@@ -135,6 +136,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             section={@section}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
+            notification_badges={@notification_badges}
           />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
@@ -179,6 +181,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
+  attr(:notification_badges, :map, default: %{})
   attr(:sidebar_expanded, :boolean, default: true)
 
   def sidebar_toggler(assigns) do
@@ -200,6 +203,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean, default: true)
+  attr(:notification_badges, :map, default: %{})
 
   def sidebar_links(assigns) do
     ~H"""
@@ -239,6 +243,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
         sidebar_expanded={@sidebar_expanded}
+        badge={Map.get(@notification_badges, :discussions)}
       >
         <:icon><Icons.discussions is_active={@active_tab == :discussions} /></:icon>
         <:text>Notes</:text>
@@ -349,6 +354,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   slot :icon, required: true
   attr :sidebar_expanded, :boolean, default: true
   attr :id, :string
+  attr :badge, :integer, default: nil
 
   def nav_link(assigns) do
     ~H"""
@@ -369,11 +375,19 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div
           :if={@sidebar_expanded}
           class={[
-            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight",
+            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight flex-1 flex flex-row justify-between",
             if(@is_active, do: "!font-semibold dark:!text-white !text-black/90")
           ]}
         >
-          <%= render_slot(@text) %>
+          <div>
+            <%= render_slot(@text) %>
+          </div>
+
+          <%= if @badge do %>
+            <div>
+              <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+            </div>
+          <% end %>
         </div>
       </div>
     </.link>
@@ -478,7 +492,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="px-2 lg:px-6 rounded justify-end items-center gap-2 flex">
           <.link
             href={
-              resource_navigation_url(@previous_page, @section_slug, @request_path, @selected_view)
+              resource_navigation_url(
+                @previous_page,
+                @section_slug,
+                assigns[:request_path],
+                assigns[:selected_view]
+              )
             }
             class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
           >
@@ -500,7 +519,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="px-2 lg:px-6 py-2 rounded justify-end items-center gap-2 flex">
           <.link
-            href={resource_navigation_url(@next_page, @section_slug, @request_path, @selected_view)}
+            href={
+              resource_navigation_url(
+                @next_page,
+                @section_slug,
+                assigns[:request_path],
+                assigns[:selected_view]
+              )
+            }
             class="w-[72px] h-10 opacity-90 hover:opacity-100 bg-blue-600 flex items-center justify-center"
           >
             <.right_arrow />
