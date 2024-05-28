@@ -2,7 +2,7 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   import Ecto.Query, warn: false
   alias Oli.Repo
 
-  alias Oli.Analytics.Summary.Context
+  alias Oli.Analytics.XAPI.Events.Context
 
   @moduledoc """
   Represents a collection of evaluated part attempts, and the possible activity and page

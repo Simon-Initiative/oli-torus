@@ -1,5 +1,5 @@
-defmodule Oli.Analytics.Summary.XAPI.PageViewed do
-  alias Oli.Analytics.Summary.Context
+defmodule Oli.Analytics.XAPI.Events.Video.Seeked do
+  alias Oli.Analytics.XAPI.Events.Context
 
   def new(
         %Context{
@@ -14,7 +14,11 @@ defmodule Oli.Analytics.Summary.XAPI.PageViewed do
           attempt_number: page_attempt_number,
           resource_id: page_id,
           timestamp: timestamp,
-          page_sub_type: page_sub_type
+          video_url: video_url,
+          video_title: video_title,
+          video_seek_from: from,
+          video_seek_to: to,
+          content_element_id: content_element_id
         }
       ) do
     %{
@@ -26,37 +30,43 @@ defmodule Oli.Analytics.Summary.XAPI.PageViewed do
         "objectType" => "Agent"
       },
       "verb" => %{
-        "id" => "http://id.tincanapi.com/verb/viewed",
+        "id" => "https://w3id.org/xapi/video/verbs/seeked",
         "display" => %{
-          "en-US" => "viewed"
+          "en-US" => "seeked"
         }
       },
       "object" => %{
-        "id" => "#{host_name}/page/#{page_id}}",
+        "id" => video_url,
         "definition" => %{
           "name" => %{
-            "en-US" => "Page"
+            "en-US" => video_title
           },
-          "type" => "http://oli.cmu.edu/extensions/types/page",
-          "subType" => page_sub_type
+          "type" => "https://w3id.org/xapi/video/activity-type/video"
         },
-        "objectType" => "Page"
+        "objectType" => "Activity"
       },
       "result" => %{
-        "completion" => true,
-        "success" => true
+        "extensions" => %{
+          "https://w3id.org/xapi/video/extensions/time-to" => to,
+          "https://w3id.org/xapi/video/extensions/time-from" => from
+        }
       },
       "context" => %{
+        "contextActivities" => %{
+          "category" => [%{"id" => "https://w3id.org/xapi/video"}]
+        },
         "extensions" => %{
           "http://oli.cmu.edu/extensions/page_attempt_number" => page_attempt_number,
           "http://oli.cmu.edu/extensions/page_attempt_guid" => page_attempt_guid,
           "http://oli.cmu.edu/extensions/section_id" => section_id,
           "http://oli.cmu.edu/extensions/project_id" => project_id,
           "http://oli.cmu.edu/extensions/publication_id" => publication_id,
-          "http://oli.cmu.edu/extensions/page_id" => page_id
+          "http://oli.cmu.edu/extensions/resource_id" => page_id,
+          "http://oli.cmu.edu/extensions/content_element_id" => content_element_id
         }
       },
-      "timestamp" => timestamp
+      "timestamp" => timestamp,
+      "registration" => "#{section_id}-#{page_id}-#{content_element_id}"
     }
   end
 end

@@ -1472,7 +1472,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
 
     emit_page_viewed_helper(
-      %Oli.Analytics.Summary.Context{
+      %Oli.Analytics.XAPI.Events.Context{
         user_id: socket.assigns.current_user.id,
         host_name: host_name(),
         section_id: section.id,
@@ -1490,7 +1490,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   defp emit_page_viewed_helper(
-         %Oli.Analytics.Summary.Context{} = context,
+         %Oli.Analytics.XAPI.Events.Context{} = context,
          %{
            attempt_guid: _page_attempt_guid,
            attempt_number: _page_attempt_number,
@@ -1499,7 +1499,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            page_sub_type: _page_sub_type
          } = page_details
        ) do
-    event = Oli.Analytics.Summary.XAPI.PageViewed.new(context, page_details)
+    event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
     Oli.Analytics.XAPI.emit(:page_viewed, event)
   end
 

@@ -14,9 +14,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
   alias Oli.Repo
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
+  alias Oli.Analytics.XAPI.Events.Context
 
   alias Oli.Analytics.Summary.{
-    Context,
     AttemptGroup
   }
 
