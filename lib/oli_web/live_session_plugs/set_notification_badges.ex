@@ -42,7 +42,6 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
           user.id,
           root_curriculum_resource_id
         )
-        |> Enum.reduce(0, fn %{count: count}, acc -> acc + count end)
 
       notification_badges = Map.get(socket.assigns, :notification_badges, %{})
 

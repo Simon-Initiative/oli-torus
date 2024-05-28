@@ -867,6 +867,105 @@ defmodule Oli.Resources.CollaborationTest do
       assert %{"block1" => 2} == student2_private_notes_counts
     end
 
+    test "get_unread_reply_counts_for_root_discussions/2 returns unread reply counts for posts created by user",
+         %{
+           section: section,
+           student1: student1,
+           student2: student2
+         } do
+      %{resource_id: root_curriculum_resource_id} =
+        DeliveryResolver.root_container(section.slug)
+
+      create_post(
+        student1.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 1 root discussion"
+      )
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 root discussion"
+      )
+
+      {:ok, parent_post} =
+        create_post(
+          student1.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 1 2nd root discussion"
+        )
+
+      create_post(
+        student1.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 1 2nd root discussion reply",
+        parent_post_id: parent_post.id,
+        thread_root_id: parent_post.id
+      )
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 2nd root discussion reply",
+        parent_post_id: parent_post.id,
+        thread_root_id: parent_post.id
+      )
+
+      unread_reply_counts =
+        Collaboration.get_unread_reply_counts_for_root_discussions(
+          student1.id,
+          root_curriculum_resource_id
+        )
+
+      assert unread_reply_counts == 1
+
+      # mark reply as read
+      Collaboration.mark_course_discussions_and_replies_read(
+        student1.id,
+        root_curriculum_resource_id
+      )
+
+      unread_reply_counts =
+        Collaboration.get_unread_reply_counts_for_root_discussions(
+          student1.id,
+          root_curriculum_resource_id
+        )
+
+      assert unread_reply_counts == 0
+
+      # add two more replies
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 2nd root discussion reply 2",
+        parent_post_id: parent_post.id,
+        thread_root_id: parent_post.id
+      )
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 2nd root discussion reply 3",
+        parent_post_id: parent_post.id,
+        thread_root_id: parent_post.id
+      )
+
+      unread_reply_counts =
+        Collaboration.get_unread_reply_counts_for_root_discussions(
+          student1.id,
+          root_curriculum_resource_id
+        )
+
+      assert unread_reply_counts == 2
+    end
+
     test "list_root_posts_for_section/2 returns posts with is_read when marked read", %{
       section: section,
       student1: student1,

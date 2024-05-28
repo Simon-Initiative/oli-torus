@@ -523,24 +523,26 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  Returns the list of unread replies for a user.
+  Returns the unread replies count for posts created by a given user.
   """
   def get_unread_reply_counts_for_root_discussions(user_id, root_curriculum_resource_id) do
     from(
-      p in Post,
+      post in Post,
+      join: parent_post in Post,
+      on: parent_post.id == post.thread_root_id,
       left_join: urp in UserReadPost,
-      on: urp.post_id == p.id,
-      # ignore replies that were created by the user
+      on: urp.post_id == post.id and urp.user_id == ^user_id,
       where:
-        is_nil(urp.post_id) and
-          p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
-      group_by: p.thread_root_id,
-      select: %{
-        thread_root_id: p.thread_root_id,
-        count: count(p.id)
-      }
+        post.resource_id == ^root_curriculum_resource_id and
+          post.visibility == :public and
+          post.status in [:approved, :archived] and
+          parent_post.status in [:approved, :archived] and
+          post.user_id != ^user_id and parent_post.user_id == ^user_id and
+          is_nil(urp.post_id),
+      select: count(post.id)
     )
     |> Repo.all()
+    |> hd()
   end
 
   @doc """
