@@ -138,7 +138,8 @@ defmodule Oli.Delivery.SectionsTest do
     page_4_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 4"
+        title: "Page 4",
+        graded: true
       )
 
     ## modules...
@@ -1970,11 +1971,12 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_last_completed_or_started_pages/3" do
+  describe "get_last_completed_or_started_assignments/3" do
     setup [:create_elixir_project]
 
     test "returns empty list if there are no completed or started pages", %{section: section} do
-      assert Sections.get_last_completed_or_started_pages(section, insert(:user).id, 3) == []
+      assert Sections.get_last_completed_or_started_assignments(section, insert(:user).id, 3) ==
+               []
     end
 
     test "returns last completed or started pages", %{
@@ -2014,7 +2016,7 @@ defmodule Oli.Delivery.SectionsTest do
       initiate_resource_attempt(page_4, user, section, ~U[2024-04-22 23:00:00Z])
 
       [last_page, second_last_page] =
-        Sections.get_last_completed_or_started_pages(section, user.id, 2)
+        Sections.get_last_completed_or_started_assignments(section, user.id, 2)
 
       # Returns Page 4 since it is the last started page
       assert last_page.slug == page_4.slug

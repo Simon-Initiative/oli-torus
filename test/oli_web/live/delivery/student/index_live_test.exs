@@ -141,7 +141,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     page_5_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 5"
+        title: "Page 5",
+        graded: true
       )
 
     page_6_revision =
@@ -1028,7 +1029,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[role=resource_type][aria-label=practice]}
+               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
 
       assert has_element?(view, third_assignment <> ~s{div[role=details]}, "3 days left")
@@ -1038,21 +1039,21 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       conn: conn,
       section: section,
       user: user,
-      page_1: page_1,
-      page_2: page_2,
-      page_3: page_3
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
     } do
       stub_current_time(~U[2023-10-31 00:00:00Z])
 
-      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1,
+      set_progress(section.id, page_5.resource_id, user.id, 1.0, page_5,
         attempt_state: :evaluated,
         updated_at: ~U[2023-11-01 20:00:00Z]
       )
 
       stub_current_time(~U[2024-04-22 21:00:00Z])
 
-      set_progress(section.id, page_2.resource_id, user.id, 0.5, page_2,
-        attempt_state: :evaluated,
+      set_progress(section.id, page_4.resource_id, user.id, 0.5, page_4,
+        attempt_state: :active,
         updated_at: ~U[2023-11-01 21:00:00Z]
       )
 
@@ -1103,15 +1104,15 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                second_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_2.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
 
       assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 1")
-      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_2.title)
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
 
       assert has_element?(
                view,
-               second_assignment <> ~s{div[role=resource_type][aria-label=practice]}
+               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
 
       assert has_element?(
@@ -1126,18 +1127,19 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                third_assignment
              )
              |> render() =~
-               ~s{href="/sections/#{section.slug}/lesson/#{page_1.slug}?request_path=%2Fsections%2F#{section.slug}"}
+               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
 
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 1")
-      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 1")
-      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_1.title)
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
 
       assert has_element?(
                view,
-               third_assignment <> ~s{div[role=resource_type][aria-label=practice]}
+               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
 
-      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+      assert has_element?(view, third_assignment <> ~s{div[role=details] div[role=score]}, "5")
+      assert has_element?(view, third_assignment <> ~s{div[role=details] div[role=out_of]}, "10")
     end
   end
 end

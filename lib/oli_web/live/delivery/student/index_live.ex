@@ -25,17 +25,25 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       |> DeliveryResolver.root_container()
       |> build_intro_message_title()
 
-    latest_lessons = Sections.get_last_completed_or_started_pages(section, current_user_id, 3)
-    upcoming_lessons = Sections.get_nearest_upcoming_lessons(section, current_user_id, 3)
+    nearest_upcoming_lesson =
+      section
+      |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
+      |> List.first()
 
-    page_ids = Enum.map(upcoming_lessons ++ latest_lessons, & &1.resource_id)
+    latest_assignments =
+      Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+
+    upcoming_assignments =
+      Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
+
+    page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section.slug, page_ids)
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Enum.map(
         [
           Sections.get_last_open_and_unfinished_page(section, current_user_id),
-          List.first(upcoming_lessons)
+          nearest_upcoming_lesson
         ],
         fn
           nil ->
@@ -68,8 +76,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          ),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
        nearest_upcoming_lesson: nearest_upcoming_lesson,
-       upcoming_lessons: upcoming_lessons,
-       latest_lessons: latest_lessons,
+       upcoming_assignments: upcoming_assignments,
+       latest_assignments: latest_assignments,
        containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
        intro_message: intro_message,
@@ -125,8 +133,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
           <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
           <.assignments
-            upcoming_lessons={@upcoming_lessons}
-            latest_lessons={@latest_lessons}
+            upcoming_assignments={@upcoming_assignments}
+            latest_assignments={@latest_assignments}
             section_slug={@section_slug}
             assignments_tab={@assignments_tab}
             containers_per_page={@containers_per_page}
@@ -355,8 +363,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  attr(:upcoming_lessons, :list, required: true)
-  attr(:latest_lessons, :list, default: [])
+  attr(:upcoming_assignments, :list, required: true)
+  attr(:latest_assignments, :list, default: [])
   attr(:section_slug, :string, required: true)
   attr(:assignments_tab, :atom, required: true)
   attr(:containers_per_page, :map, required: true)
@@ -364,8 +372,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp assignments(assigns) do
     lessons =
       case assigns.assignments_tab do
-        :upcoming -> assigns.upcoming_lessons
-        :latest -> assigns.latest_lessons
+        :upcoming -> assigns.upcoming_assignments
+        :latest -> assigns.latest_assignments
       end
 
     assigns = Map.put(assigns, :lessons, lessons)
