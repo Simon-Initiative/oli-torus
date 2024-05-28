@@ -121,6 +121,8 @@ defmodule Oli.Delivery.Evaluation.Rule do
         case parse_range(right) do
           # allow bounds in any order (may have come from dynamic variables)
           {:inclusive, lower, upper, precision} ->
+            IO.puts(~c"checking #{l_value} in range l=#{lower} u=#{upper} prec=#{precision}")
+
             min(lower, upper) <= l_value && l_value <= max(lower, upper) &&
               check_precision(left, precision)
 
@@ -188,7 +190,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp is_range?(str), do: String.starts_with?(str, ["[", "("])
 
   defp is_float?(str),
-    do: String.contains?(str, ".") or String.contains?(str, "e-")
+    do: String.contains?(str, ".") or String.contains?(str, "e")
 
   defp parse_range(range_str) do
     case Regex.run(

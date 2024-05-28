@@ -60,6 +60,11 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     assert eval("attemptNumber = {1} && input = {[3.0e+5,4.0e+5]}", "3.5e5") == true
     assert eval("attemptNumber = {1} && input = {[3.0e5,4.0e5]}", "3.5e5") == true
 
+    # test bug parsing scientific notation w/positive exponent and no decimal point
+    assert eval("attemptNumber = {1} && input = {[3e+5,4e+5]}", "3.5e5") == true
+    assert eval("attemptNumber = {1} && input = {[3.0e5,5.0e5]}", "4e5") == true
+    assert eval("attemptNumber = {1} && input = {[3e5,5e5]}", "4e6") == false
+
     # float inside the range, evaluates to true
     assert eval("attemptNumber = {1} && input = {(3,4)}", "3.1") == true
     assert eval("attemptNumber = {1} && input = {(3.0,4)}", "3.1") == true
