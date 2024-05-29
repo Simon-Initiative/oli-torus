@@ -30,7 +30,7 @@ export const VideoEditor = (props: Props) => {
     <span {...props.attributes} contentEditable={false} style={{ position: 'relative' }}>
       {props.children}
 
-      <VideoPlayer video={model}>
+      <VideoPlayer video={model} pageAttemptGuid="">
         <VideoSettings model={props.model} onEdit={onEdit} commandContext={props.commandContext} />
       </VideoPlayer>
     </span>

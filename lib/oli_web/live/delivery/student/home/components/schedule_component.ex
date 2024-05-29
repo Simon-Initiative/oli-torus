@@ -112,7 +112,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             </div>
             <div class="pr-1 opacity-80 justify-center items-center gap-2.5 flex">
               <div class="text-sm font-semibold tracking-tight">
-                Reading
+                Lesson
               </div>
             </div>
           </div>

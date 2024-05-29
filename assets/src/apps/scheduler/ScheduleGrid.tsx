@@ -66,14 +66,14 @@ const LegendIconItem: React.FC<{ icon: string; text: string; color: string }> = 
   text,
   color,
 }) => (
-  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3">
+  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3 dark:bg-black">
     <i className={`fa fa-${icon} mr-3 ${color}`} />
     {text}
   </span>
 );
 
 const LegendBarItem: React.FC = () => (
-  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3">
+  <span className="inline-flex items-center mr-4 rounded-md bg-gray-100 py-1 px-3 dark:bg-black">
     <span className="inline-block rounded bg-delivery-primary-300 dark:bg-delivery-primary-600 h-5 justify-between p-0.5 cursor-move w-10 mr-3" />
     Suggested Range
   </span>

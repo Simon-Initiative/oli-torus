@@ -85,6 +85,7 @@ defmodule Oli.Rendering.Content.Html do
     {:safe, video_player} =
       OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
         "video" => attrs,
+        "pageAttemptGuid" => context.resource_attempt.attempt_guid,
         "pointMarkerContext" => %{
           renderPointMarkers: context.render_opts.render_point_markers,
           isAnnotationLevel: context.is_annotation_level

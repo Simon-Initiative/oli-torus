@@ -31,7 +31,7 @@ defmodule OliWeb.Components.Common do
   def badge(assigns) do
     ~H"""
     <span class={[
-      "text-xs font-medium mr-2 px-2.5 py-0.5 rounded border uppercase",
+      "text-xs font-medium mr-2 px-2.5 py-0.5 rounded-xl border uppercase",
       badge_variant_classes(@variant),
       @class
     ]}>

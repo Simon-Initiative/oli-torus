@@ -53,7 +53,11 @@
       id="page-content"
       class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
     >
-      <.back_arrow to={@request_path} show_sidebar={assigns[:show_sidebar]} view={@view} />
+      <.back_arrow
+        to={assigns[:request_path]}
+        show_sidebar={assigns[:show_sidebar]}
+        view={assigns[:view]}
+      />
 
       <%= @inner_content %>
     </div>
@@ -64,8 +68,8 @@
       previous_page={@previous_page}
       next_page={@next_page}
       section_slug={@section.slug}
-      request_path={@request_path}
-      selected_view={@selected_view}
+      request_path={assigns[:request_path]}
+      selected_view={assigns[:selected_view]}
     />
   </div>
 

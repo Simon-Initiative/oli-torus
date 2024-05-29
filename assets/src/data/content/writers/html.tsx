@@ -342,7 +342,13 @@ export class HtmlParser implements WriterImpl {
   }
 
   video(context: WriterContext, next: Next, v: Video) {
-    return <VideoPlayer video={v} pointMarkerContext={pointMarkerContextFrom(context, v)} />;
+    return (
+      <VideoPlayer
+        video={v}
+        pageAttemptGuid={context.resourceAttemptGuid as any}
+        pointMarkerContext={pointMarkerContextFrom(context, v)}
+      />
+    );
   }
 
   ecl(context: WriterContext, next: Next, attrs: ECLRepl) {
