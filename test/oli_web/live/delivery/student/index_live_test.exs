@@ -20,6 +20,16 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     AttemptGroup
   }
 
+  defp enroll_as_student(%{user: user, section: section} = context) do
+    Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+    context
+  end
+
+  defp mark_section_visited(%{section: section, user: user} = context) do
+    Sections.mark_section_visited_for_student(section, user)
+    context
+  end
+
   defp create_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -131,7 +141,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     page_5_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 5"
+        title: "Page 5",
+        graded: true
       )
 
     page_6_revision =
@@ -324,12 +335,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     }
   end
 
-  defp set_progress(section_id, resource_id, user_id, progress) do
-    {:ok, _resource_access} =
-      Core.track_access(resource_id, section_id, user_id)
-      |> Core.update_resource_access(%{progress: progress})
-  end
-
   defp generate_mcq_content(title) do
     %{
       "stem" => %{
@@ -440,6 +445,48 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         ]
       }
     ]
+
+  defp set_progress(
+         section_id,
+         resource_id,
+         user_id,
+         progress,
+         revision,
+         opts \\ [attempt_state: :evaluated]
+       ) do
+    {:ok, resource_access} =
+      Core.track_access(resource_id, section_id, user_id)
+      |> Core.update_resource_access(%{progress: progress})
+
+    attempt_attrs =
+      case opts[:updated_at] do
+        nil ->
+          %{}
+
+        updated_at ->
+          Ecto.Changeset.change(resource_access, updated_at: updated_at)
+          |> Oli.Repo.update()
+
+          %{updated_at: updated_at}
+      end
+
+    insert(
+      :resource_attempt,
+      Map.merge(attempt_attrs, %{
+        resource_access: resource_access,
+        revision: revision,
+        lifecycle_state: opts[:attempt_state],
+        date_submitted:
+          if(opts[:attempt_state] == :evaluated, do: ~U[2024-05-16 20:00:00Z], else: nil)
+      })
+    )
+
+    insert(:resource_summary, %{
+      resource_id: resource_id,
+      section_id: section_id,
+      user_id: user_id
+    })
+  end
 
   defp set_activity_attempt(
          page,
@@ -596,22 +643,23 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert redirect_path ==
                "/session/new?request_path=%2Fsections%2F#{section.slug}&section=#{section.slug}"
     end
-  end
 
-  describe "student" do
-    setup [:user_conn, :create_elixir_project]
+    test "can not access when not enrolled to course", context do
+      {:ok, conn: conn, user: _user} = user_conn(context)
+      section = insert(:section)
 
-    test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, ~p"/sections/#{section.slug}")
 
       assert redirect_path == "/unauthorized"
     end
+  end
 
-    test "can access when enrolled to course", %{conn: conn, user: user, section: section} do
+  describe "student" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "can access when enrolled to course", %{conn: conn, section: section} do
       stub_current_time(~U[2023-11-04 20:00:00Z])
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -626,8 +674,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_1: page_1
     } do
       stub_current_time(~U[2023-11-04 20:00:00Z])
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -679,9 +725,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       project: project,
       publication: publication
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       stub_current_time(~U[2024-05-01 20:00:00Z])
 
       set_activity_attempt(
@@ -733,9 +776,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       section: section,
       page_1: page_1
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       stub_current_time(~U[2024-05-01 20:00:00Z])
 
       initiate_activity_attempt(page_1, user, section)
@@ -778,9 +818,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       section: section,
       page_3: page_3
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       stub_current_time(~U[2024-05-01 20:00:00Z])
 
       initiate_activity_attempt(page_3, user, section)
@@ -818,15 +855,11 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
     test "can see nearest upcoming page from agenda when there are no attempts in progress",
          %{conn: conn, user: user, section: section, page_1: page_1, page_2: page_2} do
-      stub_current_time(~U[2023-11-04 20:00:00Z])
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       stub_current_time(~U[2023-11-02 20:00:00Z])
 
       initiate_activity_attempt(page_1, user, section)
 
-      set_progress(section.id, page_1.resource_id, user.id, 1.0)
+      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -868,9 +901,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       project: project,
       publication: publication
     } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
       stub_current_time(~U[2024-05-01 20:00:00Z])
 
       set_activity_attempt(
@@ -884,7 +914,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         false
       )
 
-      set_progress(section.id, page_4.resource_id, user.id, 1.0)
+      set_progress(section.id, page_4.resource_id, user.id, 1.0, page_4)
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -892,6 +922,224 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Course Progress")
 
       assert has_element?(view, "div", "17%")
+    end
+  end
+
+  describe "my assignments" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "displays default message when there are no upcoming assignments", %{
+      conn: conn,
+      section: section
+    } do
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(
+               view,
+               ~s{div[role="message"]},
+               "Great job, you completed all the assignments! There are no upcoming assignments."
+             )
+    end
+
+    test "displays default message when there are no latest assignments", %{
+      conn: conn,
+      section: section
+    } do
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      view
+      |> element("#latest_tab")
+      |> render_click()
+
+      assert has_element?(
+               view,
+               ~s{div[role="message"]},
+               "It looks like you need to start your attempt. Begin with the upcoming assignments!"
+             )
+    end
+
+    test "displays three upcoming assignments", %{
+      conn: conn,
+      section: section,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      # First upcoming assignment
+      assert element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[role=details]}, "1 day left")
+
+      # Second upcoming assignment
+      assert element(
+               view,
+               second_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+             )
+
+      assert has_element?(view, second_assignment <> ~s{div[role=details]}, "2 days left")
+
+      # Third upcoming assignment
+      assert element(
+               view,
+               third_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+             )
+
+      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "3 days left")
+    end
+
+    test "displays three latest assignments", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      stub_current_time(~U[2023-10-31 00:00:00Z])
+
+      set_progress(section.id, page_5.resource_id, user.id, 1.0, page_5,
+        attempt_state: :evaluated,
+        updated_at: ~U[2023-11-01 20:00:00Z]
+      )
+
+      stub_current_time(~U[2024-04-22 21:00:00Z])
+
+      set_progress(section.id, page_4.resource_id, user.id, 0.5, page_4,
+        attempt_state: :active,
+        updated_at: ~U[2023-11-01 21:00:00Z]
+      )
+
+      set_progress(section.id, page_3.resource_id, user.id, 0.3, page_3,
+        attempt_state: :evaluated,
+        updated_at: ~U[2023-11-01 22:00:00Z]
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      view
+      |> element("#latest_tab")
+      |> render_click()
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      # First latest assignment
+      assert element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=details] div[role=count]},
+               "Attempt 1/∞"
+             )
+
+      assert has_element?(view, first_assignment <> ~s{div[role=details] div[role=score]}, "5")
+      assert has_element?(view, first_assignment <> ~s{div[role=details] div[role=out_of]}, "10")
+
+      # Second latest assignment
+      assert element(
+               view,
+               second_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+             )
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[role=details] div[role=countdown]},
+               "00:00:00"
+             )
+
+      # Third latest assignment
+      assert element(
+               view,
+               third_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+             )
+
+      assert has_element?(view, third_assignment <> ~s{div[role=details] div[role=score]}, "5")
+      assert has_element?(view, third_assignment <> ~s{div[role=details] div[role=out_of]}, "10")
     end
   end
 end
