@@ -525,7 +525,7 @@ defmodule Oli.Resources.Collaboration do
   @doc """
   Returns the unread replies count for posts created by a given user.
   """
-  def get_unread_reply_counts_for_root_discussions(user_id, root_curriculum_resource_id) do
+  def get_unread_replies_count_for_root_discussions(user_id, root_curriculum_resource_id) do
     from(
       post in Post,
       join: parent_post in Post,
@@ -637,8 +637,7 @@ defmodule Oli.Resources.Collaboration do
           post: %{
             post
             | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0),
-              is_read: not (is_nil(urp.id) and post.user_id != ^user_id)
+              read_replies_count: coalesce(read_replies.count, 0)
           },
           total_count: over(count(post.id))
         }
@@ -749,8 +748,7 @@ defmodule Oli.Resources.Collaboration do
           select: %{
             replies_count: count(post.id),
             last_reply: max(post.updated_at),
-            read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
-            is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
+            read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id)
           }
         )
       )

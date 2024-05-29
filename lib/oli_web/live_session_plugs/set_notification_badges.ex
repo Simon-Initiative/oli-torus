@@ -38,7 +38,7 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
 
     if course_discussions_enabled? do
       unread_replies_count =
-        Collaboration.get_unread_reply_counts_for_root_discussions(
+        Collaboration.get_unread_replies_count_for_root_discussions(
           user.id,
           root_curriculum_resource_id
         )

@@ -867,7 +867,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert %{"block1" => 2} == student2_private_notes_counts
     end
 
-    test "get_unread_reply_counts_for_root_discussions/2 returns unread reply counts for posts created by user",
+    test "get_unread_replies_count_for_root_discussions/2 returns unread reply counts for posts created by user",
          %{
            section: section,
            student1: student1,
@@ -917,7 +917,7 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       unread_reply_counts =
-        Collaboration.get_unread_reply_counts_for_root_discussions(
+        Collaboration.get_unread_replies_count_for_root_discussions(
           student1.id,
           root_curriculum_resource_id
         )
@@ -931,7 +931,7 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       unread_reply_counts =
-        Collaboration.get_unread_reply_counts_for_root_discussions(
+        Collaboration.get_unread_replies_count_for_root_discussions(
           student1.id,
           root_curriculum_resource_id
         )
@@ -958,101 +958,12 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       unread_reply_counts =
-        Collaboration.get_unread_reply_counts_for_root_discussions(
+        Collaboration.get_unread_replies_count_for_root_discussions(
           student1.id,
           root_curriculum_resource_id
         )
 
       assert unread_reply_counts == 2
-    end
-
-    test "list_root_posts_for_section/2 returns posts with is_read when marked read", %{
-      section: section,
-      student1: student1,
-      student2: student2
-    } do
-      %{resource_id: root_curriculum_resource_id} =
-        DeliveryResolver.root_container(section.slug)
-
-      create_post(
-        student1.id,
-        section.id,
-        root_curriculum_resource_id,
-        "student 1 root discussion"
-      )
-
-      create_post(
-        student2.id,
-        section.id,
-        root_curriculum_resource_id,
-        "student 2 root discussion"
-      )
-
-      {:ok, parent_post} =
-        create_post(
-          student1.id,
-          section.id,
-          root_curriculum_resource_id,
-          "student 1 2nd root discussion"
-        )
-
-      create_post(
-        student1.id,
-        section.id,
-        root_curriculum_resource_id,
-        "student 1 2nd root discussion reply",
-        parent_post_id: parent_post.id,
-        thread_root_id: parent_post.id
-      )
-
-      sort_by = "date"
-      sort_order = :desc
-      offset = 0
-      limit = 100
-
-      # only posts that do not belong to the student should have is_read marked false
-      assert {posts, more_posts_exist?} =
-               Collaboration.list_root_posts_for_section(
-                 student2.id,
-                 section.id,
-                 root_curriculum_resource_id,
-                 limit,
-                 offset,
-                 sort_by,
-                 sort_order
-               )
-
-      assert more_posts_exist? == false
-
-      assert Enum.find(posts, fn post -> post.content.message == "student 1 root discussion" end).is_read ==
-               false
-
-      assert Enum.find(posts, fn post -> post.content.message == "student 2 root discussion" end).is_read ==
-               true
-
-      assert Enum.find(posts, fn post ->
-               post.content.message == "student 1 2nd root discussion"
-             end).is_read == false
-
-      # mark all root posts as read for student 2
-      Collaboration.mark_course_discussions_and_replies_read(
-        student2.id,
-        root_curriculum_resource_id
-      )
-
-      # all posts should now have is_read marked true
-      assert {posts, _more_posts_exist?} =
-               Collaboration.list_root_posts_for_section(
-                 student2.id,
-                 section.id,
-                 root_curriculum_resource_id,
-                 limit,
-                 offset,
-                 sort_by,
-                 sort_order
-               )
-
-      assert Enum.all?(posts, fn post -> post.is_read == true end)
     end
   end
 

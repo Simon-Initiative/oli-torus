@@ -176,7 +176,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           post
           | replies_count: 0,
             read_replies_count: 0,
-            is_read: false,
             reaction_summaries: %{},
             replies: nil
         }
@@ -476,33 +475,30 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   end
 
   def handle_info({:discussion_created, new_post}, socket) do
-    new_post = %{
-      new_post
-      | is_read: new_post.user_id == socket.assigns.current_user.id
-    }
-
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
 
   def handle_info({:reply_posted, new_post}, socket) do
     %{posts: posts} = socket.assigns
 
-    new_post = %{
-      new_post
-      | is_read: new_post.user_id == socket.assigns.current_user.id
-    }
-
     {:noreply,
      assign(socket,
        posts:
-         Enum.map(posts, fn post ->
+         Annotations.find_and_update_post(posts, new_post.parent_post_id, fn post ->
            if post.id == new_post.parent_post_id do
              %Collaboration.Post{
                post
                | replies_count: post.replies_count + 1,
+                 # mark new post as read if it's the current user's post
+                 read_replies_count:
+                   if(new_post.user_id == socket.assigns.current_user.id,
+                     do: post.read_replies_count + 1,
+                     else: post.read_replies_count
+                   ),
+                 # only append the new reply if the replies are expanded for the parent post
                  replies:
                    case post.replies do
-                     nil -> [new_post]
+                     nil -> nil
                      replies -> replies ++ [new_post]
                    end
              }
@@ -690,7 +686,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                   class="bg-white dark:bg-gray-900"
                   post={post}
                   current_user={@ctx.user}
-                  show_unread_badge={true}
+                  enable_unread_badge={true}
                 />
               </div>
             <% end %>
