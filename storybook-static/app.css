@@ -1177,6 +1177,12 @@ select {
   --color-delivery-tooltip-bg-dark: #E8E8E8;
   --color-delivery-tooltip-content: #fff;
   --color-delivery-tooltip-content-dark: #000;
+  --color-checkpoint: #B27307;
+  --color-checkpoint-dark: #FF8F40;
+  --color-practice: #1D4ED8;
+  --color-practice-dark: #8CBCFF;
+  --color-exploration: #A21CAF;
+  --color-exploration-dark: #EC8CFF;
   --screen-sm: 640px;
   --screen-md: 768px;
   --screen-lg: 1024px;
@@ -5351,6 +5357,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 2rem;
 }
 
+.w-80 {
+  width: 20rem;
+}
+
 .w-9 {
   width: 2.25rem;
 }
@@ -5509,6 +5519,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-auto {
   width: auto;
+}
+
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
 }
 
 .w-full {
@@ -6289,6 +6304,10 @@ table.table-striped tbody tr:nth-child(even) {
   white-space: nowrap;
 }
 
+.break-words {
+  overflow-wrap: break-word;
+}
+
 .\!rounded-\[3px\] {
   border-radius: 3px !important;
 }
@@ -6754,6 +6773,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#1C1A20\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(28 26 32 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#1E9531\] {
   --tw-bg-opacity: 1;
   background-color: rgb(30 149 49 / var(--tw-bg-opacity));
@@ -7052,6 +7076,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(249 115 22 / var(--tw-bg-opacity));
 }
 
+.bg-practice {
+  --tw-bg-opacity: 1;
+  background-color: rgb(29 78 216 / var(--tw-bg-opacity));
+}
+
 .bg-primary {
   --tw-bg-opacity: 1;
   background-color: rgb(59 118 211 / var(--tw-bg-opacity));
@@ -7123,6 +7152,10 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-white {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+}
+
+.bg-white\/10 {
+  background-color: rgb(255 255 255 / 0.1);
 }
 
 .bg-white\/\[\.15\] {
@@ -8282,6 +8315,10 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.02px;
 }
 
+.tracking-\[0\.32px\] {
+  letter-spacing: 0.32px;
+}
+
 .tracking-\[0\.96px\] {
   letter-spacing: 0.96px;
 }
@@ -8385,6 +8422,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(55 58 68 / var(--tw-text-opacity));
 }
 
+.text-checkpoint {
+  --tw-text-opacity: 1;
+  color: rgb(178 115 7 / var(--tw-text-opacity));
+}
+
 .text-current {
   color: currentColor;
 }
@@ -8429,7 +8471,7 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(5 150 105 / var(--tw-text-opacity));
 }
 
-.text-fuchsia-700 {
+.text-exploration {
   --tw-text-opacity: 1;
   color: rgb(162 28 175 / var(--tw-text-opacity));
 }
@@ -8522,6 +8564,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(38 38 38 / var(--tw-text-opacity));
 }
 
+.text-practice {
+  --tw-text-opacity: 1;
+  color: rgb(29 78 216 / var(--tw-text-opacity));
+}
+
 .text-primary {
   --tw-text-opacity: 1;
   color: rgb(59 118 211 / var(--tw-text-opacity));
@@ -8610,6 +8657,10 @@ table.table-striped tbody tr:nth-child(even) {
 .text-white {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.text-white\/60 {
+  color: rgb(255 255 255 / 0.6);
 }
 
 .text-yellow-100 {
@@ -12222,10 +12273,22 @@ https://tailwindcss.com/docs/utility-first
   animation: shimmer 2s infinite;
 }
 
-.before\:bg-\[\#FF8F40\]::before {
+.before\:bg-checkpoint::before {
   content: var(--tw-content);
   --tw-bg-opacity: 1;
-  background-color: rgb(255 143 64 / var(--tw-bg-opacity));
+  background-color: rgb(178 115 7 / var(--tw-bg-opacity));
+}
+
+.before\:bg-exploration::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(162 28 175 / var(--tw-bg-opacity));
+}
+
+.before\:bg-practice::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(29 78 216 / var(--tw-bg-opacity));
 }
 
 .before\:bg-gradient-to-r::before {
@@ -12359,8 +12422,8 @@ https://tailwindcss.com/docs/utility-first
   border-bottom-width: 4px;
 }
 
-.hover\:border-none:hover {
-  border-style: none;
+.hover\:\!border-transparent:hover {
+  border-color: transparent !important;
 }
 
 .hover\:border-delivery-primary-200:hover {
@@ -12687,6 +12750,10 @@ https://tailwindcss.com/docs/utility-first
 
 .hover\:opacity-50:hover {
   opacity: 0.5;
+}
+
+.hover\:opacity-70:hover {
+  opacity: 0.7;
 }
 
 .hover\:opacity-75:hover {
@@ -13357,11 +13424,6 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#1C1A20\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(28 26 32 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#242533\] {
   --tw-bg-opacity: 1;
   background-color: rgb(36 37 51 / var(--tw-bg-opacity));
@@ -13690,11 +13752,6 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(109 209 223 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-\[\#8CBCFF\] {
-  --tw-text-opacity: 1;
-  color: rgb(140 188 255 / var(--tw-text-opacity));
-}
-
 .dark .dark\:text-\[\#BAB8BF\] {
   --tw-text-opacity: 1;
   color: rgb(186 184 191 / var(--tw-text-opacity));
@@ -13708,16 +13765,6 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-\[\#DDD\] {
   --tw-text-opacity: 1;
   color: rgb(221 221 221 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#EC8CFF\] {
-  --tw-text-opacity: 1;
-  color: rgb(236 140 255 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-\[\#FF8F40\] {
-  --tw-text-opacity: 1;
-  color: rgb(255 143 64 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-black {
@@ -13750,6 +13797,11 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(173 173 173 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-checkpoint-dark {
+  --tw-text-opacity: 1;
+  color: rgb(255 143 64 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-delivery-body-color-dark {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
@@ -13768,6 +13820,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-delivery-tooltip-content-dark {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-exploration-dark {
+  --tw-text-opacity: 1;
+  color: rgb(236 140 255 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-gray-100 {
@@ -13828,6 +13885,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-neutral-500 {
   --tw-text-opacity: 1;
   color: rgb(115 115 115 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-practice-dark {
+  --tw-text-opacity: 1;
+  color: rgb(140 188 255 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-primary-300 {
@@ -13904,6 +13966,24 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:outline-white {
   outline-color: #fff;
+}
+
+.dark .dark\:before\:bg-checkpoint-dark::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 143 64 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:before\:bg-exploration-dark::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(236 140 255 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:before\:bg-practice-dark::before {
+  content: var(--tw-content);
+  --tw-bg-opacity: 1;
+  background-color: rgb(140 188 255 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:odd\:bg-neutral-600:nth-child(odd) {
@@ -14993,6 +15073,10 @@ https://tailwindcss.com/docs/utility-first
 
   .xl\:w-2\/3 {
     width: 66.666667%;
+  }
+
+  .xl\:w-48 {
+    width: 12rem;
   }
 
   .xl\:flex-row {
