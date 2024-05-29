@@ -75,7 +75,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ),
         assistant_enabled: Sections.assistant_enabled?(section),
         display_props_per_module_id: %{},
-        selected_view: @default_selected_view
+        selected_view: @default_selected_view,
+        scroll_to_first_unfinished_level_1_resource: true
       )
       |> slim_assigns()
 
@@ -136,12 +137,25 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
+  _docp = """
+  If there is an unfinished resource (progress < 100%) at level 1 of the hierarchy, the learn page will
+  auto-scroll to that resource.
+  This resource could be a unit or a top-level page.
+  After scrolling, we set the scroll_to_first_unfinished_level_1_resource flag to false
+  to prevent auto-scrolling from being re-triggered with every user interaction.
+  """
+
+  defp maybe_scroll_to_first_unfinished_level_1_resource(
+         %{assigns: %{scroll_to_first_unfinished_level_1_resource: false}} = socket
+       ),
+       do: socket
+
   defp maybe_scroll_to_first_unfinished_level_1_resource(socket) do
     %{section: %{id: section_id}, current_user: %{id: student_id}} = socket.assigns
 
     case Sections.get_first_unfinished_level_1_resource(section_id, student_id) do
       nil ->
-        socket
+        assign(socket, scroll_to_first_unfinished_level_1_resource: false)
 
       {resource_type, resource_id} ->
         liveview_pid = self()
@@ -155,7 +169,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           )
         end)
 
-        socket
+        assign(socket, scroll_to_first_unfinished_level_1_resource: false)
     end
   end
 
