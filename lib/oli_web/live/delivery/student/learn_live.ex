@@ -173,21 +173,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  def handle_info(
-        {:scroll_to_resource, resource_type, resource_id},
-        socket
-      ) do
-    resource_type = if resource_type == "container", do: "unit", else: "top_level_page"
-
-    {:noreply,
-     push_event(socket, "scroll-y-to-target", %{
-       id: "#{resource_type}_#{resource_id}",
-       offset: 25,
-       pulse: true,
-       pulse_delay: 500
-     })}
-  end
-
   _docp = """
   This assign helper function is responsible for scrolling to the target resource.
   The target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module.
@@ -762,6 +747,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
      )
      |> update(:units, fn _units -> get_or_compute_full_hierarchy(section)["children"] end)
      |> maybe_assign_gallery_data(selected_view)}
+  end
+
+  def handle_info(
+        {:scroll_to_resource, resource_type, resource_id},
+        socket
+      ) do
+    resource_type = if resource_type == "container", do: "unit", else: "top_level_page"
+
+    {:noreply,
+     push_event(socket, "scroll-y-to-target", %{
+       id: "#{resource_type}_#{resource_id}",
+       offset: 25,
+       pulse: true,
+       pulse_delay: 500
+     })}
   end
 
   # needed to ignore results of Task invocation
@@ -2606,13 +2606,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def maybe_pulse_target(socket, nil) do
-    IO.puts("por NO pushear evento!")
     socket
   end
 
   def maybe_pulse_target(socket, target_id) do
-    IO.puts("por pushear evento!")
-
     push_event(socket, "pulse-target", %{
       target_id: target_id
     })
@@ -2628,7 +2625,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       student_visited_pages: student_visited_pages,
       student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
       student_progress_per_resource_id: student_progress_per_resource_id,
-      section: section
+      section: _section
     } = socket.assigns
 
     units_with_metrics =
