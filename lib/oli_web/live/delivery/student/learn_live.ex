@@ -118,10 +118,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       %{"selected_view" => selected_view} ->
         selected_view = String.to_existing_atom(selected_view)
 
-        {:noreply,
-         socket
-         |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)}
+        {
+          :noreply,
+          socket
+          |> assign(selected_view: selected_view)
+          |> update(:units, fn _units -> full_hierarchy["children"] end)
+          |> maybe_scroll_to_first_unfinished_level_1_resource()
+        }
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
@@ -131,6 +134,44 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       _ ->
         {:noreply, socket}
     end
+  end
+
+  defp maybe_scroll_to_first_unfinished_level_1_resource(socket) do
+    %{section: %{id: section_id}, current_user: %{id: student_id}} = socket.assigns
+
+    case Sections.get_first_unfinished_level_1_resource(section_id, student_id) do
+      nil ->
+        socket
+
+      {resource_type, resource_id} ->
+        liveview_pid = self()
+
+        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+          Process.sleep(300)
+
+          send(
+            liveview_pid,
+            {:scroll_to_resource, resource_type, resource_id}
+          )
+        end)
+
+        socket
+    end
+  end
+
+  def handle_info(
+        {:scroll_to_resource, resource_type, resource_id},
+        socket
+      ) do
+    resource_type = if resource_type == "container", do: "unit", else: "top_level_page"
+
+    {:noreply,
+     push_event(socket, "scroll-y-to-target", %{
+       id: "#{resource_type}_#{resource_id}",
+       offset: 25,
+       pulse: true,
+       pulse_delay: 500
+     })}
   end
 
   _docp = """
@@ -155,7 +196,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         push_event(socket, "scroll-y-to-target", %{
           id: "#{resource_type}_#{resource_id}",
-          offset: 10,
+          offset: 25,
           pulse: true,
           pulse_delay: 500
         })
