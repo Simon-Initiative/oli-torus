@@ -19,8 +19,9 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
     setup do
       {:ok, dir} = Briefly.create(type: :directory)
 
-      map = Seeder.base_project_with_resource2()
-      |> Map.put(:upload_directory, dir)
+      map =
+        Seeder.base_project_with_resource2()
+        |> Map.put(:upload_directory, dir)
 
       {:ok, map}
     end
