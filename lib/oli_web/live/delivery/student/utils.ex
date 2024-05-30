@@ -328,6 +328,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   def schedule_live_path(section_slug, params),
     do: ~p"/sections/#{section_slug}/assignments?#{params}"
 
+  # nil case arises for linked loose pages not in in hierarchy index
+  def get_container_label(nil, section), do: section.title
+
   def get_container_label(page_id, section) do
     section_id = section.id
 
