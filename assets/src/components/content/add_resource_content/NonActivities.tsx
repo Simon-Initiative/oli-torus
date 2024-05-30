@@ -45,11 +45,10 @@ export const NonActivities: React.FC<Props> = ({
 
 
   useEffect(() => {
-    Persistence.hasExperiment(resourceContext.projectSlug)
-      .then(result => {
-        setDisabled("has_experiment" in result ? !result.has_experiment : true);
-      })
-  }, [])
+    Persistence.hasExperiment(resourceContext.projectSlug).then((result) => {
+      setDisabled('has_experiment' in result ? !result.has_experiment : true);
+    });
+  }, []);
 
 
 
@@ -218,3 +217,13 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
   );
 };
 
+// const addABTest = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
+//   Persistence.experiment(projectSlug).then((result) => {
+//     if (result.type === 'success') {
+//       onAddItem(createAlternatives(result.experiment.resource_id, 'upgrade_decision_point'), index);
+//     } else {
+//       throw result.message;
+//     }
+//   });
+//   document.body.click();
+// };
