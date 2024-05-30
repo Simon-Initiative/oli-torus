@@ -315,5 +315,13 @@ module.exports = {
       hvxl: { raw: '(min-width: 1280px) and (min-height: 800px)' },
       hv2xl: { raw: '(min-width: 1536px) and (min-height: 950px)' },
     },
+    colors: {
+      checkpoint: {
+        DEFAULT: '#B27307',
+        dark: '#FF8F40',
+      },
+      practice: { DEFAULT: '#1D4ED8', dark: '#8CBCFF' },
+      exploration: { DEFAULT: '#A21CAF', dark: '#EC8CFF' },
+    },
   },
 };
