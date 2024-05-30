@@ -6725,6 +6725,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(247 174 50 / var(--tw-border-opacity));
 }
 
+.border-zinc-700 {
+  --tw-border-opacity: 1;
+  border-color: rgb(63 63 70 / var(--tw-border-opacity));
+}
+
 .border-b-delivery-primary {
   --tw-border-opacity: 1;
   border-bottom-color: rgb(1 101 217 / var(--tw-border-opacity));
@@ -7325,6 +7330,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .fill-black\/90 {
   fill: rgb(0 0 0 / 0.9);
+}
+
+.fill-blue-400 {
+  fill: #5D8DDB;
 }
 
 .fill-blue-600 {
@@ -10042,6 +10051,16 @@ div:has(.instructor_dashboard_table) #header_paging {
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
 
+div:has(.instructor_dashboard_table) #footer_paging {
+  position: sticky;
+  left: 0px;
+}
+
+.dark div:has(.instructor_dashboard_table) #footer_paging {
+  --tw-bg-opacity: 1;
+  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+}
+
 div:has(.remix_materials_table) {
   overflow-x: hidden;
 }
@@ -10202,6 +10221,16 @@ div:has(.remix_materials_table) #header_paging {
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
 
+div:has(.remix_materials_table) #footer_paging {
+  position: sticky;
+  left: 0px;
+}
+
+.dark div:has(.remix_materials_table) #footer_paging {
+  --tw-bg-opacity: 1;
+  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+}
+
 .remix_materials_table th:last-of-type {
   text-align: right;
 }
@@ -10358,6 +10387,16 @@ div:has(.remix_materials_publications_table) #header_paging {
 }
 
 .dark div:has(.remix_materials_publications_table) #header_paging {
+  --tw-bg-opacity: 1;
+  background-color: rgb(38 38 38 / var(--tw-bg-opacity));
+}
+
+div:has(.remix_materials_publications_table) #footer_paging {
+  position: sticky;
+  left: 0px;
+}
+
+.dark div:has(.remix_materials_publications_table) #footer_paging {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
 }
