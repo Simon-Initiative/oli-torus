@@ -2553,6 +2553,26 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   describe "sidebar menu" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
+    test "can see default logo", %{
+      conn: conn,
+      section: section
+    } do
+      Sections.update_section(section, %{brand_id: nil})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert element(view, "#logo_button") |> render() =~ "/images/oli_torus_logo.png"
+    end
+
+    test "can see brand logo", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      assert element(view, "#logo_button") |> render() =~ "www.logo.com"
+    end
+
     test "does not render Explorations, Practice and Collaboration links if those features are not enabled",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))

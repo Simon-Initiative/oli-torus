@@ -29,17 +29,25 @@ defmodule OliWeb.Components.Delivery.Layouts do
   )
 
   attr(:sidebar_expanded, :boolean, default: true)
+  attr(:include_logo, :boolean, default: false)
 
   def header(assigns) do
     ~H"""
     <div
       id="header"
-      class={[
-        "fixed z-50 w-full md:pl-[226px] py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-        if(!@sidebar_expanded, do: "md:!pl-[95px]")
-      ]}
+      class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
-      <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
+      <.link
+        :if={@include_logo}
+        id="header_logo_button"
+        navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+      >
+        <.logo_img section={@section} />
+      </.link>
+      <div class={[
+        if(!@sidebar_expanded, do: "md:!pl-[95px]"),
+        "flex md:pl-[226px] items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']"
+      ]}>
         <.title section={@section} project={@project} preview_mode={@preview_mode} />
       </div>
       <div class="justify-end items-center flex">
