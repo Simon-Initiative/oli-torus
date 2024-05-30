@@ -17,15 +17,15 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
 
   describe "xapi upload pipeline tests" do
     setup do
-
       {:ok, dir} = Briefly.create(type: :directory)
 
       on_exit(fn ->
         File.rm_rf!(dir)
       end)
 
-      map = Seeder.base_project_with_resource2()
-      |> Map.put(:upload_directory, dir)
+      map =
+        Seeder.base_project_with_resource2()
+        |> Map.put(:upload_directory, dir)
 
       {:ok, map}
     end
