@@ -12,6 +12,6 @@ defmodule Oli.Analytics.XAPI.FileWriterUploader do
 
   def upload(%StatementBundle{} = bundle) do
     # write the bundle to a file in ./bundle_id.jsonl
-    File.write!("./test_bundles/#{bundle.bundle_id}.jsonl", bundle.body)
+    File.write("#{bundle.partition}/#{bundle.bundle_id}.jsonl", bundle.body)
   end
 end
