@@ -1844,10 +1844,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           />
         </div>
       </div>
-      <div class="relative flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
+      <div class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
         <video
           id={"video_preview_image_#{@video_url}"}
-          class="rounded-xl object-cover absolute h-[170px] w-[294px]"
+          class="rounded-xl object-cover absolute h-[170px] w-[294px] top-0 pointer-events-none"
           preload="metadata"
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
@@ -1872,7 +1872,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
             role="play_unit_intro_video"
-            class="z-30 w-full h-full absolute top-0 left-0 flex items-center justify-center"
+            class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px]" />
           </div>
