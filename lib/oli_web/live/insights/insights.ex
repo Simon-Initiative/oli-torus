@@ -547,13 +547,16 @@ defmodule OliWeb.Insights do
 
   defp get_by_page_row(socket, :by_page) do
     if socket.assigns.is_product do
+      section_by_product_ids =
+        Oli.Publishing.DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
+
       Oli.Analytics.ByPage.query_against_project_slug(
         socket.assigns.project.slug,
-        socket.assigns.product_ids
+        section_by_product_ids
       )
     else
       Oli.Analytics.ByPage.query_against_project_slug(
-        socket.assigns.project.slug,
+        socket.assigns.project,
         socket.assigns.section_ids
       )
     end
