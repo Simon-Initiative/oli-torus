@@ -17,7 +17,6 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
 
   describe "xapi upload pipeline tests" do
     setup do
-
       {:ok, dir} = Briefly.create(type: :directory)
 
       map = Seeder.base_project_with_resource2()
