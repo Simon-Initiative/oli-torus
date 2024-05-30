@@ -2157,30 +2157,35 @@ defmodule Oli.Delivery.SectionsTest do
       page_5_resource_id = page_5.resource_id
 
       # Create attempts for page 1 => unit 1 is still unfinished
+      initiate_activity_attempt(page_1, user, section)
       set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1, :evaluated)
 
       assert {"container", ^unit_1_resource_id} =
                Sections.get_first_unfinished_level_1_resource(section.id, user.id)
 
       # Create attempt for page 2  => unit 1 is finished, and next resource in hierarchy is unit 2
+      initiate_activity_attempt(page_2, user, section)
       set_progress(section.id, page_2.resource_id, user.id, 1.0, page_2, :evaluated)
 
       assert {"container", ^unit_2_resource_id} =
                Sections.get_first_unfinished_level_1_resource(section.id, user.id)
 
       # Create attempt for page 3 => unit 2 is finished, and next resource in hierarchy is page 4
+      initiate_activity_attempt(page_3, user, section)
       set_progress(section.id, page_3.resource_id, user.id, 1.0, page_3, :evaluated)
 
       assert {"page", ^page_4_resource_id} =
                Sections.get_first_unfinished_level_1_resource(section.id, user.id)
 
       # Create attempt for page 4 => next resource in hierarchy is page 5
+      initiate_activity_attempt(page_4, user, section)
       set_progress(section.id, page_4.resource_id, user.id, 1.0, page_4, :evaluated)
 
       assert {"page", ^page_5_resource_id} =
                Sections.get_first_unfinished_level_1_resource(section.id, user.id)
 
       # Create attempt for page 5 => all level 1 resources are completed
+      initiate_activity_attempt(page_5, user, section)
       set_progress(section.id, page_5.resource_id, user.id, 1.0, page_5, :evaluated)
 
       refute Sections.get_first_unfinished_level_1_resource(section.id, user.id)
