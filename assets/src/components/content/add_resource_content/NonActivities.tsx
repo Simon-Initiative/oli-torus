@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
@@ -9,6 +9,7 @@ import {
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
+  createAlternative
 } from 'data/content/resource';
 import {
   ResourceContent,
@@ -18,6 +19,7 @@ import {
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
+import { MyContext } from 'components/resource/editors/Editors';
 
 interface Props {
   index: number[];
@@ -36,9 +38,11 @@ export const NonActivities: React.FC<Props> = ({
   index,
   parents,
   featureFlags,
-  resourceContext,
+  resourceContext
 }) => {
+  const { contentItem, onEdit } = useContext(MyContext);
   const [disabled, setDisabled] = useState(true);
+
 
   useEffect(() => {
     Persistence.hasExperiment(resourceContext.projectSlug)
@@ -46,6 +50,8 @@ export const NonActivities: React.FC<Props> = ({
         setDisabled("has_experiment" in result ? !result.has_experiment : true);
       })
   }, [])
+
+
 
   return (
     <div className="d-flex flex-column">
@@ -122,11 +128,45 @@ export const NonActivities: React.FC<Props> = ({
           onHoverEnd={() => onResetTip()}
           key={'ab-test'}
           disabled={disabled}
-          onClick={() => addABTest(onAddItem, index, resourceContext.projectSlug)}
+          onClick={() => { addABTest(onAddItem, contentItem!, onEdit, index, resourceContext.projectSlug) }}
         />
       </div>
     </div>
   );
+};
+
+const addABTest = (onAddItem: AddCallback, contentItem: ResourceContent, onEdit: any, index: number[], projectSlug: string) => {
+  Persistence.experiment(projectSlug)
+    .then(result => {
+      if (result.type === 'success') {
+        console.log('Result', result)
+        console.log(contentItem)
+        // console.log('hola', result.experiment.content.options[0])
+        // const x = createAlternatives(Number(result.experiment.content.options[0]))
+        // onAddItem(x, index);
+
+        // const newAlt = createAlternative(result.experiment.content.options[0].id);
+        // const update = {
+        //   ...x,
+        //   children: x.children.push(newAlt),
+        // }
+        // onEdit(update);
+
+        // const newAlt = createAlternative(optionId);
+        // const update = {
+        //   ...contentItem,
+        //   children: contentItem.children.push(newAlt),
+        // };
+
+        // onEdit(update);
+        // setActiveOption(newAlt);
+
+        return null;
+      } else {
+        throw result.message;
+      }
+    })
+  document.body.click();
 };
 
 const addContent = (onAddItem: AddCallback, index: number[]) => {
@@ -178,14 +218,3 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
   );
 };
 
-const addABTest = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
-  Persistence.experiment(projectSlug)
-    .then(result => {
-      if (result.type === 'success') {
-        onAddItem(createAlternatives(result.experiment.resource_id, 'upgrade_decision_point'), index);
-      } else {
-        throw result.message;
-      }
-    })
-  document.body.click();
-};

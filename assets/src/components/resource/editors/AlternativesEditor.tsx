@@ -76,6 +76,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
             description="Select Alternative"
             additionalControls={<ManageAlternativesLink projectSlug={projectSlug} />}
             onFetchOptions={() => {
+              console.log(alternativeOptions)
               return Promise.resolve(
                 alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
               );

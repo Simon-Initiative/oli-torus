@@ -30,6 +30,7 @@ export type ResourceContent =
   | SurveyContent
   | AlternativesContent
   | AlternativeContent
+  | ExperimentContent
   | Break;
 
 export const isResourceContent = (content: any) =>
@@ -69,6 +70,8 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Alternatives';
     case 'alternative':
       return 'Alternative';
+    case 'experiment':
+      return 'Experiment';
     case 'break':
       return 'Page Break';
     case 'selection':
@@ -96,6 +99,8 @@ export const allowedContentItems = (content: ResourceContent): string[] => {
       return ['alternative'];
     case 'alternative':
       return allElements;
+    // case 'experiment':
+    // return allElements;
     default:
       return [];
   }
@@ -206,6 +211,17 @@ export const createGroup = (
   audience,
 });
 
+export const createExperiment = (
+  value: number,
+  // children: Immutable.List<AlternativeContent> = Immutable.List(),
+  children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
+): ExperimentContent => ({
+  type: 'experiment',
+  id: guid(),
+  value,
+  children,
+});
+
 export const createAlternatives = (
   alternatives_id: number,
   strategy: AlternativesStrategy = 'user_section_preference',
@@ -311,6 +327,13 @@ export interface AlternativeContent {
   type: 'alternative';
   id: string;
   value: string;
+  children: Immutable.List<ResourceContent>;
+}
+
+export interface ExperimentContent {
+  type: 'experiment';
+  id: string;
+  value: number;
   children: Immutable.List<ResourceContent>;
 }
 

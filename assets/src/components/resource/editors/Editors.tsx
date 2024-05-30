@@ -16,6 +16,20 @@ import './Editors.scss';
 import { createEditor } from './createEditor';
 import { EditorErrorBoundary } from './editor_error_boundary';
 
+
+type MyContextType = {
+  onEdit: ((contentItem: ResourceContent) => void) | null;
+  contentItem: ResourceContent | null;
+};
+
+const initialState: MyContextType = {
+  onEdit: null,
+  contentItem: null,
+};
+export const MyContext = React.createContext(initialState);
+
+
+
 export type EditorsProps = {
   className?: ClassName;
   editMode: boolean;
@@ -109,16 +123,18 @@ export const Editors = (props: EditorsProps) => {
         key={contentItem.id}
         className={classNames('resource-block-editor-and-controls', contentItem.id)}
       >
-        <AddResource
-          index={[index]}
-          parents={[]}
-          editMode={editMode}
-          editorMap={editorMap}
-          resourceContext={props.resourceContext}
-          featureFlags={featureFlags}
-          onAddItem={onAddItem}
-          onRegisterNewObjective={props.onRegisterNewObjective}
-        />
+        <MyContext.Provider value={{ onEdit, contentItem }}>
+          <AddResource
+            index={[index]}
+            parents={[]}
+            editMode={editMode}
+            editorMap={editorMap}
+            resourceContext={props.resourceContext}
+            featureFlags={featureFlags}
+            onAddItem={onAddItem}
+            onRegisterNewObjective={props.onRegisterNewObjective}
+          />
+        </MyContext.Provider >
 
         <div
           className={classNames('resource-block-editor')}

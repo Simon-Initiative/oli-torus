@@ -63,8 +63,18 @@ export type AlternativesGroup = {
   title: string;
   options: AlternativesGroupOption[];
 };
-export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
-export type ExperimentReceived = { type: 'success'; experiment: { resource_id: number } };
+export type AlternativesOption = { id: number; name: string };
+
+export type AlternativesGroupsReceived = {
+  type: 'success';
+  alternatives: { options: AlternativesGroup[] };
+};
+
+export type ExperimentReceived = {
+  type: 'success';
+  experiment: { resource_id: number; options: AlternativesOption[] };
+};
+
 export type HasExperimentReceived = { type: 'success'; has_experiment: boolean };
 
 // Requests all alternative groups for a given project or section
