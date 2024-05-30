@@ -40,38 +40,41 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <.link
         :if={@include_logo}
         id="header_logo_button"
+        class="w-48"
         navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
       >
         <.logo_img section={@section} />
       </.link>
       <div class={[
-        if(!@sidebar_expanded, do: "md:!pl-[95px]"),
-        "flex md:pl-[226px] items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']"
+        if(@sidebar_expanded, do: "md:!pl-[226px]"),
+        "w-full flex flex-row md:pl-[95px]"
       ]}>
-        <.title section={@section} project={@project} preview_mode={@preview_mode} />
-      </div>
-      <div class="justify-end items-center flex">
-        <div class={
-          if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
-        }>
-          <UserAccount.menu
-            id="user-account-menu"
-            ctx={@ctx}
-            section={@section}
-            is_system_admin={@is_system_admin}
-          />
+        <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
+          <.title section={@section} project={@project} preview_mode={@preview_mode} />
         </div>
-      </div>
-      <div class="flex items-center p-2 ml-auto">
-        <button
-          class={[
-            "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
-            if(@force_show_user_menu, do: "hidden", else: "md:hidden")
-          ]}
-          phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
-        >
-          <i class="fa-solid fa-bars"></i>
-        </button>
+        <div class="justify-end items-center flex">
+          <div class={
+            if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
+          }>
+            <UserAccount.menu
+              id="user-account-menu"
+              ctx={@ctx}
+              section={@section}
+              is_system_admin={@is_system_admin}
+            />
+          </div>
+        </div>
+        <div class="flex items-center p-2 ml-auto">
+          <button
+            class={[
+              "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
+              if(@force_show_user_menu, do: "hidden", else: "md:hidden")
+            ]}
+            phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
+          >
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
       </div>
     </div>
     """
