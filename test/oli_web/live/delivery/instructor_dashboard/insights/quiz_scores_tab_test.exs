@@ -280,7 +280,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
 
       # Change page size from default (20) to 2
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "2"})
 
       # Page 1
@@ -354,7 +354,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.QuizScoreTabTest do
 
       # Change page size from 2 to 1
       view
-      |> element("#header_paging_page_size_form")
+      |> element("#footer_paging_page_size_form")
       |> render_change(%{limit: "1"})
 
       # Page 3. It keeps showing the same element.

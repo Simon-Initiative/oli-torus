@@ -284,7 +284,7 @@ defmodule OliWeb.Icons do
 
   attr :width, :string, default: "24"
   attr :height, :string, default: "24"
-  attr :class, :string, default: ""
+  attr :class, :string, default: "fill-white"
 
   def chevron_down(assigns) do
     ~H"""

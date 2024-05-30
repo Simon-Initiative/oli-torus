@@ -1,12 +1,13 @@
 defmodule OliWeb.Components.Delivery.Content do
   use OliWeb, :live_component
 
-  alias Phoenix.LiveView.JS
-
-  alias OliWeb.Common.{PagedTable, SearchInput}
   alias OliWeb.Components.Delivery.ContentTableModel
+  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias OliWeb.Common.SearchInput
   alias OliWeb.Common.Params
   alias OliWeb.Router.Helpers, as: Routes
+
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -117,7 +118,7 @@ defmodule OliWeb.Components.Delivery.Content do
           </.form>
         </div>
 
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
