@@ -4245,7 +4245,7 @@ defmodule Oli.Delivery.Sections do
               cp.page_id
             ),
         join: rev in Revision,
-        on: sr.resource_id == rev.resource_id,
+        on: sr.resource_id == rev.resource_id and rev.deleted == false,
         join: rt in ResourceType,
         on: rt.id == rev.resource_type_id,
         where: cp.section_id == ^section_id and sr.numbering_level == 1,
@@ -4266,7 +4266,7 @@ defmodule Oli.Delivery.Sections do
               cp.container_id,
               cp.page_id
             ),
-          min_numbering_level: min(sr.numbering_index),
+          min_numbering_index: min(sr.numbering_index),
           resource_type: rt.type,
           progress: fragment("COALESCE(SUM(?) / COUNT(*), 0.0)", ra.progress)
         }
@@ -4274,7 +4274,7 @@ defmodule Oli.Delivery.Sections do
 
     from(mnl in subquery(min_numbering_index_per_resource),
       where: mnl.progress != 1.0,
-      order_by: [mnl.min_numbering_level],
+      order_by: [mnl.min_numbering_index],
       limit: 1,
       select: {mnl.resource_type, mnl.resource_id}
     )

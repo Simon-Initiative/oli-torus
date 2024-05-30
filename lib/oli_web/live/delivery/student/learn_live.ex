@@ -1203,6 +1203,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               phx-value-force_auto_scroll?="true"
               phx-value-scroll_behavior="auto"
               phx-value-pulse_target_id={"module_#{module["resource_id"]}"}
+              role="collapse module button"
               class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-white opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex"
             >
               <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
