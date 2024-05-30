@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.SectionsTest do
-  use OliWeb.ConnCase
+  use OliWeb.ConnCase, async: false
 
   import Oli.Utils.Seeder.Utils
   import Oli.Factory
