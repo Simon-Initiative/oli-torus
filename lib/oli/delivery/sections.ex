@@ -4301,12 +4301,9 @@ defmodule Oli.Delivery.Sections do
         join: r_att in ResourceAttempt,
         on: r_att.revision_id == rev.id,
         join: ra in assoc(r_att, :resource_access),
-        join: rs in ResourceSummary,
-        on: rs.resource_id == rev.resource_id and rs.user_id == ra.user_id,
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
-            rev.resource_type_id == ^page_resource_type_id and
-            rs.publication_id == -1 and rs.project_id == -1 and last_att.row_number == 1,
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
         group_by: [rev.id, sr.numbering_index, sr.end_date, last_att.lifecycle_state],
         select:
           map(rev, [
@@ -4324,8 +4321,8 @@ defmodule Oli.Delivery.Sections do
           end_date: sr.end_date,
           latest_update: max(ra.updated_at),
           attempts_count: count(r_att.id),
-          score: fragment("CAST(SUM(?) as float)", rs.num_correct),
-          out_of: fragment("CAST(SUM(?) as float)", rs.num_attempts),
+          score: max(ra.score),
+          out_of: max(ra.out_of),
           progress: max(ra.progress),
           last_attempt_state: last_att.lifecycle_state
         }
