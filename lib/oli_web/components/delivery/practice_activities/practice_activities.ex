@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     StudentResponse
   }
 
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Attempts.Core.{
@@ -26,7 +27,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   alias Oli.Repo
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
-  alias OliWeb.Common.{Params, PagedTable, SearchInput}
+  alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
   alias OliWeb.ManualGrading.RenderedActivity
@@ -135,7 +136,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           </div>
         </div>
 
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}

@@ -999,6 +999,7 @@ defmodule Oli.Resources.Collaboration do
     |> join(:inner, [_s, p, _spp], u in User, on: p.user_id == u.id)
     |> where(^section_join)
     |> where([_s, p], p.status != :deleted)
+    |> where([_s, p], p.visibility != :private)
     |> select([s, p, spp, pr, r, u], %{
       id: p.id,
       content: p.content,
