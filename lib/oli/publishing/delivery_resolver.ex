@@ -330,7 +330,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     # TODO: FIX this is not quite right, we need just the unordered pages but this will
     # include *all* pages that are not in the hierarchy, including those that
     # are linked to from the hierarchy. We likely need to add a field to the root section resource
-    # record to track unordered pages to properly track these
+    # record to properly track thees unordered pages
     hierarchy_nodes_set = Hierarchy.flatten_pages(hierarchy) |> MapSet.new()
     all_nodes_set = Enum.map(all_nodes, fn {_, node} -> node end) |> MapSet.new()
 
