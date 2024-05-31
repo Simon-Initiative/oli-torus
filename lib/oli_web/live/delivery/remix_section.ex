@@ -219,7 +219,9 @@ defmodule OliWeb.Delivery.RemixSection do
        publications_table_model: publications_table_model,
        publications_table_model_total_count: publications_table_model_total_count,
        publications_table_model_params: publications_table_model_params,
-       is_product: is_product?(socket)
+       is_product: is_product?(socket),
+       # current browsing mode, either :curriculum or :unordered_pages
+       browse_mode: :curriculum
      )}
   end
 
@@ -800,6 +802,22 @@ defmodule OliWeb.Delivery.RemixSection do
      |> hide_modal(modal_assigns: nil)}
   end
 
+  def handle_event("MoveModal.remove", %{"uuid" => uuid}, socket) do
+    %{hierarchy: hierarchy, active: active} = socket.assigns
+
+    hierarchy =
+      Hierarchy.find_and_unlink_node(hierarchy, uuid)
+      |> Hierarchy.finalize()
+
+    # refresh active node
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
+
+    {:noreply,
+     socket
+     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> hide_modal(modal_assigns: nil)}
+  end
+
   def handle_event("MoveModal.cancel", _, socket) do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
@@ -846,6 +864,10 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event("RemoveModal.cancel", _, socket) do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  def handle_event("update_browse_mode", %{"mode" => mode}, socket) do
+    {:noreply, assign(socket, browse_mode: String.to_existing_atom(mode))}
   end
 
   defp maybe_filter_publications(publications, params) do
@@ -970,4 +992,35 @@ defmodule OliWeb.Delivery.RemixSection do
 
   defp is_product?(%{assigns: %{live_action: :product_remix}} = _socket), do: true
   defp is_product?(_), do: false
+
+  attr :browse_mode, :atom
+
+  def browse_mode_selector(assigns) do
+    ~H"""
+    <div class="inline-flex rounded-md shadow-sm" role="group">
+      <button
+        type="button"
+        class={[
+          "rounded-l-md px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white",
+          if(@browse_mode == :curriculum, do: "bg-gray-200 text-primary")
+        ]}
+        phx-click="update_browse_mode"
+        phx-value-mode="curriculum"
+      >
+        <i class="fa-solid fa-sitemap"></i>
+      </button>
+      <button
+        type="button"
+        class={[
+          "rounded-r-md px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white",
+          if(@browse_mode == :unordered_pages, do: "bg-gray-200 text-primary")
+        ]}
+        phx-click="update_browse_mode"
+        phx-value-mode="unordered_pages"
+      >
+        <i class="fa-solid fa-list"></i>
+      </button>
+    </div>
+    """
+  end
 end

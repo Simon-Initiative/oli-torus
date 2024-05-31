@@ -438,6 +438,29 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
+  def find_and_unlink_node(hierarchy, uuid) do
+    node = find_in_hierarchy(hierarchy, uuid)
+
+    hierarchy
+    |> add_to_unordered_pages(node)
+    |> find_and_remove_node_r(uuid)
+    |> mark_unfinalized()
+  end
+
+  defp add_to_unordered_pages(hierarchy, node) do
+    %HierarchyNode{
+      hierarchy
+      | unordered_pages: [node | hierarchy.unordered_pages]
+    }
+  end
+
+  defp remove_from_unordered_pages(hierarchy, uuid) do
+    %HierarchyNode{
+      hierarchy
+      | unordered_pages: Enum.filter(hierarchy.unordered_pages, fn page -> page.uuid != uuid end)
+    }
+  end
+
   @doc """
   Moves a node to a given container given by destination uuid
   """

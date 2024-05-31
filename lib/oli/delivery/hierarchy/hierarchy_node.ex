@@ -23,7 +23,11 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             section_resource: nil,
             ancestors: [],
             finalized: true,
-            visited: false
+            visited: false,
+            # a root node may specify a list of pages that are not in the hierarchy but
+            # should be included in the final set of section resources. This is only valid for the
+            # top-most root node and is only used in the delivery context.
+            unordered_pages: []
 
   def simplify(%Oli.Delivery.Hierarchy.HierarchyNode{} = node) do
     %{

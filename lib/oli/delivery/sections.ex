@@ -2343,7 +2343,8 @@ defmodule Oli.Delivery.Sections do
       create_nonstructural_section_resources(section.id, [publication_id],
         skip_resource_ids: processed_ids,
         required_survey_resource_id: survey_id,
-        reference_activity_ids: []
+        reference_activity_ids: [],
+        unordered_page_resource_ids: []
       )
 
       root_section_resource_id = section_resources_by_resource_id[root_resource_id].id
@@ -2833,11 +2834,15 @@ defmodule Oli.Delivery.Sections do
 
       reference_activity_ids = build_reference_activity_ids(hierarchy.children)
 
+      unordered_page_resource_ids =
+        Enum.map(hierarchy.unordered_pages, fn page -> page.resource_id end)
+
       if length(processed_resource_ids) != 1 do
         create_nonstructural_section_resources(section_id, publication_ids,
           skip_resource_ids: processed_resource_ids,
           required_survey_resource_id: survey_id,
-          reference_activity_ids: reference_activity_ids
+          reference_activity_ids: reference_activity_ids,
+          unordered_page_resource_ids: unordered_page_resource_ids
         )
       end
 
@@ -3622,7 +3627,8 @@ defmodule Oli.Delivery.Sections do
            resource_id: resource_id,
            project_id: project_id,
            revision: revision,
-           section_resource: section_resource
+           section_resource: section_resource,
+           unordered_pages: unordered_pages
          },
          section_id,
          section_resources \\ []
@@ -3700,7 +3706,8 @@ defmodule Oli.Delivery.Sections do
   defp create_nonstructural_section_resources(section_id, publication_ids,
          skip_resource_ids: skip_resource_ids,
          required_survey_resource_id: required_survey_resource_id,
-         reference_activity_ids: reference_activity_ids
+         reference_activity_ids: reference_activity_ids,
+         unordered_page_resource_ids: unordered_page_resource_ids
        ) do
     published_resources_by_resource_id =
       build_published_resources_by_resource_id(publication_ids, reference_activity_ids)
@@ -3716,6 +3723,9 @@ defmodule Oli.Delivery.Sections do
       end
 
     skip_set = MapSet.new(skip_resource_ids ++ unreachable_page_resource_ids)
+
+    # remove unordered pages from the list of resources to skip
+    skip_set = MapSet.difference(skip_set, MapSet.new(unordered_page_resource_ids))
 
     section_resource_rows =
       published_resources_by_resource_id

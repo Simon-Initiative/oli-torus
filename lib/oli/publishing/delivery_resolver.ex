@@ -11,6 +11,7 @@ defmodule Oli.Publishing.DeliveryResolver do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionsProjectsPublications
+  alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Branding.CustomLabels
@@ -315,9 +316,30 @@ defmodule Oli.Publishing.DeliveryResolver do
 
   @impl Resolver
   def full_hierarchy(section_slug) do
-    {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section_slug)
+    {all_nodes, root_hierarchy_node} = all_nodes_by_sr_id(section_slug)
 
-    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+    hierarchy_node_with_children(root_hierarchy_node, all_nodes)
+    |> load_root_hierarchy_node_unordered_pages(all_nodes)
+  end
+
+  # find all non-hierarchy nodes from hierarchy_nodes and attach to root_hierarchy_node as unordered_pages
+  defp load_root_hierarchy_node_unordered_pages(
+         hierarchy,
+         all_nodes
+       ) do
+    # TODO: FIX this is not quite right, we need just the unordered pages but this will
+    # include *all* pages that are not in the hierarchy, including those that
+    # are linked to from the hierarchy. We likely need to add a field to the root section resource
+    # record to track unordered pages to properly track these
+    hierarchy_nodes_set = Hierarchy.flatten_pages(hierarchy) |> MapSet.new()
+    all_nodes_set = Enum.map(all_nodes, fn {_, node} -> node end) |> MapSet.new()
+
+    unordered_pages = MapSet.difference(all_nodes_set, hierarchy_nodes_set)
+
+    %HierarchyNode{
+      hierarchy
+      | unordered_pages: unordered_pages
+    }
   end
 
   defp hierarchy_node_with_children(
@@ -334,8 +356,9 @@ defmodule Oli.Publishing.DeliveryResolver do
     )
   end
 
-  # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
-  defp hierarchy_nodes_by_sr_id(section_slug) do
+  # Returns a map of all page and container resource ids to hierarchy nodes and the root hierarchy
+  # node, including non-hierarchical unordered pages
+  defp all_nodes_by_sr_id(section_slug) do
     page_id = Oli.Resources.ResourceType.id_for_page()
     container_id = Oli.Resources.ResourceType.id_for_container()
 

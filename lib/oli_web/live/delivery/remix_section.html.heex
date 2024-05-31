@@ -42,42 +42,64 @@
     </div>
   </div>
 
-  <div class="curriculum-navigation">
+  <div class="curriculum-navigation flex flex-row ">
+    <.browse_mode_selector browse_mode={@browse_mode} />
     <%= render_breadcrumb(assigns) %>
   </div>
 
   <div class="grid grid-cols-12" phx-window-keydown="keydown">
     <div class="col-span-12">
-      <div class="curriculum-entries">
-        <%= if Enum.count(@active.children) == 0 do %>
-          <div style="margin-top: 15px">
-            <p>There's nothing here.</p>
+      <%= case @browse_mode do %>
+        <% :curriculum -> %>
+          <div class="curriculum-entries">
+            <%= if Enum.count(@active.children) == 0 do %>
+              <div style="margin-top: 15px">
+                <p>There's nothing here.</p>
+              </div>
+            <% end %>
+            <%= for {node, index} <- filter_items(@active.children, @dragging) do %>
+              <DropTarget.droptarget id={index} index={index} />
+              <Entry.entry
+                index={index}
+                selected={@selected == node.uuid}
+                node={node}
+                is_product={assigns[:is_product]}
+              />
+            <% end %>
+            <DropTarget.droptarget id="last" index={length(@active.children)} />
           </div>
-        <% end %>
-        <%= for {node, index} <- filter_items(@active.children, @dragging) do %>
-          <DropTarget.droptarget id={index} index={index} />
-          <Entry.entry
-            index={index}
-            selected={@selected == node.uuid}
-            node={node}
-            is_product={assigns[:is_product]}
-          />
-        <% end %>
-        <DropTarget.droptarget id="last" index={length(@active.children)} />
-      </div>
-      <div class="mt-5">
-        <button
-          phx-click="show_add_materials_modal"
-          `
-          class="btn btn-xs btn-primary p-2 mr-1"
-          type="button"
-        >
-          Add Materials
-        </button>
-        <% # <button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
-        #  <%= new_container_name(@active)
-        # </button> %>
-      </div>
+          <div class="mt-5">
+            <button
+              phx-click="show_add_materials_modal"
+              `
+              class="btn btn-xs btn-primary p-2 mr-1"
+              type="button"
+            >
+              Add Materials
+            </button>
+            <% # <button phx-click="add_container" class="btn btn-xs btn-outline-primary p-2 mr-1" type="button">
+            #  <%= new_container_name(@active)
+            # </button> %>
+          </div>
+        <% :unordered_pages -> %>
+          <div class="curriculum-entries">
+            <%= if Enum.count(@hierarchy.unordered_pages) == 0 do %>
+              <div style="margin-top: 15px">
+                <p>There are no unordered materials.</p>
+              </div>
+            <% end %>
+            <div style="margin-top: 15px">
+              <%= for {node, index} <- Enum.with_index(@hierarchy.unordered_pages) do %>
+                <Entry.entry
+                  index={index}
+                  selected={@selected == node.uuid}
+                  node={node}
+                  is_product={assigns[:is_product]}
+                />
+              <% end %>
+            </div>
+          </div>
+      <% end %>
     </div>
   </div>
 </div>
