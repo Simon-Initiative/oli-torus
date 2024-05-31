@@ -31,14 +31,14 @@ defmodule Oli.Delivery.Settings do
     combine(resolved_revision, section_resource, nil)
   end
 
-  def get_combined_settings_for_all_resources(section_id, user_id) do
+  def get_combined_settings_for_all_resources(section_id, user_id, resource_ids \\ nil) do
     section = Oli.Delivery.Sections.get_section!(section_id)
 
     student_exceptions_map =
-      get_all_student_exceptions(section_id, user_id)
+      get_all_student_exceptions(section_id, user_id, resource_ids)
       |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, se) end)
 
-    get_page_resources_with_settings(section.slug)
+    get_page_resources_with_settings(section.slug, resource_ids)
     |> Enum.reduce(%{}, fn {resource_id, section_resource, page_settings}, acc ->
       student_exception = student_exceptions_map[resource_id]
 
@@ -101,8 +101,14 @@ defmodule Oli.Delivery.Settings do
     |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, Map.take(se, fields)) end)
   end
 
-  defp get_page_resources_with_settings(section_slug) do
+  defp get_page_resources_with_settings(section_slug, resource_ids \\ nil) do
     page_id = Oli.Resources.ResourceType.id_for_page()
+
+    resource_ids_filter =
+      case resource_ids do
+        nil -> true
+        ids -> dynamic([rev: rev], rev.resource_id in ^ids)
+      end
 
     from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
       where: rev.resource_type_id == ^page_id,
@@ -117,6 +123,7 @@ defmodule Oli.Delivery.Settings do
         }
       }
     )
+    |> where(^resource_ids_filter)
     |> Repo.all()
   end
 
@@ -185,10 +192,17 @@ defmodule Oli.Delivery.Settings do
     |> Repo.one()
   end
 
-  def get_all_student_exceptions(section_id, user_id) do
+  def get_all_student_exceptions(section_id, user_id, resource_ids \\ nil) do
+    resource_ids_filter =
+      case resource_ids do
+        nil -> true
+        ids -> dynamic([se], se.resource_id in ^ids)
+      end
+
     StudentException
     |> where(section_id: ^section_id)
     |> where(user_id: ^user_id)
+    |> where(^resource_ids_filter)
     |> Repo.all()
   end
 

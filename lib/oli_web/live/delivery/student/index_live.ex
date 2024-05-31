@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   import OliWeb.Components.Delivery.Layouts
 
-  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections}
+  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
@@ -25,6 +25,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       |> DeliveryResolver.root_container()
       |> build_intro_message_title()
 
+    combined_settings =
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+
     nearest_upcoming_lesson =
       section
       |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
@@ -32,9 +35,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     latest_assignments =
       Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+      |> combine_settings(combined_settings)
 
     upcoming_assignments =
       Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
+      |> combine_settings(combined_settings)
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section.slug, page_ids)
@@ -523,7 +528,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  # Completed page (graded or practice)
+  # Completed page
   defp lesson_details(%{completed: true} = assigns) do
     ~H"""
     <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
@@ -547,7 +552,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="flex px-2 py-0.5 bg-white/10 rounded-xl shadow tracking-tight gap-2 items-center align-center">
           <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="dark:text-white text-xs font-semibold">
-              Attempt <%= "#{@lesson.attempts_count}/#{max_attempts(@lesson.max_attempts)}" %>
+              Attempt <%= "#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}" %>
             </div>
           </div>
         </div>
@@ -721,6 +726,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     Sections.get_ordered_containers_per_page(section_slug, page_ids)
     |> Enum.reduce(%{}, fn elem, acc ->
       Map.put(acc, elem[:page_id], add_label_to_containers.(elem[:containers]))
+    end)
+  end
+
+  defp combine_settings(assignments, settings) do
+    Enum.map(assignments, fn assignment ->
+      Map.put(assignment, :settings, settings[assignment.resource_id])
     end)
   end
 end
