@@ -75,6 +75,17 @@ export function alternatives(projectSlug: ProjectSlug) {
   return makeRequest<AlternativesGroupsReceived>(params);
 }
 
+export type HasExperimentReceived = { type: 'success'; has_experiment: boolean };
+
+export function hasExperiment(projectSlug: ProjectSlug) {
+  const params = {
+    method: 'GET',
+    url: `/project/${projectSlug}/has_experiment`,
+  };
+
+  return makeRequest<HasExperimentReceived>(params);
+}
+
 function traverseContent(o: any, func: any) {
   for (const i in o) {
     func.apply(this, [i, o[i]]);
