@@ -36,7 +36,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :lti_1p3_deployment,
          :contains_discussions,
          :contains_explorations,
-         :contains_deliberate_practice
+         :contains_deliberate_practice,
+         :open_and_free
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email], %User{}}
   }
