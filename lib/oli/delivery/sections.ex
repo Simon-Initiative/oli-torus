@@ -4296,7 +4296,9 @@ defmodule Oli.Delivery.Sections do
         [rev: rev, sr: sr] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
           section.slug
         ),
-        join: r_att in subquery(last_attempt_query),
+        join: last_att in subquery(last_attempt_query),
+        on: last_att.revision_id == rev.id,
+        join: r_att in ResourceAttempt,
         on: r_att.revision_id == rev.id,
         join: ra in assoc(r_att, :resource_access),
         join: rs in ResourceSummary,
@@ -4304,8 +4306,8 @@ defmodule Oli.Delivery.Sections do
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
             rev.resource_type_id == ^page_resource_type_id and
-            rs.publication_id == -1 and rs.project_id == -1 and r_att.row_number == 1,
-        group_by: [rev.id, sr.numbering_index, sr.end_date, r_att.lifecycle_state],
+            rs.publication_id == -1 and rs.project_id == -1 and last_att.row_number == 1,
+        group_by: [rev.id, sr.numbering_index, sr.end_date, last_att.lifecycle_state],
         select:
           map(rev, [
             :id,
@@ -4325,7 +4327,7 @@ defmodule Oli.Delivery.Sections do
           score: fragment("CAST(SUM(?) as float)", rs.num_correct),
           out_of: fragment("CAST(SUM(?) as float)", rs.num_attempts),
           progress: max(ra.progress),
-          last_attempt_state: r_att.lifecycle_state
+          last_attempt_state: last_att.lifecycle_state
         }
       )
 
