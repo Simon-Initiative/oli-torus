@@ -14740,8 +14740,8 @@ https://tailwindcss.com/docs/utility-first
     padding-right: 2rem;
   }
 
-  .md\:\!pl-\[95px\] {
-    padding-left: 95px !important;
+  .md\:\!pl-\[226px\] {
+    padding-left: 226px !important;
   }
 
   .md\:pb-4 {
@@ -14752,12 +14752,12 @@ https://tailwindcss.com/docs/utility-first
     padding-left: 125px;
   }
 
-  .md\:pl-\[226px\] {
-    padding-left: 226px;
-  }
-
   .md\:pl-\[50px\] {
     padding-left: 50px;
+  }
+
+  .md\:pl-\[95px\] {
+    padding-left: 95px;
   }
 
   .md\:pr-\[175px\] {
