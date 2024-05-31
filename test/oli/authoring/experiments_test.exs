@@ -11,6 +11,48 @@ defmodule Oli.Authoring.ExperimentsTest do
   @experiment_id "upgrade_decision_point"
   @another_id "another_id"
 
+  describe "has_experiment/1" do
+    test "returns true for a given project slug" do
+      project = insert(:project, slug: "some_project")
+      publication = insert(:publication, project: project, published: nil)
+      content = %{"strategy" => @experiment_id}
+      revision = insert(:revision, content: content, resource_type_id: @alternatives_type_id)
+      insert(:published_resource, revision: revision, publication: publication)
+
+      assert Experiments.has_experiment(project.slug)
+    end
+
+    test "returns false when not in the current publication" do
+      project = insert(:project, slug: "some_project")
+      publication = insert(:publication, project: project)
+      content = %{"strategy" => @experiment_id}
+      revision = insert(:revision, content: content, resource_type_id: @alternatives_type_id)
+      insert(:published_resource, revision: revision, publication: publication)
+
+      refute Experiments.has_experiment(project.slug)
+    end
+
+    test "returns false when strategy is different to upgrade_decision_point" do
+      project = insert(:project, slug: "some_project")
+      publication = insert(:publication, project: project, published: nil)
+      content = %{"strategy" => @another_id}
+      revision = insert(:revision, content: content, resource_type_id: @alternatives_type_id)
+      insert(:published_resource, revision: revision, publication: publication)
+
+      refute Experiments.has_experiment(project.slug)
+    end
+
+    test "returns false when resource_type_id is different to alternatives_type_id" do
+      project = insert(:project, slug: "some_project")
+      publication = insert(:publication, project: project, published: nil)
+      content = %{"strategy" => @experiment_id}
+      revision = insert(:revision, content: content, resource_type_id: @container_type_id)
+      insert(:published_resource, revision: revision, publication: publication)
+
+      refute Experiments.has_experiment(project.slug)
+    end
+  end
+
   describe "get_latest_experiment/1" do
     test "returns revision (experiment) for a given project slug" do
       project = insert(:project, slug: "some_project")

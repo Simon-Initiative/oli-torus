@@ -1,10 +1,11 @@
 defmodule OliWeb.Api.ResourceController do
   use OliWeb, :controller
 
-  alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Course
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Authoring.Experiments
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
 
   def index(conn, %{"project" => project_slug}) do
@@ -76,6 +77,16 @@ defmodule OliWeb.Api.ResourceController do
 
       _ ->
         error(conn, 404, "failed to resolve alternatives groups")
+    end
+  end
+
+  def has_experiment(conn, %{"project" => project_slug}) do
+    case Experiments.has_experiment(project_slug) do
+      has_experiment_result when has_experiment_result in [true, false] ->
+        json(conn, %{"type" => "success", "has_experiment" => has_experiment_result})
+
+      _ ->
+        error(conn, 404, "failed to resolve experiment")
     end
   end
 
