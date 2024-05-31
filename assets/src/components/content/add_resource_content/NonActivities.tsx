@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
@@ -38,7 +38,6 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
-
   const [ABTestDisabled, setABTestDisabled] = useState(true);
 
   useEffect(() => {
