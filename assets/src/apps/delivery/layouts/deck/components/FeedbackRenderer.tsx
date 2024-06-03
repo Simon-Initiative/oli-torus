@@ -36,7 +36,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
           }
         `}
       </style>
-      {feedbacks.map((feedback) => (
+      {feedbacks.map((feedback, index) => (
         <div
           key={`${feedback.id}_${renderId}`}
           style={{
@@ -49,6 +49,7 @@ const FeedbackRenderer: React.FC<FeedbackRendererProps> = ({ feedbacks, snapshot
             borderRadius: feedback.custom.palette.borderRadius,
           }}
           className="feedback-item"
+          tabIndex={index}
         >
           <PartsLayoutRenderer parts={feedback.partsLayout} onPartInit={handlePartInit} />
         </div>

@@ -5,45 +5,42 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
   alias Oli.Analytics.XAPI.StatementBundle
   alias Oli.Analytics.XAPI.QueueProducer
 
-  def make_bundle(data) do
+  def make_bundle(data, directory_as_partition) do
     %StatementBundle{
       body: data,
       bundle_id: data,
       partition_id: data,
       category: :page_viewed,
-      partition: :section
+      partition: directory_as_partition
     }
   end
 
   describe "xapi upload pipeline tests" do
     setup do
-      # Create the directory ./test_bundles
-      File.mkdir_p!("./test_bundles")
+      {:ok, dir} = Briefly.create(type: :directory)
 
-      on_exit(fn ->
-        File.rm_rf!("./test_bundles")
-      end)
-
-      map = Seeder.base_project_with_resource2()
+      map =
+        Seeder.base_project_with_resource2()
+        |> Map.put(:upload_directory, dir)
 
       {:ok, map}
     end
 
-    test "test pushing through a single message" do
-      bundle = make_bundle("1")
+    test "test pushing through a single message", map do
+      bundle = make_bundle("1", map.upload_directory)
       ref = Broadway.test_message(UploadPipeline, bundle)
       assert_receive {:ack, ^ref, [%{data: ^bundle}], []}
 
-      assert File.exists?("./test_bundles/1.jsonl")
-      assert File.read!("./test_bundles/1.jsonl") == "1"
+      assert File.exists?("#{map.upload_directory}/1.jsonl")
+      assert File.read!("#{map.upload_directory}/1.jsonl") == "1"
     end
 
-    test "test that failed uploads get written to DB" do
-      bundle = make_bundle("fail")
+    test "test that failed uploads get written to DB", map do
+      bundle = make_bundle("fail", map.upload_directory)
       ref = Broadway.test_message(UploadPipeline, bundle)
       assert_receive {:ack, ^ref, [%{data: ^bundle}], []}
 
-      refute File.exists?("./test_bundles/1.jsonl")
+      refute File.exists?("#{map.upload_directory}/1.jsonl")
       [failed] = Oli.Repo.all(Oli.Analytics.XAPI.PendingUpload)
 
       assert failed.bundle["body"] == "fail"
@@ -55,11 +52,11 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       assert body == "fail"
     end
 
-    test "test that a single batcher honors batch keys" do
-      bundle1a = make_bundle("1")
-      bundle1b = make_bundle("1")
-      bundle2a = make_bundle("2")
-      bundle2b = make_bundle("2")
+    test "test that a single batcher honors batch keys", map do
+      bundle1a = make_bundle("1", map.upload_directory)
+      bundle1b = make_bundle("1", map.upload_directory)
+      bundle2a = make_bundle("2", map.upload_directory)
+      bundle2b = make_bundle("2", map.upload_directory)
 
       ref = Broadway.test_batch(UploadPipeline, [bundle1a, bundle1b, bundle2a, bundle2b])
       assert_receive {:ack, ^ref, success, failure}, 1000
@@ -68,17 +65,17 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       assert length(success) == 2
       assert length(failure) == 0
 
-      # assert that ./test_bundles/1.jsonl and ./test_bundles/2.jsonl exist
-      assert File.exists?("./test_bundles/1.jsonl")
-      assert File.exists?("./test_bundles/2.jsonl")
+      # assert that #{map.upload_directory}/1.jsonl and #{map.upload_directory}/2.jsonl exist
+      assert File.exists?("#{map.upload_directory}/1.jsonl")
+      assert File.exists?("#{map.upload_directory}/2.jsonl")
 
       # verify that the contents of the files are correct, in other words
       # we verify that the two messages were coalesced into one file
-      assert File.read!("./test_bundles/1.jsonl") == "1\n1"
-      assert File.read!("./test_bundles/2.jsonl") == "2\n2"
+      assert File.read!("#{map.upload_directory}/1.jsonl") == "1\n1"
+      assert File.read!("#{map.upload_directory}/2.jsonl") == "2\n2"
     end
 
-    test "verify that a stopped pipeline drains the QueueProducer" do
+    test "verify that a stopped pipeline drains the QueueProducer", map do
       Broadway.start_link(__MODULE__,
         name: :dummy_pipeline,
         producer: [
@@ -99,8 +96,8 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       producer_name = Broadway.producer_names(:dummy_pipeline) |> hd
 
       # Async call to the producer
-      GenStage.cast(producer_name, {:insert, make_bundle("1")})
-      GenStage.cast(producer_name, {:insert, make_bundle("2")})
+      GenStage.cast(producer_name, {:insert, make_bundle("1", map.upload_directory)})
+      GenStage.cast(producer_name, {:insert, make_bundle("2", map.upload_directory)})
 
       # wait for the producer to receive the first message
       Process.sleep(100)

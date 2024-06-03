@@ -7,7 +7,7 @@ defmodule OliWeb.Common.PagingParams do
     :label
   ]
 
-  def calculate(total_count, offset, limit, max_rendered_pages) do
+  def calculate(total_count, offset, limit, max_rendered_pages, has_shorter_label \\ false) do
     half = ceil((max_rendered_pages - 1) / 2)
 
     # Calculate the index of the absolute last page (not last rendered page choice)
@@ -47,7 +47,12 @@ defmodule OliWeb.Common.PagingParams do
       end
 
     upper = min(offset + limit, total_count)
-    label = "Showing result #{offset + 1} - #{upper} of #{total_count} total"
+
+    label =
+      case has_shorter_label do
+        true -> "#{offset + 1} - #{upper} of #{total_count} results"
+        false -> "Showing result #{offset + 1} - #{upper} of #{total_count} total"
+      end
 
     %__MODULE__{
       rendered_pages_count: rendered_pages,
