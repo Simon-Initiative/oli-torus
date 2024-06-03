@@ -95,29 +95,13 @@ defmodule OliWeb.Delivery.Student.Learn.Components.ViewSelector do
 
   defp view_icon(%{option: :outline} = assigns) do
     ~H"""
-    <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M5 5H11M5 9H11M5 13H9M1 3C1 2.46957 1.21071 1.96086 1.58579 1.58579C1.96086 1.21071 2.46957 1 3 1H13C13.5304 1 14.0391 1.21071 14.4142 1.58579C14.7893 1.96086 15 2.46957 15 3V17C15 17.5304 14.7893 18.0391 14.4142 18.4142C14.0391 18.7893 13.5304 19 13 19H3C2.46957 19 1.96086 18.7893 1.58579 18.4142C1.21071 18.0391 1 17.5304 1 17V3Z"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="stroke-black/60 dark:stroke-white"
-      />
-    </svg>
+    <i class="ti ti-list"></i>
     """
   end
 
   defp view_icon(%{option: :gallery} = assigns) do
     ~H"""
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M15 8H15.01M3 16L8 11C8.928 10.107 10.072 10.107 11 11L16 16M14 14L15 13C15.928 12.107 17.072 12.107 18 13L21 16M3 6C3 5.20435 3.31607 4.44129 3.87868 3.87868C4.44129 3.31607 5.20435 3 6 3H18C18.7956 3 19.5587 3.31607 20.1213 3.87868C20.6839 4.44129 21 5.20435 21 6V18C21 18.7956 20.6839 19.5587 20.1213 20.1213C19.5587 20.6839 18.7956 21 18 21H6C5.20435 21 4.44129 20.6839 3.87868 20.1213C3.31607 19.5587 3 18.7956 3 18V6Z"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="stroke-black/60 dark:stroke-white"
-      />
-    </svg>
+    <i class="ti ti-layout-grid"></i>
     """
   end
 
