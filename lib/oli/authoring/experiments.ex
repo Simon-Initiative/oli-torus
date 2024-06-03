@@ -48,6 +48,20 @@ defmodule Oli.Authoring.Experiments do
     )
   end
 
+  def is_experiment_enabled(project_slug) do
+    from(pr in PublishedResource,
+      join: revision in Revision,
+      on: revision.id == pr.revision_id,
+      join: e in Experiment,
+      on: e.revision_id == revision.id,
+      where: pr.publication_id in subquery(project_working_publication(project_slug)),
+      where: fragment("?->>'strategy' = ?", revision.content, @experiment_id),
+      where: revision.resource_type_id == @alternatives_type_id,
+      select: e.is_enabled
+    )
+    |> Repo.one!()
+  end
+
   def create_experiment!(params) do
     params
     |> Experiment.new_changeset()

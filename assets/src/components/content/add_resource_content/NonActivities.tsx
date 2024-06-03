@@ -41,8 +41,8 @@ export const NonActivities: React.FC<Props> = ({
   const [ABTestDisabled, setABTestDisabled] = useState(true);
 
   useEffect(() => {
-    Persistence.hasExperiment(resourceContext.projectSlug).then((result) => {
-      setABTestDisabled('has_experiment' in result ? !result.has_experiment : true);
+    Persistence.isExperimentEnabled(resourceContext.projectSlug).then((result) => {
+      setABTestDisabled('is_experiment_enabled' in result ? !result.is_experiment_enabled : true);
     });
   }, []);
 

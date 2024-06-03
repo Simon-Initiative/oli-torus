@@ -80,10 +80,10 @@ defmodule OliWeb.Api.ResourceController do
     end
   end
 
-  def has_experiment(conn, %{"project" => project_slug}) do
-    case Experiments.has_experiment(project_slug) do
-      has_experiment_result when has_experiment_result in [true, false] ->
-        json(conn, %{"type" => "success", "has_experiment" => has_experiment_result})
+  def is_experiment_enabled(conn, %{"project" => project_slug}) do
+    case Experiments.is_experiment_enabled(project_slug) do
+      is_experiment_enabled when is_experiment_enabled in [true, false] ->
+        json(conn, %{"type" => "success", "is_experiment_enabled" => is_experiment_enabled})
 
       _ ->
         error(conn, 404, "failed to resolve experiment")

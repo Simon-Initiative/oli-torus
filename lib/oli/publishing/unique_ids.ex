@@ -262,7 +262,8 @@ defmodule Oli.Publishing.UniqueIds do
           :page_type,
           :parent_slug,
           :total_attempts,
-          :avg_score
+          :avg_score,
+          :experiment
         ])
       end)
 
