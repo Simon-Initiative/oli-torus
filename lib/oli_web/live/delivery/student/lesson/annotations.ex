@@ -429,7 +429,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :post, Oli.Resources.Collaboration.Post, required: true
   attr :current_user, Oli.Accounts.User, required: true
   attr :disable_anonymous_option, :boolean, default: false
-  attr :enable_unread_badge, :boolean, default: false
+  attr :has_unread_replies, :boolean, default: false
   attr :go_to_post_href, :string, default: nil
   attr :rest, :global, include: ~w(class)
 
@@ -444,10 +444,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     >
       <div class="flex flex-row justify-between mb-1" role="post header">
         <div class="flex flex-row">
-          <div
-            :if={@enable_unread_badge && @post.replies_count > @post.read_replies_count}
-            class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
-          />
+          <div :if={@has_unread_replies} class="w-2 h-2 my-2 mr-3 bg-primary rounded-full" />
           <div class="font-semibold" role="user name">
             <%= post_creator(@post, @current_user) %>
           </div>
@@ -470,7 +467,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         on_toggle_reaction="toggle_reaction"
         on_toggle_replies="toggle_post_replies"
         go_to_post_href={@go_to_post_href}
-        has_unread_replies={@enable_unread_badge && @post.replies_count > @post.read_replies_count}
+        has_unread_replies={@has_unread_replies}
       />
       <.post_replies
         post={@post}

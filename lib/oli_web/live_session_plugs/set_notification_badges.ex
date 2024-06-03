@@ -37,21 +37,22 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
       end
 
     if course_discussions_enabled? do
-      unread_replies_count =
-        Collaboration.get_unread_replies_count_for_root_discussions(
+      total_count_of_unread_replies =
+        Collaboration.get_total_count_of_unread_replies_for_root_discussions(
           user.id,
           root_curriculum_resource_id
         )
 
       notification_badges = Map.get(socket.assigns, :notification_badges, %{})
 
-      case unread_replies_count do
+      case total_count_of_unread_replies do
         0 ->
           socket
 
         _ ->
           assign(socket,
-            notification_badges: Map.put(notification_badges, :discussions, unread_replies_count),
+            notification_badges:
+              Map.put(notification_badges, :discussions, total_count_of_unread_replies),
             has_unread_discussions: true
           )
       end

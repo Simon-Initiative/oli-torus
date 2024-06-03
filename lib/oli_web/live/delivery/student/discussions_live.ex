@@ -25,17 +25,29 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     %{resource_id: root_curriculum_resource_id} =
       DeliveryResolver.root_container(section.slug)
 
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(
-        Oli.PubSub,
-        "collab_space_discussion_#{socket.assigns.section.slug}"
-      )
+    unread_reply_counts =
+      if connected?(socket) do
+        Phoenix.PubSub.subscribe(
+          Oli.PubSub,
+          "collab_space_discussion_#{socket.assigns.section.slug}"
+        )
 
-      Collaboration.mark_course_discussions_and_replies_read(
-        current_user.id,
-        root_curriculum_resource_id
-      )
-    end
+        # gather unread reply counts for root discussions then mark as read
+        unread_reply_counts =
+          Collaboration.get_unread_reply_counts_for_root_discussions(
+            current_user.id,
+            root_curriculum_resource_id
+          )
+
+        Collaboration.mark_course_discussions_and_replies_read(
+          current_user.id,
+          root_curriculum_resource_id
+        )
+
+        unread_reply_counts
+      else
+        %{}
+      end
 
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(section.root_section_resource_id)
@@ -85,7 +97,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         posts_search_term: "",
         posts_search_results: nil,
         notes_search_term: "",
-        notes_search_results: nil
+        notes_search_results: nil,
+        unread_reply_counts: unread_reply_counts
       )
       |> assign_new_discussion_form()
     }
@@ -175,7 +188,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         new_post = %Post{
           post
           | replies_count: 0,
-            read_replies_count: 0,
             reaction_summaries: %{},
             replies: nil
         }
@@ -489,12 +501,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
              %Collaboration.Post{
                post
                | replies_count: post.replies_count + 1,
-                 # mark new post as read if it's the current user's post
-                 read_replies_count:
-                   if(new_post.user_id == socket.assigns.current_user.id,
-                     do: post.read_replies_count + 1,
-                     else: post.read_replies_count
-                   ),
                  # only append the new reply if the replies are expanded for the parent post
                  replies:
                    case post.replies do
@@ -555,6 +561,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         more_posts_exist?={@more_posts_exist?}
         posts_search_term={@posts_search_term}
         posts_search_results={@posts_search_results}
+        unread_reply_counts={@unread_reply_counts}
       />
       <.notes_section
         :if={not @is_instructor}
@@ -661,6 +668,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :more_posts_exist?, :boolean
   attr :posts_search_term, :string
   attr :posts_search_results, :any
+  attr :unread_reply_counts, :map
 
   defp posts_section(assigns) do
     ~H"""
@@ -686,7 +694,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                   class="bg-white dark:bg-gray-900"
                   post={post}
                   current_user={@ctx.user}
-                  enable_unread_badge={true}
+                  has_unread_replies={Map.get(@unread_reply_counts, post.id, 0) > 0}
                 />
               </div>
             <% end %>

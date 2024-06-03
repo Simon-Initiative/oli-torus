@@ -867,7 +867,7 @@ defmodule Oli.Resources.CollaborationTest do
       assert %{"block1" => 2} == student2_private_notes_counts
     end
 
-    test "get_unread_replies_count_for_root_discussions/2 returns unread reply counts for posts created by user",
+    test "get_total_count_of_unread_replies_for_root_discussions/2 returns unread reply counts for posts created by user",
          %{
            section: section,
            student1: student1,
@@ -917,7 +917,7 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       unread_reply_counts =
-        Collaboration.get_unread_replies_count_for_root_discussions(
+        Collaboration.get_total_count_of_unread_replies_for_root_discussions(
           student1.id,
           root_curriculum_resource_id
         )
@@ -931,7 +931,7 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       unread_reply_counts =
-        Collaboration.get_unread_replies_count_for_root_discussions(
+        Collaboration.get_total_count_of_unread_replies_for_root_discussions(
           student1.id,
           root_curriculum_resource_id
         )
@@ -958,12 +958,150 @@ defmodule Oli.Resources.CollaborationTest do
       )
 
       unread_reply_counts =
-        Collaboration.get_unread_replies_count_for_root_discussions(
+        Collaboration.get_total_count_of_unread_replies_for_root_discussions(
           student1.id,
           root_curriculum_resource_id
         )
 
       assert unread_reply_counts == 2
+    end
+
+    test "get_unread_reply_counts_for_root_discussions/2 returns the root posts with unread replies flag",
+         %{
+           section: section,
+           student1: student1,
+           student2: student2
+         } do
+      %{resource_id: root_curriculum_resource_id} =
+        DeliveryResolver.root_container(section.slug)
+
+      # root posts
+      {:ok, parent_post1} =
+        create_post(
+          student1.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 1 root discussion"
+        )
+
+      {:ok, parent_post2} =
+        create_post(
+          student2.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 2 root discussion"
+        )
+
+      {:ok, parent_post3} =
+        create_post(
+          student1.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 1 2nd root discussion"
+        )
+
+      # create replies
+      create_post(
+        student1.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 1 parent_post1 reply",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 parent_post1 reply",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      parent_post1_id = parent_post1.id
+
+      assert Collaboration.get_unread_reply_counts_for_root_discussions(
+               student1.id,
+               root_curriculum_resource_id
+             ) == %{
+               parent_post1_id => 1
+             }
+
+      # add two more replies to the parent post 1 and a reply from student 1
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 parent_post1 reply 2",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 parent_post1 reply 3",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      create_post(
+        student1.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 1 parent_post1 reply 1",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      assert Collaboration.get_unread_reply_counts_for_root_discussions(
+               student1.id,
+               root_curriculum_resource_id
+             ) == %{
+               parent_post1_id => 3
+             }
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 parent_post3 reply",
+        parent_post_id: parent_post3.id,
+        thread_root_id: parent_post3.id
+      )
+
+      parent_post3_id = parent_post3.id
+
+      assert Collaboration.get_unread_reply_counts_for_root_discussions(
+               student1.id,
+               root_curriculum_resource_id
+             ) == %{
+               parent_post1_id => 3,
+               parent_post3_id => 1
+             }
+
+      assert Collaboration.get_unread_reply_counts_for_root_discussions(
+               student2.id,
+               root_curriculum_resource_id
+             ) == %{}
+
+      create_post(
+        student1.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 1 parent_post2 reply",
+        parent_post_id: parent_post2.id,
+        thread_root_id: parent_post2.id
+      )
+
+      parent_post2_id = parent_post2.id
+
+      assert Collaboration.get_unread_reply_counts_for_root_discussions(
+               student2.id,
+               root_curriculum_resource_id
+             ) == %{parent_post2_id => 1}
     end
   end
 
