@@ -65,8 +65,9 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
           className={minimized ? 'displayNone' : ''}
           role="alertdialog"
           aria-live="polite"
-          aria-hidden="true"
           aria-label="Feedback dialog"
+          aria-labelledby="Feedback dialog"
+          tabIndex={1}
         >
           <div className={`theme-feedback-header ${showHeader ? '' : 'displayNone'}`}>
             <button
