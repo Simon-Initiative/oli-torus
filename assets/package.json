@@ -40,6 +40,7 @@
     "@rjsf/bootstrap-4": "^3.2.1",
     "@rjsf/core": "^4.2.0",
     "@stripe/stripe-js": "^1.18.0",
+    "@tabler/icons-react": "^3.5.0",
     "@tailwindcss/container-queries": "^0.1.0",
     "@tailwindui/react": "^0.1.1",
     "@uiw/react-md-editor": "^3.23.5",
