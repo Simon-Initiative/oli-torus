@@ -2224,8 +2224,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     )
   end
 
-  defp completed_page?(true = _graded, visited?, raw_avg_score, _progress),
-    do: visited? and not is_nil(raw_avg_score)
+  defp completed_page?(true = _graded, visited?, raw_avg_score, progress),
+    do: visited? and not is_nil(raw_avg_score) and progress == 1.0
 
   defp completed_page?(false = _graded, visited?, _score, progress),
     do: visited? and progress == 1.0

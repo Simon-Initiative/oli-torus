@@ -902,10 +902,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            project: project,
            publication: publication
          } do
-      # complete all pages
-      [page_1, page_2, practice_page, graded_page]
-      |> Enum.each(fn page ->
-        set_progress(section.id, page.resource_id, user.id, 1.0, page)
+      # complete all pages except the graded one
+      [{page_1, 1.0}, {page_2, 1.0}, {practice_page, 1.0}, {graded_page, 0.75}]
+      |> Enum.each(fn {page, progress} ->
+        set_progress(section.id, page.resource_id, user.id, progress, page)
 
         set_activity_attempt(
           page,
@@ -939,7 +939,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
              )
 
-      assert has_element?(
+      # this page is not yet completed, so we do not expect to see the check icon
+      refute has_element?(
                view,
                ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
              )
