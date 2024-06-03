@@ -1,13 +1,16 @@
 defmodule OliWeb.Components.Delivery.Content do
   use OliWeb, :live_component
 
-  alias OliWeb.Components.Delivery.ContentTableModel
-  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias Phoenix.LiveView.JS
+
+  alias Oli.Delivery.Metrics
   alias OliWeb.Common.SearchInput
-  alias OliWeb.Common.Params
+  alias OliWeb.Components.Delivery.{CardHighLights, ContentTableModel}
+  alias OliWeb.Common.{InstructorDashboardPagedTable, Params}
   alias OliWeb.Router.Helpers, as: Routes
 
   alias Phoenix.LiveView.JS
+  alias OliWeb.Icons
 
   @default_params %{
     offset: 0,
@@ -16,7 +19,8 @@ defmodule OliWeb.Components.Delivery.Content do
     sort_order: :asc,
     sort_by: :numbering_index,
     text_search: nil,
-    container_filter_by: :units
+    container_filter_by: :units,
+    selected_card_value: nil
   }
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
@@ -47,6 +51,24 @@ defmodule OliWeb.Components.Delivery.Content do
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
 
+    selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
+    containers_count = containers_count(containers, params.container_filter_by)
+
+    card_props = [
+      %{
+        title: "High Progress, Low Proficiency",
+        count: Map.get(containers_count, :high_progress_low_proficiency),
+        is_selected: selected_card_value == "1",
+        value: "1"
+      },
+      %{
+        title: "Zero Student Progress",
+        count: Map.get(containers_count, :zero_student_progress),
+        is_selected: selected_card_value == "2",
+        value: "2"
+      }
+    ]
+
     {:ok,
      assign(socket,
        total_count: total_count,
@@ -56,7 +78,8 @@ defmodule OliWeb.Components.Delivery.Content do
        patch_url_type: assigns.patch_url_type,
        section_slug: assigns.section_slug,
        options_for_container_select: options_for_container_select(containers),
-       view: assigns[:view]
+       view: assigns[:view],
+       card_props: card_props
      )}
   end
 
@@ -67,6 +90,7 @@ defmodule OliWeb.Components.Delivery.Content do
   attr(:patch_url_type, :atom, required: true)
   attr(:view, :atom)
   attr(:section_slug, :string)
+  attr(:card_props, :list)
 
   def render(assigns) do
     ~H"""
@@ -94,9 +118,12 @@ defmodule OliWeb.Components.Delivery.Content do
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div
           style="min-height: 83px;"
-          class="flex justify-between gap-2 items-end px-4 sm:px-9 py-4 instructor_dashboard_table"
+          class="flex justify-between gap-2 items-center px-4 sm:px-9 py-4 instructor_dashboard_table"
         >
-          <div>
+          <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight">
+            Course Modules
+          </div>
+          <div class="">
             <a
               href={
                 Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug,
@@ -104,12 +131,28 @@ defmodule OliWeb.Components.Delivery.Content do
                 )
               }
               download="course_content.csv"
-              class="self-end"
+              class="flex items-center justify-center gap-x-2"
             >
-              <i class="fa-solid fa-download ml-1" /> Download
+              Download CSV <Icons.download />
             </a>
           </div>
-          <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-44">
+        </div>
+
+        <div class="flex flex-row mx-9 gap-x-4">
+          <%= for card <- @card_props do %>
+            <CardHighLights.render
+              title={card.title}
+              count={card.count}
+              is_selected={card.is_selected}
+              value={card.value}
+              on_click={JS.push("select_card", target: @myself)}
+              container_filter_by={@params.container_filter_by}
+            />
+          <% end %>
+        </div>
+
+        <div class="mx-9 my-4">
+          <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
             <SearchInput.render
               id="content_search_input"
               name="container_name"
@@ -211,6 +254,14 @@ defmodule OliWeb.Components.Delivery.Content do
      )}
   end
 
+  def handle_event("select_card", %{"selected" => value}, socket) do
+    value = if value == Map.get(socket.assigns.params, :selected_card_value), do: nil, else: value
+
+    send(self(), {:selected_card_containers, value})
+
+    {:noreply, socket}
+  end
+
   defp decode_params(params) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
@@ -237,7 +288,9 @@ defmodule OliWeb.Components.Delivery.Content do
           "container_filter_by",
           [:modules, :units, :pages],
           @default_params.container_filter_by
-        )
+        ),
+      selected_card_value:
+        Params.get_param(params, "selected_card_value", @default_params.selected_card_value)
     }
   end
 
@@ -268,6 +321,7 @@ defmodule OliWeb.Components.Delivery.Content do
           containers
           |> Enum.filter(fn container -> container.numbering_level == 2 end)
           |> maybe_filter_by_text(params.text_search)
+          |> maybe_filter_by_card(params.selected_card_value)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(modules), "MODULES",
@@ -278,6 +332,7 @@ defmodule OliWeb.Components.Delivery.Content do
           containers
           |> Enum.filter(fn container -> container.numbering_level == 1 end)
           |> maybe_filter_by_text(params.text_search)
+          |> maybe_filter_by_card(params.selected_card_value)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -319,6 +374,22 @@ defmodule OliWeb.Components.Delivery.Content do
     |> Enum.filter(fn container ->
       String.contains?(String.downcase(container.title), String.downcase(text_search))
     end)
+  end
+
+  defp maybe_filter_by_card(containers, nil), do: containers
+  defp maybe_filter_by_card(containers, ""), do: containers
+
+  defp maybe_filter_by_card(containers, selected_card_value) do
+    case selected_card_value do
+      "1" ->
+        Enum.filter(containers, fn container ->
+          Metrics.progress_range(container.progress) == "High" and
+            container.student_proficiency == "Low"
+        end)
+
+      "2" ->
+        Enum.filter(containers, fn container -> container.progress == 0 end)
+    end
   end
 
   defp options_for_container_select(containers) do
@@ -368,4 +439,26 @@ defmodule OliWeb.Components.Delivery.Content do
         do: "text-white font-bold",
         else: "text-zinc-700 font-normal"
       )
+
+  defp containers_count(containers, container_filter) do
+    container_filter_id =
+      case container_filter do
+        :units -> 1
+        :modules -> 2
+        _ -> nil
+      end
+
+    %{
+      zero_student_progress:
+        Enum.count(containers, fn container ->
+          Map.get(container, :numbering_level) == container_filter_id and container.progress == 0
+        end),
+      high_progress_low_proficiency:
+        Enum.count(containers, fn container ->
+          Map.get(container, :numbering_level) == container_filter_id and
+            Metrics.progress_range(container.progress) == "High" and
+            container.student_proficiency == "Low"
+        end)
+    }
+  end
 end

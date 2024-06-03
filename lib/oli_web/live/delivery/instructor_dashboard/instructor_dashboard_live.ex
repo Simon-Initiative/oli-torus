@@ -746,6 +746,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
+  def handle_info(
+        {:selected_card_containers, value},
+        socket
+      ) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{%{selected_card_value: value}}"
+     )}
+  end
+
+  def handle_info(
+        {:selected_card_students, {value, container_id}},
+        socket
+      ) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{%{selected_card_value: value, container_id: container_id}}"
+     )}
+  end
+
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
