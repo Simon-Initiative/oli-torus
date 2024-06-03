@@ -1,0 +1,34 @@
+.activity-report {
+  margin-bottom: 1rem;
+  border: 1px solid #222439;
+
+  .activity-report-label {
+    text-transform: uppercase;
+    background: var(--color-delivery-purpose-label-bg);
+    padding: 4px 0;
+    color: var(--color-white);
+
+    /** icon */
+    &::before {
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      margin-left: 8px;
+      margin-right: 8px;
+      content: '\f681';
+    }
+  }
+
+  .activity-report-content {
+    padding: 20px;
+  }
+}
+
+html.dark {
+  .activity-report {
+    border-color: var(--color-delivery-purpose-label-bg-dark);
+
+    & > .activity-report-label {
+      background: var(--color-delivery-purpose-label-bg-dark);
+    }
+  }
+}

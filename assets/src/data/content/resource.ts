@@ -258,10 +258,7 @@ export const createReport = (ac: ActivityWithReportOption): ReportContent => ({
   title: undefined,
   children: [],
   activityId: ac.id,
-  // activitySlug: ac.slug,
-  // activityTitle: ac.title,
-  // activityType: ac.type,
-  // parentPage: ac.page,
+  reportType: ac.type === 'oli_likert'? 'likert_bar' : undefined,
 });
 
 export const createBreak = (): Break => ({
@@ -351,6 +348,7 @@ export interface ReportContent {
   title: string | undefined;
   children: [];
   activityId: string;
+  reportType?: string;
 }
 
 export interface Break {

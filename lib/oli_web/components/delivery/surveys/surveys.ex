@@ -581,6 +581,12 @@ defmodule OliWeb.Components.Delivery.Surveys do
     |> Repo.all()
   end
 
+  @spec get_activities_details(
+          any(),
+          atom() | %{:analytics_version => any(), :id => any(), optional(any()) => any()},
+          any(),
+          any()
+        ) :: any()
   def get_activities_details(activity_resource_ids, section, activity_types_map, page_resource_id) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
