@@ -1483,8 +1483,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         publication_id: publication_id
       },
       %{
-        attempt_guid: hd(context.resource_attempts).attempt_guid,
-        attempt_number: hd(context.resource_attempts).attempt_number,
+        attempt_guid: List.first(context.resource_attempts) |> Map.get(:attempt_guid),
+        attempt_number: List.first(context.resource_attempts) |> Map.get(:attempt_number),
         resource_id: context.page.resource_id,
         timestamp: DateTime.utc_now(),
         page_sub_type: page_sub_type

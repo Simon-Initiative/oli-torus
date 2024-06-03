@@ -101,7 +101,7 @@ defmodule Oli.Delivery.Settings do
     |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, Map.take(se, fields)) end)
   end
 
-  defp get_page_resources_with_settings(section_slug, resource_ids \\ nil) do
+  defp get_page_resources_with_settings(section_slug, resource_ids) do
     page_id = Oli.Resources.ResourceType.id_for_page()
 
     resource_ids_filter =

@@ -456,7 +456,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
        ) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
-      |> Core.update_resource_access(%{progress: progress})
+      |> Core.update_resource_access(%{progress: progress, score: 5.0, out_of: 10.0})
 
     attempt_attrs =
       case opts[:updated_at] do

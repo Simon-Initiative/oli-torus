@@ -578,7 +578,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           </div>
         </div>
       <% end %>
-      <div class="justify-end items-end gap-2.5 flex ml-auto">
+      <div
+        :if={nil not in [@lesson.score, @lesson.out_of]}
+        class="justify-end items-end gap-2.5 flex ml-auto"
+      >
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
@@ -614,7 +617,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp completed_lesson?(%{graded: true} = assignment),
     do:
-      assignment.attempts_count == assignment.max_attempts and
+      assignment.attempts_count == assignment.settings.max_attempts and
         assignment.last_attempt_state != :active
 
   defp completed_lesson?(practice), do: practice.progress == 1.0

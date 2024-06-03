@@ -58,7 +58,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
   alias Oli.Delivery.Settings
-  alias Oli.Analytics.Summary.ResourceSummary
 
   require Logger
 
@@ -4296,11 +4295,11 @@ defmodule Oli.Delivery.Sections do
         [rev: rev, sr: sr] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
           section.slug
         ),
-        join: last_att in subquery(last_attempt_query),
+        left_join: last_att in subquery(last_attempt_query),
         on: last_att.revision_id == rev.id,
-        join: r_att in ResourceAttempt,
+        left_join: r_att in ResourceAttempt,
         on: r_att.revision_id == rev.id,
-        join: ra in assoc(r_att, :resource_access),
+        left_join: ra in assoc(r_att, :resource_access),
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
             rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
