@@ -25,9 +25,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       |> DeliveryResolver.root_container()
       |> build_intro_message_title()
 
-    combined_settings =
-      Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
-
     nearest_upcoming_lesson =
       section
       |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
@@ -35,14 +32,15 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     latest_assignments =
       Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
-      |> combine_settings(combined_settings)
 
     upcoming_assignments =
       Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
-      |> combine_settings(combined_settings)
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section.slug, page_ids)
+
+    combined_settings =
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Enum.map(
@@ -81,8 +79,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          ),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
        nearest_upcoming_lesson: nearest_upcoming_lesson,
-       upcoming_assignments: upcoming_assignments,
-       latest_assignments: latest_assignments,
+       upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
+       latest_assignments: combine_settings(latest_assignments, combined_settings),
        containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
        intro_message: intro_message,
@@ -662,7 +660,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
+  defp format_date(nil, _context, _format), do: "Not yet scheduled"
 
   defp format_date(due_date, context, format) do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
