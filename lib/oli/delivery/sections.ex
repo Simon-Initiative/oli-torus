@@ -4366,9 +4366,12 @@ defmodule Oli.Delivery.Sections do
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
       left_join: ra in ResourceAccess,
       on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
+      left_join: r_att in ResourceAttempt,
+      on: r_att.resource_access_id == ra.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0,
+          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0 and
+          is_nil(r_att.id),
       order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
       limit: ^lessons_count,
       select:
