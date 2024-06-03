@@ -1211,7 +1211,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(learning_objectives_tooltip) =~ "Objective 4"
     end
 
-    test "can see unit check icon and score summary when all pages are completed",
+    test "can see unit correct progress when all pages are completed",
          %{
            conn: conn,
            user: user,
@@ -1256,16 +1256,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # when the slider buttons are enabled we know the student async metrics were loaded
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
-      assert has_element?(
-               view,
-               ~s{div[role="unit_1"] div[role="score summary"]},
-               "1 / 2"
-             )
-
-      assert has_element?(
-               view,
-               ~s{div[role="unit_1"] svg[role="unit completed check icon"]}
-             )
+      assert has_element?(view, ~s{div[role="unit_1_progress"]}, "100%")
     end
 
     test "can expand more than one module card", %{
