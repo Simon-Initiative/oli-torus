@@ -1234,6 +1234,11 @@ defmodule Oli.Delivery.Metrics do
   def proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
   def proficiency_range(_proficiency), do: "High"
 
+  def progress_range(nil), do: "Not enough data"
+  def progress_range(progress) when progress <= 0.5, do: "Low"
+  def progress_range(progress) when progress <= 0.8, do: "Medium"
+  def progress_range(_progress), do: "High"
+
   @doc """
   Updates page progress to be 100% complete.
   """
