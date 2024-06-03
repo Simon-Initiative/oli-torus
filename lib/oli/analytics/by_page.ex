@@ -52,7 +52,8 @@ defmodule Oli.Analytics.ByPage do
       on: page.resource_id == pairing.page_id,
       left_join: activity in subquery(subquery_activity),
       on: pairing.activity_id == activity.resource_id,
-      left_join: analytics in subquery(Common.analytics_by_activity(project_slug)),
+      left_join:
+        analytics in subquery(Common.analytics_by_activity(project_slug, filtered_sections)),
       on: pairing.activity_id == analytics.activity_id,
       select: %{
         slice: page,
