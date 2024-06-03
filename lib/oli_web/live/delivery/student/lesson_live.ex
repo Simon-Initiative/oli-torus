@@ -1114,11 +1114,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket.assigns.datashop_session_id
         )
 
+      socket =
+        socket
+        |> assign(page_context: page_context)
+
       emit_page_viewed_event(socket)
 
       {:noreply,
        socket
-       |> assign(page_context: page_context)
        |> assign(begin_attempt?: true, show_loader?: true)
        |> clear_flash()
        |> assign_html()
