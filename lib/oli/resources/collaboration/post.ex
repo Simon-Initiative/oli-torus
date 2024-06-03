@@ -37,6 +37,7 @@ defmodule Oli.Resources.Collaboration.Post do
     field :resource_type_id, :id, virtual: true
     field :resource_slug, :id, virtual: true
     field :replies_count, :integer, virtual: true
+    field :unread_replies_count, :integer, virtual: true
 
     field :reaction_summaries, :map, virtual: true
     field :replies, :any, virtual: true

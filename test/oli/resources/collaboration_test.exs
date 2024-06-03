@@ -1103,6 +1103,80 @@ defmodule Oli.Resources.CollaborationTest do
                root_curriculum_resource_id
              ) == %{parent_post2_id => 1}
     end
+
+    test "list_root_posts_for_section/8 returns root posts with metadata",
+         %{
+           section: section,
+           student1: student1,
+           student2: student2
+         } do
+      %{resource_id: root_curriculum_resource_id} =
+        DeliveryResolver.root_container(section.slug)
+
+      # root posts
+      {:ok, parent_post1} =
+        create_post(
+          student1.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 1 root discussion"
+        )
+
+      {:ok, parent_post2} =
+        create_post(
+          student2.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 2 root discussion"
+        )
+
+      {:ok, parent_post3} =
+        create_post(
+          student1.id,
+          section.id,
+          root_curriculum_resource_id,
+          "student 1 root discussion 2"
+        )
+
+      # create replies
+      create_post(
+        student1.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 1 parent_post1 reply",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      create_post(
+        student2.id,
+        section.id,
+        root_curriculum_resource_id,
+        "student 2 parent_post1 reply",
+        parent_post_id: parent_post1.id,
+        thread_root_id: parent_post1.id
+      )
+
+      parent_post1_id = parent_post1.id
+      parent_post2_id = parent_post2.id
+      parent_post3_id = parent_post3.id
+
+      assert {[
+                %Post{id: ^parent_post1_id, unread_replies_count: 1},
+                %Post{id: ^parent_post3_id, unread_replies_count: 0},
+                %Post{id: ^parent_post2_id, unread_replies_count: 0}
+              ],
+              _more_posts_exist?} =
+               Collaboration.list_root_posts_for_section(
+                 student1.id,
+                 section.id,
+                 root_curriculum_resource_id,
+                 100,
+                 0,
+                 "unread",
+                 :desc
+               )
+    end
   end
 
   defp create_post(user_id, section_id, resource_id, message, attrs \\ []) do

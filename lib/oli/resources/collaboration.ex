@@ -522,6 +522,24 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
+  defp unread_replies_subquery(user_id) do
+    from(
+      post in Post,
+      left_join: thread_root in Post,
+      on: thread_root.id == post.thread_root_id,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == post.id and urp.user_id == ^user_id,
+      where:
+        post.user_id != ^user_id and thread_root.user_id == ^user_id and
+          is_nil(urp.post_id),
+      group_by: post.thread_root_id,
+      select: %{
+        thread_root_id: post.thread_root_id,
+        count: count(post.id)
+      }
+    )
+  end
+
   @doc """
   Returns a map of root post ids that map to their unread reply counts for posts created by a given user.
   """
@@ -613,18 +631,13 @@ defmodule Oli.Resources.Collaboration do
           [
             {sort_order,
              dynamic(
-               [post, _sr, _spp, _pr, _rev, _user, replies, read_replies, urp, _reactions],
-               fragment(
-                 "case when ? > ? or ? then 1 else 0 end",
-                 coalesce(replies.count, 0),
-                 coalesce(read_replies.count, 0),
-                 is_nil(urp.id) and post.user_id != ^user_id
-               )
+               [post, _sr, _spp, _pr, _rev, _user, _replies, unread_replies, _urp, _reactions],
+               coalesce(unread_replies.count, 0)
              )},
             {sort_order,
              dynamic(
                [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
-               post.updated_at
+               post.id
              )}
           ]
       end
@@ -644,8 +657,8 @@ defmodule Oli.Resources.Collaboration do
         on: post.user_id == user.id,
         left_join: replies in subquery(replies_subquery()),
         on: replies.thread_root_id == post.id,
-        left_join: read_replies in subquery(read_replies_subquery(user_id)),
-        on: read_replies.thread_root_id == post.id,
+        left_join: unread_replies in subquery(unread_replies_subquery(user_id)),
+        on: unread_replies.thread_root_id == post.id,
         left_join: urp in UserReadPost,
         on: urp.post_id == post.id and urp.user_id == ^user_id,
         left_join: reactions in assoc(post, :reactions),
@@ -665,7 +678,8 @@ defmodule Oli.Resources.Collaboration do
         select: %{
           post: %{
             post
-            | replies_count: coalesce(replies.count, 0)
+            | replies_count: coalesce(replies.count, 0),
+              unread_replies_count: coalesce(unread_replies.count, 0)
           },
           total_count: over(count(post.id))
         }

@@ -25,29 +25,22 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     %{resource_id: root_curriculum_resource_id} =
       DeliveryResolver.root_container(section.slug)
 
-    unread_reply_counts =
-      if connected?(socket) do
-        Phoenix.PubSub.subscribe(
-          Oli.PubSub,
-          "collab_space_discussion_#{socket.assigns.section.slug}"
-        )
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(
+        Oli.PubSub,
+        "collab_space_discussion_#{socket.assigns.section.slug}"
+      )
 
-        # gather unread reply counts for root discussions then mark as read
-        unread_reply_counts =
-          Collaboration.get_unread_reply_counts_for_root_discussions(
-            current_user.id,
-            root_curriculum_resource_id
-          )
+      # mark all posts as read after 1 second, allowing the page to properly load first with unread badges
+      Task.async(fn ->
+        Process.sleep(1_000)
 
         Collaboration.mark_course_discussions_and_replies_read(
           current_user.id,
           root_curriculum_resource_id
         )
-
-        unread_reply_counts
-      else
-        %{}
-      end
+      end)
+    end
 
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(section.root_section_resource_id)
@@ -97,8 +90,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         posts_search_term: "",
         posts_search_results: nil,
         notes_search_term: "",
-        notes_search_results: nil,
-        unread_reply_counts: unread_reply_counts
+        notes_search_results: nil
       )
       |> assign_new_discussion_form()
     }
@@ -561,7 +553,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         more_posts_exist?={@more_posts_exist?}
         posts_search_term={@posts_search_term}
         posts_search_results={@posts_search_results}
-        unread_reply_counts={@unread_reply_counts}
       />
       <.notes_section
         :if={not @is_instructor}
@@ -668,7 +659,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   attr :more_posts_exist?, :boolean
   attr :posts_search_term, :string
   attr :posts_search_results, :any
-  attr :unread_reply_counts, :map
 
   defp posts_section(assigns) do
     ~H"""
@@ -694,7 +684,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                   class="bg-white dark:bg-gray-900"
                   post={post}
                   current_user={@ctx.user}
-                  has_unread_replies={Map.get(@unread_reply_counts, post.id, 0) > 0}
+                  enable_unread_badge={true}
                 />
               </div>
             <% end %>
