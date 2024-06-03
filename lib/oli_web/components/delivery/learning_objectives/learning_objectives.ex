@@ -1,11 +1,12 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
-  alias OliWeb.Common.{PagedTable, SearchInput}
-  alias Phoenix.LiveView.JS
-  alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.Params
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -81,7 +82,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               <i class="fa-solid fa-download ml-1" /> Download
             </a>
           </div>
-          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end">
+          <div class="flex flex-col-reverse sm:flex-row gap-2 items-end overflow-hidden">
             <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
               <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
                 <small class="torus-small uppercase">
@@ -118,7 +119,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
         <%= if @total_count > 0 do %>
           <div id="objectives-table">
-            <PagedTable.render
+            <InstructorDashboardPagedTable.render
               table_model={@table_model}
               page_change={JS.push("paged_table_page_change", target: @myself)}
               sort={JS.push("paged_table_sort", target: @myself)}
@@ -133,7 +134,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             />
           </div>
         <% else %>
-          <h6 class="text-center py-4">There are no objectives to show</h6>
+          <h6 class="text-center py-4 bg-white dark:bg-gray-800">There are no objectives to show</h6>
         <% end %>
       </div>
     </div>

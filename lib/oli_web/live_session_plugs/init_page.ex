@@ -35,6 +35,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       ) do
     resource_id = assigns.page_context.page.resource_id
 
+    # note will all be nil for case of "loose" linked pages not in hierarchy
     {:ok, {previous, next, current}, _} =
       PreviousNextIndex.retrieve(assigns.section, resource_id)
 

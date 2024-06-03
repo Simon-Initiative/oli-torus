@@ -200,17 +200,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       refute render(view) =~ "Module 1"
       refute render(view) =~ "Module 2"
 
-      assert element(view, "#header_paging > div:first-child") |> render() =~
-               "Showing result 3 - 3 of 3 total"
+      assert element(view, "#footer_paging > div:first-child") |> render() =~
+               "3 - 3 of 3 results"
 
-      [top_selected_page, bottom_selected_page] =
+      selected_page =
         view
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{li.page-item.active button})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+        |> Floki.text()
 
-      assert top_selected_page == bottom_selected_page and bottom_selected_page =~ "2"
+      assert selected_page =~ "2"
 
       ### filtering by modules
       params = %{container_filter_by: :modules}

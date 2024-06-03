@@ -4,6 +4,7 @@ import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { CopyListener } from './copy_listener';
+import { Countdown } from './countdown';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DragSource, DropTarget } from './dragdrop';
@@ -73,4 +74,5 @@ export const Hooks = {
   PointMarkers,
   AutoSelect,
   CustomFocusWrap,
+  Countdown,
 };

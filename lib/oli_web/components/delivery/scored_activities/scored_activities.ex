@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Revision
 
-  alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.PagingParams
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
@@ -30,6 +30,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias OliWeb.ManualGrading.Rendering
   alias OliWeb.ManualGrading.RenderedActivity
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
 
   alias Phoenix.LiveView.JS
 
@@ -135,6 +136,21 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   def render(assigns) do
     ~H"""
     <div>
+      <button
+        :if={!is_nil(@current_assessment)}
+        class="whitespace-nowrap"
+        phx-click="back"
+        phx-target={@myself}
+      >
+        <div class="w-36 h-9 justify-start items-start gap-3.5 inline-flex">
+          <div class="px-1.5 py-2 border-zinc-700 justify-start items-center gap-1 flex">
+            <Icons.chevron_down class="fill-blue-400 rotate-90" />
+            <div class="text-zinc-700 text-sm font-semibold tracking-tight">
+              Back to Activities
+            </div>
+          </div>
+        </div>
+      </button>
       <.loader if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
@@ -146,13 +162,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               <% else %>
                 <h4 class="torus-h4 whitespace-nowrap"><%= @current_assessment.title %></h4>
               <% end %>
-              <button
-                class="btn btn-primary whitespace-nowrap mr-auto my-6"
-                phx-click="back"
-                phx-target={@myself}
-              >
-                Go back
-              </button>
             </div>
           <% else %>
             <h4 class="torus-h4 whitespace-nowrap">Scored Activities</h4>
@@ -214,7 +223,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           </div>
         </div>
 
-        <PagedTable.render
+        <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
           offset={@params.offset}
