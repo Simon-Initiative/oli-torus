@@ -142,7 +142,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 5",
-        graded: true
+        graded: true,
+        max_attempts: 1
       )
 
     page_6_revision =
@@ -1045,6 +1046,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     } do
       stub_current_time(~U[2023-10-31 00:00:00Z])
 
+      # It has only one allowed attempt
       set_progress(section.id, page_5.resource_id, user.id, 1.0, page_5,
         attempt_state: :evaluated,
         updated_at: ~U[2023-11-01 20:00:00Z]
@@ -1138,8 +1140,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
 
-      assert has_element?(view, third_assignment <> ~s{div[role=details] div[role=score]}, "5")
-      assert has_element?(view, third_assignment <> ~s{div[role=details] div[role=out_of]}, "10")
+      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
     end
   end
 end
