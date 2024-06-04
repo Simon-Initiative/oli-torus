@@ -609,7 +609,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       where: rs.page_id == ^page_id,
       where: rs.project_id == -1,
       where: rs.publication_id == -1,
-      select: distinct(rs.activity_id)
+      distinct: true,
+      select: rs.activity_id
     )
     |> Repo.all()
   end
