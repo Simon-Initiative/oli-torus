@@ -35,7 +35,8 @@ defmodule Oli.Analytics.ByObjective do
       objective in subquery(subquery),
       left_join: pairing in subquery(activity_objectives),
       on: objective.resource_id == pairing.objective_id,
-      left_join: analytics in subquery(Common.analytics_by_objective(project_slug)),
+      left_join:
+        analytics in subquery(Common.analytics_by_objective(project_slug, filtered_sections)),
       on: pairing.objective_id == analytics.objective_id,
       select: %{
         slice: objective,
