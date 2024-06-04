@@ -109,7 +109,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             socket.assigns.post_params.sort_by,
             sort_by,
             socket.assigns.post_params.sort_order
-          )
+          ),
+        offset: 0
       })
 
     {posts, more_posts_exist?} =
@@ -138,7 +139,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             socket.assigns.note_params.sort_by,
             sort_by,
             socket.assigns.note_params.sort_order
-          )
+          ),
+        offset: 0
       })
 
     {notes, more_notes_exist?} =
