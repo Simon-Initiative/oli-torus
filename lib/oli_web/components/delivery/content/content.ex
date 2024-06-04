@@ -186,7 +186,8 @@ defmodule OliWeb.Components.Delivery.Content do
            socket,
            %{
              container_filter_by: filter,
-             text_search: @default_params.text_search
+             text_search: @default_params.text_search,
+             selected_card_value: @default_params.selected_card_value
            },
            socket.assigns.patch_url_type
          )

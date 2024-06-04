@@ -355,7 +355,7 @@ defmodule OliWeb.Components.Delivery.Students do
             </form>
           </div>
         </div>
-        <div class="flex flex-row mx-9 gap-x-4">
+        <div class="flex flex-row mx-9 my-4 gap-x-4">
           <%= for card <- @card_props do %>
             <CardHighLights.render
               title={card.title}

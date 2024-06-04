@@ -750,10 +750,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         {:selected_card_containers, value},
         socket
       ) do
+    params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
+
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{%{selected_card_value: value}}"
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{params}"
      )}
   end
 
@@ -761,10 +763,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         {:selected_card_students, {value, container_id}},
         socket
       ) do
+    params =
+      Map.merge(socket.assigns.params, %{
+        "selected_card_value" => value,
+        "container_id" => container_id
+      })
+
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{%{selected_card_value: value, container_id: container_id}}"
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{params}"
      )}
   end
 
