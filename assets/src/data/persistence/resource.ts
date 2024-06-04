@@ -75,17 +75,6 @@ export function alternatives(projectSlug: ProjectSlug) {
   return makeRequest<AlternativesGroupsReceived>(params);
 }
 
-export type isExperimentEnabledReceived = { type: 'success'; is_experiment_enabled: boolean };
-
-export function isExperimentEnabled(projectSlug: ProjectSlug) {
-  const params = {
-    method: 'GET',
-    url: `/project/${projectSlug}/is_experiment_enabled`,
-  };
-
-  return makeRequest<isExperimentEnabledReceived>(params);
-}
-
 function traverseContent(o: any, func: any) {
   for (const i in o) {
     func.apply(this, [i, o[i]]);
