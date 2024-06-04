@@ -532,23 +532,22 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     activity_type_1 =
       Oli.Resources.activity_references(current_assessment)
 
-    activity_type_2 = get_resource_summary_id_by_page(current_assessment.resource_id, section.id)
+    activity_type_2 = get_unique_activities_from_responses(current_assessment.resource_id, section.id)
 
     all_activity_ids =
       Enum.uniq(activity_type_1 ++ activity_type_2)
 
-    activities =
+    all_revisions = DeliveryResolver.from_resource_id(section.slug, all_activity_ids)
+
+    details_by_activity =
       from(rs in ResourceSummary,
-        join: aa in ActivityAttempt,
-        on: aa.resource_id == rs.resource_id,
-        join: rev in Revision,
-        on: aa.revision_id == rev.id,
         where: rs.section_id == ^section.id,
+        where: rs.project_id == -1,
+        where: rs.publication_id == -1,
         where: rs.user_id == -1,
         where: rs.resource_id in ^all_activity_ids,
-        group_by: [rev.resource_id, rev.id, rs.num_attempts],
         select: {
-          rev,
+          rs.resource_id,
           rs.num_attempts,
           fragment(
             "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
@@ -558,9 +557,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         }
       )
       |> Repo.all()
-      |> Enum.map(fn {rev, total_attempts, avg_score} ->
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+      |> Enum.reduce(%{}, fn {resource_id, total_attempts, avg_score}, acc ->
+        Map.put(acc, resource_id, {total_attempts, avg_score})
       end)
+
+    activities = DeliveryResolver.from_resource_id(section.slug, all_activity_ids)
+    |> Enum.map(fn rev ->
+      {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
+      Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+    end)
 
     add_objective_mapper(activities, section.slug)
   end
@@ -598,18 +603,13 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     add_objective_mapper(activities, section.slug)
   end
 
-  defp get_resource_summary_id_by_page(page_id, section_id) do
-    from(rs in ResourceSummary,
-      join: aa in ActivityAttempt,
-      on: aa.resource_id == rs.resource_id,
-      join: rev in Revision,
-      on: aa.revision_id == rev.id,
+  defp get_unique_activities_from_responses(page_id, section_id) do
+    from(rs in ResponseSummary,
       where: rs.section_id == ^section_id,
-      where: rs.resource_id == ^page_id,
+      where: rs.page_id == ^page_id,
       where: rs.project_id == -1,
       where: rs.publication_id == -1,
-      group_by: [rev.resource_id, rev.id, rs.num_attempts],
-      select: rev.id
+      select: distinct(rs.activity_id)
     )
     |> Repo.all()
   end
