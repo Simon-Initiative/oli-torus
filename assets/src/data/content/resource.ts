@@ -149,6 +149,7 @@ export type ResourceContext = {
   projectSlug: ProjectSlug; // The current project
   resourceSlug: ResourceSlug; // The current resource
   resourceId: ResourceId; // The resource id
+  hasExperiments: boolean; // Whether the project has experiments
   title: string; // The title of the resource
   content: PageContent; // Content of the resource
   objectives: AttachedObjectives; // Attached objectives

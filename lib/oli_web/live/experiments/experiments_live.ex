@@ -8,6 +8,8 @@ defmodule OliWeb.Experiments.ExperimentsView do
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Experiments
   alias Oli.Resources.ResourceType
@@ -23,11 +25,10 @@ defmodule OliWeb.Experiments.ExperimentsView do
 
   def mount(_params, _session, socket) do
     experiment = Experiments.get_latest_experiment(socket.assigns.project.slug)
-    is_upgrade_enabled = Experiments.get_experiment_state!(experiment)
 
     socket =
       socket
-      |> assign(is_upgrade_enabled: is_upgrade_enabled)
+      |> assign(is_upgrade_enabled: socket.assigns.project.has_experiments)
       |> assign(title: @title)
       |> assign(experiment: experiment)
 
@@ -81,18 +82,25 @@ defmodule OliWeb.Experiments.ExperimentsView do
           {:ok, experiment} =
             create_experiment(socket.assigns.project, socket.assigns.current_author)
 
-          assign(socket, experiment: experiment, is_upgrade_enabled: true)
+          {:ok, updated_project = %Project{has_experiments: has_experiments}} =
+            Course.update_project(socket.assigns.project, %{has_experiments: true})
 
-        revision = %Revision{experiment: experiment} ->
-          experiment =
-            case experiment do
-              %Ecto.Association.NotLoaded{} -> Oli.Repo.preload(revision, :experiment).experiment
-              experiment -> experiment
-            end
+          assign(socket,
+            experiment: experiment,
+            is_upgrade_enabled: has_experiments,
+            project: updated_project
+          )
 
-          params = %{is_enabled: !experiment.is_enabled}
-          is_enabled = Experiments.update_experiment!(experiment, params).is_enabled
-          assign(socket, :is_upgrade_enabled, is_enabled)
+        %Revision{} ->
+          {:ok, updated_project = %Project{}} =
+            Course.update_project(socket.assigns.project, %{
+              has_experiments: !socket.assigns.project.has_experiments
+            })
+
+          assign(socket,
+            is_upgrade_enabled: updated_project.has_experiments,
+            project: updated_project
+          )
       end
 
     {:noreply, socket}
@@ -429,10 +437,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
       content: %{"options" => initial_opts, "strategy" => "upgrade_decision_point"}
     }
 
-    {:ok, revision} = ResourceEditor.create(project.slug, author, @alternatives_type_id, attrs)
-    Experiments.create_experiment!(%{revision_id: revision.id, is_enabled: true})
-
-    {:ok, revision}
+    ResourceEditor.create(project.slug, author, @alternatives_type_id, attrs)
   end
 
   defp edit_group_options(
