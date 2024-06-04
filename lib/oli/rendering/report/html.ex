@@ -6,6 +6,7 @@ defmodule Oli.Rendering.Report.Html do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Activities.Reports.ProviderList
 
   @behaviour Oli.Rendering.Report
 
@@ -13,7 +14,6 @@ defmodule Oli.Rendering.Report.Html do
         %Context{enrollment: enrollment, user: user, mode: mode} = context,
         %{"id" => id, "activityId" => activity_id} = element
       ) do
-        IO.inspect(mode)
     report =
       case mode do
         :author_preview ->
@@ -28,7 +28,8 @@ defmodule Oli.Rendering.Report.Html do
               "If you do not see your personalized report here, return and complete the activity linked to this report"
             ]
           else
-            report_provider = report_provider(activity_attempt.revision.activity_type.slug)
+            report_provider =
+              ProviderList.report_provider(activity_attempt.revision.activity_type.slug)
 
             case Oli.Activities.Reports.Renderer.render(report_provider, context, element) do
               {:ok, report} -> report
@@ -74,9 +75,5 @@ defmodule Oli.Rendering.Report.Html do
 
   def error(%Context{} = context, element, error) do
     Error.render(context, element, error, Error.Html)
-  end
-
-  defp report_provider("oli_likert") do
-    Module.concat([Oli, Activities, Reports, Providers, OliLikert])
   end
 end

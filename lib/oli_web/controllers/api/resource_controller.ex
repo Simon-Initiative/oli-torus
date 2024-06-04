@@ -80,7 +80,7 @@ defmodule OliWeb.Api.ResourceController do
     end
   end
 
-  def with_report(conn, %{"project" => project_slug}) do
+  def activities_with_report(conn, %{"project" => project_slug}) do
     author = conn.assigns[:current_author]
 
     with {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
