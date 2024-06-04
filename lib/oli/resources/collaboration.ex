@@ -522,25 +522,74 @@ defmodule Oli.Resources.Collaboration do
     )
   end
 
+  defp unread_replies_subquery(user_id) do
+    from(
+      post in Post,
+      left_join: thread_root in Post,
+      on: thread_root.id == post.thread_root_id,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == post.id and urp.user_id == ^user_id,
+      where:
+        post.user_id != ^user_id and thread_root.user_id == ^user_id and
+          is_nil(urp.post_id),
+      group_by: post.thread_root_id,
+      select: %{
+        thread_root_id: post.thread_root_id,
+        count: count(post.id)
+      }
+    )
+  end
+
   @doc """
-  Returns the list of unread replies for a user.
+  Returns a map of root post ids that map to their unread reply counts for posts created by a given user.
   """
   def get_unread_reply_counts_for_root_discussions(user_id, root_curriculum_resource_id) do
     from(
-      p in Post,
+      post in Post,
+      left_join: parent_post in Post,
+      on: parent_post.id == post.thread_root_id,
       left_join: urp in UserReadPost,
-      on: urp.post_id == p.id,
-      # ignore replies that were created by the user
+      on: urp.post_id == post.id and urp.user_id == ^user_id,
       where:
-        is_nil(urp.post_id) and
-          p.resource_id == ^root_curriculum_resource_id and p.user_id != ^user_id,
-      group_by: p.thread_root_id,
+        post.resource_id == ^root_curriculum_resource_id and
+          post.visibility == :public and
+          post.status in [:approved, :archived] and
+          parent_post.status in [:approved, :archived] and
+          post.user_id != ^user_id and parent_post.user_id == ^user_id and
+          is_nil(urp.post_id),
+      group_by: parent_post.id,
       select: %{
-        thread_root_id: p.thread_root_id,
-        count: count(p.id)
+        post_id: parent_post.id,
+        unread_replies_count: count(post.id)
       }
     )
     |> Repo.all()
+    |> Enum.reduce(%{}, fn %{post_id: post_id, unread_replies_count: unread_replies_count}, acc ->
+      Map.put(acc, post_id, unread_replies_count)
+    end)
+  end
+
+  @doc """
+  Returns the total count of unread replies for posts created by a given user.
+  """
+  def get_total_count_of_unread_replies_for_root_discussions(user_id, root_curriculum_resource_id) do
+    from(
+      post in Post,
+      join: parent_post in Post,
+      on: parent_post.id == post.thread_root_id,
+      left_join: urp in UserReadPost,
+      on: urp.post_id == post.id and urp.user_id == ^user_id,
+      where:
+        post.resource_id == ^root_curriculum_resource_id and
+          post.visibility == :public and
+          post.status in [:approved, :archived] and
+          parent_post.status in [:approved, :archived] and
+          post.user_id != ^user_id and parent_post.user_id == ^user_id and
+          is_nil(urp.post_id),
+      select: count(post.id)
+    )
+    |> Repo.all()
+    |> hd()
   end
 
   @doc """
@@ -582,18 +631,13 @@ defmodule Oli.Resources.Collaboration do
           [
             {sort_order,
              dynamic(
-               [post, _sr, _spp, _pr, _rev, _user, replies, read_replies, urp, _reactions],
-               fragment(
-                 "case when ? > ? or ? then 1 else 0 end",
-                 coalesce(replies.count, 0),
-                 coalesce(read_replies.count, 0),
-                 is_nil(urp.id) and post.user_id != ^user_id
-               )
+               [post, _sr, _spp, _pr, _rev, _user, _replies, unread_replies, _urp, _reactions],
+               coalesce(unread_replies.count, 0)
              )},
             {sort_order,
              dynamic(
                [post, _sr, _spp, _pr, _rev, _user, _replies, _read_replies, _reactions],
-               post.updated_at
+               post.id
              )}
           ]
       end
@@ -613,8 +657,8 @@ defmodule Oli.Resources.Collaboration do
         on: post.user_id == user.id,
         left_join: replies in subquery(replies_subquery()),
         on: replies.thread_root_id == post.id,
-        left_join: read_replies in subquery(read_replies_subquery(user_id)),
-        on: read_replies.thread_root_id == post.id,
+        left_join: unread_replies in subquery(unread_replies_subquery(user_id)),
+        on: unread_replies.thread_root_id == post.id,
         left_join: urp in UserReadPost,
         on: urp.post_id == post.id and urp.user_id == ^user_id,
         left_join: reactions in assoc(post, :reactions),
@@ -635,8 +679,7 @@ defmodule Oli.Resources.Collaboration do
           post: %{
             post
             | replies_count: coalesce(replies.count, 0),
-              read_replies_count: coalesce(read_replies.count, 0),
-              is_read: not (is_nil(urp.id) and post.user_id != ^user_id)
+              unread_replies_count: coalesce(unread_replies.count, 0)
           },
           total_count: over(count(post.id))
         }
@@ -730,90 +773,6 @@ defmodule Oli.Resources.Collaboration do
   end
 
   @doc """
-  This query is an optimization used to update the metrics of a thread root post
-  every time it is expanded, collapsed or changed by a new reply post broadcasted.
-  It avoids having to refetch all thread posts with list_root_posts_for_section/4
-  """
-
-  def rebuild_metrics_for_root_post(root_post, user_id) do
-    post_metrics =
-      Repo.one(
-        from(
-          post in Post,
-          left_join: urp in UserReadPost,
-          on: urp.post_id == post.id and urp.user_id == ^user_id,
-          where: post.thread_root_id == ^root_post.id,
-          group_by: post.thread_root_id,
-          select: %{
-            replies_count: count(post.id),
-            last_reply: max(post.updated_at),
-            read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id),
-            is_read: count(urp.user_id == ^user_id and post.id == urp.post_id) > 0
-          }
-        )
-      )
-      |> case do
-        nil -> %{}
-        metrics -> metrics
-      end
-
-    Map.merge(root_post, post_metrics)
-  end
-
-  def build_metrics_for_reply_posts(posts, user_id) do
-    Enum.map(posts, fn post ->
-      case get_post_children([post], user_id) do
-        [] ->
-          Map.merge(post, %{
-            replies_count: 0,
-            last_reply: nil,
-            read_replies_count: 0
-          })
-
-        child_posts ->
-          Map.merge(post, %{
-            replies_count: Enum.count(child_posts),
-            last_reply:
-              Enum.max_by(
-                child_posts,
-                fn child_post -> child_post.updated_at end
-              )
-              |> Map.get(:updated_at),
-            read_replies_count:
-              Enum.reduce(child_posts, 0, fn child_post, acc ->
-                child_post.read_replies_count + acc
-              end)
-          })
-      end
-    end)
-  end
-
-  defp get_post_children(parent_post, user_id, acum_child_posts \\ [])
-
-  defp get_post_children([], _user_id, acum_child_posts), do: List.flatten(acum_child_posts)
-
-  defp get_post_children(parent_posts, user_id, acum_child_posts) do
-    parent_post_ids = Enum.map(parent_posts, &Map.get(&1, :id))
-
-    child_posts =
-      Repo.all(
-        from(
-          post in Post,
-          left_join: urp in UserReadPost,
-          on: urp.post_id == post.id and urp.user_id == ^user_id,
-          where: post.parent_post_id in ^parent_post_ids,
-          group_by: post.id,
-          select: %{
-            post
-            | read_replies_count: count(urp.user_id == ^user_id and post.user_id != ^user_id)
-          }
-        )
-      )
-
-    get_post_children(child_posts, user_id, [child_posts | acum_child_posts])
-  end
-
-  @doc """
   Returns the list of posts created by an user in a section.
 
   ## Examples
@@ -841,6 +800,7 @@ defmodule Oli.Resources.Collaboration do
         on: post.user_id == user.id,
         where:
           post.section_id == ^section_id and post.user_id == ^user_id and
+            post.visibility == :public and
             (post.status in [:approved, :archived] or
                (post.status == :submitted and post.user_id == ^user_id)),
         select: %{
@@ -886,6 +846,7 @@ defmodule Oli.Resources.Collaboration do
         on: post.user_id == user.id,
         where:
           (post.section_id == ^section_id and post.user_id != ^user_id and
+             post.visibility == :public and
              post.status in [:approved, :archived]) or
             (post.status == :submitted and post.user_id != ^user_id),
         select: %{
@@ -998,8 +959,7 @@ defmodule Oli.Resources.Collaboration do
     |> join(:inner, [_s, _p, _spp, pr], r in Revision, on: r.id == pr.revision_id)
     |> join(:inner, [_s, p, _spp], u in User, on: p.user_id == u.id)
     |> where(^section_join)
-    |> where([_s, p], p.status != :deleted)
-    |> where([_s, p], p.visibility != :private)
+    |> where([_s, p], p.status != :deleted and p.visibility == :public)
     |> select([s, p, spp, pr, r, u], %{
       id: p.id,
       content: p.content,
@@ -1204,8 +1164,7 @@ defmodule Oli.Resources.Collaboration do
         preload: [user: user, reactions: reactions],
         select: %{
           post
-          | replies_count: coalesce(replies.count, 0),
-            read_replies_count: coalesce(read_replies.count, 0)
+          | replies_count: coalesce(replies.count, 0)
         }
       )
     )
@@ -1302,7 +1261,6 @@ defmodule Oli.Resources.Collaboration do
         select: %{
           post
           | replies_count: coalesce(replies.count, 0),
-            read_replies_count: coalesce(read_replies.count, 0),
             resource_slug: rev.slug,
             headline:
               fragment(
@@ -1443,7 +1401,6 @@ defmodule Oli.Resources.Collaboration do
         select: post
       )
     )
-    |> build_metrics_for_reply_posts(user_id)
     |> summarize_reactions(user_id)
   end
 
