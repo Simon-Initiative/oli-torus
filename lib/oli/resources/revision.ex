@@ -72,8 +72,6 @@ defmodule Oli.Resources.Revision do
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
     belongs_to :primary_resource, Oli.Resources.Resource
 
-    has_one :experiment, Oli.Authoring.Schemas.Experiment
-
     has_many :warnings, Oli.Qa.Warning
 
     field(:total_count, :integer, virtual: true)

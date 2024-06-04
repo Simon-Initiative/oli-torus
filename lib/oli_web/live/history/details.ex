@@ -19,8 +19,7 @@ defmodule OliWeb.RevisionHistory.Details do
     :__meta__,
     :resource_type,
     :primary_resource,
-    :content,
-    :experiment
+    :content
   ]
 
   # keys that will be allowed to be edited by the user
