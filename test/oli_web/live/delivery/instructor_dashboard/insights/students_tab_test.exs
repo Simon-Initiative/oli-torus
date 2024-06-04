@@ -504,6 +504,131 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert payment_status_2 =~ "Grace Period: 8d remaining"
       assert payment_status_3 =~ "Grace Period: 8d remaining"
     end
+
+    test "cards to filter works correctly", %{conn: conn, instructor: instructor} do
+      %{
+        section: section,
+        mod1_pages: mod1_pages,
+        mod1_resource: mod1_resource
+      } =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_2.published_resource.resource_id, user_1.id, 1)
+
+      params = %{container_id: mod1_resource.id}
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_route(section.slug, params))
+
+      # Low Progress card it should have 3 students
+      assert element(view, "div[phx-value-selected=\"1\"]") |> render() =~ "Low Progress"
+      assert element(view, "div[phx-value-selected=\"1\"]") |> render() =~ "3"
+      assert element(view, "div[phx-value-selected=\"1\"]") |> render() =~ "Students"
+
+      # Low Proficiency card it should have 0 students
+      assert element(view, "div[phx-value-selected=\"2\"]") |> render() =~ "Low Proficiency"
+      assert element(view, "div[phx-value-selected=\"2\"]") |> render() =~ "0"
+      assert element(view, "div[phx-value-selected=\"2\"]") |> render() =~ "Students"
+
+      # Zero Interaction in a week card it should have 2 students
+      assert element(view, "div[phx-value-selected=\"3\"]") |> render() =~
+               "Zero interaction in a week"
+
+      assert element(view, "div[phx-value-selected=\"3\"]") |> render() =~ "0"
+      assert element(view, "div[phx-value-selected=\"3\"]") |> render() =~ "Students"
+
+      ## Filtering by Low Progress
+      element(view, "div[phx-value-selected=\"1\"]") |> render_click()
+
+      assert has_element?(view, "table tr td div a", user_2.family_name)
+      assert has_element?(view, "table tr td div a", user_3.family_name)
+      assert has_element?(view, "table tr td div a", user_4.family_name)
+      refute has_element?(view, "table tr td div a", user_1.family_name)
+
+      ## Filtering by Low Proficiency
+      element(view, "div[phx-value-selected=\"2\"]") |> render_click()
+      assert has_element?(view, "p", "None exist")
+
+      ## Filtering by Zero Interaction in a week
+
+      element(view, "div[phx-value-selected=\"3\"]") |> render_click()
+
+      refute has_element?(view, "table tr td div a", user_1.family_name)
+      refute has_element?(view, "table tr td div a", user_2.family_name)
+      refute has_element?(view, "table tr td div a", user_3.family_name)
+      refute has_element?(view, "table tr td div a", user_4.family_name)
+    end
+
+    test "selecting and deselecting a card works correctly", %{conn: conn, instructor: instructor} do
+      %{
+        section: section,
+        mod1_pages: mod1_pages,
+        mod1_resource: mod1_resource
+      } =
+        Oli.Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, _page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_2.published_resource.resource_id, user_1.id, 1)
+
+      params = %{container_id: mod1_resource.id}
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_route(section.slug, params))
+
+      # Low Progress card it should have 3 students
+      assert element(view, "div[phx-value-selected=\"1\"]") |> render() =~ "Low Progress"
+      assert element(view, "div[phx-value-selected=\"1\"]") |> render() =~ "3"
+      assert element(view, "div[phx-value-selected=\"1\"]") |> render() =~ "Students"
+
+      ## Select Low Progress card
+      element(view, "div[phx-value-selected=\"1\"]") |> render_click()
+
+      ## Check that only 3 students are displayed
+      assert has_element?(view, "table tr td div a", user_2.family_name)
+      assert has_element?(view, "table tr td div a", user_3.family_name)
+      assert has_element?(view, "table tr td div a", user_4.family_name)
+      refute has_element?(view, "table tr td div a", user_1.family_name)
+
+      ## Click again to deselect Low Progress card
+      element(view, "div[phx-value-selected=\"1\"]") |> render_click()
+
+      ## Check that all students are displayed
+      assert has_element?(view, "table tr td div a", user_2.family_name)
+      assert has_element?(view, "table tr td div a", user_3.family_name)
+      assert has_element?(view, "table tr td div a", user_4.family_name)
+      assert has_element?(view, "table tr td div a", user_1.family_name)
+    end
   end
 
   describe "page size change" do
