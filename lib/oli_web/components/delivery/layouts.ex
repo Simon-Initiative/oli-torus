@@ -564,34 +564,38 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   defp resource_navigation_url(
-         %{"slug" => slug, "type" => "page", "id" => resource_id},
+         %{"id" => resource_id, "slug" => slug, "type" => type, "level" => level},
          section_slug,
          request_path,
          selected_view
        ) do
-    # If the request_path is the Learn page and we navigate to a different lesson,
-    # we need to update the request_path to include the new target resource.
-    request_path =
-      if request_path && String.contains?(request_path, "/learn") do
+    case {type, Integer.parse(level)} do
+      # If the given resource is a unit or a module (level <= 2), we navigate to learn page.
+      {"container", {level, _}} when level <= 2 ->
         Utils.learn_live_path(section_slug,
           target_resource_id: resource_id,
           selected_view: selected_view
         )
-      else
-        request_path
-      end
 
-    Utils.lesson_live_path(section_slug, slug,
-      request_path: request_path,
-      selected_view: selected_view
-    )
-  end
+      # If the given resource is a page or a section/sub-section (level > 2), we navigate to lesson page.
+      _ ->
+        # If the request_path is the Learn page and we navigate to a different lesson,
+        # we need to update the request_path to include the new target resource.
+        request_path =
+          if request_path && String.contains?(request_path, "/learn") do
+            Utils.learn_live_path(section_slug,
+              target_resource_id: resource_id,
+              selected_view: selected_view
+            )
+          else
+            request_path
+          end
 
-  defp resource_navigation_url(%{"id" => container_id}, section_slug, _, selected_view) do
-    Utils.learn_live_path(section_slug,
-      target_resource_id: container_id,
-      selected_view: selected_view
-    )
+        Utils.lesson_live_path(section_slug, slug,
+          request_path: request_path,
+          selected_view: selected_view
+        )
+    end
   end
 
   attr(:to, :string)
