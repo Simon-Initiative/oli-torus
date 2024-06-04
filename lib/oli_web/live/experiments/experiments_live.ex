@@ -8,6 +8,8 @@ defmodule OliWeb.Experiments.ExperimentsView do
   import OliWeb.ErrorHelpers
   import OliWeb.Resources.AlternativesEditor.GroupOption
 
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Experiments
   alias Oli.Resources.ResourceType
@@ -26,7 +28,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
 
     socket =
       socket
-      |> assign(is_upgrade_enabled: false)
+      |> assign(is_upgrade_enabled: socket.assigns.project.has_experiments)
       |> assign(title: @title)
       |> assign(experiment: experiment)
 
@@ -80,10 +82,25 @@ defmodule OliWeb.Experiments.ExperimentsView do
           {:ok, experiment} =
             create_experiment(socket.assigns.project, socket.assigns.current_author)
 
-          assign(socket, experiment: experiment, is_upgrade_enabled: true)
+          {:ok, updated_project = %Project{has_experiments: has_experiments}} =
+            Course.update_project(socket.assigns.project, %{has_experiments: true})
+
+          assign(socket,
+            experiment: experiment,
+            is_upgrade_enabled: has_experiments,
+            project: updated_project
+          )
 
         %Revision{} ->
-          assign(socket, :is_upgrade_enabled, !socket.assigns.is_upgrade_enabled)
+          {:ok, updated_project = %Project{}} =
+            Course.update_project(socket.assigns.project, %{
+              has_experiments: !socket.assigns.project.has_experiments
+            })
+
+          assign(socket,
+            is_upgrade_enabled: updated_project.has_experiments,
+            project: updated_project
+          )
       end
 
     {:noreply, socket}

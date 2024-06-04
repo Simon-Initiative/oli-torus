@@ -148,6 +148,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       {:ok, view, _html} = live(conn, live_view_experiments_route(project.slug))
 
       {view, context}
+      |> step(:click_on_checkbox)
       |> step(:test_has_alternatives_group)
       |> step(:test_has_options)
       |> step(:test_has_button_show_edit_group_modal, :refute)
