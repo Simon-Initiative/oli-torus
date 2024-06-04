@@ -532,7 +532,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     activity_type_1 =
       Oli.Resources.activity_references(current_assessment)
 
-    activity_type_2 = get_unique_activities_from_responses(current_assessment.resource_id, section.id)
+    activity_type_2 =
+      get_unique_activities_from_responses(current_assessment.resource_id, section.id)
 
     all_activity_ids =
       Enum.uniq(activity_type_1 ++ activity_type_2)
@@ -561,11 +562,12 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.put(acc, resource_id, {total_attempts, avg_score})
       end)
 
-    activities = DeliveryResolver.from_resource_id(section.slug, all_activity_ids)
-    |> Enum.map(fn rev ->
-      {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
-      Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
-    end)
+    activities =
+      DeliveryResolver.from_resource_id(section.slug, all_activity_ids)
+      |> Enum.map(fn rev ->
+        {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
+        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+      end)
 
     add_objective_mapper(activities, section.slug)
   end
