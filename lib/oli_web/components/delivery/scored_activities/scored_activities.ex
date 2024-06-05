@@ -380,8 +380,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
     section = socket.assigns.section
     activity_types_map = socket.assigns.activity_types_map
+    page_id = socket.assigns.current_assessment.resource_id
 
-    case get_activity_details(selected_activity, section, activity_types_map) do
+    case get_activity_details(selected_activity, section, activity_types_map, page_id) do
       nil ->
         assign(socket, table_model: table_model)
 
@@ -533,6 +534,47 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     |> Repo.one()
   end
 
+  defp get_activities(
+         current_assessment,
+         %Section{analytics_version: :v2} = section,
+         _student_ids
+       ) do
+    # Fetch all unique acitivty ids from the v2 tracked responses for this section
+    activity_ids_from_responses =
+      get_unique_activities_from_responses(current_assessment.resource_id, section.id)
+
+    details_by_activity =
+      from(rs in ResourceSummary,
+        where: rs.section_id == ^section.id,
+        where: rs.project_id == -1,
+        where: rs.publication_id == -1,
+        where: rs.user_id == -1,
+        where: rs.resource_id in ^activity_ids_from_responses,
+        select: {
+          rs.resource_id,
+          rs.num_attempts,
+          fragment(
+            "CAST(? as float) / CAST(? as float)",
+            rs.num_correct,
+            rs.num_attempts
+          )
+        }
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn {resource_id, total_attempts, avg_score}, acc ->
+        Map.put(acc, resource_id, {total_attempts, avg_score})
+      end)
+
+    activities =
+      DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
+      |> Enum.map(fn rev ->
+        {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
+        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
+      end)
+
+    add_objective_mapper(activities, section.slug)
+  end
+
   defp get_activities(current_assessment, section, student_ids) do
     activities =
       from(aa in ActivityAttempt,
@@ -563,12 +605,28 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
       end)
 
+    add_objective_mapper(activities, section.slug)
+  end
+
+  defp get_unique_activities_from_responses(page_id, section_id) do
+    from(rs in ResponseSummary,
+      where: rs.section_id == ^section_id,
+      where: rs.page_id == ^page_id,
+      where: rs.project_id == -1,
+      where: rs.publication_id == -1,
+      distinct: true,
+      select: rs.activity_id
+    )
+    |> Repo.all()
+  end
+
+  defp add_objective_mapper(activities, section_slug) do
     objectives_mapper =
       Enum.reduce(activities, [], fn activity, acc ->
         (Map.values(activity.objectives) |> List.flatten()) ++ acc
       end)
       |> Enum.uniq()
-      |> DeliveryResolver.objectives_by_resource_ids(section.slug)
+      |> DeliveryResolver.objectives_by_resource_ids(section_slug)
       |> Enum.map(fn objective -> {objective.resource_id, objective} end)
       |> Enum.into(%{})
 
@@ -591,7 +649,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end)
   end
 
-  defp get_activity_details(selected_activity, section, activity_types_map) do
+  defp get_activity_details(selected_activity, section, activity_types_map, page_id) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
@@ -659,9 +717,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           join: u in User,
           on: sr.user_id == u.id,
           where:
-            rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
+            rs.section_id == ^section.id and rs.activity_id == ^selected_activity.resource_id and
               rs.publication_id == -1 and rs.project_id == -1 and
-              rs.page_id == ^activity_attempt.page_id,
+              rs.page_id == ^page_id,
           select: %{
             part_id: rpp.part_id,
             response: rpp.response,
@@ -765,25 +823,27 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   end
 
   defp add_multi_input_details(activity_attempt, response_summaries) do
-    mapper = build_input_mapper(activity_attempt.transformed_model["inputs"])
+    if activity_attempt.transformed_model do
+      mapper = build_input_mapper(activity_attempt.transformed_model["inputs"])
 
-    Enum.reduce(
-      activity_attempt.transformed_model["inputs"],
-      activity_attempt,
-      fn input, acc2 ->
-        case input["inputType"] do
-          response when response in ["numeric", "text"] ->
-            add_text_or_numeric_responses(
-              acc2,
-              response_summaries,
-              mapper
-            )
+      Enum.reduce(
+        activity_attempt.transformed_model["inputs"],
+        activity_attempt,
+        fn input, acc2 ->
+          case input["inputType"] do
+            response when response in ["numeric", "text"] ->
+              add_text_or_numeric_responses(
+                acc2,
+                response_summaries,
+                mapper
+              )
 
-          "dropdown" ->
-            add_dropdown_choices(acc2, response_summaries)
+            "dropdown" ->
+              add_dropdown_choices(acc2, response_summaries)
+          end
         end
-      end
-    )
+      )
+    end
   end
 
   defp add_dropdown_choices(acc, response_summaries) do
@@ -827,6 +887,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         acc_responses
       end
     end)
+  end
+
+  defp build_input_mapper(nil) do
+    %{}
   end
 
   defp build_input_mapper(inputs) do
