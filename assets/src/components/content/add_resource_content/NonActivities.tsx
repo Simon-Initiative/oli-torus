@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
@@ -38,6 +38,12 @@ export const NonActivities: React.FC<Props> = ({
   featureFlags,
   resourceContext,
 }) => {
+  const [ABTestDisabled, setABTestDisabled] = useState(true);
+
+  useEffect(() => {
+    setABTestDisabled(!resourceContext.hasExperiments);
+  }, []);
+
   return (
     <div className="d-flex flex-column">
       <div className="resource-choice-header">Content types</div>
@@ -112,7 +118,7 @@ export const NonActivities: React.FC<Props> = ({
           onHoverStart={() => onSetTip('A/B Testing is not yet supported')}
           onHoverEnd={() => onResetTip()}
           key={'ab-test'}
-          disabled={true}
+          disabled={ABTestDisabled}
           onClick={() => true}
         />
       </div>

@@ -36,7 +36,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :lti_1p3_deployment,
          :contains_discussions,
          :contains_explorations,
-         :contains_deliberate_practice
+         :contains_deliberate_practice,
+         :open_and_free
        ], %Sections.Section{}},
     current_user: {[:id, :name, :email], %User{}}
   }
@@ -850,11 +851,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= "PAGE #{@unit["numbering"]["index"]}" %>
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
-              <%= @unit["title"] %>
-            </h3>
-            <div class="flex items-center w-full gap-3">
-              <div class="flex items-center gap-3" role="schedule_details">
+            <div class="flex w-full">
+              <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
+                <%= @unit["title"] %>
+              </h3>
+              <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     Due:
@@ -866,19 +867,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ) %>
                 </div>
               </div>
-              <div class="ml-auto flex items-center gap-6">
-                <.progress_bar
-                  percent={@progress}
-                  width="100px"
-                  on_going_colour="bg-[#0CAF61]"
-                  completed_colour="bg-[#0CAF61]"
-                  role={"unit_#{@unit["numbering"]["index"]}_progress"}
-                />
-              </div>
+            </div>
+            <div class="flex items-center gap-6">
+              <.progress_bar
+                percent={@progress}
+                width="194px"
+                on_going_colour="bg-[#0CAF61]"
+                completed_colour="bg-[#0CAF61]"
+                role={"unit_#{@unit["numbering"]["index"]}_progress"}
+              />
             </div>
           </div>
         </div>
-        <div class="w-[294px]">
+        <div class="flex">
           <.card
             card={@unit}
             module_index={1}
@@ -1922,10 +1923,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           />
         </div>
       </div>
-      <div class="relative flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
+      <div class="flex flex-col items-center rounded-xl h-[170px] w-[294px] bg-gray-200/50 shrink-0 px-5 pt-[15px] bg-cover bg-center">
         <video
           id={"video_preview_image_#{@video_url}"}
-          class="rounded-xl object-cover absolute h-[170px] w-[294px]"
+          class="rounded-xl object-cover absolute h-[170px] w-[294px] top-0 pointer-events-none"
           preload="metadata"
         >
           <source src={"#{@video_url}#t=0.5"} /> Your browser does not support the video tag.
@@ -1950,7 +1951,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="w-full h-full rounded-full backdrop-blur bg-gray/50"></div>
           <div
             role="play_unit_intro_video"
-            class="z-30 w-full h-full absolute top-0 left-0 flex items-center justify-center"
+            class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
             <Icons.play class="scale-110 ml-[6px] mt-[9px]" />
           </div>
@@ -2302,8 +2303,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     )
   end
 
-  defp completed_page?(true = _graded, visited?, raw_avg_score, _progress),
-    do: visited? and not is_nil(raw_avg_score)
+  defp completed_page?(true = _graded, visited?, raw_avg_score, progress),
+    do: visited? and not is_nil(raw_avg_score) and progress == 1.0
 
   defp completed_page?(false = _graded, visited?, _score, progress),
     do: visited? and progress == 1.0

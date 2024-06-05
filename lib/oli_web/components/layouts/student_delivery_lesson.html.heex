@@ -40,11 +40,13 @@
 
 <div class="h-screen flex flex-col overscroll-none overflow-hidden">
   <Components.Delivery.Layouts.header
+    :if={@section}
     ctx={@ctx}
     is_system_admin={assigns[:is_system_admin] || false}
     section={@section}
     preview_mode={@preview_mode}
     force_show_user_menu={true}
+    include_logo={true}
   />
 
   <div class="flex-1 flex flex-col mt-14 overflow-hidden">

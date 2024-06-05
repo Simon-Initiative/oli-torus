@@ -250,7 +250,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
          optionalContentTypes: %{
            ecl: publication.project.allow_ecl_content_type
          },
-         appsignalKey: Application.get_env(:appsignal, :client_key)
+         appsignalKey: Application.get_env(:appsignal, :client_key),
+         hasExperiments: nil
        }}
     else
       _ -> {:error, :not_found}
