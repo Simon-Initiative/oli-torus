@@ -371,8 +371,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
     section = socket.assigns.section
     activity_types_map = socket.assigns.activity_types_map
+    page_id = socket.assigns.current_assessment.resource_id
 
-    case get_activity_details(selected_activity, section, activity_types_map) do
+    case get_activity_details(selected_activity, section, activity_types_map, page_id) do
       nil ->
         assign(socket, table_model: table_model)
 
@@ -534,28 +535,18 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     activity_ids_from_responses =
       get_unique_activities_from_responses(current_assessment.resource_id, section.id)
 
-    # But also get the ids of the statically referenced activities from the page.
-    # These activities will of course show up in the previous set, but we need to
-    # fetch these to better handle the case when there are no attempts yet for this
-    # page.  This allows us to at least show these activities (with no data of course).
-    statically_referenced =
-      Oli.Resources.activity_references(current_assessment)
-
-    all_activity_ids =
-      Enum.uniq(activity_ids_from_responses ++ statically_referenced)
-
     details_by_activity =
       from(rs in ResourceSummary,
         where: rs.section_id == ^section.id,
         where: rs.project_id == -1,
         where: rs.publication_id == -1,
         where: rs.user_id == -1,
-        where: rs.resource_id in ^all_activity_ids,
+        where: rs.resource_id in ^activity_ids_from_responses,
         select: {
           rs.resource_id,
           rs.num_attempts,
           fragment(
-            "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
+            "CAST(? as float) / CAST(? as float)",
             rs.num_correct,
             rs.num_attempts
           )
@@ -567,7 +558,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       end)
 
     activities =
-      DeliveryResolver.from_resource_id(section.slug, all_activity_ids)
+      DeliveryResolver.from_resource_id(section.slug, activity_ids_from_responses)
       |> Enum.map(fn rev ->
         {total_attempts, avg_score} = Map.get(details_by_activity, rev.resource_id, {0, 0.0})
         Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
@@ -650,7 +641,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     end)
   end
 
-  defp get_activity_details(selected_activity, section, activity_types_map) do
+  defp get_activity_details(selected_activity, section, activity_types_map, page_id) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
 
@@ -718,9 +709,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           join: u in User,
           on: sr.user_id == u.id,
           where:
-            rs.section_id == ^section.id and rs.activity_id == ^activity_attempt.resource_id and
+            rs.section_id == ^section.id and rs.activity_id == ^selected_activity.resource_id and
               rs.publication_id == -1 and rs.project_id == -1 and
-              rs.page_id == ^activity_attempt.page_id,
+              rs.page_id == ^page_id,
           select: %{
             part_id: rpp.part_id,
             response: rpp.response,
