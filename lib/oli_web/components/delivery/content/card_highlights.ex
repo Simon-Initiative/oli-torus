@@ -1,4 +1,4 @@
-defmodule OliWeb.Components.Delivery.CardHighLights do
+defmodule OliWeb.Components.Delivery.CardHighlights do
   use Phoenix.Component
 
   attr :title, :string, required: true
@@ -13,16 +13,16 @@ defmodule OliWeb.Components.Delivery.CardHighLights do
     <div
       phx-click={@on_click}
       phx-value-selected={@value}
-      class={"w-56 h-auto rounded-md #{if @is_selected, do: "shadow border-2 border-blue-500 bg-slate-50", else: "bg-white border border-blue-500/30 hover:border-blue-500/80"} flex-col justify-start items-start px-4 py-3 hover:cursor-pointer"}
+      class={"w-56 h-auto rounded-md dark:bg-gray-800 flex-col justify-start items-start px-4 py-3 hover:cursor-pointer #{if @is_selected, do: "shadow border-2 border-blue-500 bg-slate-50", else: "bg-white border border-blue-500/30 hover:border-blue-500/80 dark:border-white"}"}
     >
-      <div class="text-slate-500 text-xs font-normal leading-none">
+      <div class="text-slate-500 text-xs font-normal leading-none dark:text-white">
         <%= @title %>
       </div>
       <div class="flex items-baseline space-x-2 mt-2">
-        <div class={"text-3xl font-semibold leading-10 #{if @is_selected, do: "text-blue-500", else: "text-slate-800"}"}>
+        <div class={"text-3xl font-semibold leading-10 dark:text-white #{if @is_selected, do: "text-blue-500", else: "text-slate-800"}"}>
           <%= @count %>
         </div>
-        <div class="text-gray-400 text-xs font-normal leading-none">
+        <div class="text-gray-400 text-xs font-normal leading-none dark:text-white">
           <%= case @container_filter_by do %>
             <% :units -> %>
               Units

@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.SearchInput
-  alias OliWeb.Components.Delivery.{CardHighLights, ContentTableModel}
+  alias OliWeb.Components.Delivery.{CardHighlights, ContentTableModel}
   alias OliWeb.Common.{InstructorDashboardPagedTable, Params}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -58,14 +58,14 @@ defmodule OliWeb.Components.Delivery.Content do
       %{
         title: "High Progress, Low Proficiency",
         count: Map.get(containers_count, :high_progress_low_proficiency),
-        is_selected: selected_card_value == "1",
-        value: "1"
+        is_selected: selected_card_value == "high_progress_low_proficiency",
+        value: :high_progress_low_proficiency
       },
       %{
         title: "Zero Student Progress",
         count: Map.get(containers_count, :zero_student_progress),
-        is_selected: selected_card_value == "2",
-        value: "2"
+        is_selected: selected_card_value == "zero_student_progress",
+        value: :zero_student_progress
       }
     ]
 
@@ -120,10 +120,10 @@ defmodule OliWeb.Components.Delivery.Content do
           style="min-height: 83px;"
           class="flex justify-between gap-2 items-center px-4 sm:px-9 py-4 instructor_dashboard_table"
         >
-          <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight">
-            Course Modules
+          <div class="text-zinc-700 text-lg font-bold leading-none tracking-tight dark:bg-gray-800 dark:text-white">
+            Course <%= if @params.container_filter_by == :units, do: "Units", else: "Modules" %>
           </div>
-          <div class="">
+          <div>
             <a
               href={
                 Routes.delivery_path(OliWeb.Endpoint, :download_course_content_info, @section_slug,
@@ -140,7 +140,7 @@ defmodule OliWeb.Components.Delivery.Content do
 
         <div class="flex flex-row mx-9 gap-x-4">
           <%= for card <- @card_props do %>
-            <CardHighLights.render
+            <CardHighlights.render
               title={card.title}
               count={card.count}
               is_selected={card.is_selected}
@@ -256,7 +256,10 @@ defmodule OliWeb.Components.Delivery.Content do
   end
 
   def handle_event("select_card", %{"selected" => value}, socket) do
-    value = if value == Map.get(socket.assigns.params, :selected_card_value), do: nil, else: value
+    value =
+      if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
+        do: nil,
+        else: String.to_existing_atom(value)
 
     send(self(), {:selected_card_containers, value})
 
@@ -291,7 +294,12 @@ defmodule OliWeb.Components.Delivery.Content do
           @default_params.container_filter_by
         ),
       selected_card_value:
-        Params.get_param(params, "selected_card_value", @default_params.selected_card_value)
+        Params.get_atom_param(
+          params,
+          "selected_card_value",
+          [:high_progress_low_proficiency, :zero_student_progress],
+          @default_params.selected_card_value
+        )
     }
   end
 
@@ -377,21 +385,17 @@ defmodule OliWeb.Components.Delivery.Content do
     end)
   end
 
-  defp maybe_filter_by_card(containers, nil), do: containers
-  defp maybe_filter_by_card(containers, ""), do: containers
+  defp maybe_filter_by_card(containers, :high_progress_low_proficiency),
+    do:
+      Enum.filter(containers, fn container ->
+        Metrics.progress_range(container.progress) == "High" and
+          container.student_proficiency == "Low"
+      end)
 
-  defp maybe_filter_by_card(containers, selected_card_value) do
-    case selected_card_value do
-      "1" ->
-        Enum.filter(containers, fn container ->
-          Metrics.progress_range(container.progress) == "High" and
-            container.student_proficiency == "Low"
-        end)
+  defp maybe_filter_by_card(containers, :zero_student_progress),
+    do: Enum.filter(containers, fn container -> container.progress == 0 end)
 
-      "2" ->
-        Enum.filter(containers, fn container -> container.progress == 0 end)
-    end
-  end
+  defp maybe_filter_by_card(containers, _), do: containers
 
   defp options_for_container_select(containers) do
     Enum.reduce(containers, %{units: false, modules: false}, fn container, acc ->

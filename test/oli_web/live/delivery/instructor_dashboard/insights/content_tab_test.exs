@@ -589,13 +589,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_2 =~ "Unit 2"
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected=\"2\"]") |> render_click()
+      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
 
       refute has_element?(view, "table tr td div a", unit_for_tr_1)
       assert has_element?(view, "table tr td div a", unit_for_tr_2)
 
       ## Filtering by High Progress, Low Proficiency card
-      element(view, "div[phx-value-selected=\"1\"]") |> render_click()
+      element(view, "div[phx-value-selected=\"high_progress_low_proficiency\"]") |> render_click()
       refute has_element?(view, "table tr td div a", unit_for_tr_1)
       refute has_element?(view, "table tr td div a", unit_for_tr_2)
     end
@@ -654,7 +654,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_2 =~ "Unit 2"
 
       ## Filtering by zero student progress card
-      element(view, "div[phx-value-selected=\"2\"]") |> render_click()
+      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
 
       assert has_element?(view, "table tr td div a", unit_for_tr_2)
       refute has_element?(view, "table tr td div a", unit_for_tr_1)

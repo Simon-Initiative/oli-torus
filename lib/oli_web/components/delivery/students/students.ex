@@ -7,9 +7,10 @@ defmodule OliWeb.Components.Delivery.Students do
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.{SearchInput, Params, Utils}
-  alias OliWeb.Components.Delivery.CardHighLights
+  alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias Lti_1p3.Tool.ContextRoles
 
   @default_params %{
     offset: 0,
@@ -55,20 +56,20 @@ defmodule OliWeb.Components.Delivery.Students do
       %{
         title: "Low Progress",
         count: Map.get(students_count, :low_progress),
-        is_selected: selected_card_value == "1",
-        value: "1"
+        is_selected: selected_card_value == :low_progress,
+        value: :low_progress
       },
       %{
         title: "Low Proficiency",
         count: Map.get(students_count, :low_proficiency),
-        is_selected: selected_card_value == "2",
-        value: "2"
+        is_selected: selected_card_value == :low_proficiency,
+        value: :low_proficiency
       },
       %{
         title: "Zero interaction in a week",
         count: Map.get(students_count, :zero_interaction_in_a_week),
-        is_selected: selected_card_value == "3",
-        value: "3"
+        is_selected: selected_card_value == :zero_interaction_in_a_week,
+        value: :zero_interaction_in_a_week
       }
     ]
 
@@ -119,37 +120,29 @@ defmodule OliWeb.Components.Delivery.Students do
     end)
   end
 
-  defp maybe_filter_by_card(students, nil, _), do: students
-  defp maybe_filter_by_card(students, "", _), do: students
-
-  defp maybe_filter_by_card(students, selected_card_value, filter_by) do
-    case selected_card_value do
-      "1" ->
-        Enum.filter(students, fn student ->
-          Metrics.progress_range(student.progress) == "Low" ||
-            (is_nil(student.progress) and
-               (student.enrollment_status == filter_by and
-                  student.user_role_id == 4))
-        end)
-
-      "2" ->
-        Enum.filter(students, fn student ->
-          Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
-            (is_nil(student.overall_proficiency) and
-               (student.enrollment_status == filter_by and
-                  student.user_role_id == 4))
-        end)
-
-      "3" ->
-        Enum.filter(students, fn student ->
-          diff_days = Timex.Comparable.diff(DateTime.utc_now(), student.last_interaction, :days)
-
-          diff_days > 7 and
-            (student.enrollment_status == filter_by and
-               student.user_role_id == 4)
-        end)
-    end
+  defp maybe_filter_by_card(students, :low_progress, filter_by) do
+    Enum.filter(students, fn student ->
+      Metrics.progress_range(student.progress) == "Low" ||
+        (is_nil(student.progress) and is_learner_selected(student, filter_by))
+    end)
   end
+
+  defp maybe_filter_by_card(students, :low_proficiency, filter_by) do
+    Enum.filter(students, fn student ->
+      Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
+        (is_nil(student.overall_proficiency) and is_learner_selected(student, filter_by))
+    end)
+  end
+
+  defp maybe_filter_by_card(students, :zero_interaction_in_a_week, filter_by) do
+    Enum.filter(students, fn student ->
+      diff_days = Timex.Comparable.diff(DateTime.utc_now(), student.last_interaction, :days)
+
+      diff_days > 7 and is_learner_selected(student, filter_by)
+    end)
+  end
+
+  defp maybe_filter_by_card(students, _, _filter_by), do: students
 
   defp maybe_filter_by_option(students, dropdown_value) do
     case dropdown_value do
@@ -357,7 +350,7 @@ defmodule OliWeb.Components.Delivery.Students do
         </div>
         <div class="flex flex-row mx-9 my-4 gap-x-4">
           <%= for card <- @card_props do %>
-            <CardHighLights.render
+            <CardHighlights.render
               title={card.title}
               count={card.count}
               is_selected={card.is_selected}
@@ -524,7 +517,10 @@ defmodule OliWeb.Components.Delivery.Students do
   end
 
   def handle_event("select_card", %{"selected" => value}, socket) do
-    value = if value == Map.get(socket.assigns.params, :selected_card_value), do: nil, else: value
+    value =
+      if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
+        do: nil,
+        else: value
 
     send(self(), {:selected_card_students, {value, socket.assigns.params.container_id}})
 
@@ -742,7 +738,12 @@ defmodule OliWeb.Components.Delivery.Students do
           @default_params.filter_by
         ),
       selected_card_value:
-        Params.get_param(params, "selected_card_value", @default_params.selected_card_value),
+        Params.get_atom_param(
+          params,
+          "selected_card_value",
+          [:low_progress, :low_proficiency, :zero_interaction_in_a_week],
+          @default_params.selected_card_value
+        ),
       container_filter_by:
         Params.get_atom_param(
           params,
@@ -788,26 +789,28 @@ defmodule OliWeb.Components.Delivery.Students do
     %{
       low_progress:
         Enum.count(students, fn student ->
-          Metrics.progress_range(student.progress) == "Low" ||
-            (is_nil(student.progress) and
-               (student.enrollment_status == filter_by and
-                  student.user_role_id == 4))
+          (Metrics.progress_range(student.progress) == "Low" ||
+             is_nil(student.progress)) and is_learner_selected(student, filter_by)
         end),
       low_proficiency:
         Enum.count(students, fn student ->
-          Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
-            (is_nil(student.overall_proficiency) and
-               (student.enrollment_status == filter_by and
-                  student.user_role_id == 4))
+          (Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
+             is_nil(student.overall_proficiency)) and is_learner_selected(student, filter_by)
         end),
       zero_interaction_in_a_week:
         Enum.count(students, fn student ->
           diff_days = Timex.Comparable.diff(DateTime.utc_now(), student.last_interaction, :days)
 
-          diff_days > 7 and
-            (student.enrollment_status == filter_by and
-               student.user_role_id == 4)
+          diff_days > 7 and is_learner_selected(student, filter_by)
         end)
     }
+  end
+
+  ## Determine if a learner is selected based on the filter_by value
+  defp is_learner_selected(student, filter_by) do
+    student_role_id = ContextRoles.get_role(:context_learner).id
+
+    student.enrollment_status == filter_by and
+      student.user_role_id == student_role_id
   end
 end
