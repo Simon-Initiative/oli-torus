@@ -529,7 +529,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          %Section{analytics_version: :v2} = section,
          _student_ids
        ) do
-
     # Fetch all unique acitivty ids from the v2 tracked responses for this section
     activity_ids_from_responses =
       get_unique_activities_from_responses(current_assessment.resource_id, section.id)
