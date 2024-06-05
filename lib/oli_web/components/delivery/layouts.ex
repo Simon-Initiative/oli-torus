@@ -290,7 +290,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/learn"
     else
-      ~p"/sections/#{section_slug}/learn?#{%{sidebar_expanded: sidebar_expanded, selected_view: "gallery"}}"
+      ~p"/sections/#{section_slug}/learn?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 

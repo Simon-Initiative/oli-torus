@@ -1891,26 +1891,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       })
     end
 
-    test "auto scrolls to first unfinished level 1 resource",
-         %{conn: conn, section: section, user: user} do
-      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      view
-      |> element(~s{div[role="unit_1"] div[role="card_1"]})
-      |> render_click()
-
-      {"container", unit_id} =
-        Sections.get_first_unfinished_level_1_resource(section.id, user.id)
-
-      target_id = "unit_#{unit_id}"
-
-      # scrolling and pulse animation are triggered
-      assert_push_event(view, "scroll-y-to-target", %{
-        id: ^target_id,
-        offset: 25
-      })
-    end
-
     test "can see pages within sections and sub-sections",
          %{
            conn: conn,

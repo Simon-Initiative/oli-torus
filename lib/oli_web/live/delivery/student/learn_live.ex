@@ -75,8 +75,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ),
         assistant_enabled: Sections.assistant_enabled?(section),
         display_props_per_module_id: %{},
-        selected_view: @default_selected_view,
-        scroll_to_first_unfinished_level_1_resource: true
+        selected_view: @default_selected_view
       )
       |> slim_assigns()
 
@@ -119,13 +118,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       %{"selected_view" => selected_view} ->
         selected_view = String.to_existing_atom(selected_view)
 
-        {
-          :noreply,
-          socket
-          |> assign(selected_view: selected_view)
-          |> update(:units, fn _units -> full_hierarchy["children"] end)
-          |> maybe_scroll_to_first_unfinished_level_1_resource()
-        }
+        {:noreply,
+         socket
+         |> assign(selected_view: selected_view)
+         |> update(:units, fn _units -> full_hierarchy["children"] end)}
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
@@ -134,42 +130,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
       _ ->
         {:noreply, socket}
-    end
-  end
-
-  _docp = """
-  If there is an unfinished resource (progress < 100%) at level 1 of the hierarchy, the learn page will
-  auto-scroll to that resource.
-  This resource could be a unit or a top-level page.
-  After scrolling, we set the scroll_to_first_unfinished_level_1_resource flag to false
-  to prevent auto-scrolling from being re-triggered with every user interaction.
-  """
-
-  defp maybe_scroll_to_first_unfinished_level_1_resource(
-         %{assigns: %{scroll_to_first_unfinished_level_1_resource: false}} = socket
-       ),
-       do: socket
-
-  defp maybe_scroll_to_first_unfinished_level_1_resource(socket) do
-    %{section: %{id: section_id}, current_user: %{id: student_id}} = socket.assigns
-
-    case Sections.get_first_unfinished_level_1_resource(section_id, student_id) do
-      nil ->
-        assign(socket, scroll_to_first_unfinished_level_1_resource: false)
-
-      {resource_type, resource_id} ->
-        liveview_pid = self()
-
-        Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
-          Process.sleep(300)
-
-          send(
-            liveview_pid,
-            {:scroll_to_resource, resource_type, resource_id}
-          )
-        end)
-
-        assign(socket, scroll_to_first_unfinished_level_1_resource: false)
     end
   end
 
