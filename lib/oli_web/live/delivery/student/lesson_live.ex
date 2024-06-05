@@ -1117,10 +1117,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {:noreply,
        socket
        |> assign(page_context: page_context)
-       |> assign(scripts: Utils.get_required_activity_scripts(page_context))
        |> assign(begin_attempt?: true, show_loader?: true)
        |> clear_flash()
-       |> assign_html()
+       |> assign_html_and_scripts()
        |> load_scripts_on_client_side()
        |> emit_page_viewed_event()}
     else
