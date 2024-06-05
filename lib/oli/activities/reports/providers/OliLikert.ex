@@ -14,6 +14,17 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
     prompts = [~s|<div>
     <ul>|, prompts_from_items(Map.get(attempt_data, :data)), "</ul></div>"]
 
+    groups =
+      Map.get(attempt_data, :data)
+      |> Enum.reduce([], fn a, c ->
+        case Map.get(a, :group) do
+          nil -> c
+          g -> c ++ [g]
+        end
+      end)
+      |> Enum.uniq()
+      |> Enum.join(" ---- ")
+
     {:ok, first} =
       Map.get(attempt_data, :choices)
       |> List.first()
@@ -31,7 +42,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
         <div class="grow"></div>
         <div class="mb-8">#{first}</div>
       </div>
-      <div class="grow">|, visualization(context, data_url), ~s|</div>
+      <div class="grow">|, visualization(context, data_url, groups), ~s|</div>
     </div>|]
 
     {:ok, [visuals, prompts]}
@@ -90,9 +101,8 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
 
   defp color_matcher(_), do: "blue"
 
-  defp visualization(%Oli.Rendering.Context{} = context, data_url) do
+  defp visualization(%Oli.Rendering.Context{} = context, data_url, groups) do
     # encoded = Jason.encode!(data)
-
     spec =
       VegaLite.from_json("""
       {
@@ -116,7 +126,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
                         "axis": {
                             "labelAngle": 0
                         },
-                        "title": "Deep ---- Shallow"
+                        "title": "<-- #{groups} -->"
                     },
                     "y": {
                         "field": "response",
