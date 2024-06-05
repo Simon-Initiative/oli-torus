@@ -529,16 +529,20 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
          %Section{analytics_version: :v2} = section,
          _student_ids
        ) do
-    activity_type_1 =
-      Oli.Resources.activity_references(current_assessment)
 
-    activity_type_2 =
+    # Fetch all unique acitivty ids from the v2 tracked responses for this section
+    activity_ids_from_responses =
       get_unique_activities_from_responses(current_assessment.resource_id, section.id)
 
-    all_activity_ids =
-      Enum.uniq(activity_type_1 ++ activity_type_2)
+    # But also get the ids of the statically referenced activities from the page.
+    # These activities will of course show up in the previous set, but we need to
+    # fetch these to better handle the case when there are no attempts yet for this
+    # page.  This allows us to at least show these activities (with no data of course).
+    statically_referenced =
+      Oli.Resources.activity_references(current_assessment)
 
-    all_revisions = DeliveryResolver.from_resource_id(section.slug, all_activity_ids)
+    all_activity_ids =
+      Enum.uniq(activity_ids_from_responses ++ statically_referenced)
 
     details_by_activity =
       from(rs in ResourceSummary,
