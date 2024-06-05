@@ -8,17 +8,41 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
         %Oli.Rendering.Context{enrollment: enrollment, user: user} = context,
         %{"activityId" => activity_id} = _element
       ) do
-    data = report_data(enrollment.section_id, user.id, activity_id)
+    attempt_data = process_attempt_data(enrollment.section_id, user.id, activity_id)
     data_url = "/api/v1/activity/report/#{enrollment.section_id}/#{activity_id}"
 
     prompts = [~s|<div>
-    <ul>|, prompts_from_items(data), "</ul></div>"]
+    <ul>|, prompts_from_items(Map.get(attempt_data, :data)), "</ul></div>"]
 
-    {:ok, [visualization(context, data, data_url), prompts]}
+    {:ok, first} =
+      Map.get(attempt_data, :choices)
+      |> List.first()
+      |> JSONPointer.get("/content/0/children/0/text")
+
+    {:ok, last} =
+      Map.get(attempt_data, :choices)
+      |> List.last()
+      |> JSONPointer.get("/content/0/children/0/text")
+
+    visuals = [~s|
+    <div class="flex flex-row">
+      <div class="flex flex-col ml-2">
+        <div>#{last}</div>
+        <div class="grow"></div>
+        <div class="mb-8">#{first}</div>
+      </div>
+      <div class="grow">|, visualization(context, data_url), ~s|</div>
+    </div>|]
+
+    {:ok, [visuals, prompts]}
   end
 
   @impl Oli.Activities.Reports.Renderer
   def report_data(section_id, user_id, activity_id) do
+    Map.get(process_attempt_data(section_id, user_id, activity_id), :data)
+  end
+
+  defp process_attempt_data(section_id, user_id, activity_id) do
     activity_attempt =
       Core.get_latest_activity_attempt(section_id, user_id, activity_id)
       |> Oli.Repo.preload(:part_attempts)
@@ -26,23 +50,27 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
     part_attempts_by_id =
       Enum.reduce(activity_attempt.part_attempts, %{}, fn a, c -> Map.put(c, a.part_id, a) end)
 
-    Map.get(activity_attempt.revision.content, "items")
-    |> Enum.with_index()
-    |> Enum.reduce([], fn {a, idx}, c ->
-      {:ok, p} = JSONPointer.get(a, "/content/0/children/0/text")
-      r = Map.get(part_attempts_by_id, Map.get(a, "id"))
-      {:ok, r} = JSONPointer.get(r.response, "/input")
+    data =
+      Map.get(activity_attempt.revision.content, "items")
+      |> Enum.with_index()
+      |> Enum.reduce([], fn {a, idx}, c ->
+        {:ok, p} = JSONPointer.get(a, "/content/0/children/0/text")
+        r = Map.get(part_attempts_by_id, Map.get(a, "id"))
+        {:ok, r} = JSONPointer.get(r.response, "/input")
 
-      value = %{
-        prompt_long: "P#{idx + 1}: #{p}",
-        prompt: "P#{idx + 1}",
-        response: r,
-        color: color_matcher(Map.get(a, "group")),
-        index: idx
-      }
+        value = %{
+          prompt_long: "P#{idx + 1}: #{p}",
+          prompt: "P#{idx + 1}",
+          response: r,
+          color: color_matcher(Map.get(a, "group")),
+          group: Map.get(a, "group"),
+          index: idx
+        }
 
-      c ++ [value]
-    end)
+        c ++ [value]
+      end)
+
+    %{choices: Map.get(activity_attempt.revision.content, "choices"), data: data}
   end
 
   defp prompts_from_items(data) do
@@ -62,7 +90,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
 
   defp color_matcher(_), do: "blue"
 
-  defp visualization(%Oli.Rendering.Context{} = context, _data, data_url) do
+  defp visualization(%Oli.Rendering.Context{} = context, data_url) do
     # encoded = Jason.encode!(data)
 
     spec =
@@ -87,11 +115,13 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
                         },
                         "axis": {
                             "labelAngle": 0
-                        }
+                        },
+                        "title": "Deep ---- Shallow"
                     },
                     "y": {
                         "field": "response",
-                        "type": "quantitative"
+                        "type": "quantitative",
+                        "title": "Scale"
                     },
                     "color": {
                         "field": "color",
