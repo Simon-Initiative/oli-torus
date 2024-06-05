@@ -25,6 +25,10 @@ defmodule Oli.Authoring.Experiments do
   """
   @spec get_latest_experiment(String.t()) :: {:ok, %Revision{}} | nil | term()
   def get_latest_experiment(project_slug) do
+    project_slug |> base_query() |> Repo.one()
+  end
+
+  def base_query(project_slug) do
     from(pr in PublishedResource,
       join: revision in Revision,
       on: revision.id == pr.revision_id,
@@ -33,6 +37,5 @@ defmodule Oli.Authoring.Experiments do
       where: revision.resource_type_id == @alternatives_type_id,
       select: revision
     )
-    |> Repo.one()
   end
 end

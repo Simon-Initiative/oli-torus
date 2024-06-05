@@ -902,10 +902,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            project: project,
            publication: publication
          } do
-      # complete all pages
-      [page_1, page_2, practice_page, graded_page]
-      |> Enum.each(fn page ->
-        set_progress(section.id, page.resource_id, user.id, 1.0, page)
+      # complete all pages except the graded one
+      [{page_1, 1.0}, {page_2, 1.0}, {practice_page, 1.0}, {graded_page, 0.75}]
+      |> Enum.each(fn {page, progress} ->
+        set_progress(section.id, page.resource_id, user.id, progress, page)
 
         set_activity_attempt(
           page,
@@ -939,7 +939,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                ~s{div[id="page_#{practice_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
              )
 
-      assert has_element?(
+      # this page is not yet completed, so we do not expect to see the check icon
+      refute has_element?(
                view,
                ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"] div[role="check icon"]}
              )
@@ -1211,7 +1212,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(learning_objectives_tooltip) =~ "Objective 4"
     end
 
-    test "can see unit check icon and score summary when all pages are completed",
+    test "can see unit correct progress when all pages are completed",
          %{
            conn: conn,
            user: user,
@@ -1256,16 +1257,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # when the slider buttons are enabled we know the student async metrics were loaded
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
-      assert has_element?(
-               view,
-               ~s{div[role="unit_1"] div[role="score summary"]},
-               "1 / 2"
-             )
-
-      assert has_element?(
-               view,
-               ~s{div[role="unit_1"] svg[role="unit completed check icon"]}
-             )
+      assert has_element?(view, ~s{div[role="unit_1_progress"]}, "100%")
     end
 
     test "can expand more than one module card", %{

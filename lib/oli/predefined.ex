@@ -368,7 +368,7 @@ defmodule Oli.Predefined do
       49 -> "Stoat"
       50 -> "Heron"
       51 -> "Cassowary"
-      52 -> "Skunk"
+      52 -> "Badger"
       53 -> "Serval"
       54 -> "Owl"
       55 -> "Firefly"

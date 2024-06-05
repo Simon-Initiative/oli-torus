@@ -1,10 +1,10 @@
 defmodule OliWeb.Api.ResourceController do
   use OliWeb, :controller
 
-  alias Oli.Authoring.Editing.PageEditor
   alias Oli.Authoring.Course
-  alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
 
   def index(conn, %{"project" => project_slug}) do
