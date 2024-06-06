@@ -178,27 +178,9 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     dispatch(setShowScoringOverview({ show: true }));
   };
 
-  useKeyDown(
-    () => {
-      if (hasUndo) handleUndo();
-    },
-    ['KeyZ'],
-    { ctrlKey: true },
-  );
-  useKeyDown(
-    () => {
-      if (hasRedo) handleRedo();
-    },
-    ['KeyY'],
-    { ctrlKey: true },
-  );
-  useKeyDown(
-    () => {
-      if (hasRedo) handleRedo();
-    },
-    ['KeyZ'],
-    { ctrlKey: false, shiftKey: true },
-  );
+  useKeyDown(handleUndo, ['KeyZ'], { ctrlKey: true });
+  useKeyDown(handleRedo, ['KeyY'], { ctrlKey: true });
+  useKeyDown(handleRedo, ['KeyZ'], { ctrlKey: false, metaKey: true, shiftKey: true });
   useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
 
   const handleAddComponent = useCallback(
