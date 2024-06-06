@@ -1484,11 +1484,16 @@ defmodule Oli.Delivery.Sections do
       [%{page_id: 1, containers: [%{id: 10, title: "Introduction", numbering_level: 1}]}]
   """
 
-  @spec get_ordered_containers_per_page(String.t()) :: [
+  @spec get_ordered_containers_per_page(String.t(), list(integer())) :: [
           %{page_id: integer(), containers: list(map())}
         ]
-  def get_ordered_containers_per_page(section_slug) do
+  def get_ordered_containers_per_page(section_slug, page_ids \\ []) do
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+
+    pages_filter =
+      if Enum.empty?(page_ids),
+        do: true,
+        else: dynamic([_sr, _s, _spp, _pr, _rev, cp], cp.page_id in ^page_ids)
 
     from(
       [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
@@ -1497,6 +1502,7 @@ defmodule Oli.Delivery.Sections do
       where:
         rev.deleted == false and s.slug == ^section_slug and
           rev.resource_type_id == ^container_type_id,
+      where: ^pages_filter,
       group_by: [cp.page_id],
       select: %{
         page_id: cp.page_id,
@@ -2166,7 +2172,7 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns the schedule for the current week and the next week for the given section and user.
   """
-  @spec get_schedule_for_current_and_next_week(%Oli.Delivery.Sections.Section{}, integer()) ::
+  @spec get_schedule_for_current_and_next_week(Section.t(), integer()) ::
           any()
   def get_schedule_for_current_and_next_week(section, current_user_id) do
     current_week_number =
@@ -4050,8 +4056,8 @@ defmodule Oli.Delivery.Sections do
             }
           })
   def get_resources_scheduled_dates_for_student(section_slug, student_id) do
-    from(sr in Oli.Delivery.Sections.SectionResource,
-      join: s in Oli.Delivery.Sections.Section,
+    from(sr in SectionResource,
+      join: s in Section,
       on: sr.section_id == s.id and s.slug == ^section_slug,
       left_join: se in Oli.Delivery.Settings.StudentException,
       on:
@@ -4235,7 +4241,7 @@ defmodule Oli.Delivery.Sections do
   ## Returns:
   - Returns a map with details of the last unfinished page if found, otherwise `nil`.
   """
-  @spec get_last_open_and_unfinished_page(Oli.Delivery.Sections.Section.t(), integer()) ::
+  @spec get_last_open_and_unfinished_page(Section.t(), integer()) ::
           map() | nil
   def get_last_open_and_unfinished_page(section, user_id) do
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
@@ -4262,33 +4268,141 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Finds the nearest upcoming lesson in a specific section based on the current date.
+  Fetches the most recently accessed graded pages (completed or started) up to a given count for a specific user and section.
+  It returns a list of pages, each with details about the page and the last attempt on that page,
+  including state, update times, and scoring information. The result is ordered by the latest
+  update time of resource accesses.
+
+  ## Parameters:
+  - `section`: The section struct containing details about the current section.
+  - `user_id`: The user ID for whom the data is fetched.
+  - `pages_count`: The maximum number of page records to return.
+
+  ## Returns:
+  - A list of maps, each containing detailed information about a page, including metadata
+    like title, slug, and associated attempt details such as score and progress.
+  """
+  @spec get_last_completed_or_started_assignments(Section.t(), integer(), integer()) :: [map()]
+  def get_last_completed_or_started_assignments(section, user_id, pages_count) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    # Subquery to fetch the last attempt for each page
+    last_attempt_query =
+      from(
+        r_att in ResourceAttempt,
+        join: ra in assoc(r_att, :resource_access),
+        where: ra.user_id == ^user_id,
+        select: %{
+          r_att
+          | row_number:
+              row_number()
+              |> over(partition_by: r_att.revision_id, order_by: [desc: r_att.updated_at])
+        }
+      )
+
+    base_query =
+      from(
+        [rev: rev, sr: sr] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
+          section.slug
+        ),
+        left_join: last_att in subquery(last_attempt_query),
+        on: last_att.revision_id == rev.id,
+        left_join: r_att in ResourceAttempt,
+        on: r_att.revision_id == rev.id,
+        left_join: ra in assoc(r_att, :resource_access),
+        where:
+          ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
+        group_by: [rev.id, sr.numbering_index, sr.end_date, last_att.lifecycle_state],
+        select:
+          map(rev, [
+            :id,
+            :title,
+            :slug,
+            :duration_minutes,
+            :resource_id,
+            :graded,
+            :purpose,
+            :max_attempts
+          ]),
+        select_merge: %{
+          numbering_index: sr.numbering_index,
+          end_date: sr.end_date,
+          latest_update: max(ra.updated_at),
+          attempts_count: count(r_att.id),
+          score: max(ra.score),
+          out_of: max(ra.out_of),
+          progress: max(ra.progress),
+          last_attempt_state: last_att.lifecycle_state
+        }
+      )
+
+    Repo.all(
+      from(
+        result in subquery(base_query),
+        order_by: [desc: result.latest_update],
+        limit: ^pages_count
+      )
+    )
+  end
+
+  @doc """
+  Finds the nearest upcoming lessons in a specific section based on the current date and the lessons count.
 
   ## Parameters:
   - `section`: The section struct containing details about the course section.
+  - `user_id`: The ID of the user.
+  - `lessons_count`: The number of upcoming lessons to retrieve.
 
   ## Returns:
-  - Returns a map with details of the upcoming lesson if found, otherwise `nil`.
+  - Returns a list of maps with details of the upcoming lessons.
   """
-  @spec get_nearest_upcoming_lesson(Oli.Delivery.Sections.Section.t()) :: map() | nil
-  def get_nearest_upcoming_lesson(section) do
-    today = Oli.DateTime.utc_now()
+  @spec get_nearest_upcoming_lessons(Section.t(), integer(), integer(), Keyword.t() | nil) ::
+          list(map())
+  def get_nearest_upcoming_lessons(section, user_id, lessons_count, opts \\ []) do
+    today =
+      Oli.Date.utc_today()
+      |> DateTime.new!(~T[00:00:00])
+
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
+    graded_filter =
+      if opts[:only_graded] do
+        dynamic([_sr, _s, _spp, _pr, rev, _ra], rev.graded)
+      else
+        true
+      end
+
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
+      left_join: ra in ResourceAccess,
+      on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
+      left_join: r_att in ResourceAttempt,
+      on: r_att.resource_access_id == ra.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(sr.start_date, sr.end_date) >= ^today,
+          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0 and
+          is_nil(r_att.id),
       order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
-      limit: 1,
-      select: map(rev, [:id, :title, :slug, :duration_minutes, :resource_id, :graded, :purpose]),
+      limit: ^lessons_count,
+      select:
+        map(rev, [
+          :id,
+          :title,
+          :slug,
+          :duration_minutes,
+          :resource_id,
+          :graded,
+          :purpose,
+          :max_attempts
+        ]),
       select_merge: %{
         numbering_index: sr.numbering_index,
         start_date: sr.start_date,
         end_date: sr.end_date
       }
     )
-    |> Repo.one()
+    |> where(^graded_filter)
+    |> Repo.all()
   end
 
   @doc """

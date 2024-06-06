@@ -468,4 +468,12 @@ defmodule Oli.Publishing.DeliveryResolver do
       )
     )
   end
+
+  def get_sections_for_products(product_ids) do
+    from(section in Section,
+      where: section.blueprint_id in ^product_ids,
+      select: section.id
+    )
+    |> Repo.all()
+  end
 end

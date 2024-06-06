@@ -328,6 +328,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def schedule_live_path(section_slug, params),
     do: ~p"/sections/#{section_slug}/assignments?#{params}"
 
+  # nil case arises for linked loose pages not in in hierarchy index
   def get_container_label(nil, section), do: section.title
 
   def get_container_label(page_id, section) do
@@ -462,5 +463,66 @@ defmodule OliWeb.Delivery.Student.Utils do
       |> Date.add((week_number - 1) * 7)
 
     {week_start, Date.add(week_start, 6)}
+  end
+
+  @doc """
+  Calculates the number of days from today to the given end date of a resource and returns a human-readable string describing the difference.
+
+  ## Parameters:
+  - `resource_end_date`: The `DateTime` representing the end date of the resource.
+
+  ## Returns:
+  - A string indicating the number of days until or since the resource end date, such as "Due Today", "1 day left", or "Past Due by X days".
+
+  ## Examples:
+      iex> days_difference(~U[2024-05-12T00:00:00Z])
+      "1 day left"
+  """
+  @spec days_difference(DateTime.t()) :: String.t()
+  def days_difference(resource_end_date) do
+    days = resource_end_date |> DateTime.to_date() |> Timex.diff(Oli.Date.utc_today(), :days)
+
+    case days do
+      0 ->
+        "Due Today"
+
+      1 ->
+        "1 day left"
+
+      -1 ->
+        "Past Due"
+
+      days when days < 0 ->
+        "Past Due by #{abs(days)} days"
+
+      days ->
+        "#{days} days left"
+    end
+  end
+
+  @doc """
+  Rounds a given score to two decimal places and converts it to an integer if the result is a whole number.
+
+  ## Parameters:
+  - `score`: The floating-point number representing a score.
+
+  ## Returns:
+  - Either a floating-point number or an integer, depending on whether rounding results in a whole number.
+
+  ## Examples:
+      iex> parse_score(84.236)
+      84.24
+      iex> parse_score(85.00)
+      85
+  """
+  @spec parse_score(float()) :: float() | integer()
+  def parse_score(score) do
+    score = Float.round(score, 2)
+
+    if trunc(score) == score do
+      trunc(score)
+    else
+      score
+    end
   end
 end

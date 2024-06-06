@@ -30,7 +30,8 @@ defmodule Oli.Analytics.ByActivity do
       end
 
     from activity in subquery(subquery),
-      left_join: analytics in subquery(Common.analytics_by_activity(project_slug)),
+      left_join:
+        analytics in subquery(Common.analytics_by_activity(project_slug, filtered_sections)),
       on: activity.resource_id == analytics.activity_id,
       select: %{
         slice: activity,

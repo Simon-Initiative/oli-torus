@@ -410,6 +410,35 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                  "?request_path=some_request_path&selected_view=gallery"
     end
 
+    test "can see default logo", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.update_section(section, %{brand_id: nil})
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
+    end
+
+    test "can see brand logo", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
+    end
+
     test "can access when enrolled to course", %{
       conn: conn,
       user: user,

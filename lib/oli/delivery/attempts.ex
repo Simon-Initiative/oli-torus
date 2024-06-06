@@ -75,22 +75,18 @@ defmodule Oli.Delivery.Attempts do
   def get_historical_graded_attempt_summary(section, page_revision_slug, user_id) do
     page_revision = DeliveryResolver.from_revision_slug(section.slug, page_revision_slug)
 
-    case Core.get_resource_attempt_history(page_revision.resource_id, section.slug, user_id) do
-      nil ->
-        %HistoricalGradedAttemptSummary{
-          page_revision_slug: page_revision_slug,
-          historical_attempts: []
-        }
+    historical_graded_attempts =
+      case Core.get_resource_attempt_history(page_revision.resource_id, section.slug, user_id) do
+        nil ->
+          []
 
-      {_access, attempts} ->
-        historical_graded_attempts =
-          attempts
-          |> Enum.filter(fn a -> a.revision.graded == true end)
+        {_access, attempts} ->
+          Enum.filter(attempts, fn a -> a.revision.graded end)
+      end
 
-        %HistoricalGradedAttemptSummary{
-          page_revision_slug: page_revision_slug,
-          historical_attempts: historical_graded_attempts
-        }
-    end
+    %HistoricalGradedAttemptSummary{
+      page_revision_slug: page_revision_slug,
+      historical_attempts: historical_graded_attempts
+    }
   end
 end

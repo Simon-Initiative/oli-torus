@@ -3,12 +3,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   import OliWeb.Components.Delivery.Layouts
 
-  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections}
+  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
+  alias OliWeb.Icons
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
@@ -21,13 +23,30 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     intro_message =
       section.slug
       |> DeliveryResolver.root_container()
-      |> build_intro_message()
+      |> build_intro_message_title()
+
+    nearest_upcoming_lesson =
+      section
+      |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
+      |> List.first()
+
+    latest_assignments =
+      Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+
+    upcoming_assignments =
+      Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
+
+    page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
+    containers_per_page = build_containers_per_page(section.slug, page_ids)
+
+    combined_settings =
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Enum.map(
         [
           Sections.get_last_open_and_unfinished_page(section, current_user_id),
-          Sections.get_nearest_upcoming_lesson(section)
+          nearest_upcoming_lesson
         ],
         fn
           nil ->
@@ -60,13 +79,42 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          ),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
        nearest_upcoming_lesson: nearest_upcoming_lesson,
+       upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
+       latest_assignments: combine_settings(latest_assignments, combined_settings),
+       containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
-       intro_message: intro_message
+       intro_message: intro_message,
+       assignments_tab: :upcoming
      )}
   end
 
   def handle_params(_params, _uri, socket) do
     {:noreply, socket}
+  end
+
+  def handle_event(
+        "load_historical_graded_attempt_summary",
+        %{"page_revision_slug" => page_revision_slug},
+        socket
+      ) do
+    %{section: section, current_user: current_user} = socket.assigns
+
+    historical_graded_attempt_summary =
+      Attempts.get_historical_graded_attempt_summary(section, page_revision_slug, current_user.id)
+
+    {:noreply,
+     assign(socket, historical_graded_attempt_summary: historical_graded_attempt_summary)}
+  end
+
+  def handle_event("clear_historical_graded_attempt_summary", _params, socket) do
+    {:noreply, assign(socket, historical_graded_attempt_summary: nil)}
+  end
+
+  def handle_event("toggle_assignments_tab", _params, socket) do
+    case socket.assigns.assignments_tab do
+      :upcoming -> {:noreply, assign(socket, assignments_tab: :latest)}
+      :latest -> {:noreply, assign(socket, assignments_tab: :upcoming)}
+    end
   end
 
   def render(assigns) do
@@ -79,40 +127,30 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
       intro_message={@intro_message}
     />
-    <div class="w-full h-full relative bg-stone-950 dark:text-white">
+    <div
+      id="schedule-view"
+      class="w-full h-full relative bg-stone-950 dark:text-white"
+      phx-hook="Countdown"
+    >
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
-        <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
+        <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
+          <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
+          <.assignments
+            upcoming_assignments={@upcoming_assignments}
+            latest_assignments={@latest_assignments}
+            section_slug={@section_slug}
+            assignments_tab={@assignments_tab}
+            containers_per_page={@containers_per_page}
+          />
+        </div>
+
         <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
-          <div class="w-full h-fit overflow-y-auto p-6 bg-zinc-400 bg-opacity-20 dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
-            <div class="flex-col justify-start items-start gap-7 inline-flex grow">
-              <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
-                <div class="text-2xl font-bold leading-loose tracking-tight">
-                  Upcoming Agenda
-                </div>
-                <.link
-                  href={
-                    Utils.schedule_live_path(
-                      @section_slug,
-                      request_path: ~p"/sections/#{@section_slug}"
-                    )
-                  }
-                  class="hover:no-underline"
-                >
-                  <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
-                    View full schedule
-                  </div>
-                </.link>
-              </div>
-              <.live_component
-                module={ScheduleComponent}
-                ctx={@ctx}
-                id="schedule_component"
-                schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}
-                section_start_date={@section_start_date}
-                section_slug={@section_slug}
-              />
-            </div>
-          </div>
+          <.agenda
+            section_slug={@section_slug}
+            schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}
+            section_start_date={@section_start_date}
+            ctx={@ctx}
+          />
         </div>
       </div>
     </div>
@@ -259,9 +297,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
         <div class="w-full flex flex-col items-start gap-2.5">
           <div class="w-full whitespace-nowrap overflow-hidden">
-            <span class="text-3xl font-medium">
+            <span class="text-3xl text-white font-medium">
               <%= @intro_message %>
             </span>
+          </div>
+          <div class="w-full text-white/60 text-lg font-semibold">
+            Dive Into Discovery. Begin Your Learning Adventure Now!
           </div>
         </div>
         <div class="pt-5 flex items-start gap-6">
@@ -299,27 +340,88 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp course_progress(assigns) do
     ~H"""
-    <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-      <div class="w-full h-96 p-6 bg-zinc-400 bg-opacity-20 dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
-        <div class="flex-col justify-start items-start gap-5 inline-flex grow">
-          <div class="justify-start items-start gap-2.5 inline-flex">
-            <div class="text-2xl font-bold leading-loose tracking-tight">
-              Course Progress
+    <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+      <div class="flex-col justify-start items-start gap-5 inline-flex grow">
+        <div class="justify-start items-start gap-2.5 inline-flex">
+          <div class="text-2xl font-bold leading-loose tracking-tight">
+            Course Progress
+          </div>
+        </div>
+        <%= if @has_visited_section do %>
+          <div class="flex-col justify-start items-start flex">
+            <div>
+              <span class="text-6xl font-bold tracking-wide"><%= @progress %></span>
+              <span class="text-3xl font-bold tracking-tight">%</span>
             </div>
           </div>
-          <%= if @has_visited_section do %>
-            <div class="flex-col justify-start items-start flex">
-              <div>
-                <span class="text-6xl font-bold tracking-wide"><%= @progress %></span>
-                <span class="text-3xl font-bold tracking-tight">%</span>
+        <% else %>
+          <div class="justify-start items-center gap-1 inline-flex self-stretch">
+            <div class="text-base font-normal tracking-tight grow">
+              Begin your learning journey to watch your progress unfold here!
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:upcoming_assignments, :list, required: true)
+  attr(:latest_assignments, :list, default: [])
+  attr(:section_slug, :string, required: true)
+  attr(:assignments_tab, :atom, required: true)
+  attr(:containers_per_page, :map, required: true)
+
+  defp assignments(assigns) do
+    lessons =
+      case assigns.assignments_tab do
+        :upcoming -> assigns.upcoming_assignments
+        :latest -> assigns.latest_assignments
+      end
+
+    assigns = Map.put(assigns, :lessons, lessons)
+
+    ~H"""
+    <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+      <div class="w-full flex-col justify-start items-start gap-5 flex grow">
+        <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
+          <div class="text-2xl font-bold leading-loose tracking-tight">
+            My Assignments
+          </div>
+        </div>
+        <div class="w-full h-fit overflow-hidden dark:text-white justify-start items-start gap-3.5 flex xl:flex-row flex-col">
+          <button
+            id="upcoming_tab"
+            phx-click="toggle_assignments_tab"
+            class={assignments_tab_class(@assignments_tab, :upcoming)}
+          >
+            <div class="pr-1 text-lg tracking-tight font-bold whitespace-nowrap">
+              Upcoming
+            </div>
+          </button>
+          <button
+            id="latest_tab"
+            phx-click="toggle_assignments_tab"
+            class={assignments_tab_class(@assignments_tab, :latest)}
+          >
+            <div class="grow shrink basis-0 text-lg tracking-tight font-bold">Latest</div>
+          </button>
+        </div>
+        <div role="assignments" class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
+          <%= if Enum.empty?(@lessons) do %>
+            <div role="message" class="w-80 h-16 flex-col justify-start items-start gap-2.5 flex">
+              <div class="w-80 dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
+                <%= empty_assignments_message(@assignments_tab) %>
               </div>
             </div>
           <% else %>
-            <div class="justify-start items-center gap-1 inline-flex self-stretch">
-              <div class="text-base font-normal tracking-tight grow">
-                Begin your learning journey to watch your progress unfold here!
-              </div>
-            </div>
+            <.lesson_card
+              :for={lesson <- @lessons}
+              upcoming={@assignments_tab == :upcoming}
+              lesson={lesson}
+              containers={@containers_per_page[lesson.resource_id] || []}
+              section_slug={@section_slug}
+            />
           <% end %>
         </div>
       </div>
@@ -327,25 +429,238 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  def handle_event(
-        "load_historical_graded_attempt_summary",
-        %{"page_revision_slug" => page_revision_slug},
-        socket
-      ) do
-    %{section: section, current_user: current_user} = socket.assigns
+  defp assignments_tab_class(tab, tab), do: "pointer-events-none cursor-not-allowed"
+  defp assignments_tab_class(_, _), do: "opacity-40 hover:opacity-70"
 
-    historical_graded_attempt_summary =
-      Attempts.get_historical_graded_attempt_summary(section, page_revision_slug, current_user.id)
+  defp empty_assignments_message(:upcoming),
+    do: "Great job, you completed all the assignments! There are no upcoming assignments."
 
-    {:noreply,
-     assign(socket, historical_graded_attempt_summary: historical_graded_attempt_summary)}
+  defp empty_assignments_message(:latest),
+    do: "It looks like you need to start your attempt. Begin with the upcoming assignments!"
+
+  attr(:lesson, :map, required: true)
+  attr(:upcoming, :boolean, required: true)
+  attr(:section_slug, :string, required: true)
+  attr(:containers, :list, required: true)
+
+  defp lesson_card(assigns) do
+    assigns =
+      Map.merge(assigns, %{
+        lesson_type: Student.type_from_resource(assigns.lesson),
+        completed: !assigns.upcoming and completed_lesson?(assigns.lesson),
+        unit: Enum.find(assigns.containers, fn c -> c["numbering_level"] == 1 end),
+        module: Enum.find(assigns.containers, fn c -> c["numbering_level"] == 2 end)
+      })
+
+    ~H"""
+    <.link
+      href={
+        Utils.lesson_live_path(@section_slug, @lesson.slug,
+          request_path: ~p"/sections/#{@section_slug}"
+        )
+      }
+      class="w-full text-black hover:text-black hover:no-underline"
+    >
+      <div class={[
+        left_bar_color(@lesson_type),
+        item_bg_color(@completed),
+        "flex h-full px-2.5 py-3.5 rounded-xl border flex-col justify-start items-start hover:cursor-pointer relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:z-10"
+      ]}>
+        <div class="self-stretch justify-between items-start flex pl-2">
+          <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-2.5 flex">
+            <div role="container_label" class="justify-start items-start gap-2 flex uppercase">
+              <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+                <%= @unit["label"] %>
+              </div>
+
+              <div :if={@module} class="flex items-center gap-2">
+                <div class="dark:text-white text-opacity-60 text-xs font-bold">•</div>
+                <div class="dark:text-white text-opacity-60 text-xs font-bold whitespace-nowrap">
+                  <%= @module["label"] %>
+                </div>
+              </div>
+            </div>
+            <div role="title" class="self-stretch pb-2.5 justify-start items-start gap-2.5 flex">
+              <div class="grow shrink basis-0 dark:text-white text-opacity-90 text-lg font-semibold">
+                <%= @lesson.title %>
+              </div>
+            </div>
+          </div>
+          <Student.resource_type type={@lesson_type} long={false} />
+        </div>
+
+        <.lesson_details upcoming={@upcoming} lesson={@lesson} completed={@completed} />
+      </div>
+    </.link>
+    """
   end
 
-  def handle_event("clear_historical_graded_attempt_summary", _params, socket) do
-    {:noreply, assign(socket, historical_graded_attempt_summary: nil)}
+  defp left_bar_color(:checkpoint), do: "before:bg-checkpoint dark:before:bg-checkpoint-dark"
+  defp left_bar_color(:practice), do: "before:bg-practice dark:before:bg-practice-dark"
+  defp left_bar_color(:exploration), do: "before:bg-exploration dark:before:bg-exploration-dark"
+  defp left_bar_color(_), do: ""
+
+  defp item_bg_color(true = _completed),
+    do:
+      "bg-black/[.07] hover:bg-black/[.1] border border-white/[.1] dark:bg-white/[.02] dark:hover:bg-white/[.06] dark:border-white/[0.06] dark:hover:border-white/[0.02]"
+
+  defp item_bg_color(false = _completed),
+    do:
+      "bg-black/[.1] hover:bg-black/[.2] border border-white/[.6] hover:border-transparent dark:bg-white/[.08] dark:hover:bg-white/[.12] dark:border-black hover:!border-transparent"
+
+  attr :lesson, :map, required: true
+  attr :upcoming, :boolean, required: true
+  attr :completed, :boolean, required: true
+
+  defp lesson_details(%{upcoming: true} = assigns) do
+    ~H"""
+    <div role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
+      <div class="pr-2 pl-1 self-end">
+        <div class="flex items-end gap-1">
+          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
+            <%= Utils.days_difference(@lesson.end_date) %>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
   end
 
-  defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
+  # Completed page
+  defp lesson_details(%{completed: true} = assigns) do
+    ~H"""
+    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+      <div class="justify-end items-end gap-2.5 flex ml-auto">
+        <div class="flex items-end gap-1">
+          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
+            Completed
+          </div>
+          <Icons.check progress={1.0} />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Non-completed graded page (assignment)
+  defp lesson_details(%{lesson: %{graded: true}} = assigns) do
+    ~H"""
+    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+      <%= if @lesson.last_attempt_state != :active do %>
+        <div class="flex px-2 py-0.5 bg-white/10 rounded-xl shadow tracking-tight gap-2 items-center align-center">
+          <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
+            <div class="dark:text-white text-xs font-semibold">
+              Attempt <%= "#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}" %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <div
+          :if={@lesson.end_date}
+          class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
+        >
+          <div class="opacity-50 text-black dark:text-white text-xs font-normal">
+            Time Remaining:
+          </div>
+          <div
+            role="countdown"
+            class={[
+              if(@lesson.purpose == :application,
+                do: "text-exploration dark:text-exploration-dark",
+                else: "text-checkpoint dark:text-checkpoint-dark"
+              ),
+              "text-xs font-normal"
+            ]}
+          >
+            <%= Student.format_time_remaining(@lesson.end_date) %>
+          </div>
+        </div>
+      <% end %>
+      <div
+        :if={nil not in [@lesson.score, @lesson.out_of]}
+        class="justify-end items-end gap-2.5 flex ml-auto"
+      >
+        <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
+          <div class="w-4 h-4 relative"><Icons.star /></div>
+          <div role="score" class="text-sm font-semibold tracking-tight">
+            <%= Utils.parse_score(@lesson.score) %>
+          </div>
+          <div class="text-sm font-semibold tracking-widest">
+            /
+          </div>
+          <div role="out_of" class="text-sm font-semibold tracking-tight">
+            <%= Utils.parse_score(@lesson.out_of) %>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  # Non-completed practice page
+  defp lesson_details(assigns) do
+    ~H"""
+    <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
+      <div :if={@lesson.end_date} class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex">
+        <div class="opacity-50 text-black dark:text-white text-xs font-normal">
+          Time Remaining:
+        </div>
+        <div role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
+          <%= Student.format_time_remaining(@lesson.end_date) %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp completed_lesson?(%{graded: true} = assignment),
+    do:
+      assignment.attempts_count == assignment.settings.max_attempts and
+        assignment.last_attempt_state != :active
+
+  defp completed_lesson?(practice), do: practice.progress == 1.0
+
+  attr(:section_slug, :string, required: true)
+  attr(:section_start_date, :string, required: true)
+  attr(:schedule_for_current_week_and_next_week, :map, required: true)
+  attr(:ctx, :map, required: true)
+
+  defp agenda(assigns) do
+    ~H"""
+    <div class="w-full h-fit overflow-y-auto p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+      <div class="flex-col justify-start items-start gap-7 inline-flex grow">
+        <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
+          <div class="text-2xl font-bold leading-loose tracking-tight">
+            Upcoming Agenda
+          </div>
+          <.link
+            href={
+              Utils.schedule_live_path(
+                @section_slug,
+                request_path: ~p"/sections/#{@section_slug}"
+              )
+            }
+            class="hover:no-underline"
+          >
+            <div class="text-[#3399FF] hover:text-opacity-80 text-base font-bold tracking-tight">
+              View full schedule
+            </div>
+          </.link>
+        </div>
+        <.live_component
+          module={ScheduleComponent}
+          ctx={@ctx}
+          id="schedule_component"
+          schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}
+          section_start_date={@section_start_date}
+          section_slug={@section_slug}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  defp format_date(nil, _context, _format), do: "Not yet scheduled"
 
   defp format_date(due_date, context, format) do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
@@ -381,15 +696,43 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     |> trunc()
   end
 
-  defp build_intro_message(%{intro_content: intro_content}) when intro_content not in [nil, %{}],
-    do:
-      Phoenix.HTML.raw(
-        Oli.Rendering.Content.render(
-          %Oli.Rendering.Context{},
-          intro_content["children"],
-          Oli.Rendering.Content.Html
-        )
-      )
+  defp build_intro_message_title(%{intro_content: intro_content})
+       when intro_content not in [nil, %{}],
+       do:
+         Phoenix.HTML.raw(
+           Oli.Rendering.Content.render(
+             %Oli.Rendering.Context{},
+             intro_content["children"],
+             Oli.Rendering.Content.Html
+           )
+         )
 
-  defp build_intro_message(_), do: "Welcome to this course!"
+  defp build_intro_message_title(_), do: "Welcome to the Course"
+
+  defp max_attempts(0), do: "∞"
+  defp max_attempts(max_attempts), do: max_attempts
+
+  defp build_containers_per_page(section_slug, page_ids) do
+    containers_label_map =
+      Sections.get_ordered_container_labels(section_slug, short_label: true)
+      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
+        Map.put(acc, container_id, label)
+      end)
+
+    add_label_to_containers =
+      &Enum.map(&1, fn container ->
+        Map.put(container, "label", containers_label_map[container["id"]])
+      end)
+
+    Sections.get_ordered_containers_per_page(section_slug, page_ids)
+    |> Enum.reduce(%{}, fn elem, acc ->
+      Map.put(acc, elem[:page_id], add_label_to_containers.(elem[:containers]))
+    end)
+  end
+
+  defp combine_settings(assignments, settings) do
+    Enum.map(assignments, fn assignment ->
+      Map.put(assignment, :settings, settings[assignment.resource_id])
+    end)
+  end
 end

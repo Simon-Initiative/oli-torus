@@ -136,6 +136,7 @@ defmodule Oli.MixProject do
       {:bamboo_phoenix, "~> 1.0"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 2.2"},
+      {:briefly, "~> 0.5.0"},
       {:broadway, "~> 1.0.7"},
       {:broadway_dashboard, "~> 0.4.0"},
       {:cachex, "~> 3.5"},

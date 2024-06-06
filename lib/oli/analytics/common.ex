@@ -198,7 +198,7 @@ defmodule Oli.Analytics.Common do
     end
   end
 
-  def analytics_by_activity(project_slug) do
+  def analytics_by_activity(project_slug, []) do
     activity_num_attempts_rel_difficulty =
       from(project in Project,
         where: project.slug == ^project_slug,
@@ -218,6 +218,34 @@ defmodule Oli.Analytics.Common do
         }
       )
 
+    get_analytics(project_slug, activity_num_attempts_rel_difficulty)
+  end
+
+  def analytics_by_activity(project_slug, section_ids) do
+    activity_num_attempts_rel_difficulty =
+      from(project in Project,
+        where: project.slug == ^project_slug,
+        join: snapshot in Snapshot,
+        on: snapshot.project_id == project.id,
+        where: snapshot.section_id in ^section_ids,
+        group_by: [snapshot.activity_id],
+        select: %{
+          activity_id: snapshot.activity_id,
+          number_of_attempts: count(snapshot.part_attempt_id, :distinct),
+          relative_difficulty:
+            fragment(
+              "sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
+              snapshot.hints,
+              snapshot.correct,
+              snapshot.id
+            )
+        }
+      )
+
+    get_analytics(project_slug, activity_num_attempts_rel_difficulty)
+  end
+
+  defp get_analytics(project_slug, activity_num_attempts_rel_difficulty) do
     activity_correctness =
       from(project in Project,
         where: project.slug == ^project_slug,
@@ -270,7 +298,7 @@ defmodule Oli.Analytics.Common do
     )
   end
 
-  def analytics_by_objective(project_slug) do
+  def analytics_by_objective(project_slug, []) do
     activity_num_attempts_rel_difficulty =
       from(project in Project,
         where: project.slug == ^project_slug,
@@ -290,6 +318,43 @@ defmodule Oli.Analytics.Common do
         }
       )
 
+    get_analytics_for_objective(
+      project_slug,
+      activity_num_attempts_rel_difficulty
+    )
+  end
+
+  def analytics_by_objective(project_slug, section_ids) do
+    activity_num_attempts_rel_difficulty =
+      from(project in Project,
+        where: project.slug == ^project_slug,
+        join: snapshot in Snapshot,
+        on: snapshot.project_id == project.id,
+        where: snapshot.section_id in ^section_ids,
+        group_by: [snapshot.objective_id],
+        select: %{
+          objective_id: snapshot.objective_id,
+          number_of_attempts: count(snapshot.id),
+          relative_difficulty:
+            fragment(
+              "sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
+              snapshot.hints,
+              snapshot.correct,
+              snapshot.id
+            )
+        }
+      )
+
+    get_analytics_for_objective(
+      project_slug,
+      activity_num_attempts_rel_difficulty
+    )
+  end
+
+  defp get_analytics_for_objective(
+         project_slug,
+         activity_num_attempts_rel_difficulty
+       ) do
     activity_correctness =
       from(project in Project,
         where: project.slug == ^project_slug,

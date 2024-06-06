@@ -4852,6 +4852,18 @@
   resolved "https://registry.npmjs.org/@stripe/stripe-js/-/stripe-js-1.18.0.tgz"
   integrity sha512-yBRHAMKHnF3kbzv0tpKB82kSow43wW5qXLK8ofg3V9NaaCyObSTO7wJfktWAtG/NBgkJOdUL+pV8dHBj0qvDkQ==
 
+"@tabler/icons-react@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@tabler/icons-react/-/icons-react-3.5.0.tgz#71925d527bb50a3b5bb23cc0154acc8b0ed65214"
+  integrity sha512-bn05XKZV3ZfOv5Jr1FCTmVPOQGBVJoA4NefrnR919rqg6WGXAa08NovONHJGSuMxXUMV3b9Cni85diIW/E9yuw==
+  dependencies:
+    "@tabler/icons" "3.5.0"
+
+"@tabler/icons@3.5.0":
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@tabler/icons/-/icons-3.5.0.tgz#29d0dbf100c8cb392dd64f1fe8efdcfcd1f57e44"
+  integrity sha512-I53dC3ZSHQ2MZFGvDYJelfXm91L2bTTixS4w5jTAulLhHbCZso5Bih4Rk/NYZxlngLQMKHvEYwZQ+6w/WluKiA==
+
 "@tailwindcss/container-queries@^0.1.0":
   version "0.1.0"
   resolved "https://registry.npmjs.org/@tailwindcss/container-queries/-/container-queries-0.1.0.tgz"

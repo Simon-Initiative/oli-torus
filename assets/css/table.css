@@ -73,6 +73,10 @@ div:has(.instructor_dashboard_table) #header_paging {
   @apply sticky left-0 dark:bg-neutral-800;
 }
 
+div:has(.instructor_dashboard_table) #footer_paging {
+  @apply sticky left-0 dark:bg-neutral-800;
+}
+
 div:has(.remix_materials_table) {
   @apply overflow-x-hidden;
 }
