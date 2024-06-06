@@ -8,34 +8,34 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
         %Oli.Rendering.Context{enrollment: enrollment, user: user} = context,
         %{"activityId" => activity_id} = _element
       ) do
-    attempt_data = process_attempt_data(enrollment.section_id, user.id, activity_id)
-    data_url = "/api/v1/activity/report/#{enrollment.section_id}/#{activity_id}"
+    with %{choices: choices, data: data} <-
+           process_attempt_data(enrollment.section_id, user.id, activity_id) do
+      data_url = "/api/v1/activity/report/#{enrollment.section_id}/#{activity_id}"
 
-    prompts = [~s|<div>
-    <ul>|, prompts_from_items(Map.get(attempt_data, :data)), "</ul></div>"]
+      prompts = [~s|<div><ul>|, prompts_from_items(data), "</ul></div>"]
 
-    groups =
-      Map.get(attempt_data, :data)
-      |> Enum.reduce([], fn a, c ->
-        case Map.get(a, :group) do
-          nil -> c
-          g -> c ++ [g]
-        end
-      end)
-      |> Enum.uniq()
-      |> Enum.join(" ---- ")
+      groups =
+        data
+        |> Enum.reduce([], fn a, c ->
+          case Map.get(a, :group) do
+            nil -> c
+            g -> c ++ [g]
+          end
+        end)
+        |> Enum.uniq()
+        |> Enum.join(" ---- ")
 
-    {:ok, first} =
-      Map.get(attempt_data, :choices)
-      |> List.first()
-      |> JSONPointer.get("/content/0/children/0/text")
+      {:ok, first} =
+        choices
+        |> List.first()
+        |> JSONPointer.get("/content/0/children/0/text")
 
-    {:ok, last} =
-      Map.get(attempt_data, :choices)
-      |> List.last()
-      |> JSONPointer.get("/content/0/children/0/text")
+      {:ok, last} =
+        choices
+        |> List.last()
+        |> JSONPointer.get("/content/0/children/0/text")
 
-    visuals = [~s|
+      visuals = [~s|
     <div class="flex flex-row">
       <div class="flex flex-col ml-2">
         <div>#{last}</div>
@@ -45,7 +45,10 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
       <div class="grow">|, visualization(context, data_url, groups), ~s|</div>
     </div>|]
 
-    {:ok, [visuals, prompts]}
+      {:ok, [visuals, prompts]}
+    else
+      e -> {:error, e}
+    end
   end
 
   @impl Oli.Activities.Reports.Renderer
@@ -65,9 +68,19 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
       Map.get(activity_attempt.revision.content, "items")
       |> Enum.with_index()
       |> Enum.reduce([], fn {a, idx}, c ->
-        {:ok, p} = JSONPointer.get(a, "/content/0/children/0/text")
+        p =
+          case JSONPointer.get(a, "/content/0/children/0/text") do
+            {:ok, pv} -> pv
+            {:error, _} -> ""
+          end
+
         r = Map.get(part_attempts_by_id, Map.get(a, "id"))
-        {:ok, r} = JSONPointer.get(r.response, "/input")
+
+        r =
+          case JSONPointer.get(r.response, "/input") do
+            {:ok, rv} -> rv
+            {:error, _} -> ""
+          end
 
         value = %{
           prompt_long: "P#{idx + 1}: #{p}",
