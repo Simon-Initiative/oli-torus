@@ -52,8 +52,7 @@ defmodule Oli.Rendering.Report.Html do
               {:ok, report} ->
                 [parent_link, report]
 
-              {:error, e} ->
-                IO.inspect("----- error")
+              e ->
                 Logger.error(
                   "Error rendering activity report: #{inspect(%{error: e, section_slug: context.section_slug, user_id: context.user.id, activity_id: activity_id})}"
                 )
