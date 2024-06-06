@@ -3,7 +3,6 @@ defmodule OliWeb.Api.ResourceController do
 
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ObjectiveEditor
-  import Oli.Authoring.Editing.Utils
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
