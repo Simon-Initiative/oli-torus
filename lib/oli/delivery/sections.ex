@@ -58,7 +58,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
   alias Oli.Delivery.Settings
-  alias Oli.Analytics.Summary.ResourceSummary
 
   require Logger
 
@@ -4296,16 +4295,15 @@ defmodule Oli.Delivery.Sections do
         [rev: rev, sr: sr] in Oli.Publishing.DeliveryResolver.section_resource_revisions(
           section.slug
         ),
-        join: r_att in subquery(last_attempt_query),
+        left_join: last_att in subquery(last_attempt_query),
+        on: last_att.revision_id == rev.id,
+        left_join: r_att in ResourceAttempt,
         on: r_att.revision_id == rev.id,
-        join: ra in assoc(r_att, :resource_access),
-        join: rs in ResourceSummary,
-        on: rs.resource_id == rev.resource_id and rs.user_id == ra.user_id,
+        left_join: ra in assoc(r_att, :resource_access),
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
-            rev.resource_type_id == ^page_resource_type_id and
-            rs.publication_id == -1 and rs.project_id == -1 and r_att.row_number == 1,
-        group_by: [rev.id, sr.numbering_index, sr.end_date, r_att.lifecycle_state],
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
+        group_by: [rev.id, sr.numbering_index, sr.end_date, last_att.lifecycle_state],
         select:
           map(rev, [
             :id,
@@ -4322,10 +4320,10 @@ defmodule Oli.Delivery.Sections do
           end_date: sr.end_date,
           latest_update: max(ra.updated_at),
           attempts_count: count(r_att.id),
-          score: fragment("CAST(SUM(?) as float)", rs.num_correct),
-          out_of: fragment("CAST(SUM(?) as float)", rs.num_attempts),
+          score: max(ra.score),
+          out_of: max(ra.out_of),
           progress: max(ra.progress),
-          last_attempt_state: r_att.lifecycle_state
+          last_attempt_state: last_att.lifecycle_state
         }
       )
 
@@ -4368,9 +4366,12 @@ defmodule Oli.Delivery.Sections do
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
       left_join: ra in ResourceAccess,
       on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
+      left_join: r_att in ResourceAttempt,
+      on: r_att.resource_access_id == ra.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0,
+          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0 and
+          is_nil(r_att.id),
       order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
       limit: ^lessons_count,
       select:

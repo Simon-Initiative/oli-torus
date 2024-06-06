@@ -74,7 +74,7 @@ export const generateMultipleChoiceRules = (
 
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
     conditions: createMCQCommonErrorCondition(path, question),
-    feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_CORRECT_FEEDBACK,
+    feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_INCORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
 

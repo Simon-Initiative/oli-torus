@@ -1114,18 +1114,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket.assigns.datashop_session_id
         )
 
-      socket =
-        socket
-        |> assign(page_context: page_context)
-
-      emit_page_viewed_event(socket)
-
       {:noreply,
        socket
+       |> assign(page_context: page_context)
        |> assign(begin_attempt?: true, show_loader?: true)
        |> clear_flash()
        |> assign_html()
-       |> load_scripts_on_client_side()}
+       |> load_scripts_on_client_side()
+       |> emit_page_viewed_event()}
     else
       {:redirect, to} ->
         {:noreply, redirect(socket, to: to)}
@@ -1483,13 +1479,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         publication_id: publication_id
       },
       %{
-        attempt_guid: hd(context.resource_attempts).attempt_guid,
-        attempt_number: hd(context.resource_attempts).attempt_number,
+        attempt_guid: List.first(context.resource_attempts).attempt_guid,
+        attempt_number: List.first(context.resource_attempts).attempt_number,
         resource_id: context.page.resource_id,
         timestamp: DateTime.utc_now(),
         page_sub_type: page_sub_type
       }
     )
+
+    socket
   end
 
   defp emit_page_viewed_helper(
