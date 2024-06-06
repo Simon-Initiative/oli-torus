@@ -12,7 +12,6 @@ defmodule Oli.Rendering.Report.Markdown do
     [
       "---\n",
       "##### Activity Report\n",
-
       "---\n"
     ]
   end

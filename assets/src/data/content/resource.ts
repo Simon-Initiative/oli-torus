@@ -259,7 +259,7 @@ export const createReport = (ac: ActivityWithReportOption): ReportContent => ({
   title: undefined,
   children: [],
   activityId: ac.id,
-  reportType: ac.type === 'oli_likert'? 'likert_bar' : undefined,
+  reportType: ac.type === 'oli_likert' ? 'likert_bar' : undefined,
 });
 
 export const createBreak = (): Break => ({

@@ -446,19 +446,19 @@ defmodule Oli.Resources do
       Revision
       |> join(:left, [rev], pr in Oli.Publishing.PublishedResource, on: pr.revision_id == rev.id)
       |> join(:left, [_, pr], pub in Oli.Publishing.Publications.Publication,
-           on: pr.publication_id == pub.id
-         )
+        on: pr.publication_id == pub.id
+      )
       |> join(:left, [_, _, pub], proj in Oli.Authoring.Course.Project,
-           on: pub.project_id == proj.id
-         )
+        on: pub.project_id == proj.id
+      )
       |> join(:left, [rev, _, _, _], reg in Oli.Activities.ActivityRegistration,
-           on: rev.activity_type_id == reg.id
-         )
+        on: rev.activity_type_id == reg.id
+      )
       |> where(
-           [rev, _, pub, proj, reg],
-           proj.id == ^project_id and is_nil(pub.published) and
-           reg.generates_report == true
-         )
+        [rev, _, pub, proj, reg],
+        proj.id == ^project_id and is_nil(pub.published) and
+          reg.generates_report == true
+      )
       |> select([rev, _, _, _, reg], %{
         id: rev.resource_id,
         type: reg.slug,

@@ -37,7 +37,7 @@ defmodule Oli.Activities.Manifest do
        allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
        global: false,
        variables: value_or(json["variables"], []),
-       generatesReport: value_or(json["generatesReport"], false),
+       generatesReport: value_or(json["generatesReport"], false)
      }}
   end
 

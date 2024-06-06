@@ -15,7 +15,6 @@ defmodule Oli.Rendering.Report.Plaintext do
     ]
   end
 
-
   def error(%Context{} = context, element, error) do
     Error.render(context, element, error, Error.Plaintext)
   end
