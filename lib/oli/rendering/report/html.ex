@@ -2,7 +2,6 @@ defmodule Oli.Rendering.Report.Html do
   @moduledoc """
   Implements the Html writer for content report rendering
   """
-
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
   alias Oli.Delivery.Attempts.Core
