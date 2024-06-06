@@ -79,11 +79,12 @@ defmodule OliWeb.Api.ResourceController do
     end
   end
 
+  @spec activities_with_report(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def activities_with_report(conn, %{"project" => project_slug}) do
     author = conn.assigns[:current_author]
 
     with {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
-         {:ok} <- authorize_user(author, project) do
+         {:ok} <- Oli.Authoring.Editing.Utils.authorize_user(author, project) do
       activities = Resources.get_report_activities(project.id)
 
       publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
@@ -120,5 +121,12 @@ defmodule OliWeb.Api.ResourceController do
     conn
     |> send_resp(code, reason)
     |> halt()
+  end
+
+  defp trap_nil(result) do
+    case result do
+      nil -> {:error, {:not_found}}
+      _ -> {:ok, result}
+    end
   end
 end
