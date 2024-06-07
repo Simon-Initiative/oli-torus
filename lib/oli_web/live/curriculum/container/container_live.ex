@@ -255,6 +255,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
   def handle_event("validate-options", %{"revision" => revision_params}, socket) do
     %{options_modal_assigns: %{revision: revision} = modal_assigns} = socket.assigns
 
+    revision_params = ContainerLiveHelpers.decode_revision_params(revision_params)
+
     changeset =
       revision
       |> Resources.change_revision(revision_params)
