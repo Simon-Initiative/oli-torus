@@ -253,11 +253,13 @@ export const createSurvey = (
   children,
 });
 
-export const createReport = (ac: ActivityWithReportOption): ReportContent => ({
+export const createReport = (ac: ActivityWithReportOption,
+  children: Immutable.List<ResourceContent> = Immutable.List(),
+): ReportContent => ({
   type: 'report',
   id: guid(),
   title: undefined,
-  children: [],
+  children: children,
   activityId: ac.id,
   reportType: ac.type === 'oli_likert' ? 'likert_bar' : undefined,
 });
@@ -347,7 +349,7 @@ export interface ReportContent {
   type: 'report';
   id: string;
   title: string | undefined;
-  children: [];
+  children: Immutable.List<ResourceContent>;
   activityId: string;
   reportType?: string;
 }
