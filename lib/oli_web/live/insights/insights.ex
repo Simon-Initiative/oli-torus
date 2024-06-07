@@ -1,7 +1,8 @@
 defmodule OliWeb.Insights do
+  use OliWeb, :live_view
+
   alias OliWeb.Common.MultiSelectOptions
   alias Oli.Delivery.Sections
-  use OliWeb, :live_view
   alias OliWeb.Common.MultiSelect
   alias OliWeb.Common.MultiSelectOptions.SelectOption
   alias Oli.{Accounts, Publishing}
@@ -470,7 +471,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_page, socket) do
     by_page_rows =
-      get_by_page_row(socket, :by_page)
+      get_rows_by(socket, :by_page)
 
     active_rows =
       apply_filter_sort(
@@ -486,7 +487,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_objective, socket) do
     by_objective_rows =
-      get_by_page_row(socket, :by_objective)
+      get_rows_by(socket, :by_objective)
       |> arrange_rows_into_objective_hierarchy()
 
     active_rows =
@@ -503,7 +504,7 @@ defmodule OliWeb.Insights do
 
   def handle_info(:init_by_activity, socket) do
     by_activity_rows =
-      get_by_page_row(socket, :by_activity)
+      get_rows_by(socket, :by_activity)
 
     active_rows =
       apply_filter_sort(
@@ -517,7 +518,7 @@ defmodule OliWeb.Insights do
     {:noreply, assign(socket, by_activity_rows: by_activity_rows, active_rows: active_rows)}
   end
 
-  defp get_by_page_row(socket, :by_activity) do
+  defp get_rows_by(socket, :by_activity) do
     if socket.assigns.is_product do
       section_by_product_ids =
         Oli.Publishing.DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
@@ -534,7 +535,7 @@ defmodule OliWeb.Insights do
     end
   end
 
-  defp get_by_page_row(socket, :by_objective) do
+  defp get_rows_by(socket, :by_objective) do
     if socket.assigns.is_product do
       section_by_product_ids =
         Oli.Publishing.DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
@@ -551,7 +552,7 @@ defmodule OliWeb.Insights do
     end
   end
 
-  defp get_by_page_row(socket, :by_page) do
+  defp get_rows_by(socket, :by_page) do
     if socket.assigns.is_product do
       section_by_product_ids =
         Oli.Publishing.DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
@@ -562,7 +563,7 @@ defmodule OliWeb.Insights do
       )
     else
       Oli.Analytics.ByPage.query_against_project_slug(
-        socket.assigns.project,
+        socket.assigns.project.slug,
         socket.assigns.section_ids
       )
     end
