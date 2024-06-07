@@ -253,7 +253,8 @@ export const createSurvey = (
   children,
 });
 
-export const createReport = (ac: ActivityWithReportOption,
+export const createReport = (
+  ac: ActivityWithReportOption,
   children: Immutable.List<ResourceContent> = Immutable.List(),
 ): ReportContent => ({
   type: 'report',
