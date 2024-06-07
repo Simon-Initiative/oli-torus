@@ -1287,12 +1287,13 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       refute has_element?(lcd, "video[data-filename='b.mp4']")
     end
 
-    test "renders no intro content if the revision is a not a container", %{
-      conn: conn,
-      project: project,
-      page_revision: revision,
-      project_hierarchy: project_hierarchy
-    } do
+    test "renders the intro content if the revision is a page (practice, graded, exploration, etc)",
+         %{
+           conn: conn,
+           project: project,
+           page_revision: revision,
+           project_hierarchy: project_hierarchy
+         } do
       form =
         revision
         |> Oli.Resources.change_revision()
@@ -1310,7 +1311,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
           form: form
         })
 
-      refute has_element?(
+      assert has_element?(
                lcd,
                "label",
                "Introduction content"
