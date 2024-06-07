@@ -352,6 +352,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   The title is used to identify this <%= resource_type_label(@revision) %>.
                 </small>
               </div>
+              <.intro_content_input form={@form} target={@myself} />
               <div class="form-group">
                 <label for="grading_type">Grading Type</label>
                 <.input
@@ -524,33 +525,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               The title is used to identify this <%= resource_type_label(@revision) %>.
             </small>
           </div>
-          <div class="form-group">
-            <label for="introduction_content">Introduction content</label>
-            <.input type="hidden" name="revision[intro_content]" field={@form[:intro_content] || %{}} />
-            <div class="form-control overflow-hidden truncate-form-control min-h-[34px]">
-              <div :if={fetch_field(@form.source, :intro_content) not in [nil, "", %{}]}>
-                <%= Phoenix.HTML.raw(
-                  Oli.Rendering.Content.render(
-                    %Oli.Rendering.Context{},
-                    fetch_field(@form.source, :intro_content)[
-                      "children"
-                    ],
-                    Oli.Rendering.Content.Html
-                  )
-                ) %>
-              </div>
-            </div>
-
-            <.button
-              phx-click="change_step"
-              phx-target={@myself}
-              phx-value-target_step="intro_content"
-              type="button"
-              class="btn btn-primary mt-2"
-            >
-              Edit
-            </.button>
-          </div>
+          <.intro_content_input form={@form} target={@myself} />
           <div class="flex gap-10 justify-center">
             <.poster_image_selection
               target={@myself}
@@ -711,7 +686,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   attr :intro_video, :string
   attr :target, :map
 
-  def intro_video_selection(%{intro_video: nil} = assigns) do
+  def intro_video_selection(%{intro_video: url} = assigns) when url in [nil, ""] do
     ~H"""
     <div class="form-group flex flex-col gap-2">
       <label>Intro video</label>
@@ -793,6 +768,41 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       >
         Select
       </button>
+    </div>
+    """
+  end
+
+  attr :form, :map
+  attr :target, :map
+
+  def intro_content_input(assigns) do
+    ~H"""
+    <div class="form-group">
+      <label for="introduction_content">Introduction content</label>
+      <.input type="hidden" name="revision[intro_content]" field={@form[:intro_content] || %{}} />
+      <div class="form-control overflow-hidden truncate-form-control min-h-[34px]">
+        <div :if={fetch_field(@form.source, :intro_content) not in [nil, "", %{}]}>
+          <%= Phoenix.HTML.raw(
+            Oli.Rendering.Content.render(
+              %Oli.Rendering.Context{},
+              fetch_field(@form.source, :intro_content)[
+                "children"
+              ],
+              Oli.Rendering.Content.Html
+            )
+          ) %>
+        </div>
+      </div>
+
+      <.button
+        phx-click="change_step"
+        phx-target={@target}
+        phx-value-target_step="intro_content"
+        type="button"
+        class="btn btn-primary mt-2"
+      >
+        Edit
+      </.button>
     </div>
     """
   end
