@@ -728,7 +728,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 max-w-[720px] w-full pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -736,7 +736,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+          <div id="eventIntercept" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
             <div class="flex w-full justify-center">
               <button
@@ -797,7 +797,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 max-w-[720px] w-full pt-20 pb-10 mx-6 flex-col justify-start items-stretch gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -821,7 +821,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             <div
               :if={!@show_loader?}
               id="raw_html"
-              class="content opacity-0"
+              class="content opacity-0 w-full"
               phx-update="ignore"
               role="page content"
             >
@@ -855,7 +855,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <.password_attempt_modal />
 
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
-      <div class="flex-1 max-w-[720px] pt-20 pb-10 mx-6 flex-col justify-start items-center inline-flex">
+      <div class="flex-1 max-w-[720px] w-full pt-20 pb-10 mx-6 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}
           ctx={@ctx}

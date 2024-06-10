@@ -99,7 +99,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             objectives={@objectives}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" phx-update="ignore" class="content" role="page_content">
+          <div id="eventIntercept" phx-update="ignore" class="content w-full" role="page_content">
             <%= raw(@html) %>
           </div>
           <.link
