@@ -313,7 +313,7 @@ defmodule OliWeb.Components.Delivery.Students do
             <.link navigate={@navigation_data.request_path} role="back button">
               <div class="flex gap-2 items-center">
                 <Icons.left_chevron_blue />
-                <div class="text-zinc-700 text-sm font-semibold tracking-tight">
+                <div class="text-zinc-700 text-sm font-semibold tracking-tight dark:text-white">
                   Back to <%= String.capitalize(
                     get_container_type(@navigation_data.container_filter_by)
                   ) %>
@@ -333,7 +333,7 @@ defmodule OliWeb.Components.Delivery.Students do
               </button>
             </div>
             <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
-              <div class="self-stretch text-zinc-700 text-xl font-bold leading-none tracking-tight">
+              <div class="self-stretch text-zinc-700 text-xl font-bold leading-none tracking-tight dark:text-white">
                 <%= @title %>
               </div>
             </div>
@@ -356,7 +356,7 @@ defmodule OliWeb.Components.Delivery.Students do
                     class: "form-check-input",
                     checked: @navigation_data.navigation_criteria == :by_filtered
                   ) %>
-                  <div class="w-full text-zinc-900 text-xs font-normal font-['Open Sans'] leading-none">
+                  <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
                     Navigate within <%= @navigation_data.filtered_count %> filtered <%= get_container_type(
                       @navigation_data.container_filter_by
                     ) %> <%= get_card_type(@navigation_data.filter_criteria_card) %>
@@ -367,7 +367,7 @@ defmodule OliWeb.Components.Delivery.Students do
                     class: "form-check-input",
                     checked: @navigation_data.navigation_criteria == :by_all
                   ) %>
-                  <div class="w-full text-zinc-900 text-xs font-normal font-['Open Sans'] leading-none">
+                  <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
                     Navigate within ALL <%= get_container_type(@navigation_data.container_filter_by) %>
                   </div>
                 <% end %>
