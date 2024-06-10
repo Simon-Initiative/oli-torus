@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
   alias Lti_1p3.Tool.ContextRoles
 
   @default_params %{
@@ -33,13 +34,29 @@ defmodule OliWeb.Components.Delivery.Students do
           section: section,
           ctx: ctx,
           students: students,
-          dropdown_options: dropdown_options
+          dropdown_options: dropdown_options,
+          navigation_data: navigation_data
         } = assigns,
         socket
       ) do
     {total_count, rows} = apply_filters(students, params)
 
     {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
+
+    {previous_id, next_id} =
+      case Map.get(navigation_data, :containers) do
+        nil ->
+          {nil, nil}
+
+        _ ->
+          filtered_containers =
+            filter_containers_by_option(navigation_data)
+
+          get_navigation_ids(
+            filtered_containers,
+            navigation_data.current_container_id
+          )
+      end
 
     table_model =
       Map.merge(table_model, %{
@@ -93,7 +110,10 @@ defmodule OliWeb.Components.Delivery.Students do
        inviter: if(is_nil(ctx.author), do: "user", else: "author"),
        current_user: ctx.user,
        current_author: ctx.author,
-       card_props: card_props
+       card_props: card_props,
+       previous_id: previous_id,
+       next_id: next_id,
+       navigation_data: navigation_data
      )}
   end
 
@@ -247,6 +267,9 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:inviter, :string, required: false)
   attr(:myself, :string, required: false)
   attr(:card_props, :list)
+  attr(:previous_id, :integer)
+  attr(:next_id, :integer)
+  attr(:navigation_data, :map, required: true)
 
   def render(assigns) do
     ~H"""
@@ -284,6 +307,75 @@ defmodule OliWeb.Components.Delivery.Students do
           myself={@myself}
         />
       </.live_component>
+      <%= unless is_nil(Map.get(@navigation_data, :containers)) do %>
+        <div class="flex flex-col mb-8">
+          <div class="flex mt-4 mb-2">
+            <.link navigate={@navigation_data.request_path} role="back button">
+              <div class="flex gap-2 items-center">
+                <Icons.left_chevron_blue />
+                <div class="text-zinc-700 text-sm font-semibold tracking-tight">
+                  Back to <%= String.capitalize(
+                    get_container_type(@navigation_data.container_filter_by)
+                  ) %>
+                </div>
+              </div>
+            </.link>
+          </div>
+          <div class="flex flex-row justify-center items-center">
+            <div class="w-28 py-2 rounded-md justify-center items-center gap-2 inline-flex">
+              <button
+                disabled={is_nil(@previous_id)}
+                phx-click="change_navigation"
+                value={@previous_id}
+                phx-target={@myself}
+              >
+                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#a3a3a3", else: "#468AEF"} />
+              </button>
+            </div>
+            <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
+              <div class="self-stretch text-zinc-700 text-xl font-bold leading-none tracking-tight">
+                <%= @title %>
+              </div>
+            </div>
+            <div class="w-auto py-2 flex rounded-md justify-center items-center gap-2 inline-flex">
+              <button
+                disabled={is_nil(@next_id)}
+                phx-click="change_navigation"
+                value={@next_id}
+                phx-target={@myself}
+              >
+                <Icons.next_arrow color={if is_nil(@next_id), do: "#a3a3a3", else: "#468AEF"} />
+              </button>
+            </div>
+          </div>
+          <form phx-change="select_option" phx-target={@myself} id="container_option">
+            <div class="flex justify-center items-center">
+              <div class="flex flex-col items-start gap-y-2 pl-32">
+                <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
+                  <%= radio_button(:container, :option, :by_filtered,
+                    class: "form-check-input",
+                    checked: @navigation_data.navigation_criteria == :by_filtered
+                  ) %>
+                  <div class="w-full text-zinc-900 text-xs font-normal font-['Open Sans'] leading-none">
+                    Navigate within <%= @navigation_data.filtered_count %> filtered <%= get_container_type(
+                      @navigation_data.container_filter_by
+                    ) %> <%= get_card_type(@navigation_data.filter_criteria_card) %>
+                  </div>
+                <% end %>
+                <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
+                  <%= radio_button(:container, :option, :by_all,
+                    class: "form-check-input",
+                    checked: @navigation_data.navigation_criteria == :by_all
+                  ) %>
+                  <div class="w-full text-zinc-900 text-xs font-normal font-['Open Sans'] leading-none">
+                    Navigate within ALL <%= get_container_type(@navigation_data.container_filter_by) %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </form>
+        </div>
+      <% end %>
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
@@ -705,6 +797,67 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
+  def handle_event(
+        "select_option",
+        %{"_target" => _, "container" => %{"option" => "by_filtered"}},
+        socket
+      ) do
+    %{
+      navigation_data:
+        %{containers: containers, current_container_id: current_container_id} = navigation_data
+    } = socket.assigns
+
+    filtered_containers = Enum.filter(containers, & &1.was_filtered)
+
+    exist =
+      Enum.any?(filtered_containers, fn container ->
+        container.id == current_container_id
+      end)
+
+    navigation_data =
+      if exist,
+        do: Map.merge(navigation_data, %{navigation_criteria: :by_filtered}),
+        else:
+          Map.merge(navigation_data, %{
+            navigation_criteria: :by_filtered,
+            current_container_id: Enum.at(filtered_containers, 0).id
+          })
+
+    send(self(), {:update_navigation_data_to_students, navigation_data})
+
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "select_option",
+        %{"_target" => _, "container" => %{"option" => "by_all"}},
+        socket
+      ) do
+    %{navigation_data: navigation_data} = socket.assigns
+
+    navigation_data =
+      Map.merge(navigation_data, %{
+        navigation_criteria: :by_all
+      })
+
+    send(self(), {:update_navigation_data_to_students, navigation_data})
+
+    {:noreply, socket}
+  end
+
+  def handle_event("change_navigation", %{"value" => value}, socket) do
+    %{navigation_data: navigation_data} = socket.assigns
+
+    navigation_data =
+      Map.merge(navigation_data, %{
+        current_container_id: String.to_integer(value)
+      })
+
+    send(self(), {:update_navigation_data_to_students, navigation_data})
+
+    {:noreply, socket}
+  end
+
   def decode_params(params) do
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
@@ -812,5 +965,51 @@ defmodule OliWeb.Components.Delivery.Students do
 
     student.enrollment_status == filter_by and
       student.user_role_id == student_role_id
+  end
+
+  defp get_navigation_ids(
+         containers_list,
+         current_container_id
+       ) do
+    current_index =
+      Enum.find_index(containers_list, fn container ->
+        container.id == current_container_id
+      end)
+
+    previous_id =
+      if current_index > 0, do: Enum.at(containers_list, current_index - 1).id, else: nil
+
+    next_id =
+      if current_index < length(containers_list) - 1,
+        do: Enum.at(containers_list, current_index + 1).id,
+        else: nil
+
+    {previous_id, next_id}
+  end
+
+  defp filter_containers_by_option(navigation_data) do
+    case navigation_data.navigation_criteria do
+      :by_filtered ->
+        Enum.filter(navigation_data.containers, fn container -> container.was_filtered end)
+
+      :by_all ->
+        navigation_data.containers
+    end
+  end
+
+  defp get_container_type(container_filter_by) do
+    case container_filter_by do
+      :units -> "units"
+      :modules -> "modules"
+      _ -> ""
+    end
+  end
+
+  defp get_card_type(filter_criteria_card) do
+    case filter_criteria_card do
+      :zero_student_progress -> "(Zero Student Progress)"
+      :high_progress_low_proficiency -> "(High Progress, Low Proficiency)"
+      _ -> ""
+    end
   end
 end
