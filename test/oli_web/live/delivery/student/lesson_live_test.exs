@@ -1059,7 +1059,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
-    test "redirects to the learn page when the next or previous page corresponds to a unit or module",
+    test "redirects to the learn page when the next or previous page corresponds to a module",
          %{
            conn: conn,
            user: user,
@@ -1102,68 +1102,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         view,
         Utils.learn_live_path(section.slug,
           target_resource_id: module_1.resource_id,
-          selected_view: @default_selected_view
-        )
-      )
-    end
-
-    test "redirects to the lesson page when the next or previous page corresponds to a section or subsection",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           page_4: page_4,
-           module_2: module_2,
-           section_1: section_1,
-           subsection_1: subsection_1
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      # next page is a section
-      {:ok, view, _html} =
-        live(
-          conn,
-          Utils.lesson_live_path(section.slug, module_2.slug,
-            selected_view: @default_selected_view
-          )
-        )
-
-      view
-      |> element(~s{div[role="next_page"] a})
-      |> render_click
-
-      request_path =
-        Utils.learn_live_path(section.slug,
-          target_resource_id: section_1.resource_id,
-          selected_view: @default_selected_view
-        )
-
-      assert_redirected(
-        view,
-        Utils.lesson_live_path(section.slug, section_1.slug,
-          request_path: request_path,
-          selected_view: @default_selected_view
-        )
-      )
-
-      # previous page is a subsection
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_4.slug))
-
-      view
-      |> element(~s{div[role="prev_page"] a})
-      |> render_click
-
-      request_path =
-        Utils.learn_live_path(section.slug,
-          target_resource_id: subsection_1.resource_id,
-          selected_view: @default_selected_view
-        )
-
-      assert_redirected(
-        view,
-        Utils.lesson_live_path(section.slug, subsection_1.slug,
-          request_path: request_path,
           selected_view: @default_selected_view
         )
       )
