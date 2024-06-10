@@ -156,12 +156,16 @@ defmodule OliWeb.Insights do
     </div>
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">
-        <button {is_disabled(@selected, :by_activity)} class="btn btn-primary" phx-click="by-activity">
+        <button
+          {is_disabled(@selected, :by_activity)}
+          class="btn btn-primary"
+          phx-click="filter_by_activity"
+        >
           By Activity
         </button>
       </li>
       <li class="nav-item my-2 mr-2">
-        <button {is_disabled(@selected, :by_page)} class="btn btn-primary" phx-click="by-page">
+        <button {is_disabled(@selected, :by_page)} class="btn btn-primary" phx-click="filter_by_page">
           <%= if is_loading?(assigns) and @selected == :by_page do %>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <% end %>
@@ -173,7 +177,7 @@ defmodule OliWeb.Insights do
         <button
           {is_disabled(@selected, :by_objective)}
           class="btn btn-primary"
-          phx-click="by-objective"
+          phx-click="filter_by_objective"
         >
           <%= if is_loading?(assigns) and @selected == :by_objective do %>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -273,54 +277,13 @@ defmodule OliWeb.Insights do
     rows |> Enum.filter(&String.match?(&1.slice.title, ~r/#{String.trim(query)}/i))
   end
 
-  # data splits
-  def handle_event("by-activity", _event, socket) do
-    active_rows =
-      apply_filter_sort(
-        :by_activity,
-        socket.assigns.by_activity_rows,
-        socket.assigns.query,
-        socket.assigns.sort_by,
-        socket.assigns.sort_order
-      )
+  def handle_event("filter_" <> filter_criteria, _event, socket) do
+    selected = String.to_existing_atom(filter_criteria)
 
-    {:noreply, assign(socket, selected: :by_activity, active_rows: active_rows)}
-  end
+    # do the query and assign the results in an async way
+    filter_type(selected)
 
-  def handle_event("by-page", _event, socket) do
-    active_rows =
-      if is_nil(socket.assigns.by_page_rows) do
-        send(self(), :init_by_page)
-        nil
-      else
-        apply_filter_sort(
-          :by_page,
-          socket.assigns.by_page_rows,
-          socket.assigns.query,
-          socket.assigns.sort_by,
-          socket.assigns.sort_order
-        )
-      end
-
-    {:noreply, assign(socket, selected: :by_page, active_rows: active_rows)}
-  end
-
-  def handle_event("by-objective", _event, socket) do
-    active_rows =
-      if is_nil(socket.assigns.by_objective_rows) do
-        send(self(), :init_by_objective)
-        nil
-      else
-        apply_filter_sort(
-          :by_objective,
-          socket.assigns.by_objective_rows,
-          socket.assigns.query,
-          socket.assigns.sort_by,
-          socket.assigns.sort_order
-        )
-      end
-
-    {:noreply, assign(socket, selected: :by_objective, active_rows: active_rows)}
+    {:noreply, assign(socket, selected: selected, active_rows: nil)}
   end
 
   # search
