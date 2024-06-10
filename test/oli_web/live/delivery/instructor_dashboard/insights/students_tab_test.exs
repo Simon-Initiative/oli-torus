@@ -640,6 +640,120 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert has_element?(view, "table tr td div a", user_4.family_name)
       assert has_element?(view, "table tr td div a", user_1.family_name)
     end
+
+    test "navigation between containers works correctly", %{conn: conn, instructor: instructor} do
+      %{
+        section: section,
+        unit1_container: unit1_container,
+        unit2_container: unit2_container
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/content"
+        )
+
+      ## Click on Unit 2 container
+      element(
+        view,
+        "a[href=\"/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit2_container.resource.id}\"]"
+      )
+      |> render_click()
+
+      ## Check that Unit 2 container title is displayed
+      assert has_element?(view, "div", unit2_container.revision.title)
+      assert has_element?(view, "div", "Navigate within 2 filtered units")
+      assert has_element?(view, "div", "Navigate within ALL units")
+
+      ## Click to navigate to Unit 1 container
+      element(
+        view,
+        "button[phx-click=\"change_navigation\"][value=\"#{unit1_container.resource.id}\"]"
+      )
+      |> render_click()
+
+      ## Check that Unit 1 container title is displayed
+      assert has_element?(view, "div", unit1_container.revision.title)
+
+      ## Click to navigate to ALL units
+      element(
+        view,
+        "form[phx-change=\"select_option\"]"
+      )
+      |> render_change(%{
+        "_target" => ["container", "option"],
+        "container" => %{"option" => "by_all"}
+      })
+
+      ## Check again that Unit 1 container title is displayed
+      assert has_element?(view, "div", unit1_container.revision.title)
+    end
+
+    test "button to back to units/modules works correctly", %{conn: conn, instructor: instructor} do
+      %{
+        section: section,
+        mod1_pages: mod1_pages,
+        unit2_container: unit2_container
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_2.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_3.published_resource.resource_id, user_1.id, 1)
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/instructor_dashboard/insights/content"
+        )
+
+      ## Filtering by zero student progress card
+      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+
+      ## Click on Unit 2 container
+      element(
+        view,
+        "a[href=\"/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit2_container.resource.id}\"]"
+      )
+      |> render_click()
+
+      ## Check that Unit 2 container title is displayed
+      element(view, "h4", "Students Enrolled in #{unit2_container.revision.title}")
+
+      ## Click on back to units/modules button
+      element(view, ~s{a[role="back button"]}) |> render_click()
+
+      params = %{
+        offset: 0,
+        limit: 20,
+        sort_by: :numbering_index,
+        sort_order: :asc,
+        container_filter_by: :units,
+        selected_card_value: :zero_student_progress
+      }
+
+      ## Check that the page is back to the units/modules view
+      assert_redirected(
+        view,
+        ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{params}"
+      )
+    end
   end
 
   describe "page size change" do
