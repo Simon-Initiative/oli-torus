@@ -534,6 +534,139 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       assert unit_for_tr_1 =~ "Unit 1"
       assert unit_for_tr_2 =~ "Unit 2"
     end
+
+    test "cards to filter works correctly", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_1.id,
+        1,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        user_1.id,
+        1,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        user_1.id,
+        1,
+        page_3.revision
+      )
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      [unit_for_tr_1, unit_for_tr_2] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert unit_for_tr_1 =~ "Unit 1"
+      assert unit_for_tr_2 =~ "Unit 2"
+
+      ## Filtering by zero student progress card
+      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+
+      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+      assert has_element?(view, "table tr td div a", unit_for_tr_2)
+
+      ## Filtering by High Progress, Low Proficiency card
+      element(view, "div[phx-value-selected=\"high_progress_low_proficiency\"]") |> render_click()
+      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+      refute has_element?(view, "table tr td div a", unit_for_tr_2)
+    end
+
+    test "cards to filter works correctly combined with input search", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      %{
+        section: section,
+        mod1_pages: mod1_pages
+      } = Seeder.base_project_with_larger_hierarchy()
+
+      [page_1, page_2, page_3] = mod1_pages
+      user_1 = insert(:user, %{given_name: "Diego", family_name: "Forlán"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      set_progress(
+        section.id,
+        page_1.published_resource.resource_id,
+        user_1.id,
+        1,
+        page_1.revision
+      )
+
+      set_progress(
+        section.id,
+        page_2.published_resource.resource_id,
+        user_1.id,
+        1,
+        page_2.revision
+      )
+
+      set_progress(
+        section.id,
+        page_3.published_resource.resource_id,
+        user_1.id,
+        1,
+        page_3.revision
+      )
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      [unit_for_tr_1, unit_for_tr_2] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert unit_for_tr_1 =~ "Unit 1"
+      assert unit_for_tr_2 =~ "Unit 2"
+
+      ## Filtering by zero student progress card
+      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+
+      assert has_element?(view, "table tr td div a", unit_for_tr_2)
+      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+
+      ## Search for "Unit" string
+      view
+      |> element("form[phx-change=\"search_container\"]")
+      |> render_change(%{container_name: "Unit"})
+
+      assert has_element?(view, "table tr td div a", unit_for_tr_2)
+      refute has_element?(view, "table tr td div a", unit_for_tr_1)
+    end
   end
 
   defp set_progress(section_id, resource_id, user_id, progress, revision) do

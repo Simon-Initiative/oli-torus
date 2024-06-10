@@ -4,14 +4,13 @@ defmodule OliWeb.Components.Delivery.Students do
 
   alias Phoenix.LiveView.JS
 
-  alias Oli.Accounts.Author
-  alias Oli.Accounts.User
-  alias OliWeb.Common.InstructorDashboardPagedTable
-  alias OliWeb.Common.Params
-  alias OliWeb.Common.SearchInput
-  alias OliWeb.Common.Utils
+  alias Oli.Accounts.{Author, User}
+  alias Oli.Delivery.Metrics
+  alias OliWeb.Common.{SearchInput, Params, Utils}
+  alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias Lti_1p3.Tool.ContextRoles
 
   @default_params %{
     offset: 0,
@@ -23,7 +22,9 @@ defmodule OliWeb.Components.Delivery.Students do
     sort_by: :name,
     text_search: nil,
     filter_by: :enrolled,
-    payment_status: nil
+    payment_status: nil,
+    selected_card_value: nil,
+    container_filter_by: :students
   }
 
   def update(
@@ -48,6 +49,30 @@ defmodule OliWeb.Components.Delivery.Students do
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
       })
 
+    selected_card_value = Map.get(assigns.params, :selected_card_value, nil)
+    students_count = students_count(students, params.filter_by)
+
+    card_props = [
+      %{
+        title: "Low Progress",
+        count: Map.get(students_count, :low_progress),
+        is_selected: selected_card_value == :low_progress,
+        value: :low_progress
+      },
+      %{
+        title: "Low Proficiency",
+        count: Map.get(students_count, :low_proficiency),
+        is_selected: selected_card_value == :low_proficiency,
+        value: :low_proficiency
+      },
+      %{
+        title: "Zero interaction in a week",
+        count: Map.get(students_count, :zero_interaction_in_a_week),
+        is_selected: selected_card_value == :zero_interaction_in_a_week,
+        value: :zero_interaction_in_a_week
+      }
+    ]
+
     {:ok,
      assign(socket,
        id: assigns.id,
@@ -67,7 +92,8 @@ defmodule OliWeb.Components.Delivery.Students do
        add_enrollments_users_not_found: [],
        inviter: if(is_nil(ctx.author), do: "user", else: "author"),
        current_user: ctx.user,
-       current_author: ctx.author
+       current_author: ctx.author,
+       card_props: card_props
      )}
   end
 
@@ -76,6 +102,7 @@ defmodule OliWeb.Components.Delivery.Students do
       students
       |> maybe_filter_by_text(params.text_search)
       |> maybe_filter_by_option(params.filter_by)
+      |> maybe_filter_by_card(params.selected_card_value, params.filter_by)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -92,6 +119,30 @@ defmodule OliWeb.Components.Delivery.Students do
       )
     end)
   end
+
+  defp maybe_filter_by_card(students, :low_progress, filter_by) do
+    Enum.filter(students, fn student ->
+      Metrics.progress_range(student.progress) == "Low" ||
+        (is_nil(student.progress) and is_learner_selected(student, filter_by))
+    end)
+  end
+
+  defp maybe_filter_by_card(students, :low_proficiency, filter_by) do
+    Enum.filter(students, fn student ->
+      Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
+        (is_nil(student.overall_proficiency) and is_learner_selected(student, filter_by))
+    end)
+  end
+
+  defp maybe_filter_by_card(students, :zero_interaction_in_a_week, filter_by) do
+    Enum.filter(students, fn student ->
+      diff_days = Timex.Comparable.diff(DateTime.utc_now(), student.last_interaction, :days)
+
+      diff_days > 7 and is_learner_selected(student, filter_by)
+    end)
+  end
+
+  defp maybe_filter_by_card(students, _, _filter_by), do: students
 
   defp maybe_filter_by_option(students, dropdown_value) do
     case dropdown_value do
@@ -195,6 +246,7 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:current_author, :any, required: false)
   attr(:inviter, :string, required: false)
   attr(:myself, :string, required: false)
+  attr(:card_props, :list)
 
   def render(assigns) do
     ~H"""
@@ -235,7 +287,7 @@ defmodule OliWeb.Components.Delivery.Students do
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
-            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2"><%= @title %></h4>
+            <h4 class="torus-h4 !py-0 sm:mr-auto mb-2">Students Enrolled in <%= @title %></h4>
             <%= if @show_progress_csv_download do %>
               <a
                 class="self-end"
@@ -295,6 +347,18 @@ defmodule OliWeb.Components.Delivery.Students do
               />
             </form>
           </div>
+        </div>
+        <div class="flex flex-row mx-9 my-4 gap-x-4">
+          <%= for card <- @card_props do %>
+            <CardHighlights.render
+              title={card.title}
+              count={card.count}
+              is_selected={card.is_selected}
+              value={card.value}
+              on_click={JS.push("select_card", target: @myself)}
+              container_filter_by={@params.container_filter_by}
+            />
+          <% end %>
         </div>
 
         <InstructorDashboardPagedTable.render
@@ -450,6 +514,17 @@ defmodule OliWeb.Components.Delivery.Students do
       </fieldset>
     </div>
     """
+  end
+
+  def handle_event("select_card", %{"selected" => value}, socket) do
+    value =
+      if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
+        do: nil,
+        else: value
+
+    send(self(), {:selected_card_students, {value, socket.assigns.params.container_id}})
+
+    {:noreply, socket}
   end
 
   def handle_event("select_inviter", %{"inviter" => inviter}, socket) do
@@ -661,6 +736,20 @@ defmodule OliWeb.Components.Delivery.Students do
           "filter_by",
           [:enrolled, :suspended, :paid, :not_paid, :grace_period, :non_students],
           @default_params.filter_by
+        ),
+      selected_card_value:
+        Params.get_atom_param(
+          params,
+          "selected_card_value",
+          [:low_progress, :low_proficiency, :zero_interaction_in_a_week],
+          @default_params.selected_card_value
+        ),
+      container_filter_by:
+        Params.get_atom_param(
+          params,
+          "container_filter_by",
+          [:students],
+          @default_params.container_filter_by
         )
     }
   end
@@ -694,5 +783,34 @@ defmodule OliWeb.Components.Delivery.Students do
     |> MapSet.new()
     |> MapSet.union(MapSet.new(current_elements))
     |> MapSet.to_list()
+  end
+
+  defp students_count(students, filter_by) do
+    %{
+      low_progress:
+        Enum.count(students, fn student ->
+          (Metrics.progress_range(student.progress) == "Low" ||
+             is_nil(student.progress)) and is_learner_selected(student, filter_by)
+        end),
+      low_proficiency:
+        Enum.count(students, fn student ->
+          (Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
+             is_nil(student.overall_proficiency)) and is_learner_selected(student, filter_by)
+        end),
+      zero_interaction_in_a_week:
+        Enum.count(students, fn student ->
+          diff_days = Timex.Comparable.diff(DateTime.utc_now(), student.last_interaction, :days)
+
+          diff_days > 7 and is_learner_selected(student, filter_by)
+        end)
+    }
+  end
+
+  ## Determine if a learner is selected based on the filter_by value
+  defp is_learner_selected(student, filter_by) do
+    student_role_id = ContextRoles.get_role(:context_learner).id
+
+    student.enrollment_status == filter_by and
+      student.user_role_id == student_role_id
   end
 end

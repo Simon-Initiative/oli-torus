@@ -746,6 +746,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
+  def handle_info(
+        {:selected_card_containers, value},
+        socket
+      ) do
+    params = Map.merge(socket.assigns.params, %{"selected_card_value" => value})
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{params}"
+     )}
+  end
+
+  def handle_info(
+        {:selected_card_students, {value, container_id}},
+        socket
+      ) do
+    params =
+      Map.merge(socket.assigns.params, %{
+        "selected_card_value" => value,
+        "container_id" => container_id
+      })
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{params}"
+     )}
+  end
+
   @impl Phoenix.LiveView
   def handle_info(_any, socket) do
     {:noreply, socket}
