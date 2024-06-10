@@ -1,23 +1,18 @@
 import { useEffect } from 'react';
 
 export function useKeyDown(
-  callback: () => void,
+  callback: (ctrlKey?: boolean, metaKey?: boolean, shiftKey?: boolean) => any,
   keyCodes: string[],
-  options: { ctrlKey?: boolean; shiftKey?: boolean; metaKey?: boolean } = {},
+  options: { ctrlKey?: boolean; shiftKey?: boolean } = {},
   dependencies: any = [],
 ): void {
   const handler = ({ metaKey, ctrlKey, shiftKey, code }: KeyboardEvent) => {
-    const { ctrlKey: ctrlRequired, shiftKey: shiftRequired, metaKey: metaRequired } = options;
+    const { ctrlKey: ctrlRequired } = options;
 
-    let ctrlMatch = ctrlRequired === undefined || ctrlKey === ctrlRequired;
-    const metaMatch = metaKey === metaRequired;
-    const shiftMatch = shiftKey === shiftRequired;
-
-    if (!ctrlMatch && metaKey && shiftRequired === undefined) {
-      ctrlMatch = metaKey === ctrlRequired;
-    }
-    if (((metaMatch && shiftMatch) || (ctrlMatch && !shiftKey)) && keyCodes.includes(code)) {
-      callback();
+    const ctrlMatch =
+      ctrlRequired === undefined || ctrlKey === ctrlRequired || metaKey === ctrlRequired;
+    if (ctrlMatch && keyCodes.includes(code)) {
+      callback(ctrlKey, metaKey, shiftKey);
     }
   };
 
