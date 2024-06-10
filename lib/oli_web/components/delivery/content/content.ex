@@ -34,6 +34,22 @@ defmodule OliWeb.Components.Delivery.Content do
 
     {total_count, column_name, rows} = apply_filters(containers, params)
 
+    containers_list = create_containers_list(containers, rows)
+
+    request_path =
+      ~p"/sections/#{assigns.section_slug}/instructor_dashboard/insights/content?#{params_without_nil_values(params)}"
+
+    navigation_data = %{
+      request_path: request_path,
+      containers: containers_list,
+      filter_criteria_card: params.selected_card_value,
+      container_filter_by: params.container_filter_by,
+      filtered_count: total_count,
+      navigation_criteria: :by_filtered
+    }
+
+    send(self(), {:set_navigation_data_to_students, navigation_data})
+
     {:ok, table_model} =
       ContentTableModel.new(
         rows,
@@ -465,5 +481,21 @@ defmodule OliWeb.Components.Delivery.Content do
             container.student_proficiency == "Low"
         end)
     }
+  end
+
+  defp params_without_nil_values(params) do
+    Enum.reject(params, fn {_k, v} -> is_nil(v) end)
+    |> Enum.into(%{})
+  end
+
+  defp create_containers_list(containers, rows) do
+    rows_ids = rows |> Enum.map(& &1.id) |> MapSet.new()
+
+    containers
+    |> Enum.map(fn container ->
+      container
+      |> Map.put(:was_filtered, MapSet.member?(rows_ids, container.id))
+      |> Map.drop([:progress, :student_proficiency, :numbering_index, :numbering_level])
+    end)
   end
 end
