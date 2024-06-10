@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.RecommendedActions
+  alias Oli.NavigationDataForStudentsTab
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias OliWeb.Components.Delivery.Students
@@ -13,13 +14,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
+    %{id: id} = socket.assigns.current_user
+    key = "navigation_data_for_user_#{id}"
+
+    navigation_data =
+      case NavigationDataForStudentsTab.get_data(key) do
+        {:ok, data} -> data
+        :error -> %{}
+      end
+
     ctx = SessionContext.init(socket, session)
-    {:ok, assign(socket, ctx: ctx)}
+    {:ok, assign(socket, ctx: ctx, navigation_data_for_students_tab: navigation_data)}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
     view = String.to_existing_atom(params["view"])
     params = Students.decode_params(params)
+
+    navigation_data =
+      Map.get(socket.assigns, :navigation_data_for_students_tab, %{})
+      |> Map.put(:current_container_id, params.container_id)
 
     socket =
       socket
@@ -30,6 +44,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
+      |> assign(navigation_data_for_students_tab: navigation_data)
 
     socket =
       if params.container_id do
@@ -356,26 +371,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
-  defp container_details_tab(section_slug, preview_mode, selected_container) do
-    [
-      %TabLink{
-        label: fn -> render_container_tab_detail(%{title: selected_container.title}) end,
-        path: path_for(:insights, :content, section_slug, preview_mode),
-        badge: nil,
-        active: true
-      }
-    ]
-  end
-
-  defp render_container_tab_detail(assigns) do
-    ~H"""
-    <div class="flex gap-2 items-center">
-      <i class="fa-solid fa-chevron-left" />
-      <span><%= @title %></span>
-    </div>
-    """
-  end
-
   defp overview_tabs(section_slug, preview_mode, active_tab) do
     [
       %TabLink{
@@ -455,6 +450,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         students={@users}
         dropdown_options={@dropdown_options}
+        navigation_data={@navigation_data_for_students_tab}
       />
     </div>
     """
@@ -519,10 +515,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
-    <InstructorDashboard.tabs tabs={
-      container_details_tab(@section_slug, @preview_mode, @selected_container)
-    } />
-
     <div class="container mx-auto">
       <.live_component
         id="container_details_table"
@@ -536,6 +528,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         students={@users}
         dropdown_options={@dropdown_options}
+        navigation_data={@navigation_data_for_students_tab}
       />
     </div>
     """
@@ -773,6 +766,32 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      push_patch(socket,
        to:
          ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{params}"
+     )}
+  end
+
+  def handle_info({:set_navigation_data_to_students, navigation_data}, socket) do
+    %{id: id} = socket.assigns.current_user
+    key = "navigation_data_for_user_#{id}"
+    NavigationDataForStudentsTab.set_data(key, navigation_data)
+
+    {:noreply,
+     socket
+     |> assign(navigation_data_for_students_tab: navigation_data)}
+  end
+
+  def handle_info({:update_navigation_data_to_students, navigation_data}, socket) do
+    %{params: params, section: section, current_user: %{id: id}} = socket.assigns
+    key = "navigation_data_for_user_#{id}"
+    NavigationDataForStudentsTab.set_data(key, navigation_data)
+
+    params =
+      Map.merge(params, %{"container_id" => navigation_data.current_container_id})
+
+    {:noreply,
+     socket
+     |> assign(navigation_data_for_students_tab: navigation_data)
+     |> push_patch(
+       to: ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{params}"
      )}
   end
 
