@@ -728,7 +728,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <div class="flex-1 max-w-[720px] w-full pt-20 pb-10 mx-6 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 max-w-[1040px] w-full pt-20 pb-10 px-[80px] flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -797,7 +797,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <div class="flex-1 max-w-[720px] w-full pt-20 pb-10 mx-6 flex-col justify-start items-stretch gap-10 inline-flex">
+        <div class="flex-1 max-w-[1040px] w-full pt-20 pb-10 px-[80px] flex-col justify-start items-stretch gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}

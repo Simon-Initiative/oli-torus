@@ -91,7 +91,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             </div>
           </div>
         </div>
-        <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="w-[880px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
