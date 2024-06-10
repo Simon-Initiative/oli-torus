@@ -349,14 +349,16 @@ defmodule OliWeb.Components.Delivery.Student do
   attr :duration_minutes, :integer
 
   def duration_in_minutes(assigns) do
+    assigns = Map.put(assigns, :duration_minutes, parse_minutes(assigns.duration_minutes))
+
     ~H"""
-    <div class="ml-auto items-center gap-1.5 flex">
+    <div :if={@duration_minutes} class="ml-auto items-center gap-1.5 flex">
       <div :if={@graded} class="w-[22px] h-[22px] opacity-60 flex items-center justify-center">
         <Icons.clock />
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
         <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
-          <%= parse_minutes(@duration_minutes) %>
+          <%= @duration_minutes %>
           <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
             min
           </span>
@@ -366,7 +368,7 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
-  defp parse_minutes(minutes) when minutes in ["", nil], do: "?"
+  defp parse_minutes(minutes) when minutes in ["", nil], do: nil
   defp parse_minutes(minutes), do: minutes
 
   attr :type, :atom, required: true
