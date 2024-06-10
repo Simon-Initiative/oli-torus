@@ -45,7 +45,7 @@ const UndoRedoToolbar: React.FC = () => {
       }
     },
     ['KeyZ'],
-    { ctrlKey: true, shiftKey: true },
+    { ctrlKey: true },
   );
   return (
     <>
