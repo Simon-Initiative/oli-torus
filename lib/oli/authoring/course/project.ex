@@ -24,6 +24,11 @@ defmodule Oli.Authoring.Course.Project do
     field(:latest_datashop_snapshot_timestamp, :utc_datetime)
     field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v1)
     field(:allow_transfer_payment_codes, :boolean, default: false)
+    field(:welcome_title, :string, default: "Welcome to the Course")
+
+    field(:encouraging_subtitle, :string,
+      default: "Dive Into Discovery. Begin Your Learning Adventure Now!"
+    )
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
     embeds_one(:attributes, ProjectAttributes, on_replace: :delete)
