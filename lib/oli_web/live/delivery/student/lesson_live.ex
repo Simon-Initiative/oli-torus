@@ -728,7 +728,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <div class="flex-1 max-w-[1040px] w-full pt-20 pb-10 px-[80px] flex-col justify-start items-center gap-10 inline-flex">
+        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -797,7 +797,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <div class="flex-1 max-w-[1040px] w-full pt-20 pb-10 px-[80px] flex-col justify-start items-stretch gap-10 inline-flex">
+        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-stretch gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -855,7 +855,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <.password_attempt_modal />
 
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
-      <div class="flex-1 max-w-[720px] w-full pt-20 pb-10 mx-6 flex-col justify-start items-center inline-flex">
+      <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center inline-flex">
         <.page_header
           page_context={@page_context}
           ctx={@ctx}
@@ -1081,7 +1081,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           Scored Activity
         </div>
       </div>
-      <div class="max-w-[720px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
+      <div class="max-w-[880px] w-full mx-auto opacity-90 dark:text-white text-sm font-normal leading-6">
         You can start or stop at any time, and your progress will be saved. When you submit your answers using the Submit button, it will count as an attempt. So make sure you have answered all the questions before submitting.
       </div>
     </div>
