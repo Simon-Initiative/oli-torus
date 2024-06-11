@@ -16,6 +16,7 @@ import ReviewModeNavigation from './components/ReviewModeNavigation';
 
 interface DeckLayoutHeaderProps {
   pageName?: string;
+  backUrl?: string;
   activityName?: string;
   showScore?: boolean;
   themeId?: string;
@@ -25,6 +26,7 @@ interface DeckLayoutHeaderProps {
 const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   pageName,
   activityName,
+  backUrl,
   showScore = false,
   themeId,
   userName,
@@ -44,7 +46,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const isPreviewMode = useSelector(selectPreviewMode);
   const isInstructor = useSelector(selectIsInstructor);
   const isReviewMode = useSelector(selectReviewMode);
-  const [backButtonUrl, setBackButtonUrl] = useState('');
+  const [backButtonUrl, setBackButtonUrl] = useState(backUrl);
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
 
   const projectSlug = useSelector(selectSectionSlug);
@@ -56,8 +58,12 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
       setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
       setBackButtonText('Back to Authoring');
     } else {
-      setBackButtonUrl(window.location.href.split('/adaptive_lesson')[0] + '/explorations');
-      setBackButtonText('Back to Explorations');
+      // if no backUrl is provided, then set it to the section root url
+      if (!backUrl) {
+        setBackButtonUrl(window.location.href.split('/adaptive_lesson')[0]);
+      }
+
+      setBackButtonText('Back');
     }
   }, [isPreviewMode]);
 
