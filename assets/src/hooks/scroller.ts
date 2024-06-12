@@ -104,10 +104,8 @@ export const Scroller = {
     });
 
     window.addEventListener('phx:pulse-target', (e: Event) => {
-      console.log('estoy en el handler correcto');
       const target = document.getElementById((e as CustomEvent).detail.target_id);
 
-      console.log((e as CustomEvent).detail.target_id);
       if (target) {
         target.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)1]');
       }
