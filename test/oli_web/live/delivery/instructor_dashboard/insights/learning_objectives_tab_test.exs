@@ -302,6 +302,39 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       # Select is disabled
       assert has_element?(view, ".torus-select[disabled]")
     end
+
+    test "filter by proficiency works correctly", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      revisions: revisions
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      ## Checks that all objectives are displayed
+      assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+
+      ## Set proficiency filter to Low
+      params = %{
+        selected_proficiency_ids: Jason.encode!([1])
+      }
+
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug, params))
+      ## Checks that there are no objectives displayed since none of them have proficiency Low
+      assert has_element?(view, "h6", "There are no objectives to show")
+
+      ## Click on Clear All Filters button
+      element(view, "button[phx-click=\"clear_all_filters\"]") |> render_click()
+
+      ## Checks that all objectives are displayed again
+      assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
+      assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
+    end
   end
 
   describe "page size change" do
