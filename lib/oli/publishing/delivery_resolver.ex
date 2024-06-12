@@ -263,6 +263,11 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
+  @doc """
+  Returns the revisions of a given list of section ids that are of the given resource type
+  and belong to the given project
+  """
+  @spec project_revisions_by_section_ids([integer()], String.t(), integer()) :: [Revision.t()]
   def project_revisions_by_section_ids(section_ids, project_slug, resource_type_id) do
     from(sr in SectionResource,
       join: s in Section,

@@ -164,7 +164,7 @@ defmodule OliWeb.Insights do
       <li class="nav-item my-2 mr-2 ">
         <div class="flex gap-10">
           <.live_component
-            id="multi_sections"
+            id="sections"
             module={MultiSelectInput}
             options={@sections}
             disabled={@sections == []}
@@ -173,7 +173,7 @@ defmodule OliWeb.Insights do
             uuid={@form_uuid_for_section}
           />
           <.live_component
-            id="multi_products"
+            id="products"
             module={MultiSelectInput}
             options={@products}
             disabled={@products == []}
