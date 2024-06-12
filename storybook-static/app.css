@@ -5117,10 +5117,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 56px;
 }
 
-.h-\[57px\] {
-  height: 57px;
-}
-
 .h-\[64px\] {
   height: 64px;
 }
@@ -5196,6 +5192,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[50px\] {
   min-height: 50px;
+}
+
+.min-h-\[57px\] {
+  min-height: 57px;
 }
 
 .min-h-\[5rem\] {
@@ -5571,6 +5571,10 @@ table.table-striped tbody tr:nth-child(even) {
 .min-w-max {
   min-width: -moz-max-content;
   min-width: max-content;
+}
+
+.max-w-\[240px\] {
+  max-width: 240px;
 }
 
 .max-w-\[300px\] {
