@@ -7,12 +7,13 @@ defmodule OliWeb.Insights do
   alias Oli.{Accounts, Publishing}
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Components.Project.AsyncExporter
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.SessionContext
 
-  def mount(_params, %{"project_slug" => project_slug} = session, socket) do
+  def mount(%{"project_id" => project_slug}, session, socket) do
     ctx = SessionContext.init(socket, session)
 
     by_activity_rows =
@@ -48,6 +49,8 @@ defmodule OliWeb.Insights do
 
     {:ok,
      assign(socket,
+       breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})],
+       active: :insights,
        ctx: ctx,
        is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
@@ -60,7 +63,6 @@ defmodule OliWeb.Insights do
        query: "",
        sort_by: "title",
        sort_order: :asc,
-       title: "Insights | " <> project.title,
        latest_publication: latest_publication,
        analytics_export_status: analytics_export_status,
        analytics_export_url: analytics_export_url,
