@@ -49,8 +49,6 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
   } = props;
   const alternativesContext = useAlternatives();
 
-  console.log('this is the content item');
-  console.log(contentItem);
   const [activeOption, setActiveOption] = useState(contentItem.children.first());
 
   const renderLoading = () => (
@@ -86,8 +84,6 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
           ? 'Manage Upgrade Options'
           : 'Manage Alternatives Options';
 
-      console.log(contentItem);
-      console.log(title);
       window.oliDispatch(
         modalActions.display(
           <SelectModal
