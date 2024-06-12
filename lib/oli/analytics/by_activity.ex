@@ -18,8 +18,9 @@ defmodule Oli.Analytics.ByActivity do
   defp get_base_query(project_slug, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_by_section_ids(
+        DeliveryResolver.project_revisions_by_section_ids(
           filtered_sections,
+          project_slug,
           ResourceType.id_for_activity()
         )
       else

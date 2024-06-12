@@ -21,7 +21,7 @@ defmodule OliWeb.Insights do
     project = Course.get_project_by_slug(project_slug)
 
     {sections, products} =
-      Sections.get_sections_by_base_project(project)
+      Sections.get_sections_containing_resources_of_given_project(project.id)
       |> Enum.reduce({[], []}, fn section, {sections, products} ->
         if section.type == :blueprint do
           {sections, [%Option{id: section.id, name: section.title} | products]}

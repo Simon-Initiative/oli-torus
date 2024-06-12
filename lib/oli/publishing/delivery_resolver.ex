@@ -263,7 +263,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
-  def revisions_by_section_ids(section_ids, resource_type_id) do
+  def project_revisions_by_section_ids(section_ids, project_slug, resource_type_id) do
     from(sr in SectionResource,
       join: s in Section,
       on: s.id == sr.section_id,
@@ -271,6 +271,9 @@ defmodule Oli.Publishing.DeliveryResolver do
       join: spp in SectionsProjectsPublications,
       on: s.id == spp.section_id,
       where: sr.project_id == spp.project_id,
+      join: p in Project,
+      on: p.id == spp.project_id,
+      where: p.slug == ^project_slug,
       join: pr in PublishedResource,
       on: pr.publication_id == spp.publication_id,
       where: pr.resource_id == sr.resource_id,

@@ -823,6 +823,23 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Gets all sections that have any resource that belongs to a given project
+  (The section could have been created using the given project as a base project,
+  or have been created from another project and then adding resources of the given one by remixing the course)
+  """
+  def get_sections_containing_resources_of_given_project(project_id) do
+    from(
+      s in Section,
+      join: spp in SectionsProjectsPublications,
+      on: s.id == spp.section_id,
+      where: spp.project_id == ^project_id and s.status == :active,
+      distinct: [s],
+      select: s
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Gets all sections that use a particular project when their 'end_date' attribute is not nil and is later than the current date.
 
   ## Examples
