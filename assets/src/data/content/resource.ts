@@ -209,15 +209,17 @@ export const createGroup = (
 
 export const createAlternatives = (
   alternatives_id: number,
-  strategy: AlternativesStrategy = 'user_section_preference',
+  strategy: AlternativesStrategy,
   children: Immutable.List<AlternativeContent> = Immutable.List(),
-): AlternativesContent => ({
+): AlternativesContent => {
+  console.log(strategy);
+   return {
   type: 'alternatives',
   id: guid(),
   children,
   strategy,
   alternatives_id,
-});
+}};
 
 export const createAlternative = (
   value: string,
@@ -281,7 +283,7 @@ export interface ActivityReference {
 
 export type GroupLayout = 'vertical' | 'deck';
 
-export type AlternativesStrategy = 'select_all' | 'user_section_preference';
+export type AlternativesStrategy = 'select_all' | 'user_section_preference' | 'upgrade_decision_point';
 
 export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
 
