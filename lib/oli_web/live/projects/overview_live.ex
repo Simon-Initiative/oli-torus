@@ -94,6 +94,14 @@ defmodule OliWeb.Projects.OverviewLive do
           </div>
           <.welcome_message_editor form={@form} project_slug={@project.slug} ctx={@ctx} />
           <div class="form-label-group mb-3">
+            <%= label(@form, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
+            <%= textarea(@form, :encouraging_subtitle,
+              class: "form-control",
+              placeholder: "Enter a subtitle to encourage students to begin the course...",
+              required: false
+            ) %>
+          </div>
+          <div class="form-label-group mb-3">
             <%= label(@form, :description, "Latest Publication", class: "control-label") %>
             <%= case @latest_published_publication do %>
               <% %{edition: edition, major: major, minor: minor} -> %>
