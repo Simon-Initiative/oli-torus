@@ -2074,16 +2074,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def card_badge(%{completed: true} = assigns) do
     ~H"""
+    <% parsed_minutes = parse_card_badge_minutes(@duration_minutes, :page) %>
+
     <div
       role="card badge"
       class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <Icons.check />
       <div
+        :if={parsed_minutes}
         id={"card_badge_details_#{@resource_id}"}
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
-        <%= parse_card_badge_minutes(@duration_minutes, :page) %>
+        <%= parsed_minutes %>
       </div>
     </div>
     """
@@ -2091,12 +2094,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def card_badge(assigns) do
     ~H"""
+    <% parsed_minutes = parse_card_badge_minutes(@duration_minutes, :page) %>
+
     <div
+      :if={parsed_minutes}
       role="card badge"
       class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
     >
       <div class="dark:text-white text-[13px] font-semibold pointer-events-none">
-        <%= parse_card_badge_minutes(@duration_minutes, :page) %>
+        <%= parsed_minutes %>
       </div>
     </div>
     """
@@ -2116,16 +2122,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
       when completed_pages_count < total_pages_count do
     ~H"""
+    <% parsed_minutes = parse_card_badge_minutes(@page_metrics.total_duration_minutes, :module) %>
     <div
       role="card badge"
       id={"in_progress_card_badge_#{@resource_id}"}
       class="ml-auto h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex"
     >
       <div class="dark:text-white text-[13px] font-semibold">
-        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_card_badge_minutes(
-          @page_metrics.total_duration_minutes,
-          :module
-        ) %>
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
+          if parsed_minutes, do: " · #{parsed_minutes}" %>
       </div>
     </div>
     """
@@ -2142,6 +2147,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       )
       when completed_pages_count == total_pages_count do
     ~H"""
+    <% parsed_minutes = parse_card_badge_minutes(@page_metrics.total_duration_minutes, :module) %>
+
     <div
       role="card badge"
       class="h-[26px] px-2 py-1 dark:bg-white/10 rounded-xl shadow justify-end items-center gap-1 inline-flex overflow-hidden"
@@ -2151,10 +2158,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"card_badge_details_#{@resource_id}"}
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
-        <%= parse_module_total_pages(@page_metrics.total_pages_count) %> · <%= parse_card_badge_minutes(
-          @page_metrics.total_duration_minutes,
-          :module
-        ) %>
+        <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
+          if parsed_minutes, do: " · #{parsed_minutes}" %>
       </div>
     </div>
     """
@@ -2795,5 +2800,5 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end
   end
 
-  defp parse_card_badge_minutes(_, _), do: "? min"
+  defp parse_card_badge_minutes(_, _), do: nil
 end

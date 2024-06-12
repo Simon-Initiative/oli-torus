@@ -1017,6 +1017,20 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def download(assigns) do
+    ~H"""
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M3.56934 14.9318V16.6791C3.56934 17.1425 3.75343 17.587 4.08111 17.9147C4.4088 18.2423 4.85324 18.4264 5.31666 18.4264H15.8006C16.264 18.4264 16.7084 18.2423 17.0361 17.9147C17.3638 17.587 17.5479 17.1425 17.5479 16.6791V14.9318M6.19032 9.68984L10.5586 14.0581M10.5586 14.0581L14.9269 9.68984M10.5586 14.0581V3.57422"
+        stroke="#5B8FF9"
+        stroke-width="1.74732"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   def visible(assigns) do
     ~H"""
     <svg

@@ -174,7 +174,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 8",
-        graded: true
+        graded: true,
+        duration_minutes: 10
       )
 
     page_9_revision =
@@ -851,7 +852,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    test "can see not completed card badge for intro videos, graded pages, practice pages and modules",
+    test "can see not completed card badge for intro videos, practice pages and modules",
          %{
            conn: conn,
            section: section,
@@ -877,13 +878,27 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                ~s{div[id="page_#{graded_page.resource_id}"] div[role="card badge"]},
-               "? min"
+               "10 min"
              )
 
       assert has_element?(
                view,
                ~s{div[id="module_#{module_1.resource_id}"] div[role="card badge"]},
                "2 pages · 25m"
+             )
+    end
+
+    test "can not see card badge for pages that have no duration time set",
+         %{
+           conn: conn,
+           section: section,
+           page_9: page_9
+         } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute has_element?(
+               view,
+               ~s{div[id="page_#{page_9.resource_id}"] div[role="card badge"]}
              )
     end
 

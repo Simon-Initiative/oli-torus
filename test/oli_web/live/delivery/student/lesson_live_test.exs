@@ -120,6 +120,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Exploration 1",
+        purpose: :application,
         content: %{
           "model" => [],
           "advancedDelivery" => true,
@@ -136,6 +137,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         graded: true,
         max_attempts: 5,
         title: "Graded Adaptive Page",
+        purpose: :foundation,
         content: %{
           "model" => [],
           "advancedDelivery" => true,
@@ -729,6 +731,120 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # Note that the student will then be redirected to the adaptive chromeless review path in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless
       # (tested in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest)
+    end
+
+    test "back button of an adaptive page (NOT an exploration one) points to the provided url param 'request_path'",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           graded_adaptive_page_revision: graded_adaptive_page_revision
+         } do
+      # the goal is to set the back button of the adaptive page to point to the provided request_path
+      # (that will match the page from where the user accesed the adaptive page)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # we need an active attempt to avoid being redirected to the prologue view
+      create_attempt(user, section, graded_adaptive_page_revision, %{lifecycle_state: :active})
+
+      request_path = "some_request_path"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            graded_adaptive_page_revision.slug,
+            request_path
+          )
+        )
+
+      assert view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{div[data-react-class="Components.Delivery"]})
+             |> Floki.attribute("data-react-props")
+             |> Jason.decode!()
+             |> Map.get("content")
+             |> Map.get("backUrl") ==
+               "some_request_path"
+    end
+
+    test "back button of an adaptive page (an exploration one) points to the provided url param 'request_path'",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           exploration_1: exploration_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # we need an active attempt to avoid being redirected to the prologue view
+      create_attempt(user, section, exploration_1, %{lifecycle_state: :active})
+
+      request_path = "some_other_request_path"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            exploration_1.slug,
+            request_path
+          )
+        )
+
+      assert view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{div[data-react-class="Components.Delivery"]})
+             |> Floki.attribute("data-react-props")
+             |> Jason.decode!()
+             |> Map.get("content")
+             |> Map.get("backUrl") ==
+               "some_other_request_path"
+    end
+
+    test "adaptive page does not have a backUrl key in it's content if no request_path is provided",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           exploration_1: exploration_1
+         } do
+      # if the react Component.Delivery does not recieve a backUrl key, then
+      # the back button will point to the root path of the section
+      # this logic is handled within the react component, so we can not test it here.
+      # (we can only test that the backUrl key is not present in the content)
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # we need an active attempt to avoid being redirected to the prologue view
+      create_attempt(user, section, exploration_1, %{lifecycle_state: :active})
+
+      request_path = nil
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            exploration_1.slug,
+            request_path
+          )
+        )
+
+      refute view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{div[data-react-class="Components.Delivery"]})
+             |> Floki.attribute("data-react-props")
+             |> Jason.decode!()
+             |> Map.get("content")
+             |> Map.get("backUrl")
     end
 
     test "does not render 'Review' link on attempt summary if instructor does not allow it", %{

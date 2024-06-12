@@ -168,7 +168,7 @@ export const VlabComponent: React.FC = () => {
               }
             : { id: input.id, inputType: input.inputType },
         value: (uiState.partState[input.partId]?.studentInput || [''])[0],
-        hasHints: uiState.partState[input.partId].hasMoreHints,
+        hasHints: !context.graded && uiState.partState[input.partId].hasMoreHints,
       },
     ]),
   );

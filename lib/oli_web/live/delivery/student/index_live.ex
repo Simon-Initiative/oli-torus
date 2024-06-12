@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   import OliWeb.Components.Delivery.Layouts
 
-  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections}
+  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
@@ -38,6 +38,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section.slug, page_ids)
+
+    combined_settings =
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Enum.map(
@@ -76,8 +79,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          ),
        last_open_and_unfinished_page: last_open_and_unfinished_page,
        nearest_upcoming_lesson: nearest_upcoming_lesson,
-       upcoming_assignments: upcoming_assignments,
-       latest_assignments: latest_assignments,
+       upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
+       latest_assignments: combine_settings(latest_assignments, combined_settings),
        containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
        intro_message: intro_message,
@@ -523,7 +526,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  # Completed page (graded or practice)
+  # Completed page
   defp lesson_details(%{completed: true} = assigns) do
     ~H"""
     <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
@@ -547,7 +550,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="flex px-2 py-0.5 bg-white/10 rounded-xl shadow tracking-tight gap-2 items-center align-center">
           <div role="count" class="pl-1 justify-start items-center gap-2.5 flex">
             <div class="dark:text-white text-xs font-semibold">
-              Attempt <%= "#{@lesson.attempts_count}/#{max_attempts(@lesson.max_attempts)}" %>
+              Attempt <%= "#{@lesson.attempts_count}/#{max_attempts(@lesson.settings.max_attempts)}" %>
             </div>
           </div>
         </div>
@@ -573,7 +576,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           </div>
         </div>
       <% end %>
-      <div class="justify-end items-end gap-2.5 flex ml-auto">
+      <div
+        :if={nil not in [@lesson.score, @lesson.out_of]}
+        class="justify-end items-end gap-2.5 flex ml-auto"
+      >
         <div class="text-green-700 dark:text-green-500 flex justify-end items-center gap-1">
           <div class="w-4 h-4 relative"><Icons.star /></div>
           <div role="score" class="text-sm font-semibold tracking-tight">
@@ -609,7 +615,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp completed_lesson?(%{graded: true} = assignment),
     do:
-      assignment.attempts_count == assignment.max_attempts and
+      assignment.attempts_count == assignment.settings.max_attempts and
         assignment.last_attempt_state != :active
 
   defp completed_lesson?(practice), do: practice.progress == 1.0
@@ -654,7 +660,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     """
   end
 
-  defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
+  defp format_date(nil, _context, _format), do: "Not yet scheduled"
 
   defp format_date(due_date, context, format) do
     FormatDateTime.to_formatted_datetime(due_date, context, format)
@@ -721,6 +727,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     Sections.get_ordered_containers_per_page(section_slug, page_ids)
     |> Enum.reduce(%{}, fn elem, acc ->
       Map.put(acc, elem[:page_id], add_label_to_containers.(elem[:containers]))
+    end)
+  end
+
+  defp combine_settings(assignments, settings) do
+    Enum.map(assignments, fn assignment ->
+      Map.put(assignment, :settings, settings[assignment.resource_id])
     end)
   end
 end

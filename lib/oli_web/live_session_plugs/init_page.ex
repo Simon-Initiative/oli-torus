@@ -65,11 +65,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   def on_mount(
         :init_context_state,
-        _params,
+        params,
         _session,
         socket
       ) do
-    {:cont, init_context_state(socket)}
+    {:cont, init_context_state(socket, params)}
   end
 
   # Handles the 2 cases of adaptive delivery
@@ -89,7 +89,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
                } = page_context
            }
          } =
-           socket
+           socket,
+         params
        ) do
     view =
       if Map.get(content, "displayApplicationChrome", false) do
@@ -111,7 +112,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       pageTitle: page_context.page.title,
       pageSlug: page_context.page.slug,
       graded: page_context.page.graded,
-      content: page_context.page.content,
+      content: build_page_content(page_context.page.content, params["request_path"]),
       resourceAttemptState: resource_attempt && resource_attempt.state,
       resourceAttemptGuid: resource_attempt && resource_attempt.attempt_guid,
       currentServerTime: DateTime.utc_now() |> to_epoch,
@@ -159,7 +160,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
              }
            }
          } =
-           socket
+           socket,
+         _params
        ) do
     assign(socket, %{view: :practice_page})
   end
@@ -171,7 +173,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
              page_context: %PageContext{page: %{graded: true}} = page_context
            }
          } =
-           socket
+           socket,
+         _params
        ) do
     assign(socket, %{view: :graded_page})
     |> prologue_assigns(page_context)
@@ -183,7 +186,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
              page_context: %PageContext{progress_state: :error}
            }
          } =
-           socket
+           socket,
+         _params
        ) do
     assign(socket, %{view: :error})
   end
@@ -257,4 +261,13 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       attempt_message: attempt_message
     )
   end
+
+  _docp = """
+  In case there is a request path we add that path in the page content as 'backUrl'.
+  This backUrl aims to return the student to the page they were on
+  before they accessed the page we are building (i.e. the "Learn", "Home" or "Schedule" page)
+  """
+
+  defp build_page_content(content, nil), do: content
+  defp build_page_content(content, request_path), do: Map.put(content, "backUrl", request_path)
 end
