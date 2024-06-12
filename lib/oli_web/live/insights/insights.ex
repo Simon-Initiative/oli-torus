@@ -131,6 +131,9 @@ defmodule OliWeb.Insights do
           class="btn btn-primary"
           phx-click="filter_by_activity"
         >
+          <%= if is_loading?(assigns) and @selected == :by_activity do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
           By Activity
         </button>
       </li>
@@ -216,6 +219,11 @@ defmodule OliWeb.Insights do
               <% end %>
             </tbody>
           </table>
+        <% else %>
+          <div class="w-full h-40 flex items-center justify-center">
+            <span class="spinner-border spinner-border-sm w-16 h-16" role="status" aria-hidden="true">
+            </span>
+          </div>
         <% end %>
       </div>
     </div>
