@@ -669,6 +669,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       <style>{`style { display: none !important; }`}</style>
       <DeckLayoutHeader
         pageName={pageTitle}
+        backUrl={pageContent?.backUrl}
         userName={currentUserName}
         activityName=""
         showScore={true}
