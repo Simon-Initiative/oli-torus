@@ -154,7 +154,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
           input.id,
           (uiState.partState[input.partId]?.studentInput as string[]) || [''],
         ),
-        hasHints: uiState.partState[input.partId].hasMoreHints,
+        hasHints: !context.graded && uiState.partState[input.partId].hasMoreHints,
       },
     ]),
   );

@@ -140,7 +140,7 @@ export const MultiInputComponent: React.FC = () => {
               }
             : { id: input.id, inputType: input.inputType, size: input.size },
         value: (uiState.partState[input.partId]?.studentInput || [''])[0],
-        hasHints: uiState.partState[input.partId].hasMoreHints,
+        hasHints: !context.graded && uiState.partState[input.partId].hasMoreHints,
       },
     ]),
   );
