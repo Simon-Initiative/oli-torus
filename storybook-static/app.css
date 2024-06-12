@@ -4418,11 +4418,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 1.25rem;
 }
 
-.mx-6 {
-  margin-left: 1.5rem;
-  margin-right: 1.5rem;
-}
-
 .mx-8 {
   margin-left: 2rem;
   margin-right: 2rem;
@@ -5510,10 +5505,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 70px;
 }
 
-.w-\[720px\] {
-  width: 720px;
-}
-
 .w-\[72px\] {
   width: 72px;
 }
@@ -5577,6 +5568,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: max-content;
 }
 
+.max-w-\[1040px\] {
+  max-width: 1040px;
+}
+
 .max-w-\[240px\] {
   max-width: 240px;
 }
@@ -5591,10 +5586,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[600px\] {
   max-width: 600px;
-}
-
-.max-w-\[720px\] {
-  max-width: 720px;
 }
 
 .max-w-\[760px\] {
