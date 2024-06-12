@@ -5190,6 +5190,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 300px;
 }
 
+.min-h-\[34px\] {
+  min-height: 34px;
+}
+
 .min-h-\[50px\] {
   min-height: 50px;
 }
