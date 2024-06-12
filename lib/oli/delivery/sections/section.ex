@@ -155,7 +155,7 @@ defmodule Oli.Delivery.Sections.Section do
     # enable/disable the ai chatbot assistant for this section
     field(:assistant_enabled, :boolean, default: false)
 
-    field(:welcome_title, :string, default: "Welcome to the Course")
+    field(:welcome_title, :map, default: %{})
 
     field(:encouraging_subtitle, :string,
       default: "Dive Into Discovery. Begin Your Learning Adventure Now!"

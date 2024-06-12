@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.AddWelcomeTitleAndEncouragingSubtitleToSections do
 
   def change do
     alter table(:sections) do
-      add(:welcome_title, :text)
+      add(:welcome_title, :map)
       add(:encouraging_subtitle, :text)
     end
   end
