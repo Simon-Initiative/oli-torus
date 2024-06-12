@@ -1,17 +1,16 @@
-defmodule OliWeb.Common.MultiSelectOptions do
+defmodule OliWeb.Common.MultiSelect do
   use Ecto.Schema
 
   embedded_schema do
-    embeds_many :options, OliWeb.Common.MultiSelectOptions.SelectOption
+    embeds_many :options, OliWeb.Common.MultiSelect.Option
   end
 
-  defmodule SelectOption do
+  defmodule Option do
     use Ecto.Schema
 
     embedded_schema do
       field :selected, :boolean, default: false
-      field :label, :string
-      field :is_product, :boolean
+      field :name, :string
     end
   end
 

@@ -1,10 +1,9 @@
 defmodule OliWeb.Insights do
   use OliWeb, :live_view
 
-  alias OliWeb.Common.MultiSelectOptions
   alias Oli.Delivery.Sections
-  alias OliWeb.Common.MultiSelect
-  alias OliWeb.Common.MultiSelectOptions.SelectOption
+  alias OliWeb.Common.MultiSelectInput
+  alias OliWeb.Common.MultiSelect.Option
   alias Oli.{Accounts, Publishing}
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
@@ -25,26 +24,9 @@ defmodule OliWeb.Insights do
       Sections.get_sections_by_base_project(project)
       |> Enum.reduce({[], []}, fn section, {sections, products} ->
         if section.type == :blueprint do
-          {sections,
-           [
-             %SelectOption{
-               id: section.id,
-               label: section.title,
-               selected: false,
-               is_product: true
-             }
-             | products
-           ]}
+          {sections, [%Option{id: section.id, name: section.title} | products]}
         else
-          {[
-             %SelectOption{
-               id: section.id,
-               label: section.title,
-               selected: false,
-               is_product: false
-             }
-             | sections
-           ], products}
+          {[%Option{id: section.id, name: section.title} | sections], products}
         end
       end)
 
@@ -66,12 +48,6 @@ defmodule OliWeb.Insights do
 
     {:ok,
      assign(socket,
-       initial_section_options:
-         MultiSelectOptions.build_changeset(sections)
-         |> to_form(),
-       initial_product_options:
-         MultiSelectOptions.build_changeset(products)
-         |> to_form(),
        ctx: ctx,
        is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
@@ -92,16 +68,10 @@ defmodule OliWeb.Insights do
        products: products,
        sections: sections,
        is_product: false,
-       form_sections:
-         MultiSelectOptions.build_changeset(sections)
-         |> to_form(),
-       form_products:
-         MultiSelectOptions.build_changeset(products)
-         |> to_form(),
        section_ids: [],
        product_ids: [],
-       form_uid_for_product: "",
-       form_uid_for_section: ""
+       form_uuid_for_product: "",
+       form_uuid_for_section: ""
      )}
   end
 
@@ -188,27 +158,24 @@ defmodule OliWeb.Insights do
 
       <li class="nav-item my-2 mr-2 ">
         <div class="flex gap-10">
-          <.form for={@form_sections} id="multiselect-form-section" phx-change="section-change">
-            <.live_component
-              id="multi_sections"
-              module={MultiSelect}
-              options={@sections}
-              form={@form_sections}
-              label="Select a section"
-              uid={@form_uid_for_section}
-            />
-          </.form>
-
-          <.form for={@form_products} id="multiselect-form" phx-change="product-change">
-            <.live_component
-              id="multi_products"
-              module={MultiSelect}
-              options={@products}
-              form={@form_products}
-              label="Select a product"
-              uid={@form_uid_for_product}
-            />
-          </.form>
+          <.live_component
+            id="multi_sections"
+            module={MultiSelectInput}
+            options={@sections}
+            disabled={@sections == []}
+            on_select_message="section_selected"
+            placeholder="Select a section"
+            uuid={@form_uuid_for_section}
+          />
+          <.live_component
+            id="multi_products"
+            module={MultiSelectInput}
+            options={@products}
+            disabled={@products == []}
+            on_select_message="product_selected"
+            placeholder="Select a product"
+            uuid={@form_uuid_for_product}
+          />
         </div>
       </li>
     </ul>
@@ -386,23 +353,30 @@ defmodule OliWeb.Insights do
     end
   end
 
-  def handle_event("section-change", params, socket) do
-    target_value =
-      hd(params["_target"])
+  def handle_info({:option_selected, "section_selected", selected_ids}, socket) do
+    socket =
+      assign(socket,
+        section_ids: selected_ids,
+        form_uuid_for_product: generate_uuid(),
+        product_ids: [],
+        is_product: false
+      )
 
-    value =
-      params[target_value]
-
-    update_section_by_value(value, socket, target_value)
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
   end
 
-  def handle_event("product-change", params, socket) do
-    target_value = hd(params["_target"])
+  def handle_info({:option_selected, "product_selected", selected_ids}, socket) do
+    socket =
+      assign(socket,
+        product_ids: selected_ids,
+        form_uuid_for_section: generate_uuid(),
+        section_ids: [],
+        is_product: true
+      )
 
-    value =
-      params[target_value]
-
-    update_product_by_value(value, socket, target_value)
+    filter_type(socket.assigns.selected)
+    {:noreply, socket}
   end
 
   def handle_info(
@@ -533,121 +507,7 @@ defmodule OliWeb.Insights do
   end
 
   defp generate_uuid do
-    #
-    :crypto.strong_rand_bytes(16)
-    |> Base.encode16()
-  end
-
-  defp update_section_by_value("true", socket, target_value) do
-    section_ids_updated =
-      update_section_ids(
-        :add,
-        socket.assigns.sections,
-        target_value,
-        socket.assigns.section_ids
-      )
-
-    reset_form_product_values(socket.assigns.product_ids, section_ids_updated, socket)
-  end
-
-  defp update_section_by_value("false", socket, target_value) do
-    section_ids_updated =
-      update_section_ids(
-        :delete,
-        socket.assigns.sections,
-        target_value,
-        socket.assigns.section_ids
-      )
-
-    socket =
-      assign(socket,
-        is_product: false,
-        section_ids: section_ids_updated
-      )
-
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
-  end
-
-  defp reset_form_product_values([], section_ids_updated, socket) do
-    socket =
-      assign(socket,
-        is_product: false,
-        section_ids: section_ids_updated
-      )
-
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
-  end
-
-  defp reset_form_product_values(_section_ids, section_ids_updated, socket) do
-    socket =
-      assign(socket,
-        is_product: false,
-        section_ids: section_ids_updated,
-        form_uid_for_product: generate_uuid(),
-        product_ids: [],
-        form_products: socket.assigns.initial_product_options
-      )
-
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
-  end
-
-  defp update_product_by_value("true", socket, target_value) do
-    product_ids_updated =
-      update_section_ids(
-        :add,
-        socket.assigns.products,
-        target_value,
-        socket.assigns.product_ids
-      )
-
-    reset_form_section_values(socket.assigns.section_ids, product_ids_updated, socket)
-  end
-
-  defp update_product_by_value("false", socket, target_value) do
-    product_ids_updated =
-      update_section_ids(
-        :delete,
-        socket.assigns.products,
-        target_value,
-        socket.assigns.product_ids
-      )
-
-    socket =
-      assign(socket,
-        is_product: false,
-        product_ids: product_ids_updated
-      )
-
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
-  end
-
-  defp reset_form_section_values([], product_ids_updated, socket) do
-    socket =
-      assign(socket,
-        is_product: true,
-        product_ids: product_ids_updated
-      )
-
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
-  end
-
-  defp reset_form_section_values(_product_ids, product_ids_updated, socket) do
-    socket =
-      assign(socket,
-        is_product: true,
-        product_ids: product_ids_updated,
-        form_uid_for_section: generate_uuid(),
-        section_ids: [],
-        form_sections: socket.assigns.initial_section_options
-      )
-
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
+    UUID.uuid4()
   end
 
   defp filter_type(selected) do
@@ -661,24 +521,6 @@ defmodule OliWeb.Insights do
       :by_objective ->
         send(self(), :init_by_objective)
     end
-  end
-
-  defp update_section_ids(action, sections, target, section_ids) do
-    case action do
-      :add ->
-        [fliter_section_by_target_value(sections, target) | section_ids]
-
-      :delete ->
-        List.delete(section_ids, fliter_section_by_target_value(sections, target))
-    end
-  end
-
-  defp fliter_section_by_target_value(sections, target) do
-    hd(
-      Enum.filter(sections, fn section ->
-        section.label == target
-      end)
-    ).id
   end
 
   defp click_or_enter_key?(event) do
