@@ -219,7 +219,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     <div
       id={"objective_#{@objective.resource_id}_tooltip"}
-      class="hidden absolute h-[57px] px-6 pt-[15px] pb-6 -top-[20px] -left-6 text-gray-800 dark:text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-gray-300 dark:bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-start gap-4 -translate-x-full"
+      class="hidden absolute min-h-[57px] max-w-[240px] -top-[20px] p-6 -left-6 text-gray-800 dark:text-gray-700 text-base font-normal font-['Inter'] leading-normal bg-gray-300 dark:bg-white rounded-md border-2 border-gray-700 flex-col justify-start items-center gap-4 z-10 -translate-x-full"
     >
       <%= proficiency_to_text(@objective.proficiency) %>
       <div class="absolute h-[40px] w-2 bg-gray-300 dark:bg-white top-2 right-0 z-20"></div>
