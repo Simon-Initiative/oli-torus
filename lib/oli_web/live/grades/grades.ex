@@ -221,18 +221,56 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
+  # Sorts the given list of pages by the order within the hierarchy.
+  #
+  # TODO: Eventually we should use a reachability implementation to determine
+  # the order of the pages in the hierarchy as well as unordered pages outside
+  # of the hierarchy. For now, we just sort the pages by the order they appear
+  # in the hierarchy and append any remaining pages that are not in the hierarchy
+  # to the end.
+  defp sort_pages_by_hierarchy(pages, hierarchy) do
+    pages_map = Enum.reduce(pages, %{}, fn p, m -> Map.put(m, p.resource_id, p) end)
+    page_resource_ids = MapSet.new(Enum.map(pages, fn p -> p.resource_id end))
+
+    {reverse_ordered_page_resource_ids, remaining_resource_ids} =
+      hierarchy
+      |> Oli.Delivery.Hierarchy.flatten()
+      # only include pages that are in the hierarchy
+      |> Enum.filter(fn node ->
+        node.revision.resource_type_id ==
+          Oli.Resources.ResourceType.id_for_page()
+      end)
+      |> Enum.map(fn node -> node.revision.resource_id end)
+      |> Enum.reduce({[], page_resource_ids}, fn resource_id, {ordered, remaining} ->
+        if MapSet.member?(remaining, resource_id) do
+          {[resource_id | ordered], MapSet.delete(remaining, resource_id)}
+        else
+          {ordered, remaining}
+        end
+      end)
+
+    # reverse result and add any remaining pages that are not in the hierarchy
+    (Enum.reverse(reverse_ordered_page_resource_ids) ++ MapSet.to_list(remaining_resource_ids))
+    |> Enum.map(fn resource_id -> Map.get(pages_map, resource_id) end)
+  end
+
   def emit_status(pid, status, decoration, is_done?) do
     send(pid, {:test_status, status, decoration, is_done?})
   end
 
   def handle_event("send_line_items", _, socket) do
     registration = socket.assigns.registration
+    section = socket.assigns.section
 
     case fetch_line_items(registration, socket.assigns.line_items_url) do
       {:ok, line_items, access_token} ->
-        graded_pages = Sections.fetch_scored_pages(socket.assigns.section.slug)
+        graded_pages = Sections.fetch_scored_pages(section.slug)
 
-        case determine_line_item_tasks(graded_pages, line_items, socket.assigns.section) do
+        # sort by hierarchical order
+        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+        ordered_graded_pages = sort_pages_by_hierarchy(graded_pages, hierarchy)
+
+        case determine_line_item_tasks(ordered_graded_pages, line_items, socket.assigns.section) do
           [] ->
             {:noreply,
              put_flash(socket, :info, dgettext("grades", "LMS line items already up to date"))}
