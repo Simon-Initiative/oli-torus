@@ -16,7 +16,6 @@ import {
   getResponseId,
 } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
-import { getPartById } from 'data/activities/model/utils';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
