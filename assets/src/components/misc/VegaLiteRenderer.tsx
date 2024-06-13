@@ -6,11 +6,9 @@ export interface VegaLiteSpec {
 }
 
 export const VegaLiteRenderer = (props: VegaLiteSpec) => {
-  console.log(' sdhiere');
-  console.log(props.spec);
   return (
     <>
-      <VegaLite spec={props.spec} />
+      <VegaLite spec={props.spec} actions={false} />
     </>
   );
 };

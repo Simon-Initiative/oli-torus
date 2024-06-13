@@ -23,24 +23,14 @@ defmodule Oli.Rendering.Report.Html do
           render_author_preview(context)
 
         _ ->
-          parent_link =
-            case determine_parent_page(section_slug, activity_id) do
-              %{id: _id, slug: slug} ->
-                parent_revision = DeliveryResolver.from_revision_slug(section_slug, slug)
-
-                [
-                  ~s|<div class="container"><h3 class="text-center"><a href=#{"/sections/#{section_slug}/lesson/#{slug}"} target="_blank">#{parent_revision.title}</a></h3></div>|
-                ]
-
-              _ ->
-                ["<div></div>"]
-            end
+          parent_link = determine_parent_link(section_slug, activity_id)
 
           activity_attempt =
             Core.get_latest_activity_attempt(enrollment.section_id, user.id, activity_id)
 
           if is_nil(activity_attempt) do
             [
+              parent_link,
               ~s|<div>If you do not see your personalized report here, it means that you have not yet completed the activity linked to this report</div>|
             ]
           else
@@ -68,15 +58,27 @@ defmodule Oli.Rendering.Report.Html do
     ]
   end
 
-  defp determine_parent_page(section_slug, activity_id) do
+  defp determine_parent_link(section_slug, activity_id) do
     pub_ids = DeliveryResolver.section_publication_ids(section_slug) |> Oli.Repo.all()
 
-    Enum.reduce(pub_ids, %{}, fn a, c ->
-      case Map.get(Oli.Publishing.determine_parent_pages([activity_id], a), activity_id) do
-        nil -> c
-        p -> p
-      end
-    end)
+    case Map.get(Oli.Publishing.determine_parent_pages([activity_id], pub_ids), activity_id) do
+      %{id: _id, slug: slug} ->
+        parent_revision = DeliveryResolver.from_revision_slug(section_slug, slug)
+
+        title =
+          if is_nil(parent_revision) do
+            "Activity"
+          else
+            parent_revision.title
+          end
+
+        [
+          ~s|<div class="container"><h3 class="text-center"><a href=#{"/sections/#{section_slug}/lesson/#{slug}"} target="_blank">#{title}</a></h3></div>|
+        ]
+
+      _ ->
+        ["<div></div>"]
+    end
   end
 
   defp render_author_preview(%Context{} = context) do

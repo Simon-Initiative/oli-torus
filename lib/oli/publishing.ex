@@ -1489,7 +1489,8 @@ defmodule Oli.Publishing do
   Returns a map of activity_ids to a map containing the slug and resource id of the
   page that encloses it
   """
-  def determine_parent_pages(activity_resource_ids, publication_id) do
+  def determine_parent_pages(activity_resource_ids, publication_ids)
+      when is_list(publication_ids) do
     page_id = ResourceType.id_for_page()
 
     activities = MapSet.new(activity_resource_ids)
@@ -1502,7 +1503,7 @@ defmodule Oli.Publishing do
     from published_resources as mapping
     join revisions as rev
     on mapping.revision_id = rev.id
-    where mapping.publication_id = #{publication_id}
+    where mapping.publication_id in (#{Enum.join(publication_ids, ",")})
       and rev.resource_type_id = #{page_id}
       and rev.deleted is false
     """
@@ -1515,6 +1516,10 @@ defmodule Oli.Publishing do
     |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map ->
       Map.put(map, activity_id, %{slug: slug, id: id})
     end)
+  end
+
+  def determine_parent_pages(activity_resource_ids, publication_id) do
+    determine_parent_pages(activity_resource_ids, [publication_id])
   end
 
   def determine_parent_pages(publication_id) do

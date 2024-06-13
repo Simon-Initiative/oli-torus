@@ -42,15 +42,7 @@ export const ReportBlock = ({
         <div className="flex-grow-1"></div>
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
-      <div>
-        {/* <button
-          key="add"
-          className={classNames('btn btn-sm', styles.option)}
-          onClick={onSelectActivity}
-        >
-          <i className="fas fa-plus"></i>
-        </button> */}
-      </div>
+      <div></div>
       <div>{children}</div>
     </div>
   );

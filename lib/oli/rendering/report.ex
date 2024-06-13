@@ -7,7 +7,7 @@ defmodule Oli.Rendering.Report do
   alias Oli.Rendering.Context
 
   @callback report(%Context{}, %{}) :: [any()]
-  @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
+  @callback error(%Context{}, %{}, {atom(), String.t(), String.t()}) :: [any()]
 
   @doc """
   Renders a report element that has children elements. Returns an IO list of strings.

@@ -60,7 +60,6 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
     case 'survey':
       return <SurveyEditor {...editorProps} contentItem={contentItem} />;
     case 'report':
-      console.log('creating report editor');
       return <ReportEditor {...editorProps} contentItem={contentItem} />;
     case 'alternatives':
       return <AlternativesEditor {...editorProps} contentItem={contentItem} />;
