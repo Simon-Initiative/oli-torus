@@ -7883,6 +7883,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 0.75rem;
 }
 
+.pl-32 {
+  padding-left: 8rem;
+}
+
 .pl-4 {
   padding-left: 1rem;
 }
