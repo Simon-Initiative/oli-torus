@@ -3,7 +3,6 @@ import {
   getCorrectResponse,
   getIncorrectResponse,
   getMaxPoints,
-  getMaxScoreResponse,
 } from 'data/activities/model/responses';
 
 // Migrated qs may have non-default point values but no customScoring attribute. To allow for this,
