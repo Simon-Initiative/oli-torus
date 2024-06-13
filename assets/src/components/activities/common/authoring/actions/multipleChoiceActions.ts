@@ -9,7 +9,12 @@ import {
   makeUndoable,
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
-import { getCorrectResponse, getResponseBy, getResponseId } from 'data/activities/model/responses';
+import {
+  getCorrectResponse,
+  getMaxPoints,
+  getResponseBy,
+  getResponseId,
+} from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getPartById } from 'data/activities/model/utils';
 import { clone } from 'utils/common';
@@ -41,7 +46,8 @@ export const MCActions = {
   toggleChoiceCorrectness(id: string, partId: string) {
     return (model: HasParts, _post: PostUndoable) => {
       const part = getPartById(model, partId);
-      const correctScore = part.outOf || 1;
+      // migrated qs may have custom score but no outOf attribute
+      const correctScore = part.outOf ?? getMaxPoints(model, partId);
       const correctResponse = getCorrectResponse(model, partId);
       correctResponse.rule = matchRule(id);
       correctResponse.score = correctScore;
