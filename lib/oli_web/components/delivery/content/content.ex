@@ -48,15 +48,14 @@ defmodule OliWeb.Components.Delivery.Content do
       navigation_criteria: :by_filtered
     }
 
-    send(self(), {:set_navigation_data_to_students, navigation_data})
-
     {:ok, table_model} =
       ContentTableModel.new(
         rows,
         column_name,
         assigns.section_slug,
         assigns[:view],
-        assigns.patch_url_type
+        assigns.patch_url_type,
+        navigation_data
       )
 
     table_model =

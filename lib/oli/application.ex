@@ -65,7 +65,6 @@ defmodule Oli.Application do
         Oli.DatashopCache,
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
-        {Oli.NavigationDataForStudentsTab, []},
 
         # Starts Cachex to store section info
         Oli.Delivery.Sections.SectionCache,

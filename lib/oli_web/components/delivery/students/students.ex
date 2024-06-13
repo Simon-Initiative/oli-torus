@@ -25,7 +25,8 @@ defmodule OliWeb.Components.Delivery.Students do
     filter_by: :enrolled,
     payment_status: nil,
     selected_card_value: nil,
-    container_filter_by: :students
+    container_filter_by: :students,
+    navigation_data: Jason.encode!(%{})
   }
 
   def update(
@@ -34,8 +35,7 @@ defmodule OliWeb.Components.Delivery.Students do
           section: section,
           ctx: ctx,
           students: students,
-          dropdown_options: dropdown_options,
-          navigation_data: navigation_data
+          dropdown_options: dropdown_options
         } = assigns,
         socket
       ) do
@@ -43,8 +43,10 @@ defmodule OliWeb.Components.Delivery.Students do
 
     {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
 
+    navigation_data = Jason.decode!(params.navigation_data)
+
     {previous_id, next_id} =
-      case Map.get(navigation_data, :containers) do
+      case navigation_data["containers"] do
         nil ->
           {nil, nil}
 
@@ -54,7 +56,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
           get_navigation_ids(
             filtered_containers,
-            navigation_data.current_container_id
+            navigation_data["current_container_id"]
           )
       end
 
@@ -307,16 +309,14 @@ defmodule OliWeb.Components.Delivery.Students do
           myself={@myself}
         />
       </.live_component>
-      <%= unless is_nil(Map.get(@navigation_data, :containers)) do %>
+      <%= unless is_nil(@navigation_data["containers"]) do %>
         <div class="flex flex-col mb-8">
           <div class="flex mt-4 mb-2">
-            <.link navigate={@navigation_data.request_path} role="back button">
+            <.link navigate={@navigation_data["request_path"]} role="back button">
               <div class="flex gap-2 items-center">
                 <Icons.left_chevron_blue />
                 <div class="text-zinc-700 text-sm font-semibold tracking-tight dark:text-white">
-                  Back to <%= String.capitalize(
-                    get_container_type(@navigation_data.container_filter_by)
-                  ) %>
+                  Back to <%= String.capitalize(@navigation_data["container_filter_by"]) %>
                 </div>
               </div>
             </.link>
@@ -354,21 +354,21 @@ defmodule OliWeb.Components.Delivery.Students do
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
                   <%= radio_button(:container, :option, :by_filtered,
                     class: "form-check-input",
-                    checked: @navigation_data.navigation_criteria == :by_filtered
+                    checked: @navigation_data["navigation_criteria"] == "by_filtered"
                   ) %>
                   <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
-                    Navigate within <%= @navigation_data.filtered_count %> filtered <%= get_container_type(
-                      @navigation_data.container_filter_by
-                    ) %> <%= get_card_type(@navigation_data.filter_criteria_card) %>
+                    Navigate within <%= @navigation_data["filtered_count"] %> filtered <%= @navigation_data[
+                      "container_filter_by"
+                    ] %> <%= get_card_type(@navigation_data["filter_criteria_card"]) %>
                   </div>
                 <% end %>
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
                   <%= radio_button(:container, :option, :by_all,
                     class: "form-check-input",
-                    checked: @navigation_data.navigation_criteria == :by_all
+                    checked: @navigation_data["navigation_criteria"] == "by_all"
                   ) %>
                   <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
-                    Navigate within ALL <%= get_container_type(@navigation_data.container_filter_by) %>
+                    Navigate within ALL <%= @navigation_data["container_filter_by"] %>
                   </div>
                 <% end %>
               </div>
@@ -388,7 +388,7 @@ defmodule OliWeb.Components.Delivery.Students do
                     OliWeb.Endpoint,
                     :download_container_progress,
                     @section_slug,
-                    @params.container_id
+                    @params.container_id || ""
                   )
                 }
                 download="progress.csv"
@@ -612,9 +612,12 @@ defmodule OliWeb.Components.Delivery.Students do
     value =
       if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
         do: nil,
-        else: value
+        else: String.to_existing_atom(value)
 
-    send(self(), {:selected_card_students, {value, socket.assigns.params.container_id}})
+    send(
+      self(),
+      {:selected_card_students, {value, socket.assigns.params.container_id, socket.assigns.view}}
+    )
 
     {:noreply, socket}
   end
@@ -802,30 +805,40 @@ defmodule OliWeb.Components.Delivery.Students do
         %{"_target" => _, "container" => %{"option" => "by_filtered"}},
         socket
       ) do
-    %{
-      navigation_data:
-        %{containers: containers, current_container_id: current_container_id} = navigation_data
-    } = socket.assigns
+    navigation_data = socket.assigns.navigation_data
 
-    filtered_containers = Enum.filter(containers, & &1.was_filtered)
+    containers = navigation_data["containers"]
+    current_container_id = navigation_data["current_container_id"]
+
+    filtered_containers =
+      Enum.filter(containers, fn container -> container["was_filtered"] end)
 
     exist =
       Enum.any?(filtered_containers, fn container ->
-        container.id == current_container_id
+        container["id"] == current_container_id
       end)
 
     navigation_data =
       if exist,
-        do: Map.merge(navigation_data, %{navigation_criteria: :by_filtered}),
+        do: Map.merge(navigation_data, %{"navigation_criteria" => "by_filtered"}),
         else:
           Map.merge(navigation_data, %{
-            navigation_criteria: :by_filtered,
-            current_container_id: Enum.at(filtered_containers, 0).id
+            "navigation_criteria" => "by_filtered",
+            "current_container_id" => Enum.at(filtered_containers, 0)["id"]
           })
 
-    send(self(), {:update_navigation_data_to_students, navigation_data})
-
-    {:noreply, socket}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{navigation_data: Jason.encode!(navigation_data)})
+         )
+     )}
   end
 
   def handle_event(
@@ -837,12 +850,22 @@ defmodule OliWeb.Components.Delivery.Students do
 
     navigation_data =
       Map.merge(navigation_data, %{
-        navigation_criteria: :by_all
+        "navigation_criteria" => "by_all"
       })
+      |> Jason.encode!()
 
-    send(self(), {:update_navigation_data_to_students, navigation_data})
-
-    {:noreply, socket}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{navigation_data: navigation_data})
+         )
+     )}
   end
 
   def handle_event("change_navigation", %{"value" => value}, socket) do
@@ -850,19 +873,38 @@ defmodule OliWeb.Components.Delivery.Students do
 
     navigation_data =
       Map.merge(navigation_data, %{
-        current_container_id: String.to_integer(value)
+        "current_container_id" => String.to_integer(value)
       })
+      |> Jason.encode!()
 
-    send(self(), {:update_navigation_data_to_students, navigation_data})
-
-    {:noreply, socket}
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{navigation_data: navigation_data})
+         )
+     )}
   end
 
   def decode_params(params) do
+    navigation_data =
+      Params.get_param(params, "navigation_data", @default_params.navigation_data)
+      |> Jason.decode!()
+
+    container_id =
+      if is_nil(navigation_data),
+        do: Params.get_int_param(params, "container_id", @default_params.container_id),
+        else: navigation_data["current_container_id"]
+
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
-      container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
+      container_id: container_id,
       section_slug: Params.get_int_param(params, "section_slug", @default_params.section_slug),
       page_id: Params.get_int_param(params, "page_id", @default_params.page_id),
       sort_order:
@@ -903,7 +945,8 @@ defmodule OliWeb.Components.Delivery.Students do
           "container_filter_by",
           [:students],
           @default_params.container_filter_by
-        )
+        ),
+      navigation_data: navigation_data |> Jason.encode!()
     }
   end
 
@@ -973,35 +1016,32 @@ defmodule OliWeb.Components.Delivery.Students do
        ) do
     current_index =
       Enum.find_index(containers_list, fn container ->
-        container.id == current_container_id
+        container["id"] == current_container_id
       end)
 
     previous_id =
-      if current_index > 0, do: Enum.at(containers_list, current_index - 1).id, else: nil
+      if current_index > 0, do: Enum.at(containers_list, current_index - 1)["id"], else: nil
 
     next_id =
       if current_index < length(containers_list) - 1,
-        do: Enum.at(containers_list, current_index + 1).id,
+        do: Enum.at(containers_list, current_index + 1)["id"],
         else: nil
 
     {previous_id, next_id}
   end
 
   defp filter_containers_by_option(navigation_data) do
-    case navigation_data.navigation_criteria do
+    containers = navigation_data["containers"]
+
+    navigation_criteria =
+      navigation_data["navigation_criteria"] |> String.to_existing_atom()
+
+    case navigation_criteria do
       :by_filtered ->
-        Enum.filter(navigation_data.containers, fn container -> container.was_filtered end)
+        Enum.filter(containers, fn container -> container["was_filtered"] end)
 
       :by_all ->
-        navigation_data.containers
-    end
-  end
-
-  defp get_container_type(container_filter_by) do
-    case container_filter_by do
-      :units -> "units"
-      :modules -> "modules"
-      _ -> ""
+        containers
     end
   end
 

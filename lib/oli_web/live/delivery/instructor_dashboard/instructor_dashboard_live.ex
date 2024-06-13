@@ -6,7 +6,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.RecommendedActions
-  alias Oli.NavigationDataForStudentsTab
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
   alias OliWeb.Components.Delivery.Students
@@ -14,26 +13,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
-    %{id: id} = socket.assigns.current_user
-    key = "navigation_data_for_user_#{id}"
-
-    navigation_data =
-      case NavigationDataForStudentsTab.get_data(key) do
-        {:ok, data} -> data
-        :error -> %{}
-      end
-
     ctx = SessionContext.init(socket, session)
-    {:ok, assign(socket, ctx: ctx, navigation_data_for_students_tab: navigation_data)}
+    {:ok, assign(socket, ctx: ctx)}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
     view = String.to_existing_atom(params["view"])
     params = Students.decode_params(params)
-
-    navigation_data =
-      Map.get(socket.assigns, :navigation_data_for_students_tab, %{})
-      |> Map.put(:current_container_id, params.container_id)
 
     socket =
       socket
@@ -44,7 +30,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
-      |> assign(navigation_data_for_students_tab: navigation_data)
 
     socket =
       if params.container_id do
@@ -450,7 +435,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         students={@users}
         dropdown_options={@dropdown_options}
-        navigation_data={@navigation_data_for_students_tab}
       />
     </div>
     """
@@ -528,7 +512,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         students={@users}
         dropdown_options={@dropdown_options}
-        navigation_data={@navigation_data_for_students_tab}
       />
     </div>
     """
@@ -753,7 +736,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def handle_info(
-        {:selected_card_students, {value, container_id}},
+        {:selected_card_students, {value, container_id, :insights = _view}},
         socket
       ) do
     params =
@@ -769,29 +752,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      )}
   end
 
-  def handle_info({:set_navigation_data_to_students, navigation_data}, socket) do
-    %{id: id} = socket.assigns.current_user
-    key = "navigation_data_for_user_#{id}"
-    NavigationDataForStudentsTab.set_data(key, navigation_data)
-
-    {:noreply,
-     socket
-     |> assign(navigation_data_for_students_tab: navigation_data)}
-  end
-
-  def handle_info({:update_navigation_data_to_students, navigation_data}, socket) do
-    %{params: params, section: section, current_user: %{id: id}} = socket.assigns
-    key = "navigation_data_for_user_#{id}"
-    NavigationDataForStudentsTab.set_data(key, navigation_data)
-
+  def handle_info(
+        {:selected_card_students, {value, _container_id, :overview = _view}},
+        socket
+      ) do
     params =
-      Map.merge(params, %{"container_id" => navigation_data.current_container_id})
+      Map.merge(socket.assigns.params, %{
+        "selected_card_value" => value
+      })
 
     {:noreply,
-     socket
-     |> assign(navigation_data_for_students_tab: navigation_data)
-     |> push_patch(
-       to: ~p"/sections/#{section.slug}/instructor_dashboard/insights/content?#{params}"
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/overview/students?#{params}"
      )}
   end
 
