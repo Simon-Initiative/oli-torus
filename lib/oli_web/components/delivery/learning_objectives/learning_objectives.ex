@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
+  alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
@@ -17,7 +18,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     sort_by: :objective,
     text_search: nil,
     filter_by: "root",
-    selected_proficiency_ids: Jason.encode!([])
+    selected_proficiency_ids: Jason.encode!([]),
+    selected_card_value: nil
   }
 
   @proficiency_options [
@@ -50,6 +52,26 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           end)
       })
 
+    selected_card_value = Map.get(assigns.params, "selected_card_value", nil)
+    objectives_count = objectives_count(objectives_tab.objectives)
+
+    card_props = [
+      %{
+        title: "Low Proficiency Outcomes",
+        count: Map.get(objectives_count, :low_proficiency_outcomes),
+        is_selected: selected_card_value == "low_proficiency_outcomes",
+        value: :low_proficiency_outcomes,
+        subtitle: "learning objectives"
+      },
+      %{
+        title: "Low Proficiency Skills",
+        count: Map.get(objectives_count, :low_proficiency_skills),
+        is_selected: selected_card_value == "low_proficiency_skills",
+        value: :low_proficiency_skills,
+        subtitle: "sub-objectives"
+      }
+    ]
+
     selected_proficiency_ids = Jason.decode!(params.selected_proficiency_ids)
 
     proficiency_options =
@@ -75,7 +97,8 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        view: assigns[:view],
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
-       selected_proficiency_ids: selected_proficiency_ids
+       selected_proficiency_ids: selected_proficiency_ids,
+       card_props: card_props
      )}
   end
 
@@ -88,23 +111,17 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   attr(:filter_disabled?, :boolean)
   attr(:view, :atom)
   attr(:section_slug, :string)
+  attr(:card_props, :list)
 
   def render(assigns) do
     ~H"""
     <div class="flex flex-col gap-2 mb-10">
       <div class="bg-white shadow-sm dark:bg-gray-800">
-        <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
+        <div class="flex justify-between items-center px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
             <h4 class="torus-h4 !py-0 mr-auto mb-2">Learning Objectives</h4>
-            <a
-              href={
-                Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)
-              }
-              class="self-end"
-            >
-              <i class="fa-solid fa-download ml-1" /> Download
-            </a>
           </div>
+
           <div class="flex flex-col-reverse sm:flex-row gap-2 items-end overflow-hidden">
             <.form for={%{}} class="w-full" phx-change="filter_by" phx-target={@myself}>
               <label class="cursor-pointer inline-flex flex-col gap-1 w-full">
@@ -131,6 +148,24 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
               </label>
             </.form>
           </div>
+          <a
+            href={Routes.delivery_path(OliWeb.Endpoint, :download_learning_objectives, @section_slug)}
+            class="flex items-center justify-center gap-x-2"
+          >
+            Download CSV <Icons.download />
+          </a>
+        </div>
+        <div class="flex flex-row mx-9 gap-x-4">
+          <%= for card <- @card_props do %>
+            <CardHighlights.render
+              title={card.title}
+              count={card.count}
+              is_selected={card.is_selected}
+              value={card.value}
+              on_click={JS.push("select_card", target: @myself)}
+              container_filter_by={card.subtitle}
+            />
+          <% end %>
         </div>
         <div class="flex flex-row items-center gap-x-4 mx-9 my-4 dark:bg-gray-800">
           <.form
@@ -293,6 +328,23 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       </div>
     </div>
     """
+  end
+
+  def handle_event("select_card", %{"selected" => value}, socket) do
+    value =
+      if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
+        do: nil,
+        else: String.to_existing_atom(value)
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{selected_card_value: value},
+           socket.assigns.patch_url_type
+         )
+     )}
   end
 
   def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
@@ -476,6 +528,13 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
           params,
           "selected_proficiency_ids",
           @default_params.selected_proficiency_ids
+        ),
+      selected_card_value:
+        Params.get_atom_param(
+          params,
+          "selected_card_value",
+          [:low_proficiency_outcomes, :low_proficiency_skills],
+          @default_params.selected_card_value
         )
     }
   end
@@ -509,6 +568,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       |> maybe_filter_by_text(params.text_search)
       |> maybe_filter_by_option(params.filter_by)
       |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
+      |> maybe_filter_by_card(params.selected_card_value)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(objectives), objectives |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -558,6 +618,20 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
     end)
   end
 
+  defp maybe_filter_by_card(objectives, :low_proficiency_outcomes),
+    do:
+      Enum.filter(objectives, fn objective ->
+        objective.student_proficiency_obj == "Low"
+      end)
+
+  defp maybe_filter_by_card(objectives, :low_proficiency_skills),
+    do:
+      Enum.filter(objectives, fn objective ->
+        objective.student_proficiency_subobj == "Low"
+      end)
+
+  defp maybe_filter_by_card(objectives, _), do: objectives
+
   defp route_for(socket, new_params, :instructor_dashboard) do
     Routes.live_path(
       socket,
@@ -578,6 +652,19 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       :learning_objectives,
       update_params(socket.assigns.params, new_params)
     )
+  end
+
+  defp objectives_count(objectives) do
+    %{
+      low_proficiency_outcomes:
+        Enum.count(objectives, fn obj ->
+          obj.student_proficiency_obj == "Low"
+        end),
+      low_proficiency_skills:
+        Enum.count(objectives, fn obj ->
+          obj.student_proficiency_subobj == "Low"
+        end)
+    }
   end
 
   _docp = """
