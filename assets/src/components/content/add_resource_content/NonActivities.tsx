@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { FetchDataModal } from 'components/modal/FetchDataModal';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 import { modalActions } from 'actions/modal';
 import { FeatureFlags } from 'apps/page-editor/types';
 import {
+  AlternativeContent,
   ResourceContext,
+  createAlternative,
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
@@ -177,7 +179,10 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         }
         onDone={(alternativesId: string) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(createAlternatives(Number(alternativesId), 'user_section_preference'), index);
+          onAddItem(
+            createAlternatives(Number(alternativesId), 'user_section_preference', Immutable.List()),
+            index,
+          );
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,
@@ -188,31 +193,21 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
 const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
   document.body.click();
 
-  window.oliDispatch(
-    modalActions.display(
-      <FetchDataModal
-        title="Fetching A/B testing options"
-        onFetchData={() =>
-          Persistence.alternatives(projectSlug).then((result) => {
-            if (result.type === 'success') {
-              const experiment = result.alternatives.find(
-                (a) => a.strategy === 'upgrade_decision_point',
-              );
-              if (experiment) {
-                return experiment;
-              }
-              throw 'No experiment found. Please follow the instructions on how to setup and enable A/B testing.';
-            } else {
-              throw result.message;
-            }
-          })
-        }
-        onDone={(experiment: Persistence.AlternativesGroup) => {
-          window.oliDispatch(modalActions.dismiss());
-          onAddItem(createAlternatives(Number(experiment.id), 'upgrade_decision_point'), index);
-        }}
-        onCancel={() => window.oliDispatch(modalActions.dismiss())}
-      />,
-    ),
-  );
+  Persistence.alternatives(projectSlug).then((result) => {
+    if (result.type === 'success') {
+      const experiment = result.alternatives.find((a) => a.strategy === 'upgrade_decision_point');
+      if (experiment) {
+        const children: AlternativeContent[] = [];
+        experiment.options.forEach((o) => children.push(createAlternative(o.id)));
+        onAddItem(
+          createAlternatives(
+            Number(experiment.id),
+            'upgrade_decision_point',
+            Immutable.List(children),
+          ),
+          index,
+        );
+      }
+    }
+  });
 };

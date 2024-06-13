@@ -210,7 +210,7 @@ export const createGroup = (
 export const createAlternatives = (
   alternatives_id: number,
   strategy: AlternativesStrategy,
-  children: Immutable.List<AlternativeContent> = Immutable.List(),
+  children: Immutable.List<AlternativeContent>,
 ): AlternativesContent => ({
   type: 'alternatives',
   id: guid(),
