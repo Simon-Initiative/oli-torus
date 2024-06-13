@@ -11,7 +11,7 @@ import {
 import { Choices } from 'data/activities/model/choices';
 import {
   getCorrectResponse,
-  getMaxPoints,
+  getOutOfPoints,
   getResponseBy,
   getResponseId,
 } from 'data/activities/model/responses';
@@ -47,7 +47,7 @@ export const MCActions = {
     return (model: HasParts, _post: PostUndoable) => {
       const part = getPartById(model, partId);
       // migrated qs may have custom score but no outOf attribute
-      const correctScore = part.outOf ?? getMaxPoints(model, partId);
+      const correctScore = getOutOfPoints(model, partId);
       const correctResponse = getCorrectResponse(model, partId);
       correctResponse.rule = matchRule(id);
       correctResponse.score = correctScore;

@@ -3,6 +3,7 @@ import {
   getCorrectResponse,
   getIncorrectResponse,
   getMaxPoints,
+  getOutOfPoints,
 } from 'data/activities/model/responses';
 
 // Migrated qs may have non-default point values but no customScoring attribute. To allow for this,
@@ -27,8 +28,7 @@ export const ScoringActions = {
         // When going from custom to default, we need to reset the scores for each part to 1 or 0
         model.scoringStrategy = ScoringStrategy.average;
         model.authoring?.parts?.forEach((part: Part) => {
-          // outOf attribute may not exist on migrated qs, use max score instead
-          const oldCorrectScore = part.outOf ?? getMaxPoints(model, part.id);
+          const oldCorrectScore = getOutOfPoints(model, part.id);
           part.outOf = 1;
           part.incorrectScore = 0;
           part.responses?.forEach((response) => {

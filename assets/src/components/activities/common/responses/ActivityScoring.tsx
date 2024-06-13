@@ -4,7 +4,6 @@ import { HasParts } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import {
   getIncorrectPoints,
-  getMaxPoints,
   getOutOfPoints,
   hasCustomScoring,
 } from 'data/activities/model/responses';
@@ -23,14 +22,12 @@ interface ActivityScoreProps {
 export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptForDefault }) => {
   const { model, dispatch, editMode } = useAuthoringElementContext<HasParts>();
   const checkboxInputId = useMemo(() => guid(), []);
-  const outOf = getOutOfPoints(model, partId);
+  const outOfPoints = getOutOfPoints(model, partId);
   const incorrect = getIncorrectPoints(model, partId);
   const [useDefaultScoring, setDefaultScoring] = useState(
     !hasCustomScoring(model) && promptForDefault,
   );
   const incorrectPoints = incorrect || 0;
-  // migrated qs may have no outOf attribute but non-default points
-  const outOfPoints = outOf ?? getMaxPoints(model, partId);
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultScoring(e.target.checked);
