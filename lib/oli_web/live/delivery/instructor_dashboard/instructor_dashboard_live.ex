@@ -356,26 +356,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
 
-  defp container_details_tab(section_slug, preview_mode, selected_container) do
-    [
-      %TabLink{
-        label: fn -> render_container_tab_detail(%{title: selected_container.title}) end,
-        path: path_for(:insights, :content, section_slug, preview_mode),
-        badge: nil,
-        active: true
-      }
-    ]
-  end
-
-  defp render_container_tab_detail(assigns) do
-    ~H"""
-    <div class="flex gap-2 items-center">
-      <i class="fa-solid fa-chevron-left" />
-      <span><%= @title %></span>
-    </div>
-    """
-  end
-
   defp overview_tabs(section_slug, preview_mode, active_tab) do
     [
       %TabLink{
@@ -519,10 +499,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         %{view: :insights, active_tab: :content, params: %{container_id: _container_id}} = assigns
       ) do
     ~H"""
-    <InstructorDashboard.tabs tabs={
-      container_details_tab(@section_slug, @preview_mode, @selected_container)
-    } />
-
     <div class="container mx-auto">
       <.live_component
         id="container_details_table"
@@ -760,7 +736,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   def handle_info(
-        {:selected_card_students, {value, container_id}},
+        {:selected_card_students, {value, container_id, :insights = _view}},
         socket
       ) do
     params =
@@ -773,6 +749,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
      push_patch(socket,
        to:
          ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/insights/content?#{params}"
+     )}
+  end
+
+  def handle_info(
+        {:selected_card_students, {value, _container_id, :overview = _view}},
+        socket
+      ) do
+    params =
+      Map.merge(socket.assigns.params, %{
+        "selected_card_value" => value
+      })
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/overview/students?#{params}"
      )}
   end
 
