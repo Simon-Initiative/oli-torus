@@ -64,8 +64,15 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
     part_attempts_by_id =
       Enum.reduce(activity_attempt.part_attempts, %{}, fn a, c -> Map.put(c, a.part_id, a) end)
 
+    content =
+      if is_nil(activity_attempt.transformed_model) do
+        activity_attempt.revision.content
+      else
+        activity_attempt.transformed_model
+      end
+
     data =
-      Map.get(activity_attempt.revision.content, "items")
+      Map.get(content, "items")
       |> Enum.with_index()
       |> Enum.reduce([], fn {a, idx}, c ->
         p =
@@ -115,7 +122,6 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
   defp color_matcher(_), do: "blue"
 
   defp visualization(%Oli.Rendering.Context{} = context, data_url, groups) do
-    # encoded = Jason.encode!(data)
     spec =
       VegaLite.from_json("""
       {
