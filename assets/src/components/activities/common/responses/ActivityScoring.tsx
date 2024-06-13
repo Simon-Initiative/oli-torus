@@ -44,7 +44,8 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
   };
 
   const onCorrectScoreChange = (score: number) => {
-    if (score >= 0) {
+    // disallow changing correct to zero, can cause problems finding correct answer on migrated qs
+    if (score > 0) {
       dispatch(ScoringActions.editPartScore(partId, score, incorrectPoints || null));
     }
   };
