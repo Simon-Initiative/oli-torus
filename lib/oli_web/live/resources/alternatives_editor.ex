@@ -390,9 +390,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
     {:noreply,
      socket
      |> hide_modal()
-     |> assign(
-       alternatives: alternatives
-     )}
+     |> assign(alternatives: alternatives)}
   end
 
   def handle_event(
