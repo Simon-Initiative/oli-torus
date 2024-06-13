@@ -91,7 +91,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             </div>
           </div>
         </div>
-        <div class="w-[720px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+        <div class="w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
             ctx={@ctx}
@@ -99,7 +99,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             objectives={@objectives}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" phx-update="ignore" class="content" role="page_content">
+          <div id="eventIntercept" phx-update="ignore" class="content w-full" role="page_content">
             <%= raw(@html) %>
           </div>
           <.link

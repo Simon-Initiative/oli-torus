@@ -401,7 +401,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       }
     },
     ['Delete', 'Backspace'],
-    {},
+    { ctrlKey: true },
     [selectedPartAndCapabilities, configurePartId],
   );
   useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true }, [
