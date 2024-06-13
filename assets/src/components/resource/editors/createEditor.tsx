@@ -44,7 +44,7 @@ export type EditorProps = {
   onAddItem: AddCallback;
 };
 
-// content or referenced activities
+//content or referenced activities
 export const createEditor = (editorProps: EditorProps): JSX.Element => {
   const { contentItem } = editorProps;
 
