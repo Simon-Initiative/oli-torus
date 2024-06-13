@@ -182,7 +182,7 @@ defmodule OliWeb.ExperimentsLiveTest do
     to_evaluate =
       view
       |> render()
-      |> Floki.find("button:fl-contains('Download Experiment JSON')")
+      |> Floki.find("a:fl-contains('Download Experiment JSON')")
       |> Floki.text() =~ "Download Experiment JSON"
 
     evaluate_assertion(to_evaluate, assert_or_refute)
@@ -194,7 +194,7 @@ defmodule OliWeb.ExperimentsLiveTest do
     to_evaluate =
       view
       |> render()
-      |> Floki.find("button:fl-contains('Download Segment JSON')")
+      |> Floki.find("a:fl-contains('Download Segment JSON')")
       |> Floki.text() =~ "Download Segment JSON"
 
     evaluate_assertion(to_evaluate, assert_or_refute)
