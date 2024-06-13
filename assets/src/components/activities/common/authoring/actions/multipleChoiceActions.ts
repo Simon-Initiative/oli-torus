@@ -45,8 +45,6 @@ export const MCActions = {
 
   toggleChoiceCorrectness(id: string, partId: string) {
     return (model: HasParts, _post: PostUndoable) => {
-      const part = getPartById(model, partId);
-      // migrated qs may have custom score but no outOf attribute
       const correctScore = getOutOfPoints(model, partId);
       const correctResponse = getCorrectResponse(model, partId);
       correctResponse.rule = matchRule(id);
