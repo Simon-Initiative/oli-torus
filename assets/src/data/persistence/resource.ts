@@ -1,5 +1,5 @@
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import { AttachedObjectives, PageContent } from '../content/resource';
+import { AlternativesStrategy, AttachedObjectives, PageContent } from '../content/resource';
 import { makeRequest } from './common';
 
 export type ResourceUpdate = {
@@ -62,6 +62,7 @@ export type AlternativesGroup = {
   id: number;
   title: string;
   options: AlternativesGroupOption[];
+  strategy: AlternativesStrategy;
 };
 export type AlternativesGroupsReceived = { type: 'success'; alternatives: AlternativesGroup[] };
 
