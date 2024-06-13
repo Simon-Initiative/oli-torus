@@ -360,13 +360,15 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
       <div className={styles.groupBlockHeader}>
         <div className={styles.options}>
           {options}
-          <button
-            key="add"
-            className={classNames('btn btn-sm', styles.option)}
-            onClick={onCreateAlternative}
-          >
-            <i className="fas fa-plus"></i>
-          </button>
+          {contentItem.strategy !== 'upgrade_decision_point' && (
+            <button
+              key="add"
+              className={classNames('btn btn-sm', styles.option)}
+              onClick={onCreateAlternative}
+            >
+              <i className="fas fa-plus"></i>
+            </button>
+          )}
         </div>
         <div className="flex-grow-1"></div>
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
