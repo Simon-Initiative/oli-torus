@@ -2,7 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HasParts } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
-import { getIncorrectPoints, getOutOfPoints } from 'data/activities/model/responses';
+import {
+  getIncorrectPoints,
+  getMaxPoints,
+  getOutOfPoints,
+  hasCustomScoring,
+} from 'data/activities/model/responses';
 import guid from 'utils/guid';
 import { ScoringActions } from '../authoring/actions/scoringActions';
 import { ScoreInput } from './ScoreInput';
@@ -21,16 +26,19 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
   const outOf = getOutOfPoints(model, partId);
   const incorrect = getIncorrectPoints(model, partId);
   const [useDefaultScoring, setDefaultScoring] = useState(
-    (outOf === null || outOf === undefined) && promptForDefault,
+    !hasCustomScoring(model) && promptForDefault,
   );
-  const outOfPoints = outOf || 1;
   const incorrectPoints = incorrect || 0;
+  // migrated qs may have no outOf attribute but non-default points
+  const outOfPoints = outOf ?? getMaxPoints(model, partId);
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDefaultScoring(e.target.checked);
     if (e.target.checked) {
+      // custom to default: sets outOf to null to indicate
       dispatch(ScoringActions.editPartScore(partId, null, null, 'average'));
     } else {
+      // default to custom
       dispatch(ScoringActions.editPartScore(partId, 1, 0));
     }
   };
@@ -43,7 +51,7 @@ export const ActivityScoring: React.FC<ActivityScoreProps> = ({ partId, promptFo
 
   const onIncorrectScoreChange = (score: number) => {
     if (score >= 0) {
-      dispatch(ScoringActions.editPartScore(partId, outOf || null, score));
+      dispatch(ScoringActions.editPartScore(partId, outOfPoints, score));
     }
   };
 

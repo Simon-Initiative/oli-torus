@@ -1,13 +1,26 @@
-import { ActivityLevelScoring, Part, ScoringStrategy } from 'components/activities/types';
-import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/responses';
+import { ActivityLevelScoring, Part, Response, ScoringStrategy } from 'components/activities/types';
+import {
+  getCorrectResponse,
+  getIncorrectResponse,
+  getMaxPoints,
+  getMaxScoreResponse,
+} from 'data/activities/model/responses';
+
+// Migrated qs may have non-default point values but no customScoring attribute. To allow for this,
+// this method should be used rather than checking attribute. Attribute will get set if toggled
+export const usesCustomScoring = (model: ActivityLevelScoring) =>
+  model.customScoring ||
+  model.authoring.parts.some((part: Part) => part.responses.some((r: Response) => r.score > 1));
 
 export const ScoringActions = {
   toggleActivityDefaultScoring() {
     // This toggles an activity-level default scoring flag, currently only used for multi input questions.
     return (model: ActivityLevelScoring) => {
-      model.customScoring = !model.customScoring;
+      // attribute may not exist on migrated qs; this will set it
+      model.customScoring = !usesCustomScoring(model);
 
       if (model.customScoring) {
+        // going from default to custom, so all responses should already be 1 or 0.
         model.authoring?.parts?.forEach((part: Part) => {
           part.outOf = 1;
         });
@@ -15,11 +28,12 @@ export const ScoringActions = {
         // When going from custom to default, we need to reset the scores for each part to 1 or 0
         model.scoringStrategy = ScoringStrategy.average;
         model.authoring?.parts?.forEach((part: Part) => {
-          const correctScore = part.outOf;
+          // outOf attribute may not exist on migrated qs, use max score instead
+          const oldCorrectScore = part.outOf ?? getMaxPoints(model, part.id);
           part.outOf = 1;
           part.incorrectScore = 0;
           part.responses?.forEach((response) => {
-            response.score = response.score === correctScore ? 1 : 0;
+            response.score = response.score === oldCorrectScore ? 1 : 0;
           });
         });
       }
@@ -56,6 +70,7 @@ export const ScoringActions = {
         console.warn('Could not set score for part', partId);
         return;
       }
+      const oldOutOf = part.outOf;
       part.outOf = correctScore;
       part.incorrectScore = incorrectScore;
 
@@ -63,24 +78,35 @@ export const ScoringActions = {
         part.scoringStrategy = scoringStrategy;
       }
 
-      // When we change the correct & incorrect scores, we also need to update the responses for the correct & incorrect answers
+      // if changing to default, reset the scores for each part to 1 or 0
+      if (part.outOf == null) {
+        model.authoring?.parts?.forEach((part: Part) => {
+          // outOf attribute may not exist on migrated qs, use max score instead
+          const oldCorrectScore = oldOutOf ?? getMaxPoints(model, part.id);
+          part.responses?.forEach((response) => {
+            response.score = response.score === oldCorrectScore ? 1 : 0;
+          });
+        });
+      } else {
+        // When we change the correct & incorrect scores, we also need to update the responses for the correct & incorrect answers
 
-      try {
-        const correctResponse = getCorrectResponse(model, partId);
-        if (correctResponse) {
-          correctResponse.score = correctScore ?? 1;
+        try {
+          const correctResponse = getCorrectResponse(model, partId);
+          if (correctResponse) {
+            correctResponse.score = correctScore ?? 1;
+          }
+        } catch (e) {
+          console.warn('Could not find correct response for part', partId);
         }
-      } catch (e) {
-        console.warn('Could not find correct response for part', partId);
-      }
 
-      try {
-        const incorrectResponse = getIncorrectResponse(model, partId);
-        if (incorrectResponse) {
-          incorrectResponse.score = incorrectScore ?? 0;
+        try {
+          const incorrectResponse = getIncorrectResponse(model, partId);
+          if (incorrectResponse) {
+            incorrectResponse.score = incorrectScore ?? 0;
+          }
+        } catch (e) {
+          console.warn('Could not find incorrect response for part', partId);
         }
-      } catch (e) {
-        console.warn('Could not find incorrect response for part', partId);
       }
     };
   },

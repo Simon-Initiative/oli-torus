@@ -3,6 +3,7 @@ import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { usesCustomScoring } from 'components/activities/common/authoring/actions/scoringActions';
 import { ActivityScoring } from 'components/activities/common/responses/ActivityScoring';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { Dropdown, FillInTheBlank, MultiInput } from 'components/activities/multi_input/schema';
@@ -64,7 +65,7 @@ export const PartsTab: React.FC<Props> = (props) => {
         title={title}
         response={response}
         partId={part.id}
-        customScoring={model.customScoring}
+        customScoring={usesCustomScoring(model)}
         removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
         updateScore={(_id, score) =>
           dispatch(ResponseActions.editResponseScore(response.id, score))
@@ -101,7 +102,7 @@ export const PartsTab: React.FC<Props> = (props) => {
           Add targeted feedback
         </AuthoringButtonConnected>
         <ResponseMultiInputScoringMethod />
-        {model.customScoring && <ActivityScoring partId={part.id} promptForDefault={false} />}
+        {usesCustomScoring(model) && <ActivityScoring partId={part.id} promptForDefault={false} />}
       </Card.Content>
     </Card.Card>
   );

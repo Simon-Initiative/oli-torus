@@ -45,7 +45,9 @@ export const getResponseBy = (model: HasParts, predicate: (x: Response) => boole
 
 export const hasCustomScoring = (model: HasParts, partId?: string): boolean => {
   const outOf = getOutOfPoints(model, partId || model.authoring.parts[0].id);
-  return outOf !== null && outOf !== undefined;
+  // migrated qs may carry non-default point values but no outOf attribute
+  const maxScore = getMaxPoints(model, partId || model.authoring.parts[0].id);
+  return (outOf !== null && outOf !== undefined) || maxScore > 1;
 };
 
 export const getOutOfPoints = (model: HasParts, partId: string) => {
@@ -87,6 +89,9 @@ export const getMaxScoreResponse = (model: HasParts, partId: string) => {
     prev && current.score > prev.score ? current : prev,
   );
 };
+
+export const getMaxPoints = (model: HasParts, partId: string) =>
+  getMaxScoreResponse(model, partId).score;
 
 export interface ResponseMapping {
   response: Response;
