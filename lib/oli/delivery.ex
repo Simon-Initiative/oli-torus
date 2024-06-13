@@ -99,7 +99,9 @@ defmodule Oli.Delivery do
               grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
               line_items_service_url: AGS.get_line_items_url(lti_params, registration),
               nrps_enabled: NRPS.nrps_enabled?(lti_params),
-              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
+              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
+              welcome_title: blueprint.welcome_title,
+              encouraging_subtitle: blueprint.encouraging_subtitle
             },
             attrs
           )
@@ -148,7 +150,9 @@ defmodule Oli.Delivery do
               line_items_service_url: AGS.get_line_items_url(lti_params, registration),
               nrps_enabled: NRPS.nrps_enabled?(lti_params),
               nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
-              customizations: customizations
+              customizations: customizations,
+              welcome_title: publication.project.welcome_title,
+              encouraging_subtitle: publication.project.encouraging_subtitle
             },
             attrs
           )

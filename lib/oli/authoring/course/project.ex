@@ -26,9 +26,7 @@ defmodule Oli.Authoring.Course.Project do
     field(:allow_transfer_payment_codes, :boolean, default: false)
     field(:welcome_title, :map, default: %{})
 
-    field(:encouraging_subtitle, :string,
-      default: "Dive Into Discovery. Begin Your Learning Adventure Now!"
-    )
+    field(:encouraging_subtitle, :string)
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
     embeds_one(:attributes, ProjectAttributes, on_replace: :delete)

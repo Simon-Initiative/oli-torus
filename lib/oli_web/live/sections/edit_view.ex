@@ -55,16 +55,21 @@ defmodule OliWeb.Sections.EditView do
             val -> Map.from_struct(val)
           end
 
+        base_project = Oli.Authoring.Course.get_project!(section.base_project_id)
+        changeset = Sections.change_section(section)
+
         {:ok,
          assign(socket,
            ctx: SessionContext.init(socket, session),
            brands: available_brands,
            institutions: available_institutions,
-           changeset: Sections.change_section(section),
+           changeset: changeset,
+           form: to_form(changeset),
            is_admin: type == :admin,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
-           labels: labels
+           labels: labels,
+           base_project: base_project
          )}
     end
   end
@@ -76,6 +81,7 @@ defmodule OliWeb.Sections.EditView do
   attr(:is_admin, :boolean)
   attr(:brands, :list)
   attr(:labels, :map, default: CustomLabels.default_map())
+  attr(:base_project, :any)
 
   def render(assigns) do
     assigns = assign(assigns, changeset: to_form(assigns.changeset))
@@ -87,10 +93,13 @@ defmodule OliWeb.Sections.EditView do
         <Group.render label="Settings" description="Manage the course section settings">
           <MainDetails.render
             changeset={@changeset}
+            form={@form}
             disabled={false}
             is_admin={@is_admin}
             brands={@brands}
             institutions={@institutions}
+            project_slug={@base_project.slug}
+            ctx={@ctx}
           />
         </Group.render>
         <Group.render
@@ -135,11 +144,15 @@ defmodule OliWeb.Sections.EditView do
       params
       |> can_change_payment?(socket.assigns.is_admin)
       |> convert_dates(socket.assigns.ctx)
+      |> decode_welcome_title()
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
-        {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
+        changeset = Sections.change_section(section)
+
+        {:noreply,
+         assign(socket, section: section, changeset: changeset, form: to_form(changeset))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -176,6 +189,16 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
+  def handle_event("welcome_title_change", %{"values" => welcome_title}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :welcome_title, %{
+        "type" => "p",
+        "children" => welcome_title
+      })
+
+    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
+  end
+
   defp convert_dates(params, ctx) do
     utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], ctx)
     utc_end_date = FormatDateTime.datestring_to_utc_datetime(params["end_date"], ctx)
@@ -192,4 +215,9 @@ defmodule OliWeb.Sections.EditView do
       false -> Map.delete(params, "requires_payment")
     end
   end
+
+  defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
+
+  defp decode_welcome_title(project_params),
+    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
 end

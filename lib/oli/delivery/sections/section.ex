@@ -157,9 +157,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:welcome_title, :map, default: %{})
 
-    field(:encouraging_subtitle, :string,
-      default: "Dive Into Discovery. Begin Your Learning Adventure Now!"
-    )
+    field(:encouraging_subtitle, :string)
 
     timestamps(type: :utc_datetime)
   end

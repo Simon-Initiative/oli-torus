@@ -160,7 +160,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "grace_period_days" => 1,
             "amount" => Money.new(:USD, "25.00"),
             "publisher_id" => project.publisher_id,
-            "customizations" => custom_labels
+            "customizations" => custom_labels,
+            "welcome_title" => project.welcome_title,
+            "encouraging_subtitle" => project.encouraging_subtitle
           }
 
           case Sections.create_section(new_blueprint) do
