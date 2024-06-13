@@ -71,6 +71,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
         activity_attempt.transformed_model
       end
 
+      IO.inspect(content)
     data =
       Map.get(content, "items")
       |> Enum.with_index()

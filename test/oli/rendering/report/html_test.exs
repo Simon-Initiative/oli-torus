@@ -121,7 +121,7 @@ defmodule Oli.Content.Report.HtmlTest do
       :attempt1
     )
     |> Seeder.create_activity_attempt(
-      %{attempt_number: 1, transformed_model: %{some: :thing}},
+      %{attempt_number: 1, transformed_model: nil},
       :activity_a,
       :attempt1,
       :activity_attempt1
