@@ -219,7 +219,9 @@ defmodule Oli.Delivery.Sections.Section do
       :v25_migration,
       :page_prompt_template,
       :apply_major_updates,
-      :assistant_enabled
+      :assistant_enabled,
+      :welcome_title,
+      :encouraging_subtitle
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)
