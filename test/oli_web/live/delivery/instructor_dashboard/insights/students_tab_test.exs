@@ -354,7 +354,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["10%", "7%", "0%", "7%"]
+      assert progress == ["3%", "2%", "0%", "2%"]
 
       ### filtering by no container
       ### (we want to get the progress across all course section)
@@ -383,7 +383,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["0%", "0%", "0%", "0%"]
+      assert progress == ["3%", "2%", "0%", "2%"]
 
       ### filtering by page
       params = %{page_id: page_1.published_resource.resource_id}
@@ -509,11 +509,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       %{
         section: section,
         mod1_pages: mod1_pages,
+        mod2_pages: mod2_pages,
+        mod3_pages: mod3_pages,
         mod1_resource: mod1_resource
       } =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
-      [page_1, page_2, _page_3] = mod1_pages
+      [page_1, page_2, page_3] = mod1_pages
+      [page_4, page_5, page_6] = mod2_pages
+      [page_7, page_8, page_9, _page_10] = mod3_pages
 
       user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
       user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
@@ -530,6 +534,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_2.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_3.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_4.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_5.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_6.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_7.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
       params = %{container_id: mod1_resource.id}
 
@@ -588,11 +599,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       %{
         section: section,
         mod1_pages: mod1_pages,
+        mod2_pages: mod2_pages,
+        mod3_pages: mod3_pages,
         mod1_resource: mod1_resource
       } =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
-      [page_1, page_2, _page_3] = mod1_pages
+      [page_1, page_2, page_3] = mod1_pages
+      [page_4, page_5, page_6] = mod2_pages
+      [page_7, page_8, page_9, _page_10] = mod3_pages
 
       user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
       user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
@@ -609,6 +624,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       set_progress(section.id, page_1.published_resource.resource_id, user_1.id, 1)
       set_progress(section.id, page_2.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_3.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_4.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_5.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_6.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_7.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_8.published_resource.resource_id, user_1.id, 1)
+      set_progress(section.id, page_9.published_resource.resource_id, user_1.id, 1)
 
       params = %{container_id: mod1_resource.id}
 
@@ -664,7 +686,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       ## Click on Unit 2 container
       element(
         view,
-        "a[href=\"/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit2_container.resource.id}\"]"
+        "a",
+        unit2_container.revision.title
       )
       |> render_click()
 
@@ -729,7 +752,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       ## Click on Unit 2 container
       element(
         view,
-        "a[href=\"/sections/#{section.slug}/instructor_dashboard/insights/content?container_id=#{unit2_container.resource.id}\"]"
+        "a",
+        unit2_container.revision.title
       )
       |> render_click()
 
