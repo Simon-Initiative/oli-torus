@@ -2,14 +2,13 @@ defmodule OliWeb.Delivery.Content.Progress do
   use OliWeb, :html
 
   attr(:progress_percentage, :string, default: "100")
+  attr(:params_from_url, :map)
+  attr(:target, :any)
 
   attr(:progress_selector, :atom,
     default: :is_less_than_or_equal,
     values: [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal]
   )
-
-  attr(:progress_filter_text, :string, default: "")
-  attr(:target, :any)
 
   def render(assigns) do
     ~H"""
@@ -27,7 +26,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           type="button"
         >
           Progress <%= progress_filter_text(
-            @progress_filter_text,
+            @params_from_url,
             @progress_selector,
             @progress_percentage
           ) %>
@@ -61,17 +60,20 @@ defmodule OliWeb.Delivery.Content.Progress do
       >
         <div class="progress-options mt-2">
           <%= radio_button(:progress, :option, "is_equal_to",
-            checked: if(@progress_selector == :is_equal_to, do: true, else: false),
+            field: "is_equal_to",
+            checked: @progress_selector == :is_equal_to,
             id: "is_equal_to"
           ) %>
           <label for="is_equal_to"><%= "is =" %></label>
           <%= radio_button(:progress, :option, "is_less_than_or_equal",
-            checked: if(@progress_selector == :is_less_than_or_equal, do: true, else: false),
+            field: "is_less_than_or_equal",
+            checked: @progress_selector == :is_less_than_or_equal,
             id: "is_less_than_or_equal"
           ) %>
           <label for="is_less_than_or_equal"><%= "< =" %></label>
           <%= radio_button(:progress, :option, "is_greather_than_or_equal",
-            checked: if(@progress_selector == :is_greather_than_or_equal, do: true, else: false),
+            field: "is_greather_than_or_equal",
+            checked: @progress_selector == :is_greather_than_or_equal,
             id: "is_greather_than_or_equal"
           ) %>
           <label for="is_greather_than_or_equal"><%= "> =" %></label>
@@ -126,17 +128,19 @@ defmodule OliWeb.Delivery.Content.Progress do
     """
   end
 
-  defp progress_filter_text("", _progress_selector, _progress_percentage), do: ""
+  # defp progress_filter_text(%{"progress_selector" => _}, progress_selector, progress_percentage) do
+  #   progress_selector_text =
+  #     case progress_selector do
+  #       :is_equal_to -> " is ="
+  #       :is_less_than_or_equal -> " is <="
+  #       :is_greather_than_or_equal -> " is >="
+  #       nil -> ""
+  #     end
 
-  defp progress_filter_text(_progress_filter_text, progress_selector, progress_percentage) do
-    progress_selector_text =
-      case progress_selector do
-        :is_equal_to -> " is ="
-        :is_less_than_or_equal -> " is <="
-        :is_greather_than_or_equal -> " is >="
-        nil -> ""
-      end
+  #   progress_selector_text <> " #{progress_percentage}"
+  # end
 
-    progress_selector_text <> " #{progress_percentage}"
+  defp progress_filter_text(_params_from_url, _progress_selector, _progress_percentage) do
+    ""
   end
 end

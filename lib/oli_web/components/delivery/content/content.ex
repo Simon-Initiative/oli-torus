@@ -22,9 +22,8 @@ defmodule OliWeb.Components.Delivery.Content do
     container_filter_by: :units,
     selected_card_value: nil,
     progress_percentage: 100,
-    progress_selector: :is_less_than_or_equal,
-    progress_filter_text: "",
-    selected_proficiency_ids: Jason.encode!([1, 2, 3])
+    progress_selector: nil,
+    selected_proficiency_ids: Jason.encode!([])
   }
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
@@ -186,7 +185,7 @@ defmodule OliWeb.Components.Delivery.Content do
             target={@myself}
             progress_percentage={@params.progress_percentage}
             progress_selector={@params.progress_selector}
-            progress_filter_text={@params.progress_filter_text}
+            params_from_url={@params_from_url}
           />
 
           <OliWeb.Delivery.Content.Proficiency.render
@@ -229,17 +228,17 @@ defmodule OliWeb.Components.Delivery.Content do
         },
         socket
       ) do
+    params =
+      Map.merge(socket.assigns.params, %{
+        progress_percentage: progress_percentage,
+        progress_selector: progress_selector
+      })
+
+    socket = assign(socket, :params, params)
+
     {:noreply,
      push_patch(socket,
-       to:
-         route_for(
-           socket,
-           %{
-             progress_percentage: progress_percentage,
-             progress_selector: progress_selector
-           },
-           socket.assigns.patch_url_type
-         )
+       to: route_for(socket, params, socket.assigns.patch_url_type)
      )}
   end
 
@@ -311,12 +310,15 @@ defmodule OliWeb.Components.Delivery.Content do
   end
 
   def handle_event("search_container", %{"container_name" => container_name}, socket) do
+    params = Map.merge(socket.assigns.params, %{text_search: container_name})
+    socket = assign(socket, :params, params)
+
     {:noreply,
      push_patch(socket,
        to:
          route_for(
            socket,
-           %{text_search: container_name},
+           params,
            socket.assigns.patch_url_type
          )
      )}
@@ -425,8 +427,6 @@ defmodule OliWeb.Components.Delivery.Content do
           [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
           @default_params.progress_selector
         ),
-      progress_filter_text:
-        Params.get_param(params, "progress_selector", @default_params.progress_filter_text),
       selected_proficiency_ids:
         Params.get_param(
           params,
@@ -510,6 +510,10 @@ defmodule OliWeb.Components.Delivery.Content do
       _ ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)
     end
+  end
+
+  defp maybe_filter_by_proficiency(containers, "[]") do
+    containers
   end
 
   defp maybe_filter_by_proficiency(containers, selected_proficiency_ids) do
