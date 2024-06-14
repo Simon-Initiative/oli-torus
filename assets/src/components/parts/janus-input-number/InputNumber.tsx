@@ -275,7 +275,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
       {showLabel && (
         <React.Fragment>
           <label htmlFor={`${id}-number-input`} className="inputNumberLabel">
-            {label.length > 0 ? label : ''}
+            {label?.length > 0 ? label : ''}
           </label>
           <br />
         </React.Fragment>

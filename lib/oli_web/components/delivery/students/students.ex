@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Icons
   alias Lti_1p3.Tool.ContextRoles
 
   @default_params %{
@@ -24,7 +25,8 @@ defmodule OliWeb.Components.Delivery.Students do
     filter_by: :enrolled,
     payment_status: nil,
     selected_card_value: nil,
-    container_filter_by: :students
+    container_filter_by: :students,
+    navigation_data: Jason.encode!(%{})
   }
 
   def update(
@@ -40,6 +42,23 @@ defmodule OliWeb.Components.Delivery.Students do
     {total_count, rows} = apply_filters(students, params)
 
     {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
+
+    navigation_data = Jason.decode!(params.navigation_data)
+
+    {previous_id, next_id} =
+      case navigation_data["containers"] do
+        nil ->
+          {nil, nil}
+
+        _ ->
+          filtered_containers =
+            filter_containers_by_option(navigation_data)
+
+          get_navigation_ids(
+            filtered_containers,
+            navigation_data["current_container_id"]
+          )
+      end
 
     table_model =
       Map.merge(table_model, %{
@@ -93,7 +112,10 @@ defmodule OliWeb.Components.Delivery.Students do
        inviter: if(is_nil(ctx.author), do: "user", else: "author"),
        current_user: ctx.user,
        current_author: ctx.author,
-       card_props: card_props
+       card_props: card_props,
+       previous_id: previous_id,
+       next_id: next_id,
+       navigation_data: navigation_data
      )}
   end
 
@@ -247,6 +269,9 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:inviter, :string, required: false)
   attr(:myself, :string, required: false)
   attr(:card_props, :list)
+  attr(:previous_id, :integer)
+  attr(:next_id, :integer)
+  attr(:navigation_data, :map, required: true)
 
   def render(assigns) do
     ~H"""
@@ -284,6 +309,73 @@ defmodule OliWeb.Components.Delivery.Students do
           myself={@myself}
         />
       </.live_component>
+      <%= unless is_nil(@navigation_data["containers"]) do %>
+        <div class="flex flex-col mb-8">
+          <div class="flex mt-4 mb-2">
+            <.link navigate={@navigation_data["request_path"]} role="back button">
+              <div class="flex gap-2 items-center">
+                <Icons.left_chevron_blue />
+                <div class="text-zinc-700 text-sm font-semibold tracking-tight dark:text-white">
+                  Back to <%= String.capitalize(@navigation_data["container_filter_by"]) %>
+                </div>
+              </div>
+            </.link>
+          </div>
+          <div class="flex flex-row justify-center items-center">
+            <div class="w-28 py-2 rounded-md justify-center items-center gap-2 inline-flex">
+              <button
+                disabled={is_nil(@previous_id)}
+                phx-click="change_navigation"
+                value={@previous_id}
+                phx-target={@myself}
+              >
+                <Icons.previous_arrow color={if is_nil(@previous_id), do: "#a3a3a3", else: "#468AEF"} />
+              </button>
+            </div>
+            <div class="w-auto px-2 py-1 rounded-md flex-col justify-center items-center text-center inline-flex">
+              <div class="self-stretch text-zinc-700 text-xl font-bold leading-none tracking-tight dark:text-white">
+                <%= @title %>
+              </div>
+            </div>
+            <div class="w-auto py-2 flex rounded-md justify-center items-center gap-2 inline-flex">
+              <button
+                disabled={is_nil(@next_id)}
+                phx-click="change_navigation"
+                value={@next_id}
+                phx-target={@myself}
+              >
+                <Icons.next_arrow color={if is_nil(@next_id), do: "#a3a3a3", else: "#468AEF"} />
+              </button>
+            </div>
+          </div>
+          <form phx-change="select_option" phx-target={@myself} id="container_option">
+            <div class="flex justify-center items-center">
+              <div class="flex flex-col items-start gap-y-2 pl-32">
+                <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
+                  <%= radio_button(:container, :option, :by_filtered,
+                    class: "form-check-input",
+                    checked: @navigation_data["navigation_criteria"] == "by_filtered"
+                  ) %>
+                  <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
+                    Navigate within <%= @navigation_data["filtered_count"] %> filtered <%= @navigation_data[
+                      "container_filter_by"
+                    ] %> <%= get_card_type(@navigation_data["filter_criteria_card"]) %>
+                  </div>
+                <% end %>
+                <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
+                  <%= radio_button(:container, :option, :by_all,
+                    class: "form-check-input",
+                    checked: @navigation_data["navigation_criteria"] == "by_all"
+                  ) %>
+                  <div class="w-full text-zinc-900 text-xs font-normal leading-none dark:text-white">
+                    Navigate within ALL <%= @navigation_data["container_filter_by"] %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </form>
+        </div>
+      <% end %>
       <div class="bg-white dark:bg-gray-800 shadow-sm">
         <div class="flex justify-between sm:items-end px-4 sm:px-9 py-4 instructor_dashboard_table">
           <div>
@@ -296,7 +388,7 @@ defmodule OliWeb.Components.Delivery.Students do
                     OliWeb.Endpoint,
                     :download_container_progress,
                     @section_slug,
-                    @params.container_id
+                    @params.container_id || ""
                   )
                 }
                 download="progress.csv"
@@ -520,9 +612,12 @@ defmodule OliWeb.Components.Delivery.Students do
     value =
       if String.to_existing_atom(value) == Map.get(socket.assigns.params, :selected_card_value),
         do: nil,
-        else: value
+        else: String.to_existing_atom(value)
 
-    send(self(), {:selected_card_students, {value, socket.assigns.params.container_id}})
+    send(
+      self(),
+      {:selected_card_students, {value, socket.assigns.params.container_id, socket.assigns.view}}
+    )
 
     {:noreply, socket}
   end
@@ -705,11 +800,111 @@ defmodule OliWeb.Components.Delivery.Students do
      )}
   end
 
+  def handle_event(
+        "select_option",
+        %{"_target" => _, "container" => %{"option" => "by_filtered"}},
+        socket
+      ) do
+    navigation_data = socket.assigns.navigation_data
+
+    containers = navigation_data["containers"]
+    current_container_id = navigation_data["current_container_id"]
+
+    filtered_containers =
+      Enum.filter(containers, fn container -> container["was_filtered"] end)
+
+    exist =
+      Enum.any?(filtered_containers, fn container ->
+        container["id"] == current_container_id
+      end)
+
+    navigation_data =
+      if exist,
+        do: Map.merge(navigation_data, %{"navigation_criteria" => "by_filtered"}),
+        else:
+          Map.merge(navigation_data, %{
+            "navigation_criteria" => "by_filtered",
+            "current_container_id" => Enum.at(filtered_containers, 0)["id"]
+          })
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{navigation_data: Jason.encode!(navigation_data)})
+         )
+     )}
+  end
+
+  def handle_event(
+        "select_option",
+        %{"_target" => _, "container" => %{"option" => "by_all"}},
+        socket
+      ) do
+    %{navigation_data: navigation_data} = socket.assigns
+
+    navigation_data =
+      Map.merge(navigation_data, %{
+        "navigation_criteria" => "by_all"
+      })
+      |> Jason.encode!()
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{navigation_data: navigation_data})
+         )
+     )}
+  end
+
+  def handle_event("change_navigation", %{"value" => value}, socket) do
+    %{navigation_data: navigation_data} = socket.assigns
+
+    navigation_data =
+      Map.merge(navigation_data, %{
+        "current_container_id" => String.to_integer(value)
+      })
+      |> Jason.encode!()
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{navigation_data: navigation_data})
+         )
+     )}
+  end
+
   def decode_params(params) do
+    navigation_data =
+      Params.get_param(params, "navigation_data", @default_params.navigation_data)
+      |> Jason.decode!()
+
+    container_id =
+      if is_nil(navigation_data),
+        do: Params.get_int_param(params, "container_id", @default_params.container_id),
+        else: navigation_data["current_container_id"]
+
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),
       limit: Params.get_int_param(params, "limit", @default_params.limit),
-      container_id: Params.get_int_param(params, "container_id", @default_params.container_id),
+      container_id: container_id,
       section_slug: Params.get_int_param(params, "section_slug", @default_params.section_slug),
       page_id: Params.get_int_param(params, "page_id", @default_params.page_id),
       sort_order:
@@ -750,7 +945,8 @@ defmodule OliWeb.Components.Delivery.Students do
           "container_filter_by",
           [:students],
           @default_params.container_filter_by
-        )
+        ),
+      navigation_data: navigation_data |> Jason.encode!()
     }
   end
 
@@ -812,5 +1008,48 @@ defmodule OliWeb.Components.Delivery.Students do
 
     student.enrollment_status == filter_by and
       student.user_role_id == student_role_id
+  end
+
+  defp get_navigation_ids(
+         containers_list,
+         current_container_id
+       ) do
+    current_index =
+      Enum.find_index(containers_list, fn container ->
+        container["id"] == current_container_id
+      end)
+
+    previous_id =
+      if current_index > 0, do: Enum.at(containers_list, current_index - 1)["id"], else: nil
+
+    next_id =
+      if current_index < length(containers_list) - 1,
+        do: Enum.at(containers_list, current_index + 1)["id"],
+        else: nil
+
+    {previous_id, next_id}
+  end
+
+  defp filter_containers_by_option(navigation_data) do
+    containers = navigation_data["containers"]
+
+    navigation_criteria =
+      navigation_data["navigation_criteria"] |> String.to_existing_atom()
+
+    case navigation_criteria do
+      :by_filtered ->
+        Enum.filter(containers, fn container -> container["was_filtered"] end)
+
+      :by_all ->
+        containers
+    end
+  end
+
+  defp get_card_type(filter_criteria_card) do
+    case filter_criteria_card do
+      :zero_student_progress -> "(Zero Student Progress)"
+      :high_progress_low_proficiency -> "(High Progress, Low Proficiency)"
+      _ -> ""
+    end
   end
 end

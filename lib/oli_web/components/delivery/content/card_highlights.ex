@@ -6,7 +6,7 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
   attr :is_selected, :boolean, default: false
   attr :value, :string, required: true
   attr :on_click, :map, required: true
-  attr :container_filter_by, :atom
+  attr :container_filter_by, :atom, default: nil
 
   def render(assigns) do
     ~H"""
@@ -28,8 +28,10 @@ defmodule OliWeb.Components.Delivery.CardHighlights do
               Units
             <% :modules -> %>
               Modules
-            <% _ -> %>
+            <% :students -> %>
               Students
+            <% _ -> %>
+              <%= @container_filter_by %>
           <% end %>
         </div>
       </div>

@@ -29,18 +29,34 @@ defmodule Oli.Delivery.PreviousNextIndex do
   Returns {:error, reason} if the index cannot be rebuilt.
 
   """
-  def retrieve(%Section{previous_next_index: nil} = section, resource_id) do
+  def retrieve(section, resource_id, opts \\ [skip: []])
+
+  def retrieve(%Section{previous_next_index: nil} = section, resource_id, opts) do
     case rebuild_if_nil(section) do
-      {:ok, section} -> retrieve(section, resource_id)
+      {:ok, section} -> retrieve(section, resource_id, opts)
       {:error, e} -> Repo.rollback(e)
     end
   end
 
-  def retrieve(%Section{previous_next_index: previous_next_index}, resource_id) do
-    retrieve(previous_next_index, resource_id)
+  def retrieve(%Section{previous_next_index: previous_next_index}, resource_id, opts) do
+    retrieve(previous_next_index, resource_id, opts)
   end
 
-  def retrieve(previous_next_index, resource_id) when is_map(previous_next_index) do
+  def retrieve(previous_next_index, resource_id, skip: containers_to_skip)
+      when is_map(previous_next_index) and containers_to_skip != [] do
+    case Map.get(previous_next_index, Integer.to_string(resource_id)) do
+      nil ->
+        {:ok, {nil, nil, nil}, previous_next_index}
+
+      %{"prev" => prev, "next" => next} = current ->
+        {:ok,
+         {get_closest_navigable_resource(previous_next_index, prev, "prev", containers_to_skip),
+          get_closest_navigable_resource(previous_next_index, next, "next", containers_to_skip),
+          current}, previous_next_index}
+    end
+  end
+
+  def retrieve(previous_next_index, resource_id, _opts) when is_map(previous_next_index) do
     case Map.get(previous_next_index, Integer.to_string(resource_id)) do
       nil ->
         {:ok, {nil, nil, nil}, previous_next_index}
@@ -56,6 +72,42 @@ defmodule Oli.Delivery.PreviousNextIndex do
          previous_next_index}
     end
   end
+
+  defp get_closest_navigable_resource(
+         _previous_next_index,
+         nil,
+         _direction,
+         _containers_to_skip
+       ),
+       do: nil
+
+  defp get_closest_navigable_resource(
+         previous_next_index,
+         current_resource_id,
+         direction,
+         containers_to_skip
+       ) do
+    current_resource = Map.get(previous_next_index, current_resource_id)
+
+    with %{"type" => "container", "level" => level} <- current_resource,
+         {level, _} <- Integer.parse(level),
+         true <- skip_container?(level, containers_to_skip) do
+      get_closest_navigable_resource(
+        previous_next_index,
+        current_resource[direction],
+        direction,
+        containers_to_skip
+      )
+    else
+      _ -> current_resource
+    end
+  end
+
+  defp skip_container?(1, [:unit | _containers]), do: true
+  defp skip_container?(2, [:module | _containers]), do: true
+  defp skip_container?(level, [:section | _containers]) when level > 2, do: true
+  defp skip_container?(level, [_container | containers]), do: skip_container?(level, containers)
+  defp skip_container?(_level, []), do: false
 
   # Allowing the section to be directly passed in from client code is problematic because it
   # can lead to situations where client code is continually passing in a %Section{} with a

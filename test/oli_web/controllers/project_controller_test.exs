@@ -13,20 +13,6 @@ defmodule OliWeb.ProjectControllerTest do
   @valid_attrs %{title: "default title"}
   @invalid_attrs %{title: ""}
 
-  describe "authorization" do
-    test "all get routes redirect to workspace path when attempting to view a project that does not exist",
-         %{conn: conn} do
-      unauthorized_redirect(conn, :insights, "does not exist")
-    end
-  end
-
-  test "author can not access projects that do not belong to them", %{conn: conn, author: author} do
-    {:ok, author: _author2, project: project2} = author_project_fixture()
-    conn = Plug.Test.init_test_session(conn, current_author_id: author.id)
-
-    unauthorized_redirect(conn, :insights, project2.slug)
-  end
-
   describe "projects" do
     # this test demonstrates the valid case where an author has multiple user accounts associated
     # (consider an authoring account shared across lms or independent instructor accounts)
@@ -59,13 +45,6 @@ defmodule OliWeb.ProjectControllerTest do
       assert response =~ "Overview"
       assert response =~ project.title
       assert response =~ publisher.name
-    end
-  end
-
-  describe "insights" do
-    test "displays the page", %{conn: conn, project: project} do
-      conn = get(conn, Routes.project_path(conn, :insights, project.slug))
-      assert html_response(conn, 200) =~ "Insights"
     end
   end
 
@@ -201,10 +180,5 @@ defmodule OliWeb.ProjectControllerTest do
 
     {:ok, product_2} = Sections.create_section_resources(product_2, new_publication)
     Sections.rebuild_contained_pages(product_2)
-  end
-
-  defp unauthorized_redirect(conn, path, project) do
-    conn = get(conn, Routes.project_path(conn, path, project))
-    assert redirected_to(conn) == Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
   end
 end

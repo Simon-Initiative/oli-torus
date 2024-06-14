@@ -731,6 +731,7 @@ defmodule Oli.Seeder do
     Map.merge(mappings, %{
       container: %{resource: container_resource, revision: container_revision},
       unit1_container: %{resource: unit1_resource, revision: unit1_revision},
+      unit2_container: %{resource: unit2_resource, revision: unit2_revision},
       mod1_pages: mod1_pages,
       mod2_pages: mod2_pages,
       mod3_pages: mod3_pages,

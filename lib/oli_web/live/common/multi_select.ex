@@ -1,32 +1,36 @@
-defmodule OliWeb.Common.MultiSelect do
+defmodule OliWeb.Common.MultiSelectInput do
   use OliWeb, :live_component
   alias Phoenix.LiveView.JS
+  alias OliWeb.Icons
 
-  def update(params, socket) do
-    %{
-      options: options,
-      uid: uid,
-      form: form,
-      id: id,
-      label: label
-    } =
-      params
-
-    socket =
-      socket
-      |> assign(form: form)
-      |> assign(id: id)
-      |> assign(:section_ids, nil)
-      |> assign(:product_ids, nil)
-      |> assign(:label, label)
-      |> assign(:disabled, options == [])
-      |> assign(:options, options)
-      |> assign(uid: uid)
-
-    {:ok, socket}
+  def update(
+        %{
+          options: options,
+          uuid: uuid,
+          disabled: disabled,
+          id: id,
+          placeholder: placeholder,
+          on_select_message: on_select_message
+        },
+        socket
+      ) do
+    {:ok,
+     socket
+     |> assign(id: id)
+     |> assign(:placeholder, placeholder)
+     |> assign(:disabled, disabled)
+     |> assign(:options, options)
+     |> assign(uuid: uuid)
+     |> assign(on_select_message: on_select_message)
+     |> assign(selected_values: %{})}
   end
 
-  attr :label, :string, default: "Select an option"
+  attr :placeholder, :string, default: "Select an option"
+  attr :disabled, :boolean, default: false
+  attr :options, :list, default: []
+  attr :id, :string
+  attr :on_select_message, :string, doc: "The message to send when an option is selected"
+  attr :uuid, :string, default: UUID.uuid4()
 
   def render(assigns) do
     ~H"""
@@ -41,12 +45,25 @@ defmodule OliWeb.Common.MultiSelect do
           )
         }
         class={[
-          "flex justify-between h-10 items-center p-2 w-96 hover:cursor-pointer",
+          "flex justify-between min-h-[40px] items-center p-2 w-96 hover:cursor-pointer",
           if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
         ]}
         id={"#{@id}-selected-options-container"}
       >
-        <span><%= @label %></span>
+        <div class="flex gap-1 flex-wrap">
+          <span :if={@selected_values == %{}}><%= @placeholder %></span>
+          <div :for={{id, name} <- @selected_values} class="bg-blue-500 rounded-lg px-2 flex gap-1">
+            <span class="whitespace-nowrap text-white"><%= name %></span>
+            <div
+              class="stroke-white hover:stroke-white/50 w-2 h-2 mr-2"
+              phx-click="remove_selected"
+              phx-value-id={id}
+              phx-target={@myself}
+            >
+              <Icons.close />
+            </div>
+          </div>
+        </div>
         <div id={"#{@id}-down-icon"}>
           <i class="fa-solid fa-chevron-up rotate-180"></i>
         </div>
@@ -54,25 +71,62 @@ defmodule OliWeb.Common.MultiSelect do
           <i class="fa-solid fa-chevron-up"></i>
         </div>
       </div>
-      <div
-        class="p-4 hidden absolute mt-10 dark:bg-gray-700 bg-white w-96 border max-h-56 overflow-y-scroll"
-        id={"#{@id}-options-container"}
-        phx-click-away={
-          JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
-        }
-      >
-        <div id={@uid}>
-          <.inputs_for :let={opt} field={@form[:options]}>
-            <.input
-              value={opt.data.selected}
-              type="checkbox"
-              label={opt.data.label}
-              name={opt.data.label}
-            />
-          </.inputs_for>
+      <div class="relative">
+        <div
+          class="p-4 hidden absolute dark:bg-gray-700 bg-white w-96 border max-h-56 overflow-y-scroll"
+          id={"#{@id}-options-container"}
+          phx-click-away={
+            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
+          }
+        >
+          <div>
+            <.form :let={_f} for={%{}} as={:options} phx-change="toggle_selected" phx-target={@myself}>
+              <.input
+                :for={option <- @options}
+                name={option.id}
+                value={option.selected}
+                label={option.name}
+                type="checkbox"
+              />
+            </.form>
+          </div>
         </div>
       </div>
     </div>
     """
+  end
+
+  def handle_event("remove_selected", %{"id" => id}, socket) do
+    selected_id = String.to_integer(id)
+    do_update_selection(socket, selected_id)
+  end
+
+  def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
+    selected_id = String.to_integer(id)
+    do_update_selection(socket, selected_id)
+  end
+
+  defp do_update_selection(socket, selected_id) do
+    updated_options =
+      Enum.map(socket.assigns.options, fn option ->
+        if option.id == selected_id do
+          %{option | selected: !option.selected}
+        else
+          option
+        end
+      end)
+
+    {selected_values, selected_ids} =
+      Enum.reduce(updated_options, {%{}, []}, fn option, {values, acc_ids} ->
+        if option.selected do
+          {Map.put(values, option.id, option.name), [option.id | acc_ids]}
+        else
+          {values, acc_ids}
+        end
+      end)
+
+    send(self(), {:option_selected, socket.assigns.on_select_message, selected_ids})
+
+    {:noreply, assign(socket, selected_values: selected_values, options: updated_options)}
   end
 end

@@ -20,8 +20,9 @@ defmodule Oli.Analytics.ByObjective do
   defp get_base_query(project_slug, activity_objectives, filtered_sections) do
     subquery =
       if filtered_sections != [] do
-        DeliveryResolver.revisions_by_section_ids(
+        DeliveryResolver.project_revisions_by_section_ids(
           filtered_sections,
+          project_slug,
           ResourceType.id_for_objective()
         )
       else
@@ -42,7 +43,7 @@ defmodule Oli.Analytics.ByObjective do
         slice: objective,
         eventually_correct: analytics.eventually_correct,
         first_try_correct: analytics.first_try_correct,
-        number_of_attempts: pairing.number_of_attempts,
+        number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty
       },
       preload: [:resource_type]
@@ -56,8 +57,7 @@ defmodule Oli.Analytics.ByObjective do
       on: snapshot.project_id == project.id,
       group_by: [snapshot.objective_id],
       select: %{
-        objective_id: snapshot.objective_id,
-        number_of_attempts: count(snapshot.id)
+        objective_id: snapshot.objective_id
       }
     )
   end

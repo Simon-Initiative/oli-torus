@@ -22,8 +22,31 @@ const UndoRedoToolbar: React.FC = () => {
     dispatch(redo(null));
   };
 
-  useKeyDown(handleUndo, ['KeyZ'], { ctrlKey: true });
-  useKeyDown(handleRedo, ['KeyY'], { ctrlKey: true });
+  useKeyDown(
+    (ctrlKey, metaKey, shiftKey) => {
+      if ((ctrlKey || metaKey) && !shiftKey) {
+        handleUndo();
+      }
+    },
+    ['KeyZ'],
+    { ctrlKey: true },
+  );
+  useKeyDown(
+    (ctrlKey, metaKey) => {
+      if (ctrlKey && !metaKey) handleRedo();
+    },
+    ['KeyY'],
+    { ctrlKey: true },
+  );
+  useKeyDown(
+    (ctrlKey, metaKey, shiftKey) => {
+      if ((ctrlKey || metaKey) && shiftKey) {
+        handleRedo();
+      }
+    },
+    ['KeyZ'],
+    { ctrlKey: true },
+  );
   return (
     <>
       <OverlayTrigger

@@ -281,6 +281,7 @@ defmodule OliWeb.Components.Common do
 
   attr(:errors, :list, default: [])
   attr(:class, :string, default: nil)
+  attr(:class_label, :string, default: "")
   attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
   attr(:ctx, :map, default: nil)
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
@@ -312,7 +313,7 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class="contents" phx-feedback-for={@name}>
-      <label class="flex gap-2 items-center">
+      <label class={"flex gap-2 items-center #{@class_label}"}>
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"

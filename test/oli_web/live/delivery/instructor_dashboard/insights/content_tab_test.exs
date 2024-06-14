@@ -250,24 +250,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr a})
         |> Floki.attribute("href")
 
-      assert links == [
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{container_id: unit1_resource.id}
-               ),
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{container_id: unit2_resource.id}
-               )
-             ]
+      filtered_links = Enum.map(links, &remove_navigation_data/1)
+
+      expected_links = [
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{container_id: unit1_resource.id}
+        ),
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{container_id: unit2_resource.id}
+        )
+      ]
+
+      assert filtered_links == expected_links
 
       ### both "units" and "modules" buttons are shown to user
       options_for_select =
@@ -303,24 +307,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr a})
         |> Floki.attribute("href")
 
-      assert links == [
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{container_id: unit1_resource.id}
-               ),
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{container_id: unit2_resource.id}
-               )
-             ]
+      filtered_links = Enum.map(links, &remove_navigation_data/1)
+
+      expected_links = [
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{container_id: unit1_resource.id}
+        ),
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{container_id: unit2_resource.id}
+        )
+      ]
+
+      assert filtered_links == expected_links
 
       ### "units" button is selected
       assert has_element?(view, "button.bg-blue-500", "Units")
@@ -392,32 +400,36 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr a})
         |> Floki.attribute("href")
 
-      assert links == [
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{page_id: page1.id}
-               ),
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{page_id: page2.id}
-               ),
-               Routes.live_path(
-                 OliWeb.Endpoint,
-                 OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                 section.slug,
-                 :insights,
-                 :content,
-                 %{page_id: page3.id}
-               )
-             ]
+      filtered_links = Enum.map(links, &remove_navigation_data/1)
+
+      expected_links = [
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{page_id: page1.id}
+        ),
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{page_id: page2.id}
+        ),
+        Routes.live_path(
+          OliWeb.Endpoint,
+          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+          section.slug,
+          :insights,
+          :content,
+          %{page_id: page3.id}
+        )
+      ]
+
+      assert filtered_links == expected_links
     end
 
     test "content tab shows the container details view when a student is clicked on the contents table",
@@ -679,5 +691,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       revision: revision,
       lifecycle_state: :evaluated
     })
+  end
+
+  def remove_navigation_data(url) do
+    uri = URI.parse(url)
+    query_params = URI.decode_query(uri.query)
+    filtered_query_params = Map.drop(query_params, ["navigation_data"])
+    new_query = URI.encode_query(filtered_query_params)
+    URI.to_string(%{uri | query: new_query})
   end
 end

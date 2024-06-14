@@ -16,12 +16,14 @@ defmodule OliWeb.Experiments.ExperimentsView do
   alias Oli.Resources.Revision
   alias OliWeb.Common.Modal.DeleteModal
   alias OliWeb.Common.Modal.FormModal
+  alias OliWeb.Router.Helpers, as: Routes
 
   on_mount {OliWeb.LiveSessionPlugs.SetUser, :default}
   on_mount {OliWeb.LiveSessionPlugs.SetProject, :default}
 
   @title "Experiments"
   @alternatives_type_id ResourceType.id_for_alternatives()
+  @default_error_message "Something went wrong. Please refresh the page and try again."
 
   def mount(_params, _session, socket) do
     experiment = Experiments.get_latest_experiment(socket.assigns.project.slug)
@@ -68,8 +70,19 @@ defmodule OliWeb.Experiments.ExperimentsView do
       <% end %>
 
       <div :if={@is_upgrade_enabled} class="flex gap-4">
-        <.button class="btn btn-md btn-primary mt-2">Download Segment JSON</.button>
-        <.button class="btn btn-md btn-primary mt-2">Download Experiment JSON</.button>
+        <.button
+          class="btn btn-md btn-primary mt-2"
+          href={Routes.experiment_path(OliWeb.Endpoint, :segment_download, assigns.project.slug)}
+        >
+          Download Segment JSON
+        </.button>
+
+        <.button
+          class="btn btn-md btn-primary mt-2"
+          href={Routes.experiment_path(OliWeb.Endpoint, :experiment_download, assigns.project.slug)}
+        >
+          Download Experiment JSON
+        </.button>
       </div>
     </div>
     """
@@ -168,6 +181,9 @@ defmodule OliWeb.Experiments.ExperimentsView do
       {:ok, [experiment], _group} ->
         {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
 
+      {:error, message: error_message} ->
+        show_error(socket, error_message)
+
       {:error, _} ->
         show_error(socket)
     end
@@ -238,6 +254,9 @@ defmodule OliWeb.Experiments.ExperimentsView do
       {:ok, [experiment], _group} ->
         {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
 
+      {:error, message: error_message} ->
+        show_error(socket, error_message)
+
       {:error, _} ->
         show_error(socket)
     end
@@ -298,6 +317,9 @@ defmodule OliWeb.Experiments.ExperimentsView do
          ) do
       {:ok, [experiment], _group} ->
         {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
+
+      {:error, message: error_message} ->
+        show_error(socket, error_message)
 
       {:error, _} ->
         show_error(socket)
@@ -393,6 +415,9 @@ defmodule OliWeb.Experiments.ExperimentsView do
       {:ok, [experiment], _group} ->
         {:noreply, hide_modal(socket) |> assign(experiment: experiment)}
 
+      {:error, message: error_message} ->
+        show_error(socket, error_message)
+
       {:error, _} ->
         show_error(socket)
     end
@@ -448,24 +473,36 @@ defmodule OliWeb.Experiments.ExperimentsView do
          content,
          updated_options
        ) do
-    case ResourceEditor.edit(project_slug, resource_id, author, %{
-           content: %{content | "options" => updated_options}
-         }) do
-      {:ok, updated_group} ->
-        # update groups list to reflect latest update
-        alternatives =
-          Enum.map(alternatives, fn g ->
-            if g.resource_id == updated_group.resource_id do
-              updated_group
-            else
-              g
-            end
-          end)
+    with :ok <- check_duplicated_options(updated_options),
+         {:ok, updated_group} <-
+           ResourceEditor.edit(project_slug, resource_id, author, %{
+             content: %{content | "options" => updated_options}
+           }) do
+      # update groups list to reflect latest update
+      alternatives =
+        Enum.map(alternatives, fn g ->
+          if g.resource_id == updated_group.resource_id do
+            updated_group
+          else
+            g
+          end
+        end)
 
-        {:ok, alternatives, updated_group}
+      {:ok, alternatives, updated_group}
+    end
+  end
 
-      error ->
-        error
+  defp check_duplicated_options(options) do
+    option_names = Enum.map(options, & &1["name"])
+
+    case option_names -- Enum.uniq(option_names) do
+      [] ->
+        :ok
+
+      dups ->
+        {:error,
+         message:
+           "The option could not be created because duplicate options have been found (#{Enum.join(dups, ", ")}). Please choose a unique name and try again."}
     end
   end
 
@@ -478,8 +515,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
     end
   end
 
-  defp show_error(socket) do
-    {:noreply,
-     put_flash(socket, :error, "Something went wrong. Please refresh the page and try again.")}
+  defp show_error(socket, message \\ @default_error_message) do
+    {:noreply, socket |> hide_modal() |> put_flash(:error, message)}
   end
 end
