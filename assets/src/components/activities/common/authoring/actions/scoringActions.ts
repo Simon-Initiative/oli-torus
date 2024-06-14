@@ -2,7 +2,6 @@ import { ActivityLevelScoring, Part, Response, ScoringStrategy } from 'component
 import {
   getCorrectResponse,
   getIncorrectResponse,
-  getMaxPoints,
   getOutOfPoints,
 } from 'data/activities/model/responses';
 
@@ -69,7 +68,8 @@ export const ScoringActions = {
         console.warn('Could not set score for part', partId);
         return;
       }
-      const oldOutOf = part.outOf;
+      // outOf attribute may not exist on migrated questions
+      const oldCorrectScore = getOutOfPoints(model, part.id);
       part.outOf = correctScore;
       part.incorrectScore = incorrectScore;
 
@@ -80,8 +80,6 @@ export const ScoringActions = {
       // if changing to default, reset the scores for each part to 1 or 0
       if (part.outOf == null) {
         model.authoring?.parts?.forEach((part: Part) => {
-          // outOf attribute may not exist on migrated qs, use max score instead
-          const oldCorrectScore = oldOutOf ?? getMaxPoints(model, part.id);
           part.responses?.forEach((response) => {
             response.score = response.score === oldCorrectScore ? 1 : 0;
           });
