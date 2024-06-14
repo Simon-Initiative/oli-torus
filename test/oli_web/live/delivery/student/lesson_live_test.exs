@@ -187,6 +187,47 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         }
       )
 
+    page_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 4",
+        duration_minutes: 5,
+        graded: true,
+        max_attempts: 5,
+        content: %{
+          model: []
+        }
+      )
+
+    page_5_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 5",
+        duration_minutes: 5,
+        graded: true,
+        max_attempts: 5,
+        content: %{
+          model: []
+        }
+      )
+
+    ## sections and subsections...
+    subsection_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_4_revision.resource_id
+        ],
+        title: "Erlang as a motivation"
+      })
+
+    section_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [subsection_1_revision.resource_id, page_5_revision.resource_id],
+        title: "Why Elixir?"
+      })
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -211,7 +252,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     module_2_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_3_revision.resource_id],
+        children: [section_1_revision.resource_id, page_3_revision.resource_id],
         title: "The second module is awesome!",
         poster_image: "module_2_custom_image_url",
         intro_content: %{
@@ -267,6 +308,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         graded_adaptive_page_revision,
         page_2_revision,
         page_3_revision,
+        page_4_revision,
+        page_5_revision,
+        subsection_1_revision,
+        section_1_revision,
         module_1_revision,
         module_2_revision,
         unit_1_revision,
@@ -348,6 +393,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       graded_adaptive_page_revision: graded_adaptive_page_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      section_1: section_1_revision,
+      subsection_1: subsection_1_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       unit_1: unit_1_revision,
@@ -1126,13 +1175,14 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
-    test "redirects to the learn page when the next or previous page corresponds to a container",
+    test "redirects to the learn page when the next or previous page corresponds to a module",
          %{
            conn: conn,
            user: user,
            section: section,
+           page_1: page_1,
            page_2: page_2,
-           page_3: page_3,
+           module_1: module_1,
            module_2: module_2
          } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -1158,7 +1208,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
 
       # previous page is a container
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       view
       |> element(~s{div[role="prev_page"] a})
@@ -1167,7 +1217,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert_redirected(
         view,
         Utils.learn_live_path(section.slug,
-          target_resource_id: module_2.resource_id,
+          target_resource_id: module_1.resource_id,
           selected_view: @default_selected_view
         )
       )

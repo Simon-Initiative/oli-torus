@@ -24,7 +24,7 @@ const UndoRedoToolbar: React.FC = () => {
 
   useKeyDown(
     (ctrlKey, metaKey, shiftKey) => {
-      if (ctrlKey && !shiftKey) {
+      if ((ctrlKey || metaKey) && !shiftKey) {
         handleUndo();
       }
     },
@@ -40,7 +40,7 @@ const UndoRedoToolbar: React.FC = () => {
   );
   useKeyDown(
     (ctrlKey, metaKey, shiftKey) => {
-      if (!ctrlKey && metaKey && shiftKey) {
+      if ((ctrlKey || metaKey) && shiftKey) {
         handleRedo();
       }
     },

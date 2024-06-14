@@ -37,7 +37,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
     # note will all be nil for case of "loose" linked pages not in hierarchy
     {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(assigns.section, resource_id)
+      PreviousNextIndex.retrieve(assigns.section, resource_id, skip: [:section])
 
     socket =
       case assigns.view do

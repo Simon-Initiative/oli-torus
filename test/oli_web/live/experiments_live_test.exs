@@ -1,5 +1,6 @@
 defmodule OliWeb.ExperimentsLiveTest do
   use ExUnit.Case, async: true
+  alias Oli.Authoring.Experiments
   alias Oli.Resources.Revision
   use OliWeb.ConnCase
 
@@ -167,6 +168,31 @@ defmodule OliWeb.ExperimentsLiveTest do
       |> step(:test_has_button_download_segment_json)
       |> step(:test_has_button_download_experiment_json)
     end
+
+    test "creates new option correctly", %{view: view, project: project} do
+      {view, %{project: project}}
+      |> step(:click_on_checkbox)
+      |> step(:put_resource_id)
+      |> step(:put_options)
+      |> step(:test_experiment_has_2_options)
+      |> step(:test_has_new_option_link)
+      |> step(:click_on_create_option_button)
+      |> step(:submit_create_option_form)
+      |> step(:test_experiment_has_3_options)
+    end
+
+    test "does not create duplicate option", %{view: view, project: project} do
+      {view, %{project: project}}
+      |> step(:click_on_checkbox)
+      |> step(:put_resource_id)
+      |> step(:put_options)
+      |> step(:test_experiment_has_2_options)
+      |> step(:test_has_new_option_link)
+      |> step(:click_on_create_option_button)
+      |> step(:submit_create_option_form_duplicate)
+      |> step(:test_duplicate_error_message)
+      |> step(:test_experiment_has_2_options)
+    end
   end
 
   defp evaluate_assertion(to_evaluate, assert_or_refute) do
@@ -327,6 +353,64 @@ defmodule OliWeb.ExperimentsLiveTest do
 
   defp step({view, ctx}, :click_on_checkbox, _assert_or_refute) do
     view |> element("input[phx-click=\"enable_upgrade\"]") |> render_click()
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :click_on_create_option_button, _assert_or_refute) do
+    resource_id = Map.get(ctx, :resource_id)
+    assert resource_id
+
+    view
+    |> element(
+      "button[phx-click=\"show_create_option_modal\"][phx-value-resource_id=\"#{resource_id}\"]"
+    )
+    |> render_click()
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :submit_create_option_form, _assert_or_refute) do
+    view
+    |> form("#create_modal > div > div > form", %{"params" => %{"name" => "Option 3"}})
+    |> render_submit()
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :submit_create_option_form_duplicate, _assert_or_refute) do
+    view
+    |> form("#create_modal > div > div > form", %{"params" => %{"name" => "Option 1"}})
+    |> render_submit()
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_experiment_has_2_options, _assert_or_refute) do
+    resource_id = Map.get(ctx, :resource_id)
+    assert resource_id
+
+    content = Experiments.get_latest_experiment(ctx.project.slug).content
+    option_names = get_in(content, ["options", Access.all(), "name"])
+    assert option_names == ["Option 1", "Option 2"]
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_experiment_has_3_options, _assert_or_refute) do
+    resource_id = Map.get(ctx, :resource_id)
+    assert resource_id
+
+    content = Experiments.get_latest_experiment(ctx.project.slug).content
+    option_names = get_in(content, ["options", Access.all(), "name"])
+    assert option_names == ["Option 3", "Option 1", "Option 2"]
+
+    {view, ctx}
+  end
+
+  defp step({view, ctx}, :test_duplicate_error_message, _assert_or_refute) do
+    assert render(view) =~
+             "The option could not be created because duplicate options have been found"
+
     {view, ctx}
   end
 

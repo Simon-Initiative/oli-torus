@@ -3,7 +3,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(containers, container_column_name, section_slug, view, patch_url_type) do
+  def new(containers, container_column_name, section_slug, view, patch_url_type, navigation_data) do
     column_specs = [
       %ColumnSpec{
         name: :numbering_index,
@@ -37,7 +37,12 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
-      data: %{section_slug: section_slug, view: view, patch_url_type: patch_url_type}
+      data: %{
+        section_slug: section_slug,
+        view: view,
+        patch_url_type: patch_url_type,
+        navigation_data: navigation_data
+      }
     )
   end
 
@@ -51,6 +56,10 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
         "PAGES" -> %{page_id: container.id}
         _ -> %{container_id: container.id}
       end
+
+    navigation_data = Map.merge(assigns.navigation_data, %{current_container_id: container.id})
+
+    url_params = Map.merge(url_params, %{navigation_data: Jason.encode!(navigation_data)})
 
     assigns =
       Map.merge(assigns, %{

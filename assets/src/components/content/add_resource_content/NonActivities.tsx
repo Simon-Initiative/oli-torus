@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import * as Immutable from 'immutable';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { SelectModal } from 'components/modal/SelectModal';
 import { ManageAlternativesLink } from 'components/resource/editors/AlternativesEditor';
 import { modalActions } from 'actions/modal';
 import { FeatureFlags } from 'apps/page-editor/types';
 import {
+  AlternativeContent,
   ResourceContext,
+  createAlternative,
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
@@ -119,7 +122,7 @@ export const NonActivities: React.FC<Props> = ({
           onHoverEnd={() => onResetTip()}
           key={'ab-test'}
           disabled={ABTestDisabled}
-          onClick={() => true}
+          onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
         />
       </div>
     </div>
@@ -155,11 +158,20 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
       <SelectModal
         title="Select Alternatives Group"
         description="Select an Alternatives Group"
-        additionalControls={<ManageAlternativesLink projectSlug={projectSlug} />}
+        additionalControls={
+          <ManageAlternativesLink
+            linkHref={`/authoring/project/${projectSlug}/alternatives`}
+            linkText="Manage Alternatives"
+          />
+        }
         onFetchOptions={() =>
           Persistence.alternatives(projectSlug).then((result) => {
             if (result.type === 'success') {
-              return result.alternatives.map((a) => ({ value: a.id, title: a.title }));
+              return result.alternatives
+                .filter(
+                  (a: Persistence.AlternativesGroup) => a.strategy !== 'upgrade_decision_point',
+                )
+                .map((a) => ({ value: a.id, title: a.title }));
             } else {
               throw result.message;
             }
@@ -167,10 +179,35 @@ const addAlternatives = (onAddItem: AddCallback, index: number[], projectSlug: s
         }
         onDone={(alternativesId: string) => {
           window.oliDispatch(modalActions.dismiss());
-          onAddItem(createAlternatives(Number(alternativesId)), index);
+          onAddItem(
+            createAlternatives(Number(alternativesId), 'user_section_preference', Immutable.List()),
+            index,
+          );
         }}
         onCancel={() => window.oliDispatch(modalActions.dismiss())}
       />,
     ),
   );
+};
+
+const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
+  document.body.click();
+
+  Persistence.alternatives(projectSlug).then((result) => {
+    if (result.type === 'success') {
+      const experiment = result.alternatives.find((a) => a.strategy === 'upgrade_decision_point');
+      if (experiment) {
+        const children: AlternativeContent[] = [];
+        experiment.options.forEach((o) => children.push(createAlternative(o.id)));
+        onAddItem(
+          createAlternatives(
+            Number(experiment.id),
+            'upgrade_decision_point',
+            Immutable.List(children),
+          ),
+          index,
+        );
+      }
+    }
+  });
 };

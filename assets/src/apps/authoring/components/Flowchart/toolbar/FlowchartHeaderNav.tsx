@@ -180,7 +180,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
 
   useKeyDown(
     (ctrlKey, metaKey, shiftKey) => {
-      if (ctrlKey && !shiftKey) {
+      if ((ctrlKey || metaKey) && !shiftKey) {
         handleUndo();
       }
     },
@@ -198,7 +198,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   );
   useKeyDown(
     (ctrlKey, metaKey, shiftKey) => {
-      if (!ctrlKey && metaKey && shiftKey) {
+      if ((ctrlKey || metaKey) && shiftKey) {
         handleRedo();
       }
     },

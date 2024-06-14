@@ -11,6 +11,7 @@ import {
   AlternativeContent,
   AlternativesContent,
   ResourceContent,
+  ResourceContext,
   createAlternative,
 } from 'data/content/resource';
 import * as Persistence from 'data/persistence/resource';
@@ -41,6 +42,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
     index,
     parents,
     canRemove,
+    resourceContext,
     onEdit,
     onRemove,
     onPostUndoable,
@@ -68,13 +70,26 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
   ) => {
     const activeOptionIndex = contentItem.children.findIndex((c) => c.id == activeOption.id);
 
-    const showCreateAlternativeModal = () =>
+    const showCreateAlternativeModal = () => {
+      const title =
+        contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
+      const description =
+        contentItem.strategy === 'upgrade_decision_point' ? 'Select Option' : 'Select Alternative';
+      const linkHref =
+        contentItem.strategy === 'upgrade_decision_point'
+          ? `/authoring/project/${projectSlug}/experiments`
+          : `/authoring/project/${projectSlug}/alternatives`;
+      const linkText =
+        contentItem.strategy === 'upgrade_decision_point'
+          ? 'Manage Upgrade Options'
+          : 'Manage Alternatives Options';
+
       window.oliDispatch(
         modalActions.display(
           <SelectModal
-            title="Select Alternative"
-            description="Select Alternative"
-            additionalControls={<ManageAlternativesLink projectSlug={projectSlug} />}
+            title={title}
+            description={description}
+            additionalControls={<ManageAlternativesLink linkHref={linkHref} linkText={linkText} />}
             onFetchOptions={() => {
               return Promise.resolve(
                 alternativeOptions.map((o) => ({ value: o.id, title: o.name })),
@@ -96,6 +111,7 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
           />,
         ),
       );
+    };
 
     const onEditAlternative = (updatedOption: AlternativeContent) => {
       const update = {
@@ -116,10 +132,16 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
       onPostUndoable(contentItem.id, makePageUndoable('Removed alternative', index, contentItem));
       setActiveOption(contentItem.children.first());
     };
+    const options =
+      contentItem.strategy === 'upgrade_decision_point'
+        ? 'No upgrade decision point option selected.'
+        : 'No alternative option selected.';
 
     return (
       <AlternativesGroupBlock
         editMode={editMode}
+        projectSlug={projectSlug}
+        resourceContext={resourceContext}
         contentItem={contentItem}
         activeOption={activeOption}
         setActiveOption={setActiveOption}
@@ -145,15 +167,15 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
             nothing: () => (
               <div className={styles.alternativesEditor}>
                 <div className="text-secondary text-center m-4">
-                  <div>No alternative content exists.</div>
+                  <div>{options}</div>
                   <div>
                     <button
                       className="btn btn-link btn-sm p-0 align-bottom"
                       onClick={showCreateAlternativeModal}
                     >
-                      Create{' '}
+                      Select{' '}
                     </button>{' '}
-                    an alternative item to get started.
+                    an option to get started.
                   </div>
                 </div>
               </div>
@@ -186,18 +208,14 @@ export const AlternativesEditor = (props: AlternativesEditorProps) => {
 };
 
 interface ManageAlternativesLinkProps {
-  projectSlug: string;
+  linkHref: string;
+  linkText: string;
 }
 
-export const ManageAlternativesLink = ({ projectSlug }: ManageAlternativesLinkProps) => (
+export const ManageAlternativesLink = ({ linkHref, linkText }: ManageAlternativesLinkProps) => (
   <>
-    <a
-      className="btn btn-link"
-      href={`/authoring/project/${projectSlug}/alternatives`}
-      target="_blank"
-      rel="noreferrer"
-    >
-      Manage Alternatives <i className="fas fa-external-link-alt"></i>
+    <a className="btn btn-link" href={linkHref} target="_blank" rel="noreferrer">
+      {linkText} <i className="fas fa-external-link-alt"></i>
     </a>
   </>
 );
@@ -212,6 +230,8 @@ const AlternativeEditor = (props: AlternativeEditorProps) => {
 
 interface AlternativesGroupBlockProps {
   editMode: boolean;
+  projectSlug: string;
+  resourceContext: ResourceContext;
   contentItem: AlternativesContent;
   activeOption: AlternativeContent;
   parents: ResourceContent[];
@@ -227,6 +247,8 @@ interface AlternativesGroupBlockProps {
 export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGroupBlockProps>) => {
   const {
     editMode,
+    projectSlug,
+    resourceContext,
     contentItem,
     activeOption,
     canRemove,
@@ -242,12 +264,16 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
 
   const selectedOption = contentItem.children.find((o) => o.id === activeOption.id);
 
-  const showEditAlternative = () =>
+  const showEditAlternative = () => {
+    const title =
+      contentItem.strategy === 'upgrade_decision_point' ? 'Edit Option' : 'Edit Alternative';
+    const description =
+      contentItem.strategy === 'upgrade_decision_point' ? 'Edit Option' : 'Edit Alternative';
     window.oliDispatch(
       modalActions.display(
         <SelectModal
-          title="Edit Alternative"
-          description="Edit Alternative"
+          title={title}
+          description={description}
           additionalControls={
             <>
               <button
@@ -283,6 +309,7 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
         />,
       ),
     );
+  };
 
   const optionIdCount = contentItem.children.reduce(
     (acc, option) => ({
@@ -304,18 +331,44 @@ export const AlternativesGroupBlock = (props: PropsWithChildren<AlternativesGrou
     />
   ));
 
+  const maybeConnectUpgrade = !resourceContext.hasExperiments && (
+    <div className="mb-1">
+      <i className="fas fa-exclamation-triangle text-warning mx-1"></i>This experiment is not
+      integrated with UpGrade.
+      <a
+        className="btn btn-link"
+        href={`/authoring/project/${projectSlug}/experiments`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Enable A/B testing with UpGrade
+      </a>
+      to collect experiment data.
+    </div>
+  );
+
+  const maybeUpgradeAB = contentItem.strategy === 'upgrade_decision_point' && (
+    <div className="mb-1">
+      {maybeConnectUpgrade}
+      <h2>A/B Testing Decision Point</h2>
+    </div>
+  );
+
   return (
     <div id={`resource-editor-${contentItem.id}`} className={contentBlockStyles.groupBlock}>
+      {maybeUpgradeAB}
       <div className={styles.groupBlockHeader}>
         <div className={styles.options}>
           {options}
-          <button
-            key="add"
-            className={classNames('btn btn-sm', styles.option)}
-            onClick={onCreateAlternative}
-          >
-            <i className="fas fa-plus"></i>
-          </button>
+          {contentItem.strategy !== 'upgrade_decision_point' && (
+            <button
+              key="add"
+              className={classNames('btn btn-sm', styles.option)}
+              onClick={onCreateAlternative}
+            >
+              <i className="fas fa-plus"></i>
+            </button>
+          )}
         </div>
         <div className="flex-grow-1"></div>
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />

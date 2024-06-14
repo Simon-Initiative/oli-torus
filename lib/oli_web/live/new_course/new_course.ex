@@ -256,29 +256,33 @@ defmodule OliWeb.Delivery.NewCourse do
       |> Ecto.Changeset.apply_changes()
       |> Map.from_struct()
 
-    case Delivery.create_section(
-           socket.assigns.source,
-           socket.assigns.current_user,
-           socket.assigns.lti_params,
-           %{
-             class_modality: section_params.class_modality,
-             class_days: section_params.class_days,
-             course_section_number: section_params.course_section_number,
-             start_date: section_params.start_date,
-             end_date: section_params.end_date,
-             preferred_scheduling_time: section_params.preferred_scheduling_time
-           }
-         ) do
-      {:ok, _section} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Section successfully created.")
-         |> push_redirect(to: Routes.delivery_path(OliWeb.Endpoint, :index))}
+    liveview_pid = self()
 
-      {:error, error} ->
-        {_error_id, error_msg} = log_error("Failed to create new section", error)
-        put_flash(socket, :form_error, error_msg)
-    end
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      case Delivery.create_section(
+             socket.assigns.source,
+             socket.assigns.current_user,
+             socket.assigns.lti_params,
+             %{
+               class_modality: section_params.class_modality,
+               class_days: section_params.class_days,
+               course_section_number: section_params.course_section_number,
+               start_date: section_params.start_date,
+               end_date: section_params.end_date,
+               preferred_scheduling_time: section_params.preferred_scheduling_time
+             }
+           ) do
+        {:ok, section} ->
+          send(liveview_pid, {:section_created, section.slug})
+
+        {:error, error} ->
+          {_error_id, error_msg} = log_error("Failed to create new section", error)
+
+          send(liveview_pid, {:section_created_error, error_msg})
+      end
+    end)
+
+    {:noreply, assign(socket, loading: true)}
   end
 
   def create_section(_, socket) do
