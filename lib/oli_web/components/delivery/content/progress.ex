@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.Content.Progress do
       >
         <button
           data-dropdown-toggle="dropdown"
-          class={"h-full flex-shrink-0 rounded-md z-10 inline-flex items-center py-2.5 px-4 text-zinc-900 text-xs font-semibold leading-none dark:text-white bg-white border border-[#B0B0B0] #{if @progress_selector not in ["", nil], do: "!text-blue-500 text-xs font-semibold leading-none"}"}
+          class={"h-full flex-shrink-0 rounded-md z-10 inline-flex items-center py-2.5 px-4 text-zinc-900 text-xs font-semibold leading-none dark:text-white border border-[#B0B0B0] #{if @progress_selector not in ["", nil], do: "!text-blue-500 text-xs font-semibold leading-none"}"}
           type="button"
         >
           Progress <%= progress_filter_text(
@@ -50,7 +50,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           |> JS.hide(to: "#progress-up-icon")
           |> JS.show(to: "#progress-down-icon")
         }
-        class="hidden bg-white mt-2 rounded border flex flex-col p-2 gap-4 absolute w-auto"
+        class="hidden bg-white dark:bg-gray-800 mt-1 rounded border flex flex-col p-2 absolute w-auto"
         phx-submit="apply_progress_filter"
         id="progress_form"
         phx-target={@target}
@@ -75,7 +75,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           ) %>
           <label for="is_greather_than_or_equal"><%= "> =" %></label>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 mt-4">
           <.input
             type="number"
             min="0"
@@ -87,7 +87,7 @@ defmodule OliWeb.Delivery.Content.Progress do
         </div>
         <div>
           <div class="w-full border border-gray-200 my-4"></div>
-          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
+          <div class="flex flex-row items-center justify-end px-2 pb-2 gap-x-4">
             <button
               type="button"
               phx-click={
