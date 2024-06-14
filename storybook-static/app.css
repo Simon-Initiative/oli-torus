@@ -4948,6 +4948,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 80%;
 }
 
+.h-40 {
+  height: 10rem;
+}
+
 .h-48 {
   height: 12rem;
 }
@@ -5187,6 +5191,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[34px\] {
   min-height: 34px;
+}
+
+.min-h-\[40px\] {
+  min-height: 40px;
 }
 
 .min-h-\[50px\] {
@@ -12684,6 +12692,10 @@ https://tailwindcss.com/docs/utility-first
 
 .hover\:stroke-black\/90:hover {
   stroke: rgb(0 0 0 / 0.9);
+}
+
+.hover\:stroke-white\/50:hover {
+  stroke: rgb(255 255 255 / 0.5);
 }
 
 .hover\:text-xl:hover {
