@@ -380,5 +380,151 @@ defmodule Oli.Delivery.Metrics.AvgScoreTest do
                p10.published_resource.resource_id
              ) == nil
     end
+
+    test "raw_avg_score_across_for_pages/3 calculates correctly",
+         %{
+           section: section,
+           user_1: user_1,
+           user_2: user_2,
+           mod1_pages: mod1_pages,
+           mod2_pages: mod2_pages,
+           mod3_pages: mod3_pages
+         } do
+      [p1, p2, p3] = mod1_pages
+      [p4, p5, p6] = mod2_pages
+      [p7, p8, p9, p10] = mod3_pages
+
+      pages_raw_avg_score =
+        Metrics.raw_avg_score_across_for_pages(
+          section,
+          [
+            p1.published_resource.resource_id,
+            p2.published_resource.resource_id,
+            p3.published_resource.resource_id,
+            p4.published_resource.resource_id,
+            p5.published_resource.resource_id,
+            p6.published_resource.resource_id,
+            p7.published_resource.resource_id,
+            p8.published_resource.resource_id,
+            p9.published_resource.resource_id,
+            p10.published_resource.resource_id
+          ],
+          [user_1.id, user_2.id]
+        )
+
+      assert Map.get(pages_raw_avg_score, p1.published_resource.resource_id) == %{
+               score: 4.0,
+               out_of: 8.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p2.published_resource.resource_id) == %{
+               score: 7.0,
+               out_of: 8.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p3.published_resource.resource_id) == %{
+               score: 3.0,
+               out_of: 8.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p4.published_resource.resource_id) == %{
+               score: 1.0,
+               out_of: 4.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p5.published_resource.resource_id) == %{
+               score: 0.0,
+               out_of: 4.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p6.published_resource.resource_id) == %{
+               score: 4.0,
+               out_of: 4.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p7.published_resource.resource_id) == %{
+               score: 4.0,
+               out_of: 4.0
+             }
+
+      assert Map.get(pages_raw_avg_score, p8.published_resource.resource_id) == %{
+               score: 3.0,
+               out_of: 4.0
+             }
+
+      refute Map.get(pages_raw_avg_score, p9.published_resource.resource_id)
+
+      refute Map.get(pages_raw_avg_score, p10.published_resource.resource_id)
+
+      pages_raw_avg_score_excluding_user_2 =
+        Metrics.raw_avg_score_across_for_pages(
+          section,
+          [
+            p1.published_resource.resource_id,
+            p2.published_resource.resource_id,
+            p3.published_resource.resource_id,
+            p4.published_resource.resource_id,
+            p5.published_resource.resource_id,
+            p6.published_resource.resource_id,
+            p7.published_resource.resource_id,
+            p8.published_resource.resource_id,
+            p9.published_resource.resource_id,
+            p10.published_resource.resource_id
+          ],
+          [user_1.id]
+        )
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p1.published_resource.resource_id) ==
+               %{
+                 score: 4.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p2.published_resource.resource_id) ==
+               %{
+                 score: 3.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p3.published_resource.resource_id) ==
+               %{
+                 score: 2.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p4.published_resource.resource_id) ==
+               %{
+                 score: 1.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p5.published_resource.resource_id) ==
+               %{
+                 score: 0.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p6.published_resource.resource_id) ==
+               %{
+                 score: 4.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p7.published_resource.resource_id) ==
+               %{
+                 score: 4.0,
+                 out_of: 4.0
+               }
+
+      assert Map.get(pages_raw_avg_score_excluding_user_2, p8.published_resource.resource_id) ==
+               %{
+                 score: 3.0,
+                 out_of: 4.0
+               }
+
+      refute Map.get(pages_raw_avg_score_excluding_user_2, p9.published_resource.resource_id)
+
+      refute Map.get(pages_raw_avg_score_excluding_user_2, p10.published_resource.resource_id)
+    end
   end
 end
