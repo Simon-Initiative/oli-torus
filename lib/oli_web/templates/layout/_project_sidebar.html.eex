@@ -45,7 +45,7 @@
       <div aria-hidden="true" class="label mt-1">Improve</div>
     </button>
     <div class="dropdown-menu">
-      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.project_path(@conn, :insights, @project) %>">Insights</a></li>
+      <a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Insights, @project.slug) %>">Insights</a>
     </div>
   </div>
 
