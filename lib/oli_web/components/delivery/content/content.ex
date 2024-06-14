@@ -116,7 +116,6 @@ defmodule OliWeb.Components.Delivery.Content do
        section_slug: assigns.section_slug,
        options_for_container_select: options_for_container_select(containers),
        view: assigns[:view],
-       params_from_url: assigns.params,
        card_props: card_props,
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
@@ -125,7 +124,6 @@ defmodule OliWeb.Components.Delivery.Content do
   end
 
   attr(:params, :map, required: true)
-  attr(:params_from_url, :map, required: true)
   attr(:total_count, :integer, required: true)
   attr(:table_model, :map, required: true)
   attr(:options_for_container_select, :list)
@@ -206,7 +204,6 @@ defmodule OliWeb.Components.Delivery.Content do
             target={@myself}
             progress_percentage={@params.progress_percentage}
             progress_selector={@params.progress_selector}
-            params_from_url={@params_from_url}
           />
 
           <.multi_select
@@ -649,17 +646,32 @@ defmodule OliWeb.Components.Delivery.Content do
   defp maybe_filter_by_progress(containers, progress_selector, percentage) do
     case progress_selector do
       :is_equal_to ->
-        Enum.filter(containers, fn container -> container.progress == percentage / 100 end)
+        Enum.filter(containers, fn container ->
+          parse_progress(container.progress || 0.0) == percentage
+        end)
 
       :is_less_than_or_equal ->
-        Enum.filter(containers, fn container -> container.progress <= percentage / 100 end)
+        Enum.filter(containers, fn container ->
+          parse_progress(container.progress || 0.0) <= percentage
+        end)
 
       :is_greather_than_or_equal ->
-        Enum.filter(containers, fn container -> container.progress >= percentage / 100 end)
+        Enum.filter(containers, fn container ->
+          parse_progress(container.progress || 0.0) >= percentage
+        end)
 
       nil ->
         containers
     end
+  end
+
+  defp parse_progress(progress) do
+    {progress, _} =
+      Float.round(progress * 100)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    progress
   end
 
   defp maybe_filter_by_text(containers, nil), do: containers
