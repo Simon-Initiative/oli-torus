@@ -29,6 +29,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           type="button"
         >
           Progress <%= progress_filter_text(
+            @params_from_url,
             @progress_selector,
             @progress_percentage
           ) %>
@@ -115,9 +116,7 @@ defmodule OliWeb.Delivery.Content.Progress do
     """
   end
 
-  defp progress_filter_text(nil, _progress_percentage), do: ""
-
-  defp progress_filter_text(progress_selector, progress_percentage) do
+  defp progress_filter_text(%{"progress_percentage" => _}, progress_selector, progress_percentage) do
     progress_selector_text =
       case progress_selector do
         :is_equal_to -> " is ="
@@ -128,4 +127,6 @@ defmodule OliWeb.Delivery.Content.Progress do
 
     progress_selector_text <> " #{progress_percentage}"
   end
+
+  defp progress_filter_text(_params_from_url, _progress_selector, _progress_percentage), do: ""
 end

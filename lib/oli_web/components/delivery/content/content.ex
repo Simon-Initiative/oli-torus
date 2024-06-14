@@ -23,7 +23,7 @@ defmodule OliWeb.Components.Delivery.Content do
     container_filter_by: :units,
     selected_card_value: nil,
     progress_percentage: 100,
-    progress_selector: nil,
+    progress_selector: :is_less_than_or_equal,
     selected_proficiency_ids: Jason.encode!([])
   }
 
@@ -119,7 +119,8 @@ defmodule OliWeb.Components.Delivery.Content do
        card_props: card_props,
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
-       selected_proficiency_ids: selected_proficiency_ids
+       selected_proficiency_ids: selected_proficiency_ids,
+       params_from_url: assigns.params
      )}
   end
 
@@ -204,6 +205,7 @@ defmodule OliWeb.Components.Delivery.Content do
             target={@myself}
             progress_percentage={@params.progress_percentage}
             progress_selector={@params.progress_selector}
+            params_from_url={@params_from_url}
           />
 
           <.multi_select
