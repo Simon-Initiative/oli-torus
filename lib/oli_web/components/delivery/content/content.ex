@@ -20,7 +20,10 @@ defmodule OliWeb.Components.Delivery.Content do
     sort_by: :numbering_index,
     text_search: nil,
     container_filter_by: :units,
-    selected_card_value: nil
+    selected_card_value: nil,
+    progress_percentage: 100,
+    progress_selector: :is_less_than_or_equal,
+    progress_filter_text: ""
   }
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
@@ -166,7 +169,7 @@ defmodule OliWeb.Components.Delivery.Content do
           <% end %>
         </div>
 
-        <div class="mx-9 my-4">
+        <div class="flex gap-2 mx-9 my-4 ">
           <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
             <SearchInput.render
               id="content_search_input"
@@ -174,6 +177,13 @@ defmodule OliWeb.Components.Delivery.Content do
               text={@params.text_search}
             />
           </.form>
+
+          <OliWeb.Delivery.Content.Progress.render
+            target={@myself}
+            progress_percentage={@params.progress_percentage}
+            progress_selector={@params.progress_selector}
+            progress_filter_text={@params.progress_filter_text}
+          />
         </div>
 
         <InstructorDashboardPagedTable.render
@@ -193,7 +203,34 @@ defmodule OliWeb.Components.Delivery.Content do
     """
   end
 
+  def handle_event(
+        "progress_filter",
+        %{
+          "progress_percentage" => progress_percentage,
+          "progress" => %{"option" => progress_selector}
+        },
+        socket
+      ) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{
+             progress_percentage: progress_percentage,
+             progress_selector: progress_selector
+           },
+           socket.assigns.patch_url_type
+         )
+     )}
+  end
+
   def handle_event("filter_container", %{"filter" => filter}, socket) do
+    socket =
+      update(socket, :params, fn params ->
+        %{params | progress_percentage: 100, progress_selector: :is_less_than_or_equal}
+      end)
+
     {:noreply,
      push_patch(socket,
        to:
@@ -314,7 +351,18 @@ defmodule OliWeb.Components.Delivery.Content do
           "selected_card_value",
           [:high_progress_low_proficiency, :zero_student_progress],
           @default_params.selected_card_value
-        )
+        ),
+      progress_percentage:
+        Params.get_int_param(params, "progress_percentage", @default_params.progress_percentage),
+      progress_selector:
+        Params.get_atom_param(
+          params,
+          "progress_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          @default_params.progress_selector
+        ),
+      progress_filter_text:
+        Params.get_param(params, "progress_selector", @default_params.progress_filter_text)
     }
   end
 
@@ -346,6 +394,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> Enum.filter(fn container -> container.numbering_level == 2 end)
           |> maybe_filter_by_text(params.text_search)
           |> maybe_filter_by_card(params.selected_card_value)
+          |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(modules), "MODULES",
@@ -357,6 +406,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> Enum.filter(fn container -> container.numbering_level == 1 end)
           |> maybe_filter_by_text(params.text_search)
           |> maybe_filter_by_card(params.selected_card_value)
+          |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -387,6 +437,22 @@ defmodule OliWeb.Components.Delivery.Content do
 
       _ ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)
+    end
+  end
+
+  defp maybe_filter_by_progress(containers, progress_selector, percentage) do
+    case progress_selector do
+      :is_equal_to ->
+        Enum.filter(containers, fn container -> container.progress == percentage / 100 end)
+
+      :is_less_than_or_equal ->
+        Enum.filter(containers, fn container -> container.progress <= percentage / 100 end)
+
+      :is_greather_than_or_equal ->
+        Enum.filter(containers, fn container -> container.progress >= percentage / 100 end)
+
+      nil ->
+        containers
     end
   end
 

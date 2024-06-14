@@ -136,3 +136,37 @@ https://tailwindcss.com/docs/utility-first
 .search-result em {
   @apply not-italic bg-yellow-50;
 }
+
+.progress-options {
+  @apply flex;
+
+  input[type='radio'] {
+    @apply opacity-0 fixed w-0;
+  }
+
+  input[type='radio']:checked + label {
+    background-color: rgba(59, 118, 211, 0.07); /* Background color with opacity */
+    border-color: #3b76d3; /* Border color */
+    color: #3b76d3; /* Text color */
+  }
+
+  label {
+    @apply inline-block border-t border-b py-3 text-xs leading-5 h-[21px] w-[53px] flex items-center justify-center;
+  }
+
+  label:hover {
+    @apply cursor-pointer;
+  }
+
+  label:first-of-type {
+    @apply border-l border-r rounded-l-lg;
+  }
+
+  label:last-of-type {
+    @apply border-l border-r rounded-r-lg;
+  }
+
+  label:not(:first-of-type):not(:last-of-type) {
+    @apply border-l border-r; /* Apply your desired border styles here */
+  }
+}
