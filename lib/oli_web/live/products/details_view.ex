@@ -57,7 +57,6 @@ defmodule OliWeb.Products.DetailsView do
            product: product,
            is_admin: Accounts.has_admin_role?(author),
            changeset: changeset,
-           form: to_form(changeset),
            title: "Edit Product",
            show_confirm: false,
            breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})],
@@ -90,7 +89,6 @@ defmodule OliWeb.Products.DetailsView do
             product={@product}
             project_slug={@base_project.slug}
             changeset={@changeset}
-            form={@form}
             available_brands={@available_brands}
             publishers={@publishers}
             is_admin={@is_admin}
@@ -196,10 +194,8 @@ defmodule OliWeb.Products.DetailsView do
     case Sections.update_section(socket.assigns.product, decode_welcome_title(params)) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Product changes saved")
-        changeset = Section.changeset(section, %{})
 
-        {:noreply,
-         assign(socket, product: section, changeset: changeset, form: to_form(changeset))}
+        {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket = put_flash(socket, :error, "Couldn't update product title")
@@ -300,7 +296,7 @@ defmodule OliWeb.Products.DetailsView do
         "children" => welcome_title
       })
 
-    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   defp ext(entry) do

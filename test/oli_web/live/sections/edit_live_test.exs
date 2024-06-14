@@ -181,7 +181,23 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "loads open and free section data correctly", %{conn: conn} do
-      section = insert(:section, open_and_free: true)
+      welcome_title = %{
+        type: "p",
+        children: [
+          %{
+            id: "2748906063",
+            type: "p",
+            children: [%{text: "Welcome Title"}]
+          }
+        ]
+      }
+
+      section =
+        insert(:section,
+          open_and_free: true,
+          welcome_title: welcome_title,
+          encouraging_subtitle: "Encouraging subtitle"
+        )
 
       {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
 
@@ -192,6 +208,15 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert html =~ "Direct Delivery section settings"
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"#{section.description}\"]")
+      assert has_element?(view, "input[value=\"#{section.encouraging_subtitle}\"]")
+
+      # Loads the welcome title
+      view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
+      |> Floki.attribute("data-live-react-props")
+      |> hd() =~ "Welcome Title"
 
       assert view
              |> element(
@@ -334,6 +359,68 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       updated_section = Sections.get_section!(section.id)
       assert updated_section.title == valid_title
+    end
+
+    test "update section with a valid welcome title shows an info alert", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
+
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "2748906063",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome Title"}]
+          }
+        ]
+      }
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{section: %{welcome_title: Poison.encode!(welcome_title)}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Product changes saved"
+
+      view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
+      |> Floki.attribute("data-live-react-props")
+      |> hd() =~ "Welcome Title"
+
+      updated_section = Sections.get_section!(section.id)
+      assert updated_section.welcome_title == welcome_title
+    end
+
+    test "update section with a valid encouraging subtitle shows an info alert", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
+
+      valid_subtitle = "Valid subtitle"
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{section: %{encouraging_subtitle: valid_subtitle}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Product changes saved"
+
+      assert view
+             |> element("#section_encouraging_subtitle")
+             |> render() =~ valid_subtitle
+
+      updated_section = Sections.get_section!(section.id)
+      assert updated_section.encouraging_subtitle == valid_subtitle
     end
 
     test "update section with an invalid start/end date shows an error", %{
