@@ -3,7 +3,8 @@ defmodule OliWeb.Components.Common do
 
   import OliWeb.Gettext
 
-  alias OliWeb.Common.FormatDateTime
+  alias Phoenix.HTML.Form
+  alias OliWeb.Common.{FormatDateTime, React}
   alias Phoenix.LiveView.JS
 
   def not_found(assigns) do
@@ -1086,6 +1087,42 @@ defmodule OliWeb.Components.Common do
           <% end %>
         </label>
       </form>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :form, :any, required: true
+  attr :value, :any, required: true
+  attr :field_name, :atom, required: true
+  attr :field_label, :string, required: true
+  attr :on_edit, :string, required: true
+  attr :project_slug, :string, required: true
+  attr :ctx, :map, required: true
+
+  def rich_text_editor_field(assigns) do
+    ~H"""
+    <div id={@id} class="form-label-group mb-3">
+      <%= Form.label(@form, @field_name, @field_label, class: "control-label") %>
+      <%= Form.hidden_input(@form, @field_name) %>
+
+      <div id="rich_text_editor" phx-update="ignore">
+        <%= React.component(
+          @ctx,
+          "Components.RichTextEditor",
+          %{
+            projectSlug: @project_slug,
+            onEdit: "initial_function_that_will_be_overwritten",
+            onEditEvent: @on_edit,
+            onEditTarget: "##{@id}",
+            editMode: true,
+            value: @value,
+            fixedToolbar: true,
+            allowBlockElements: false
+          },
+          id: "rich_text_editor_react_component"
+        ) %>
+      </div>
     </div>
     """
   end

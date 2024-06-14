@@ -7,7 +7,6 @@ defmodule OliWeb.Products.Details.Edit do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Common
-  alias OliWeb.Common.React
 
   defp statuses do
     [{"Active", "active"}, {"Archived", "archived"}]
@@ -53,7 +52,19 @@ defmodule OliWeb.Products.Details.Edit do
           <div><%= error_tag(f, :description) %></div>
         </div>
 
-        <.welcome_message_editor form={f} project_slug={@project_slug} ctx={@ctx} />
+        <% welcome_title =
+          (Common.fetch_field(f.source, :welcome_title) &&
+             Common.fetch_field(f.source, :welcome_title)["children"]) || [] %>
+        <Common.rich_text_editor_field
+          id="welcome_title_field"
+          form={f}
+          value={welcome_title}
+          field_name={:welcome_title}
+          field_label="Welcome Message Title"
+          on_edit="welcome_title_change"
+          project_slug={@project_slug}
+          ctx={@ctx}
+        />
 
         <div class="form-group mb-2">
           <%= label(f, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
@@ -164,40 +175,6 @@ defmodule OliWeb.Products.Details.Edit do
 
         <%= submit("Save", class: "btn btn-primary") %>
       </.form>
-    </div>
-    """
-  end
-
-  attr :form, :any, required: true
-  attr :project_slug, :string, required: true
-  attr :ctx, :map, required: true
-
-  defp welcome_message_editor(assigns) do
-    ~H"""
-    <% welcome_title =
-      (Common.fetch_field(@form.source, :welcome_title) &&
-         Common.fetch_field(@form.source, :welcome_title)["children"]) || [] %>
-    <div id="welcome_title_field" class="form-label-group mb-3">
-      <%= label(@form, :welcome_title, "Welcome Message Title", class: "control-label") %>
-      <%= hidden_input(@form, :welcome_title) %>
-
-      <div id="welcome_title_editor" phx-update="ignore">
-        <%= React.component(
-          @ctx,
-          "Components.RichTextEditor",
-          %{
-            projectSlug: @project_slug,
-            onEdit: "initial_function_that_will_be_overwritten",
-            onEditEvent: "welcome_title_change",
-            onEditTarget: "#welcome_title_field",
-            editMode: true,
-            value: welcome_title,
-            fixedToolbar: true,
-            allowBlockElements: false
-          },
-          id: "rich_text_editor_react_component"
-        ) %>
-      </div>
     </div>
     """
   end

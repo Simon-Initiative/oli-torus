@@ -15,7 +15,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
-  alias OliWeb.Common.{React, SessionContext}
+  alias OliWeb.Common.SessionContext
 
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)
@@ -92,7 +92,19 @@ defmodule OliWeb.Projects.OverviewLive do
               required: false
             ) %>
           </div>
-          <.welcome_message_editor form={@form} project_slug={@project.slug} ctx={@ctx} />
+          <% welcome_title =
+            (fetch_field(@form.source, :welcome_title) &&
+               fetch_field(@form.source, :welcome_title)["children"]) || [] %>
+          <.rich_text_editor_field
+            id="welcome_title_field"
+            form={@form}
+            value={welcome_title}
+            field_name={:welcome_title}
+            field_label="Welcome Message Title"
+            on_edit="welcome_title_change"
+            project_slug={@project.slug}
+            ctx={@ctx}
+          />
           <div class="form-label-group mb-3">
             <%= label(@form, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
             <%= textarea(@form, :encouraging_subtitle,
@@ -567,40 +579,6 @@ defmodule OliWeb.Projects.OverviewLive do
     <a class="text-primary external" href="https://pslcdatashop.web.cmu.edu/" target="_blank">
       datashop
     </a>
-    """
-  end
-
-  attr :form, :any, required: true
-  attr :project_slug, :string, required: true
-  attr :ctx, :map, required: true
-
-  defp welcome_message_editor(assigns) do
-    ~H"""
-    <% welcome_title =
-      (fetch_field(@form.source, :welcome_title) &&
-         fetch_field(@form.source, :welcome_title)["children"]) || [] %>
-    <div id="welcome_title_field" class="form-label-group mb-3">
-      <%= label(@form, :welcome_title, "Welcome Message Title", class: "control-label") %>
-      <%= hidden_input(@form, :welcome_title) %>
-
-      <div id="welcome_title_editor" phx-update="ignore">
-        <%= React.component(
-          @ctx,
-          "Components.RichTextEditor",
-          %{
-            projectSlug: @project_slug,
-            onEdit: "initial_function_that_will_be_overwritten",
-            onEditEvent: "welcome_title_change",
-            onEditTarget: "#welcome_title_field",
-            editMode: true,
-            value: welcome_title,
-            fixedToolbar: true,
-            allowBlockElements: false
-          },
-          id: "rich_text_editor_react_component"
-        ) %>
-      </div>
-    </div>
     """
   end
 end
