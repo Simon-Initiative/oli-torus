@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.Content do
   alias OliWeb.Components.Delivery.{CardHighlights, ContentTableModel}
   alias OliWeb.Common.{InstructorDashboardPagedTable, Params}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Delivery.Content.Progress
 
   alias Phoenix.LiveView.JS
   alias OliWeb.Icons
@@ -25,6 +26,12 @@ defmodule OliWeb.Components.Delivery.Content do
     progress_selector: nil,
     selected_proficiency_ids: Jason.encode!([])
   }
+
+  @proficiency_options [
+    %{id: 1, name: "Low", selected: false},
+    %{id: 2, name: "Medium", selected: false},
+    %{id: 3, name: "High", selected: false}
+  ]
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
     params =
@@ -87,6 +94,18 @@ defmodule OliWeb.Components.Delivery.Content do
       }
     ]
 
+    selected_proficiency_ids = Jason.decode!(params.selected_proficiency_ids)
+
+    proficiency_options =
+      update_proficiency_options(selected_proficiency_ids, @proficiency_options)
+
+    selected_proficiency_options =
+      Enum.reduce(proficiency_options, %{}, fn option, acc ->
+        if option.selected,
+          do: Map.put(acc, option.id, option.name),
+          else: acc
+      end)
+
     {:ok,
      assign(socket,
        total_count: total_count,
@@ -97,9 +116,11 @@ defmodule OliWeb.Components.Delivery.Content do
        section_slug: assigns.section_slug,
        options_for_container_select: options_for_container_select(containers),
        view: assigns[:view],
-       selected_proficiency_ids: Jason.decode!(params.selected_proficiency_ids),
        params_from_url: assigns.params,
-       card_props: card_props
+       card_props: card_props,
+       proficiency_options: proficiency_options,
+       selected_proficiency_options: selected_proficiency_options,
+       selected_proficiency_ids: selected_proficiency_ids
      )}
   end
 
@@ -181,17 +202,21 @@ defmodule OliWeb.Components.Delivery.Content do
             />
           </.form>
 
-          <OliWeb.Delivery.Content.Progress.render
+          <Progress.render
             target={@myself}
             progress_percentage={@params.progress_percentage}
             progress_selector={@params.progress_selector}
             params_from_url={@params_from_url}
           />
 
-          <OliWeb.Delivery.Content.Proficiency.render
-            target={@myself}
+          <.multi_select
+            id="proficiency_select"
+            options={@proficiency_options}
+            selected_values={@selected_proficiency_options}
             selected_proficiency_ids={@selected_proficiency_ids}
-            params_from_url={@params_from_url}
+            target={@myself}
+            disabled={@selected_proficiency_ids == %{}}
+            placeholder="Proficiency"
           />
 
           <button
@@ -220,62 +245,123 @@ defmodule OliWeb.Components.Delivery.Content do
     """
   end
 
-  def handle_event(
-        "apply_progress_filter",
-        %{
-          "progress_percentage" => progress_percentage,
-          "progress" => %{"option" => progress_selector}
-        },
-        socket
-      ) do
-    params =
-      Map.merge(socket.assigns.params, %{
-        progress_percentage: progress_percentage,
-        progress_selector: progress_selector
-      })
+  attr :placeholder, :string, default: "Select an option"
+  attr :disabled, :boolean, default: false
+  attr :options, :list, default: []
+  attr :id, :string
+  attr :target, :map, default: %{}
+  attr :selected_values, :map, default: %{}
+  attr :selected_proficiency_ids, :list, default: []
 
-    socket = assign(socket, :params, params)
-
-    {:noreply,
-     push_patch(socket,
-       to: route_for(socket, params, socket.assigns.patch_url_type)
-     )}
+  def multi_select(assigns) do
+    ~H"""
+    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-blue-500", else: "border-zinc-400"}"}>
+      <div
+        phx-click={
+          if(!@disabled,
+            do:
+              JS.toggle(to: "##{@id}-options-container")
+              |> JS.toggle(to: "##{@id}-down-icon")
+              |> JS.toggle(to: "##{@id}-up-icon")
+          )
+        }
+        class={[
+          "flex gap-x-4 px-4 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
+          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
+        ]}
+        id={"#{@id}-selected-options-container"}
+      >
+        <div class="flex gap-1 flex-wrap">
+          <span
+            :if={@selected_values == %{}}
+            class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
+          >
+            <%= @placeholder %>
+          </span>
+          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
+            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
+          </span>
+        </div>
+        <div>
+          <div id={"#{@id}-down-icon"}>
+            <Icons.chevron_down />
+          </div>
+          <div class="hidden" id={"#{@id}-up-icon"}>
+            <Icons.chevron_down class="fill-blue-400 rotate-180" />
+          </div>
+        </div>
+      </div>
+      <div class="relative">
+        <div
+          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
+          id={"#{@id}-options-container"}
+          phx-click-away={
+            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
+          }
+        >
+          <div>
+            <.form
+              :let={_f}
+              class="flex flex-column gap-y-3 px-4"
+              for={%{}}
+              as={:options}
+              phx-change="toggle_selected"
+              phx-target={@target}
+            >
+              <.input
+                :for={option <- @options}
+                name={option.id}
+                value={option.selected}
+                label={option.name}
+                checked={option.id in @selected_proficiency_ids}
+                type="checkbox"
+                class_label="text-zinc-900 text-xs font-normal leading-none dark:text-white"
+              />
+            </.form>
+          </div>
+          <div class="w-full border border-gray-200 my-4"></div>
+          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
+            <button
+              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
+              phx-click={
+                JS.hide(to: "##{@id}-options-container")
+                |> JS.hide(to: "##{@id}-up-icon")
+                |> JS.show(to: "##{@id}-down-icon")
+              }
+            >
+              Cancel
+            </button>
+            <button
+              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+              phx-click={
+                JS.push("apply_proficiency_filter")
+                |> JS.hide(to: "##{@id}-options-container")
+                |> JS.hide(to: "##{@id}-up-icon")
+                |> JS.show(to: "##{@id}-down-icon")
+              }
+              phx-target={@target}
+              phx-value={@selected_proficiency_ids}
+              disabled={@disabled}
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
   end
 
-  def handle_event("clear_all_filters", _params, socket) do
-    section_slug = socket.assigns.section_slug
-    path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/content"
-
-    {:noreply, push_patch(socket, to: path)}
-  end
-
-  def handle_event(
-        "apply_proficiency_filter",
-        %{"1" => proficiency_1, "2" => proficiency_2, "3" => proficiency_3},
-        socket
-      ) do
-    selected_proficiency_ids =
-      [proficiency_1, proficiency_2, proficiency_3]
-      |> Enum.with_index(1)
-      |> Enum.filter(fn {value, _option} -> value == "true" end)
-      |> Keyword.values()
-
-    socket = assign(socket, :selected_proficiency_ids, selected_proficiency_ids)
-
-    {:noreply,
-     push_patch(socket,
-       to:
-         route_for(
-           socket,
-           %{selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)},
-           socket.assigns.patch_url_type
-         )
-     )}
+  def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
+    selected_id = String.to_integer(id)
+    do_update_selection(socket, selected_id)
   end
 
   def handle_event("apply_proficiency_filter", _params, socket) do
-    selected_proficiency_ids = socket.assigns.selected_proficiency_ids
-    patch_url_type = socket.assigns.patch_url_type
+    %{
+      selected_proficiency_ids: selected_proficiency_ids,
+      patch_url_type: patch_url_type
+    } = socket.assigns
 
     {:noreply,
      push_patch(socket,
@@ -286,6 +372,32 @@ defmodule OliWeb.Components.Delivery.Content do
            patch_url_type
          )
      )}
+  end
+
+  def handle_event(
+        "apply_progress_filter",
+        %{
+          "progress_percentage" => progress_percentage,
+          "progress" => %{"option" => progress_selector}
+        },
+        socket
+      ) do
+    new_params = %{
+      progress_percentage: progress_percentage,
+      progress_selector: progress_selector
+    }
+
+    {:noreply,
+     push_patch(socket,
+       to: route_for(socket, new_params, socket.assigns.patch_url_type)
+     )}
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    section_slug = socket.assigns.section_slug
+    path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/content"
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("filter_container", %{"filter" => filter}, socket) do
@@ -656,5 +768,40 @@ defmodule OliWeb.Components.Delivery.Content do
       |> Map.put(:was_filtered, MapSet.member?(rows_ids, container.id))
       |> Map.drop([:progress, :student_proficiency, :numbering_index, :numbering_level])
     end)
+  end
+
+  defp show_proficiency_selected_values(values) do
+    Enum.map_join(values, ", ", fn {_id, values} -> values end)
+  end
+
+  defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do
+    Enum.map(proficiency_options, fn option ->
+      if option.id in selected_proficiency_ids,
+        do: %{option | selected: true},
+        else: option
+    end)
+  end
+
+  defp do_update_selection(socket, selected_id) do
+    %{proficiency_options: proficiency_options} = socket.assigns
+
+    updated_options =
+      Enum.map(proficiency_options, fn option ->
+        if option.id == selected_id, do: %{option | selected: !option.selected}, else: option
+      end)
+
+    {selected_proficiency_options, selected_ids} =
+      Enum.reduce(updated_options, {%{}, []}, fn option, {values, acc_ids} ->
+        if option.selected,
+          do: {Map.put(values, option.id, option.name), [option.id | acc_ids]},
+          else: {values, acc_ids}
+      end)
+
+    {:noreply,
+     assign(socket,
+       selected_proficiency_options: selected_proficiency_options,
+       proficiency_options: updated_options,
+       selected_proficiency_ids: selected_ids
+     )}
   end
 end

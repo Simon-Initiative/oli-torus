@@ -1,6 +1,8 @@
 defmodule OliWeb.Delivery.Content.Progress do
   use OliWeb, :html
 
+  alias OliWeb.Icons
+
   attr(:progress_percentage, :string, default: "100")
   attr(:params_from_url, :map)
   attr(:target, :any)
@@ -16,13 +18,14 @@ defmodule OliWeb.Delivery.Content.Progress do
       <div
         phx-click={
           JS.toggle(to: "#progress_form", display: "flex")
-          |> JS.dispatch("handle_progress_arrow_direction")
+          |> JS.toggle(to: "#progress-down-icon")
+          |> JS.toggle(to: "#progress-up-icon")
         }
         class="w-full h-9"
       >
         <button
           data-dropdown-toggle="dropdown"
-          class="h-full flex-shrink-0 rounded-md z-10 inline-flex items-center py-2.5 px-4 text-xs text-center text-gray-900 bg-white border border-[#B0B0B0] focus:text-[#3B76D3] hover:border-[#3B76D3] hover:text-[#3B76D3] focus:outline-none focus:border-[#3B76D3] focus:ring-0 focus:border-radius-0"
+          class={"h-full flex-shrink-0 rounded-md z-10 inline-flex items-center py-2.5 px-4 text-zinc-900 text-xs font-semibold leading-none dark:text-white bg-white border border-[#B0B0B0] #{if @progress_selector not in ["", nil], do: "!text-blue-500 text-xs font-semibold leading-none"}"}
           type="button"
         >
           Progress <%= progress_filter_text(
@@ -30,30 +33,24 @@ defmodule OliWeb.Delivery.Content.Progress do
             @progress_selector,
             @progress_percentage
           ) %>
-          <svg
-            class="w-2.5 h-2.5 ml-2.5"
-            aria-hidden="true"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 10 6"
-          >
-            <path
-              id="progress_path_arrow"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M1 1L5 5L9 1"
-            />
-          </svg>
+          <div class="ml-3">
+            <div id="progress-down-icon">
+              <Icons.chevron_down />
+            </div>
+            <div class="hidden" id="progress-up-icon">
+              <Icons.chevron_down class="fill-blue-400 rotate-180" />
+            </div>
+          </div>
         </button>
       </div>
       <.form
         for={%{}}
         phx-click-away={
-          JS.hide(to: "#progress_form") |> JS.dispatch("handle_progress_arrow_direction")
+          JS.hide(to: "#progress_form")
+          |> JS.hide(to: "#progress-up-icon")
+          |> JS.show(to: "#progress-down-icon")
         }
-        class="hidden bg-white mt-2 rounded border flex flex-col p-2 gap-4 absolute w-[173px] h-[154px]"
+        class="hidden bg-white mt-2 rounded border flex flex-col p-2 gap-4 absolute w-auto"
         phx-submit="apply_progress_filter"
         id="progress_form"
         phx-target={@target}
@@ -88,57 +85,48 @@ defmodule OliWeb.Delivery.Content.Progress do
             class="w-[75px] h-[27px] border border-slate-300 text-xs"
           /> <span class="text-xs">&percnt;</span>
         </div>
-        <div class="flex border-t border-gray-200 -mx-2 px-2 pt-3 pb-4 items-center justify-end gap-4">
-          <button
-            type="button"
-            phx-click={
-              JS.hide(to: "#progress_form")
-              |> JS.dispatch("handle_progress_arrow_direction")
-            }
-            class="flex items-center justify-center w-[58px] h-[28px] text-xs text-[#4F4F4F] hover:text-white bg-white hover:bg-[#3B76D3] rounded"
-          >
-            Cancel
-          </button>
-          <button
-            phx-click={
-              JS.hide(to: "#progress_form")
-              |> JS.dispatch("handle_progress_arrow_direction")
-            }
-            class="flex items-center justify-center w-[58px] h-[28px] text-xs text-[#4F4F4F] hover:text-white bg-white hover:bg-[#3B76D3] rounded"
-          >
-            Apply
-          </button>
+        <div>
+          <div class="w-full border border-gray-200 my-4"></div>
+          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
+            <button
+              type="button"
+              phx-click={
+                JS.hide(to: "#progress_form")
+                |> JS.hide(to: "#progress-up-icon")
+                |> JS.show(to: "#progress-down-icon")
+              }
+              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              phx-click={
+                JS.hide(to: "#progress_form")
+                |> JS.hide(to: "#progress-up-icon")
+                |> JS.show(to: "#progress-down-icon")
+              }
+              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+            >
+              Apply
+            </button>
+          </div>
         </div>
       </.form>
-
-      <script>
-        window.addEventListener("handle_progress_arrow_direction", e => {
-          const progress_path_arrow = document.getElementById("progress_path_arrow")
-          style = document.getElementById("progress_form").getAttribute("style")
-
-          console.log(style);
-          if (style === "display: none;" || style === null) {
-            progress_path_arrow.setAttribute('d', 'M1 5L5 1L9 5');
-          } else {
-            progress_path_arrow.setAttribute('d', 'M1 1L5 5L9 1');
-          }
-        })
-      </script>
     </div>
     """
   end
 
-  # defp progress_filter_text(%{"progress_selector" => _}, progress_selector, progress_percentage) do
-  #   progress_selector_text =
-  #     case progress_selector do
-  #       :is_equal_to -> " is ="
-  #       :is_less_than_or_equal -> " is <="
-  #       :is_greather_than_or_equal -> " is >="
-  #       nil -> ""
-  #     end
+  defp progress_filter_text(%{"progress_selector" => _}, progress_selector, progress_percentage) do
+    progress_selector_text =
+      case progress_selector do
+        :is_equal_to -> " is ="
+        :is_less_than_or_equal -> " is <="
+        :is_greather_than_or_equal -> " is >="
+        nil -> ""
+      end
 
-  #   progress_selector_text <> " #{progress_percentage}"
-  # end
+    progress_selector_text <> " #{progress_percentage}"
+  end
 
   defp progress_filter_text(_params_from_url, _progress_selector, _progress_percentage) do
     ""
