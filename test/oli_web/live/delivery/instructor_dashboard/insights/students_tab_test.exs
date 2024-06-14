@@ -769,7 +769,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
         sort_by: :numbering_index,
         sort_order: :asc,
         container_filter_by: :units,
-        selected_card_value: :zero_student_progress
+        selected_card_value: :zero_student_progress,
+        progress_percentage: 100,
+        selected_proficiency_ids: Jason.encode!([])
       }
 
       ## Check that the page is back to the units/modules view
