@@ -118,7 +118,7 @@ export const NonActivities: React.FC<Props> = ({
         <ResourceChoice
           icon="vial"
           label="A/B Test"
-          onHoverStart={() => onSetTip('A/B Testing is not yet supported')}
+          onHoverStart={() => onSetTip('Insert your A/B testing decision point to assign options randomly')}
           onHoverEnd={() => onResetTip()}
           key={'ab-test'}
           disabled={ABTestDisabled}
