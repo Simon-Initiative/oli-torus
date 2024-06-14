@@ -3,7 +3,6 @@ defmodule OliWeb.Sections.MainDetails do
 
   alias OliWeb.Components.Common
 
-  attr(:changeset, :any, required: true)
   attr(:form, :any, required: true)
   attr(:disabled, :boolean, required: true)
   attr(:is_admin, :boolean, required: true)
@@ -16,11 +15,11 @@ defmodule OliWeb.Sections.MainDetails do
     ~H"""
     <div>
       <div class="form-label-group">
-        <.input field={@changeset[:title]} label="Title" class="form-control" disabled={@disabled} />
+        <.input field={@form[:title]} label="Title" class="form-control" disabled={@disabled} />
       </div>
       <div class="form-label-group">
         <.input
-          field={@changeset[:description]}
+          field={@form[:description]}
           label="Description"
           class="form-control"
           disabled={@disabled}
@@ -42,7 +41,7 @@ defmodule OliWeb.Sections.MainDetails do
       />
       <div class="form-label-group">
         <.input
-          field={@changeset[:encouraging_subtitle]}
+          field={@form[:encouraging_subtitle]}
           label="Encouraging Subtitle"
           class="form-control"
           disabled={@disabled}
@@ -51,7 +50,7 @@ defmodule OliWeb.Sections.MainDetails do
       <div class="mt-2">
         <.input
           type="select"
-          field={@changeset[:brand_id]}
+          field={@form[:brand_id]}
           label="Brand"
           class="form-control"
           options={[{"None", nil} | @brands]}
@@ -60,11 +59,11 @@ defmodule OliWeb.Sections.MainDetails do
       <div class="mt-2">
         <.input
           type="select"
-          field={@changeset[:institution_id]}
+          field={@form[:institution_id]}
           label="Institution"
           class="form-control"
           options={[{"None", nil} | @institutions]}
-          disabled={@changeset[:lti_1p3_deployment_id].value != nil}
+          disabled={@form[:lti_1p3_deployment_id].value != nil}
         />
       </div>
 

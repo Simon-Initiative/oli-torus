@@ -46,8 +46,6 @@ defmodule OliWeb.Products.DetailsView do
 
         publishers = Inventories.list_publishers()
 
-        changeset = Section.changeset(product, %{})
-
         {:ok,
          assign(socket,
            available_brands: available_brands,
@@ -56,7 +54,7 @@ defmodule OliWeb.Products.DetailsView do
            author: author,
            product: product,
            is_admin: Accounts.has_admin_role?(author),
-           changeset: changeset,
+           changeset: Section.changeset(product, %{}),
            title: "Edit Product",
            show_confirm: false,
            breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})],

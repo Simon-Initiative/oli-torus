@@ -36,8 +36,6 @@ defmodule OliWeb.Projects.OverviewLive do
       |> Enum.map(fn {k, v} -> {v.text, k} end)
       |> Enum.sort(:desc)
 
-    changeset = Project.changeset(project)
-
     socket =
       assign(socket,
         ctx: ctx,
@@ -47,8 +45,7 @@ defmodule OliWeb.Projects.OverviewLive do
         activities_enabled: Activities.advanced_activities(project, is_admin?),
         can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
         is_admin: is_admin?,
-        changeset: changeset,
-        form: to_form(changeset),
+        changeset: Project.changeset(project),
         latest_published_publication: latest_published_publication,
         publishers: Inventories.list_publishers(),
         title: "Overview | " <> project.title,
@@ -67,37 +64,37 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
-      <.form for={@form} phx-submit="update">
+      <.form :let={f} for={@changeset} phx-submit="update">
         <Overview.section
           title="Details"
           description="Your project title and description will be shown to students when you publish this project."
         >
           <div class="form-label-group mb-3">
-            <%= label(@form, :title, "Project ID", class: "control-label") %>
-            <%= text_input(@form, :slug, class: "form-control", disabled: true) %>
+            <%= label(f, :title, "Project ID", class: "control-label") %>
+            <%= text_input(f, :slug, class: "form-control", disabled: true) %>
           </div>
           <div class="form-label-group mb-3">
-            <%= label(@form, :title, "Project Title", class: "control-label") %>
-            <%= text_input(@form, :title,
+            <%= label(f, :title, "Project Title", class: "control-label") %>
+            <%= text_input(f, :title,
               class: "form-control",
               placeholder: "The title of your project...",
               required: false
             ) %>
           </div>
           <div class="form-label-group mb-3">
-            <%= label(@form, :description, "Project Description", class: "control-label") %>
-            <%= textarea(@form, :description,
+            <%= label(f, :description, "Project Description", class: "control-label") %>
+            <%= textarea(f, :description,
               class: "form-control",
               placeholder: "A brief description of your project...",
               required: false
             ) %>
           </div>
           <% welcome_title =
-            (fetch_field(@form.source, :welcome_title) &&
-               fetch_field(@form.source, :welcome_title)["children"]) || [] %>
+            (fetch_field(f.source, :welcome_title) &&
+               fetch_field(f.source, :welcome_title)["children"]) || [] %>
           <.rich_text_editor_field
             id="welcome_title_field"
-            form={@form}
+            form={f}
             value={welcome_title}
             field_name={:welcome_title}
             field_label="Welcome Message Title"
@@ -106,15 +103,15 @@ defmodule OliWeb.Projects.OverviewLive do
             ctx={@ctx}
           />
           <div class="form-label-group mb-3">
-            <%= label(@form, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
-            <%= textarea(@form, :encouraging_subtitle,
+            <%= label(f, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
+            <%= textarea(f, :encouraging_subtitle,
               class: "form-control",
               placeholder: "Enter a subtitle to encourage students to begin the course...",
               required: false
             ) %>
           </div>
           <div class="form-label-group mb-3">
-            <%= label(@form, :description, "Latest Publication", class: "control-label") %>
+            <%= label(f, :description, "Latest Publication", class: "control-label") %>
             <%= case @latest_published_publication do %>
               <% %{edition: edition, major: major, minor: minor} -> %>
                 <p class="text-secondary">
@@ -125,8 +122,8 @@ defmodule OliWeb.Projects.OverviewLive do
             <% end %>
           </div>
           <div class="form-label-group mb-3">
-            <%= label(@form, :publisher_id, "Project Publisher", class: "control-label") %>
-            <%= select(@form, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
+            <%= label(f, :publisher_id, "Project Publisher", class: "control-label") %>
+            <%= select(f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
               class: "form-control",
               required: true
             ) %>
@@ -135,8 +132,8 @@ defmodule OliWeb.Projects.OverviewLive do
           <div class="form-label-group mb-3">
             <%= if @can_enable_experiments do %>
               <div class="form-label-group mb-3 form-check">
-                <%= checkbox(@form, :has_experiments, required: false) %>
-                <%= label(@form, :has_experiments, "Enable Upgrade-based Experiments") %>
+                <%= checkbox(f, :has_experiments, required: false) %>
+                <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
               </div>
             <% end %>
 
@@ -164,7 +161,7 @@ defmodule OliWeb.Projects.OverviewLive do
           description="Project wide configuration, not all options may be relevant for all subject areas."
         >
           <div class="d-block">
-            <%= inputs_for @form, :attributes, fn fp -> %>
+            <%= inputs_for f, :attributes, fn fp -> %>
               <div :if={@is_admin} class="form-label-group mb-3">
                 <%= checkbox(fp, :calculate_embeddings_on_publish) %>
                 <%= label(fp, :calculate_embeddings_on_publish, "Calculate embeddings on publish",
@@ -229,8 +226,8 @@ defmodule OliWeb.Projects.OverviewLive do
         <%= if @is_admin do %>
           <Overview.section title="Content Types" description="Enable optional content types.">
             <div class="form-label-group mb-3 form-check">
-              <%= checkbox(@form, :allow_ecl_content_type, required: false) %>
-              <%= label(@form, :allow_ecl_content_type, "ECL Code Editor",
+              <%= checkbox(f, :allow_ecl_content_type, required: false) %>
+              <%= label(f, :allow_ecl_content_type, "ECL Code Editor",
                 class: "control-label form-check-label"
               ) %>
             </div>
@@ -497,8 +494,7 @@ defmodule OliWeb.Projects.OverviewLive do
 
   def handle_event("on_selected", %{"project" => project_attrs}, socket) do
     project = socket.assigns.project
-    changeset = Project.changeset(project, project_attrs)
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: Project.changeset(project, project_attrs))}
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do
@@ -517,12 +513,9 @@ defmodule OliWeb.Projects.OverviewLive do
     socket =
       case Course.update_project(project, project_params) do
         {:ok, project} ->
-          changeset = Project.changeset(project)
-
           socket
           |> assign(:project, project)
-          |> assign(:changeset, changeset)
-          |> assign(:form, to_form(changeset))
+          |> assign(:changeset, Project.changeset(project))
           |> put_flash(:info, "Project updated successfully.")
 
         {:error, %Ecto.Changeset{} = changeset} ->
@@ -561,7 +554,7 @@ defmodule OliWeb.Projects.OverviewLive do
         "children" => welcome_title
       })
 
-    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params

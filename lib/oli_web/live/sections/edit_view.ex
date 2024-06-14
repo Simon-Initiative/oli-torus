@@ -56,15 +56,13 @@ defmodule OliWeb.Sections.EditView do
           end
 
         base_project = Oli.Authoring.Course.get_project!(section.base_project_id)
-        changeset = Sections.change_section(section)
 
         {:ok,
          assign(socket,
            ctx: SessionContext.init(socket, session),
            brands: available_brands,
            institutions: available_institutions,
-           changeset: changeset,
-           form: to_form(changeset),
+           changeset: Sections.change_section(section),
            is_admin: type == :admin,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
@@ -84,15 +82,14 @@ defmodule OliWeb.Sections.EditView do
   attr(:base_project, :any)
 
   def render(assigns) do
-    assigns = assign(assigns, changeset: to_form(assigns.changeset))
+    assigns = assign(assigns, form: to_form(assigns.changeset))
 
     ~H"""
     <title><%= @title %></title>
-    <.form as={:section} for={@changeset} phx-change="validate" phx-submit="save" autocomplete="off">
+    <.form as={:section} for={@form} phx-change="validate" phx-submit="save" autocomplete="off">
       <Groups.render>
         <Group.render label="Settings" description="Manage the course section settings">
           <MainDetails.render
-            changeset={@changeset}
             form={@form}
             disabled={false}
             is_admin={@is_admin}
@@ -106,20 +103,15 @@ defmodule OliWeb.Sections.EditView do
           label="Schedule"
           description="Edit the start and end dates for scheduling purposes"
         >
-          <StartEnd.render changeset={@changeset} disabled={false} is_admin={@is_admin} ctx={@ctx} />
+          <StartEnd.render form={@form} disabled={false} is_admin={@is_admin} ctx={@ctx} />
         </Group.render>
         <%= if @section.open_and_free do %>
-          <OpenFreeSettings.render
-            is_admin={@is_admin}
-            changeset={@changeset}
-            disabled={false}
-            ctx={@ctx}
-          />
+          <OpenFreeSettings.render is_admin={@is_admin} form={@form} disabled={false} ctx={@ctx} />
         <% else %>
           <LtiSettings.render section={@section} />
         <% end %>
-        <PaywallSettings.render changeset={@changeset} disabled={!@is_admin} />
-        <ContentSettings.render changeset={@changeset} />
+        <PaywallSettings.render form={@form} disabled={!@is_admin} />
+        <ContentSettings.render form={@form} />
       </Groups.render>
     </.form>
     <Groups.render>
@@ -149,10 +141,8 @@ defmodule OliWeb.Sections.EditView do
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
-        changeset = Sections.change_section(section)
 
-        {:noreply,
-         assign(socket, section: section, changeset: changeset, form: to_form(changeset))}
+        {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
@@ -196,7 +186,7 @@ defmodule OliWeb.Sections.EditView do
         "children" => welcome_title
       })
 
-    {:noreply, assign(socket, changeset: changeset, form: to_form(changeset))}
+    {:noreply, assign(socket, changeset: changeset)}
   end
 
   defp convert_dates(params, ctx) do

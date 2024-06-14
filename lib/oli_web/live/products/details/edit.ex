@@ -74,7 +74,7 @@ defmodule OliWeb.Products.Details.Edit do
             placeholder: "Enter a subtitle to encourage students to begin the course...",
             required: false
           ) %>
-          <div><%= error_tag(f, :description) %></div>
+          <div><%= error_tag(f, :encouraging_subtitle) %></div>
         </div>
 
         <div class="form-group mb-2">

@@ -740,8 +740,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
          %{
            conn: conn,
            user: user,
-           section: section,
-           page_1: page_1
+           section: section
          } do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
