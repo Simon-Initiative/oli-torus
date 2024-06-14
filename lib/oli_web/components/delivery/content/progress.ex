@@ -17,12 +17,11 @@ defmodule OliWeb.Delivery.Content.Progress do
       <div
         phx-click={
           JS.toggle(to: "#progress_form", display: "flex")
-          |> JS.dispatch("handle_arrow_direction")
+          |> JS.dispatch("handle_progress_arrow_direction")
         }
         class="w-full h-9"
       >
         <button
-          id="dropdown-button"
           data-dropdown-toggle="dropdown"
           class="h-full flex-shrink-0 rounded-md z-10 inline-flex items-center py-2.5 px-4 text-xs text-center text-gray-900 bg-white border border-[#B0B0B0] focus:text-[#3B76D3] hover:border-[#3B76D3] hover:text-[#3B76D3] focus:outline-none focus:border-[#3B76D3] focus:ring-0 focus:border-radius-0"
           type="button"
@@ -40,7 +39,7 @@ defmodule OliWeb.Delivery.Content.Progress do
             viewBox="0 0 10 6"
           >
             <path
-              id="path_arrow"
+              id="progress_path_arrow"
               stroke="currentColor"
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -52,9 +51,11 @@ defmodule OliWeb.Delivery.Content.Progress do
       </div>
       <.form
         for={%{}}
-        phx-click-away={JS.hide(to: "#progress_form") |> JS.dispatch("handle_arrow_direction")}
+        phx-click-away={
+          JS.hide(to: "#progress_form") |> JS.dispatch("handle_progress_arrow_direction")
+        }
         class="hidden bg-white mt-2 rounded border flex flex-col p-2 gap-4 absolute w-[173px] h-[154px]"
-        phx-submit="progress_filter"
+        phx-submit="apply_progress_filter"
         id="progress_form"
         phx-target={@target}
       >
@@ -90,7 +91,7 @@ defmodule OliWeb.Delivery.Content.Progress do
             type="button"
             phx-click={
               JS.hide(to: "#progress_form")
-              |> JS.dispatch("handle_arrow_direction")
+              |> JS.dispatch("handle_progress_arrow_direction")
             }
             class="flex items-center justify-center w-[58px] h-[28px] text-xs text-[#4F4F4F] hover:text-white bg-white hover:bg-[#3B76D3] rounded"
           >
@@ -99,7 +100,7 @@ defmodule OliWeb.Delivery.Content.Progress do
           <button
             phx-click={
               JS.hide(to: "#progress_form")
-              |> JS.dispatch("handle_arrow_direction")
+              |> JS.dispatch("handle_progress_arrow_direction")
             }
             class="flex items-center justify-center w-[58px] h-[28px] text-xs text-[#4F4F4F] hover:text-white bg-white hover:bg-[#3B76D3] rounded"
           >
@@ -109,15 +110,15 @@ defmodule OliWeb.Delivery.Content.Progress do
       </.form>
 
       <script>
-        window.addEventListener("handle_arrow_direction", e => {
-          const path_arrow = document.getElementById("path_arrow")
+        window.addEventListener("handle_progress_arrow_direction", e => {
+          const progress_path_arrow = document.getElementById("progress_path_arrow")
           style = document.getElementById("progress_form").getAttribute("style")
 
           console.log(style);
           if (style === "display: none;" || style === null) {
-            path_arrow.setAttribute('d', 'M1 5L5 1L9 5');
+            progress_path_arrow.setAttribute('d', 'M1 5L5 1L9 5');
           } else {
-            path_arrow.setAttribute('d', 'M1 1L5 5L9 1');
+            progress_path_arrow.setAttribute('d', 'M1 1L5 5L9 1');
           }
         })
       </script>

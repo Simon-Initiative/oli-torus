@@ -23,7 +23,8 @@ defmodule OliWeb.Components.Delivery.Content do
     selected_card_value: nil,
     progress_percentage: 100,
     progress_selector: :is_less_than_or_equal,
-    progress_filter_text: ""
+    progress_filter_text: "",
+    selected_proficiency_ids: Jason.encode!([1, 2, 3])
   }
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
@@ -97,11 +98,14 @@ defmodule OliWeb.Components.Delivery.Content do
        section_slug: assigns.section_slug,
        options_for_container_select: options_for_container_select(containers),
        view: assigns[:view],
+       selected_proficiency_ids: Jason.decode!(params.selected_proficiency_ids),
+       params_from_url: assigns.params,
        card_props: card_props
      )}
   end
 
   attr(:params, :map, required: true)
+  attr(:params_from_url, :map, required: true)
   attr(:total_count, :integer, required: true)
   attr(:table_model, :map, required: true)
   attr(:options_for_container_select, :list)
@@ -184,6 +188,20 @@ defmodule OliWeb.Components.Delivery.Content do
             progress_selector={@params.progress_selector}
             progress_filter_text={@params.progress_filter_text}
           />
+
+          <OliWeb.Delivery.Content.Proficiency.render
+            target={@myself}
+            selected_proficiency_ids={@selected_proficiency_ids}
+            params_from_url={@params_from_url}
+          />
+
+          <button
+            class="text-center text-blue-500 text-xs font-semibold underline leading-none"
+            phx-click="clear_all_filters"
+            phx-target={@myself}
+          >
+            Clear All Filters
+          </button>
         </div>
 
         <InstructorDashboardPagedTable.render
@@ -204,7 +222,7 @@ defmodule OliWeb.Components.Delivery.Content do
   end
 
   def handle_event(
-        "progress_filter",
+        "apply_progress_filter",
         %{
           "progress_percentage" => progress_percentage,
           "progress" => %{"option" => progress_selector}
@@ -221,6 +239,52 @@ defmodule OliWeb.Components.Delivery.Content do
              progress_selector: progress_selector
            },
            socket.assigns.patch_url_type
+         )
+     )}
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    section_slug = socket.assigns.section_slug
+    path = ~p"/sections/#{section_slug}/instructor_dashboard/insights/content"
+
+    {:noreply, push_patch(socket, to: path)}
+  end
+
+  def handle_event(
+        "apply_proficiency_filter",
+        %{"1" => proficiency_1, "2" => proficiency_2, "3" => proficiency_3},
+        socket
+      ) do
+    selected_proficiency_ids =
+      [proficiency_1, proficiency_2, proficiency_3]
+      |> Enum.with_index(1)
+      |> Enum.filter(fn {value, _option} -> value == "true" end)
+      |> Keyword.values()
+
+    socket = assign(socket, :selected_proficiency_ids, selected_proficiency_ids)
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)},
+           socket.assigns.patch_url_type
+         )
+     )}
+  end
+
+  def handle_event("apply_proficiency_filter", _params, socket) do
+    selected_proficiency_ids = socket.assigns.selected_proficiency_ids
+    patch_url_type = socket.assigns.patch_url_type
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         route_for(
+           socket,
+           %{selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)},
+           patch_url_type
          )
      )}
   end
@@ -362,7 +426,13 @@ defmodule OliWeb.Components.Delivery.Content do
           @default_params.progress_selector
         ),
       progress_filter_text:
-        Params.get_param(params, "progress_selector", @default_params.progress_filter_text)
+        Params.get_param(params, "progress_selector", @default_params.progress_filter_text),
+      selected_proficiency_ids:
+        Params.get_param(
+          params,
+          "selected_proficiency_ids",
+          @default_params.selected_proficiency_ids
+        )
     }
   end
 
@@ -395,6 +465,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> maybe_filter_by_text(params.text_search)
           |> maybe_filter_by_card(params.selected_card_value)
           |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
+          |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(modules), "MODULES",
@@ -407,6 +478,7 @@ defmodule OliWeb.Components.Delivery.Content do
           |> maybe_filter_by_text(params.text_search)
           |> maybe_filter_by_card(params.selected_card_value)
           |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
+          |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(units), "UNITS", units |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -438,6 +510,24 @@ defmodule OliWeb.Components.Delivery.Content do
       _ ->
         Enum.sort_by(containers, fn container -> container.title end, sort_order)
     end
+  end
+
+  defp maybe_filter_by_proficiency(containers, selected_proficiency_ids) do
+    selected_proficiency_ids = Jason.decode!(selected_proficiency_ids)
+
+    mapper_ids =
+      Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
+        case id do
+          1 -> ["Low" | acc]
+          2 -> ["Medium" | acc]
+          3 -> ["High" | acc]
+          _ -> acc
+        end
+      end)
+
+    Enum.filter(containers, fn container ->
+      container.student_proficiency in mapper_ids
+    end)
   end
 
   defp maybe_filter_by_progress(containers, progress_selector, percentage) do
