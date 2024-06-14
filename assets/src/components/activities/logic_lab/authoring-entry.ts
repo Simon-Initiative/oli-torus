@@ -21,7 +21,7 @@ const manifest: Manifest = require('./manifest.json');
 registerCreationFunc(manifest, async (context: CreationContext): Promise<LogicLabModelSchema> => {
   return {
     activity: '',
-    context, // For future work so that lab activity can reference context.
+    context: { title: context.title },
     authoring: {
       version: 1,
       parts: [

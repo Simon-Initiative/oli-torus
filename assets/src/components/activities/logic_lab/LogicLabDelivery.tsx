@@ -41,7 +41,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
   } = useDeliveryElementContext<LogicLabModelSchema>();
   const dispatch = useDispatch();
   const [activity, setActivity] = useState<string>(model.activity);
-  const [modelContext, setModelContext] = useState(model.context);
 
   useEffect(() => {
     // This looks like boilerplate code for dealing with embedded activities.
@@ -50,7 +49,6 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     setActivity(model.activity);
-    setModelContext(model.context);
     let partGuid = activityState.parts[0].attemptGuid; // Moving to higher scope which helps state saving to work.
 
     const onMessage = async (e: MessageEvent) => {
@@ -195,7 +193,7 @@ const LogicLab: React.FC<LogicLabDeliveryProps> = () => {
       )}
       {loading === 'loaded' && (
         <iframe
-          title={`LogicLab Activity ${modelContext?.title}`}
+          title={`LogicLab Activity ${model.context?.title}`}
           src={baseUrl}
           allow="fullscreen"
           height="800"

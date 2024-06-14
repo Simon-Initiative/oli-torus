@@ -1,7 +1,7 @@
 /*
   Models for Torus LogicLab activity data and data exchange.
 */
-import { ActivityModelSchema, CreationContext, Feedback, Part, Transformation } from '../types';
+import { ActivityModelSchema, Feedback, Part, Transformation } from '../types';
 
 // Typing and type checking for existence of variables in a context.
 type ContextVariables = { variables: Record<string, string> };
@@ -25,7 +25,7 @@ export function getLabServer(context: ContextVariables | unknown): string {
 
 export interface LogicLabModelSchema extends ActivityModelSchema {
   activity: string; // Have to set at higher level as not all information in authoring.parts (eg) targets, are available in all contexts
-  context?: CreationContext;
+  context?: ContextInfo;
   authoring: {
     version: 1;
     parts: Part[]; // required in use
@@ -33,6 +33,11 @@ export interface LogicLabModelSchema extends ActivityModelSchema {
     previewText: string;
   };
   feedback: Feedback[];
+}
+
+// info saved from Creation Context
+export interface ContextInfo {
+  title: string;
 }
 
 export interface Score {
