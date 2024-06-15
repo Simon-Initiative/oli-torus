@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Content.Progress do
   alias OliWeb.Icons
 
   attr(:progress_percentage, :string, default: "100")
-  attr(:params_from_url, :map)
+  attr(:params_from_url, :map, default: %{})
   attr(:target, :any)
 
   attr(:progress_selector, :atom,
