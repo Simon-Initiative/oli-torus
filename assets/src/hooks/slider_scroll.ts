@@ -1,6 +1,20 @@
+const scrollPositions = new Map();
+
+function updateCurrentScrollPosition(cardId: string, scrollPosition: number) {
+  scrollPositions.set(cardId, scrollPosition);
+}
+
+function getCurrentScrollPosition(cardId: string) {
+  return scrollPositions.get(cardId) || 0.0;
+}
+
 export const SliderScroll = {
-  // This hook is used to scroll the slider to the clicked card
-  // and to hide or show the left and right button depending on the scroll position.
+  // This hook is used to scroll the slider to the clicked card to get it centered,
+  // to hide or show the left and right button depending on the scroll position.
+  // and to disable the x scroll when a card is expanded.
+  // It also saves the scroll position of each slider to restore it when the slider is updated
+  // (since we use temporary assigns in the liveview, the slider is updated evertime a module is selecting,
+  // reseting the scroll position to 0, so we need to save it and restore it after the update)
 
   mounted() {
     // Define the cards within the slider and the righ and left button
@@ -9,38 +23,12 @@ export const SliderScroll = {
     const sliderLeftButton = document.getElementById('slider_left_button_' + unit_resource_id);
     const sliderRightButton = document.getElementById('slider_right_button_' + unit_resource_id);
 
-    // Add a click event to each card that scrolls the slider to the clicked card
-    // and animates it with a pulse effect
-    cards.forEach((card: HTMLElement) => {
-      card.addEventListener('click', () => {
-        // Calculate the position to scroll to
-        const sliderPaddingLeft = parseInt(getComputedStyle(this.el).paddingLeft);
-        const sliderPaddingRight = parseInt(getComputedStyle(this.el).paddingRight);
-        const cardMarginLeft = parseInt(getComputedStyle(card).marginLeft);
-        const cardMarginRight = parseInt(getComputedStyle(card).marginRight);
-
-        const adjustedSliderWidth = this.el.clientWidth - sliderPaddingLeft - sliderPaddingRight;
-        const adjustedCardWidth = card.clientWidth + cardMarginLeft + cardMarginRight;
-
-        const sliderCenter = adjustedSliderWidth / 2;
-        const cardCenter = adjustedCardWidth / 2;
-
-        const scrollLeft = card.offsetLeft - sliderCenter + cardCenter - sliderPaddingLeft;
-
-        // Scroll to the position
-        this.el.scrollTo({
-          left: scrollLeft,
-          behavior: 'smooth',
-        });
-
-        // pulse animation
-        card.classList.add('animate-[pulse_0.5s_cubic-bezier(0.4,0,0.6,1)]');
-      });
-    });
-
-    // hide or show the button depending on the scroll position
+    // hide or show the slider buttons depending on the scroll position
+    // and update the current position in the scrollPositions map
     this.el.addEventListener('scroll', () => {
       const slider = this.el;
+
+      updateCurrentScrollPosition(this.el.dataset.resource_id, slider.scrollLeft);
 
       if (slider.scrollLeft <= 0) {
         // If the left part is fully visible, hide the left button
@@ -59,6 +47,37 @@ export const SliderScroll = {
       } else {
         sliderRightButton?.classList.remove('hidden');
         sliderRightButton?.classList.add('flex');
+      }
+    });
+
+    this.el.setAttribute('style', 'overflow-x: scroll;');
+
+    // if any of the cards has the aria-expanded attribute set to true,
+    // disable x scroll in that slider after 700ms (to allow the scroll animation to end first)
+    cards.forEach((card: HTMLElement) => {
+      if (card.getAttribute('aria-expanded') === 'true') {
+        setTimeout(() => {
+          this.el.setAttribute('style', 'overflow-x: hidden;');
+        }, 700);
+      }
+    });
+  },
+  updated() {
+    this.el.setAttribute('style', 'overflow-x: scroll;');
+
+    // re-apply the scroll position the slider had before the unit was updated by liveview.
+    this.el.scrollTo({
+      left: getCurrentScrollPosition(this.el.dataset.resource_id),
+    });
+
+    const cards = this.el.querySelectorAll('.slider-card');
+
+    // disable x scroll in the slider after 700ms (to allow the scroll animation to end first)
+    cards.forEach((card: HTMLElement) => {
+      if (card.getAttribute('aria-expanded') === 'true') {
+        setTimeout(() => {
+          this.el.setAttribute('style', 'overflow-x: hidden;');
+        }, 700);
       }
     });
   },
