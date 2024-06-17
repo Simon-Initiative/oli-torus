@@ -5052,10 +5052,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 26px;
 }
 
-.h-\[2px\] {
-  height: 2px;
-}
-
 .h-\[30px\] {
   height: 30px;
 }
@@ -5151,6 +5147,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-full {
   height: 100%;
+}
+
+.h-px {
+  height: 1px;
 }
 
 .h-screen {
@@ -5703,6 +5703,11 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.-translate-y-full {
+  --tw-translate-y: -100%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -5768,6 +5773,12 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.scale-100 {
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .scale-110 {
   --tw-scale-x: 1.1;
   --tw-scale-y: 1.1;
@@ -5802,8 +5813,8 @@ table.table-striped tbody tr:nth-child(even) {
   }
 }
 
-.animate-\[pulse_0\.5s_cubic-bezier\(0\.4\2c 0\2c 0\.6\2c 1\)\] {
-  animation: pulse 0.5s cubic-bezier(0.4,0,0.6,1);
+.animate-\[pulse_0\.7s_cubic-bezier\(0\.4\2c 0\2c 0\.6\2c 1\)1\] {
+  animation: pulse 0.7s cubic-bezier(0.4,0,0.6,1)1;
 }
 
 @keyframes pulse {
@@ -6348,6 +6359,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-radius: 60px;
 }
 
+.rounded-\[82px\] {
+  border-radius: 82px;
+}
+
 .rounded-full {
   border-radius: 9999px;
 }
@@ -6728,6 +6743,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(255 255 255 / var(--tw-border-opacity));
 }
 
+.border-white\/20 {
+  border-color: rgb(255 255 255 / 0.2);
+}
+
 .border-white\/\[\.1\] {
   border-color: rgb(255 255 255 / .1);
 }
@@ -7039,10 +7058,6 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(82 82 82 / var(--tw-bg-opacity));
 }
 
-.bg-gray-600\/10 {
-  background-color: rgb(82 82 82 / 0.1);
-}
-
 .bg-gray-600\/20 {
   background-color: rgb(82 82 82 / 0.2);
 }
@@ -7187,6 +7202,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-white\/10 {
   background-color: rgb(255 255 255 / 0.1);
+}
+
+.bg-white\/20 {
+  background-color: rgb(255 255 255 / 0.2);
 }
 
 .bg-white\/\[\.15\] {
@@ -7658,11 +7677,6 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 20px;
 }
 
-.px-\[44px\] {
-  padding-left: 44px;
-  padding-right: 44px;
-}
-
 .px-\[50px\] {
   padding-left: 50px;
   padding-right: 50px;
@@ -7791,11 +7805,6 @@ table.table-striped tbody tr:nth-child(even) {
 .py-\[60px\] {
   padding-top: 60px;
   padding-bottom: 60px;
-}
-
-.py-\[6px\] {
-  padding-top: 6px;
-  padding-bottom: 6px;
 }
 
 .py-px {
@@ -8547,10 +8556,6 @@ table.table-striped tbody tr:nth-child(even) {
 .text-gray-600 {
   --tw-text-opacity: 1;
   color: rgb(82 82 82 / var(--tw-text-opacity));
-}
-
-.text-gray-600\/10 {
-  color: rgb(82 82 82 / 0.1);
 }
 
 .text-gray-700 {
@@ -13545,11 +13550,6 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(73 75 101 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#D9D9D9\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(217 217 217 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#DF8028\] {
   --tw-bg-opacity: 1;
   background-color: rgb(223 128 40 / var(--tw-bg-opacity));
@@ -13858,11 +13858,6 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(186 184 191 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-\[\#D9D9D9\] {
-  --tw-text-opacity: 1;
-  color: rgb(217 217 217 / var(--tw-text-opacity));
-}
-
 .dark .dark\:text-\[\#DDD\] {
   --tw-text-opacity: 1;
   color: rgb(221 221 221 / var(--tw-text-opacity));
@@ -14031,10 +14026,6 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-yellow-800 {
   --tw-text-opacity: 1;
   color: rgb(124 80 5 / var(--tw-text-opacity));
-}
-
-.dark .dark\:text-opacity-10 {
-  --tw-text-opacity: 0.1;
 }
 
 .dark .dark\:text-opacity-50 {
