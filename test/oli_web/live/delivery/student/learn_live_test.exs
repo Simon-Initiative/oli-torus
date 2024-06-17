@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
-      |> Core.update_resource_access(%{progress: progress})
+      |> Core.update_resource_access(%{progress: progress, score: 1.0, out_of: 2.0})
 
     insert(:resource_attempt, %{
       resource_access: resource_access,
