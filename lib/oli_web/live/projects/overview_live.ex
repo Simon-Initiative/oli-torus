@@ -14,7 +14,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Components.Overview
-  alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes, NotesConfig, DiscussionsConfig}
+  alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Common.SessionContext
 
   def mount(_params, session, socket) do
@@ -293,32 +293,15 @@ defmodule OliWeb.Projects.OverviewLive do
         session: %{"project_slug" => @project.slug}
       ) %>
 
-      <Overview.section
-        title="Notes"
-        description="Enable students to annotate content for saving and sharing within the class community."
-      >
-        <.live_component
-          module={NotesConfig}
-          id="notes-config"
-          project={@project}
-          collab_space_config={@collab_space_config}
-          resource_slug={@revision_slug}
-        />
-      </Overview.section>
-
-      <Overview.section
-        title="Course Discussions"
-        description="Give students a course discussion board."
-      >
-        <.live_component
-          module={DiscussionsConfig}
-          id="discussions-config"
-          project={@project}
-          author={@current_author}
-          collab_space_config={@collab_space_config}
-          resource_slug={@revision_slug}
-        />
-      </Overview.section>
+      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        id: "project_collab_space_config",
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "project_slug" => @project.slug,
+          "resource_slug" => @revision_slug,
+          "is_overview_render" => true
+        }
+      ) %>
 
       <Overview.section
         title="Required Survey"
