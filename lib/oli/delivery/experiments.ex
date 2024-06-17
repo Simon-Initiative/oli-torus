@@ -104,7 +104,7 @@ defmodule Oli.Delivery.Experiments do
     case http().post(url("/api/assign"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
       {:ok, %{status_code: 404}} -> {:error, "Experiment might not be set up correctly."}
-      e -> {:error, e}
+      e -> e
     end
   end
 
