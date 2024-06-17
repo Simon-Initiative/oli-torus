@@ -30,9 +30,8 @@ defmodule OliWeb.Resources.AlternativesEditor do
         @alternatives_type_id
       )
 
-    can_add_decision_point =
-      Enum.filter(alternatives, fn a -> a.content["strategy"] == "upgrade_decision_point" end)
-      |> Enum.count() == 0
+    alternatives =
+      Enum.filter(alternatives, fn a -> a.content["strategy"] != "upgrade_decision_point" end)
 
     subscriptions = subscribe(alternatives, project.slug)
 
@@ -41,7 +40,6 @@ defmodule OliWeb.Resources.AlternativesEditor do
        ctx: ctx,
        project: project,
        author: ctx.author,
-       can_add_decision_point: can_add_decision_point,
        title: "Alternatives | " <> project.title,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives"})],
        alternatives: Enum.reverse(alternatives),
@@ -65,15 +63,6 @@ defmodule OliWeb.Resources.AlternativesEditor do
       <h2>Alternatives</h2>
       <div class="d-flex flex-row">
         <div class="flex-grow-1"></div>
-        <%= if @project.has_experiments do %>
-          <button
-            disabled={!@can_add_decision_point}
-            class="btn btn-primary mr-3"
-            phx-click="show_create_experiment"
-          >
-            <i class="fa fa-plus"></i> New Decision Point
-          </button>
-        <% end %>
         <button class="btn btn-primary" phx-click="show_create_modal">
           <i class="fa fa-plus"></i> New Alternative
         </button>
@@ -101,9 +90,6 @@ defmodule OliWeb.Resources.AlternativesEditor do
       <div class="d-flex flex-row align-items-center">
         <div>
           <b><%= @group.title %></b>
-          <%= if @group.content["strategy"] == "upgrade_decision_point" do %>
-            <i>Upgrade Decision Point</i>
-          <% end %>
         </div>
         <div class="flex-grow-1"></div>
         <.icon_button
@@ -266,22 +252,6 @@ defmodule OliWeb.Resources.AlternativesEditor do
     {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
   end
 
-  def handle_event("create_experiment", %{"params" => %{"name" => name}}, socket) do
-    %{project: project, author: author, alternatives: alternatives} = socket.assigns
-
-    {:ok, group} =
-      ResourceEditor.create(
-        project.slug,
-        author,
-        @alternatives_type_id,
-        %{title: name, content: %{"options" => [], "strategy" => "upgrade_decision_point"}}
-      )
-
-    {:noreply,
-     hide_modal(socket)
-     |> assign(alternatives: [group | alternatives], can_add_decision_point: false)}
-  end
-
   def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
     changeset =
       {%{id: uuid(), resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
@@ -417,17 +387,10 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     alternatives = Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
 
-    can_add_decision_point =
-      Enum.filter(alternatives, fn a -> a.content["strategy"] == "upgrade_decision_point" end)
-      |> Enum.count() == 0
-
     {:noreply,
      socket
      |> hide_modal()
-     |> assign(
-       alternatives: alternatives,
-       can_add_decision_point: can_add_decision_point
-     )}
+     |> assign(alternatives: alternatives)}
   end
 
   def handle_event(

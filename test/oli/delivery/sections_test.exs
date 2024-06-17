@@ -106,6 +106,96 @@ defmodule Oli.Delivery.SectionsTest do
     )
   end
 
+  defp create_maths_project(_) do
+    author = insert(:author)
+    maths_project = insert(:project, authors: [author])
+
+    # revisions...
+
+    ## pages...
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        duration_minutes: 10
+      )
+
+    ## modules...
+    module_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_1_revision.resource_id],
+        title: "How to use this course"
+      })
+
+    ## units...
+    unit_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_1_revision.resource_id],
+        title: "Introduction"
+      })
+
+    ## root container...
+    container_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [unit_1_revision.resource_id],
+        title: "Root Container"
+      })
+
+    all_revisions = [page_1_revision, module_1_revision, unit_1_revision, container_revision]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: maths_project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{
+        project: maths_project,
+        root_resource_id: container_revision.resource_id
+      })
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: maths_project,
+        title: "Maths Course",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    %{
+      maths_author: author,
+      maths_section: section,
+      maths_project: maths_project,
+      maths_publication: publication,
+      maths_page_1: page_1_revision,
+      maths_module_1: module_1_revision,
+      maths_unit_1: unit_1_revision,
+      maths_container_revision: container_revision
+    }
+  end
+
   defp create_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -2095,6 +2185,39 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns an empty list when section does not exist", %{user: user} do
       assert Sections.get_last_attempt_per_page_id("invalid_section", user.id) == []
+    end
+  end
+
+  describe "get_sections_containing_resources_of_given_project/1" do
+    setup [:create_elixir_project, :create_maths_project]
+
+    test "returns sections containing resources of the given project", %{
+      maths_section: maths_section,
+      project: elixir_project,
+      publication: elixir_publication,
+      maths_project: maths_project
+    } do
+      # the maths course has some content that belongs to the elixir project
+      # (in other words, the maths course has been remixed with some elixir pages)
+      insert(:section_project_publication, %{
+        section: maths_section,
+        project: elixir_project,
+        publication: elixir_publication
+      })
+
+      sections_for_elixir_project =
+        Sections.get_sections_containing_resources_of_given_project(elixir_project.id)
+
+      assert length(sections_for_elixir_project) == 2
+
+      sections_for_maths_project =
+        Sections.get_sections_containing_resources_of_given_project(maths_project.id)
+
+      assert length(sections_for_maths_project) == 1
+    end
+
+    test "returns an empty list when there are no sections containing resources of the given project" do
+      assert Sections.get_sections_containing_resources_of_given_project(-1) == []
     end
   end
 end

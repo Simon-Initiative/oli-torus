@@ -895,7 +895,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.user_id,
            fragment(
-             "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
+             "CAST(SUM(?) as float) / NULLIF(CAST(SUM(?) as float), 0.0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )}
@@ -1020,7 +1020,7 @@ defmodule Oli.Delivery.Metrics do
         select: {
           summary.resource_id,
           fragment(
-            "CAST(? as float) / CAST(? as float)",
+            "CAST(? as float) / NULLIF(CAST(? as float), 0.0)",
             summary.num_first_attempts_correct,
             summary.num_first_attempts
           )
@@ -1085,7 +1085,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.user_id,
            fragment(
-             "CAST(? as float) / CAST(? as float)",
+             "CAST(? as float) / NULLIF(CAST(? as float), 0.0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )}
@@ -1146,7 +1146,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.resource_id,
            fragment(
-             "? / ?",
+             "? / NULLIF(?, 0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )}
@@ -1217,7 +1217,7 @@ defmodule Oli.Delivery.Metrics do
         select:
           {summary.resource_id,
            fragment(
-             "CAST(SUM(?) as float) / CAST(SUM(?) as float)",
+             "CAST(SUM(?) as float) / NULLIF(CAST(SUM(?) as float), 0.0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
            )}

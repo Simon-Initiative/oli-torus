@@ -3,7 +3,6 @@ defmodule OliWeb.ProjectController do
 
   alias Oli.Authoring.Course
   alias Oli.Qa
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Clone
 
   def unpublished(pub), do: pub.published == nil
@@ -18,13 +17,6 @@ defmodule OliWeb.ProjectController do
 
     conn
     |> redirect(to: Routes.project_path(conn, :publish, project))
-  end
-
-  def insights(conn, _project_params) do
-    render(conn, "insights.html",
-      breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})],
-      active: :insights
-    )
   end
 
   def create(conn, %{"project" => %{"title" => title} = _project_params}) do

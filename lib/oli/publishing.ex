@@ -126,7 +126,7 @@ defmodule Oli.Publishing do
 
   def query_unpublished_revisions_by_type_and_section(project_slug, type, list_section_ids) do
     publication_ids =
-      project_working_publication_by_setion_list(project_slug, list_section_ids)
+      project_working_publication_by_section_list(project_slug, list_section_ids)
 
     resource_type_id = ResourceType.get_id_by_type(type)
 
@@ -523,7 +523,7 @@ defmodule Oli.Publishing do
     )
   end
 
-  def project_working_publication_by_setion_list(project_slug, list_section_ids) do
+  def project_working_publication_by_section_list(project_slug, list_section_ids) do
     Repo.all(
       from pub in Publication,
         join: proj in Project,

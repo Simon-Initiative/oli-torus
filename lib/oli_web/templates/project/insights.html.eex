@@ -1,7 +1,0 @@
-<div class="insights container">
-  <div class="grid grid-cols-12 mt-4">
-    <div class="col-span-12">
-      <%= live_render @conn, OliWeb.Insights, session: %{ "project_slug" => @project.slug } %>
-    </div>
-  </div>
-</div>

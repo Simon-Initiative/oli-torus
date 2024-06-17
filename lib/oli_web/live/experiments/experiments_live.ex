@@ -16,6 +16,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
   alias Oli.Resources.Revision
   alias OliWeb.Common.Modal.DeleteModal
   alias OliWeb.Common.Modal.FormModal
+  alias OliWeb.Router.Helpers, as: Routes
 
   on_mount {OliWeb.LiveSessionPlugs.SetUser, :default}
   on_mount {OliWeb.LiveSessionPlugs.SetProject, :default}
@@ -69,8 +70,19 @@ defmodule OliWeb.Experiments.ExperimentsView do
       <% end %>
 
       <div :if={@is_upgrade_enabled} class="flex gap-4">
-        <.button class="btn btn-md btn-primary mt-2">Download Segment JSON</.button>
-        <.button class="btn btn-md btn-primary mt-2">Download Experiment JSON</.button>
+        <.button
+          class="btn btn-md btn-primary mt-2"
+          href={Routes.experiment_path(OliWeb.Endpoint, :segment_download, assigns.project.slug)}
+        >
+          Download Segment JSON
+        </.button>
+
+        <.button
+          class="btn btn-md btn-primary mt-2"
+          href={Routes.experiment_path(OliWeb.Endpoint, :experiment_download, assigns.project.slug)}
+        >
+          Download Experiment JSON
+        </.button>
       </div>
     </div>
     """
