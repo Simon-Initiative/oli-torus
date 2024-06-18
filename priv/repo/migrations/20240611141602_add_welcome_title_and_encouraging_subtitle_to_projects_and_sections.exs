@@ -6,5 +6,10 @@ defmodule Oli.Repo.Migrations.AddWelcomeTitleAndEncouragingSubtitleToProjects do
       add(:welcome_title, :map)
       add(:encouraging_subtitle, :text)
     end
+
+    alter table(:sections) do
+      add(:welcome_title, :map)
+      add(:encouraging_subtitle, :text)
+    end
   end
 end

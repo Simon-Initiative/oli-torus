@@ -73,6 +73,18 @@ defmodule Oli.Interop.IngestTest do
       # verify project
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
       assert project.title == "The Cuisine of Northern Spain"
+
+      assert project.welcome_title == %{
+               "children" => [
+                 %{
+                   "text" => "Explore Northern Spain's Culinary Delights!"
+                 }
+               ],
+               "id" => "3261709550",
+               "type" => "p"
+             }
+
+      assert project.encouraging_subtitle == "Unlock Your Potential. Start Learning Today!"
       assert p.title == project.title
       assert p.attributes == project.attributes
       assert p.customizations == project.customizations
