@@ -315,7 +315,7 @@ defmodule OliWeb.CollaborationLiveTest do
         |> get(live_view_author_edit(project.slug, page_revision.slug))
 
       assert html_response(conn, 200) =~
-               "<h3 class=\"card-title\">Collaborative Space Config</h3>"
+               "<h3 class=\"card-title\">Notes</h3>"
     end
   end
 
@@ -355,11 +355,10 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space Config")
+      assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Disabled")
       assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
       refute has_element?(view, "button[phx-click=\"archive\"", "Archived")
-      refute has_element?(view, "#revision_collab_space_config_threaded")
 
       view
       |> element("button[phx-click=\"enable\"")
@@ -392,7 +391,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space Config")
+      assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Enabled")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
       assert has_element?(view, "button[phx-click=\"archive\"", "Archive")
@@ -437,15 +436,6 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space Config")
-      assert has_element?(view, "span", "Enabled")
-
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_threaded"
-             )
-             |> render() =~ "checked"
-
       assert view
              |> element(
                "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
@@ -454,133 +444,9 @@ defmodule OliWeb.CollaborationLiveTest do
 
       assert view
              |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_show_full_history"
-             )
-             |> render() =~ "checked"
-
-      assert view
-             |> element(
                "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
              )
              |> render() =~ "checked"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "0"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_posts"
-             )
-             |> render() =~ "0"
-    end
-
-    test "changes the collab space config attrs correctly", %{
-      conn: conn,
-      instructor: instructor,
-      section: section,
-      page_revision_cs: page_revision_cs
-    } do
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceConfigView,
-          session: %{
-            "current_user_id" => instructor.id,
-            "collab_space_config" => page_revision_cs.collab_space_config,
-            "section_slug" => section.slug,
-            "is_delivery" => true,
-            "resource_slug" => page_revision_cs.slug
-          }
-        )
-
-      view
-      |> element("form[phx-submit=\"save\"")
-      |> render_submit(%{
-        section_resource: %{
-          collab_space_config: %{
-            threaded: false,
-            auto_accept: false,
-            participation_min_replies: 2,
-            anonymous_posting: false
-          }
-        }
-      })
-
-      refute view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_threaded"
-             )
-             |> render() =~ "checked"
-
-      refute view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_auto_accept"
-             )
-             |> render() =~ "checked"
-
-      refute view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_anonymous_posting"
-             )
-             |> render() =~ "checked"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "2"
-
-      assert_receive {
-        :updated_collab_space_config,
-        %CollabSpaceConfig{
-          threaded: false,
-          auto_accept: false,
-          participation_min_replies: 2
-        }
-      }
-    end
-
-    test "handles error when changes to the collab space config attrs are wrong", %{
-      conn: conn,
-      instructor: instructor,
-      section: section,
-      page_revision_cs: page_revision_cs
-    } do
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceConfigView,
-          session: %{
-            "current_user_id" => instructor.id,
-            "collab_space_config" => page_revision_cs.collab_space_config,
-            "section_slug" => section.slug,
-            "is_delivery" => true,
-            "resource_slug" => page_revision_cs.slug
-          }
-        )
-
-      view
-      |> element("form[phx-submit=\"save\"")
-      |> render_submit(%{
-        section_resource: %{collab_space_config: %{participation_min_replies: -1}}
-      })
-
-      refute view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "-1"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #section_resource_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "0"
-
-      refute_receive {:updated_collab_space_config, _}
     end
 
     test "can enable Collab spaces for all pages in course", %{
@@ -603,8 +469,8 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Notes enabled"
 
       # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
       # so we directly submit the form in the modal
@@ -623,15 +489,8 @@ defmodule OliWeb.CollaborationLiveTest do
         }
       })
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "All 2 pages currently have Collaborative Spaces enabled"
-
-      # enable all pages button is disabled
-      assert has_element?(
-               view,
-               "button[disabled=disabled]",
-               "Enable Collaboration Spaces for all pages in the course"
-             )
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "All 2 pages currently have Notes enabled"
     end
 
     test "can disable Collab spaces for all pages in course", %{
@@ -654,8 +513,8 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Notes enabled"
 
       # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
       # so we directly confirm the modal
@@ -663,15 +522,8 @@ defmodule OliWeb.CollaborationLiveTest do
       |> element(~s{div[id="disable_collab_space_modal"] button}, "OK")
       |> render_click()
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "0 pages currently have Collaborative Spaces enabled"
-
-      # disable all pages button is disabled
-      assert has_element?(
-               view,
-               "button[disabled=disabled]",
-               "Disable Collaboration Spaces for all pages in the course"
-             )
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "0 pages currently have Notes enabled"
     end
   end
 
@@ -692,7 +544,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space Config")
+      assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Disabled")
       assert has_element?(view, "button[phx-click=\"enable\"", "Enable")
       refute has_element?(view, "button[phx-click=\"archive\"", "Archived")
@@ -723,7 +575,7 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space Config")
+      assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Enabled")
       assert has_element?(view, "button[phx-click=\"disable\"", "Disable")
       assert has_element?(view, "button[phx-click=\"archive\"", "Archive")
@@ -763,22 +615,11 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert has_element?(view, "h3", "Collaborative Space Config")
+      assert has_element?(view, "h3", "Notes")
       assert has_element?(view, "span", "Enabled")
 
       assert view
-             |> element("#collab_space_config_form #revision_collab_space_config_0_threaded")
-             |> render() =~ "checked"
-
-      assert view
              |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
-             |> render() =~
-               "checked"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_show_full_history"
-             )
              |> render() =~
                "checked"
 
@@ -788,108 +629,6 @@ defmodule OliWeb.CollaborationLiveTest do
              )
              |> render() =~
                "checked"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "0"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_participation_min_posts"
-             )
-             |> render() =~
-               "0"
-    end
-
-    test "changes the collab space config attrs correctly", %{
-      conn: conn,
-      author: author,
-      project: project,
-      page_revision_cs: page_revision_cs
-    } do
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceConfigView,
-          session: %{
-            "current_author_id" => author.id,
-            "collab_space_config" => page_revision_cs.collab_space_config,
-            "project_slug" => project.slug,
-            "resource_slug" => page_revision_cs.slug
-          }
-        )
-
-      view
-      |> element("form[phx-submit=\"save\"")
-      |> render_submit(%{
-        revision: %{
-          collab_space_config: %{
-            threaded: false,
-            auto_accept: false,
-            participation_min_replies: 2,
-            anonymous_posting: false
-          }
-        }
-      })
-
-      refute view
-             |> element("#collab_space_config_form #revision_collab_space_config_0_threaded")
-             |> render() =~ "checked"
-
-      refute view
-             |> element("#collab_space_config_form #revision_collab_space_config_0_auto_accept")
-             |> render() =~
-               "checked"
-
-      refute view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_anonymous_posting"
-             )
-             |> render() =~
-               "checked"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "2"
-    end
-
-    test "handles error when changes to the collab space config attrs are wrong", %{
-      conn: conn,
-      author: author,
-      project: project,
-      page_revision_cs: page_revision_cs
-    } do
-      {:ok, view, _html} =
-        live_isolated(
-          conn,
-          CollabSpaceConfigView,
-          session: %{
-            "current_author_id" => author.id,
-            "collab_space_config" => page_revision_cs.collab_space_config,
-            "project_slug" => project.slug,
-            "resource_slug" => page_revision_cs.slug
-          }
-        )
-
-      view
-      |> element("form[phx-submit=\"save\"")
-      |> render_submit(%{revision: %{collab_space_config: %{participation_min_replies: -1}}})
-
-      refute view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "-1"
-
-      assert view
-             |> element(
-               "#collab_space_config_form #revision_collab_space_config_0_participation_min_replies"
-             )
-             |> render() =~ "0"
     end
 
     test "can enable Collab spaces for all pages in course", %{
@@ -912,8 +651,8 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Notes enabled"
 
       # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
       # so we directly submit the form in the modal
@@ -932,15 +671,8 @@ defmodule OliWeb.CollaborationLiveTest do
         }
       })
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "All 2 pages currently have Collaborative Spaces enabled"
-
-      # enable all pages button is disabled
-      assert has_element?(
-               view,
-               "button[disabled=disabled]",
-               "Enable Collaboration Spaces for all pages in the course"
-             )
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "All 2 pages currently have Notes enabled"
     end
 
     test "can disable Collab spaces for all pages in course", %{
@@ -963,8 +695,8 @@ defmodule OliWeb.CollaborationLiveTest do
           }
         )
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "1 page currently has Collaborative Spaces enabled"
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "1 page currently has Notes enabled."
 
       # can not trigger a JS command from a test to show the confirmation modal (hidden to the user),
       # so we directly confirm the modal
@@ -972,15 +704,15 @@ defmodule OliWeb.CollaborationLiveTest do
       |> element(~s{div[id="disable_collab_space_modal"] button}, "OK")
       |> render_click()
 
-      assert element(view, "h5[role='collab_space_page_summary']")
-             |> render() =~ "0 pages currently have Collaborative Spaces enabled"
+      assert element(view, "div[role='collab_space_page_summary']")
+             |> render() =~ "0 pages currently have Notes enabled."
 
       # disable all pages button is disabled
-      assert has_element?(
-               view,
-               "button[disabled=disabled]",
-               "Disable Collaboration Spaces for all pages in the course"
-             )
+      element(
+        view,
+        "div[role='collab_space_toggle_all_pages']"
+      )
+      |> render() =~ "<input type=\"checkbox\" class=\"sr-only peer\">"
     end
   end
 

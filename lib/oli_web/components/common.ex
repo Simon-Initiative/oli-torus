@@ -1069,11 +1069,11 @@ defmodule OliWeb.Components.Common do
   attr :name, :string, default: nil
   attr :checked, :boolean, default: false
   attr :phx_target, :any, default: nil
-  attr :rest, :global, include: ~w(class disabled)
+  attr :rest, :global, include: ~w(class disabled role)
 
   def toggle_switch(assigns) do
     ~H"""
-    <div class={[@rest[:class]]}>
+    <div {@rest}>
       <form phx-change={@on_toggle} phx-target={@phx_target}>
         <label class="inline-flex items-center cursor-pointer">
           <input type="checkbox" name={@name} class="sr-only peer" checked={@checked} />

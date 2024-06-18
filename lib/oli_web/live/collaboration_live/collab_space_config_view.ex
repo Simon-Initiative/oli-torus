@@ -94,6 +94,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
           <span>Enable Notes for all pages in the course</span>
           <.toggle_switch
             class="ml-4"
+            role="collab_space_toggle_all_pages"
             checked={@collab_space_pages_count > 0}
             on_toggle={
               if @collab_space_pages_count > 0 do
@@ -104,7 +105,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
             }
           />
         </div>
-        <div>
+        <div role="collab_space_page_summary">
           <%= ~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Notes enabled.
         </div>
       </section>
