@@ -92,7 +92,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           id={`action-feedback-${uuid}`}
           placeholder="Enter feedback"
           disabled={false}
-          readOnly = {true}
+          readOnly={true}
           onClick={handleShowFeedbackClick}
           defaultValue={fakeFeedback}
           // onChange={(e) => setFakeFeedback(e.target.value)}
