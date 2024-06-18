@@ -39,7 +39,7 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
     }
     if (optionLabels) {
       for (let i = 0; i < optionLabels.length; i++) {
-        // Set selected if selectedIndex equals current index
+        // Set  selected if selectedIndex equals current index
         options.push(
           <option key={i + 1} value={i + 1} selected={i + 1 === -1}>
             {optionLabels[i]}
