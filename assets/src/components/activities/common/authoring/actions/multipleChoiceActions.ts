@@ -9,9 +9,13 @@ import {
   makeUndoable,
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
-import { getCorrectResponse, getResponseBy, getResponseId } from 'data/activities/model/responses';
+import {
+  getCorrectResponse,
+  getOutOfPoints,
+  getResponseBy,
+  getResponseId,
+} from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
-import { getPartById } from 'data/activities/model/utils';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
@@ -40,8 +44,7 @@ export const MCActions = {
 
   toggleChoiceCorrectness(id: string, partId: string) {
     return (model: HasParts, _post: PostUndoable) => {
-      const part = getPartById(model, partId);
-      const correctScore = part.outOf || 1;
+      const correctScore = getOutOfPoints(model, partId);
       const correctResponse = getCorrectResponse(model, partId);
       correctResponse.rule = matchRule(id);
       correctResponse.score = correctScore;

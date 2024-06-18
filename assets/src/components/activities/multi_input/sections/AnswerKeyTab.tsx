@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
+import { usesCustomScoring } from 'components/activities/common/authoring/actions/scoringActions';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { ActivityScoring } from 'components/activities/common/responses/ActivityScoring';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -75,7 +76,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
         <SimpleFeedback partId={props.input.partId} />
 
         <MultiInputScoringMethod />
-        {model.customScoring && (
+        {usesCustomScoring(model) && (
           <ActivityScoring partId={props.input.partId} promptForDefault={false} />
         )}
 
@@ -105,7 +106,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
       />
       <SimpleFeedback partId={props.input.partId} />
       <MultiInputScoringMethod />
-      {model.customScoring && (
+      {usesCustomScoring(model) && (
         <ActivityScoring partId={props.input.partId} promptForDefault={false} />
       )}
       {getTargetedResponses(model, props.input.partId).map((response: Response) => (
@@ -127,7 +128,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           updateScore={(_id, score) =>
             dispatch(ResponseActions.editResponseScore(response.id, score))
           }
-          customScoring={model.customScoring}
+          customScoring={usesCustomScoring(model)}
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}
         >

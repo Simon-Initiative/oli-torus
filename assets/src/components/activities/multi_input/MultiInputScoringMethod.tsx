@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Card } from 'components/misc/Card';
 import guid from 'utils/guid';
 import { useAuthoringElementContext } from '../AuthoringElementProvider';
-import { ScoringActions } from '../common/authoring/actions/scoringActions';
+import { ScoringActions, usesCustomScoring } from '../common/authoring/actions/scoringActions';
 import { ScoringStrategy } from '../types';
 import { MultiInputSchema } from './schema';
 
@@ -11,7 +11,7 @@ interface MultiInputScoringMethodProps {}
 export const MultiInputScoringMethod: React.FC<MultiInputScoringMethodProps> = () => {
   const { model, dispatch, editMode } = useAuthoringElementContext<MultiInputSchema>();
   const checkboxInputId = useMemo(guid, []);
-  const defaultScoring = !model.customScoring;
+  const defaultScoring = !usesCustomScoring(model);
   const scoringStrategy = model.scoringStrategy || ScoringStrategy.total;
 
   const onChangeDefault = (e: React.ChangeEvent<HTMLInputElement>) => {

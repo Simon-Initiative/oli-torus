@@ -44,13 +44,18 @@ export const getResponseBy = (model: HasParts, predicate: (x: Response) => boole
   getByUnsafe(getResponses(model), predicate);
 
 export const hasCustomScoring = (model: HasParts, partId?: string): boolean => {
-  const outOf = getOutOfPoints(model, partId || model.authoring.parts[0].id);
-  return outOf !== null && outOf !== undefined;
+  const pId = partId || model.authoring.parts[0].id;
+  // new questions carry outOf attribute for custom scoring
+  const outOf = getPartById(model, pId)?.outOf;
+  // migrated qs may carry non-default point values but no outOf attribute
+  const maxScore = getMaxPoints(model, pId);
+  return (outOf !== null && outOf !== undefined) || maxScore > 1;
 };
 
 export const getOutOfPoints = (model: HasParts, partId: string) => {
-  const part = getPartById(model, partId);
-  return part?.outOf;
+  const outOf = getPartById(model, partId)?.outOf;
+  // migrated qs may carry non-default point values but no outOf attribute
+  return outOf ?? getMaxPoints(model, partId);
 };
 
 export const getScoringStrategy = (model: HasParts, partId: string) => {
@@ -87,6 +92,9 @@ export const getMaxScoreResponse = (model: HasParts, partId: string) => {
     prev && current.score > prev.score ? current : prev,
   );
 };
+
+export const getMaxPoints = (model: HasParts, partId: string) =>
+  getMaxScoreResponse(model, partId).score;
 
 export interface ResponseMapping {
   response: Response;

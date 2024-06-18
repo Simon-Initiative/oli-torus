@@ -1084,5 +1084,84 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def visible(assigns) do
+    ~H"""
+    <svg
+      role="visible icon"
+      width="19"
+      height="18"
+      viewBox="0 0 19 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class="dark:stroke-white stroke-black/70"
+    >
+      <g clip-path="url(#clip0_2850_70040)">
+        <path
+          d="M8 9C8 9.39782 8.15804 9.77936 8.43934 10.0607C8.72064 10.342 9.10218 10.5 9.5 10.5C9.89782 10.5 10.2794 10.342 10.5607 10.0607C10.842 9.77936 11 9.39782 11 9C11 8.60218 10.842 8.22064 10.5607 7.93934C10.2794 7.65804 9.89782 7.5 9.5 7.5C9.10218 7.5 8.72064 7.65804 8.43934 7.93934C8.15804 8.22064 8 8.60218 8 9Z"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M16.25 9C14.45 12 12.2 13.5 9.5 13.5C6.8 13.5 4.55 12 2.75 9C4.55 6 6.8 4.5 9.5 4.5C12.2 4.5 14.45 6 16.25 9Z"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_2850_70040">
+          <rect width="18" height="18" fill="white" transform="translate(0.5)" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  def hidden(assigns) do
+    ~H"""
+    <svg
+      class="dark:stroke-white stroke-black/70"
+      role="hidden icon"
+      width="19"
+      height="18"
+      viewBox="0 0 19 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_2850_70060)">
+        <path
+          d="M8.43868 7.94043C8.15741 8.22179 7.99944 8.60336 7.99951 9.00119C7.99958 9.39903 8.15769 9.78054 8.43905 10.0618C8.72041 10.3431 9.10198 10.501 9.49981 10.501C9.89765 10.5009 10.2792 10.3428 10.5604 10.0614"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M13.0107 12.5048C11.9587 13.163 10.741 13.5082 9.5 13.5C6.8 13.5 4.55 12 2.75 9.00002C3.704 7.41002 4.784 6.24152 5.99 5.49452M8.135 4.63502C8.58428 4.54407 9.04161 4.49884 9.5 4.50002C12.2 4.50002 14.45 6.00002 16.25 9.00002C15.7505 9.83252 15.2157 10.5503 14.6465 11.1525"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          d="M2.75 2.25L16.25 15.75"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_2850_70060">
+          <rect
+            width="18"
+            height="18"
+            class="dark:fill-white fill-black/70"
+            transform="translate(0.5)"
+          />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
   ########## Studend Delivery Icons (end) ##########
 end

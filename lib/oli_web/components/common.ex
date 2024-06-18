@@ -601,7 +601,7 @@ defmodule OliWeb.Components.Common do
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center mx-auto" role={@role}>
+    <div class="flex flex-row items-center gap-3 mx-auto" role={@role}>
       <div class="flex justify-center w-full">
         <div
           class={"rounded-[60px] bg-gray-600/20 #{@height} dark:bg-white/20"}
@@ -612,14 +612,14 @@ defmodule OliWeb.Components.Common do
               "rounded-[60px] #{@height}",
               if(@percent == 100, do: @completed_colour, else: @on_going_colour)
             ]}
-            style={"width: #{@percent}%"}
+            style={"width: #{if @percent == 0, do: 1, else: @percent}%"}
           >
           </div>
         </div>
       </div>
       <div
         :if={@show_percent}
-        class="ml-[6px] text-[16px] dark:text-[#DDD] leading-[32px] tracking-[0.02px] font-semibold"
+        class="text-right dark:text-white text-base font-semibold leading-loose tracking-tight"
       >
         <%= @percent %>%
       </div>

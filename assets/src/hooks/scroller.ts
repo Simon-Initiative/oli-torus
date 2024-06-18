@@ -90,15 +90,24 @@ export const Scroller = {
 
     window.addEventListener('phx:scroll-y-to-target', (e: Event) => {
       const el = document.getElementById((e as CustomEvent).detail.id);
+      const scrollBehavior = (e as CustomEvent).detail.scroll_behavior || 'smooth';
       const offset = (e as CustomEvent).detail.offset || 0;
       if (el) {
-        window.scrollTo({ top: el.offsetTop - offset, behavior: 'smooth' });
+        window.scrollTo({ top: el.offsetTop - offset, behavior: scrollBehavior });
 
         if ((e as CustomEvent).detail.pulse == true) {
           setTimeout(() => {
             el.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
           }, (e as CustomEvent).detail.pulse_delay || 300);
         }
+      }
+    });
+
+    window.addEventListener('phx:pulse-target', (e: Event) => {
+      const target = document.getElementById((e as CustomEvent).detail.target_id);
+
+      if (target) {
+        target.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)1]');
       }
     });
 
@@ -117,17 +126,30 @@ export const Scroller = {
 
         const sliderPaddingLeft = parseInt(getComputedStyle(unit_slider).paddingLeft);
         const sliderPaddingRight = parseInt(getComputedStyle(unit_slider).paddingRight);
+        const sliderMarginLeft = parseInt(getComputedStyle(unit_slider).marginLeft);
+        const sliderMarginRight = parseInt(getComputedStyle(unit_slider).marginRight);
+        const cardPaddingLeft = parseInt(getComputedStyle(target_card).paddingLeft);
+        const cardPaddingRight = parseInt(getComputedStyle(target_card).paddingRight);
         const cardMarginLeft = parseInt(getComputedStyle(target_card).marginLeft);
         const cardMarginRight = parseInt(getComputedStyle(target_card).marginRight);
 
         const adjustedSliderWidth =
-          unit_slider.clientWidth - sliderPaddingLeft - sliderPaddingRight;
-        const adjustedCardWidth = target_card.clientWidth + cardMarginLeft + cardMarginRight;
+          unit_slider.clientWidth -
+          sliderPaddingLeft -
+          sliderPaddingRight -
+          sliderMarginLeft -
+          sliderMarginRight;
+        const adjustedCardWidth =
+          target_card.clientWidth +
+          cardMarginLeft +
+          cardMarginRight +
+          cardPaddingLeft +
+          cardPaddingRight;
 
         const sliderCenter = adjustedSliderWidth / 2;
         const cardCenter = adjustedCardWidth / 2;
 
-        const scrollLeft = target_card.offsetLeft - sliderCenter + cardCenter - sliderPaddingLeft;
+        const scrollLeft = target_card.offsetLeft - sliderCenter + cardCenter - 3;
 
         // Scroll to the position
         unit_slider.scrollTo({
