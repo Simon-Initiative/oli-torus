@@ -288,6 +288,26 @@ defmodule OliWeb.Delivery.Student.Utils do
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
 
   @doc """
+  Generates a URL for the Prologue view for a given graded page.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `prologue_live_path("math", "intro")` returns `"/sections/math/prologue/intro"`.
+    - `prologue_live_path("math", "intro", request_path: "some/previous/url")` returns `"/sections/math/prologue/intro?request_path=some/previous/url"`.
+  """
+  def prologue_live_path(section_slug, revision_slug, params \\ [])
+
+  def prologue_live_path(section_slug, revision_slug, []),
+    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
+
+  def prologue_live_path(section_slug, revision_slug, params),
+    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
+
+  @doc """
   Generates a URL for reviewing an attempt of a lesson.
 
   ## Parameters
