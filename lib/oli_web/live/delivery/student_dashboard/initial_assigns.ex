@@ -70,7 +70,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
     url_params =
       if !is_nil(params["container_id"]), do: %{container_id: params["container_id"]}, else: %{}
 
-    case socket.assigns[:route_name] |> IO.inspect(label: "--- A2 ---") do
+    case socket.assigns[:route_name] do
       :student_dashboard_preview ->
         [
           Breadcrumb.new(%{
