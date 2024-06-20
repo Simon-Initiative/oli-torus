@@ -2759,6 +2759,26 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
   end
 
+  describe "preview" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "redirects and ensures navigation to the Notes page", %{conn: conn, section: section} do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
+
+      view
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="discussions_nav_link"])})
+      |> render_click()
+
+      redirect_path = "/sections/#{section.slug}/preview/discussions"
+      assert_redirect(view, redirect_path)
+
+      {:ok, view, _html} = live(conn, redirect_path)
+
+      assert view |> element(~s{h3)}) |> render() =~ "My Notes"
+    end
+  end
+
   defp enable_all_sidebar_links(section, author, page_1, page_2, page_3) do
     # change the purpose of the pages to have an exploration page and a deliberate practice page
     Oli.Resources.update_revision(page_1, %{purpose: :application, author_id: author.id})
