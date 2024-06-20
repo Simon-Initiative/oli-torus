@@ -36,6 +36,19 @@ defmodule OliWeb.Components.Footer do
     """
   end
 
+  def email_footer(assigns) do
+    ~H"""
+    <footer class="absolute bottom-0 left-0 right-0 pb-4 w-full md:container md:mx-auto lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark">
+      <div class="flex flex-col w-full px-10">
+        <div class="flex flex-col sm:flex-row gap-2">
+          <.footer_part_1 />
+          <.footer_part_2 />
+        </div>
+      </div>
+    </footer>
+    """
+  end
+
   defp footer_part_1(assigns) do
     assigns =
       assign(assigns,
