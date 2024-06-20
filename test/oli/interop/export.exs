@@ -2,6 +2,8 @@ defmodule Oli.Interop.ExportTest do
   use OliWeb.ConnCase
 
   alias Oli.Interop.Export
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources
   import Oli.Factory
 
   describe "export" do
@@ -49,6 +51,27 @@ defmodule Oli.Interop.ExportTest do
       assert type_labels["module"] == project.customizations.module
 
       assert type_labels["section"] == project.customizations.section
+    end
+
+    test "export a project with nil revisions does not fail", %{project: project} do
+      author = hd(project.authors)
+
+      root_revision = AuthoringResolver.root_container(project.slug)
+
+      ## Modify the root revision to have a non-revision child resource
+      Resources.update_revision(root_revision, %{
+        children: [1000],
+        author_id: author.id
+      })
+
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
+
+      assert hierarchy_json["children"] |> Enum.filter(&(&1 == nil)) |> length() == 1
     end
   end
 
