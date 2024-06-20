@@ -303,17 +303,20 @@ defmodule OliWeb.Components.Delivery.Student do
   end
 
   @doc """
-  Calculates the time remaining from the current moment until a specified end date and formats it as "HH:MM:SS".
+  Calculates the time remaining from the current moment until a specified end date
+  and formats it as "DD:HH:MM:SS" or "HH:MM:SS" depending on the duration.
 
   ## Parameters
   - `end_date`: The resource `end_date` as a `DateTime`.
 
   ## Returns
-  - A string representing the formatted time remaining as "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
+  - A string representing the formatted time remaining as "DD:HH:MM:SS" or "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
 
   ## Examples
       iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 3661))
       "01:01:01"
+      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 266460))
+      "03:02:01:00"
   """
 
   @spec format_time_remaining(DateTime.t()) :: String.t()
@@ -326,15 +329,23 @@ defmodule OliWeb.Components.Delivery.Student do
       Timex.diff(end_date, current_time, :seconds)
       |> max(0)
 
-    # Calculate hours, minutes and seconds
-    hours = div(diff_seconds, 3600)
+    # Calculate days, hours, minutes and seconds
+    days = div(diff_seconds, 86400)
+    hours = div(rem(diff_seconds, 86400), 3600)
     minutes = div(rem(diff_seconds, 3600), 60)
     seconds = rem(diff_seconds, 60)
 
-    # format duration as HH:MM:SS
-    (hours
-     |> Integer.to_string()
-     |> String.pad_leading(2, "0")) <>
+    # Format the duration based on the number of days remaining (DD:HH:MM:SS or HH:MM:SS)
+    days_parsed =
+      (days
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+        ":"
+
+    if(days > 0, do: days_parsed, else: "") <>
+      (hours
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
       ":" <>
       (minutes
        |> Integer.to_string()
