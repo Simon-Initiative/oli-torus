@@ -126,7 +126,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
         live(conn, live_view_students_dashboard_route(section.slug, student.id))
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/reports/students">Student reports</a>)
+               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/overview/students">Student reports</a>)
 
       assert html =~ ~s(#{student.name} information)
     end
