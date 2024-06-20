@@ -2762,7 +2762,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   describe "preview" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
-    test "redirects and ensures navigation to the Notes page", %{conn: conn, section: section} do
+    test "redirects and ensures navigation to the preview Notes page", %{
+      conn: conn,
+      section: section
+    } do
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
@@ -2775,7 +2778,33 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       {:ok, view, _html} = live(conn, redirect_path)
 
+      assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
       assert view |> element(~s{h3)}) |> render() =~ "My Notes"
+    end
+
+    test "redirects and ensures navigation to the preview Practice page", %{
+      conn: conn,
+      section: section,
+      author: author,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
+    } do
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
+
+      view
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="practice_nav_link"])})
+      |> render_click()
+
+      redirect_path = "/sections/#{section.slug}/preview/practice"
+      assert_redirect(view, redirect_path)
+
+      {:ok, view, _html} = live(conn, redirect_path)
+
+      assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
+      assert view |> element(~s{h1)}) |> render() =~ "Your Practice Pages"
     end
   end
 
