@@ -467,22 +467,25 @@ defmodule Oli.Interop.Export do
   defp full_hierarchy(revisions_by_id, resource_id) do
     revision = Map.get(revisions_by_id, resource_id)
 
-    case ResourceType.get_type_by_id(revision.resource_type_id) do
-      "container" ->
-        %{
-          type: "container",
-          id: "#{resource_id}",
-          title: revision.title,
-          tags: transform_tags(revision),
-          children: Enum.map(revision.children, fn id -> full_hierarchy(revisions_by_id, id) end)
-        }
+    if revision do
+      case ResourceType.get_type_by_id(revision.resource_type_id) do
+        "container" ->
+          %{
+            type: "container",
+            id: "#{resource_id}",
+            title: revision.title,
+            tags: transform_tags(revision),
+            children:
+              Enum.map(revision.children, fn id -> full_hierarchy(revisions_by_id, id) end)
+          }
 
-      "page" ->
-        %{
-          type: "item",
-          children: [],
-          idref: "#{resource_id}"
-        }
+        "page" ->
+          %{
+            type: "item",
+            children: [],
+            idref: "#{resource_id}"
+          }
+      end
     end
   end
 
