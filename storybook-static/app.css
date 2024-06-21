@@ -10096,8 +10096,11 @@ a {
 
 .instructor_dashboard_table td:has(div.highlight-exception) {
   border-radius: 0.375rem;
-  background-color: rgb(193 211 241 / var(--tw-bg-opacity));
-  --tw-bg-opacity: 0.5;
+  --tw-shadow: inset 0px 0px 0px 8px rgba(0,0,0,0.0);
+  --tw-shadow-colored: inset 0px 0px 0px 8px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  --tw-shadow-color: rgb(193 211 241 / 0.5);
+  --tw-shadow: var(--tw-shadow-colored);
 }
 
 div:has(.instructor_dashboard_table) #header_paging {
@@ -10266,8 +10269,11 @@ div:has(.remix_materials_table) {
 
 .remix_materials_table td:has(div.highlight-exception) {
   border-radius: 0.375rem;
-  background-color: rgb(193 211 241 / var(--tw-bg-opacity));
-  --tw-bg-opacity: 0.5;
+  --tw-shadow: inset 0px 0px 0px 8px rgba(0,0,0,0.0);
+  --tw-shadow-colored: inset 0px 0px 0px 8px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  --tw-shadow-color: rgb(193 211 241 / 0.5);
+  --tw-shadow: var(--tw-shadow-colored);
 }
 
 div:has(.remix_materials_table) #header_paging {
@@ -10436,8 +10442,11 @@ div:has(.remix_materials_table) #footer_paging {
 
 .remix_materials_publications_table td:has(div.highlight-exception) {
   border-radius: 0.375rem;
-  background-color: rgb(193 211 241 / var(--tw-bg-opacity));
-  --tw-bg-opacity: 0.5;
+  --tw-shadow: inset 0px 0px 0px 8px rgba(0,0,0,0.0);
+  --tw-shadow-colored: inset 0px 0px 0px 8px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  --tw-shadow-color: rgb(193 211 241 / 0.5);
+  --tw-shadow: var(--tw-shadow-colored);
 }
 
 div:has(.remix_materials_publications_table) #header_paging {
