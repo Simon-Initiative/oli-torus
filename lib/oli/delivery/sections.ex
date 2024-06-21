@@ -4320,7 +4320,13 @@ defmodule Oli.Delivery.Sections do
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
             rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
-        group_by: [rev.id, sr.numbering_index, sr.end_date, last_att.lifecycle_state],
+        group_by: [
+          rev.id,
+          sr.numbering_index,
+          sr.end_date,
+          last_att.lifecycle_state,
+          last_att.inserted_at
+        ],
         select:
           map(rev, [
             :id,
@@ -4340,6 +4346,7 @@ defmodule Oli.Delivery.Sections do
           score: max(ra.score),
           out_of: max(ra.out_of),
           progress: max(ra.progress),
+          last_attempt_started_at: last_att.inserted_at,
           last_attempt_state: last_att.lifecycle_state
         }
       )
