@@ -157,18 +157,22 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-    <button
-      class="hover:underline whitespace-nowrap"
-      type="button"
-      phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
-      phx-value-user_id={@id}
-    >
-      <%= if is_nil(@available_date) do %>
-        Always available
-      <% else %>
-        <%= value_from_datetime(@available_date, @ctx) %>
-      <% end %>
-    </button>
+    <div class={data_class(@selected_assessment.start_date, @available_date)}>
+      <div class="relative">
+        <button
+          class="hover:underline whitespace-nowrap"
+          type="button"
+          phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
+          phx-value-user_id={@id}
+        >
+          <%= if is_nil(@available_date) do %>
+            Always available
+          <% else %>
+            <%= value_from_datetime(@available_date, @ctx) %>
+          <% end %>
+        </button>
+      </div>
+    </div>
     """
   end
 
@@ -180,18 +184,22 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-    <button
-      class="hover:underline whitespace-nowrap"
-      type="button"
-      phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
-      phx-value-user_id={@id}
-    >
-      <%= if @due_date do %>
-        <%= value_from_datetime(@due_date, @ctx) %>
-      <% else %>
-        No due date
-      <% end %>
-    </button>
+    <div class={data_class(@selected_assessment.end_date, @due_date)}>
+      <div class="relative">
+        <button
+          class="hover:underline whitespace-nowrap"
+          type="button"
+          phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
+          phx-value-user_id={@id}
+        >
+          <%= if @due_date do %>
+            <%= value_from_datetime(@due_date, @ctx) %>
+          <% else %>
+            No due date
+          <% end %>
+        </button>
+      </div>
+    </div>
     """
   end
 
@@ -425,8 +433,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   end
 
   defp data_class(assessment_data, student_exception_data)
-       when assessment_data != student_exception_data and student_exception_data != nil,
-       do: "highlight-exception"
+       when assessment_data != student_exception_data and student_exception_data != nil do
+    "highlight-exception"
+  end
 
   defp data_class(_assessment_data, _student_exception_data), do: ""
 
