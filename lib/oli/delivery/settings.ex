@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Settings do
   alias Oli.Resources.Revision
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Settings.StudentException
+  alias Oli.Delivery.Settings.SettingsChanges
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Publishing.DeliveryResolver
 
@@ -324,4 +325,12 @@ defmodule Oli.Delivery.Settings do
     do: {:allowed}
 
   def check_password(_, _), do: {:invalid_password}
+
+  def insert_settings_change(attrs) do
+    SettingsChanges.changeset(
+      %SettingsChanges{},
+      attrs
+    )
+    |> Repo.insert()
+  end
 end
