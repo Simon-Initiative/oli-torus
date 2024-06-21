@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { useDrop } from 'react-dnd';
 import { useDispatch, useSelector } from 'react-redux';
 import { Handle, Position } from 'reactflow';
@@ -28,12 +28,15 @@ interface NodeProps {
 
 // Note: use className="nodrag" on interactive pieces here.
 export const ScreenNode: React.FC<NodeProps> = ({ data }) => {
-  return (
-    <>
-      <Handle type="target" position={Position.Left} style={{ display: 'none' }} />
-      <ScreenNodeBody data={data} />
-      <Handle type="source" position={Position.Right} id="a" style={{ display: 'none' }} />
-    </>
+  return useMemo(
+    () => (
+      <>
+        <Handle type="target" position={Position.Left} style={{ display: 'none' }} />
+        <ScreenNodeBody data={data} />
+        <Handle type="source" position={Position.Right} id="a" style={{ display: 'none' }} />
+      </>
+    ),
+    [data],
   );
 };
 

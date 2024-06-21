@@ -280,23 +280,18 @@ defmodule OliWeb.Sections.OverviewView do
           </div>
         <% end %>
       </Group.render>
-      <Group.render
-        label="Collaboration Spaces"
-        description="Manage the Collaborative Spaces within the course"
-      >
-        <div class="container mx-auto">
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-            id: "collab_space_config",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "section_slug" => @section.slug,
-              "resource_slug" => @resource_slug,
-              "is_overview_render" => true,
-              "is_delivery" => true
-            }
-          ) %>
-        </div>
-      </Group.render>
+
+      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        id: "collab_space_config",
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "section_slug" => @section.slug,
+          "resource_slug" => @resource_slug,
+          "is_overview_render" => true,
+          "is_delivery" => true
+        }
+      ) %>
+
       <Group.render
         label="Grading"
         description="View and manage student grades and progress"

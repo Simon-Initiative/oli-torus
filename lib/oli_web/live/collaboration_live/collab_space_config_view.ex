@@ -1,4 +1,5 @@
 defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
+  alias Oli.Rendering.Group
   use OliWeb, :live_view
 
   alias Oli.Authoring.Course
@@ -9,6 +10,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Delivery.Sections.SectionResource
   alias OliWeb.CollaborationLive.CollabSpaceView
+  alias OliWeb.Common.Properties.{Group}
   alias Phoenix.PubSub
   alias OliWeb.Components.Modal
   alias Phoenix.LiveView.JS
@@ -79,95 +81,105 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
      )}
   end
 
+  def render(%{is_overview_render: true} = assigns) do
+    ~H"""
+    <.notes_modals form={@form} />
+
+    <Group.render
+      label="Notes"
+      description="Enable students to annotate content for saving and sharing within the class community."
+    >
+      <section>
+        <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
+          <span>Enable Notes for all pages in the course</span>
+          <.toggle_switch
+            class="ml-4"
+            role="collab_space_toggle_all_pages"
+            checked={@collab_space_pages_count > 0}
+            on_toggle={
+              if @collab_space_pages_count > 0 do
+                Modal.show_modal("disable_collab_space_modal")
+              else
+                Modal.show_modal("enable_collab_space_modal")
+              end
+            }
+          />
+        </div>
+        <div role="collab_space_page_summary">
+          <%= ~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Notes enabled.
+        </div>
+      </section>
+    </Group.render>
+    <Group.render label="Course Discussions" description="Give students a course discussion board.">
+      <section>
+        <div class="inline-flex py-2 mb-2 border-b dark:border-gray-700">
+          <span>Enable Course Discussions</span>
+          <.toggle_switch
+            class="ml-4"
+            checked={@collab_space_status == :enabled}
+            on_toggle="toggle_discussions"
+          />
+        </div>
+
+        <.form id="collab_space_config_form" class="w-full" for={@form} phx-change="save">
+          <.inputs_for :let={cs} field={@form[:collab_space_config]}>
+            <.input type="hidden" field={cs[:status]} />
+
+            <.input type="hidden" field={cs[:threaded]} />
+            <.input type="hidden" field={cs[:show_full_history]} />
+            <.input type="hidden" field={cs[:participation_min_replies]} value={0} />
+            <.input type="hidden" field={cs[:participation_min_posts]} value={0} />
+
+            <.input
+              type="checkbox"
+              field={cs[:auto_accept]}
+              class="disabled:bg-primary-200 disabled:hover:bg-primary-200 dark:disabled:bg-primary-800 dark:disabled:hover:bg-primary-800"
+              label="Allow posts to be visible without approval"
+              disabled={@collab_space_status == :disabled}
+            />
+            <.input
+              type="checkbox"
+              field={cs[:anonymous_posting]}
+              class="disabled:bg-primary-200 disabled:hover:bg-primary-200 dark:disabled:bg-primary-800 dark:disabled:hover:bg-primary-800"
+              label="Allow anonymous posts"
+              disabled={@collab_space_status == :disabled}
+            />
+          </.inputs_for>
+        </.form>
+      </section>
+    </Group.render>
+    """
+  end
+
+  # page-level notes configuration
   def render(assigns) do
     ~H"""
-    <Modal.modal
-      id="enable_collab_space_modal"
-      class="!w-auto"
-      on_confirm={
-        JS.dispatch("click", to: "#enable_collab_submit_button")
-        |> Modal.hide_modal("enable_collab_space_modal")
-      }
-    >
-      Are you sure you want to <strong>enable</strong>
-      collaboration spaces for all pages in the course?
-      <br />The following configuration will be bulk-applied to all pages:
-      <.form class="w-full" for={@form} phx-submit="enable_all_page_collab_spaces">
-        <.collab_space_form_content form={@form} />
-        <button id="enable_collab_submit_button" class="hidden" type="submit" />
-      </.form>
+    <.notes_modals form={@form} />
 
-      <:confirm>OK</:confirm>
-      <:cancel>Cancel</:cancel>
-    </Modal.modal>
-
-    <Modal.modal
-      id="disable_collab_space_modal"
-      class="!w-auto"
-      on_confirm={
-        JS.push("disable_all_page_collab_spaces") |> Modal.hide_modal("disable_collab_space_modal")
-      }
-    >
-      Are you sure you want to <strong>disable</strong>
-      collaboration spaces for all pages in the course?
-      <:confirm>OK</:confirm>
-      <:cancel>Cancel</:cancel>
-    </Modal.modal>
-
-    <div class={"max-w-full #{if @is_overview_render, do: "shadow-none p-0"}"}>
-      <section>
-        <h5 :if={@is_overview_render} class="mb-2">Student Course Portal Collaborative Space</h5>
-        <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
-          <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
-            <%= unless @is_overview_render do %>
-              <h3 class="card-title">Collaborative Space Config</h3>
-            <% end %>
-            <div>
-              <span class="bg-delivery-primary-200 badge badge-info">
-                <%= humanize(@collab_space_status) %>
-              </span>
-            </div>
-          </div>
-
-          <div class="mt-4 md:mt-0">
-            <.action_buttons status={@collab_space_status} />
+    <div class="border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+      <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
+        <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
+          <%= unless @is_overview_render do %>
+            <h3 class="card-title">Notes</h3>
+          <% end %>
+          <div>
+            <span class="bg-delivery-primary-200 badge badge-info">
+              <%= humanize(@collab_space_status) %>
+            </span>
           </div>
         </div>
-        <%= if  @collab_space_status == :enabled do %>
-          <div class="card-footer bg-transparent flex mt-8">
-            <.form id="collab_space_config_form" class="w-full" for={@form} phx-submit="save">
-              <.collab_space_form_content form={@form} />
-              <button class="torus-button primary !flex ml-auto mt-4" type="submit">Save</button>
-            </.form>
-          </div>
-        <% end %>
-      </section>
 
-      <section
-        :if={@is_overview_render}
-        class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200"
-      >
-        <h5 role="collab_space_page_summary">
-          <%= ~s{#{if @pages_count == @collab_space_pages_count, do: "All"} #{@collab_space_pages_count} #{Gettext.ngettext(OliWeb.Gettext, "page currently has", "pages currently have", @collab_space_pages_count)}} %> Collaborative Spaces enabled
-        </h5>
-        <button
-          phx-click={
-            @pages_count > @collab_space_pages_count &&
-              Modal.show_modal("enable_collab_space_modal")
-          }
-          class="btn btn-primary w-[450px]"
-          disabled={@pages_count == @collab_space_pages_count}
-        >
-          Enable Collaboration Spaces for all pages in the course
-        </button>
-        <button
-          phx-click={@collab_space_pages_count > 0 && Modal.show_modal("disable_collab_space_modal")}
-          class="btn btn-primary w-[450px]"
-          disabled={@collab_space_pages_count == 0}
-        >
-          Disable Collaboration Spaces for all pages in the course
-        </button>
-      </section>
+        <div class="mt-4 md:mt-0">
+          <.action_buttons status={@collab_space_status} />
+        </div>
+      </div>
+      <%= if  @collab_space_status == :enabled do %>
+        <div class="card-footer bg-transparent flex mt-8">
+          <.form id="collab_space_config_form" for={@form} phx-change="save">
+            <.collab_space_form_content form={@form} />
+          </.form>
+        </div>
+      <% end %>
     </div>
     """
   end
@@ -194,6 +206,45 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     """
   end
 
+  attr :form, :map, required: true
+
+  def notes_modals(assigns) do
+    ~H"""
+    <Modal.modal
+      id="enable_collab_space_modal"
+      class="!w-auto"
+      on_confirm={
+        JS.dispatch("click", to: "#enable_collab_submit_button")
+        |> Modal.hide_modal("enable_collab_space_modal")
+      }
+    >
+      Are you sure you want to <strong>enable</strong>
+      Notes for all pages in the course?
+      <br />The following configuration will be bulk-applied to all pages:
+      <.form class="w-full" for={@form} phx-submit="enable_all_page_collab_spaces">
+        <.collab_space_form_content form={@form} />
+        <button id="enable_collab_submit_button" class="hidden" type="submit" />
+      </.form>
+
+      <:confirm>OK</:confirm>
+      <:cancel>Cancel</:cancel>
+    </Modal.modal>
+
+    <Modal.modal
+      id="disable_collab_space_modal"
+      class="!w-auto"
+      on_confirm={
+        JS.push("disable_all_page_collab_spaces") |> Modal.hide_modal("disable_collab_space_modal")
+      }
+    >
+      Are you sure you want to <strong>disable</strong>
+      Notes for all pages in the course?
+      <:confirm>OK</:confirm>
+      <:cancel>Cancel</:cancel>
+    </Modal.modal>
+    """
+  end
+
   attr :form, :map
 
   def collab_space_form_content(assigns) do
@@ -201,14 +252,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     <.inputs_for :let={cs} field={@form[:collab_space_config]}>
       <.input type="hidden" field={cs[:status]} />
 
-      <div class="form-check mt-1">
-        <.input
-          type="checkbox"
-          field={cs[:threaded]}
-          class="form-check-input"
-          label="Allow threading of posts with replies"
-        />
-      </div>
+      <.input type="hidden" field={cs[:threaded]} />
+      <.input type="hidden" field={cs[:show_full_history]} />
+      <.input type="hidden" field={cs[:participation_min_replies]} value={0} />
+      <.input type="hidden" field={cs[:participation_min_posts]} value={0} />
 
       <div class="form-check mt-1">
         <.input
@@ -222,42 +269,10 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       <div class="form-check mt-1">
         <.input
           type="checkbox"
-          field={cs[:show_full_history]}
-          class="form-check-input"
-          label="Show full history"
-        />
-      </div>
-
-      <div class="form-check mt-1">
-        <.input
-          type="checkbox"
           field={cs[:anonymous_posting]}
           class="form-check-input"
           label="Allow anonymous posts"
         />
-      </div>
-
-      <br /> Participation requirements
-      <div class="flex flex-col gap-4">
-        <div class="form-group">
-          <.input
-            type="number"
-            min={0}
-            field={cs[:participation_min_replies]}
-            class="form-control"
-            label="Minimum replies"
-          />
-        </div>
-
-        <div class="form-group">
-          <.input
-            type="number"
-            min={0}
-            field={cs[:participation_min_posts]}
-            class="form-control"
-            label="Minimum posts"
-          />
-        </div>
       </div>
     </.inputs_for>
     """
@@ -296,6 +311,26 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       Map.merge(from_struct(socket.assigns.collab_space_config), %{status: :archived}),
       socket
     )
+  end
+
+  def handle_event("toggle_discussions", _params, socket) do
+    case socket.assigns.collab_space_status == :enabled do
+      true ->
+        upsert_collab_space(
+          socket.assigns.is_delivery,
+          "disabled",
+          Map.merge(from_struct(socket.assigns.collab_space_config), %{status: :disabled}),
+          socket
+        )
+
+      false ->
+        upsert_collab_space(
+          socket.assigns.is_delivery,
+          "enabled",
+          Map.merge(from_struct(socket.assigns.collab_space_config), %{status: :enabled}),
+          socket
+        )
+    end
   end
 
   def handle_event("disable_all_page_collab_spaces", _params, socket) do
@@ -380,7 +415,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
       {:ok, section_resource} ->
         set_contains_discussions(section, section_resource)
 
-        socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
+        socket = put_flash(socket, :info, "Notes successfully #{action}.")
         collab_space_config = section_resource.collab_space_config
 
         PubSub.broadcast(
@@ -398,7 +433,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
          )}
 
       {:error, _} ->
-        socket = put_flash(socket, :error, "Collaborative space couldn't be #{action}.")
+        socket = put_flash(socket, :error, "Notes couldn't be #{action}.")
         {:noreply, socket}
     end
   end
@@ -419,7 +454,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
          page_resource: _page_resource,
          next_page_revision: next_page_revision
        }} ->
-        socket = put_flash(socket, :info, "Collaborative space successfully #{action}.")
+        socket = put_flash(socket, :info, "Notes successfully #{action}.")
         collab_space_config = next_page_revision.collab_space_config
 
         {:noreply,
@@ -431,7 +466,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
          )}
 
       {:error, _} ->
-        socket = put_flash(socket, :error, "Collaborative space couldn't be #{action}.")
+        socket = put_flash(socket, :error, "Notes couldn't be #{action}.")
         {:noreply, socket}
     end
   end

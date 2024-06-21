@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
   alias Lti_1p3.Tool.ContextRoles
+  alias OliWeb.Delivery.Content.Progress
 
   @default_params %{
     offset: 0,
@@ -26,8 +27,17 @@ defmodule OliWeb.Components.Delivery.Students do
     payment_status: nil,
     selected_card_value: nil,
     container_filter_by: :students,
-    navigation_data: Jason.encode!(%{})
+    navigation_data: Jason.encode!(%{}),
+    progress_percentage: 100,
+    progress_selector: nil,
+    selected_proficiency_ids: Jason.encode!([])
   }
+
+  @proficiency_options [
+    %{id: 1, name: "Low", selected: false},
+    %{id: 2, name: "Medium", selected: false},
+    %{id: 3, name: "High", selected: false}
+  ]
 
   def update(
         %{
@@ -92,6 +102,18 @@ defmodule OliWeb.Components.Delivery.Students do
       }
     ]
 
+    selected_proficiency_ids = Jason.decode!(params.selected_proficiency_ids)
+
+    proficiency_options =
+      update_proficiency_options(selected_proficiency_ids, @proficiency_options)
+
+    selected_proficiency_options =
+      Enum.reduce(proficiency_options, %{}, fn option, acc ->
+        if option.selected,
+          do: Map.put(acc, option.id, option.name),
+          else: acc
+      end)
+
     {:ok,
      assign(socket,
        id: assigns.id,
@@ -115,7 +137,10 @@ defmodule OliWeb.Components.Delivery.Students do
        card_props: card_props,
        previous_id: previous_id,
        next_id: next_id,
-       navigation_data: navigation_data
+       navigation_data: navigation_data,
+       proficiency_options: proficiency_options,
+       selected_proficiency_options: selected_proficiency_options,
+       selected_proficiency_ids: selected_proficiency_ids
      )}
   end
 
@@ -125,9 +150,64 @@ defmodule OliWeb.Components.Delivery.Students do
       |> maybe_filter_by_text(params.text_search)
       |> maybe_filter_by_option(params.filter_by)
       |> maybe_filter_by_card(params.selected_card_value, params.filter_by)
+      |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
+      |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
       |> sort_by(params.sort_by, params.sort_order)
 
     {length(students), students |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+  end
+
+  defp maybe_filter_by_proficiency(students, "[]") do
+    students
+  end
+
+  defp maybe_filter_by_proficiency(students, selected_proficiency_ids) do
+    selected_proficiency_ids = Jason.decode!(selected_proficiency_ids)
+
+    mapper_ids =
+      Enum.reduce(selected_proficiency_ids, [], fn id, acc ->
+        case id do
+          1 -> ["Low" | acc]
+          2 -> ["Medium" | acc]
+          3 -> ["High" | acc]
+          _ -> acc
+        end
+      end)
+
+    Enum.filter(students, fn student ->
+      student.overall_proficiency in mapper_ids
+    end)
+  end
+
+  defp maybe_filter_by_progress(students, progress_selector, percentage) do
+    case progress_selector do
+      :is_equal_to ->
+        Enum.filter(students, fn student ->
+          parse_progress(student.progress || 0.0) == percentage
+        end)
+
+      :is_less_than_or_equal ->
+        Enum.filter(students, fn student ->
+          parse_progress(student.progress || 0.0) <= percentage
+        end)
+
+      :is_greather_than_or_equal ->
+        Enum.filter(students, fn student ->
+          parse_progress(student.progress || 0.0) >= percentage
+        end)
+
+      nil ->
+        students
+    end
+  end
+
+  defp parse_progress(progress) do
+    {progress, _} =
+      Float.round(progress * 100)
+      |> Float.to_string()
+      |> Integer.parse()
+
+    progress
   end
 
   defp maybe_filter_by_text(students, nil), do: students
@@ -350,7 +430,7 @@ defmodule OliWeb.Components.Delivery.Students do
           </div>
           <form phx-change="select_option" phx-target={@myself} id="container_option">
             <div class="flex justify-center items-center">
-              <div class="flex flex-col items-start gap-y-2 pl-32">
+              <div class="flex flex-col items-start gap-y-2">
                 <%= label class: "form-check-label flex flex-row items-center cursor-pointer gap-x-2" do %>
                   <%= radio_button(:container, :option, :by_filtered,
                     class: "form-check-input",
@@ -431,13 +511,6 @@ defmodule OliWeb.Components.Delivery.Students do
                 </label>
               </form>
             </div>
-            <form for="search" phx-target={@myself} phx-change="search_student" class="w-44">
-              <SearchInput.render
-                id="students_search_input"
-                name="student_name"
-                text={@params.text_search}
-              />
-            </form>
           </div>
         </div>
         <div class="flex flex-row mx-9 my-4 gap-x-4">
@@ -453,6 +526,40 @@ defmodule OliWeb.Components.Delivery.Students do
           <% end %>
         </div>
 
+        <div class="flex gap-2 mx-9 my-4 ">
+          <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
+            <SearchInput.render
+              id="students_search_input"
+              name="student_name"
+              text={@params.text_search}
+            />
+          </form>
+
+          <Progress.render
+            target={@myself}
+            progress_percentage={@params.progress_percentage}
+            progress_selector={@params.progress_selector}
+          />
+
+          <.multi_select
+            id="proficiency_select"
+            options={@proficiency_options}
+            selected_values={@selected_proficiency_options}
+            selected_proficiency_ids={@selected_proficiency_ids}
+            target={@myself}
+            disabled={@selected_proficiency_ids == %{}}
+            placeholder="Proficiency"
+          />
+
+          <button
+            class="text-center text-blue-500 text-xs font-semibold underline leading-none"
+            phx-click="clear_all_filters"
+            phx-target={@myself}
+          >
+            Clear All Filters
+          </button>
+        </div>
+
         <InstructorDashboardPagedTable.render
           table_model={@table_model}
           total_count={@total_count}
@@ -465,6 +572,113 @@ defmodule OliWeb.Components.Delivery.Students do
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
         />
+      </div>
+    </div>
+    """
+  end
+
+  attr :placeholder, :string, default: "Select an option"
+  attr :disabled, :boolean, default: false
+  attr :options, :list, default: []
+  attr :id, :string
+  attr :target, :map, default: %{}
+  attr :selected_values, :map, default: %{}
+  attr :selected_proficiency_ids, :list, default: []
+
+  def multi_select(assigns) do
+    ~H"""
+    <div class={"flex flex-col border relative rounded-md h-9 #{if @selected_values != %{}, do: "border-blue-500", else: "border-zinc-400"}"}>
+      <div
+        phx-click={
+          if(!@disabled,
+            do:
+              JS.toggle(to: "##{@id}-options-container")
+              |> JS.toggle(to: "##{@id}-down-icon")
+              |> JS.toggle(to: "##{@id}-up-icon")
+          )
+        }
+        class={[
+          "flex gap-x-4 px-4 h-9 justify-between items-center w-auto hover:cursor-pointer rounded",
+          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
+        ]}
+        id={"#{@id}-selected-options-container"}
+      >
+        <div class="flex gap-1 flex-wrap">
+          <span
+            :if={@selected_values == %{}}
+            class="text-zinc-900 text-xs font-semibold leading-none dark:text-white"
+          >
+            <%= @placeholder %>
+          </span>
+          <span :if={@selected_values != %{}} class="text-blue-500 text-xs font-semibold leading-none">
+            Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
+          </span>
+        </div>
+        <div>
+          <div id={"#{@id}-down-icon"}>
+            <Icons.chevron_down />
+          </div>
+          <div class="hidden" id={"#{@id}-up-icon"}>
+            <Icons.chevron_down class="fill-blue-400 rotate-180" />
+          </div>
+        </div>
+      </div>
+      <div class="relative">
+        <div
+          class="py-4 hidden z-50 absolute dark:bg-gray-800 bg-white w-48 border overflow-y-scroll top-1 rounded"
+          id={"#{@id}-options-container"}
+          phx-click-away={
+            JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")
+          }
+        >
+          <div>
+            <.form
+              :let={_f}
+              class="flex flex-column gap-y-3 px-4"
+              for={%{}}
+              as={:options}
+              phx-change="toggle_selected"
+              phx-target={@target}
+            >
+              <.input
+                :for={option <- @options}
+                name={option.id}
+                value={option.selected}
+                label={option.name}
+                checked={option.id in @selected_proficiency_ids}
+                type="checkbox"
+                class_label="text-zinc-900 text-xs font-normal leading-none dark:text-white"
+              />
+            </.form>
+          </div>
+          <div class="w-full border border-gray-200 my-4"></div>
+          <div class="flex flex-row items-center justify-end px-4 gap-x-4">
+            <button
+              class="text-center text-neutral-600 text-xs font-semibold leading-none dark:text-white"
+              phx-click={
+                JS.hide(to: "##{@id}-options-container")
+                |> JS.hide(to: "##{@id}-up-icon")
+                |> JS.show(to: "##{@id}-down-icon")
+              }
+            >
+              Cancel
+            </button>
+            <button
+              class="px-4 py-2 bg-blue-500 rounded justify-center items-center gap-2 inline-flex opacity-90 text-right text-white text-xs font-semibold leading-none"
+              phx-click={
+                JS.push("apply_proficiency_filter")
+                |> JS.hide(to: "##{@id}-options-container")
+                |> JS.hide(to: "##{@id}-up-icon")
+                |> JS.show(to: "##{@id}-down-icon")
+              }
+              phx-target={@target}
+              phx-value={@selected_proficiency_ids}
+              disabled={@disabled}
+            >
+              Apply
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     """
@@ -606,6 +820,79 @@ defmodule OliWeb.Components.Delivery.Students do
       </fieldset>
     </div>
     """
+  end
+
+  def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
+    selected_id = String.to_integer(id)
+    do_update_selection(socket, selected_id)
+  end
+
+  def handle_event("apply_proficiency_filter", _params, socket) do
+    %{
+      selected_proficiency_ids: selected_proficiency_ids
+    } = socket.assigns
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, %{
+             selected_proficiency_ids: Jason.encode!(selected_proficiency_ids)
+           })
+         )
+     )}
+  end
+
+  def handle_event(
+        "apply_progress_filter",
+        %{
+          "progress_percentage" => progress_percentage,
+          "progress" => %{"option" => progress_selector}
+        },
+        socket
+      ) do
+    new_params = %{
+      progress_percentage: progress_percentage,
+      progress_selector: progress_selector
+    }
+
+    {:noreply,
+     push_patch(socket,
+       to:
+         Routes.live_path(
+           socket,
+           OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
+           socket.assigns.section_slug,
+           socket.assigns.view,
+           socket.assigns.tab_name,
+           update_params(socket.assigns.params, new_params)
+         )
+     )}
+  end
+
+  def handle_event("clear_all_filters", _params, socket) do
+    %{section_slug: section_slug, view: view, params: params} = socket.assigns
+
+    path =
+      case view do
+        :overview ->
+          ~p"/sections/#{section_slug}/instructor_dashboard/overview/students"
+
+        :insights ->
+          new_params = %{
+            navigation_data: params.navigation_data,
+            container_id: params.container_id
+          }
+
+          ~p"/sections/#{section_slug}/instructor_dashboard/insights/content?#{new_params}"
+      end
+
+    {:noreply, push_patch(socket, to: path)}
   end
 
   def handle_event("select_card", %{"selected" => value}, socket) do
@@ -946,7 +1233,22 @@ defmodule OliWeb.Components.Delivery.Students do
           [:students],
           @default_params.container_filter_by
         ),
-      navigation_data: navigation_data |> Jason.encode!()
+      navigation_data: navigation_data |> Jason.encode!(),
+      progress_percentage:
+        Params.get_int_param(params, "progress_percentage", @default_params.progress_percentage),
+      progress_selector:
+        Params.get_atom_param(
+          params,
+          "progress_selector",
+          [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal],
+          @default_params.progress_selector
+        ),
+      selected_proficiency_ids:
+        Params.get_param(
+          params,
+          "selected_proficiency_ids",
+          @default_params.selected_proficiency_ids
+        )
     }
   end
 
@@ -1051,5 +1353,40 @@ defmodule OliWeb.Components.Delivery.Students do
       :high_progress_low_proficiency -> "(High Progress, Low Proficiency)"
       _ -> ""
     end
+  end
+
+  defp show_proficiency_selected_values(values) do
+    Enum.map_join(values, ", ", fn {_id, values} -> values end)
+  end
+
+  defp update_proficiency_options(selected_proficiency_ids, proficiency_options) do
+    Enum.map(proficiency_options, fn option ->
+      if option.id in selected_proficiency_ids,
+        do: %{option | selected: true},
+        else: option
+    end)
+  end
+
+  defp do_update_selection(socket, selected_id) do
+    %{proficiency_options: proficiency_options} = socket.assigns
+
+    updated_options =
+      Enum.map(proficiency_options, fn option ->
+        if option.id == selected_id, do: %{option | selected: !option.selected}, else: option
+      end)
+
+    {selected_proficiency_options, selected_ids} =
+      Enum.reduce(updated_options, {%{}, []}, fn option, {values, acc_ids} ->
+        if option.selected,
+          do: {Map.put(values, option.id, option.name), [option.id | acc_ids]},
+          else: {values, acc_ids}
+      end)
+
+    {:noreply,
+     assign(socket,
+       selected_proficiency_options: selected_proficiency_options,
+       proficiency_options: updated_options,
+       selected_proficiency_ids: selected_ids
+     )}
   end
 end

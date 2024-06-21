@@ -82,10 +82,16 @@ defmodule Oli.Rendering.Content.Html do
   def img_inline(%Context{} = _context, _, _e), do: ""
 
   def video(%Context{} = context, _, attrs) do
+    attempt_guid =
+      case context.resource_attempt do
+        nil -> ""
+        attempt -> attempt.attempt_guid
+      end
+
     {:safe, video_player} =
       OliWeb.Common.React.component(context, "Components.VideoPlayer", %{
         "video" => attrs,
-        "pageAttemptGuid" => context.resource_attempt.attempt_guid,
+        "pageAttemptGuid" => attempt_guid,
         "pointMarkerContext" => %{
           renderPointMarkers: context.render_opts.render_point_markers,
           isAnnotationLevel: context.is_annotation_level

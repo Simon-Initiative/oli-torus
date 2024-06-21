@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   alias OliWeb.Components.Modal
 
   attr :section_slug, :string, required: true
+  attr :collab_space_config, :map, required: true
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
   attr :current_user, Oli.Accounts.User, required: true
@@ -44,6 +45,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               current_user={@current_user}
               create_new_annotation={@create_new_annotation}
               selected_point={@selected_point}
+              collab_space_config={@collab_space_config}
             />
           <% _ -> %>
             <.search_results
@@ -63,6 +65,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :current_user, Oli.Accounts.User, required: true
   attr :selected_point, :any, required: true
   attr :active_tab, :atom, required: true
+  attr :collab_space_config, :map, required: true
 
   defp annotations(assigns) do
     ~H"""
@@ -71,7 +74,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         :if={@selected_point}
         class="my-2"
         active={@create_new_annotation}
-        disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
+        disable_anonymous_option={
+          @active_tab == :my_notes || is_guest(@current_user) ||
+            !@collab_space_config.anonymous_posting
+        }
         save_label={if(@active_tab == :my_notes, do: "Save", else: "Post")}
         placeholder={
           if(@active_tab == :my_notes, do: "Add a new note...", else: "Post a new note...")
@@ -88,7 +94,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <.post
               post={annotation}
               current_user={@current_user}
-              disable_anonymous_option={@active_tab == :my_notes || is_guest(@current_user)}
+              disable_anonymous_option={
+                @active_tab == :my_notes || is_guest(@current_user) ||
+                  !@collab_space_config.anonymous_posting
+              }
             />
           <% end %>
       <% end %>

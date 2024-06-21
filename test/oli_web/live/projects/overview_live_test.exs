@@ -33,7 +33,8 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       assert has_element?(view, "h4", "Advanced Activities")
       assert has_element?(view, "h4", "Allow Duplication")
       assert has_element?(view, "h4", "Publishing Visibility")
-      assert has_element?(view, "h4", "Collaboration Space")
+      assert has_element?(view, "h4", "Notes")
+      assert has_element?(view, "h4", "Course Discussions")
       assert has_element?(view, "h4", "Transfer Payment Codes")
       assert has_element?(view, "h4", "Actions")
 
@@ -170,7 +171,8 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       assert has_element?(view, "h4", "Advanced Activities")
       assert has_element?(view, "h4", "Allow Duplication")
       assert has_element?(view, "h4", "Publishing Visibility")
-      assert has_element?(view, "h4", "Collaboration Space")
+      assert has_element?(view, "h4", "Notes")
+      assert has_element?(view, "h4", "Course Discussions")
       assert has_element?(view, "h4", "Actions")
 
       assert has_element?(view, "button", "Bulk Resource Attribute Edit")
