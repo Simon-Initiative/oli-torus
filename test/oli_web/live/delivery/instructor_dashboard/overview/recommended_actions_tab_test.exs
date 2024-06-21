@@ -225,7 +225,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       section: section,
       section_page: section_page
     } do
-      set_schedule_for_page(10, section_page)
+      set_schedule_for_page(10, section_page, section.id)
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
@@ -243,7 +243,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       section: section,
       section_page: section_page
     } do
-      set_schedule_for_page(10, section_page)
+      set_schedule_for_page(10, section_page, section.id)
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
@@ -277,7 +277,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       section: section,
       section_page: section_page
     } do
-      set_schedule_for_page(25, section_page)
+      set_schedule_for_page(25, section_page, section.id)
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
@@ -291,7 +291,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
     end
   end
 
-  defp set_schedule_for_page(hours, section_page) do
+  defp set_schedule_for_page(hours, section_page, section_id) do
     end_date = DateTime.utc_now() |> DateTime.add(hours, :hour) |> DateTime.truncate(:second)
 
     section_page
@@ -299,7 +299,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
     |> Repo.update()
 
     Oli.Delivery.Sections.SectionResource
-    |> where([sr], sr.resource_id == ^section_page.resource.id)
+    |> where([sr], sr.resource_id == ^section_page.resource.id and sr.section_id == ^section_id)
     |> select([sr], sr)
     |> limit(1)
     |> Repo.one()
