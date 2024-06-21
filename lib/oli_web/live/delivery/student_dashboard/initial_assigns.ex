@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
   @moduledoc """
   Ensure common assigns are applied to all StudentDashboard LiveViews attaching this hook.
   """
+  use OliWeb, :verified_routes
+
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias OliWeb.Components.Delivery.Utils
@@ -93,14 +95,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
           Breadcrumb.new(%{
             full_title: "Student reports",
             link:
-              Routes.live_path(
-                socket,
-                OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                socket.assigns.section.slug,
-                :reports,
-                :students,
-                url_params
-              )
+              ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/overview/students"
           }),
           Breadcrumb.new(%{
             full_title: "#{Utils.user_name(socket.assigns.student)} information"
