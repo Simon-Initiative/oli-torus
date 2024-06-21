@@ -35,9 +35,8 @@ export const FlowchartEditor = () => {
   const activities = useSelector(selectAllActivities);
   const currentActivityId = useSelector(selectCurrentActivityId);
 
-  const edges = buildEdges(activities);
-  const nodes = activitiesToNodes(activities);
-
+  const edges = useMemo(() => buildEdges(activities), [activities]);
+  const nodes = useMemo(() => activitiesToNodes(activities), [activities]);
   useEffect(() => {
     // A cheat-code for going to advanced editor
     const cheat = (e: KeyboardEvent) => {
@@ -117,7 +116,12 @@ export const FlowchartEditor = () => {
 
           <div className="flowchart-right">
             <FlowchartTopToolbar />
-            <FlowchartComponent nodes={nodes} edges={edges} />
+            {useMemo(
+              () => (
+                <FlowchartComponent nodes={nodes} edges={edges} />
+              ),
+              [nodes, edges],
+            )}
           </div>
         </DndProvider>
       </div>

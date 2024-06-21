@@ -54,7 +54,8 @@ defmodule OliWeb.Projects.OverviewLive do
         license_opts: cc_options,
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
-        latest_publication: latest_publication
+        latest_publication: latest_publication,
+        notes_config: %{}
       )
 
     {:ok, socket}
@@ -292,22 +293,15 @@ defmodule OliWeb.Projects.OverviewLive do
         session: %{"project_slug" => @project.slug}
       ) %>
 
-      <Overview.section
-        title="Collaboration Spaces"
-        description="Manage the Collaborative Spaces within the project."
-      >
-        <div class="container mx-auto">
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-            id: "project_collab_space_config",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "project_slug" => @project.slug,
-              "resource_slug" => @revision_slug,
-              "is_overview_render" => true
-            }
-          ) %>
-        </div>
-      </Overview.section>
+      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        id: "project_collab_space_config",
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "project_slug" => @project.slug,
+          "resource_slug" => @revision_slug,
+          "is_overview_render" => true
+        }
+      ) %>
 
       <Overview.section
         title="Required Survey"

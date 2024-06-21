@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.Student do
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias OliWeb.Components.Common
+  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
   alias OliWeb.Delivery.Student.Utils
 
@@ -20,16 +21,12 @@ defmodule OliWeb.Components.Delivery.Student do
         />
       </svg>
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-        <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(@raw_avg_score[:out_of]) %>
+        <%= Utils.parse_score(@raw_avg_score[:score]) %> / <%= Utils.parse_score(
+          @raw_avg_score[:out_of]
+        ) %>
       </span>
     </div>
     """
-  end
-
-  defp format_float(float) do
-    float
-    |> round()
-    |> trunc()
   end
 
   attr(:ctx, OliWeb.Common.SessionContext)
