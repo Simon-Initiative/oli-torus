@@ -601,7 +601,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: rac in ResourceAccess,
         on: rac.id == ra.resource_access_id,
         where:
-          aa.resource_id == ^resource_id and
+          aa.resource_id == ^resource_id and not is_nil(aa.date_evaluated) and
             is_nil(aa2) and rac.user_id == ^user_id and rac.section_id == ^section_id,
         select: aa
       )
@@ -615,7 +615,7 @@ defmodule Oli.Delivery.Attempts.Core do
         left_join: aa2 in ActivityAttempt,
         on:
           aa.resource_attempt_id == aa2.resource_attempt_id and aa.resource_id == aa2.resource_id and
-            aa.id < aa2.id,
+            aa.id < aa2.id ,
         left_join: rev in assoc(aa, :revision),
         where: aa.resource_attempt_id == ^resource_attempt_id and is_nil(aa2),
         select: aa,

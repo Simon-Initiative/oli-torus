@@ -19,6 +19,7 @@ import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
 import { References } from './bibliography/References';
+import { LikerReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
@@ -39,3 +40,4 @@ registerApplication('TechSupportButton', TechSupportButton, globalStore);
 registerApplication('OfflineDetector', OfflineDetector, globalStore);
 registerApplication('RichTextEditor', RichTextEditor, globalStore);
 registerApplication('VegaLiteRenderer', VegaLiteRenderer, globalStore);
+registerApplication('LikerReportRenderer', LikerReportRenderer, globalStore);

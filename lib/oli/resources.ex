@@ -441,6 +441,22 @@ defmodule Oli.Resources do
     |> Repo.all()
   end
 
+  @doc """
+  Returns an activity registration for the given resource id.
+  """
+  def get_activity_registration_by_resource_id(resource_id) do
+    from(rev in Revision,
+      join: res in Resource,
+      on: res.id == rev.resource_id,
+      join: reg in Oli.Activities.ActivityRegistration,
+      on: rev.activity_type_id == reg.id,
+      where: res.id == ^resource_id,
+      select: reg,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   def get_report_activities(project_id) do
     query =
       Revision

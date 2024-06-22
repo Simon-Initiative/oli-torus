@@ -4,16 +4,16 @@ defmodule Oli.Rendering.Report.Html do
   """
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
-  alias Oli.Delivery.Attempts.Core
+  # alias Oli.Delivery.Attempts.Core
   alias Oli.Activities.Reports.ProviderList
-  alias Oli.Publishing.DeliveryResolver
+  # alias Oli.Publishing.DeliveryResolver
 
   require Logger
 
   @behaviour Oli.Rendering.Report
 
   def report(
-        %Context{enrollment: enrollment, user: user, mode: mode, section_slug: section_slug} =
+        %Context{enrollment: _enrollment, user: _user, mode: mode, section_slug: _section_slug} =
           context,
         %{"id" => id, "activityId" => activity_id} = element
       ) do
@@ -23,33 +23,60 @@ defmodule Oli.Rendering.Report.Html do
           render_author_preview(context)
 
         _ ->
-          parent_link = determine_parent_link(section_slug, activity_id)
+          case Oli.Resources.get_activity_registration_by_resource_id(activity_id) do
+            nil ->
+              Logger.error(
+                "Error rendering activity report: #{inspect(%{section_slug: context.section_slug, user_id: context.user.id, activity_id: activity_id})}"
+              )
 
-          activity_attempt =
-            Core.get_latest_activity_attempt(enrollment.section_id, user.id, activity_id)
+              [~s|<div class="alert alert-danger">Activity report render error</div>|]
 
-          if is_nil(activity_attempt) do
-            [
-              parent_link,
-              ~s|<div>If you do not see your personalized report here, it means that you have not yet completed the activity linked to this report</div>|
-            ]
-          else
-            report_provider =
-              ProviderList.report_provider(activity_attempt.revision.activity_type.slug)
-
-            case Oli.Activities.Reports.Renderer.render(report_provider, context, element) do
-              {:ok, report} ->
-                [parent_link, report]
-
-              e ->
-                Logger.error(
-                  "Error rendering activity report: #{inspect(%{error: e, section_slug: context.section_slug, user_id: context.user.id, activity_id: activity_id})}"
-                )
-
-                [~s|<div class="alert alert-danger">Activity report render error</div>|]
-            end
+            registration ->
+              render_with_provider(registration.slug, context, element)
           end
       end
+
+    # some =
+    #   Phoenix.HTML.raw(render_author_preview(context))
+    #   |> Phoenix.HTML.safe_to_string()
+    #   |> String.trim()
+
+    # {:safe, report} =
+    #   OliWeb.Common.React.component(context, "Components.ActivityReportRenderer", %{data: some})
+
+    # report =
+    #   case mode do
+    #     :author_preview ->
+    #       render_author_preview(context)
+
+    #     _ ->
+    #       parent_link = determine_parent_link(section_slug, activity_id)
+
+    #       activity_attempt =
+    #         Core.get_latest_activity_attempt(enrollment.section_id, user.id, activity_id)
+
+    #       if is_nil(activity_attempt) do
+    #         [
+    #           parent_link,
+    #           ~s|<div>If you do not see your personalized report here, it means that you have not yet completed the activity linked to this report</div>|
+    #         ]
+    #       else
+    #         report_provider =
+    #           ProviderList.report_provider(activity_attempt.revision.activity_type.slug)
+
+    #         case Oli.Activities.Reports.Renderer.render(report_provider, context, element) do
+    #           {:ok, report} ->
+    #             [parent_link, report]
+
+    #           e ->
+    #             Logger.error(
+    #               "Error rendering activity report: #{inspect(%{error: e, section_slug: context.section_slug, user_id: context.user.id, activity_id: activity_id})}"
+    #             )
+
+    #             [~s|<div class="alert alert-danger">Activity report render error</div>|]
+    #         end
+    #       end
+    #   end
 
     [
       ~s|<div id="#{id}" class="activity-report"><div class="activity-report-label">Report</div><div class="content-purpose-content content">|,
@@ -58,28 +85,45 @@ defmodule Oli.Rendering.Report.Html do
     ]
   end
 
-  defp determine_parent_link(section_slug, activity_id) do
-    pub_ids = DeliveryResolver.section_publication_ids(section_slug) |> Oli.Repo.all()
+  defp render_with_provider(slug, context, %{"activityId" => activity_id} = element) do
+    report_provider =
+      ProviderList.report_provider(slug)
 
-    case Map.get(Oli.Publishing.determine_parent_pages([activity_id], pub_ids), activity_id) do
-      %{id: _id, slug: slug} ->
-        parent_revision = DeliveryResolver.from_revision_slug(section_slug, slug)
+    case Oli.Activities.Reports.Renderer.render(report_provider, context, element) do
+      {:ok, report} ->
+        [report]
 
-        title =
-          if is_nil(parent_revision) do
-            "Activity"
-          else
-            parent_revision.title
-          end
+      e ->
+        Logger.error(
+          "Error rendering activity report: #{inspect(%{error: e, section_slug: context.section_slug, user_id: context.user.id, activity_id: activity_id})}"
+        )
 
-        [
-          ~s|<div class="container"><h3 class="text-center"><a href=#{"/sections/#{section_slug}/lesson/#{slug}"} target="_blank">#{title}</a></h3></div>|
-        ]
-
-      _ ->
-        ["<div></div>"]
+        [~s|<div class="alert alert-danger">Activity report render error</div>|]
     end
   end
+
+  # defp determine_parent_link(section_slug, activity_id) do
+  #   pub_ids = DeliveryResolver.section_publication_ids(section_slug) |> Oli.Repo.all()
+
+  #   case Map.get(Oli.Publishing.determine_parent_pages([activity_id], pub_ids), activity_id) do
+  #     %{id: _id, slug: slug} ->
+  #       parent_revision = DeliveryResolver.from_revision_slug(section_slug, slug)
+
+  #       title =
+  #         if is_nil(parent_revision) do
+  #           "Activity"
+  #         else
+  #           parent_revision.title
+  #         end
+
+  #       [
+  #         ~s|<div class="container"><h3 class="text-center"><a href=#{"/sections/#{section_slug}/lesson/#{slug}"} target="_blank">#{title}</a></h3></div>|
+  #       ]
+
+  #     _ ->
+  #       ["<div></div>"]
+  #   end
+  # end
 
   defp render_author_preview(%Context{} = context) do
     spec =
