@@ -1333,12 +1333,22 @@ defmodule Oli.TestHelpers do
         obj_resource_a.id
       ])
 
+    # Page with grouped activities
+    page_2_model = [
+      %{
+        "type" => "group",
+        "id" => 1,
+        "purpose" => "didigetthis",
+        "children" => build_content_for_page.([act_resource_y.id, act_resource_z.id])
+      }
+    ]
+
     {page_resource_2, page_revision_2} =
       create_page(
         "Page 2",
         "page_2",
         project,
-        build_content_for_page.([act_resource_y.id, act_resource_z.id]),
+        page_2_model,
         [obj_resource_b.id]
       )
 
