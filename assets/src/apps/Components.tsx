@@ -1,3 +1,4 @@
+import { LikerReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
 import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
@@ -19,7 +20,6 @@ import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
 import { References } from './bibliography/References';
-import { LikerReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
