@@ -1,9 +1,9 @@
-defmodule OliWeb.LiveSessionPlugs.RedirectToPrologueTest do
+defmodule OliWeb.LiveSessionPlugs.RedirectToLessonTest do
   use OliWeb.ConnCase
   import Oli.Factory
 
   alias Oli.Resources.ResourceType
-  alias OliWeb.LiveSessionPlugs.RedirectToPrologue
+  alias OliWeb.LiveSessionPlugs.RedirectToLesson
 
   defp graded_page_revision do
     insert(:revision,
@@ -12,11 +12,11 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToPrologueTest do
     )
   end
 
-  test "redirects a graded page when page state is not in progress" do
+  test "redirects a graded page to lesson page when page state is in progress" do
     graded_page_revision = graded_page_revision()
 
     {:halt, updated_socket} =
-      RedirectToPrologue.on_mount(
+      RedirectToLesson.on_mount(
         :default,
         %{
           "section_slug" => "some-section-slug",
@@ -30,7 +30,7 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToPrologueTest do
             page_context:
               build(:page_context,
                 page: graded_page_revision,
-                progress_state: :not_started
+                progress_state: :in_progress
               )
           }
         }
@@ -40,11 +40,11 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToPrologueTest do
              {:redirect,
               %{
                 to:
-                  "/sections/some-section-slug/prologue/#{graded_page_revision.slug}?request_path=some-request-path&selected_view=gallery"
+                  "/sections/some-section-slug/lesson/#{graded_page_revision.slug}?request_path=some-request-path&selected_view=gallery"
               }}
   end
 
-  test "does not redirect a graded page when page state is in progress" do
+  test "does not redirect a graded page when page state is not in progress" do
     graded_page_revision = graded_page_revision()
 
     socket = %Phoenix.LiveView.Socket{
@@ -52,13 +52,13 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToPrologueTest do
         page_context:
           build(:page_context,
             page: graded_page_revision,
-            progress_state: :in_progress
+            progress_state: :not_started
           )
       }
     }
 
     assert {:cont, ^socket} =
-             RedirectToPrologue.on_mount(
+             RedirectToLesson.on_mount(
                :default,
                %{
                  "section_slug" => "some-section-slug",
@@ -73,7 +73,7 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToPrologueTest do
     graded_page_revision = graded_page_revision()
 
     {:cont, updated_socket} =
-      RedirectToPrologue.on_mount(
+      RedirectToLesson.on_mount(
         :default,
         %{
           "section_slug" => "some-section-slug",

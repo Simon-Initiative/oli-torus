@@ -987,6 +987,7 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetUser,
             OliWeb.LiveSessionPlugs.SetSection,
             {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+            OliWeb.LiveSessionPlugs.RedirectToLesson,
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
