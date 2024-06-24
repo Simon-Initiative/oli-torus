@@ -19,12 +19,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     schedule_for_current_week_and_next_week =
       Sections.get_schedule_for_current_and_next_week(section, current_user_id)
 
-    # Use the root container revision to store the intro message for the course
-    intro_message =
-      section.slug
-      |> DeliveryResolver.root_container()
-      |> build_intro_message_title()
-
     nearest_upcoming_lesson =
       section
       |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
@@ -83,7 +77,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
        latest_assignments: combine_settings(latest_assignments, combined_settings),
        containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
-       intro_message: intro_message,
        assignments_tab: :upcoming
      )}
   end
@@ -122,10 +115,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <.header_banner
       ctx={@ctx}
       section_slug={@section_slug}
+      section={@section}
       has_visited_section={@has_visited_section}
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
-      intro_message={@intro_message}
     />
     <div
       id="schedule-view"
@@ -159,10 +152,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   attr(:ctx, :map, default: nil)
   attr(:section_slug, :string, required: true)
+  attr(:section, :any, required: true)
   attr(:has_visited_section, :boolean, required: true)
   attr(:suggested_page, :map)
   attr(:unfinished_lesson, :boolean, required: true)
-  attr(:intro_message, :map)
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
@@ -276,7 +269,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(assigns) do
     ~H"""
-    <div class="w-full h-96 relative flex items-center">
+    <div class="w-full h-1/2 relative flex items-center">
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
@@ -298,11 +291,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="w-full flex flex-col items-start gap-2.5">
           <div class="w-full whitespace-nowrap overflow-hidden">
             <span class="text-3xl text-white font-medium">
-              <%= @intro_message %>
+              <%= build_welcome_title(@section.welcome_title) %>
             </span>
           </div>
-          <div class="w-full text-white/60 text-lg font-semibold">
-            Dive Into Discovery. Begin Your Learning Adventure Now!
+          <div class="w-96 text-white/60 text-lg font-semibold">
+            <%= @section.encouraging_subtitle ||
+              "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
           </div>
         </div>
         <div class="pt-5 flex items-start gap-6">
@@ -696,18 +690,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     |> trunc()
   end
 
-  defp build_intro_message_title(%{intro_content: intro_content})
-       when intro_content not in [nil, %{}],
+  defp build_welcome_title(welcome_title)
+       when welcome_title not in [nil, %{}],
        do:
          Phoenix.HTML.raw(
            Oli.Rendering.Content.render(
              %Oli.Rendering.Context{},
-             intro_content["children"],
+             welcome_title["children"],
              Oli.Rendering.Content.Html
            )
          )
 
-  defp build_intro_message_title(_), do: "Welcome to the Course"
+  defp build_welcome_title(_), do: "Welcome to the Course"
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts

@@ -60,16 +60,45 @@ defmodule OliWeb.Projects.OverviewLiveTest do
     test "project gets updated correctly", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 
+      welcome_title = %{
+        "type" => "p",
+        "children" => [
+          %{
+            "id" => "2748906063",
+            "type" => "p",
+            "children" => [%{"text" => "Welcome Title"}]
+          }
+        ]
+      }
+
       {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
 
       element(view, "form[phx-submit=\"update\"]")
       |> render_submit(%{
-        "project" => %{"title" => "updated title", "description" => "updated description"}
+        "project" => %{
+          "title" => "updated title",
+          "description" => "updated description",
+          "welcome_title" => Poison.encode!(welcome_title),
+          "encouraging_subtitle" => "updated encouraging subtitle"
+        }
       })
 
       assert has_element?(view, "div.alert-info", "Project updated successfully.")
       assert has_element?(view, "input[name=\"project[title]\"][value=\"updated title\"]")
       assert has_element?(view, "textarea[name=\"project[description]\"]", "updated description")
+
+      assert has_element?(
+               view,
+               "textarea[name=\"project[encouraging_subtitle]\"]",
+               "updated encouraging subtitle"
+             )
+
+      view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{div[data-live-react-class="Components.RichTextEditor"]})
+      |> Floki.attribute("data-live-react-props")
+      |> hd() =~ "Welcome Title"
     end
 
     test "project can enable required surveys", %{conn: conn, author: author} do

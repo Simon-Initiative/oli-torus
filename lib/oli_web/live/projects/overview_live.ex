@@ -89,6 +89,27 @@ defmodule OliWeb.Projects.OverviewLive do
               required: false
             ) %>
           </div>
+          <% welcome_title =
+            (fetch_field(f.source, :welcome_title) &&
+               fetch_field(f.source, :welcome_title)["children"]) || [] %>
+          <.rich_text_editor_field
+            id="welcome_title_field"
+            form={f}
+            value={welcome_title}
+            field_name={:welcome_title}
+            field_label="Welcome Message Title"
+            on_edit="welcome_title_change"
+            project_slug={@project.slug}
+            ctx={@ctx}
+          />
+          <div class="form-label-group mb-3">
+            <%= label(f, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
+            <%= textarea(f, :encouraging_subtitle,
+              class: "form-control",
+              placeholder: "Enter a subtitle to encourage students to begin the course...",
+              required: false
+            ) %>
+          </div>
           <div class="form-label-group mb-3">
             <%= label(f, :description, "Latest Publication", class: "control-label") %>
             <%= case @latest_published_publication do %>
@@ -473,8 +494,7 @@ defmodule OliWeb.Projects.OverviewLive do
 
   def handle_event("on_selected", %{"project" => project_attrs}, socket) do
     project = socket.assigns.project
-    changeset = Project.changeset(project, project_attrs)
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: Project.changeset(project, project_attrs))}
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do
@@ -482,6 +502,11 @@ defmodule OliWeb.Projects.OverviewLive do
       if project_params["license"] == "custom",
         do: project_params,
         else: Map.put(project_params, "custom_license_details", nil)
+
+    project_params =
+      project_params
+      |> add_custom_license_details()
+      |> decode_welcome_title()
 
     project = socket.assigns.project
 
@@ -521,6 +546,26 @@ defmodule OliWeb.Projects.OverviewLive do
         {:noreply, socket}
     end
   end
+
+  def handle_event("welcome_title_change", %{"values" => welcome_title}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :welcome_title, %{
+        "type" => "p",
+        "children" => welcome_title
+      })
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params
+
+  defp add_custom_license_details(project_params),
+    do: Map.put(project_params, "custom_license_details", nil)
+
+  defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
+
+  defp decode_welcome_title(project_params),
+    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
 
   defp datashop_link(assigns) do
     ~H"""

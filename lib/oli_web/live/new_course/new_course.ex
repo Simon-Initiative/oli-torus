@@ -317,7 +317,9 @@ defmodule OliWeb.Delivery.NewCourse do
               context_id: UUID.uuid4(),
               customizations: customizations,
               has_experiments: has_experiments,
-              analytics_version: :v2
+              analytics_version: :v2,
+              welcome_title: project.welcome_title,
+              encouraging_subtitle: project.encouraging_subtitle
             })
 
           case create_from_publication(socket, publication, section_params) do
@@ -352,7 +354,9 @@ defmodule OliWeb.Delivery.NewCourse do
               open_and_free: true,
               has_experiments: project.has_experiments,
               context_id: UUID.uuid4(),
-              analytics_version: :v2
+              analytics_version: :v2,
+              welcome_title: blueprint.welcome_title,
+              encouraging_subtitle: blueprint.encouraging_subtitle
             })
 
           case create_from_product(socket, blueprint, section_params) do

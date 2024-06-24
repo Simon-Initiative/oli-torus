@@ -4,5 +4,15 @@
   "type": "Manifest",
   "attributes": {
     "learning_language": "es"
-  }
+  },
+  "welcomeTitle": {
+    "children": [
+      {
+        "text": "Explore Northern Spain's Culinary Delights!"
+      }
+    ],
+    "id": "3261709550",
+    "type": "p"
+  },
+  "encouragingSubtitle": "Unlock Your Potential. Start Learning Today!"
 }
