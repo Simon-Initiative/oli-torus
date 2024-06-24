@@ -4,6 +4,8 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilder do
     unique: [keys: [:section_slug]],
     max_attempts: 1
 
+  import Ecto.Query, only: [from: 2]
+
   alias Oli.Delivery.Sections.{ContainedObjective, Section}
   alias Oli.Delivery.Sections
   alias Oli.Repo
