@@ -21,9 +21,14 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilder do
     }
 
     Multi.new()
+    |> Multi.run(:section, &find_section_by_slug(&1, &2, section_slug))
     |> Multi.run(
       :contained_objectives,
       &Sections.build_contained_objectives(&1, &2, section_slug)
+    )
+    |> Multi.delete_all(
+      :delete_all_objectives,
+      &from(ContainedObjective, where: [section_id: ^&1.section.id])
     )
     |> Multi.insert_all(
       :inserted_contained_objectives,
@@ -31,7 +36,6 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilder do
       &objectives_with_timestamps(&1, timestamps),
       placeholders: placeholders
     )
-    |> Multi.run(:section, &find_section_by_slug(&1, &2, section_slug))
     |> Multi.update(
       :done_section,
       &Section.changeset(&1.section, %{v25_migration: :done})
