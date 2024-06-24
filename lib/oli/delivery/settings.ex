@@ -333,4 +333,13 @@ defmodule Oli.Delivery.Settings do
     )
     |> Repo.insert()
   end
+
+  def bulk_insert_settings_changes(settings_changes) do
+    Repo.insert_all(SettingsChanges, settings_changes)
+  end
+
+  def fetch_all_settings_changes(),
+    do:
+      SettingsChanges
+      |> Repo.all()
 end
