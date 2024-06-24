@@ -2779,7 +2779,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, redirect_path)
 
       assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
-      assert view |> element(~s{h3)}) |> render() =~ "My Notes"
+      assert view |> has_element?(~s{h1}, "Notes")
     end
 
     test "redirects and ensures navigation to the preview Practice page", %{
@@ -2804,7 +2804,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, redirect_path)
 
       assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
-      assert view |> element(~s{h1)}) |> render() =~ "Your Practice Pages"
+      assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
     end
   end
 
