@@ -168,7 +168,7 @@ defmodule Oli.Content.Report.HtmlTest do
                ~s|<div id="1855946510" class="activity-report"><div class="activity-report-label">Report</div><div class="content-purpose-content content">|
 
       assert rendered_html_string =~
-               ~s|<div data-react-class="Components.VegaLiteRenderer" data-react-props="|
+               ~s|<div data-react-class="Components.LikerReportRenderer" data-react-props="|
     end
   end
 end
