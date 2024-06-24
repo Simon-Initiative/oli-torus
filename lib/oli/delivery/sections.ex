@@ -4320,7 +4320,13 @@ defmodule Oli.Delivery.Sections do
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
             rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
-        group_by: [rev.id, sr.numbering_index, sr.end_date, last_att.lifecycle_state],
+        group_by: [
+          rev.id,
+          sr.numbering_index,
+          sr.end_date,
+          last_att.lifecycle_state,
+          last_att.inserted_at
+        ],
         select:
           map(rev, [
             :id,
@@ -4340,6 +4346,7 @@ defmodule Oli.Delivery.Sections do
           score: max(ra.score),
           out_of: max(ra.out_of),
           progress: max(ra.progress),
+          last_attempt_started_at: last_att.inserted_at,
           last_attempt_state: last_att.lifecycle_state
         }
       )
@@ -5101,15 +5108,22 @@ defmodule Oli.Delivery.Sections do
   - `user_id`: The ID of the user.
 
   ## Returns
-  A list of tuples, each containing the resource ID and a map with the state and submission date of the last attempt.
+  A list of tuples, each containing the resource ID and a map with the state, submission date and date of insertion of the last attempt.
 
   ## Examples
       iex> get_last_attempt_per_page_id("intro-to-chemistry", 42)
-      [{123, %{state: "completed", date_submitted: ~N[2021-05-23 18:00:00]}}]
+      [{123, %{state: "completed", date_submitted: ~U[2024-06-21 14:11:00Z], inserted_at: ~U[2024-06-21 13:21:59Z]}}]
   """
 
   @spec get_last_attempt_per_page_id(String.t(), integer()) ::
-          list({integer(), %{state: String.t(), date_submitted: NaiveDateTime.t()}})
+          list(
+            {integer(),
+             %{
+               state: String.t(),
+               date_submitted: DateTime.t(),
+               inserted_at: DateTime.t()
+             }}
+          )
   def get_last_attempt_per_page_id(section_slug, user_id) do
     Repo.all(
       ResourceAttempt
@@ -5127,7 +5141,12 @@ defmodule Oli.Delivery.Sections do
       )
       |> select(
         [ra1, a, _, _],
-        {a.resource_id, %{state: ra1.lifecycle_state, date_submitted: ra1.date_submitted}}
+        {a.resource_id,
+         %{
+           state: ra1.lifecycle_state,
+           date_submitted: ra1.date_submitted,
+           inserted_at: ra1.inserted_at
+         }}
       )
     )
   end

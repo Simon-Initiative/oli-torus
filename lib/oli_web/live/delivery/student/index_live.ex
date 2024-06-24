@@ -550,7 +550,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       <% else %>
         <div
-          :if={@lesson.end_date}
+          :if={lesson_expires?(@lesson)}
           class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
         >
           <div class="opacity-50 text-black dark:text-white text-xs font-normal">
@@ -566,7 +566,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               "text-xs font-normal"
             ]}
           >
-            <%= Student.format_time_remaining(@lesson.end_date) %>
+            <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
           </div>
         </div>
       <% end %>
@@ -595,16 +595,37 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp lesson_details(assigns) do
     ~H"""
     <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
-      <div :if={@lesson.end_date} class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex">
+      <div
+        :if={lesson_expires?(@lesson)}
+        class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
+      >
         <div class="opacity-50 text-black dark:text-white text-xs font-normal">
           Time Remaining:
         </div>
         <div role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
-          <%= Student.format_time_remaining(@lesson.end_date) %>
+          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp lesson_expires?(lesson) do
+    Utils.attempt_expires?(
+      lesson.last_attempt_state,
+      lesson.settings.time_limit,
+      lesson.settings.late_submit,
+      lesson.end_date
+    )
+  end
+
+  defp effective_lesson_expiration_date(lesson) do
+    Utils.effective_attempt_expiration_date(
+      lesson.last_attempt_started_at,
+      lesson.settings.time_limit,
+      lesson.settings.late_submit,
+      lesson.end_date
+    )
   end
 
   defp completed_lesson?(%{graded: true} = assignment),

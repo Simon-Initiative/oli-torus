@@ -299,7 +299,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     Sections.get_section_resource(section.id, page_4_revision.resource_id)
     |> Sections.update_section_resource(%{
       start_date: ~U[2023-11-04 20:00:00Z],
-      end_date: ~U[2023-11-05 20:00:00Z]
+      end_date: ~U[2023-11-05 20:00:00Z],
+      time_limit: 75
     })
 
     Sections.get_section_resource(section.id, page_5_revision.resource_id)
@@ -475,6 +476,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       :resource_attempt,
       Map.merge(attempt_attrs, %{
         resource_access: resource_access,
+        inserted_at: opts[:inserted_at] || DateTime.utc_now(),
         revision: revision,
         lifecycle_state: opts[:attempt_state],
         date_submitted:
@@ -1095,7 +1097,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       set_progress(section.id, page_4.resource_id, user.id, 0.5, page_4,
         attempt_state: :active,
-        updated_at: ~U[2023-11-01 21:00:00Z]
+        updated_at: ~U[2023-11-01 21:00:00Z],
+        inserted_at: ~U[2024-04-22 21:00:00Z]
       )
 
       set_progress(section.id, page_3.resource_id, user.id, 0.3, page_3,
@@ -1159,7 +1162,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(
                view,
                second_assignment <> ~s{div[role=details] div[role=countdown]},
-               "00:00:00"
+               "01:15:00"
              )
 
       # Third latest assignment
