@@ -97,6 +97,8 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> Repo.all()
   end
 
+  def objectives_by_resource_ids(nil, _section_slug), do: []
+
   def objectives_by_resource_ids(resource_ids, section_slug) do
     from([_sr, _s, _spp, _pr, rev] in section_resource_revisions(section_slug),
       where: rev.resource_id in ^resource_ids,
