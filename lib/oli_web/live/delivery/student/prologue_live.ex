@@ -8,7 +8,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Settings
-  alias Oli.Resources
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils
@@ -303,7 +303,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
               current_user.id
             )
 
-          Resources.get_revisions_by_resource_id(objective_resource_ids)
+          Resolver.objectives_by_resource_ids(objective_resource_ids, section.slug)
           |> Enum.map(fn rev ->
             %{
               resource_id: rev.resource_id,

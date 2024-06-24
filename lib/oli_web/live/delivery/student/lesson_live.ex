@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
-  alias Oli.Resources
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
@@ -811,7 +811,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               current_user.id
             )
 
-          Resources.get_revisions_by_resource_id(objective_resource_ids)
+          Resolver.objectives_by_resource_ids(objective_resource_ids, section.slug)
           |> Enum.map(fn rev ->
             %{
               resource_id: rev.resource_id,

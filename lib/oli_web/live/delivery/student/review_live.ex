@@ -11,7 +11,6 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Metrics
   alias Oli.Publishing.DeliveryResolver, as: Resolver
-  alias Oli.Resources
   alias OliWeb.Delivery.Student.Utils
 
   def mount(
@@ -59,7 +58,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
               current_user.id
             )
 
-          Resources.get_revisions_by_resource_id(objective_resource_ids)
+          Resolver.objectives_by_resource_ids(objective_resource_ids, section.slug)
           |> Enum.map(fn rev ->
             %{
               resource_id: rev.resource_id,
