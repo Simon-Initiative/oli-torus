@@ -146,6 +146,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
           </button>
         </div>
       </div>
+      <p class="pl-9 pr-6">
+        Note: Setting an availability date in the past will effectively allow a student to access the page.
+      </p>
       <Paging.render
         id="header_paging"
         total_count={@total_count}
