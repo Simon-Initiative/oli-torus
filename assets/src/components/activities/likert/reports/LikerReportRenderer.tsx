@@ -5,47 +5,65 @@ import { makeRequest } from 'data/persistence/common';
 export interface LikerReportRendererProps {
   sectionId: string;
   activityId: string;
+  sectionSlug: string;
 }
 
-export type ReportData = {
+export type Parent = {
+  title: string;
+  slug?: string;
+};
+
+export type Report = {
   type: 'success';
-  spec: VisualizationSpec;
-  prompts: string;
-  parent: { title: string; slug?: string };
+  spec?: VisualizationSpec;
+  prompts?: string;
+  message?: string;
+  parent: Parent;
 };
 
 export const LikerReportRenderer = (props: LikerReportRendererProps) => {
-  const [reportData, setReportData] = useState<ReportData>();
+  const [report, setReport] = useState<Report>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
     const url = `/activity/report/${props.sectionId}/${props.activityId}`;
     setIsLoading(true);
-    makeRequest<ReportData>({
+    makeRequest<Report>({
       url,
       method: 'GET',
     })
       .then((result) => {
         if (result.type === 'success') {
-          setReportData(result);
+          setReport(result);
         } else {
           setError(result.message ? result.message : 'Error: unable to load report');
         }
-        setIsLoading(false);
       })
       .catch((e: any) => {
-        setIsLoading(false);
         setError(e.message);
-      });
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
     <div>
-      {reportData && (
+      {report && (
         <div>
-          <VegaLite spec={reportData.spec} actions={false} />
-          <div dangerouslySetInnerHTML={{ __html: reportData.prompts }}></div>
+          <div className="container">
+            <h3 className="text-center">
+              {report.parent.slug ? (
+                <a href={`/sections/${props.sectionSlug}/lesson/${report.parent.slug}`}>
+                  {report.parent.title}
+                </a>
+              ) : (
+                report.parent.title
+              )}
+            </h3>
+          </div>
+          {report.spec && <VegaLite spec={report.spec} actions={false} />}
+          {report.prompts && <div dangerouslySetInnerHTML={{ __html: report.prompts }}></div>}
+          {report.message && <div>{report.message}</div>}
         </div>
       )}
       {isLoading && (
@@ -56,7 +74,7 @@ export const LikerReportRenderer = (props: LikerReportRendererProps) => {
           </div>
         </div>
       )}
-      {error && <div>Error: {error}</div>}
+      {error && <div className="alert alert-danger">{error}</div>}
     </div>
   );
 };
