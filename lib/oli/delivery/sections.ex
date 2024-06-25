@@ -2515,6 +2515,16 @@ defmodule Oli.Delivery.Sections do
     )
   end
 
+  def get_section_revision_for_resource(section_slug, resource_id) do
+    Repo.one(
+      from(
+        [sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
+        where: sr.resource_id == ^resource_id,
+        select: rev
+      )
+    )
+  end
+
   def get_section_resources(section_id) do
     from(sr in SectionResource,
       where: sr.section_id == ^section_id

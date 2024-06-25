@@ -1482,6 +1482,35 @@ defmodule Oli.Publishing do
     |> Enum.filter(fn m -> !Locks.expired_or_empty?(m) end)
   end
 
+  def determine_parent_pages(activity_resource_id, publication_ids)
+      when is_list(publication_ids) do
+    page_id = ResourceType.id_for_page()
+
+    sql = """
+    select r.title, r.slug, r.resource_id as id  from (
+      select distinct
+          rev.title,
+          rev.resource_id,
+          rev.slug,
+          cast(jsonb_path_query(rev.content,'$.model.** ? (@.type == "activity-reference").activity_id') as BIGINT) as act_id
+        from published_resources as mapping
+        join revisions as rev
+        on mapping.revision_id = rev.id
+        where mapping.publication_id in (#{Enum.join(publication_ids, ",")})
+          and rev.resource_type_id = #{page_id}
+          and rev.deleted is false) as r
+    where r.act_id = #{activity_resource_id}
+    limit 1
+    """
+
+    {:ok, %{columns: columns, rows: [rows]}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.with_index(columns)
+    |> Enum.reduce(%{}, fn {a, idx}, c ->
+      Map.put(c, a, Enum.at(rows, idx))
+    end)
+  end
+
   @doc """
   For a given list of activity resource ids and a given project publication id,
   find and retrieve all revisions for the pages that contain the activities.

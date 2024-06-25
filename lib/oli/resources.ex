@@ -440,4 +440,47 @@ defmodule Oli.Resources do
     )
     |> Repo.all()
   end
+
+  @doc """
+  Returns an activity registration for the given resource id.
+  """
+  def get_activity_registration_by_resource_id(resource_id) do
+    from(rev in Revision,
+      join: res in Resource,
+      on: res.id == rev.resource_id,
+      join: reg in Oli.Activities.ActivityRegistration,
+      on: rev.activity_type_id == reg.id,
+      where: res.id == ^resource_id,
+      select: reg,
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  def get_report_activities(project_id) do
+    query =
+      Revision
+      |> join(:left, [rev], pr in Oli.Publishing.PublishedResource, on: pr.revision_id == rev.id)
+      |> join(:left, [_, pr], pub in Oli.Publishing.Publications.Publication,
+        on: pr.publication_id == pub.id
+      )
+      |> join(:left, [_, _, pub], proj in Oli.Authoring.Course.Project,
+        on: pub.project_id == proj.id
+      )
+      |> join(:left, [rev, _, _, _], reg in Oli.Activities.ActivityRegistration,
+        on: rev.activity_type_id == reg.id
+      )
+      |> where(
+        [rev, _, pub, proj, reg],
+        proj.id == ^project_id and is_nil(pub.published) and
+          reg.generates_report == true
+      )
+      |> select([rev, _, _, _, reg], %{
+        id: rev.resource_id,
+        type: reg.slug,
+        title: rev.title
+      })
+
+    Repo.all(query)
+  end
 end

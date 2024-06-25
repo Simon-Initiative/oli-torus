@@ -509,6 +509,8 @@ defmodule OliWeb.Router do
     delete("/:project/lock/:resource", Api.LockController, :release)
 
     get("/:project/alternatives", Api.ResourceController, :alternatives)
+
+    get("/:project/activities/with_report", Api.ResourceController, :activities_with_report)
   end
 
   # Storage Service
@@ -704,6 +706,13 @@ defmodule OliWeb.Router do
     pipe_through([:api, :delivery_protected])
 
     post("/", Api.XAPIController, :emit)
+  end
+
+  # Delivery facing Activity report endpoints
+  scope "/api/v1/activity/report/:section_id/:resource_id", OliWeb do
+    pipe_through([:api, :delivery_protected])
+
+    get("/", Api.ActivityReportDataController, :fetch)
   end
 
   # User State Service, extrinsic state

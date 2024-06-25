@@ -14,6 +14,7 @@ import { AlternativesEditor } from './AlternativesEditor';
 import { ContentBreakEditor } from './ContentBreak';
 import { ContentEditor } from './ContentEditor';
 import { PurposeGroupEditor } from './PurposeGroupEditor';
+import { ReportEditor } from './ReportEditor';
 import { SelectionEditor } from './SelectionEditor';
 import { SurveyEditor } from './SurveyEditor';
 
@@ -43,7 +44,7 @@ export type EditorProps = {
   onAddItem: AddCallback;
 };
 
-// content or referenced activities
+//content or referenced activities
 export const createEditor = (editorProps: EditorProps): JSX.Element => {
   const { contentItem } = editorProps;
 
@@ -58,6 +59,8 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
       return <PurposeGroupEditor {...editorProps} contentItem={contentItem} />;
     case 'survey':
       return <SurveyEditor {...editorProps} contentItem={contentItem} />;
+    case 'report':
+      return <ReportEditor {...editorProps} contentItem={contentItem} />;
     case 'alternatives':
       return <AlternativesEditor {...editorProps} contentItem={contentItem} />;
     case 'break':

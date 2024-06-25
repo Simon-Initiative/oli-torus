@@ -76,6 +76,33 @@ export function alternatives(projectSlug: ProjectSlug) {
   return makeRequest<AlternativesGroupsReceived>(params);
 }
 
+export type ParentPage = {
+  title: string;
+  url: string;
+};
+
+export type ActivityWithReportOption = {
+  id: string;
+  type: string;
+  slug: string;
+  title: string;
+  page?: ParentPage;
+};
+export type ActivitiesWithReportReceived = {
+  type: 'success';
+  activities: ActivityWithReportOption[];
+};
+
+// Requests all activities that generate reports
+export function activitiesWithReport(projectSlug: ProjectSlug) {
+  const params = {
+    method: 'GET',
+    url: `/project/${projectSlug}/activities/with_report`,
+  };
+
+  return makeRequest<ActivitiesWithReportReceived>(params);
+}
+
 function traverseContent(o: any, func: any) {
   for (const i in o) {
     func.apply(this, [i, o[i]]);

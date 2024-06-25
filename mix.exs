@@ -213,7 +213,9 @@ defmodule Oli.MixProject do
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},
-      {:xml_builder, "~> 2.1.1"}
+      {:xml_builder, "~> 2.1.1"},
+      {:vega_lite, "~> 0.1.9"},
+      {:odgn_json_pointer, "~> 3.0.1"}
     ]
   end
 
