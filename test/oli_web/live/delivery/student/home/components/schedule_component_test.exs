@@ -241,8 +241,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
     })
 
     session_context = %OliWeb.Common.SessionContext{
-      browser_timezone: "Etc/UTC",
-      local_tz: "Etc/UTC",
+      browser_timezone: "America/Montevideo",
+      local_tz: "America/Montevideo",
       author: author,
       user: author,
       is_liveview: true

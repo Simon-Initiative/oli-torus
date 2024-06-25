@@ -49,9 +49,14 @@ defmodule Oli.TestHelpers do
     end
   end
 
-  def stub_current_time(now) do
-    Mox.stub(Oli.Test.DateTimeMock, :utc_now, fn -> now end)
-    Mox.stub(Oli.Test.DateMock, :utc_today, fn -> DateTime.to_date(now) end)
+  def stub_current_time(utc_now) do
+    Mox.stub(Oli.Test.DateTimeMock, :utc_now, fn -> utc_now end)
+
+    Mox.stub(Oli.Test.DateTimeMock, :now!, fn timezone ->
+      DateTime.shift_zone!(utc_now, timezone)
+    end)
+
+    Mox.stub(Oli.Test.DateMock, :utc_today, fn -> DateTime.to_date(utc_now) end)
   end
 
   def yesterday() do
