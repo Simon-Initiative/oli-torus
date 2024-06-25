@@ -1508,6 +1508,93 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_1.due_date =~ "October 10, 2023"
       assert assessment_2.due_date =~ "No due date"
     end
+
+    test "Changing an assessment setting persists that action in the database", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      ## Checks that there is no setting change for late_submit
+      assert Settings.fetch_all_settings_changes() == []
+
+      ## Changes the late_submit setting to disallow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["late_submit-#{page_1.resource.id}"],
+        "late_submit-#{page_1.resource.id}" => "disallow"
+      })
+
+      ## Checks that there is a setting change for late_submit
+      assert Settings.fetch_all_settings_changes() |> hd |> Map.get(:new_value) == "disallow"
+
+      ## Changes the late_submit setting back to allow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["late_submit-#{page_1.resource.id}"],
+        "late_submit-#{page_1.resource.id}" => "allow"
+      })
+
+      ## Checks that now there are 2 setting changes for late_submit (one for disallow and one for allow)
+      assert Settings.fetch_all_settings_changes()
+             |> length() == 2
+
+      ## Checks that the last setting change for late_submit is allow
+      assert Settings.fetch_all_settings_changes()
+             |> Enum.sort_by(& &1.id, :desc)
+             |> hd
+             |> Map.get(:new_value) == "allow"
+    end
+
+    test "bulk apply settings persist all changes in the database", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      ## Checks that there is no setting change for late_submit
+      assert Settings.fetch_all_settings_changes() == []
+
+      # we change page 3 late submit setting to :disallow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["late_submit-#{page_3.resource.id}"],
+        "late_submit-#{page_3.resource.id}" => "disallow"
+      })
+
+      changes = Settings.fetch_all_settings_changes()
+      change_for_page_3 = hd(changes)
+      assert length(changes) == 1
+      assert change_for_page_3.resource_id == page_3.resource.id
+      assert change_for_page_3.key == "late_submit"
+      assert change_for_page_3.new_value == "disallow"
+      assert change_for_page_3.old_value == "allow"
+
+      refute change_for_page_3.resource_id == page_1.resource.id
+      refute change_for_page_3.resource_id == page_2.resource.id
+
+      # and bulk apply that change to all other assessments
+      view
+      |> form(~s{form[for="bulk_apply_settings"]})
+      |> render_submit(%{"assessment_id" => page_3.resource.id})
+
+      view
+      |> form(~s{form[phx-submit=confirm_bulk_apply]})
+      |> render_submit(%{})
+
+      changes = Settings.fetch_all_settings_changes()
+
+      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 31 changes in our settings changes table.
+      ## That is, 10 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
+      assert length(changes) == 31
+    end
   end
 
   describe "student exceptions tab" do
