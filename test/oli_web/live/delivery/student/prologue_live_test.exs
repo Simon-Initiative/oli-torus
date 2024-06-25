@@ -858,38 +858,54 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert has_element?(view, ~s{div[role="objective 1 title"]}, "this is the first objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o1} title"]},
+               "this is the first objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 1"] svg[role="beginning proficiency icon"]}
+               ~s{div[role="objective #{o1}"] svg[role="beginning proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
 
-      assert has_element?(view, ~s{div[role="objective 2 title"]}, "this is the second objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o2} title"]},
+               "this is the second objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 2"] svg[role="growing proficiency icon"]}
+               ~s{div[role="objective #{o2}"] svg[role="growing proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
 
-      assert has_element?(view, ~s{div[role="objective 3 title"]}, "this is the third objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o3} title"]},
+               "this is the third objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 3"] svg[role="establishing proficiency icon"]}
+               ~s{div[role="objective #{o3}"] svg[role="establishing proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o3}_tooltip"]}, "Establishing Proficiency")
 
-      assert has_element?(view, ~s{div[role="objective 4 title"]}, "this is the forth objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o4} title"]},
+               "this is the forth objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 4"] svg[role="no data proficiency icon"]}
+               ~s{div[role="objective #{o4}"] svg[role="no data proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o4}_tooltip"]}, "Not enough information")

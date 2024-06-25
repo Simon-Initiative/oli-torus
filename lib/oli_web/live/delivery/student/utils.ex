@@ -130,7 +130,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         <div
           :for={{objective, index} <- Enum.with_index(@objectives, 1)}
           class="self-stretch flex-col justify-start items-start flex ml-6"
-          role={"objective #{index}"}
+          role={"objective #{objective.resource_id}"}
         >
           <div class="relative h-[21px] justify-start items-center gap-[19px] inline-flex">
             <.proficiency_icon_with_tooltip objective={objective} />
@@ -140,7 +140,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                   L<%= index %>
                 </div>
                 <div
-                  role={"objective #{index} title"}
+                  role={"objective #{objective.resource_id} title"}
                   class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
                 >
                   <%= objective.title %>
