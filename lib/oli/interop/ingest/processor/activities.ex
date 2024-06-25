@@ -41,7 +41,7 @@ defmodule Oli.Interop.Ingest.Processor.Activities do
       children: {:placeholder, :children},
       resource_type_id: {:placeholder, :resource_type_id},
       activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }
