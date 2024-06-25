@@ -3123,22 +3123,19 @@ defmodule Oli.Delivery.Sections do
     page_activities =
       from(
         [rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        join: content_elem in fragment("jsonb_array_elements(?->'model')", rev.content),
-        on: true,
         select: %{
           page_id: rev.resource_id,
-          activity_id: fragment("(?->>'activity_id')::integer", content_elem)
+          activity_ids:
+            fragment(
+              "SELECT array_agg(activity_id) FROM get_all_activity_references(?)",
+              rev.content
+            )
         },
-        where:
-          not rev.deleted and rev.resource_type_id == ^page_type_id and
-            fragment("?->>'type'", content_elem) == "activity-reference"
+        where: not rev.deleted and rev.resource_type_id == ^page_type_id
       )
       |> repo.all()
-      |> Enum.reduce(%{}, fn %{page_id: page_id, activity_id: activity_id}, acc ->
-        case Map.get(acc, page_id) do
-          nil -> Map.put(acc, page_id, [activity_id])
-          activities -> Map.put(acc, page_id, [activity_id | activities])
-        end
+      |> Enum.reduce(%{}, fn %{page_id: page_id, activity_ids: activity_ids}, acc ->
+        Map.put(acc, page_id, activity_ids || [])
       end)
 
     Logger.info("build_contained_objectives pages: #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms")
