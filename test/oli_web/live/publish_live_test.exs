@@ -34,14 +34,16 @@ defmodule OliWeb.PublishLiveTest do
             objective_1_revision.resource_id
           ]
         },
-        title: "revision A"
+        title: "revision A",
+        ids_added: true
       )
 
     page_2_revision =
       insert(:revision,
         resource_type_id: ResourceType.id_for_page(),
         content: %{"model" => []},
-        title: "revision B"
+        title: "revision B",
+        ids_added: true
       )
 
     container_revision =
@@ -75,8 +77,7 @@ defmodule OliWeb.PublishLiveTest do
       insert(:publication, %{
         project: project,
         root_resource_id: container_revision.resource_id,
-        published: nil,
-        ids_added: true
+        published: nil
       })
 
     # publish resources
@@ -331,7 +332,8 @@ defmodule OliWeb.PublishLiveTest do
               resource: page_resource,
               resource_type_id: ResourceType.id_for_page(),
               content: %{"model" => []},
-              title: "revision#{elem}"
+              title: "revision#{elem}",
+              ids_added: true
             )
 
           insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})

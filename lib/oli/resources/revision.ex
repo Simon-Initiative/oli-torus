@@ -37,6 +37,7 @@ defmodule Oli.Resources.Revision do
     field :title, :string
     field :slug, :string
     field :deleted, :boolean, default: false
+    field :ids_added, :boolean, default: false
     belongs_to :author, Oli.Accounts.Author
     belongs_to :resource, Oli.Resources.Resource
     belongs_to :previous_revision, Oli.Resources.Revision
@@ -96,6 +97,7 @@ defmodule Oli.Resources.Revision do
       :title,
       :slug,
       :deleted,
+      :ids_added,
       :author_id,
       :resource_id,
       :primary_resource_id,
