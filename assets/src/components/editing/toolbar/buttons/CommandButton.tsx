@@ -17,6 +17,7 @@ export const CommandButton = (props: Props) => {
 
   return (
     <button
+      type="button"
       className={classNames(
         'disabled:opacity-50',
         styles.toolbarButton,

@@ -23,8 +23,8 @@ config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
   uploader_module: Oli.Analytics.XAPI.FileWriterUploader,
   batcher_concurrency: 1,
-  batch_size: 10,
-  batch_timeout: 100,
+  batch_size: 2,
+  batch_timeout: 1,
   processor_concurrency: 1,
   suppress_event_emitting: true
 

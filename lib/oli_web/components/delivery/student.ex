@@ -5,7 +5,9 @@ defmodule OliWeb.Components.Delivery.Student do
   alias Oli.Delivery.Attempts.HistoricalGradedAttemptSummary
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias OliWeb.Components.Common
+  alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
+  alias OliWeb.Delivery.Student.Utils
 
   attr(:raw_avg_score, :map)
 
@@ -19,16 +21,12 @@ defmodule OliWeb.Components.Delivery.Student do
         />
       </svg>
       <span class="text-[12px] leading-[16px] tracking-[0.02px] text-[#0CAF61] dark:text-[#12E56A] font-semibold whitespace-nowrap">
-        <%= format_float(@raw_avg_score[:score]) %> / <%= format_float(@raw_avg_score[:out_of]) %>
+        <%= Utils.parse_score(@raw_avg_score[:score]) %> / <%= Utils.parse_score(
+          @raw_avg_score[:out_of]
+        ) %>
       </span>
     </div>
     """
-  end
-
-  defp format_float(float) do
-    float
-    |> round()
-    |> trunc()
   end
 
   attr(:ctx, OliWeb.Common.SessionContext)
@@ -203,8 +201,8 @@ defmodule OliWeb.Components.Delivery.Student do
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
         </div>
         <.time_remaining
-          :if={has_end_date?(@effective_settings)}
-          end_date={@effective_settings.end_date}
+          :if={attempt_expires?(@attempt, @effective_settings)}
+          end_date={effective_attempt_expiration_date(@attempt, @effective_settings)}
         />
       </div>
       <div class="flex flex-row justify-end">
@@ -273,15 +271,26 @@ defmodule OliWeb.Components.Delivery.Student do
     """
   end
 
+  defp attempt_expires?(attempt, effective_settings) do
+    Utils.attempt_expires?(
+      attempt.lifecycle_state,
+      effective_settings.time_limit,
+      effective_settings.late_submit,
+      effective_settings.end_date
+    )
+  end
+
+  defp effective_attempt_expiration_date(attempt, effective_settings) do
+    Utils.effective_attempt_expiration_date(
+      attempt.inserted_at,
+      effective_settings.time_limit,
+      effective_settings.late_submit,
+      effective_settings.end_date
+    )
+  end
+
   defp allow_review_submission?(%{review_submission: :allow}), do: true
   defp allow_review_submission?(_), do: false
-
-  defp has_end_date?(effective_settings) do
-    case effective_settings.end_date do
-      nil -> false
-      _ -> true
-    end
-  end
 
   attr :end_date, :string, required: true
 
@@ -293,56 +302,15 @@ defmodule OliWeb.Components.Delivery.Student do
 
   defp time_remaining(assigns) do
     ~H"""
-    <div>
+    <div class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex">
       <span class="text-xs text-gray-500 mr-1">
         Time Remaining:
       </span>
-      <%= format_time_remaining(@end_date) %>
+      <div role="countdown">
+        <%= Utils.format_time_remaining(@end_date) %>
+      </div>
     </div>
     """
-  end
-
-  @doc """
-  Calculates the time remaining from the current moment until a specified end date and formats it as "HH:MM:SS".
-
-  ## Parameters
-  - `end_date`: The resource `end_date` as a `DateTime`.
-
-  ## Returns
-  - A string representing the formatted time remaining as "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
-
-  ## Examples
-      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 3661))
-      "01:01:01"
-  """
-
-  @spec format_time_remaining(DateTime.t()) :: String.t()
-  def format_time_remaining(end_date) do
-    # Get the current time
-    current_time = Oli.DateTime.utc_now()
-
-    # Calculate the difference in seconds, clamp negative values to 0
-    diff_seconds =
-      Timex.diff(end_date, current_time, :seconds)
-      |> max(0)
-
-    # Calculate hours, minutes and seconds
-    hours = div(diff_seconds, 3600)
-    minutes = div(rem(diff_seconds, 3600), 60)
-    seconds = rem(diff_seconds, 60)
-
-    # format duration as HH:MM:SS
-    (hours
-     |> Integer.to_string()
-     |> String.pad_leading(2, "0")) <>
-      ":" <>
-      (minutes
-       |> Integer.to_string()
-       |> String.pad_leading(2, "0")) <>
-      ":" <>
-      (seconds
-       |> Integer.to_string()
-       |> String.pad_leading(2, "0"))
   end
 
   attr :graded, :boolean, default: false

@@ -424,7 +424,7 @@ defmodule Oli.Publishing.DeliveryResolver do
     |> emit([:oli, :resolvers, :authoring], :duration)
   end
 
-  defp section_publication_ids(section_slug) do
+  def section_publication_ids(section_slug) do
     from(s in Section,
       where: s.slug == ^section_slug,
       join: spp in SectionsProjectsPublications,

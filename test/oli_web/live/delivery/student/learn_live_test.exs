@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   defp set_progress(section_id, resource_id, user_id, progress, revision) do
     {:ok, resource_access} =
       Core.track_access(resource_id, section_id, user_id)
-      |> Core.update_resource_access(%{progress: progress})
+      |> Core.update_resource_access(%{progress: progress, score: 1.0, out_of: 2.0})
 
     insert(:resource_attempt, %{
       resource_access: resource_access,
@@ -2756,6 +2756,55 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> render_click()
 
       assert_redirect(view, "/sections/#{section.slug}?sidebar_expanded=true")
+    end
+  end
+
+  describe "preview" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "redirects and ensures navigation to the preview Notes page", %{
+      conn: conn,
+      section: section
+    } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
+
+      view
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="discussions_nav_link"])})
+      |> render_click()
+
+      redirect_path = "/sections/#{section.slug}/preview/discussions"
+      assert_redirect(view, redirect_path)
+
+      {:ok, view, _html} = live(conn, redirect_path)
+
+      assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
+      assert view |> has_element?(~s{h1}, "Notes")
+    end
+
+    test "redirects and ensures navigation to the preview Practice page", %{
+      conn: conn,
+      section: section,
+      author: author,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
+    } do
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
+
+      view
+      |> element(~s{nav[id="desktop-nav-menu"] a[id="practice_nav_link"])})
+      |> render_click()
+
+      redirect_path = "/sections/#{section.slug}/preview/practice"
+      assert_redirect(view, redirect_path)
+
+      {:ok, view, _html} = live(conn, redirect_path)
+
+      assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
+      assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
     end
   end
 

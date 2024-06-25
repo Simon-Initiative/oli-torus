@@ -112,6 +112,32 @@ defmodule Oli.Delivery.Sections.ContainedObjectivesBuilderTest do
 
       assert Sections.get_section_by(slug: section.slug).v25_migration == :done
     end
+
+    test "it is idempotent", %{
+      section: section,
+      resources: resources
+    } do
+      for _ <- 1..2 do
+        assert {:ok, _} = perform_job(ContainedObjectivesBuilder, %{section_slug: section.slug})
+
+        # Check all contained objectives
+        root_container_objectives = Sections.get_section_contained_objectives(section.id, nil)
+
+        # C, C1, D, E and F are the objectives attached to the inner activities
+        assert length(root_container_objectives) == 5
+
+        assert Enum.sort(root_container_objectives) ==
+                 Enum.sort([
+                   resources.obj_resource_c.id,
+                   resources.obj_resource_c1.id,
+                   resources.obj_resource_d.id,
+                   resources.obj_resource_e.id,
+                   resources.obj_resource_f.id
+                 ])
+
+        assert Sections.get_section_by(slug: section.slug).v25_migration == :done
+      end
+    end
   end
 
   describe "given a section without objectives" do

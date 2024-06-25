@@ -545,4 +545,121 @@ defmodule OliWeb.Delivery.Student.Utils do
       score
     end
   end
+
+  @doc """
+  Evaluates if an attempt is expired based on the attempt state and the time limit, late submission policy, and end date.
+  An attempt can expire if its state is :active and either has a time limit and/or disallows late submissions.
+  """
+  @spec attempt_expires?(atom(), integer(), atom(), DateTime.t()) :: boolean()
+  def attempt_expires?(state, time_limit, late_submit, end_date) do
+    case {state, time_limit, late_submit, end_date} do
+      {state, _time_limit, _late_submit, _end_date} when state != :active ->
+        false
+
+      {:active, 0, :allow, _end_date} ->
+        false
+
+      {:active, time_limit, _late_submit, _end_date} when time_limit > 0 ->
+        true
+
+      {:active, _time_limit, :disallow, end_date} when end_date != nil ->
+        true
+
+      {_, _, _, _} ->
+        false
+    end
+  end
+
+  @doc """
+    Calculates the effective expiration date for an attempt based on the inserted date, time limit, late submission policy, and end date.
+
+    ## Parameters:
+    - `inserted_at`: The `DateTime` representing the time the attempt was inserted (when the attempt started).
+    - `time_limit`: The time limit in minutes for the attempt.
+    - `late_submit`: The policy for late submission, either `:allow` or `:disallow`.
+    - `end_date`: The `DateTime` representing the end date of the resource.
+
+    ## Returns:
+    - The effective expiration date for the attempt, which is the earlier of the time limit expiration and the end date (for the case late submissions are not allowed).
+
+    ## Examples:
+        iex> effective_attempt_expiration_date(~U[2024-05-12T00:00:00Z], 60, :allow, ~U[2024-05-12T00:30:00Z])
+        ~U[2024-05-12 01:00:00Z]
+        iex> effective_attempt_expiration_date(~U[2024-05-12T00:00:00Z], 60, :disallow, ~U[2024-05-12T00:30:00Z])
+        ~U[2024-05-12 00:30:00Z]
+        iex> effective_attempt_expiration_date(~U[2024-05-12T00:00:00Z], 15, :disallow, ~U[2024-05-12T00:30:00Z])
+        ~U[2024-05-12 00:15:00Z]
+  """
+  @spec effective_attempt_expiration_date(DateTime.t(), integer(), atom(), DateTime.t()) ::
+          DateTime.t()
+  def effective_attempt_expiration_date(inserted_at, time_limit, late_submit, end_date) do
+    case {inserted_at, time_limit, late_submit, end_date} do
+      {_inserted_at, 0, :disallow, end_date} ->
+        end_date
+
+      {inserted_at, time_limit, :allow, _end_date} when time_limit > 0 ->
+        Timex.shift(inserted_at, minutes: time_limit)
+
+      {inserted_at, time_limit, :disallow, end_date} when time_limit > 0 ->
+        datetime_with_limit = Timex.shift(inserted_at, minutes: time_limit)
+
+        if DateTime.compare(datetime_with_limit, end_date) == :lt,
+          do: datetime_with_limit,
+          else: end_date
+    end
+  end
+
+  @doc """
+  Calculates the time remaining from the current moment until a specified end date
+  and formats it as "DD:HH:MM:SS" or "HH:MM:SS" depending on the duration.
+
+  ## Parameters
+  - `end_date`: The resource `end_date` as a `DateTime`.
+
+  ## Returns
+  - A string representing the formatted time remaining as "DD:HH:MM:SS" or "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
+
+  ## Examples
+      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 3661))
+      "01:01:01"
+      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 266460))
+      "03:02:01:00"
+  """
+
+  @spec format_time_remaining(DateTime.t()) :: String.t()
+  def format_time_remaining(end_date) do
+    # Get the current time
+    current_time = Oli.DateTime.utc_now()
+
+    # Calculate the difference in seconds, clamp negative values to 0
+    diff_seconds =
+      Timex.diff(end_date, current_time, :seconds)
+      |> max(0)
+
+    # Calculate days, hours, minutes and seconds
+    days = div(diff_seconds, 86400)
+    hours = div(rem(diff_seconds, 86400), 3600)
+    minutes = div(rem(diff_seconds, 3600), 60)
+    seconds = rem(diff_seconds, 60)
+
+    # Format the duration based on the number of days remaining (DD:HH:MM:SS or HH:MM:SS)
+    days_parsed =
+      (days
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+        ":"
+
+    if(days > 0, do: days_parsed, else: "") <>
+      (hours
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+      ":" <>
+      (minutes
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+      ":" <>
+      (seconds
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0"))
+  end
 end

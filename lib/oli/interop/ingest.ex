@@ -223,13 +223,19 @@ defmodule Oli.Interop.Ingest do
           labels
       end
 
+    new_product_attrs = %{
+      "welcome_title" => Map.get(product, "welcomeTitle"),
+      "encouraging_subtitle" => Map.get(product, "encouragingSubtitle")
+    }
+
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
     case Oli.Delivery.Sections.Blueprint.create_blueprint(
            project.slug,
            product["title"],
            custom_labels,
-           hierarchy_definition
+           hierarchy_definition,
+           new_product_attrs
          ) do
       {:ok, _} -> {:ok, container_map}
       e -> e
@@ -348,7 +354,9 @@ defmodule Oli.Interop.Ingest do
           description: Map.get(project_details, "description"),
           legacy_svn_root: Map.get(project_details, "svnRoot"),
           customizations: custom_labels,
-          attributes: Map.get(project_details, "attributes")
+          attributes: Map.get(project_details, "attributes"),
+          welcome_title: Map.get(project_details, "welcomeTitle"),
+          encouraging_subtitle: Map.get(project_details, "encouragingSubtitle")
         })
     end
   end
@@ -545,6 +553,31 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
+  defp rewire_report_activity_references(content, activity_map) do
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
+      case e do
+        %{"type" => "report", "activityId" => original} = ref ->
+          case retrieve(activity_map, original) do
+            nil ->
+              {ref, {:error, [original | invalid_refs]}}
+
+            retrieved ->
+              {Map.put(ref, "activityId", retrieved.resource_id), {status, invalid_refs}}
+          end
+
+        other ->
+          {other, {status, invalid_refs}}
+      end
+    end)
+    |> case do
+      {mapped, {:ok, _}} ->
+        {:ok, mapped}
+
+      {_mapped, {:error, invalid_refs}} ->
+        {:error, {:rewire_activity_references, invalid_refs}}
+    end
+  end
+
   defp rewire_bank_selections(content, tag_map) do
     PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
       case e do
@@ -637,6 +670,7 @@ defmodule Oli.Interop.Ingest do
     with {:ok, %{"content" => content} = page} <- maybe_migrate_resource_content(page, :page),
          :ok <- validate_json(content, SchemaResolver.resolve("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
+         {:ok, content} <- rewire_report_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map),
          {:ok, content} <- rewire_citation_references(content, bib_map) do
       graded = Map.get(page, "isGraded", false)

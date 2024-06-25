@@ -38,7 +38,7 @@ defmodule Oli.Delivery.Experiments do
          {:ok, assign_results} <- assign(enrollment_id) do
       case assign_results do
         # Upgrade returns an empty array payload in cases when no active
-        # experiment applies for this student
+        # experiment applies for this student.
         [] ->
           {:ok, nil}
 
@@ -103,6 +103,7 @@ defmodule Oli.Delivery.Experiments do
 
     case http().post(url("/api/assign"), body, headers()) do
       {:ok, %{status_code: 200, body: body}} -> Poison.decode(body)
+      {:ok, %{status_code: 404}} -> {:error, "Experiment might not be set up correctly."}
       e -> e
     end
   end

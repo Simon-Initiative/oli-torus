@@ -3,7 +3,8 @@ defmodule OliWeb.Components.Common do
 
   import OliWeb.Gettext
 
-  alias OliWeb.Common.FormatDateTime
+  alias Phoenix.HTML.Form
+  alias OliWeb.Common.{FormatDateTime, React}
   alias Phoenix.LiveView.JS
 
   def not_found(assigns) do
@@ -1060,6 +1061,68 @@ defmodule OliWeb.Components.Common do
       </span>
       <%= render_slot(@inner_block) %>
       <span id={"#{@id}-end"} tabindex="-1" aria-hidden="true"></span>
+    </div>
+    """
+  end
+
+  attr :on_toggle, :string, required: true
+  attr :label, :string, default: nil
+  attr :name, :string, default: nil
+  attr :checked, :boolean, default: false
+  attr :phx_target, :any, default: nil
+  attr :rest, :global, include: ~w(class disabled role)
+
+  def toggle_switch(assigns) do
+    ~H"""
+    <div {@rest}>
+      <form phx-change={@on_toggle} phx-target={@phx_target}>
+        <label class="inline-flex items-center cursor-pointer">
+          <input type="checkbox" name={@name} class="sr-only peer" checked={@checked} />
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
+          </div>
+          <%= case @label do %>
+            <% nil -> %>
+            <% label -> %>
+              <span class="ms-3 text-sm"><%= label %></span>
+          <% end %>
+        </label>
+      </form>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :form, :any, required: true
+  attr :value, :any, required: true
+  attr :field_name, :atom, required: true
+  attr :field_label, :string, required: true
+  attr :on_edit, :string, required: true
+  attr :project_slug, :string, required: true
+  attr :ctx, :map, required: true
+
+  def rich_text_editor_field(assigns) do
+    ~H"""
+    <div id={@id} class="form-label-group mb-3">
+      <%= Form.label(@form, @field_name, @field_label, class: "control-label") %>
+      <%= Form.hidden_input(@form, @field_name) %>
+
+      <div id="rich_text_editor" phx-update="ignore">
+        <%= React.component(
+          @ctx,
+          "Components.RichTextEditor",
+          %{
+            projectSlug: @project_slug,
+            onEdit: "initial_function_that_will_be_overwritten",
+            onEditEvent: @on_edit,
+            onEditTarget: "##{@id}",
+            editMode: true,
+            value: @value,
+            fixedToolbar: true,
+            allowBlockElements: false
+          },
+          id: "rich_text_editor_react_component"
+        ) %>
+      </div>
     </div>
     """
   end

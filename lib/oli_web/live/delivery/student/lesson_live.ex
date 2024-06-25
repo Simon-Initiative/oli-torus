@@ -235,7 +235,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_resource_id: page_context.page.resource_id,
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
-      anonymous: params["anonymous"] == "true",
+      anonymous:
+        page_context.collab_space_config.anonymous_posting && params["anonymous"] == "true",
       visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value}
     }
@@ -427,7 +428,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       annotated_resource_id: page_context.page.resource_id,
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
-      anonymous: params["anonymous"] == "true",
+      anonymous:
+        page_context.collab_space_config.anonymous_posting && params["anonymous"] == "true",
       visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value},
       parent_post_id: parent_post_id,
@@ -613,6 +615,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <:sidebar>
         <Annotations.panel
           section_slug={@section.slug}
+          collab_space_config={@page_context.collab_space_config}
           create_new_annotation={@annotations.create_new_annotation}
           annotations={@annotations.posts}
           current_user={@current_user}

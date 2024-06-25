@@ -98,4 +98,82 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert Utils.parse_score(0.005) == 0.01
     end
   end
+
+  describe "attempt_expires?/4" do
+    test "returns false when an attempt does not expire" do
+      refute Utils.attempt_expires?(:submitted, 0, :allow, ~U[2024-05-12 00:15:00Z])
+      refute Utils.attempt_expires?(:submitted, 0, :allow, nil)
+      refute Utils.attempt_expires?(:submitted, 10, :allow, ~U[2024-05-12 00:15:00Z])
+      refute Utils.attempt_expires?(:submitted, 10, :disallow, ~U[2024-05-12 00:15:00Z])
+      refute Utils.attempt_expires?(:active, 0, :allow, ~U[2024-05-12 00:15:00Z])
+    end
+
+    test "returns true when an attempt expires" do
+      assert Utils.attempt_expires?(:active, 0, :disallow, ~U[2024-05-12 00:15:00Z])
+      assert Utils.attempt_expires?(:active, 10, :disallow, ~U[2024-05-12 00:15:00Z])
+      assert Utils.attempt_expires?(:active, 10, :allow, ~U[2024-05-12 00:15:00Z])
+    end
+  end
+
+  describe "effective_attempt_expiration_date/4" do
+    setup do
+      stub_current_time(~U[2024-05-12 10:00:00Z])
+      :ok
+    end
+
+    test "returns the end date when late submit is disallowed and there is no time limit" do
+      assert Utils.effective_attempt_expiration_date(
+               ~U[2024-05-12 09:30:00Z],
+               0,
+               :disallow,
+               ~U[2024-05-20 09:30:00Z]
+             ) == ~U[2024-05-20 09:30:00Z]
+    end
+
+    test "returns the calculated end date (inserted at + time limit) when late submit is allowed and there is a time limit" do
+      assert Utils.effective_attempt_expiration_date(
+               ~U[2024-05-12 09:30:00Z],
+               15,
+               :allow,
+               ~U[2024-05-20 09:30:00Z]
+             ) == ~U[2024-05-12 09:45:00.000000Z]
+    end
+
+    test "returns end date if the calculated end date (inserted at + time limit) is later than the end date" do
+      assert Utils.effective_attempt_expiration_date(
+               ~U[2024-05-12 09:30:00Z],
+               15,
+               :disallow,
+               ~U[2024-05-12 09:40:00Z]
+             ) == ~U[2024-05-12 09:40:00Z]
+    end
+
+    test "returns the calculated end date (inserted at + time limit) if the end date is later than the calculated one" do
+      assert Utils.effective_attempt_expiration_date(
+               ~U[2024-05-12 09:30:00Z],
+               15,
+               :disallow,
+               ~U[2024-05-12 10:00:00Z]
+             ) == ~U[2024-05-12 09:45:00.000000Z]
+    end
+  end
+
+  describe "format_time_remaining/1" do
+    setup do
+      stub_current_time(~U[2024-05-12 10:00:00Z])
+      :ok
+    end
+
+    test "returns an hour time remaining format if the remaining time is minor than a day" do
+      assert Utils.format_time_remaining(~U[2024-05-12 11:30:03Z]) == "01:30:03"
+    end
+
+    test "returns an day time remaining format if the remaining time is bigger than a day" do
+      assert Utils.format_time_remaining(~U[2024-05-14 11:30:20Z]) == "02:01:30:20"
+    end
+
+    test "returns zero time left in hour format if time remaining is negative" do
+      assert Utils.format_time_remaining(~U[2024-05-10 11:30:20Z]) == "00:00:00"
+    end
+  end
 end

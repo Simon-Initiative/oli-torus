@@ -54,7 +54,8 @@ defmodule OliWeb.Projects.OverviewLive do
         license_opts: cc_options,
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
-        latest_publication: latest_publication
+        latest_publication: latest_publication,
+        notes_config: %{}
       )
 
     {:ok, socket}
@@ -85,6 +86,27 @@ defmodule OliWeb.Projects.OverviewLive do
             <%= textarea(f, :description,
               class: "form-control",
               placeholder: "A brief description of your project...",
+              required: false
+            ) %>
+          </div>
+          <% welcome_title =
+            (fetch_field(f.source, :welcome_title) &&
+               fetch_field(f.source, :welcome_title)["children"]) || [] %>
+          <.rich_text_editor_field
+            id="welcome_title_field"
+            form={f}
+            value={welcome_title}
+            field_name={:welcome_title}
+            field_label="Welcome Message Title"
+            on_edit="welcome_title_change"
+            project_slug={@project.slug}
+            ctx={@ctx}
+          />
+          <div class="form-label-group mb-3">
+            <%= label(f, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
+            <%= textarea(f, :encouraging_subtitle,
+              class: "form-control",
+              placeholder: "Enter a subtitle to encourage students to begin the course...",
               required: false
             ) %>
           </div>
@@ -292,22 +314,15 @@ defmodule OliWeb.Projects.OverviewLive do
         session: %{"project_slug" => @project.slug}
       ) %>
 
-      <Overview.section
-        title="Collaboration Spaces"
-        description="Manage the Collaborative Spaces within the project."
-      >
-        <div class="container mx-auto">
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-            id: "project_collab_space_config",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "project_slug" => @project.slug,
-              "resource_slug" => @revision_slug,
-              "is_overview_render" => true
-            }
-          ) %>
-        </div>
-      </Overview.section>
+      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        id: "project_collab_space_config",
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "project_slug" => @project.slug,
+          "resource_slug" => @revision_slug,
+          "is_overview_render" => true
+        }
+      ) %>
 
       <Overview.section
         title="Required Survey"
@@ -479,8 +494,7 @@ defmodule OliWeb.Projects.OverviewLive do
 
   def handle_event("on_selected", %{"project" => project_attrs}, socket) do
     project = socket.assigns.project
-    changeset = Project.changeset(project, project_attrs)
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: Project.changeset(project, project_attrs))}
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do
@@ -488,6 +502,11 @@ defmodule OliWeb.Projects.OverviewLive do
       if project_params["license"] == "custom",
         do: project_params,
         else: Map.put(project_params, "custom_license_details", nil)
+
+    project_params =
+      project_params
+      |> add_custom_license_details()
+      |> decode_welcome_title()
 
     project = socket.assigns.project
 
@@ -527,6 +546,26 @@ defmodule OliWeb.Projects.OverviewLive do
         {:noreply, socket}
     end
   end
+
+  def handle_event("welcome_title_change", %{"values" => welcome_title}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :welcome_title, %{
+        "type" => "p",
+        "children" => welcome_title
+      })
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params
+
+  defp add_custom_license_details(project_params),
+    do: Map.put(project_params, "custom_license_details", nil)
+
+  defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
+
+  defp decode_welcome_title(project_params),
+    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
 
   defp datashop_link(assigns) do
     ~H"""

@@ -215,8 +215,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       assert has_element?(
                view,
-               ~s{section[id="posts"] div[role="posts header"] h3},
-               "Course Discussions"
+               ~s{div[id="discussions_content"] div[phx-value-tab='discussions']},
+               "Course Discussion"
              )
     end
 
@@ -249,6 +249,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
         })
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
 
       # page posts are not shown in discussions view
       refute view
@@ -309,6 +314,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
       ## post header
       # student name (Me)
       assert view
@@ -344,6 +354,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
       refute render(view) =~ "My first discussion :)"
 
       form(view, "form[id=\"new_discussion_form\"]")
@@ -372,6 +387,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       Sections.mark_section_visited_for_student(section, student)
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
 
       refute render(view) =~ "My first anon discussion :)"
 
@@ -427,6 +447,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
       assert render(view) =~ "My first discussion"
       refute render(view) =~ "This is a reply to the first discussion"
 
@@ -478,6 +503,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
 
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
       assert render(view) =~ "My first discussion"
       refute render(view) =~ "This is a reply to the first discussion"
       refute render(view) =~ "This is a reply to the reply"
@@ -514,10 +544,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
           content: %{message: "My first anonymous discussion"},
           inserted_at: ~U[2023-12-01 00:00:00Z],
           updated_at: ~U[2023-12-01 00:00:00Z],
-          anonymous: true
+          anonymous: true,
+          status: :approved
         })
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
       assert render(view) =~ "My first anonymous discussion"
       assert render(view) =~ "Anonymous"
       refute render(view) =~ student_2.name
@@ -533,6 +569,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       Sections.mark_section_visited_for_student(section, student)
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
 
       assert render(view) =~ "There are no discussions to show."
     end
@@ -562,6 +603,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       )
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
 
       refute render(view) =~ "Discussion 1 :)"
       refute render(view) =~ "Discussion 2 :)"
@@ -623,6 +669,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       Sections.mark_section_visited_for_student(section, student)
 
       {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
 
       assert has_element?(view, "button[role=\"new discussion\"]", "New Discussion")
 

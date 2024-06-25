@@ -299,7 +299,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     Sections.get_section_resource(section.id, page_4_revision.resource_id)
     |> Sections.update_section_resource(%{
       start_date: ~U[2023-11-04 20:00:00Z],
-      end_date: ~U[2023-11-05 20:00:00Z]
+      end_date: ~U[2023-11-05 20:00:00Z],
+      time_limit: 75
     })
 
     Sections.get_section_resource(section.id, page_5_revision.resource_id)
@@ -475,6 +476,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       :resource_attempt,
       Map.merge(attempt_attrs, %{
         resource_access: resource_access,
+        inserted_at: opts[:inserted_at] || DateTime.utc_now(),
         revision: revision,
         lifecycle_state: opts[:attempt_state],
         date_submitted:
@@ -668,25 +670,44 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Upcoming Agenda")
     end
 
-    test "can see intro message when the student just joined the course", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_1: page_1
-    } do
+    # test this
+    test "can see welcome title and encouraging subtitle when is set and the student just joined the course",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_1: page_1
+         } do
       stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      welcome_title = %{
+        type: "p",
+        children: [
+          %{
+            id: "2748906063",
+            type: "p",
+            children: [%{text: "Welcome to "}, %{text: "the best course ever!", strong: true}]
+          }
+        ]
+      }
+
+      encouraging_subtitle = "Unlock Your Potential. Start Learning Today!"
+
+      Sections.update_section(section, %{
+        welcome_title: welcome_title,
+        encouraging_subtitle: encouraging_subtitle
+      })
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      assert has_element?(view, "span", "The best course ever!")
       assert has_element?(view, "div", "Hi, #{user.given_name} !")
 
-      # Shows intro message from root container
-      assert has_element?(
-               view,
-               "span",
-               "Welcome to the best course ever!"
-             )
+      # Shows welcome title respecting the strong tag
+      assert has_element?(view, "span", "Welcome to")
+      assert has_element?(view, "strong", "the best course ever!")
+
+      # Shows encouraging subtitle
+      assert has_element?(view, "div", encouraging_subtitle)
 
       assert has_element?(view, "div", "Upcoming Agenda")
 
@@ -715,6 +736,26 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                "div",
                "Begin your learning journey to watch your progress unfold here!"
              )
+    end
+
+    test "can see default welcome title and encouraging subtitle when is not set and the student just joined the course",
+         %{
+           conn: conn,
+           user: user,
+           section: section
+         } do
+      stub_current_time(~U[2023-11-04 20:00:00Z])
+
+      # Section with default welcome title and encouraging subtitle
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div", "Hi, #{user.given_name} !")
+
+      # Shows welcome title respecting the strong tag
+      assert has_element?(view, "span", "Welcome to the Course")
+
+      # Shows encouraging subtitle
+      assert has_element?(view, "div", "Dive Into Discovery. Begin Your Learning Adventure Now!")
     end
 
     test "can see the last open and unfinished page when it is a graded page", %{
@@ -1056,7 +1097,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       set_progress(section.id, page_4.resource_id, user.id, 0.5, page_4,
         attempt_state: :active,
-        updated_at: ~U[2023-11-01 21:00:00Z]
+        updated_at: ~U[2023-11-01 21:00:00Z],
+        inserted_at: ~U[2024-04-22 21:00:00Z]
       )
 
       set_progress(section.id, page_3.resource_id, user.id, 0.3, page_3,
@@ -1120,7 +1162,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(
                view,
                second_assignment <> ~s{div[role=details] div[role=countdown]},
-               "00:00:00"
+               "01:15:00"
              )
 
       # Third latest assignment
