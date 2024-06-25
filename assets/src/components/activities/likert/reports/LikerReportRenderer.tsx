@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { VegaLite, VisualizationSpec } from 'react-vega';
 import { makeRequest } from 'data/persistence/common';
 
-export interface LikerReportRendererProps {
+export interface LikertReportRendererProps {
   sectionId: string;
   activityId: string;
   sectionSlug: string;
@@ -21,7 +21,7 @@ export type Report = {
   parent: Parent;
 };
 
-export const LikerReportRenderer = (props: LikerReportRendererProps) => {
+export const LikertReportRenderer = (props: LikertReportRendererProps) => {
   const [report, setReport] = useState<Report>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();

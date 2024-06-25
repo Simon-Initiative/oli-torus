@@ -1,4 +1,4 @@
-import { LikerReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
+import { LikertReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
 import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
@@ -40,4 +40,4 @@ registerApplication('TechSupportButton', TechSupportButton, globalStore);
 registerApplication('OfflineDetector', OfflineDetector, globalStore);
 registerApplication('RichTextEditor', RichTextEditor, globalStore);
 registerApplication('VegaLiteRenderer', VegaLiteRenderer, globalStore);
-registerApplication('LikerReportRenderer', LikerReportRenderer, globalStore);
+registerApplication('LikertReportRenderer', LikertReportRenderer, globalStore);

@@ -11,7 +11,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
         %{"activityId" => activity_id} = _element
       ) do
     {:safe, likert_report} =
-      OliWeb.Common.React.component(context, "Components.LikerReportRenderer", %{
+      OliWeb.Common.React.component(context, "Components.LikertReportRenderer", %{
         sectionId: enrollment.section_id,
         activityId: activity_id,
         sectionSlug: section_slug
