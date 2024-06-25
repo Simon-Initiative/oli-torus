@@ -11,7 +11,6 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Metrics
   alias Oli.Publishing.DeliveryResolver, as: Resolver
-  alias Oli.Resources
   alias OliWeb.Delivery.Student.Utils
 
   def mount(
@@ -47,34 +46,34 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
     %{page_context: %{page: page}, current_user: current_user, section: section} =
       socket.assigns
 
+    page_attached_objectives =
+      Resolver.objectives_by_resource_ids(page.objectives["attached"], section.slug)
+
+    student_proficiency_per_page_level_learning_objective =
+      Metrics.proficiency_for_student_per_learning_objective(
+        page_attached_objectives,
+        current_user.id,
+        section
+      )
+
     objectives =
-      case page.objectives["attached"] do
-        objective_ids when objective_ids in [nil, []] ->
-          []
-
-        objective_resource_ids ->
-          student_proficiency_per_learning_objective =
-            Metrics.proficiency_for_student_per_learning_objective(
-              section,
-              current_user.id
+      page_attached_objectives
+      |> Enum.map(fn rev ->
+        %{
+          resource_id: rev.resource_id,
+          title: rev.title,
+          proficiency:
+            Map.get(
+              student_proficiency_per_page_level_learning_objective,
+              rev.resource_id,
+              "Not enough data"
             )
+        }
+      end)
 
-          Resources.get_revisions_by_resource_id(objective_resource_ids)
-          |> Enum.map(fn rev ->
-            %{
-              resource_id: rev.resource_id,
-              title: rev.title,
-              proficiency:
-                Map.get(
-                  student_proficiency_per_learning_objective,
-                  rev.resource_id,
-                  "Not enough data"
-                )
-            }
-          end)
-      end
-
-    assign(socket, objectives: objectives)
+    assign(socket,
+      objectives: objectives
+    )
   end
 
   defp review_allowed?(page_context),
