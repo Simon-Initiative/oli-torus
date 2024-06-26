@@ -45,12 +45,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(section.root_section_resource_id)
 
-    course_discussions_enabled? =
-      case course_collab_space_config do
-        %Collaboration.CollabSpaceConfig{status: :enabled} -> true
-        _ -> false
-      end
-
     default_posts_params =
       case socket.assigns[:has_unread_discussions] do
         true -> Map.merge(@default_params, %{sort_by: "unread", sort_order: :desc})
@@ -77,7 +71,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       assign(socket,
         is_instructor: is_instructor,
         active_tab: :discussions,
-        active_sub_tab: :notes,
+        active_sub_tab: if(socket.assigns.notes_enabled, do: :notes, else: :discussions),
         posts: posts,
         notes: notes,
         expanded_posts: %{},
@@ -87,7 +81,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         more_posts_exist?: more_posts_exist?,
         more_notes_exist?: more_notes_exist?,
         root_curriculum_resource_id: root_curriculum_resource_id,
-        course_discussions_enabled?: course_discussions_enabled?,
         posts_search_term: "",
         posts_search_results: nil,
         notes_search_term: "",
@@ -95,6 +88,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       )
       |> assign_new_discussion_form()
     }
+  end
+
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
   end
 
   def handle_event("sort_posts", %{"sort_by" => sort_by}, socket) do
@@ -545,9 +542,14 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       class="overflow-x-scroll md:overflow-x-auto flex flex-col py-6 px-16 mb-10 gap-6 items-start"
     >
       <div class="flex gap-12">
-        <.tab :if={not @is_instructor} label="My Notes" value={:notes} active={@active_sub_tab} />
         <.tab
-          :if={@course_discussions_enabled?}
+          :if={@notes_enabled && not @is_instructor}
+          label="My Notes"
+          value={:notes}
+          active={@active_sub_tab}
+        />
+        <.tab
+          :if={@discussions_enabled}
           label="Course Discussion"
           value={:discussions}
           active={@active_sub_tab}
@@ -557,7 +559,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       <%= case @active_sub_tab do %>
         <% :notes -> %>
           <.notes_section
-            :if={not @is_instructor}
+            :if={@notes_enabled && not @is_instructor}
             ctx={@ctx}
             section_slug={@section.slug}
             current_user={@current_user}
@@ -569,7 +571,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           />
         <% :discussions -> %>
           <.posts_section
-            :if={@course_discussions_enabled?}
+            :if={@discussions_enabled}
             posts={@posts}
             ctx={@ctx}
             section_slug={@section.slug}
