@@ -326,6 +326,10 @@ defmodule Oli.Delivery.Settings do
 
   def check_password(_, _), do: {:invalid_password}
 
+  @doc """
+  Insert a new settings change record.
+  """
+  @spec insert_settings_change(map()) :: {:ok, SettingsChanges.t()} | {:error, Ecto.Changeset.t()}
   def insert_settings_change(attrs) do
     SettingsChanges.changeset(
       %SettingsChanges{},
@@ -334,10 +338,19 @@ defmodule Oli.Delivery.Settings do
     |> Repo.insert()
   end
 
+  @doc """
+  Insert multiple settings change records.
+  """
+  @spec bulk_insert_settings_changes([map()]) ::
+          {:ok, [SettingsChanges.t()]} | {:error, Ecto.Changeset.t()}
   def bulk_insert_settings_changes(settings_changes) do
     Repo.insert_all(SettingsChanges, settings_changes)
   end
 
+  @doc """
+  Fetch all settings changes.
+  """
+  @spec fetch_all_settings_changes() :: [SettingsChanges.t()]
   def fetch_all_settings_changes(),
     do:
       SettingsChanges
