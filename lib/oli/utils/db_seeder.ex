@@ -1516,7 +1516,8 @@ defmodule Oli.Seeder do
           content: %{"model" => []},
           deleted: false,
           title: "title",
-          resource_id: resource.id
+          resource_id: resource.id,
+          ids_added: true
         },
         attrs
       )
@@ -1711,7 +1712,8 @@ defmodule Oli.Seeder do
           content: %{},
           deleted: false,
           title: "test",
-          resource_id: resource.id
+          resource_id: resource.id,
+          ids_added: true
         },
         attrs
       )
