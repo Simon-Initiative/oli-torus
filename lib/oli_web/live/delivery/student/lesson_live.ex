@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Settings
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
@@ -72,9 +73,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       send(self(), :gc)
     end
 
+    %{
+      resource_attempts: resource_attempts,
+      effective_settings: effective_settings,
+      review_mode: review_mode
+    } =
+      socket.assigns.page_context
+
+    resource_attempt = hd(resource_attempts)
+
+    effective_end_time =
+      Settings.determine_effective_deadline(resource_attempt, effective_settings)
+      |> to_epoch()
+
     {:ok,
      socket
      |> assign_html_and_scripts()
+     |> assign(
+       effective_end_time: effective_end_time,
+       auto_submit: effective_settings.late_submit == :disallow,
+       time_limit: effective_settings.time_limit,
+       attempt_start_time: resource_attempt.inserted_at |> to_epoch,
+       review_mode: review_mode
+     )
      |> assign_objectives()
      |> assign(
        revision_slug: page_context.page.slug,
@@ -693,6 +714,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
+        <%= if !@review_mode and @time_limit > 0 do %>
+          <div
+            id="countdown_timer_display"
+            class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
+            phx-hook="CountdownTimer"
+            data-timer-id="countdown_timer_display"
+            data-submit-button-id="submit_answers"
+            data-time-out-in-mins={@time_limit}
+            data-start-time-in-ms={@attempt_start_time}
+            data-effective-time-in-ms={@effective_end_time}
+            data-auto-submit={if @auto_submit, do: "true", else: "false"}
+          >
+          </div>
+        <% else %>
+          <%= if !@review_mode and !is_nil(@effective_end_time) do %>
+            <div
+              id="countdown_timer_display"
+              class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
+              phx-hook="EndDateTimer"
+              data-timer-id="countdown_timer_display"
+              data-submit-button-id="submit_answers"
+              data-effective-time-in-ms={@effective_end_time}
+              data-auto-submit={if @auto_submit, do: "true", else: "false"}
+            >
+            </div>
+          <% end %>
+        <% end %>
+
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -1159,5 +1208,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         )
       )
     end)
+  end
+
+  defp to_epoch(nil), do: nil
+
+  defp to_epoch(date_time) do
+    date_time
+    |> DateTime.to_unix(:second)
+    |> Kernel.*(1000)
   end
 end
