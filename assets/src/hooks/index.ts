@@ -5,10 +5,12 @@ import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
 import { CopyListener } from './copy_listener';
 import { Countdown } from './countdown';
+import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
+import { EndDateTimer } from './end_date_timer';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
@@ -75,4 +77,6 @@ export const Hooks = {
   AutoSelect,
   CustomFocusWrap,
   Countdown,
+  CountdownTimer,
+  EndDateTimer,
 };
