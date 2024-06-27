@@ -249,6 +249,24 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  attr :activity_count, :integer, default: 0
+  attr :advanced_delivery, :boolean, default: false
+  attr :page_context, :map, required: true
+  attr :section_slug, :string, required: true
+
+  def reset_attempts_button(assigns) do
+    ~H"""
+    <button
+      :if={@activity_count > 0 && @page_context.review_mode == false && not @advanced_delivery}
+      id="reset_answers"
+      class="btn btn-link btn-sm text-center mb-10"
+      onClick={"window.OLI.finalize('#{@section_slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid}', false, 'reset_answers')"}
+    >
+      <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers
+    </button>
+    """
+  end
+
   @doc """
   Generates a URL for the Learn view.
 

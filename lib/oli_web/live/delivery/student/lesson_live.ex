@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   use OliWeb, :live_view
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, scripts: 1]
+    only: [page_header: 1, scripts: 1, reset_attempts_button: 1]
 
   import Ecto.Query
 
@@ -652,6 +652,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         phx-hook="PointMarkers"
       >
         <%= raw(@html) %>
+        <div class="flex w-full justify-center">
+          <.reset_attempts_button
+            activity_count={@activity_count}
+            advanced_delivery={@advanced_delivery}
+            page_context={@page_context}
+            section_slug={@section.slug}
+          />
+        </div>
       </div>
 
       <:point_markers :if={@annotations.show_sidebar && @annotations.point_markers}>
@@ -710,6 +718,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
             <%= raw(@html) %>
+            <div class="flex w-full justify-center">
+              <.reset_attempts_button
+                activity_count={@activity_count}
+                advanced_delivery={@advanced_delivery}
+                page_context={@page_context}
+                section_slug={@section.slug}
+              />
+            </div>
           </div>
         </div>
       </div>
