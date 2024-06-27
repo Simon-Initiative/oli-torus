@@ -7,11 +7,19 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, scripts: 1]
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Delivery.Student.Utils
+
+  # this is an optimization to reduce the memory footprint of the liveview process
+  @required_keys_per_assign %{
+    section: {[:id, :slug, :title, :brand, :lti_1p3_deployment], %Sections.Section{}},
+    current_user: {[:id, :name, :email], %User{}}
+  }
 
   def mount(
         %{
@@ -33,13 +41,31 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         |> assign(page_revision: page_revision)
         |> assign_html_and_scripts()
         |> assign_objectives()
+        |> slim_assigns()
       else
         socket
         |> put_flash(:error, "You are not allowed to review this attempt.")
         |> redirect(to: Utils.learn_live_path(section.slug))
       end
 
-    {:ok, socket}
+    if connected?(socket) do
+      send(self(), :gc)
+    end
+
+    {:ok, socket,
+     temporary_assigns: [
+       scripts: [],
+       html: [],
+       page_context: %{},
+       page_revision: %{},
+       objectives: []
+     ]}
+  end
+
+  def handle_info(:gc, socket) do
+    :erlang.garbage_collect(socket.transport_pid)
+    :erlang.garbage_collect(self())
+    {:noreply, socket}
   end
 
   defp assign_objectives(socket) do
@@ -127,5 +153,19 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
     |> assign(
       scripts: Utils.get_required_activity_scripts(socket.assigns.page_context.activities || [])
     )
+  end
+
+  defp slim_assigns(socket) do
+    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
+                                                      socket ->
+      assign(
+        socket,
+        assign_name,
+        Map.merge(
+          struct,
+          Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
+        )
+      )
+    end)
   end
 end
