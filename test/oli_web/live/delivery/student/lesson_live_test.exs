@@ -532,6 +532,20 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
     end
 
+    test "can not see `reset answers` button on practice pages without activities", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "button[id='reset_answers']", "Reset Answers")
+    end
+
     test "can see prologue on graded pages with no attempt in progress", %{
       conn: conn,
       user: user,
