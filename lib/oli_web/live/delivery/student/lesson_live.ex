@@ -6,10 +6,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   import Ecto.Query
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Metrics
-  alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
@@ -22,21 +22,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
+  # this is an optimization to reduce the memory footprint of the liveview process
+  @required_keys_per_assign %{
+    section: {[:id, :slug, :title, :brand, :lti_1p3_deployment], %Sections.Section{}},
+    current_user: {[:id, :name, :email], %User{}}
+  }
+
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    %{current_user: current_user, section: section} = socket.assigns
+    %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
       async_load_annotations(
-        socket.assigns.section,
-        socket.assigns.page_context.page.resource_id,
-        socket.assigns.current_user,
-        socket.assigns.page_context,
+        section,
+        page_context.page.resource_id,
+        current_user,
+        page_context.collab_space_config,
         if(is_instructor, do: :public, else: :private),
         nil
       )
+
+      send(self(), :gc)
     end
 
     emit_page_viewed_event(socket)
@@ -44,9 +52,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> annotations_assigns(socket.assigns.page_context, is_instructor)
-     |> assign(is_instructor: is_instructor)
-     |> assign_objectives()}
+     |> annotations_assigns(page_context.collab_space_config, is_instructor)
+     |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
+     |> assign_objectives()
+     |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
   end
 
   def mount(
@@ -54,12 +63,23 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         _session,
         %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
       ) do
+    %{page_context: page_context} = socket.assigns
+
     emit_page_viewed_event(socket)
+
+    if connected?(socket) do
+      send(self(), :gc)
+    end
 
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> assign_objectives()}
+     |> assign_objectives()
+     |> assign(
+       revision_slug: page_context.page.slug,
+       attempt_guid: hd(page_context.resource_attempts).attempt_guid
+     )
+     |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
   end
 
   def mount(
@@ -70,7 +90,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     emit_page_viewed_event(socket)
 
-    {:ok, assign_scripts(socket), layout: false}
+    if connected?(socket) do
+      send(self(), :gc)
+    end
+
+    {:ok, assign_scripts(socket) |> slim_assigns(),
+     layout: false, temporary_assigns: [scripts: [], page_context: %{}]}
   end
 
   def handle_event(
@@ -79,15 +104,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{
           assigns: %{
             section: section,
-            page_context: page_context,
             datashop_session_id: datashop_session_id,
-            request_path: request_path
+            request_path: request_path,
+            revision_slug: revision_slug,
+            attempt_guid: attempt_guid
           }
         } = socket
       ) do
-    revision_slug = page_context.page.slug
-    attempt_guid = hd(page_context.resource_attempts).attempt_guid
-
     case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
       {:ok,
        %FinalizationSummary{
@@ -291,9 +314,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     else
       async_load_annotations(
         socket.assigns.section,
-        socket.assigns.page_context.page.resource_id,
+        socket.assigns.page_resource_id,
         socket.assigns.current_user,
-        socket.assigns.page_context,
+        socket.assigns.collab_space_config,
         visibility_for_active_tab(tab, is_instructor),
         socket.assigns.annotations.selected_point
       )
@@ -566,6 +589,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_info(:gc, socket) do
+    :erlang.garbage_collect(socket.transport_pid)
+    :erlang.garbage_collect(self())
+    {:noreply, socket}
+  end
+
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
@@ -615,7 +644,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <:sidebar>
         <Annotations.panel
           section_slug={@section.slug}
-          collab_space_config={@page_context.collab_space_config}
+          collab_space_config={@collab_space_config}
           create_new_annotation={@annotations.create_new_annotation}
           annotations={@annotations.posts}
           current_user={@current_user}
@@ -852,11 +881,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
-  defp annotations_assigns(socket, page_context, is_instructor) do
-    case page_context do
-      %PageContext{
-        collab_space_config: %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept}
-      } ->
+  defp annotations_assigns(socket, collab_space_config, is_instructor) do
+    case collab_space_config do
+      %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept} ->
         assign(socket,
           annotations: %{
             show_sidebar: false,
@@ -870,7 +897,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             search_results: nil,
             search_term: "",
             delete_post_id: nil
-          }
+          },
+          collab_space_config: collab_space_config
         )
 
       _ ->
@@ -882,17 +910,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
          section,
          resource_id,
          current_user,
-         page_context,
+         collab_space_config,
          visibility,
          point_block_id,
          load_replies_for_post_id \\ nil
        ) do
     if current_user do
       Task.async(fn ->
-        case page_context do
-          %PageContext{
-            collab_space_config: %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept}
-          } ->
+        case collab_space_config do
+          %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept} ->
             # load post counts
             post_counts =
               Collaboration.list_post_counts_for_user_in_section(
@@ -1118,5 +1144,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     Application.get_env(:oli, OliWeb.Endpoint)
     |> Keyword.get(:url)
     |> Keyword.get(:host)
+  end
+
+  defp slim_assigns(socket) do
+    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
+                                                      socket ->
+      assign(
+        socket,
+        assign_name,
+        Map.merge(
+          struct,
+          Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
+        )
+      )
+    end)
   end
 end
