@@ -15,9 +15,10 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Phoenix.LiveView.JS
+  alias OliWeb.Common.SessionContext
 
   attr :page_context, Oli.Delivery.Page.PageContext
-  attr :ctx, OliWeb.Common.SessionContext
+  attr :ctx, SessionContext
   attr :objectives, :list
   attr :index, :string
   attr :container_label, :string
@@ -467,22 +468,29 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   @doc """
   Calculates the number of days from today to the given end date of a resource and returns a human-readable string describing the difference.
+  It considers the user's timezone to calculate the difference.
 
   ## Parameters:
   - `resource_end_date`: The `DateTime` representing the end date of the resource.
+  - `context`: The `SessionContext` struct containing the user's timezone information.
 
   ## Returns:
   - A string indicating the number of days until or since the resource end date, such as "Due Today", "1 day left", or "Past Due by X days".
 
   ## Examples:
-      iex> days_difference(~U[2024-05-12T00:00:00Z])
+      iex> days_difference(~U[2024-05-12T00:00:00Z], %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
-  @spec days_difference(DateTime.t()) :: String.t()
-  def days_difference(resource_end_date) do
-    days = resource_end_date |> DateTime.to_date() |> Timex.diff(Oli.Date.utc_today(), :days)
+  @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
+  def days_difference(resource_end_date, context) do
+    localized_end_date =
+      resource_end_date
+      |> OliWeb.Common.FormatDateTime.maybe_localized_datetime(context)
+      |> DateTime.to_date()
 
-    case days do
+    today = context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()
+
+    case Timex.diff(localized_end_date, today, :days) do
       0 ->
         "Due Today"
 
@@ -490,7 +498,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         "1 day left"
 
       -1 ->
-        "Past Due"
+        "Past Due by a day"
 
       days when days < 0 ->
         "Past Due by #{abs(days)} days"

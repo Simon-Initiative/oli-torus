@@ -2760,7 +2760,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   end
 
   describe "preview" do
-    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+    setup [
+      :user_conn,
+      :set_timezone,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
 
     test "redirects and ensures navigation to the preview Notes page", %{
       conn: conn,
