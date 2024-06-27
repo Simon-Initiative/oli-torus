@@ -35,6 +35,9 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
     end
   end
 
+  defp assign_notes_and_discussions_enabled(socket, nil),
+    do: assign(socket, notes_enabled: false, discussions_enabled: false)
+
   defp assign_notes_and_discussions_enabled(socket, section_slug) do
     {collab_space_pages_count, _pages_count} =
       Collaboration.count_collab_spaces_enabled_in_pages_for_section(section_slug)
