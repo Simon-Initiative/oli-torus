@@ -159,7 +159,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       {:ok, view, _html} = live(conn, ~p"/sections")
 
       assert render(view) =~
-               ~s|style=\"background-image: url(&#39;/images/course_default.jpg&#39;);\"|
+               ~s|style=\"background-image: url(&#39;/images/course_default.png&#39;);\"|
     end
 
     test "can search by course name", %{conn: conn, user: user} do

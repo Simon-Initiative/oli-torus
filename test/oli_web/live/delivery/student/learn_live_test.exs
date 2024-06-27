@@ -1673,7 +1673,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_2"]"})
-             |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
+             |> render =~ "style=\"background-image: url(&#39;/images/course_default.png&#39;)"
     end
 
     test "can see Youtube or S3 video poster image",
