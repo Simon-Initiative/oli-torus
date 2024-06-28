@@ -6,6 +6,7 @@ defmodule Oli.Repo.Migrations.CreateSettingsChanges do
       add :resource_id, references(:resources)
       add :section_id, references(:sections)
       add :user_id, references(:users)
+      add :user_type, :string
       add :key, :string
       add :new_value, :string
       add :old_value, :string

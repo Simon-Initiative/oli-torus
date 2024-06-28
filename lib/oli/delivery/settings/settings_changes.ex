@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Settings.SettingsChanges do
     belongs_to(:section, Oli.Delivery.Sections.Section)
     belongs_to(:user, Oli.Accounts.User)
 
+    field(:user_type, Ecto.Enum, values: [:author, :instructor])
     field(:key, :string)
     field(:new_value, :string)
     field(:old_value, :string)
@@ -21,6 +22,7 @@ defmodule Oli.Delivery.Settings.SettingsChanges do
       :user_id,
       :section_id,
       :resource_id,
+      :user_type,
       :key,
       :new_value,
       :old_value

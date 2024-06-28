@@ -15,6 +15,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing.DeliveryResolver
   alias Oli.{Repo, Utils}
+  alias Oli.Accounts.Author
 
   @default_params %{
     offset: 0,
@@ -472,7 +473,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     settings_changes =
       assessments
       |> Enum.filter(fn a -> a.resource_id != base_assessment.resource_id end)
-      |> Enum.flat_map(&generate_setting_changes(&1, set_values, section.id, user.id))
+      |> Enum.flat_map(&generate_setting_changes(&1, set_values, section.id, user))
 
     Settings.bulk_insert_settings_changes(settings_changes)
 
@@ -685,6 +686,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                resource_id: assessment.resource_id,
                section_id: section.id,
                user_id: user.id,
+               user_type: get_user_type(user),
                key: Atom.to_string(:feedback_mode),
                new_value: Kernel.to_string(feedback_scheduled_date),
                old_value: Kernel.to_string(old_value)
@@ -714,7 +716,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     end
   end
 
-  defp generate_setting_changes(assessment, values, section_id, user_id) do
+  defp generate_setting_changes(assessment, values, section_id, user) do
     date = DateTime.utc_now() |> DateTime.truncate(:second)
 
     Enum.map(values, fn {key, new_value} ->
@@ -723,7 +725,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       %{
         resource_id: assessment.resource_id,
         section_id: section_id,
-        user_id: user_id,
+        user_id: user.id,
+        user_type: get_user_type(user),
         key: Atom.to_string(key),
         new_value: Kernel.to_string(new_value),
         old_value: Kernel.to_string(old_value),
@@ -812,6 +815,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                resource_id: assessment.resource_id,
                section_id: section.id,
                user_id: user.id,
+               user_type: get_user_type(user),
                key: Atom.to_string(date_field),
                new_value: Kernel.to_string(new_date),
                old_value: Kernel.to_string(old_value)
@@ -884,6 +888,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                resource_id: assessment_setting_id,
                section_id: section.id,
                user_id: user.id,
+               user_type: get_user_type(user),
                key: Atom.to_string(key),
                new_value: Kernel.to_string(new_value),
                old_value: Kernel.to_string(old_value)
@@ -1085,4 +1090,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     send(self(), {:flash_message, type, message})
     socket
   end
+
+  defp get_user_type(%Author{} = _), do: :author
+  defp get_user_type(_), do: :instructor
 end
