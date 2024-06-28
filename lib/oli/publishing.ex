@@ -485,8 +485,7 @@ defmodule Oli.Publishing do
       with {:ok, publication} <-
              create_publication(%{
                project_id: project.id,
-               root_resource_id: resource.id,
-               ids_added: true
+               root_resource_id: resource.id
              }),
            {:ok, published_resource} <-
              create_published_resource(%{
@@ -1029,8 +1028,7 @@ defmodule Oli.Publishing do
                {:ok, new_publication} <-
                  create_publication(%{
                    root_resource_id: active_publication.root_resource_id,
-                   project_id: active_publication.project_id,
-                   ids_added: true
+                   project_id: active_publication.project_id
                  }),
 
                # Release all locks
@@ -1051,8 +1049,7 @@ defmodule Oli.Publishing do
                      description: description,
                      edition: edition,
                      major: major,
-                     minor: minor,
-                     ids_added: true
+                     minor: minor
                    }
                  ) do
             Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)

@@ -2245,9 +2245,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
-      # when the garbage collection message is recieved we know the async metrics were loaded
+      # when the garbage collection message is received we know the async metrics were loaded
       # since the gc message is sent from the handle_info that loads the async metrics
       assert_receive(:gc, 2_000)
+
+      wait_while(fn ->
+        !has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
+      end)
 
       assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
     end
