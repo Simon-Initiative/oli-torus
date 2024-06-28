@@ -381,7 +381,8 @@ defmodule OliWeb.Delivery.Student.Utils do
       end
 
     Sections.get_container_label_and_numbering(
-      container,
+      container.numbering_level,
+      container.numbering_index,
       section.customizations
     )
   end
