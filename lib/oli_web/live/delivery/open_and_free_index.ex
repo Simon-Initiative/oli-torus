@@ -78,7 +78,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
               <.form for={%{}} phx-change="search_section" class="w-[330px]">
                 <SearchInput.render
                   id="section_search_input"
-                  name="search"
+                  name="text_search"
                   placeholder="Search by course or instructor name"
                   text={@params.text_search}
                 />
@@ -158,7 +158,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("search_section", %{"search" => text_search}, socket) do
+  def handle_event("search_section", %{"text_search" => text_search}, socket) do
     {:noreply, push_patch(socket, to: ~p"/sections?#{%{text_search: text_search}}")}
   end
 
