@@ -155,15 +155,20 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   defp init_context_state(
          %{
            assigns: %{
-             page_context: %PageContext{
-               page: %{graded: false}
-             }
+             page_context:
+               %PageContext{
+                 page: %{graded: false}
+               } = page_context
            }
          } =
            socket,
          _params
        ) do
-    assign(socket, %{view: :practice_page})
+    assign(socket, %{
+      view: :practice_page,
+      activity_count: map_size(page_context.activities),
+      advanced_delivery: Map.get(page_context.page.content, "advancedDelivery", false)
+    })
   end
 
   # Display the prologue view for graded pages
