@@ -4,9 +4,11 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1]
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Common.FormatDateTime
@@ -19,15 +21,42 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
+  # this is an optimization to reduce the memory footprint of the liveview process
+  @required_keys_per_assign %{
+    section:
+      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :resource_gating_index, :customizations],
+       %Sections.Section{}},
+    current_user: {[:id, :name, :email], %User{}}
+  }
+
   def mount(params, _session, socket) do
+    %{page_context: page_context} = socket.assigns
+
+    if connected?(socket) do
+      send(self(), :gc)
+    end
+
     {:ok,
      socket
      |> assign_objectives()
-     |> assign(request_path: params["request_path"], selected_view: params["selected_view"])}
+     |> assign(
+       request_path: params["request_path"],
+       selected_view: params["selected_view"],
+       password: page_context.effective_settings.password,
+       page_revision: page_context.page,
+       effective_settings: page_context.effective_settings
+     )
+     |> slim_assigns(), temporary_assigns: [page_context: %{}]}
+  end
+
+  def handle_info(:gc, socket) do
+    :erlang.garbage_collect(socket.transport_pid)
+    :erlang.garbage_collect(self())
+    {:noreply, socket}
   end
 
   def handle_event("begin_attempt", %{"password" => password}, socket)
-      when password != socket.assigns.page_context.effective_settings.password do
+      when password != socket.assigns.password do
     {:noreply, put_flash(socket, :error, "Incorrect password")}
   end
 
@@ -35,13 +64,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     %{
       current_user: user,
       section: section,
-      page_context: %{effective_settings: effective_settings, page: revision},
+      page_revision: page_revision,
+      effective_settings: effective_settings,
       ctx: ctx
     } = socket.assigns
 
     case Settings.check_start_date(effective_settings) do
       {:allowed} ->
-        do_start_attempt(socket, section, user, revision, effective_settings)
+        do_start_attempt(socket, section, user, page_revision, effective_settings)
 
       {:before_start_date} ->
         {:noreply,
@@ -350,5 +380,19 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       [] -> :ok
       gates -> {:error, {:gates, gates}}
     end
+  end
+
+  defp slim_assigns(socket) do
+    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
+                                                      socket ->
+      assign(
+        socket,
+        assign_name,
+        Map.merge(
+          struct,
+          Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
+        )
+      )
+    end)
   end
 end
