@@ -619,8 +619,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       class={[
-        "flex justify-center items-center absolute top-2 left-2 p-4 z-50",
-        if(!@show_sidebar, do: "xl:top-10 xl:left-12")
+        "flex justify-center items-center absolute top-12 left-2 p-4 z-50",
+        if(!@show_sidebar, do: "2xl:top-12 2xl:left-8")
       ]}
       role="back_link"
     >
