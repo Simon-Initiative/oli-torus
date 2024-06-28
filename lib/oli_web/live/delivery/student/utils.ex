@@ -127,22 +127,20 @@ defmodule OliWeb.Delivery.Student.Utils do
         </div>
         <div
           :for={{objective, index} <- Enum.with_index(@objectives, 1)}
-          class="self-stretch flex-col justify-start items-start flex ml-6"
+          class="self-stretch flex-col justify-start items-start ml-6 w-full"
           role={"objective #{objective.resource_id}"}
         >
-          <div class="relative h-[21px] justify-start items-center gap-[19px] inline-flex">
+          <div class="relative justify-start items-center gap-[19px] inline-flex w-full">
             <.proficiency_icon_with_tooltip objective={objective} />
-            <div class="justify-start items-start gap-3.5 flex">
-              <div class="justify-start items-start gap-[17px] flex">
-                <div class="w-5 text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
-                  L<%= index %>
-                </div>
-                <div
-                  role={"objective #{objective.resource_id} title"}
-                  class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
-                >
-                  <%= objective.title %>
-                </div>
+            <div class="justify-start items-start flex w-full">
+              <div class="text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px] min-w-[2rem]">
+                L<%= index %>
+              </div>
+              <div
+                role={"objective #{objective.resource_id} title"}
+                class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
+              >
+                <%= objective.title %>
               </div>
             </div>
           </div>
@@ -213,7 +211,9 @@ defmodule OliWeb.Delivery.Student.Utils do
     >
     </div>
     <div class="w-6 h-6 flex items-center justify-center">
-      <Icons.proficiency proficiency={@objective.proficiency} />
+      <div class="absolute top-0 left-0">
+        <Icons.proficiency proficiency={@objective.proficiency} />
+      </div>
     </div>
     <div
       id={"objective_#{@objective.resource_id}_tooltip"}
