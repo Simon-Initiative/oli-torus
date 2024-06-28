@@ -988,7 +988,7 @@ defmodule OliWeb.Router do
         live("/practice", Delivery.Student.PracticeLive)
       end
 
-      scope "/lesson/:revision_slug" do
+      scope "/prologue/:revision_slug" do
         live_session :delivery_lesson,
           root_layout: {OliWeb.LayoutView, :delivery},
           layout: {OliWeb.Layouts, :student_delivery_lesson},
@@ -996,6 +996,25 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetUser,
             OliWeb.LiveSessionPlugs.SetSection,
             {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+            OliWeb.LiveSessionPlugs.RedirectToLesson,
+            OliWeb.LiveSessionPlugs.SetBrand,
+            OliWeb.LiveSessionPlugs.SetPreviewMode,
+            OliWeb.LiveSessionPlugs.RequireEnrollment,
+            OliWeb.LiveSessionPlugs.SetRequestPath
+          ] do
+          live("/", Delivery.Student.PrologueLive)
+        end
+      end
+
+      scope "/lesson/:revision_slug" do
+        live_session :delivery_prologue,
+          root_layout: {OliWeb.LayoutView, :delivery},
+          layout: {OliWeb.Layouts, :student_delivery_lesson},
+          on_mount: [
+            OliWeb.LiveSessionPlugs.SetUser,
+            OliWeb.LiveSessionPlugs.SetSection,
+            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+            OliWeb.LiveSessionPlugs.RedirectToPrologue,
             OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless,
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,

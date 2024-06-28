@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     ~p"/sections/#{section_slug}/adaptive_lesson/#{revision_slug}?request_path=#{request_path}"
   end
 
-  defp create_attempt(student, section, revision, resource_attempt_data \\ %{}) do
+  defp create_attempt(student, section, revision, resource_attempt_data) do
     resource_access = get_or_insert_resource_access(student, section, revision)
 
     resource_attempt =
@@ -532,60 +532,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
     end
 
-    test "can see prologue on graded pages with no attempt in progress", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
-      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-    end
-
-    test "can see prologue on graded adaptive pages with no attempt in progress", %{
-      conn: conn,
-      user: user,
-      section: section,
-      graded_adaptive_page_revision: graded_adaptive_page_revision
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page_revision.slug))
-
-      assert has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
-      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
-    end
-
-    @tag isolation: "serializable"
-    test "can begin an attempt from the prologue view on graded adaptive pages", %{
-      conn: conn,
-      user: user,
-      section: section,
-      graded_adaptive_page_revision: graded_adaptive_page_revision
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, graded_adaptive_page_revision.slug))
-
-      view
-      |> element("button[id='begin_attempt_button']", "Begin 1st Attempt")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}"
-      )
-    end
-
     test "does not see prologue but graded page when an attempt is in progress", %{
       conn: conn,
       user: user,
@@ -624,162 +570,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[id='delivery_container']")
       # It loads the adaptive themes
       assert html =~ "/css/delivery_adaptive_themes_default_light.css"
-    end
-
-    test "password (if set by instructor) is required to begin a new attempt", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-      sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{password: "correct_password"})
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      # if we render_click() on the button to begin the attempt, a JS command shows the modal.
-      # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
-      # The workaround is to directly submit the form in the modal (that it is actully in the DOM but hidden)
-      # https://elixirforum.com/t/testing-liveview-with-js-commands/44892/5
-
-      view
-      |> form("#password_attempt_form")
-      |> render_submit(%{password: "some incorrect password"})
-
-      assert has_element?(view, "div[id='live_flash_container']", "Incorrect password")
-      refute has_element?(view, "div[role='page content']")
-      refute has_element?(view, "button[id=submit_answers]", "Submit Answers")
-    end
-
-    test "can see attempt summary (number, score, submitted at and review link) on prologue", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      _first_attempt = create_attempt(user, section, page_3)
-
-      _second_attempt =
-        create_attempt(user, section, page_3, %{
-          date_submitted: ~U[2023-11-15 20:00:00Z],
-          date_evaluated: ~U[2023-11-15 20:10:00Z],
-          score: 10,
-          out_of: 10
-        })
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      assert has_element?(view, "div[id='attempts_summary']", "Attempts 2/5")
-      assert has_element?(view, "div[id='attempts_summary']", "Review")
-
-      assert has_element?(
-               view,
-               "div[id='attempt_1_summary'] div[role='attempt score']",
-               "5.0"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_1_summary'] div[role='attempt out of']",
-               "10.0"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_1_summary'] div[role='attempt submission']",
-               "Tue Nov 14, 2023"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_2_summary'] div[role='attempt score']",
-               "10.0"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_2_summary'] div[role='attempt out of']",
-               "10.0"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_2_summary'] div[role='attempt submission']",
-               "Wed Nov 15, 2023"
-             )
-    end
-
-    test "Review link redirects to the lesson review page", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      attempt = create_attempt(user, section, page_3)
-
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_3.resource_id)
-
-      {:ok, view, _html} =
-        live(conn, Utils.lesson_live_path(section.slug, page_3.slug, request_path: request_path))
-
-      view
-      |> element(~s{a[role="review_attempt_link"]})
-      |> render_click
-
-      assert_redirected(
-        view,
-        Utils.review_live_path(section.slug, page_3.slug, attempt.attempt_guid,
-          request_path: request_path
-        )
-      )
-    end
-
-    test "Review link redirects to the lesson review page for adaptive chromeles pages",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           graded_adaptive_page_revision: graded_adaptive_page_revision
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      attempt = create_attempt(user, section, graded_adaptive_page_revision)
-
-      request_path =
-        Utils.learn_live_path(section.slug,
-          target_resource_id: graded_adaptive_page_revision.resource_id
-        )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_adaptive_lesson_live_route(
-            section.slug,
-            graded_adaptive_page_revision.slug,
-            request_path
-          )
-        )
-
-      view
-      |> element(~s{a[role="review_attempt_link"]})
-      |> render_click
-
-      assert_redirected(
-        view,
-        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: request_path}}"
-      )
-
-      # Note that the student will then be redirected to the adaptive chromeless review path in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless
-      # (tested in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest)
     end
 
     test "back button of an adaptive page (NOT an exploration one) points to the provided url param 'request_path'",
@@ -896,106 +686,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
              |> Map.get("backUrl")
     end
 
-    test "does not render 'Review' link on attempt summary if instructor does not allow it", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      _first_attempt = create_attempt(user, section, page_3)
-
-      sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{review_submission: :disallow})
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      assert has_element?(view, "div[id='attempts_summary']", "Attempts 1/5")
-      refute has_element?(view, "div[id='attempts_summary']", "Review")
-    end
-
-    test "can see attempt message tooltip summary", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      _first_attempt = create_attempt(user, section, page_3)
-      _second_attempt = create_attempt(user, section, page_3)
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      assert has_element?(
-               view,
-               "div[id='attempt_tooltip']",
-               "You have 3 attempts remaining out of 5 total attempts."
-             )
-    end
-
-    test "can not begin a new attempt if there are no more attempts available", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 2})
-
-      _first_attempt = create_attempt(user, section, page_3)
-      _second_attempt = create_attempt(user, section, page_3)
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      assert has_element?(
-               view,
-               "div[id='attempt_tooltip']",
-               "You have no attempts remaining out of 2 total attempts."
-             )
-
-      assert has_element?(view, "button[id='begin_attempt_button'][disabled='disabled']")
-    end
-
-    @tag isolation: "serializable"
-    test "can begin a new attempt from prologue (and its ordinal numbering is correct)", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      sr = Sections.get_section_resource(section.id, page_3.resource_id)
-      Sections.update_section_resource(sr, %{max_attempts: 2})
-
-      _first_attempt = create_attempt(user, section, page_3)
-
-      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
-      assert has_element?(
-               view,
-               "div[id='attempt_tooltip']",
-               "You have 1 attempt remaining out of 2 total attempts."
-             )
-
-      assert has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
-
-      view
-      |> element("button[id='begin_attempt_button']")
-      |> render_click()
-
-      refute has_element?(view, "button[id='begin_attempt_button']", "Begin 2nd Attempt")
-      assert has_element?(view, ~s{svg[role=spinner]})
-    end
-
     test "can see page info on header", %{
       conn: conn,
       user: user,
@@ -1071,38 +761,54 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
 
-      assert has_element?(view, ~s{div[role="objective 1 title"]}, "this is the first objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o1} title"]},
+               "this is the first objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 1"] svg[role="beginning proficiency icon"]}
+               ~s{div[role="objective #{o1}"] svg[role="beginning proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o1}_tooltip"]}, "Beginning Proficiency")
 
-      assert has_element?(view, ~s{div[role="objective 2 title"]}, "this is the second objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o2} title"]},
+               "this is the second objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 2"] svg[role="growing proficiency icon"]}
+               ~s{div[role="objective #{o2}"] svg[role="growing proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o2}_tooltip"]}, "Growing Proficiency")
 
-      assert has_element?(view, ~s{div[role="objective 3 title"]}, "this is the third objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o3} title"]},
+               "this is the third objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 3"] svg[role="establishing proficiency icon"]}
+               ~s{div[role="objective #{o3}"] svg[role="establishing proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o3}_tooltip"]}, "Establishing Proficiency")
 
-      assert has_element?(view, ~s{div[role="objective 4 title"]}, "this is the forth objective")
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o4} title"]},
+               "this is the forth objective"
+             )
 
       assert has_element?(
                view,
-               ~s{div[role="objective 4"] svg[role="no data proficiency icon"]}
+               ~s{div[role="objective #{o4}"] svg[role="no data proficiency icon"]}
              )
 
       assert has_element?(view, ~s{div[id="objective_#{o4}_tooltip"]}, "Not enough information")
@@ -1269,66 +975,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert_redirected(
         view,
         request_path
-      )
-    end
-
-    test "back link in a graded adaptive page returns to the learn view when visited from there",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           graded_adaptive_page_revision: graded_adaptive_page_revision
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      request_path =
-        Utils.learn_live_path(section.slug,
-          target_resource_id: graded_adaptive_page_revision.resource_id
-        )
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_adaptive_lesson_live_route(
-            section.slug,
-            graded_adaptive_page_revision.slug,
-            request_path
-          )
-        )
-
-      view
-      |> element(~s{div[role="back_link"] a})
-      |> render_click
-
-      assert_redirected(
-        view,
-        request_path
-      )
-    end
-
-    test "back link in a graded adaptive page returns to the learn view when visited directly", %{
-      conn: conn,
-      user: user,
-      section: section,
-      graded_adaptive_page_revision: graded_adaptive_page_revision
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} =
-        live(
-          conn,
-          live_view_adaptive_lesson_live_route(section.slug, graded_adaptive_page_revision.slug)
-        )
-
-      view
-      |> element(~s{div[role="back_link"] a})
-      |> render_click
-
-      assert_redirected(
-        view,
-        Utils.learn_live_path(section.slug, selected_view: @default_selected_view)
       )
     end
   end
