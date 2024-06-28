@@ -73,33 +73,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       send(self(), :gc)
     end
 
-    %{
-      resource_attempts: resource_attempts,
-      effective_settings: effective_settings,
-      review_mode: review_mode
-    } =
-      socket.assigns.page_context
-
-    resource_attempt = hd(resource_attempts)
+    resource_attempt = hd(page_context.resource_attempts)
 
     effective_end_time =
-      Settings.determine_effective_deadline(resource_attempt, effective_settings)
+      Settings.determine_effective_deadline(resource_attempt, page_context.effective_settings)
       |> to_epoch()
 
     {:ok,
      socket
      |> assign_html_and_scripts()
-     |> assign(
-       effective_end_time: effective_end_time,
-       auto_submit: effective_settings.late_submit == :disallow,
-       time_limit: effective_settings.time_limit,
-       attempt_start_time: resource_attempt.inserted_at |> to_epoch,
-       review_mode: review_mode
-     )
      |> assign_objectives()
      |> assign(
        revision_slug: page_context.page.slug,
-       attempt_guid: hd(page_context.resource_attempts).attempt_guid
+       attempt_guid: hd(page_context.resource_attempts).attempt_guid,
+       effective_end_time: effective_end_time,
+       auto_submit: page_context.effective_settings.late_submit == :disallow,
+       time_limit: page_context.effective_settings.time_limit,
+       attempt_start_time: resource_attempt.inserted_at |> to_epoch,
+       review_mode: page_context.review_mode
      )
      |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
   end
