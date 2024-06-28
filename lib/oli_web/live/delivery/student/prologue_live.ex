@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :resource_gating_index],
+      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :resource_gating_index, :customizations],
        %Sections.Section{}},
     current_user: {[:id, :name, :email], %User{}}
   }
