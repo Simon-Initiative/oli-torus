@@ -15,9 +15,10 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Phoenix.LiveView.JS
+  alias OliWeb.Common.SessionContext
 
   attr :page_context, Oli.Delivery.Page.PageContext
-  attr :ctx, OliWeb.Common.SessionContext
+  attr :ctx, SessionContext
   attr :objectives, :list
   attr :index, :string
   attr :container_label, :string
@@ -32,7 +33,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 role="container label"
-                class="opacity-50 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
+                class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider"
               >
                 <%= @container_label %>
               </div>
@@ -48,7 +49,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                 role="graded page marker"
               >
                 <Icons.flag />
-                <div class="opacity-50 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
+                <div class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider">
                   Graded Page
                 </div>
               </div>
@@ -58,45 +59,42 @@ defmodule OliWeb.Delivery.Student.Utils do
               class="px-2 py-1 bg-gray-300 bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
-              <div class="dark:text-white text-[10px] font-normal font-['Open Sans']">
+              <div class="dark:text-white text-[10px] font-normal">
                 Assignment requirement
               </div>
             </div>
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
-            <div
-              role="page numbering index"
-              class="opacity-50 dark:text-white text-[38px] font-bold font-['Open Sans']"
-            >
+            <div role="page numbering index" class="opacity-50 dark:text-white text-[38px] font-bold">
               <%= @index %>.
             </div>
-            <div
-              role="page title"
-              class="grow shrink basis-0 dark:text-white text-[38px] font-bold font-['Open Sans']"
-            >
+            <div role="page title" class="grow shrink basis-0 dark:text-white text-[38px] font-bold">
               <%= @page_context.page.title %>
             </div>
           </div>
         </div>
         <div class="justify-start items-center gap-3 inline-flex">
-          <div class="opacity-50 justify-start items-center gap-1.5 flex">
+          <div
+            :if={@page_context.page.duration_minutes}
+            class="opacity-50 justify-start items-center gap-1.5 flex"
+          >
             <div role="page read time" class="justify-end items-center gap-1 flex">
               <div class="w-[18px] h-[18px] relative opacity-80">
                 <Icons.time />
               </div>
               <div class="justify-end items-end gap-0.5 flex">
-                <div class="text-right dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
+                <div class="text-right dark:text-white text-xs font-bold uppercase tracking-wide">
                   <%= @page_context.page.duration_minutes %>
                 </div>
-                <div class="dark:text-white text-[9px] font-bold font-['Open Sans'] uppercase tracking-wide">
+                <div class="dark:text-white text-[9px] font-bold uppercase tracking-wide">
                   min
                 </div>
               </div>
             </div>
           </div>
           <div role="page schedule" class="justify-start items-start gap-1 flex">
-            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">Due:</div>
-            <div class="dark:text-white text-xs font-normal font-['Open Sans']">
+            <div class="opacity-50 dark:text-white text-xs font-normal">Due:</div>
+            <div class="dark:text-white text-xs font-normal">
               <%= FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
                 @ctx,
@@ -130,7 +128,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         <div
           :for={{objective, index} <- Enum.with_index(@objectives, 1)}
           class="self-stretch flex-col justify-start items-start ml-6 w-full"
-          role={"objective #{index}"}
+          role={"objective #{objective.resource_id}"}
         >
           <div class="relative justify-start items-center gap-[19px] inline-flex w-full">
             <.proficiency_icon_with_tooltip objective={objective} />
@@ -139,7 +137,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                 L<%= index %>
               </div>
               <div
-                role={"objective #{index} title"}
+                role={"objective #{objective.resource_id} title"}
                 class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
               >
                 <%= objective.title %>
@@ -286,6 +284,26 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def lesson_live_path(section_slug, revision_slug, params),
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
+
+  @doc """
+  Generates a URL for the Prologue view for a given graded page.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `prologue_live_path("math", "intro")` returns `"/sections/math/prologue/intro"`.
+    - `prologue_live_path("math", "intro", request_path: "some/previous/url")` returns `"/sections/math/prologue/intro?request_path=some/previous/url"`.
+  """
+  def prologue_live_path(section_slug, revision_slug, params \\ [])
+
+  def prologue_live_path(section_slug, revision_slug, []),
+    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
+
+  def prologue_live_path(section_slug, revision_slug, params),
+    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
 
   @doc """
   Generates a URL for reviewing an attempt of a lesson.
@@ -467,22 +485,29 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   @doc """
   Calculates the number of days from today to the given end date of a resource and returns a human-readable string describing the difference.
+  It considers the user's timezone to calculate the difference.
 
   ## Parameters:
   - `resource_end_date`: The `DateTime` representing the end date of the resource.
+  - `context`: The `SessionContext` struct containing the user's timezone information.
 
   ## Returns:
   - A string indicating the number of days until or since the resource end date, such as "Due Today", "1 day left", or "Past Due by X days".
 
   ## Examples:
-      iex> days_difference(~U[2024-05-12T00:00:00Z])
+      iex> days_difference(~U[2024-05-12T00:00:00Z], %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
-  @spec days_difference(DateTime.t()) :: String.t()
-  def days_difference(resource_end_date) do
-    days = resource_end_date |> DateTime.to_date() |> Timex.diff(Oli.Date.utc_today(), :days)
+  @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
+  def days_difference(resource_end_date, context) do
+    localized_end_date =
+      resource_end_date
+      |> OliWeb.Common.FormatDateTime.maybe_localized_datetime(context)
+      |> DateTime.to_date()
 
-    case days do
+    today = context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()
+
+    case Timex.diff(localized_end_date, today, :days) do
       0 ->
         "Due Today"
 
@@ -490,7 +515,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         "1 day left"
 
       -1 ->
-        "Past Due"
+        "Past Due by a day"
 
       days when days < 0 ->
         "Past Due by #{abs(days)} days"

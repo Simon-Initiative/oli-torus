@@ -27,13 +27,11 @@ defmodule OliWeb.ViewHelpers do
   def brand_logo(assigns) do
     ~H"""
     <img
-      :if={assigns[:section]}
       src={brand_logo_url(assigns[:section])}
       class={[value_or(assigns[:class], ""), "inline-block dark:hidden"]}
       alt={brand_name(assigns[:section])}
     />
     <img
-      :if={assigns[:section]}
       src={brand_logo_url_dark(assigns[:section])}
       class={[value_or(assigns[:class], ""), "hidden dark:inline-block"]}
       alt={brand_name(assigns[:section])}

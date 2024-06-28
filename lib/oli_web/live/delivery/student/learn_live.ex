@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     total_duration_minutes: 0
   }
 
-  @default_image "/images/course_default.jpg"
+  @default_image "/images/course_default.png"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:

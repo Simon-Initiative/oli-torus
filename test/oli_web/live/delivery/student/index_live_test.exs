@@ -659,7 +659,13 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
   end
 
   describe "student" do
-    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+    setup [
+      :user_conn,
+      :set_timezone,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
 
     test "can access when enrolled to course", %{conn: conn, section: section} do
       stub_current_time(~U[2023-11-04 20:00:00Z])
@@ -968,7 +974,13 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
   end
 
   describe "my assignments" do
-    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+    setup [
+      :user_conn,
+      :set_timezone,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
 
     test "displays default message when there are no upcoming assignments", %{
       conn: conn,
@@ -1036,7 +1048,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
              )
 
-      assert has_element?(view, first_assignment <> ~s{div[role=details]}, "1 day left")
+      assert has_element?(view, first_assignment <> ~s{div[role=details]}, "2 days left")
 
       # Second upcoming assignment
       assert element(
@@ -1055,7 +1067,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
 
-      assert has_element?(view, second_assignment <> ~s{div[role=details]}, "2 days left")
+      assert has_element?(view, second_assignment <> ~s{div[role=details]}, "3 days left")
 
       # Third upcoming assignment
       assert element(
@@ -1074,7 +1086,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
                third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
              )
 
-      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "3 days left")
+      assert has_element?(view, third_assignment <> ~s{div[role=details]}, "4 days left")
     end
 
     test "displays three latest assignments", %{

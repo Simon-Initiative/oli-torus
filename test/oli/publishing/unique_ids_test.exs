@@ -1,5 +1,12 @@
 defmodule Oli.Publishing.UniqueIdsTest do
-  use ExUnit.Case, async: true
+  use Oli.DataCase
+
+  import Oli.Utils.Seeder.Utils
+
+  alias Oli.Repo
+  alias Oli.Utils.Seeder
+  alias Oli.Resources
+  alias Oli.Publishing.PublishedResource
   alias Oli.Publishing.UniqueIds
   alias Oli.TestHelpers
 
@@ -43,7 +50,8 @@ defmodule Oli.Publishing.UniqueIdsTest do
     assert total == 22
 
     # Now uniqueify the ids in the content and count the "id" attributes again.
-    updated = UniqueIds.uniqueify(content, Oli.Resources.ResourceType.get_id_by_type("page"), 1)
+    {:ok, updated} =
+      UniqueIds.uniqueify(content, Oli.Resources.ResourceType.get_id_by_type("page"), 1)
 
     counts_after =
       extract_ids(updated)
@@ -63,7 +71,7 @@ defmodule Oli.Publishing.UniqueIdsTest do
   test "uniqueify/3 handles activity content correctly" do
     {:ok, content} = TestHelpers.read_json_file("./test/oli/publishing/activity.json")
 
-    updated =
+    {:ok, updated} =
       UniqueIds.uniqueify(content, Oli.Resources.ResourceType.get_id_by_type("activity"), 1)
 
     {original_ids, updated_ids} =
@@ -84,5 +92,100 @@ defmodule Oli.Publishing.UniqueIdsTest do
     # verfiy that the "id" of the input_ref remains unchanged
     input_ref = updated["stem"]["content"] |> Enum.at(2)
     assert input_ref["id"] == "1"
+  end
+
+  describe "add_unique_ids/1" do
+    setup [:setup_publication]
+
+    test "adds unique ids to content revisions in which id's have not already been added to", %{
+      project: project,
+      unscored_page1: unscored_page1,
+      unscored_page1_activity: unscored_page1_activity,
+      scored_page2: scored_page2,
+      scored_page2_activity: scored_page2_activity
+    } do
+      unscored_page1_resource_id = unscored_page1.resource_id
+      unscored_page1_activity_resource_id = unscored_page1_activity.resource_id
+      scored_page2_resource_id = scored_page2.resource_id
+      scored_page2_activity_resource_id = scored_page2_activity.resource_id
+
+      assert %Oli.Resources.Revision{ids_added: false} =
+               Resources.get_revision!(unscored_page1.id)
+
+      assert %Oli.Resources.Revision{ids_added: false} =
+               Resources.get_revision!(unscored_page1_activity.id)
+
+      assert %Oli.Resources.Revision{ids_added: false} =
+               Resources.get_revision!(scored_page2.id)
+
+      assert %Oli.Resources.Revision{ids_added: false} =
+               Resources.get_revision!(scored_page2_activity.id)
+
+      # publish the project
+      {:ok, published} = Oli.Publishing.publish_project(project, "initial publish", 1)
+
+      # verify that the ids_added field is set to true for the revisions
+      assert %Oli.Publishing.PublishedResource{
+               revision: %Oli.Resources.Revision{
+                 resource_id: ^unscored_page1_resource_id,
+                 ids_added: true
+               }
+             } = get_published_resource(published.id, unscored_page1_resource_id)
+
+      assert %Oli.Publishing.PublishedResource{
+               revision: %Oli.Resources.Revision{
+                 resource_id: ^unscored_page1_activity_resource_id,
+                 ids_added: true
+               }
+             } = get_published_resource(published.id, unscored_page1_activity_resource_id)
+
+      assert %Oli.Publishing.PublishedResource{
+               revision: %Oli.Resources.Revision{
+                 resource_id: ^scored_page2_resource_id,
+                 ids_added: true
+               }
+             } = get_published_resource(published.id, scored_page2_resource_id)
+
+      assert %Oli.Publishing.PublishedResource{
+               revision: %Oli.Resources.Revision{
+                 resource_id: ^scored_page2_activity_resource_id,
+                 ids_added: true
+               }
+             } = get_published_resource(published.id, scored_page2_activity_resource_id)
+    end
+  end
+
+  defp setup_publication(_) do
+    %{}
+    |> Seeder.Project.create_author(author_tag: :author)
+    |> Seeder.Project.create_sample_project(
+      ref(:author),
+      project_tag: :project,
+      publication_tag: :pub,
+      unscored_page1_tag: :unscored_page1,
+      unscored_page1_activity_tag: :unscored_page1_activity,
+      scored_page2_tag: :scored_page2,
+      scored_page2_activity_tag: :scored_page2_activity
+    )
+    |> Seeder.Project.edit_page(ref(:project), ref(:unscored_page1), %{ids_added: false},
+      revision_tag: :unscored_page1
+    )
+    |> Seeder.Project.edit_page(ref(:project), ref(:unscored_page1_activity), %{ids_added: false},
+      revision_tag: :unscored_page1_activity
+    )
+    |> Seeder.Project.edit_page(ref(:project), ref(:scored_page2), %{ids_added: false},
+      revision_tag: :scored_page2
+    )
+    |> Seeder.Project.edit_page(ref(:project), ref(:scored_page2_activity), %{ids_added: false},
+      revision_tag: :scored_page2_activity
+    )
+  end
+
+  defp get_published_resource(publication_id, resource_id) do
+    Repo.one(
+      from p in PublishedResource,
+        where: p.publication_id == ^publication_id and p.resource_id == ^resource_id,
+        preload: [:revision]
+    )
   end
 end

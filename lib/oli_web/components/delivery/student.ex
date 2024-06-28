@@ -325,9 +325,9 @@ defmodule OliWeb.Components.Delivery.Student do
         <Icons.clock />
       </div>
       <div class="text-right dark:text-white opacity-60 whitespace-nowrap">
-        <span class="text-sm font-semibold font-['Open Sans']" role="duration in minutes">
+        <span class="text-sm font-semibold" role="duration in minutes">
           <%= @duration_minutes %>
-          <span class="w-[25px] self-stretch text-[13px] font-semibold font-['Open Sans']">
+          <span class="w-[25px] self-stretch text-[13px] font-semibold">
             min
           </span>
         </span>
