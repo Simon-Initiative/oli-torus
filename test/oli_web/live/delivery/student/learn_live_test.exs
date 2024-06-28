@@ -2770,8 +2770,14 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "redirects and ensures navigation to the preview Notes page", %{
       conn: conn,
-      section: section
+      author: author,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
     } do
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
+
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 
