@@ -9,6 +9,6 @@ defmodule OliWeb.Common.SourceImage do
   end
 
   def cover_image(_) do
-    Routes.static_path(OliWeb.Endpoint, "/images/course_default.jpg")
+    Routes.static_path(OliWeb.Endpoint, "/images/course_default.png")
   end
 end

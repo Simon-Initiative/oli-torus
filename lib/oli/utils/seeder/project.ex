@@ -502,8 +502,7 @@ defmodule Oli.Utils.Seeder.Project do
     {:ok, publication} =
       Publication.changeset(%Publication{}, %{
         root_resource_id: curriculum_resource.id,
-        project_id: project.id,
-        ids_added: true
+        project_id: project.id
       })
       |> Repo.insert()
 
@@ -548,7 +547,8 @@ defmodule Oli.Utils.Seeder.Project do
         title: "New Page",
         objectives: %{"attached" => []},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-        content: %{"model" => []}
+        content: %{"model" => []},
+        ids_added: true
       }
       |> Map.merge(attrs)
       |> Map.merge(%{
@@ -677,7 +677,20 @@ defmodule Oli.Utils.Seeder.Project do
     activity_tag = tags[:activity_tag] || random_tag()
 
     content = %{
-      "stem" => "Example MCQ activity. Correct answer is 'Choice A'",
+      "stem" => %{
+        "id" => "1231233",
+        "content" => [
+          %{
+            "children" => [
+              %{
+                "text" => "Example MCQ activity. Correct answer is 'Choice A'"
+              }
+            ],
+            "id" => "2624267864",
+            "type" => "p"
+          }
+        ]
+      },
       "authoring" => %{
         "parts" => [
           maybe_add_explanation(
@@ -846,7 +859,8 @@ defmodule Oli.Utils.Seeder.Project do
         objectives: %{},
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
         content: %{},
-        title: "test"
+        title: "test",
+        ids_added: true
       }
       |> Map.merge(attrs)
       |> Map.merge(%{

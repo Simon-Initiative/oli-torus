@@ -130,6 +130,7 @@ defmodule Oli.Interop.Ingest do
                hierarchy_details,
                as_author
              ),
+           {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project, page_map),
            {:ok, _} <-
              create_products(
                project,
@@ -138,8 +139,7 @@ defmodule Oli.Interop.Ingest do
                page_map,
                container_map,
                as_author
-             ),
-           {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project, page_map) do
+             ) do
         project
       else
         {:error, error} -> Repo.rollback(error)

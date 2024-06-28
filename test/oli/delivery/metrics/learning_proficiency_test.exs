@@ -25,6 +25,26 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
     project = insert(:project, authors: [author])
 
     # revisions...
+
+    ## subobjectives
+    subobjective_a_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective A"
+      )
+
+    subobjective_b_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective B"
+      )
+
+    subobjective_c_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Sub-objective C"
+      )
+
     ## objectives
     objective_1_revision =
       insert(:revision,
@@ -48,6 +68,17 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       insert(:revision,
         resource_type_id: ResourceType.id_for_objective(),
         title: "Objective 4"
+      )
+
+    objective_5_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_objective(),
+        title: "Objective 5",
+        children: [
+          subobjective_a_revision.resource_id,
+          subobjective_b_revision.resource_id,
+          subobjective_c_revision.resource_id
+        ]
       )
 
     ## pages...
@@ -79,6 +110,13 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
         title: "Page 4"
       )
 
+    page_5_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.id_for_page(),
+        objectives: %{"attached" => [objective_5_revision.resource_id]},
+        title: "Page 5"
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -96,7 +134,11 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
         resource: insert(:resource),
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.id_for_container(),
-        children: [page_3_revision.resource_id, page_4_revision.resource_id],
+        children: [
+          page_3_revision.resource_id,
+          page_4_revision.resource_id,
+          page_5_revision.resource_id
+        ],
         content: %{},
         deleted: false,
         title: "Module 2"
@@ -137,166 +179,49 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
         title: "Root Container"
       })
 
+    all_revisions =
+      [
+        subobjective_a_revision,
+        subobjective_b_revision,
+        subobjective_c_revision,
+        objective_1_revision,
+        objective_2_revision,
+        objective_3_revision,
+        objective_4_revision,
+        objective_5_revision,
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        page_4_revision,
+        page_5_revision,
+        module_1_revision,
+        module_2_revision,
+        unit_1_revision,
+        unit_2_revision,
+        container_revision
+      ]
+
     # asociate resources to project
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: objective_1_revision.resource_id
-    })
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
 
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: objective_2_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: objective_3_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: objective_4_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: page_1_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: page_2_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: page_3_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: page_4_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: module_1_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: module_2_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: unit_1_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: unit_2_revision.resource_id
-    })
-
-    insert(:project_resource, %{
-      project_id: project.id,
-      resource_id: container_revision.resource_id
-    })
-
-    # publish project and resources
+    # publish project
     publication =
       insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
 
-    insert(:published_resource, %{
-      publication: publication,
-      resource: objective_1_revision.resource,
-      revision: objective_1_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: objective_2_revision.resource,
-      revision: objective_2_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: objective_3_revision.resource,
-      revision: objective_3_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: objective_4_revision.resource,
-      revision: objective_4_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: page_1_revision.resource,
-      revision: page_1_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: page_2_revision.resource,
-      revision: page_2_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: page_3_revision.resource,
-      revision: page_3_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: page_4_revision.resource,
-      revision: page_4_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: module_1_revision.resource,
-      revision: module_1_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: module_2_revision.resource,
-      revision: module_2_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: unit_1_revision.resource,
-      revision: unit_1_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: unit_2_revision.resource,
-      revision: unit_2_revision,
-      author: author
-    })
-
-    insert(:published_resource, %{
-      publication: publication,
-      resource: container_revision.resource,
-      revision: container_revision,
-      author: author
-    })
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
 
     # create section...
     section =
@@ -338,10 +263,15 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       page_2: page_2_revision,
       page_3: page_3_revision,
       page_4: page_4_revision,
+      page_5: page_5_revision,
+      subobjective_a: subobjective_a_revision,
+      subobjective_b: subobjective_b_revision,
+      subobjective_c: subobjective_c_revision,
       page_1_objective: objective_1_revision,
       page_2_objective: objective_2_revision,
       page_3_objective: objective_3_revision,
       page_4_objective: objective_4_revision,
+      page_5_objective: objective_5_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       unit_1: unit_1_revision,
@@ -662,26 +592,77 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       assert proficiency_for_student_per_page[page_3.resource_id] == "Low"
     end
 
-    test "proficiency_for_student_per_learning_objective/2 calculates correctly", %{
+    test "proficiency_for_student_per_learning_objective/3 calculates correctly", %{
       section: section,
       student_1: student_1,
+      student_2: student_2,
+      student_3: student_3,
       page_1: page_1,
       page_2: page_2,
       page_3: page_3,
+      page_5: page_5,
+      subobjective_a: subobjective_a,
+      subobjective_b: subobjective_b,
+      subobjective_c: subobjective_c,
       page_1_objective: page_1_obj,
       page_2_objective: page_2_obj,
-      page_3_objective: page_3_obj
+      page_3_objective: page_3_obj,
+      page_4_objective: page_4_obj,
+      page_5_objective: page_5_obj
     } do
       set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
       set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
       set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshot(section, page_5.resource, subobjective_a.resource, student_1, true)
+      set_snapshot(section, page_5.resource, subobjective_b.resource, student_1, true)
+      set_snapshot(section, page_5.resource, subobjective_c.resource, student_1, true)
 
       proficiency_for_student_per_learning_objective =
-        Metrics.proficiency_for_student_per_learning_objective(section, student_1.id)
+        Metrics.proficiency_for_student_per_learning_objective(
+          [page_1_obj, page_2_obj, page_3_obj, page_4_obj, page_5_obj],
+          student_1.id,
+          section
+        )
 
       assert proficiency_for_student_per_learning_objective[page_1_obj.resource_id] == "High"
       assert proficiency_for_student_per_learning_objective[page_2_obj.resource_id] == "Low"
       assert proficiency_for_student_per_learning_objective[page_3_obj.resource_id] == "Low"
+
+      assert proficiency_for_student_per_learning_objective[page_4_obj.resource_id] ==
+               "Not enough data"
+
+      assert proficiency_for_student_per_learning_objective[page_5_obj.resource_id] == "High"
+
+      set_snapshot(section, page_5.resource, subobjective_a.resource, student_2, true)
+      set_snapshot(section, page_5.resource, subobjective_b.resource, student_2, false)
+      set_snapshot(section, page_5.resource, subobjective_c.resource, student_2, true)
+
+      proficiency_for_student_2_per_learning_objective =
+        Metrics.proficiency_for_student_per_learning_objective(
+          [page_1_obj, page_5_obj],
+          student_2.id,
+          section
+        )
+
+      assert proficiency_for_student_2_per_learning_objective[page_1_obj.resource_id] ==
+               "Not enough data"
+
+      refute proficiency_for_student_2_per_learning_objective[page_2_obj.resource_id]
+
+      assert proficiency_for_student_2_per_learning_objective[page_5_obj.resource_id] == "Medium"
+
+      set_snapshot(section, page_5.resource, subobjective_a.resource, student_3, true)
+      set_snapshot(section, page_5.resource, subobjective_b.resource, student_3, false)
+      set_snapshot(section, page_5.resource, subobjective_c.resource, student_3, false)
+
+      proficiency_for_student_3_per_learning_objective =
+        Metrics.proficiency_for_student_per_learning_objective(
+          [page_5_obj],
+          student_3.id,
+          section
+        )
+
+      assert proficiency_for_student_3_per_learning_objective[page_5_obj.resource_id] == "Low"
     end
   end
 end

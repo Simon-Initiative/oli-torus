@@ -218,6 +218,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
     })
 
     %{
+      objective_1: objective_1_revision,
+      objective_2: objective_2_revision,
       section: section,
       page_1: page_1_revision,
       page_2: page_2_revision,
@@ -356,6 +358,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       conn: conn,
       user: user,
       section: section,
+      objective_1: o1,
+      objective_2: o2,
       page_2: page_2
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -370,8 +374,18 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
-      assert has_element?(view, ~s{div[role="objective 1"]}, "this is the first objective")
-      assert has_element?(view, ~s{div[role="objective 2"]}, "this is the second objective")
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o1.resource_id}"]},
+               "this is the first objective"
+             )
+
+      assert has_element?(
+               view,
+               ~s{div[role="objective #{o2.resource_id}"]},
+               "this is the second objective"
+             )
     end
 
     test "back to summary screen button redirects to the prologue page", %{

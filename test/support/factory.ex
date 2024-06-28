@@ -335,7 +335,8 @@ defmodule Oli.Factory do
       collab_space_config: build(:collab_space_config),
       content: %{
         "model" => []
-      }
+      },
+      ids_added: true
     }
   end
 

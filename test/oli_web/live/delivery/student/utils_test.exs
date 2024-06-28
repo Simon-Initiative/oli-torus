@@ -40,34 +40,57 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
   describe "days_difference/1" do
     setup do
       stub_current_time(DateTime.utc_now())
-      :ok
+
+      [
+        context: %OliWeb.Common.SessionContext{
+          browser_timezone: "America/Montevideo",
+          local_tz: "America/Montevideo",
+          author: nil,
+          user: nil,
+          is_liveview: false
+        }
+      ]
     end
 
-    test "returns 'Due Today' when the resource end date is today" do
+    test "returns 'Due Today' when the resource end date is today", %{context: ctx} do
       today = Oli.DateTime.utc_now()
-      assert Utils.days_difference(today) == "Due Today"
+      assert Utils.days_difference(today, ctx) == "Due Today"
     end
 
-    test "returns '1 day left' when the resource end date is tomorrow" do
+    test "returns '1 day left' when the resource end date is tomorrow", %{context: ctx} do
       tomorrow = Oli.DateTime.utc_now() |> Timex.shift(days: 1)
-      assert Utils.days_difference(tomorrow) == "1 day left"
+      assert Utils.days_difference(tomorrow, ctx) == "1 day left"
     end
 
-    test "returns 'Past Due' when the resource end date was yesterday" do
+    test "returns 'Past Due by a day' when the resource end date was yesterday", %{context: ctx} do
       yesterday = Oli.DateTime.utc_now() |> Timex.shift(days: -1)
-      assert Utils.days_difference(yesterday) == "Past Due"
+      assert Utils.days_difference(yesterday, ctx) == "Past Due by a day"
     end
 
-    test "returns 'Past Due by X days' when the resource end date was X days ago" do
+    test "returns 'Past Due by X days' when the resource end date was X days ago", %{context: ctx} do
       days_ago = 5
       past_date = Oli.DateTime.utc_now() |> Timex.shift(days: -days_ago)
-      assert Utils.days_difference(past_date) == "Past Due by #{days_ago} days"
+      assert Utils.days_difference(past_date, ctx) == "Past Due by #{days_ago} days"
     end
 
-    test "returns 'X days left' when the resource end date is X days in the future" do
+    test "returns 'X days left' when the resource end date is X days in the future", %{
+      context: ctx
+    } do
       days_ahead = 7
       future_date = Oli.DateTime.utc_now() |> Timex.shift(days: days_ahead)
-      assert Utils.days_difference(future_date) == "#{days_ahead} days left"
+      assert Utils.days_difference(future_date, ctx) == "#{days_ahead} days left"
+    end
+
+    test "still returns 'Past Due by a day' when the resource end date was yesterday but less than 24 hours ago",
+         %{
+           context: ctx
+         } do
+      # Stub the current time to 3:00:00 AM in UTC, which is 12:00:00 AM the 24th in Montevideo
+      stub_current_time(~U[2024-06-24 03:00:00Z])
+
+      # The end date is 2:59:59 AM in UTC, which is 11:59:59 PM the 23th in Montevideo
+      previous_day = ~U[2024-06-24 02:59:59Z]
+      assert Utils.days_difference(previous_day, ctx) == "Past Due by a day"
     end
   end
 

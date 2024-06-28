@@ -100,6 +100,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:sidebar_expanded, :boolean, default: true)
+  attr(:notes_enabled, :boolean, default: false)
+  attr(:discussions_enabled, :boolean, default: false)
   attr(:preview_mode, :boolean)
   attr :notification_badges, :map, default: %{}
 
@@ -147,6 +149,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             section={@section}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
+            notes_enabled={@notes_enabled}
+            discussions_enabled={@discussions_enabled}
             notification_badges={@notification_badges}
           />
         </div>
@@ -171,7 +175,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
       "
         phx-click-away={JS.hide()}
       >
-        <.sidebar_links active_tab={@active_tab} section={@section} preview_mode={@preview_mode} />
+        <.sidebar_links
+          active_tab={@active_tab}
+          section={@section}
+          preview_mode={@preview_mode}
+          notes_enabled={@notes_enabled}
+          discussions_enabled={@discussions_enabled}
+        />
         <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
           <div class="flex items-center">
             <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
@@ -214,6 +224,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean, default: true)
+  attr(:notes_enabled, :boolean, default: true)
+  attr(:discussions_enabled, :boolean, default: true)
   attr(:notification_badges, :map, default: %{})
 
   def sidebar_links(assigns) do
@@ -250,6 +262,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
+        :if={@notes_enabled || @discussions_enabled}
         id="discussions_nav_link"
         href={path_for(:discussions, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :discussions}
@@ -606,8 +619,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       class={[
-        "flex justify-center items-center absolute top-2 left-2 p-4 z-50",
-        if(!@show_sidebar, do: "xl:top-10 xl:left-12")
+        "flex justify-center items-center absolute top-12 left-2 p-4 z-50",
+        if(!@show_sidebar, do: "2xl:top-12 2xl:left-8")
       ]}
       role="back_link"
     >

@@ -8,7 +8,6 @@ defmodule Oli.Publishing.Publications.Publication do
     field :edition, :integer, default: 0
     field :major, :integer, default: 0
     field :minor, :integer, default: 0
-    field :ids_added, :boolean, default: false
 
     belongs_to :root_resource, Oli.Resources.Resource
     belongs_to :project, Oli.Authoring.Course.Project
@@ -25,7 +24,6 @@ defmodule Oli.Publishing.Publications.Publication do
       :edition,
       :major,
       :minor,
-      :ids_added,
       :root_resource_id,
       :project_id
     ])

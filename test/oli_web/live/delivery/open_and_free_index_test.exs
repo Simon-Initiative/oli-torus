@@ -159,7 +159,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       {:ok, view, _html} = live(conn, ~p"/sections")
 
       assert render(view) =~
-               ~s|style=\"background-image: url(&#39;/images/course_default.jpg&#39;);\"|
+               ~s|style=\"background-image: url(&#39;/images/course_default.png&#39;);\"|
     end
 
     test "can search by course name", %{conn: conn, user: user} do
@@ -176,21 +176,21 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       view
       |> form("form[phx-change=search_section]")
-      |> render_change(%{search: "best"})
+      |> render_change(%{text_search: "best"})
 
       assert has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")
 
       view
       |> form("form[phx-change=search_section]")
-      |> render_change(%{search: ""})
+      |> render_change(%{text_search: ""})
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
 
       view
       |> form("form[phx-change=search_section]")
-      |> render_change(%{search: "a not existing course"})
+      |> render_change(%{text_search: "a not existing course"})
 
       refute has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")
@@ -222,7 +222,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       view
       |> form("form[phx-change=search_section]")
-      |> render_change(%{search: "messi"})
+      |> render_change(%{text_search: "messi"})
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -230,7 +230,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       view
       |> form("form[phx-change=search_section]")
-      |> render_change(%{search: "maria"})
+      |> render_change(%{text_search: "maria"})
 
       refute has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -238,7 +238,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       view
       |> form("form[phx-change=search_section]")
-      |> render_change(%{search: "a not existing instructor"})
+      |> render_change(%{text_search: "a not existing instructor"})
 
       refute has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")

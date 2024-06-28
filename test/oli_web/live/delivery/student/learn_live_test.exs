@@ -1673,7 +1673,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view
              |> element(~s{div[role="unit_1"] div[role="card_2"]"})
-             |> render =~ "style=\"background-image: url(&#39;/images/course_default.jpg&#39;)"
+             |> render =~ "style=\"background-image: url(&#39;/images/course_default.png&#39;)"
     end
 
     test "can see Youtube or S3 video poster image",
@@ -2245,9 +2245,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
-      # when the garbage collection message is recieved we know the async metrics were loaded
+      # when the garbage collection message is received we know the async metrics were loaded
       # since the gc message is sent from the handle_info that loads the async metrics
       assert_receive(:gc, 2_000)
+
+      wait_while(fn ->
+        !has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
+      end)
 
       assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
     end
@@ -2760,12 +2764,24 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
   end
 
   describe "preview" do
-    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+    setup [
+      :user_conn,
+      :set_timezone,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
 
     test "redirects and ensures navigation to the preview Notes page", %{
       conn: conn,
-      section: section
+      author: author,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
     } do
+      enable_all_sidebar_links(section, author, page_1, page_2, page_3)
+
       stub_current_time(~U[2023-11-04 20:00:00Z])
       {:ok, view, _html} = live(conn, "/sections/#{section.slug}/preview")
 

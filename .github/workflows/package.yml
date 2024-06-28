@@ -16,7 +16,6 @@ jobs:
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}
       sha_short: ${{ steps.info.outputs.sha_short }}
-      deploy_host: ${{ steps.info.outputs.deploy_host }}
 
     steps:
       - name: 🛎️ Checkout
@@ -27,7 +26,6 @@ jobs:
         run: |
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
-          echo "deploy_host=$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
           echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
@@ -75,7 +73,6 @@ jobs:
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}
       sha_short: ${{ steps.info.outputs.sha_short }}
-      deploy_host: ${{ steps.info.outputs.deploy_host }}
 
     steps:
       - name: 🛎️ Checkout
@@ -129,28 +126,31 @@ jobs:
     environment: tokamak.oli.cmu.edu
     outputs:
       enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
+      auto_deploy_ref: ${{ steps.get_auto_deploy_ref.outputs.auto_deploy_ref }}
     steps:
       - name: Check whether AUTO_DEPLOY_ENABLED is set to TRUE
         id: check_auto_deploy_enabled
         run: echo "enabled=$(if [ "${{ vars.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
+      - name: Get AUTO_DEPLOY_REF config
+        id: get_auto_deploy_ref
+        run: echo "auto_deploy_ref=$(if [ -n "${{ vars.AUTO_DEPLOY_REF }}" ] ; then echo ${{ vars.AUTO_DEPLOY_REF }} ; else echo refs/heads/master ; fi)" >> $GITHUB_OUTPUT
 
   deployment:
     runs-on: ubuntu-latest
     environment: tokamak.oli.cmu.edu
     needs: [amazon-linux, check-auto-deploy]
-    if: github.ref == 'refs/heads/master' && needs.check-auto-deploy.outputs.enabled == 'true'
+    if: github.ref == needs.check-auto-deploy.outputs.auto_deploy_ref && needs.check-auto-deploy.outputs.enabled == 'true'
 
     steps:
-      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.amazon-linux.outputs.deploy_host }}"
+      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to tokamak.oli.cmu.edu"
 
       - name: 🚢💰 Deploy to test using SSH
         uses: fifsky/ssh-action@master
-        if: ${{ github.ref == 'refs/heads/master' }}
         with:
           command: |
             cd /torus
             sh deploy.sh -r ${{ github.ref }} ${{ needs.amazon-linux.outputs.app_version }} ${{ needs.amazon-linux.outputs.sha_short }}
-          host: ${{ needs.amazon-linux.outputs.deploy_host }}
+          host: tokamak.oli.cmu.edu
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067

@@ -319,6 +319,7 @@ defmodule Oli.Resources do
           objectives: previous_revision.objectives,
           children: previous_revision.children,
           deleted: previous_revision.deleted,
+          ids_added: previous_revision.ids_added,
           slug: previous_revision.slug,
           title: previous_revision.title,
           graded: previous_revision.graded,
