@@ -712,6 +712,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
+      create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
 
       refute has_element?(view, ~s{div[role="page read time"]})
