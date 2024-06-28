@@ -4,6 +4,7 @@ defmodule OliWeb.Sections.EditView do
   alias Oli.Branding
   alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionCache
   alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime, CustomLabelsForm}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
@@ -165,6 +166,9 @@ defmodule OliWeb.Sections.EditView do
 
     case Sections.update_section(socket.assigns.section, %{customizations: params}) do
       {:ok, section} ->
+        # we need to update the order container labels on the cache
+        SectionCache.clear(section.slug, [:ordered_container_labels])
+
         socket = put_flash(socket, :info, "Section changes saved")
 
         {:noreply,
