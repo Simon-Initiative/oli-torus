@@ -172,7 +172,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
           form: form
         })
 
-      assert has_element?(lcd, "img[src='/images/course_default.jpg']")
+      assert has_element?(lcd, "img[src='/images/course_default.png']")
     end
 
     test "renders poster image if the page revision has one", %{
@@ -386,7 +386,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
              |> render()
              |> Floki.attribute("src")
              |> hd() =~
-               "/images/course_default.jpg"
+               "/images/course_default.png"
 
       # go to image selection step
       lcd
@@ -401,7 +401,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       end)
 
       # upload an image
-      path = "assets/static/images/course_default.jpg"
+      path = "assets/static/images/course_default.png"
 
       image =
         file_input(lcd, "#upload-form", :poster_image, [
@@ -431,7 +431,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
              |> render()
              |> Floki.attribute("src")
              |> hd() =~
-               "/images/course_default.jpg"
+               "/images/course_default.png"
     end
 
     test "can Cancel image selection after upload has been completed, go back to the first modal step, and the initial poster image should not have changed",
@@ -472,7 +472,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       |> render_click()
 
       # upload an image
-      path = "assets/static/images/course_default.jpg"
+      path = "assets/static/images/course_default.png"
 
       image =
         file_input(lcd, "#upload-form", :poster_image, [
@@ -493,7 +493,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
 
       assert has_element?(
                lcd,
-               "img[src='/images/course_default.jpg']"
+               "img[src='/images/course_default.png']"
              )
     end
 
@@ -730,7 +730,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       assert_received {:handle_event_intercepted, "save-options",
                        %{
                          "revision" => %{
-                           "poster_image" => "/images/course_default.jpg",
+                           "poster_image" => "/images/course_default.png",
                            "title" => "revision A",
                            "duration_minutes" => "20",
                            "explanation_strategy" => %{"type" => "none"},
@@ -970,7 +970,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       end)
 
       # upload a video
-      path = "assets/static/images/course_default.jpg"
+      path = "assets/static/images/course_default.png"
 
       video =
         file_input(lcd, "#upload-form", :intro_video, [
@@ -1153,7 +1153,7 @@ defmodule OliWeb.Curriculum.OptionsModalContentTest do
       |> render_click()
 
       # upload a video
-      path = "assets/static/images/course_default.jpg"
+      path = "assets/static/images/course_default.png"
 
       video =
         file_input(lcd, "#upload-form", :intro_video, [

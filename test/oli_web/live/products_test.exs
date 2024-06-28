@@ -316,7 +316,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
-      path = "assets/static/images/course_default.jpg"
+      path = "assets/static/images/course_default.png"
 
       image =
         file_input(view, "#img-upload-form", :cover_image, [
@@ -351,7 +351,7 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
-      path = "assets/static/images/course_default.jpg"
+      path = "assets/static/images/course_default.png"
 
       image =
         file_input(view, "#img-upload-form", :cover_image, [
