@@ -167,7 +167,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 3",
-        duration_minutes: 5,
         graded: true,
         max_attempts: 5,
         content: %{
@@ -702,6 +701,20 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+    end
+
+    test "can not see page duration time when it is not set", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      refute has_element?(view, ~s{div[role="page read time"]})
     end
 
     test "can see proficiency explanation modal", %{

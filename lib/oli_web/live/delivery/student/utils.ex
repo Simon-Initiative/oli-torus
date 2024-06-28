@@ -33,7 +33,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 role="container label"
-                class="opacity-50 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
+                class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider"
               >
                 <%= @container_label %>
               </div>
@@ -49,7 +49,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                 role="graded page marker"
               >
                 <Icons.flag />
-                <div class="opacity-50 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
+                <div class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider">
                   Graded Page
                 </div>
               </div>
@@ -59,45 +59,42 @@ defmodule OliWeb.Delivery.Student.Utils do
               class="px-2 py-1 bg-gray-300 bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
-              <div class="dark:text-white text-[10px] font-normal font-['Open Sans']">
+              <div class="dark:text-white text-[10px] font-normal">
                 Assignment requirement
               </div>
             </div>
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
-            <div
-              role="page numbering index"
-              class="opacity-50 dark:text-white text-[38px] font-bold font-['Open Sans']"
-            >
+            <div role="page numbering index" class="opacity-50 dark:text-white text-[38px] font-bold">
               <%= @index %>.
             </div>
-            <div
-              role="page title"
-              class="grow shrink basis-0 dark:text-white text-[38px] font-bold font-['Open Sans']"
-            >
+            <div role="page title" class="grow shrink basis-0 dark:text-white text-[38px] font-bold">
               <%= @page_context.page.title %>
             </div>
           </div>
         </div>
         <div class="justify-start items-center gap-3 inline-flex">
-          <div class="opacity-50 justify-start items-center gap-1.5 flex">
+          <div
+            :if={@page_context.page.duration_minutes}
+            class="opacity-50 justify-start items-center gap-1.5 flex"
+          >
             <div role="page read time" class="justify-end items-center gap-1 flex">
               <div class="w-[18px] h-[18px] relative opacity-80">
                 <Icons.time />
               </div>
               <div class="justify-end items-end gap-0.5 flex">
-                <div class="text-right dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
+                <div class="text-right dark:text-white text-xs font-bold uppercase tracking-wide">
                   <%= @page_context.page.duration_minutes %>
                 </div>
-                <div class="dark:text-white text-[9px] font-bold font-['Open Sans'] uppercase tracking-wide">
+                <div class="dark:text-white text-[9px] font-bold uppercase tracking-wide">
                   min
                 </div>
               </div>
             </div>
           </div>
           <div role="page schedule" class="justify-start items-start gap-1 flex">
-            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">Due:</div>
-            <div class="dark:text-white text-xs font-normal font-['Open Sans']">
+            <div class="opacity-50 dark:text-white text-xs font-normal">Due:</div>
+            <div class="dark:text-white text-xs font-normal">
               <%= FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
                 @ctx,
