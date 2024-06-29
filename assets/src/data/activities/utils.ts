@@ -66,7 +66,10 @@ export const safelySelectFiles = (activityState: ActivityState | undefined): May
 export const initialPartInputs = (
   model: ActivityModelSchema,
   activityState: ActivityState,
-  defaultPartInputs: PartInputs = { [activityState.parts[0].partId]: [] },
+  defaultPartInputs: PartInputs = activityState.parts.reduce((acc, part) => {
+    acc[part.partId] = [];
+    return acc;
+  }, {} as PartInputs),
 ): PartInputs => {
   const savedPartInputs = activityState?.parts
     .filter((part) => part?.response?.input !== undefined)
