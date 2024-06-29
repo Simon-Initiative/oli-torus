@@ -68,14 +68,14 @@ function update(id: string, content: string) {
   element ? (element.innerHTML = content) : console.error('Element with id ' + id + ' not found');
 }
 
-function formatTimerMessage(realDeadlineInMs: number, now: number) {
+export function formatTimerMessage(realDeadlineInMs: number, now: number) {
   const distance = realDeadlineInMs - now;
   const minutes = Math.floor(distance / (1000 * 60));
   const seconds = Math.floor((distance % (1000 * 60)) / 1000);
   return 'Time remaining: ' + minutes + 'm ' + seconds + 's ';
 }
 
-function hasExpired(realDeadlineInMs: number, now: number) {
+export function hasExpired(realDeadlineInMs: number, now: number) {
   const distance = realDeadlineInMs - now;
   return distance < 0;
 }
