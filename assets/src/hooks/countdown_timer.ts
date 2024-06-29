@@ -52,11 +52,11 @@ function countdownTimer(
         clearInterval(interval);
         update(timerId, '');
 
-        update(timerId, 'This is a late submission');
-
         if (autoSubmit) {
           const submitButton = document.getElementById(submitButtonId);
           submitButton ? submitButton.click() : console.error('Submit button not found');
+        } else {
+          update(timerId, 'This is a late submission');
         }
       }
     }, 1000);
