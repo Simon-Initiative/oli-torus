@@ -4385,11 +4385,18 @@ defmodule Oli.Delivery.Sections do
       on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
       left_join: r_att in ResourceAttempt,
       on: r_att.resource_access_id == ra.id,
+      left_join: se in Oli.Delivery.Settings.StudentException,
+      on: se.resource_id == ra.resource_id and se.user_id == ^user_id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0 and
+          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date) >=
+            ^today and coalesce(ra.progress, 0) == 0 and
           is_nil(r_att.id),
-      order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
+      order_by: [
+        asc:
+          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
+        asc: sr.numbering_index
+      ],
       limit: ^lessons_count,
       select:
         map(rev, [
@@ -4404,8 +4411,8 @@ defmodule Oli.Delivery.Sections do
         ]),
       select_merge: %{
         numbering_index: sr.numbering_index,
-        start_date: sr.start_date,
-        end_date: sr.end_date
+        start_date: coalesce(se.start_date, sr.start_date),
+        end_date: coalesce(se.end_date, sr.end_date)
       }
     )
     |> where(^graded_filter)
