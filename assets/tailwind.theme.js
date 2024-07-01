@@ -316,6 +316,8 @@ module.exports = {
       hv2xl: { raw: '(min-width: 1536px) and (min-height: 950px)' },
     },
     colors: {
+      'high-24': { DEFAULT: '#EEEBF5' },
+      'primary-24': { DEFAULT: '#0D0C0F' },
       checkpoint: {
         DEFAULT: '#B27307',
         dark: '#FF8F40',
