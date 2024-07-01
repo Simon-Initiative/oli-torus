@@ -5,6 +5,7 @@ import {
   selectCopiedPart,
   selectPartComponentTypes,
   selectPaths,
+  setCopiedPart,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
 import { addPart } from 'apps/authoring/store/parts/actions/addPart';
@@ -111,6 +112,7 @@ const AddComponentToolbar: React.FC<{
     dispatch(setCurrentSelection({ selection: newPartData.id }));
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+    dispatch(setCopiedPart({ copiedPart: null }));
   };
 
   useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
