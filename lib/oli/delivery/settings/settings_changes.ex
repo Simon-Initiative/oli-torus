@@ -6,8 +6,8 @@ defmodule Oli.Delivery.Settings.SettingsChanges do
   schema "settings_changes" do
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:section, Oli.Delivery.Sections.Section)
-    belongs_to(:user, Oli.Accounts.User)
 
+    field(:user_id, :integer)
     field(:user_type, Ecto.Enum, values: [:author, :instructor])
     field(:key, :string)
     field(:new_value, :string)
