@@ -4386,7 +4386,7 @@ defmodule Oli.Delivery.Sections do
       left_join: r_att in ResourceAttempt,
       on: r_att.resource_access_id == ra.id,
       left_join: se in Oli.Delivery.Settings.StudentException,
-      on: se.resource_id == ra.resource_id and se.user_id == ^user_id,
+      on: se.resource_id == ra.resource_id and se.user_id == ^user_id and se.section_id == ^section.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
           coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date) >=
