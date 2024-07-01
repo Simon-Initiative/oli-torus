@@ -22,6 +22,7 @@ defmodule Oli.Delivery.Sections.SectionCache do
   ]
 
   @broadcastable_cache_keys [
+    :ordered_container_labels,
     :full_hierarchy
   ]
 
@@ -76,24 +77,34 @@ defmodule Oli.Delivery.Sections.SectionCache do
   end
 
   @doc """
-    Clears all cached data related to a specific section. This function iterates over a predefined
-    list of cache keys, clears each one associated with the given section slug, and broadcasts
-    the deletion if the key is broadcastable. It is useful for ensuring the cache does not hold
-    outdated data for a section.
+    Clears all cached data related to a specific section. This function iterates over an optional list of cache keys (defaults to @cache_keys),
+    clears each one associated with the given section slug, and broadcasts the deletion if the key is broadcastable.
+    It is useful for ensuring the cache does not hold outdated data for a section.
+    If a provided key is not in the list of cache keys, an error tuple is returned.
 
     ## Examples
 
         iex> Oli.Delivery.Sections.SectionCache.clear("my_section")
         :ok
 
+        iex> Oli.Delivery.Sections.SectionCache.clear("my_section", [:ordered_container_labels])
+        :ok
+
+        iex> Oli.Delivery.Sections.SectionCache.clear("my_section", [:invented_key])
+        {:error, :not_existing_cache_key}
+
   """
-  def clear(section_slug) do
-    for key <- @cache_keys do
-      Logger.info("Clearing #{key} from cache for section #{section_slug}.")
+  def clear(section_slug, keys \\ @cache_keys) do
+    if MapSet.subset?(MapSet.new(keys), MapSet.new(@cache_keys)) do
+      for key <- keys do
+        Logger.info("Clearing #{key} from cache for section #{section_slug}.")
 
-      delete(cache_id(section_slug, key))
+        delete(cache_id(section_slug, key))
 
-      maybe_broadcast({:delete, key}, section_slug)
+        maybe_broadcast({:delete, key}, section_slug)
+      end
+    else
+      {:error, :not_existing_cache_key}
     end
   end
 
