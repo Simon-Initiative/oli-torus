@@ -1177,6 +1177,8 @@ select {
   --color-delivery-tooltip-bg-dark: #E8E8E8;
   --color-delivery-tooltip-content: #fff;
   --color-delivery-tooltip-content-dark: #000;
+  --color-high-24: #EEEBF5;
+  --color-primary-24: #0D0C0F;
   --color-checkpoint: #B27307;
   --color-checkpoint-dark: #FF8F40;
   --color-practice: #1D4ED8;
@@ -5000,6 +5002,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 100vh;
 }
 
+.h-\[111px\] {
+  height: 111px;
+}
+
 .h-\[120px\] {
   height: 120px;
 }
@@ -7137,6 +7143,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(159 188 233 / var(--tw-bg-opacity));
 }
 
+.bg-primary-24 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(13 12 15 / var(--tw-bg-opacity));
+}
+
 .bg-primary-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(209 223 245 / var(--tw-bg-opacity));
@@ -7948,6 +7959,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 0.25rem;
 }
 
+.pr-10 {
+  padding-right: 2.5rem;
+}
+
 .pr-12 {
   padding-right: 3rem;
 }
@@ -8034,6 +8049,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-9 {
   padding-top: 2.25rem;
+}
+
+.pt-\[12px\] {
+  padding-top: 12px;
 }
 
 .pt-\[15px\] {
@@ -8593,6 +8612,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(21 128 61 / var(--tw-text-opacity));
 }
 
+.text-high-24 {
+  --tw-text-opacity: 1;
+  color: rgb(238 235 245 / var(--tw-text-opacity));
+}
+
 .text-info {
   --tw-text-opacity: 1;
   color: rgb(52 152 219 / var(--tw-text-opacity));
@@ -8792,6 +8816,10 @@ table.table-striped tbody tr:nth-child(even) {
 .no-underline {
   -webkit-text-decoration-line: none;
           text-decoration-line: none;
+}
+
+.underline-offset-8 {
+  text-underline-offset: 8px;
 }
 
 .antialiased {
@@ -12813,6 +12841,11 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(22 163 74 / var(--tw-text-opacity));
 }
 
+.hover\:text-high-24:hover {
+  --tw-text-opacity: 1;
+  color: rgb(238 235 245 / var(--tw-text-opacity));
+}
+
 .hover\:text-primary\/70:hover {
   color: rgb(59 118 211 / 0.7);
 }
@@ -12853,6 +12886,10 @@ https://tailwindcss.com/docs/utility-first
 
 .hover\:underline-offset-2:hover {
   text-underline-offset: 2px;
+}
+
+.hover\:underline-offset-8:hover {
+  text-underline-offset: 8px;
 }
 
 .hover\:opacity-100:hover {
