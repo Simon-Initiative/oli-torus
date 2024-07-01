@@ -206,8 +206,10 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
-
-  defp decode_welcome_title(project_params),
-    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+  defp decode_welcome_title(%{"welcome_title" => welcome_title} = project_params) do
+    cond do
+      welcome_title in [nil, ""] -> %{project_params | "welcome_title" => nil}
+      true -> Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
+    end
+  end
 end
