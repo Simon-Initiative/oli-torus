@@ -386,7 +386,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
     ~H"""
     <div class="form-group">
-      <label for="source">Resource That Must Has Progress</label>
+      <label for="source">Resource That Must Have Progress</label>
       <div class="input-group mb-3">
         <input
           type="text"
