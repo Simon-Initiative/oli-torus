@@ -379,7 +379,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     };
   };
 
-  // Given a part  ID and a model for that part, will return the model with the width & height
+  // Given a part ID and a model for that part, will return the model with the width & height
   // filled in if it's being actively dragged. This is so we can display the part-component properly
   // sized during the drag before the new width/height is committed.
   const decorateModelWithDragWidthHeight = useCallback(
