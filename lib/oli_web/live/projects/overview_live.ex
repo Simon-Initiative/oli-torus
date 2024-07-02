@@ -564,6 +564,9 @@ defmodule OliWeb.Projects.OverviewLive do
 
   defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
 
+  defp decode_welcome_title(%{"welcome_title" => ""} = project_params),
+    do: %{project_params | "welcome_title" => nil}
+
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
 
