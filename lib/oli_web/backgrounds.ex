@@ -13,10 +13,10 @@ defmodule OliWeb.Backgrounds do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      class="h-[calc(100vh-56px)] w-full"
+      class="h-[calc(100vh-112px)] w-full"
     >
       <g clip-path="url(#clip0_539_3635)">
-        <rect class="h-[calc(100vh-56px)] w-full" fill="#1F1F1F" />
+        <rect class="h-[calc(100vh-112px)] w-full" fill="#1F1F1F" />
         <g filter="url(#filter0_f_539_3635)">
           <ellipse cx="1217.08" cy="662.134" rx="741.431" ry="793" fill="#DB6C1E" />
         </g>
@@ -24,7 +24,7 @@ defmodule OliWeb.Backgrounds do
           <ellipse cx="572.513" cy="936.433" rx="572.513" ry="611.433" fill="#0062F2" />
         </g>
         <g style="mix-blend-mode:color-burn" opacity="0.5">
-          <rect class="h-[calc(100vh-56px)] w-full" fill="url(#pattern0_539_3635)" />
+          <rect class="h-[calc(100vh-112px)] w-full" fill="url(#pattern0_539_3635)" />
         </g>
       </g>
       <defs>
@@ -63,7 +63,7 @@ defmodule OliWeb.Backgrounds do
           <use xlink:href="#image0_539_3635" transform="scale(9.92064e-05 0.000160256)" />
         </pattern>
         <clipPath id="clip0_539_3635">
-          <rect class="h-[calc(100vh-56px)] w-full" fill="white" />
+          <rect class="h-[calc(100vh-112px)] w-full" fill="white" />
         </clipPath>
       </defs>
     </svg>
@@ -76,10 +76,10 @@ defmodule OliWeb.Backgrounds do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      class="h-[calc(100vh-56px)] w-full"
+      class="h-[calc(100vh-112px)] w-full"
     >
       <g clip-path="url(#clip0_553_7404)">
-        <rect class="h-[calc(100vh-56px)] w-full" fill="#1F1F1F" />
+        <rect class="h-[calc(100vh-112px)] w-full" fill="#1F1F1F" />
         <g filter="url(#filter0_f_553_7404)">
           <ellipse cx="1217.08" cy="662.133" rx="741.431" ry="793" fill="#54E5A4" />
         </g>
@@ -87,7 +87,7 @@ defmodule OliWeb.Backgrounds do
           <ellipse cx="572.513" cy="936.433" rx="572.513" ry="611.433" fill="#0062F2" />
         </g>
         <g style="mix-blend-mode:color-burn" opacity="0.5">
-          <rect class="h-[calc(100vh-56px)] w-full" fill="url(#pattern0_553_7404)" />
+          <rect class="h-[calc(100vh-112px)] w-full" fill="url(#pattern0_553_7404)" />
         </g>
       </g>
       <defs>
@@ -126,7 +126,7 @@ defmodule OliWeb.Backgrounds do
           <use xlink:href="#image0_553_7404" transform="scale(9.92064e-05 0.000160256)" />
         </pattern>
         <clipPath id="clip0_553_7404">
-          <rect class="h-[calc(100vh-56px)] w-full" fill="white" />
+          <rect class="h-[calc(100vh-112px)] w-full" fill="white" />
         </clipPath>
       </defs>
     </svg>
@@ -139,10 +139,10 @@ defmodule OliWeb.Backgrounds do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      class="h-[calc(100vh-56px)] w-full"
+      class="h-[calc(100vh-112px)] w-full"
     >
       <g clip-path="url(#clip0_531_7671)">
-        <rect class="h-[calc(100vh-56px)] w-full" fill="#1F1F1F" />
+        <rect class="h-[calc(100vh-112px)] w-full" fill="#1F1F1F" />
         <g filter="url(#filter0_f_531_7671)">
           <ellipse cx="1217.08" cy="662.133" rx="741.431" ry="793" fill="#FF82E4" />
         </g>
@@ -150,7 +150,7 @@ defmodule OliWeb.Backgrounds do
           <ellipse cx="572.513" cy="936.433" rx="572.513" ry="611.433" fill="#0062F2" />
         </g>
         <g style="mix-blend-mode:color-burn" opacity="0.5">
-          <rect class="h-[calc(100vh-56px)] w-full" fill="url(#pattern0_531_7671)" />
+          <rect class="h-[calc(100vh-112px)] w-full" fill="url(#pattern0_531_7671)" />
         </g>
       </g>
       <defs>
@@ -189,7 +189,7 @@ defmodule OliWeb.Backgrounds do
           <use xlink:href="#image0_531_7671" transform="scale(9.92064e-05 0.000160256)" />
         </pattern>
         <clipPath id="clip0_531_7671">
-          <rect class="h-[calc(100vh-56px)] w-full" fill="white" />
+          <rect class="h-[calc(100vh-112px)] w-full" fill="white" />
         </clipPath>
       </defs>
     </svg>
