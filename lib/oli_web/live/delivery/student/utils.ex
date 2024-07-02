@@ -686,4 +686,17 @@ defmodule OliWeb.Delivery.Student.Utils do
        |> Integer.to_string()
        |> String.pad_leading(2, "0"))
   end
+
+  attr :bib_app_params, :map, required: true
+  attr :ctx, :map, required: true
+
+  def references(assigns) do
+    ~H"""
+    <div class="content">
+      <%= OliWeb.Common.React.component(@ctx, "Components.References", @bib_app_params,
+        id: "references"
+      ) %>
+    </div>
+    """
+  end
 end

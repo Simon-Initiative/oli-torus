@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   use OliWeb, :live_view
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, scripts: 1, reset_attempts_button: 1]
+    only: [page_header: 1, scripts: 1, references: 1, reset_attempts_button: 1]
 
   import Ecto.Query
 
@@ -640,6 +640,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             section_slug={@section.slug}
           />
         </div>
+        <.references ctx={@ctx} bib_app_params={@bib_app_params} />
       </div>
 
       <:point_markers :if={@annotations.show_sidebar && @annotations.point_markers}>
@@ -706,6 +707,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 section_slug={@section.slug}
               />
             </div>
+            <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
       </div>
@@ -768,6 +770,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 Submit Answers
               </button>
             </div>
+            <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
       </div>

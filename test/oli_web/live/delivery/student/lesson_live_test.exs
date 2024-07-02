@@ -93,6 +93,28 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         title: "this is the forth objective"
       )
 
+    # bibentries...
+
+    bibentry_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("bibentry"),
+        title: "Physics, Gravity & the Laws of Motion",
+        content: %{
+          data: [
+            %{
+              author: [%{family: "Newton", given: "Isaac"}],
+              id: "temp_id_3295638416",
+              issued: %{"date-parts": [[1643, 1, 4]]},
+              publisher: "Isaac Newton",
+              shortTitle: "Gravity",
+              title: "Physics, Gravity & the Laws of Motion",
+              type: "webpage",
+              version: "1"
+            }
+          ]
+        }
+      )
+
     ## pages...
     page_1_revision =
       insert(:revision,
@@ -112,7 +134,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                 }
               ]
             }
-          ]
+          ],
+          bibrefs: [bibentry_1_revision.resource_id]
         }
       )
 
@@ -182,7 +205,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                 }
               ]
             }
-          ]
+          ],
+          bibrefs: [bibentry_1_revision.resource_id]
         }
       )
 
@@ -298,6 +322,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     all_revisions =
       [
+        bibentry_1_revision,
         objective_1_revision,
         objective_2_revision,
         objective_3_revision,
@@ -383,6 +408,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
     %{
       section: section,
+      bibentry_1: bibentry_1_revision,
       objective_1: objective_1_revision,
       objective_2: objective_2_revision,
       objective_3: objective_3_revision,
@@ -543,6 +569,43 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       refute has_element?(view, "button[id='reset_answers']", "Reset Answers")
+    end
+
+    test "can see practice page references", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      assert has_element?(
+               view,
+               "div[data-live-react-class='Components.References']"
+             )
+    end
+
+    test "can see graded page references", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+
+      assert has_element?(
+               view,
+               "div[data-live-react-class='Components.References']"
+             )
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
