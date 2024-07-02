@@ -1017,4 +1017,22 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert_redirected(view, request_path)
     end
   end
+
+  describe "offline detector" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "does NOT get loaded on prologue", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "div[id='offline_detector']")
+    end
+  end
 end
