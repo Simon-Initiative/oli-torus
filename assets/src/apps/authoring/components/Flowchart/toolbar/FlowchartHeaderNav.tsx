@@ -20,6 +20,7 @@ import {
   selectPaths,
   selectProjectSlug,
   selectRevisionSlug,
+  setCopiedPart,
   setRightPanelActiveTab,
   setShowScoringOverview,
 } from '../../../store/app/slice';
@@ -172,6 +173,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     dispatch(setCurrentSelection({ selection: newPartData.id }));
 
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.COMPONENT }));
+    dispatch(setCopiedPart({ copiedPart: null }));
   };
 
   const handleScoringOverviewClick = () => {
@@ -205,7 +207,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     ['KeyZ'],
     { ctrlKey: true },
   );
-  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart]);
+  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart, currentActivityTree]);
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => () => {
