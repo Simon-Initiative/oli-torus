@@ -519,7 +519,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("clear_search", _, socket) do
-    {:noreply, assign_annotations(socket, search_results: nil, search_term: "")}
+    async_load_annotations(
+      socket.assigns.section,
+      socket.assigns.page_resource_id,
+      socket.assigns.current_user,
+      socket.assigns.collab_space_config,
+      visibility_for_active_tab(
+        socket.assigns.annotations.active_tab,
+        socket.assigns.is_instructor
+      ),
+      socket.assigns.annotations.selected_point
+    )
+
+    {:noreply, assign_annotations(socket, search_results: nil, posts: nil, search_term: "")}
   end
 
   def handle_event(
