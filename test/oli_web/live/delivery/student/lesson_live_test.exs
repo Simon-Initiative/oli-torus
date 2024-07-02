@@ -1197,6 +1197,44 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     end
   end
 
+  describe "offline detector" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "gets loaded on graded pages that are in progress", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+
+      assert has_element?(view, "div[id='offline_detector']")
+    end
+
+    test "gets loaded on practice pages that are in progress", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: practice_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, practice_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, practice_page.slug))
+
+      assert has_element?(view, "div[id='offline_detector']")
+    end
+  end
+
   defp create_post(user, section, page, message, attrs \\ %{}) do
     default_attrs = %{
       status: :approved,

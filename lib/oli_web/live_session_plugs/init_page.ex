@@ -15,15 +15,20 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
       socket.assigns
 
+    page_context =
+      PageContext.create_for_visit(
+        section,
+        revision_slug,
+        current_user,
+        datashop_session_id
+      )
+
     {:cont,
      assign(socket,
-       page_context:
-         PageContext.create_for_visit(
-           section,
-           revision_slug,
-           current_user,
-           datashop_session_id
-         )
+       page_context: page_context,
+       # the page context will be a temporary assign,
+       # that is why we need to "duplicate" the page context progress state in another socket assign
+       page_progress_state: page_context.progress_state
      )}
   end
 
