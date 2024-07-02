@@ -151,7 +151,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       part_scripts: Oli.PartComponents.get_part_component_scripts(:delivery_script),
       scripts: Oli.Activities.get_activity_scripts(:delivery_script),
       title: page_context.page.title,
-      additional_stylesheets: Map.get(content, "additionalStylesheets", [])
+      additional_stylesheets: Map.get(content, "additionalStylesheets", []),
+      bib_app_params: %{
+        bibReferences: page_context.bib_revisions
+      }
     })
     |> prologue_assigns(page_context)
   end
@@ -172,7 +175,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     assign(socket, %{
       view: :practice_page,
       activity_count: map_size(page_context.activities),
-      advanced_delivery: Map.get(page_context.page.content, "advancedDelivery", false)
+      advanced_delivery: Map.get(page_context.page.content, "advancedDelivery", false),
+      bib_app_params: %{
+        bibReferences: page_context.bib_revisions
+      }
     })
   end
 
@@ -186,7 +192,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
            socket,
          _params
        ) do
-    assign(socket, %{view: :graded_page})
+    assign(socket, %{
+      view: :graded_page,
+      bib_app_params: %{
+        bibReferences: page_context.bib_revisions
+      }
+    })
     |> prologue_assigns(page_context)
   end
 
