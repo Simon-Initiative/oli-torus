@@ -192,7 +192,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("toggle_annotation_point", params, socket) do
-    %{is_instructor: is_instructor, annotations: %{selected_point: selected_point}} =
+    %{
+      is_instructor: is_instructor,
+      annotations: %{selected_point: selected_point},
+      page_resource_id: page_resource_id,
+      collab_space_config: collab_space_config
+    } =
       socket.assigns
 
     point_marker_id =
@@ -205,9 +210,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       # unselect the point marker and load all annotations
       async_load_annotations(
         socket.assigns.section,
-        socket.assigns.page_context.page.resource_id,
+        page_resource_id,
         socket.assigns.current_user,
-        socket.assigns.page_context,
+        collab_space_config,
         visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         nil
       )
@@ -220,9 +225,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       # select the point marker and load annotations for that point
       async_load_annotations(
         socket.assigns.section,
-        socket.assigns.page_context.page.resource_id,
+        page_resource_id,
         socket.assigns.current_user,
-        socket.assigns.page_context,
+        collab_space_config,
         visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         point_marker_id
       )
@@ -251,7 +256,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       current_user: current_user,
       is_instructor: is_instructor,
       section: section,
-      page_context: page_context,
+      page_resource_id: page_resource_id,
+      collab_space_config: collab_space_config,
       annotations: %{
         selected_point: selected_point,
         active_tab: active_tab,
@@ -267,12 +273,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       status: if(auto_approve_annotations, do: :approved, else: :submitted),
       user_id: current_user.id,
       section_id: section.id,
-      resource_id: page_context.page.resource_id,
-      annotated_resource_id: page_context.page.resource_id,
+      resource_id: page_resource_id,
+      annotated_resource_id: page_resource_id,
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
-      anonymous:
-        page_context.collab_space_config.anonymous_posting && params["anonymous"] == "true",
+      anonymous: collab_space_config.anonymous_posting && params["anonymous"] == "true",
       visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value}
     }
@@ -303,9 +308,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       %{
         current_user: current_user,
         section: section,
-        page_context: %{
-          page: %{resource_id: resource_id}
-        },
+        page_resource_id: page_resource_id,
         annotations: %{
           selected_point: selected_point,
           search_term: search_term
@@ -314,7 +317,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       async_search_annotations(
         section,
-        resource_id,
+        page_resource_id,
         current_user,
         visibility_for_active_tab(tab, is_instructor),
         selected_point,
@@ -444,7 +447,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       current_user: current_user,
       is_instructor: is_instructor,
       section: section,
-      page_context: page_context,
+      page_resource_id: page_resource_id,
+      collab_space_config: collab_space_config,
       annotations: %{
         selected_point: selected_point,
         active_tab: active_tab,
@@ -460,12 +464,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       status: if(auto_approve_annotations, do: :approved, else: :submitted),
       user_id: current_user.id,
       section_id: section.id,
-      resource_id: page_context.page.resource_id,
-      annotated_resource_id: page_context.page.resource_id,
+      resource_id: page_resource_id,
+      annotated_resource_id: page_resource_id,
       annotated_block_id: selected_point,
       annotation_type: if(selected_point, do: :point, else: :none),
-      anonymous:
-        page_context.collab_space_config.anonymous_posting && params["anonymous"] == "true",
+      anonymous: collab_space_config.anonymous_posting && params["anonymous"] == "true",
       visibility: visibility_for_active_tab(active_tab, is_instructor),
       content: %Collaboration.PostContent{message: value},
       parent_post_id: parent_post_id,
@@ -496,9 +499,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       current_user: current_user,
       is_instructor: is_instructor,
       section: section,
-      page_context: %{
-        page: %{resource_id: resource_id}
-      },
+      page_resource_id: page_resource_id,
       annotations: %{
         selected_point: selected_point,
         active_tab: active_tab
@@ -507,7 +508,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     async_search_annotations(
       section,
-      resource_id,
+      page_resource_id,
       current_user,
       visibility_for_active_tab(active_tab, is_instructor),
       selected_point,
@@ -528,12 +529,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     %{
       section: section,
-      page_context: page_context,
+      page_resource_id: page_resource_id,
       current_user: current_user,
       is_instructor: is_instructor,
       annotations: %{
         active_tab: active_tab
-      }
+      },
+      collab_space_config: collab_space_config
     } = socket.assigns
 
     point_marker_id =
@@ -544,9 +546,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     async_load_annotations(
       section,
-      page_context.page.resource_id,
+      page_resource_id,
       current_user,
-      page_context,
+      collab_space_config,
       visibility_for_active_tab(active_tab, is_instructor),
       point_marker_id,
       String.to_integer(post_id)
