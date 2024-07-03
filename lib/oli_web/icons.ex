@@ -1163,5 +1163,19 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def graduation_cap(assigns) do
+    ~H"""
+    <svg width="39" height="27" viewBox="0 0 39 27" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M36.5827 8.37533L19.4993 1.54199L2.41602 8.37533L19.4993 15.2087L36.5827 8.37533ZM36.5827 8.37533V18.6253M9.24935 11.1087V20.3337C9.24935 21.6929 10.3293 22.9965 12.2515 23.9576C14.1738 24.9187 16.7809 25.4587 19.4993 25.4587C22.2178 25.4587 24.8249 24.9187 26.7472 23.9576C28.6694 22.9965 29.7493 21.6929 29.7493 20.3337V11.1087"
+        stroke="white"
+        stroke-width="3"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Studend Delivery Icons (end) ##########
 end
