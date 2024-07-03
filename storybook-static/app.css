@@ -4542,6 +4542,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 0.5rem;
 }
 
+.mb-20 {
+  margin-bottom: 5rem;
+}
+
 .mb-24 {
   margin-bottom: 6rem;
 }
@@ -5138,6 +5142,18 @@ table.table-striped tbody tr:nth-child(even) {
   height: calc(100% - 64px);
 }
 
+.h-\[calc\(100vh-112px\)\] {
+  height: calc(100vh - 112px);
+}
+
+.h-\[calc\(100vh-180px\)\] {
+  height: calc(100vh - 180px);
+}
+
+.h-\[calc\(100vh-270px\)\] {
+  height: calc(100vh - 270px);
+}
+
 .h-\[calc\(100vh-56px\)\] {
   height: calc(100vh - 56px);
 }
@@ -5305,10 +5321,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-3 {
   width: 0.75rem;
-}
-
-.w-3\/12 {
-  width: 25%;
 }
 
 .w-3\/4 {
@@ -6139,6 +6151,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 6px;
 }
 
+.gap-px {
+  gap: 1px;
+}
+
 .gap-x-2 {
   -moz-column-gap: 0.5rem;
        column-gap: 0.5rem;
@@ -6341,6 +6357,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-radius: 3px !important;
 }
 
+.\!rounded-md {
+  border-radius: 0.375rem !important;
+}
+
 .rounded {
   border-radius: 0.25rem;
 }
@@ -6483,6 +6503,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-right-radius: 0.75rem;
 }
 
+.\!border {
+  border-width: 1px !important;
+}
+
 .border {
   border-width: 1px;
 }
@@ -6605,8 +6629,18 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(1 101 217 / var(--tw-border-opacity)) !important;
 }
 
+.\!border-white {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(255 255 255 / var(--tw-border-opacity)) !important;
+}
+
 .\!border-white\/75 {
   border-color: rgb(255 255 255 / 0.75) !important;
+}
+
+.\!border-zinc-300 {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(212 212 216 / var(--tw-border-opacity)) !important;
 }
 
 .border-\[\#0F0D0F\]\/5 {
@@ -6812,6 +6846,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!bg-delivery-primary-100 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(233 244 255 / var(--tw-bg-opacity)) !important;
+}
+
+.\!bg-stone-900 {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(28 25 23 / var(--tw-bg-opacity)) !important;
 }
 
 .bg-\[\#0CAF61\] {
@@ -7116,6 +7155,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-light {
   --tw-bg-opacity: 1;
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
+}
+
+.bg-neutral-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(64 64 64 / var(--tw-bg-opacity));
 }
 
 .bg-orange-500 {
@@ -7823,6 +7867,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 1px;
 }
 
+.\!pl-6 {
+  padding-left: 1.5rem !important;
+}
+
 .pb-0 {
   padding-bottom: 0px;
 }
@@ -7865,6 +7913,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-7 {
   padding-bottom: 1.75rem;
+}
+
+.pb-8 {
+  padding-bottom: 2rem;
 }
 
 .pb-\[60px\] {
@@ -8310,6 +8362,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 1.5rem;
 }
 
+.leading-7 {
+  line-height: 1.75rem;
+}
+
 .leading-8 {
   line-height: 2rem;
 }
@@ -8378,6 +8434,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 1.5;
 }
 
+.leading-snug {
+  line-height: 1.375;
+}
+
 .leading-tight {
   line-height: 1.25;
 }
@@ -8433,6 +8493,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!text-danger {
   --tw-text-opacity: 1 !important;
   color: rgb(231 76 60 / var(--tw-text-opacity)) !important;
+}
+
+.\!text-zinc-300 {
+  --tw-text-opacity: 1 !important;
+  color: rgb(212 212 216 / var(--tw-text-opacity)) !important;
 }
 
 .text-\[\#0CAF61\] {
@@ -8775,6 +8840,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(178 115 7 / var(--tw-text-opacity));
 }
 
+.text-zinc-300 {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 216 / var(--tw-text-opacity));
+}
+
 .text-zinc-600 {
   --tw-text-opacity: 1;
   color: rgb(82 82 91 / var(--tw-text-opacity));
@@ -8816,6 +8886,10 @@ table.table-striped tbody tr:nth-child(even) {
 .no-underline {
   -webkit-text-decoration-line: none;
           text-decoration-line: none;
+}
+
+.underline-offset-4 {
+  text-underline-offset: 4px;
 }
 
 .underline-offset-8 {
@@ -12347,6 +12421,16 @@ https://tailwindcss.com/docs/utility-first
   }
 }
 
+.placeholder\:text-zinc-300::-moz-placeholder {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 216 / var(--tw-text-opacity));
+}
+
+.placeholder\:text-zinc-300::placeholder {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 216 / var(--tw-text-opacity));
+}
+
 .before\:absolute::before {
   content: var(--tw-content);
   position: absolute;
@@ -12868,6 +12952,11 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-yellow-600:hover {
   --tw-text-opacity: 1;
   color: rgb(232 149 9 / var(--tw-text-opacity));
+}
+
+.hover\:text-zinc-300:hover {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 216 / var(--tw-text-opacity));
 }
 
 .hover\:text-opacity-80:hover {
@@ -14595,6 +14684,11 @@ https://tailwindcss.com/docs/utility-first
     padding-right: 2.25rem;
   }
 
+  .sm\:py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
   .sm\:pb-0 {
     padding-bottom: 0px;
   }
@@ -14707,6 +14801,10 @@ https://tailwindcss.com/docs/utility-first
     display: none;
   }
 
+  .md\:h-\[calc\(100vh-220px\)\] {
+    height: calc(100vh - 220px);
+  }
+
   .md\:h-full {
     height: 100%;
   }
@@ -14725,6 +14823,10 @@ https://tailwindcss.com/docs/utility-first
 
   .md\:w-2\/5 {
     width: 40%;
+  }
+
+  .md\:w-3\/12 {
+    width: 25%;
   }
 
   .md\:w-3\/5 {
@@ -14834,6 +14936,11 @@ https://tailwindcss.com/docs/utility-first
     padding-right: 2.5rem;
   }
 
+  .md\:px-32 {
+    padding-left: 8rem;
+    padding-right: 8rem;
+  }
+
   .md\:px-8 {
     padding-left: 2rem;
     padding-right: 2rem;
@@ -14861,6 +14968,10 @@ https://tailwindcss.com/docs/utility-first
 
   .md\:pr-\[175px\] {
     padding-right: 175px;
+  }
+
+  .md\:text-left {
+    text-align: left;
   }
 
   .md\:text-6xl {
@@ -14961,8 +15072,16 @@ https://tailwindcss.com/docs/utility-first
     margin-top: 0px;
   }
 
+  .lg\:mt-10 {
+    margin-top: 2.5rem;
+  }
+
   .lg\:mt-2 {
     margin-top: 0.5rem;
+  }
+
+  .lg\:mt-6 {
+    margin-top: 1.5rem;
   }
 
   .lg\:block {
@@ -14987,6 +15106,10 @@ https://tailwindcss.com/docs/utility-first
 
   .lg\:hidden {
     display: none;
+  }
+
+  .lg\:h-auto {
+    height: auto;
   }
 
   .lg\:h-full {
@@ -15071,6 +15194,10 @@ https://tailwindcss.com/docs/utility-first
     margin-bottom: calc(0px * var(--tw-space-y-reverse));
   }
 
+  .lg\:overflow-y-auto {
+    overflow-y: auto;
+  }
+
   .lg\:rounded-none {
     border-radius: 0px;
   }
@@ -15133,6 +15260,11 @@ https://tailwindcss.com/docs/utility-first
     padding-right: 1.5rem;
   }
 
+  .lg\:py-0 {
+    padding-top: 0px;
+    padding-bottom: 0px;
+  }
+
   .lg\:py-4 {
     padding-top: 1rem;
     padding-bottom: 1rem;
@@ -15157,6 +15289,10 @@ https://tailwindcss.com/docs/utility-first
 
   .lg\:pr-16 {
     padding-right: 4rem;
+  }
+
+  .lg\:pt-10 {
+    padding-top: 2.5rem;
   }
 
   .lg\:pt-6 {
