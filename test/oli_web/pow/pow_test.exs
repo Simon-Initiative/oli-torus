@@ -90,6 +90,9 @@ defmodule OliWeb.Common.PowTest do
       assert html_response(conn, 200) =~
                "Need an account?"
 
+      # assert that background is set to the default background
+      assert html_response(conn, 200) =~ "fill=\"#FF82E4\""
+
       # sign user in
       conn =
         recycle(conn)
