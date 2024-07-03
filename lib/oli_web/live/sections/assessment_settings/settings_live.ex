@@ -299,7 +299,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
     <% end %>
     <%= if live_flash(@flash, :error) do %>
       <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        {live_flash(@flash, :error)}
+        <%= live_flash(@flash, :error) %>
         <button
           type="button"
           class="close ml-4"
