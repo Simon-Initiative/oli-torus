@@ -457,11 +457,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             :if={@enable_unread_badge && @post.unread_replies_count > 0}
             class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
           />
-          <div role="post creator" class="font-semibold" role="user name">
+          <div class="font-semibold" role="user name">
             <%= post_creator(@post, @current_user) %>
           </div>
         </div>
-        <div role="post posted at" class="text-sm text-gray-500">
+        <div role="posted at" class="text-sm text-gray-500">
           <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>
