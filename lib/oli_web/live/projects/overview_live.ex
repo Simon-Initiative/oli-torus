@@ -64,7 +64,7 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
-      <.form :let={f} for={@changeset} phx-submit="update">
+      <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"
           description="Your project title and description will be shown to students when you publish this project."
@@ -499,11 +499,6 @@ defmodule OliWeb.Projects.OverviewLive do
 
   def handle_event("update", %{"project" => project_params}, socket) do
     project_params =
-      if project_params["license"] == "custom",
-        do: project_params,
-        else: Map.put(project_params, "custom_license_details", nil)
-
-    project_params =
       project_params
       |> add_custom_license_details()
       |> decode_welcome_title()
@@ -553,6 +548,20 @@ defmodule OliWeb.Projects.OverviewLive do
         "type" => "p",
         "children" => welcome_title
       })
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("validate", %{"project" => project_params}, socket) do
+    project_params =
+      project_params
+      |> add_custom_license_details()
+      |> decode_welcome_title()
+
+    changeset =
+      socket.assigns.project
+      |> Course.change_project(project_params)
+      |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, changeset: changeset)}
   end
