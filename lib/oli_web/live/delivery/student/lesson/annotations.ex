@@ -461,7 +461,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <%= post_creator(@post, @current_user) %>
           </div>
         </div>
-        <div class="text-sm text-gray-500">
+        <div role="posted at" class="text-sm text-gray-500">
           <%= Timex.from_now(@post.inserted_at) %>
         </div>
       </div>

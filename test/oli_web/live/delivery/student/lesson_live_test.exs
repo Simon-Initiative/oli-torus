@@ -1258,6 +1258,142 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       # verify the like button is styled as primary since it was liked by the current user
       assert like_button_html =~ "<path class=\"stroke-primary\""
     end
+
+    test "posts a note", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      assert_push_event(view, "request_point_markers", %{})
+
+      # when we handle the event "toggle_sidebar", the "request_point_markers" event is pushed to the client.
+      # The client then responds back with the "update_point_markers" event
+      # that is handled by the server and finally used to show the point marks on the annotations panel.
+      # We need to trigger the "update_point_markers" event manually because no js is executed while testing the liveview
+
+      render_hook(view, "update_point_markers", %{
+        point_markers: [
+          %{"id" => "158828742", "top" => 100.0000},
+          %{"id" => "3371710400", "top" => 150.0000}
+        ]
+      })
+
+      view
+      |> element(
+        ~s{button[phx-click='toggle_annotation_point'][phx-value-point-marker-id='158828742']}
+      )
+      |> render_click
+
+      render_hook(view, "begin_create_annotation", %{})
+
+      view
+      |> form(~s{form[phx-submit='create_annotation']}, %{content: "some new post content"})
+      |> render_submit()
+
+      {[post], _more_posts_exist?} =
+        Oli.Resources.Collaboration.list_all_user_notes_for_section(
+          user.id,
+          section.id,
+          1,
+          0,
+          "date",
+          :desc
+        )
+
+      # the post is stored in the DB
+      assert post.content.message == "some new post content"
+
+      # and is shown in the UI
+      assert has_element?(view, "div[role='user name']", "Me")
+      assert has_element?(view, "div[role='posted at']", "now")
+      assert has_element?(view, "p[role='post content']", "some new post content")
+    end
+
+    test "retrigers search when selected tab is changed and returns notes of current tab when search is cleared",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_1: page_1
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, _student_note} =
+        create_post(user, section, page_1, "This is a student note", %{
+          visibility: :private
+        })
+
+      {:ok, _student_note_2} =
+        create_post(user, section, page_1, "This is a another one for the student", %{
+          visibility: :private
+        })
+
+      {:ok, _class_note} =
+        create_post(user, section, page_1, "This is a class note", %{
+          visibility: :public
+        })
+
+      {:ok, _class_note_2} =
+        create_post(user, section, page_1, "This is another one for all the class", %{
+          visibility: :public
+        })
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      view
+      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> render_click
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      assert render(view) =~ "This is a student note"
+      assert render(view) =~ "This is a another one for the student"
+      refute render(view) =~ "This is a class note"
+      refute render(view) =~ "This is another one for all the class"
+
+      # search for the word "note" within the student notes
+      view
+      |> form(~s{form[phx-submit='search']}, %{search_term: "note"})
+      |> render_submit()
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      assert render(view) =~ "This is a student <em>note</em>"
+      refute render(view) =~ "This is a class <em>note</em>"
+
+      # change the selected tab to class notes -> search should be retriggered
+      view
+      |> element(~s{button[phx-click='select_tab'][phx-value-tab='class_notes']})
+      |> render_click()
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      refute render(view) =~ "This is a student <em>note</em>"
+      assert render(view) =~ "This is a class <em>note</em>"
+
+      # clear the search within the class notes -> all class notes should be visible
+      view
+      |> element(~s{button[phx-click='clear_search']})
+      |> render_click()
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      refute render(view) =~ "This is a student note"
+      refute render(view) =~ "This is a another one for the student"
+      assert render(view) =~ "This is a class note"
+      assert render(view) =~ "This is another one for all the class"
+    end
   end
 
   describe "offline detector" do
