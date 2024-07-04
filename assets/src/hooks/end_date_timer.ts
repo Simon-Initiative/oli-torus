@@ -1,18 +1,31 @@
 export const EndDateTimer = {
   mounted() {
     const { timerId, submitButtonId, effectiveTimeInMs, autoSubmit } = this.el.dataset;
+
+    // Parse the dataset values
     const parsedEffectiveTimeInMs = parseInt(effectiveTimeInMs, 10);
     const parsedAutoSubmit = autoSubmit === 'true';
+    this.isPageHidden = false;
 
     endDateTimer(timerId, submitButtonId, parsedEffectiveTimeInMs, parsedAutoSubmit);
+
+    // Add event listeners to handle visibility changes and page unload
+    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this, submitButtonId));
   },
   destroyed() {
+    // Remove event listeners when the component is destroyed
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     window.removeEventListener('beforeunload', this.handleBeforeUnload.bind(this));
   },
+  handleVisibilityChange() {
+    this.isPageHidden = document.hidden;
+  },
   handleBeforeUnload(submitButtonId: string) {
-    const submitButton = document.getElementById(submitButtonId);
-    submitButton ? submitButton.click() : console.error('Submit button not found');
+    if (this.isPageHidden) {
+      const submitButton = document.getElementById(submitButtonId);
+      submitButton ? submitButton.click() : console.error('Submit button not found');
+    }
   },
 };
 
@@ -35,10 +48,12 @@ function endDateTimer(
       const minutes = Math.floor(distance / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
+      // Update the timer display if less than 5 minutes remain
       if (minutes < 5) {
         update(timerId, 'Time remaining: ' + minutes + 'm ' + seconds + 's ');
       }
 
+      // Check if the time has expired
       if (distance < 0) {
         clearInterval(interval);
         update(timerId, '');
