@@ -1,10 +1,11 @@
 defmodule Oli.Plugs.RequireSection do
+  use OliWeb, :verified_routes
+
   import Plug.Conn
   import Phoenix.Controller
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionInvites
-  alias OliWeb.Router.Helpers, as: Routes
 
   def init(opts), do: opts
 
@@ -37,9 +38,7 @@ defmodule Oli.Plugs.RequireSection do
           end
         else
           conn
-          |> redirect(
-            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InvalidSectionInviteView)
-          )
+          |> redirect(to: ~p"/sections/join/invalid")
           |> halt()
         end
 

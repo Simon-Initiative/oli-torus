@@ -779,6 +779,10 @@ defmodule OliWeb.Router do
     ])
 
     live("/", Delivery.OpenAndFreeIndex)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([:browser])
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
