@@ -101,6 +101,20 @@ defmodule OliWeb.Projects.OverviewLiveTest do
       |> hd() =~ "Welcome Title"
     end
 
+    test "project gets validated correctly", %{conn: conn, author: author} do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, Routes.live_path(Endpoint, OverviewLive, project.slug))
+
+      assert view
+             |> element("form[phx-change=\"validate\"]")
+             |> render_change(%{
+               "project" => %{
+                 "title" => nil
+               }
+             }) =~ "can&#39;t be blank"
+    end
+
     test "project can enable required surveys", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 

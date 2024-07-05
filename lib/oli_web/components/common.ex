@@ -3,7 +3,6 @@ defmodule OliWeb.Components.Common do
 
   import OliWeb.Gettext
 
-  alias Phoenix.HTML.Form
   alias OliWeb.Common.{FormatDateTime, React}
   alias Phoenix.LiveView.JS
 
@@ -1103,8 +1102,14 @@ defmodule OliWeb.Components.Common do
   def rich_text_editor_field(assigns) do
     ~H"""
     <div id={@id} class="form-label-group mb-3">
-      <%= Form.label(@form, @field_name, @field_label, class: "control-label") %>
-      <%= Form.hidden_input(@form, @field_name) %>
+      <.input
+        field={@form[@field_name]}
+        label={@field_label}
+        type="hidden"
+        class_label="control-label"
+        error_position={:top}
+        errors={@form.errors}
+      />
 
       <div id="rich_text_editor" phx-update="ignore">
         <%= React.component(
