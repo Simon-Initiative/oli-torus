@@ -38,7 +38,16 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.authoring_pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Authoring Sign In"
+      assert html_response(conn, 200) =~ "Course Author Sign In"
+
+      assert html_response(conn, 200) =~
+               "Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">OLI</span><span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\"> Torus"
+
+      assert html_response(conn, 200) =~
+               "Create, deliver, and continuously improve course materials."
+
+      assert html_response(conn, 200) =~
+               "Create an Account"
 
       # sign author in
       conn =
