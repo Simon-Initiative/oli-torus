@@ -16,6 +16,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Components.Common
 
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)
@@ -64,30 +65,34 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
-      <.form :let={f} for={@changeset} phx-submit="update">
+      <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"
           description="Your project title and description will be shown to students when you publish this project."
         >
           <div class="form-label-group mb-3">
-            <%= label(f, :title, "Project ID", class: "control-label") %>
-            <%= text_input(f, :slug, class: "form-control", disabled: true) %>
+            <.input field={f[:slug]} label="Project ID" class="form-control" disabled />
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :title, "Project Title", class: "control-label") %>
-            <%= text_input(f, :title,
-              class: "form-control",
-              placeholder: "The title of your project...",
-              required: false
-            ) %>
+            <.input
+              field={f[:title]}
+              label="Project Title"
+              class="form-control"
+              placeholder="The title of your project..."
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :description, "Project Description", class: "control-label") %>
-            <%= textarea(f, :description,
-              class: "form-control",
-              placeholder: "A brief description of your project...",
-              required: false
-            ) %>
+            <.input
+              field={f[:description]}
+              label="Project Description"
+              type="textarea"
+              class="form-control"
+              placeholder="A brief description of your project..."
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
           <% welcome_title =
             (fetch_field(f.source, :welcome_title) &&
@@ -103,15 +108,18 @@ defmodule OliWeb.Projects.OverviewLive do
             ctx={@ctx}
           />
           <div class="form-label-group mb-3">
-            <%= label(f, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
-            <%= textarea(f, :encouraging_subtitle,
-              class: "form-control",
-              placeholder: "Enter a subtitle to encourage students to begin the course...",
-              required: false
-            ) %>
+            <.input
+              field={f[:encouraging_subtitle]}
+              label="Encouraging Subtitle"
+              type="textarea"
+              class="form-control"
+              placeholder="Enter a subtitle to encourage students to begin the course..."
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :description, "Latest Publication", class: "control-label") %>
+            <Common.label class="control-label">Latest Publication</Common.label>
             <%= case @latest_published_publication do %>
               <% %{edition: edition, major: major, minor: minor} -> %>
                 <p class="text-secondary">
@@ -122,36 +130,42 @@ defmodule OliWeb.Projects.OverviewLive do
             <% end %>
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :publisher_id, "Project Publisher", class: "control-label") %>
-            <%= select(f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
-              class: "form-control",
-              required: true
-            ) %>
+            <.input
+              field={f[:publisher_id]}
+              label="Project Publisher"
+              type="select"
+              class="form-control"
+              options={Enum.map(@publishers, &{&1.name, &1.id})}
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
 
           <div class="form-label-group mb-3">
-            <%= if @can_enable_experiments do %>
-              <div class="form-label-group mb-3 form-check">
-                <%= checkbox(f, :has_experiments, required: false) %>
-                <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
-              </div>
-            <% end %>
+            <div :if={@can_enable_experiments} class="form-label-group mb-3 form-check">
+              <.input
+                field={f[:has_experiments]}
+                label="Enable Upgrade-based Experiments"
+                type="checkbox"
+                error_position={:bottom}
+                errors={f.errors}
+              />
+            </div>
 
-            <%= if @project.has_experiments do %>
-              <a
-                type="button"
-                class="btn btn-link pl-0"
-                href={
-                  Routes.live_path(
-                    OliWeb.Endpoint,
-                    OliWeb.Experiments.ExperimentsView,
-                    @project.slug
-                  )
-                }
-              >
-                Manage Experiments
-              </a>
-            <% end %>
+            <a
+              :if={@project.has_experiments}
+              type="button"
+              class="btn btn-link pl-0"
+              href={
+                Routes.live_path(
+                  OliWeb.Endpoint,
+                  OliWeb.Experiments.ExperimentsView,
+                  @project.slug
+                )
+              }
+            >
+              Manage Experiments
+            </a>
           </div>
 
           <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
@@ -499,11 +513,6 @@ defmodule OliWeb.Projects.OverviewLive do
 
   def handle_event("update", %{"project" => project_params}, socket) do
     project_params =
-      if project_params["license"] == "custom",
-        do: project_params,
-        else: Map.put(project_params, "custom_license_details", nil)
-
-    project_params =
       project_params
       |> add_custom_license_details()
       |> decode_welcome_title()
@@ -553,6 +562,20 @@ defmodule OliWeb.Projects.OverviewLive do
         "type" => "p",
         "children" => welcome_title
       })
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("validate", %{"project" => project_params}, socket) do
+    project_params =
+      project_params
+      |> add_custom_license_details()
+      |> decode_welcome_title()
+
+    changeset =
+      socket.assigns.project
+      |> Course.change_project(project_params)
+      |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, changeset: changeset)}
   end
