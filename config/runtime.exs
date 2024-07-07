@@ -362,6 +362,9 @@ if config_env() == :prod do
   config :oli, :datashop,
     cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
 
+  config :oli, :student_sign_in,
+    background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
+
   config :oli, Oban,
     repo: Oli.Repo,
     plugins: [Oban.Plugins.Pruner],
