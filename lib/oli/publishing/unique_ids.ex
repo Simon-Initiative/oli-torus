@@ -10,8 +10,6 @@ defmodule Oli.Publishing.UniqueIds do
   Adds unique ids to the content of all page and activity revisions in a publication,
   via creation of a new, publication tracked revisions.
   """
-  def add_unique_ids(%Publication{ids_added: true}), do: {:ok, 0}
-
   def add_unique_ids(%Publication{id: publication_id} = publication) do
     # Stream the activity and page revisions, and uniqueify the content
     # for each, then chunk into groups of 50 for bulk insertion of new revisions,
@@ -39,7 +37,7 @@ defmodule Oli.Publishing.UniqueIds do
     end)
   end
 
-  # Stream the page and activity revisions for a specific publication
+  # Stream the page and activity revisions for a specific publication which have not had ids added
   defp stream_revisions(publication_id) do
     page_type_id = ResourceType.get_id_by_type("page")
     activity_type_id = ResourceType.get_id_by_type("activity")
@@ -49,7 +47,8 @@ defmodule Oli.Publishing.UniqueIds do
       on: pr.revision_id == rev.id,
       where:
         pr.publication_id == ^publication_id and
-          (rev.resource_type_id == ^page_type_id or rev.resource_type_id == ^activity_type_id)
+          (rev.resource_type_id == ^page_type_id or rev.resource_type_id == ^activity_type_id) and
+          rev.ids_added != true
     )
     |> Repo.stream()
   end
@@ -65,7 +64,13 @@ defmodule Oli.Publishing.UniqueIds do
   def uniqueify(
         %Revision{id: id, content: content, resource_type_id: resource_type_id} = revision
       ) do
-    %{revision | content: uniqueify(content, resource_type_id, id)}
+    case uniqueify(content, resource_type_id, id) do
+      {:ok, content} ->
+        %{revision | content: content, ids_added: true}
+
+      {:error} ->
+        revision
+    end
   end
 
   def uniqueify(content, resource_type_id, revision_id) do
@@ -76,19 +81,19 @@ defmodule Oli.Publishing.UniqueIds do
       if resource_type_id == ResourceType.get_id_by_type("page") do
         {content, _} = uniqueify_content(content)
 
-        content
+        {:ok, content}
       else
         {content, _} =
           do_for_stem({content, MapSet.new()})
           |> do_for_content_collection("choices")
           |> do_for_parts()
 
-        content
+        {:ok, content}
       end
     rescue
       _ ->
         Logger.warning("Error uniqueifying content for revision [#{revision_id}]")
-        content
+        {:error}
     end
   end
 
@@ -272,6 +277,8 @@ defmodule Oli.Publishing.UniqueIds do
   end
 
   # Bulk update the published_resources with the new revision ids
+  defp update_published_resources([], _publication_id), do: {:ok, 0}
+
   defp update_published_resources(mappings, publication_id) do
     {values, params, _} =
       Enum.reduce(mappings, {[], [], 2}, fn %{id: id, previous_revision_id: previous_revision_id},

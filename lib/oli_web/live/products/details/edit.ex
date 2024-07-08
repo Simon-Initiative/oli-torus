@@ -6,6 +6,7 @@ defmodule OliWeb.Products.Details.Edit do
   import Ecto.Changeset
 
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Components.Common
 
   defp statuses do
     [{"Active", "active"}, {"Archived", "archived"}]
@@ -23,6 +24,8 @@ defmodule OliWeb.Products.Details.Edit do
   attr(:available_brands, :any, default: nil)
   attr(:publishers, :list, required: true)
   attr(:is_admin, :boolean)
+  attr(:project_slug, :string, required: true)
+  attr(:ctx, :map, required: true)
 
   def render(assigns) do
     ~H"""
@@ -47,6 +50,31 @@ defmodule OliWeb.Products.Details.Edit do
           <%= label(f, :description) %>
           <%= text_input(f, :description, class: "form-control") %>
           <div><%= error_tag(f, :description) %></div>
+        </div>
+
+        <% welcome_title =
+          (Common.fetch_field(f.source, :welcome_title) &&
+             Common.fetch_field(f.source, :welcome_title)["children"]) || [] %>
+        <Common.rich_text_editor_field
+          id="welcome_title_field"
+          form={f}
+          value={welcome_title}
+          field_name={:welcome_title}
+          field_label="Welcome Message Title"
+          on_edit="welcome_title_change"
+          project_slug={@project_slug}
+          ctx={@ctx}
+        />
+
+        <div class="form-group mb-2">
+          <%= label(f, :encouraging_subtitle, "Encouraging Subtitle", class: "control-label") %>
+
+          <%= textarea(f, :encouraging_subtitle,
+            class: "form-control",
+            placeholder: "Enter a subtitle to encourage students to begin the course...",
+            required: false
+          ) %>
+          <div><%= error_tag(f, :encouraging_subtitle) %></div>
         </div>
 
         <div class="form-group mb-2">

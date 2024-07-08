@@ -620,7 +620,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert view
              |> element("label[for=\"source\"]")
              |> render() =~
-               "Resource That Must Has Progress"
+               "Resource That Must Have Progress"
 
       assert view
              |> element("input[phx-click=\"toggle-min-score\"]")

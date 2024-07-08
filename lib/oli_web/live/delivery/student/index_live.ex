@@ -19,12 +19,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     schedule_for_current_week_and_next_week =
       Sections.get_schedule_for_current_and_next_week(section, current_user_id)
 
-    # Use the root container revision to store the intro message for the course
-    intro_message =
-      section.slug
-      |> DeliveryResolver.root_container()
-      |> build_intro_message_title()
-
     nearest_upcoming_lesson =
       section
       |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
@@ -83,7 +77,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
        latest_assignments: combine_settings(latest_assignments, combined_settings),
        containers_per_page: containers_per_page,
        section_progress: section_progress(section.id, current_user_id),
-       intro_message: intro_message,
        assignments_tab: :upcoming
      )}
   end
@@ -122,10 +115,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <.header_banner
       ctx={@ctx}
       section_slug={@section_slug}
+      section={@section}
       has_visited_section={@has_visited_section}
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
-      intro_message={@intro_message}
     />
     <div
       id="schedule-view"
@@ -141,6 +134,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             section_slug={@section_slug}
             assignments_tab={@assignments_tab}
             containers_per_page={@containers_per_page}
+            ctx={@ctx}
           />
         </div>
 
@@ -159,10 +153,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   attr(:ctx, :map, default: nil)
   attr(:section_slug, :string, required: true)
+  attr(:section, :any, required: true)
   attr(:has_visited_section, :boolean, required: true)
   attr(:suggested_page, :map)
   attr(:unfinished_lesson, :boolean, required: true)
-  attr(:intro_message, :map)
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
@@ -276,7 +270,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(assigns) do
     ~H"""
-    <div class="w-full h-96 relative flex items-center">
+    <div class="w-full h-1/2 relative flex items-center">
       <div class="inset-0 absolute">
         <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
         <img
@@ -298,11 +292,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="w-full flex flex-col items-start gap-2.5">
           <div class="w-full whitespace-nowrap overflow-hidden">
             <span class="text-3xl text-white font-medium">
-              <%= @intro_message %>
+              <%= build_welcome_title(@section.welcome_title) %>
             </span>
           </div>
-          <div class="w-full text-white/60 text-lg font-semibold">
-            Dive Into Discovery. Begin Your Learning Adventure Now!
+          <div class="w-96 text-white/60 text-lg font-semibold">
+            <%= @section.encouraging_subtitle ||
+              "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
           </div>
         </div>
         <div class="pt-5 flex items-start gap-6">
@@ -371,6 +366,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:section_slug, :string, required: true)
   attr(:assignments_tab, :atom, required: true)
   attr(:containers_per_page, :map, required: true)
+  attr(:ctx, :map, required: true)
 
   defp assignments(assigns) do
     lessons =
@@ -421,6 +417,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               lesson={lesson}
               containers={@containers_per_page[lesson.resource_id] || []}
               section_slug={@section_slug}
+              ctx={@ctx}
             />
           <% end %>
         </div>
@@ -442,6 +439,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:upcoming, :boolean, required: true)
   attr(:section_slug, :string, required: true)
   attr(:containers, :list, required: true)
+  attr(:ctx, :map, required: true)
 
   defp lesson_card(assigns) do
     assigns =
@@ -489,7 +487,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <Student.resource_type type={@lesson_type} long={false} />
         </div>
 
-        <.lesson_details upcoming={@upcoming} lesson={@lesson} completed={@completed} />
+        <.lesson_details upcoming={@upcoming} lesson={@lesson} completed={@completed} ctx={@ctx} />
       </div>
     </.link>
     """
@@ -511,6 +509,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr :lesson, :map, required: true
   attr :upcoming, :boolean, required: true
   attr :completed, :boolean, required: true
+  attr :ctx, :map, required: true
 
   defp lesson_details(%{upcoming: true} = assigns) do
     ~H"""
@@ -519,12 +518,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <div class="flex items-end gap-1">
           <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
             <%= if is_nil(@lesson.settings),
-              do: Utils.coalesce(@lesson.end_date, @lesson.start_date) |> Utils.days_difference(),
+              do: Utils.coalesce(@lesson.end_date, @lesson.start_date) |> Utils.days_difference(@ctx),
               else:
                 Utils.coalesce(@lesson.settings.end_date, @lesson.end_date)
                 |> Utils.coalesce(@lesson.settings.start_date)
                 |> Utils.coalesce(@lesson.start_date)
-                |> Utils.days_difference() %>
+                |> Utils.days_difference(@ctx) %>
           </div>
         </div>
       </div>
@@ -562,7 +561,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       <% else %>
         <div
-          :if={@lesson.end_date}
+          :if={lesson_expires?(@lesson)}
           class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
         >
           <div class="opacity-50 text-black dark:text-white text-xs font-normal">
@@ -578,7 +577,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               "text-xs font-normal"
             ]}
           >
-            <%= Student.format_time_remaining(@lesson.end_date) %>
+            <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
           </div>
         </div>
       <% end %>
@@ -607,16 +606,37 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp lesson_details(assigns) do
     ~H"""
     <div role="details" class="pt-2 pb-1 px-1 flex self-stretch justify-between gap-5">
-      <div :if={@lesson.end_date} class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex">
+      <div
+        :if={lesson_expires?(@lesson)}
+        class="w-fit h-4 pl-1 justify-center items-start gap-1 inline-flex"
+      >
         <div class="opacity-50 text-black dark:text-white text-xs font-normal">
           Time Remaining:
         </div>
         <div role="countdown" class="text-practice dark:text-practice-dark text-xs font-normal">
-          <%= Student.format_time_remaining(@lesson.end_date) %>
+          <%= effective_lesson_expiration_date(@lesson) |> Utils.format_time_remaining() %>
         </div>
       </div>
     </div>
     """
+  end
+
+  defp lesson_expires?(lesson) do
+    Utils.attempt_expires?(
+      lesson.last_attempt_state,
+      lesson.settings.time_limit,
+      lesson.settings.late_submit,
+      lesson.end_date
+    )
+  end
+
+  defp effective_lesson_expiration_date(lesson) do
+    Utils.effective_attempt_expiration_date(
+      lesson.last_attempt_started_at,
+      lesson.settings.time_limit,
+      lesson.settings.late_submit,
+      lesson.end_date
+    )
   end
 
   defp completed_lesson?(%{graded: true} = assignment),
@@ -702,18 +722,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     |> trunc()
   end
 
-  defp build_intro_message_title(%{intro_content: intro_content})
-       when intro_content not in [nil, %{}],
+  defp build_welcome_title(welcome_title)
+       when welcome_title not in [nil, %{}],
        do:
          Phoenix.HTML.raw(
            Oli.Rendering.Content.render(
              %Oli.Rendering.Context{},
-             intro_content["children"],
+             welcome_title["children"],
              Oli.Rendering.Content.Html
            )
          )
 
-  defp build_intro_message_title(_), do: "Welcome to the Course"
+  defp build_welcome_title(_), do: "Welcome to the Course"
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts

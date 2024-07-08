@@ -551,6 +551,16 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for tracking project changes.
+  ## Examples
+      iex> change_project(project, params)
+      %Ecto.Changeset{source: %Project{}}
+  """
+  def change_project(project, params \\ %{}) do
+    Project.changeset(project, params)
+  end
+
+  @doc """
   Generates a datashop snapshot for the given project and sections if one is not already in progress
   """
   def generate_datashop_snapshot(project, section_ids) do

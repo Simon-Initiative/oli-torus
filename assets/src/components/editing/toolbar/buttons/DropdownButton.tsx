@@ -64,6 +64,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       }
     >
       <button
+        type="button"
         className={classNames(
           styles.toolbarButton,
           styles.dropdownButton,

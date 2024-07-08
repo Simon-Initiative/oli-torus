@@ -5,6 +5,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
   alias OliWeb.Components.Delivery.CardHighlights
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Delivery.LearningObjectives.ObjectivesTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
@@ -93,7 +94,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
        patch_url_type: assigns.patch_url_type,
        section_slug: section.slug,
        units_modules: objectives_tab.filter_options,
-       filter_disabled?: filter_by_module_disabled?(section, objectives_tab.objectives),
+       filter_disabled?: filter_by_module_disabled?(section),
        view: assigns[:view],
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
@@ -672,11 +673,6 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   This happens when the contained objectives for the section were not yet created.
   """
 
-  defp filter_by_module_disabled?(section, objectives) do
-    section.v25_migration != :done or
-      Enum.any?(
-        objectives,
-        &(&1.container_ids == [] or &1.container_ids == nil)
-      )
-  end
+  defp filter_by_module_disabled?(%Section{v25_migration: :done}), do: false
+  defp filter_by_module_disabled?(_), do: true
 end

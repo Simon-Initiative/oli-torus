@@ -236,7 +236,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       conn =
         conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
+        |> get(~p"/sections/#{section.slug}/prologue/#{revision.slug}")
 
       assert html_response(conn, 200) =~ "Attempts 1/2"
     end

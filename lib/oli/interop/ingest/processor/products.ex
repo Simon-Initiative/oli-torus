@@ -92,13 +92,19 @@ defmodule Oli.Interop.Ingest.Processor.Products do
           labels
       end
 
+    new_product_attrs = %{
+      "welcome_title" => Map.get(product, "welcomeTitle"),
+      "encouraging_subtitle" => Map.get(product, "encouragingSubtitle")
+    }
+
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
     case Oli.Delivery.Sections.Blueprint.create_blueprint(
            project.slug,
            product["title"],
            custom_labels,
-           hierarchy_definition
+           hierarchy_definition,
+           new_product_attrs
          ) do
       {:ok, _} -> {:ok, %{state | container_id_map: container_id_map}}
       e -> e

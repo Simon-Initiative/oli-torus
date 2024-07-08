@@ -15,15 +15,20 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
       socket.assigns
 
+    page_context =
+      PageContext.create_for_visit(
+        section,
+        revision_slug,
+        current_user,
+        datashop_session_id
+      )
+
     {:cont,
      assign(socket,
-       page_context:
-         PageContext.create_for_visit(
-           section,
-           revision_slug,
-           current_user,
-           datashop_session_id
-         )
+       page_context: page_context,
+       # the page context will be a temporary assign,
+       # that is why we need to "duplicate" the page context progress state in another socket assign
+       page_progress_state: page_context.progress_state
      )}
   end
 
@@ -146,7 +151,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       part_scripts: Oli.PartComponents.get_part_component_scripts(:delivery_script),
       scripts: Oli.Activities.get_activity_scripts(:delivery_script),
       title: page_context.page.title,
-      additional_stylesheets: Map.get(content, "additionalStylesheets", [])
+      additional_stylesheets: Map.get(content, "additionalStylesheets", []),
+      bib_app_params: %{
+        bibReferences: page_context.bib_revisions
+      }
     })
     |> prologue_assigns(page_context)
   end
@@ -155,15 +163,23 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   defp init_context_state(
          %{
            assigns: %{
-             page_context: %PageContext{
-               page: %{graded: false}
-             }
+             page_context:
+               %PageContext{
+                 page: %{graded: false}
+               } = page_context
            }
          } =
            socket,
          _params
        ) do
-    assign(socket, %{view: :practice_page})
+    assign(socket, %{
+      view: :practice_page,
+      activity_count: map_size(page_context.activities),
+      advanced_delivery: Map.get(page_context.page.content, "advancedDelivery", false),
+      bib_app_params: %{
+        bibReferences: page_context.bib_revisions
+      }
+    })
   end
 
   # Display the prologue view for graded pages
@@ -176,7 +192,12 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
            socket,
          _params
        ) do
-    assign(socket, %{view: :graded_page})
+    assign(socket, %{
+      view: :graded_page,
+      bib_app_params: %{
+        bibReferences: page_context.bib_revisions
+      }
+    })
     |> prologue_assigns(page_context)
   end
 

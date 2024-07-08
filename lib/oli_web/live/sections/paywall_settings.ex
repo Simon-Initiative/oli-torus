@@ -19,7 +19,7 @@ defmodule OliWeb.Sections.PaywallSettings do
     ]
   end
 
-  attr :changeset, :any, required: true
+  attr :form, :any, required: true
   attr :disabled, :boolean, required: true
 
   def render(assigns) do
@@ -31,7 +31,7 @@ defmodule OliWeb.Sections.PaywallSettings do
       <div class="form-check">
         <.input
           type="checkbox"
-          field={@changeset[:requires_payment]}
+          field={@form[:requires_payment]}
           label="Requires payment"
           class="form-check-input"
           disabled={@disabled}
@@ -39,64 +39,64 @@ defmodule OliWeb.Sections.PaywallSettings do
       </div>
       <div class="mt-2 form-label-group">
         <.input
-          field={@changeset[:amount]}
+          field={@form[:amount]}
           label="Amount"
           class="form-control"
-          disabled={@disabled or !get_boolean_value(@changeset[:requires_payment])}
+          disabled={@disabled or !get_boolean_value(@form[:requires_payment])}
         />
       </div>
       <div class="form-label-group">
         <.input
           type="select"
-          field={@changeset[:payment_options]}
+          field={@form[:payment_options]}
           label="Payment options"
           class="form-control"
           options={payment_options_choices()}
-          disabled={@disabled or !@changeset[:payment_options].value}
+          disabled={@disabled or !@form[:payment_options].value}
         />
       </div>
-      <%= unless get_boolean_value(@changeset[:open_and_free]) do %>
+      <%= unless get_boolean_value(@form[:open_and_free]) do %>
         <div class="form-check">
           <.input
             type="checkbox"
-            field={@changeset[:pay_by_institution]}
+            field={@form[:pay_by_institution]}
             label="Pay by institution"
             class="form-check-input"
-            disabled={@disabled or !get_boolean_value(@changeset[:requires_payment])}
+            disabled={@disabled or !get_boolean_value(@form[:requires_payment])}
           />
         </div>
       <% end %>
       <div class="form-check">
         <.input
           type="checkbox"
-          field={@changeset[:has_grace_period]}
+          field={@form[:has_grace_period]}
           label="Has grace period"
           class="form-check-input"
-          disabled={@disabled or !get_boolean_value(@changeset[:requires_payment])}
+          disabled={@disabled or !get_boolean_value(@form[:requires_payment])}
         />
       </div>
       <div class="form-label-group">
         <.input
           type="number"
-          field={@changeset[:grace_period_days]}
+          field={@form[:grace_period_days]}
           label="Grace period days"
           class="form-control"
           disabled={
-            @disabled or !get_boolean_value(@changeset[:requires_payment]) or
-              !get_boolean_value(@changeset[:has_grace_period])
+            @disabled or !get_boolean_value(@form[:requires_payment]) or
+              !get_boolean_value(@form[:has_grace_period])
           }
         />
       </div>
       <div class="form-label-group">
         <.input
           type="select"
-          field={@changeset[:grace_period_strategy]}
+          field={@form[:grace_period_strategy]}
           label="Grace period strategy"
           class="form-control"
           options={strategies()}
           disabled={
-            @disabled or !get_boolean_value(@changeset[:requires_payment]) or
-              !get_boolean_value(@changeset[:has_grace_period])
+            @disabled or !get_boolean_value(@form[:requires_payment]) or
+              !get_boolean_value(@form[:has_grace_period])
           }
         />
       </div>

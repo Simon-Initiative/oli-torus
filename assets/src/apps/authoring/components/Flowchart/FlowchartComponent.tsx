@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactFlow, { Controls } from 'reactflow';
 import FloatingConnectionLine from './chart-components/FloatingConnectionLine';
 import { FloatingEdge } from './chart-components/FloatingEdge';
@@ -27,8 +27,7 @@ const EdgeTypes = {
 
 export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => {
   const { nodes, edges } = props;
-
-  const layout = layoutFlowchart(nodes, edges);
+  const layout = useMemo(() => layoutFlowchart(nodes, edges), [nodes, edges]);
   // const onInit = useCallback(
   //   (reactFlowInstance: ReactFlowInstance) => {
   //     setTimeout(() => {
@@ -44,19 +43,22 @@ export const FlowchartComponent: React.FC<FlowchartComponentProps> = (props) => 
   //   [nodes],
   // );
 
-  return (
-    <ReactFlow
-      nodeTypes={NodeTypes}
-      edgeTypes={EdgeTypes}
-      nodes={layout.nodes}
-      edges={layout.edges}
-      panOnDrag={true}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      connectionLineComponent={FloatingConnectionLine}
-      proOptions={{ hideAttribution: true }}
-    >
-      <Controls position="top-right" showInteractive={false} />
-    </ReactFlow>
+  return useMemo(
+    () => (
+      <ReactFlow
+        nodeTypes={NodeTypes}
+        edgeTypes={EdgeTypes}
+        nodes={layout.nodes}
+        edges={layout.edges}
+        panOnDrag={true}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        connectionLineComponent={FloatingConnectionLine}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Controls position="top-right" showInteractive={false} />
+      </ReactFlow>
+    ),
+    [layout.nodes, layout.edges],
   );
 };

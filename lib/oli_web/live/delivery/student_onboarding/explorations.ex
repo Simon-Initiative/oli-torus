@@ -23,7 +23,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Explorations do
         </div>
       </div>
       <img
-        class="aspect-video w-full hidden hvxl:block hvxl:h-[200px] hv2xl:h-[350px]"
+        class="aspect-video hidden hvxl:block hvxl:h-[200px] hv2xl:h-[350px] mx-auto"
         src="/images/exploration.gif"
       />
       <p class="text-[14px] leading-[20px] tracking-[0.02px] dark:text-white px-[20px] hvsm:px-[70px] hvxl:px-[84px] pt-9 pb-2">

@@ -29,7 +29,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
   ]
 
   @max_poster_image_size 5_000_000
-  @default_poster_image "/images/course_default.jpg"
+  @default_poster_image "/images/course_default.png"
 
   @max_intro_video_size 50_000_000
 

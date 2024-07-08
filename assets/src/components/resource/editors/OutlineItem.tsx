@@ -224,6 +224,8 @@ export const resourceGroupTitle = (contentItem: ResourceGroup) => {
     }
   } else if (contentItem.type === 'survey') {
     return contentItem.title ?? 'Survey';
+  } else if (contentItem.type === 'report') {
+    return contentItem.title ?? 'Report';
   } else if (contentItem.type === 'alternatives') {
     return 'Alternative Content';
   }

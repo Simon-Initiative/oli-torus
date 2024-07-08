@@ -357,6 +357,8 @@ defmodule Oli.Interop.Export do
     %{
       title: project.title,
       description: project.description,
+      welcomeTitle: project.welcome_title,
+      encouragingSubtitle: project.encouraging_subtitle,
       type: "Manifest",
       required_student_survey: required_survey_resource_id,
       attributes: Map.get(project, :attributes)
@@ -453,6 +455,8 @@ defmodule Oli.Interop.Export do
       id: Integer.to_string(product.id, 10),
       originalFile: "",
       title: product.title,
+      welcomeTitle: product.welcome_title,
+      encouragingSubtitle: product.encouraging_subtitle,
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_resource_id, id) end)
     }
     |> entry("#{product.id}.json")

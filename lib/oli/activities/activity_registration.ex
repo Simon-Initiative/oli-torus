@@ -16,6 +16,7 @@ defmodule Oli.Activities.ActivityRegistration do
     field :globally_available, :boolean, default: false
     field :globally_visible, :boolean, default: true
     field :variables, {:array, :string}, default: []
+    field :generates_report, :boolean, default: false
 
     many_to_many :projects, Oli.Authoring.Course.Project,
       join_through: Oli.Activities.ActivityRegistrationProject
@@ -37,6 +38,7 @@ defmodule Oli.Activities.ActivityRegistration do
       :delivery_script,
       :authoring_script,
       :allow_client_evaluation,
+      :generates_report,
       :globally_available,
       :globally_visible,
       :variables

@@ -22,7 +22,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     total_duration_minutes: 0
   }
 
-  @default_image "/images/course_default.jpg"
+  @default_image "/images/course_default.png"
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
@@ -909,7 +909,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
-            <%= "UNIT #{@unit["numbering"]["index"]}" %>
+            <%= container_label_and_numbering(
+              @unit["numbering"]["level"],
+              @unit["numbering"]["index"],
+              @section.customizations
+            ) %>
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
             <div class="flex w-full">
@@ -980,6 +984,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 :for={module <- @unit["children"]}
                 card={module}
                 module_index={module["numbering"]["index"]}
+                section_customizations={@section.customizations}
                 unit_resource_id={@unit["resource_id"]}
                 unit_numbering_index={@unit["numbering"]["index"]}
                 bg_image_url={module["poster_image"]}
@@ -1027,9 +1032,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <div class="justify-start items-start gap-1 inline-flex">
               <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
-                Module <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
-                  "numbering"
-                ]["index"] %>
+                <%= container_label_and_numbering(
+                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["numbering"][
+                    "level"
+                  ],
+                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["numbering"][
+                    "index"
+                  ],
+                  @section.customizations
+                ) %>
               </div>
             </div>
             <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
@@ -1186,7 +1197,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="dark:text-white text-xl font-bold font-['Open Sans']">
-            <%= "Unit #{@row["numbering"]["index"]}: #{@row["title"]}" %>
+            <%= "#{Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations)}: #{@row["title"]}" %>
           </div>
         </div>
         <div class="flex flex-col mt-6">
@@ -1964,6 +1975,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :card, :map
   attr :module_index, :integer
   attr :unit_numbering_index, :integer
+  attr :section_customizations, :map
   attr :unit_resource_id, :string
   attr :selected, :boolean, default: false
   attr :bg_image_url, :string, doc: "the background image url for the card"
@@ -2036,7 +2048,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <%= if @is_page,
               do: "PAGE",
-              else: "MODULE #{@module_index}" %>
+              else:
+                container_label_and_numbering(
+                  @card["numbering"]["level"],
+                  @module_index,
+                  @section_customizations
+                ) %>
           </span>
           <h5 class="pointer-events-none text-[18px] leading-[25px] font-bold text-white z-10">
             <%= @card["title"] %>
@@ -2801,4 +2818,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp parse_card_badge_minutes(_, _), do: nil
+
+  defp container_label_and_numbering(numbering_level, numbering, customizations) do
+    Sections.get_container_label_and_numbering(numbering_level, numbering, customizations)
+    |> String.upcase()
+  end
 end

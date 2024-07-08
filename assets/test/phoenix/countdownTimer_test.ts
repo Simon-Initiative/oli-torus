@@ -1,4 +1,4 @@
-import { formatTimerMessage, hasExpired } from 'phoenix/countdownTimer';
+import { formatTimerMessage, hasExpired } from 'hooks/countdown_timer';
 
 it('formats the message correctly', () => {
   const now = new Date().getTime();

@@ -176,7 +176,8 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             class="navbar-brand dark torus-logo my-1 mr-auto"
             href={logo_link(@section, @preview_mode)}
           >
-            <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+            <%= if assigns[:section],
+              do: brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
           </a>
         </div>
 

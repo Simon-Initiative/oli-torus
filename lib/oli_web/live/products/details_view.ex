@@ -8,7 +8,7 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Utils.S3Storage
-  alias OliWeb.Common.{Breadcrumb, Confirm}
+  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext}
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Router.Helpers, as: Routes
@@ -34,6 +34,8 @@ defmodule OliWeb.Products.DetailsView do
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
+        ctx = SessionContext.init(socket, session)
+
         author = Repo.get(Author, author_id)
 
         base_project = Course.get_project!(product.base_project_id)
@@ -56,7 +58,8 @@ defmodule OliWeb.Products.DetailsView do
            title: "Edit Product",
            show_confirm: false,
            breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})],
-           base_project: base_project
+           base_project: base_project,
+           ctx: ctx
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -82,10 +85,12 @@ defmodule OliWeb.Products.DetailsView do
         <div class="md:col-span-8">
           <Edit.render
             product={@product}
+            project_slug={@base_project.slug}
             changeset={@changeset}
             available_brands={@available_brands}
             publishers={@publishers}
             is_admin={@is_admin}
+            ctx={@ctx}
           />
         </div>
       </div>
@@ -184,7 +189,7 @@ defmodule OliWeb.Products.DetailsView do
   def handle_event("save", %{"section" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Sections.update_section(socket.assigns.product, params) do
+    case Sections.update_section(socket.assigns.product, decode_welcome_title(params)) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Product changes saved")
 
@@ -282,8 +287,26 @@ defmodule OliWeb.Products.DetailsView do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
+  def handle_event("welcome_title_change", %{"values" => welcome_title}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :welcome_title, %{
+        "type" => "p",
+        "children" => welcome_title
+      })
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
   defp ext(entry) do
     [ext | _] = MIME.extensions(entry.client_type)
     ext
   end
+
+  defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
+
+  defp decode_welcome_title(%{"welcome_title" => ""} = project_params),
+    do: %{project_params | "welcome_title" => nil}
+
+  defp decode_welcome_title(project_params),
+    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
 end

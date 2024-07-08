@@ -1,3 +1,4 @@
+import { LikertReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
 import { ECLRepl } from 'components/common/ECLRepl';
 import { Navbar } from 'components/common/Navbar';
@@ -11,6 +12,7 @@ import { SurveyControls } from 'components/delivery/SurveyControls';
 import { AttemptSelector } from 'components/misc/AttemptSelector';
 import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 import { PaginationControls } from 'components/misc/PaginationControls';
+import { VegaLiteRenderer } from 'components/misc/VegaLiteRenderer';
 import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { YoutubePlayer } from 'components/youtube_player/YoutubePlayer';
 import { registerApplication } from 'apps/app';
@@ -37,3 +39,5 @@ registerApplication('YoutubePlayer', YoutubePlayer, globalStore);
 registerApplication('TechSupportButton', TechSupportButton, globalStore);
 registerApplication('OfflineDetector', OfflineDetector, globalStore);
 registerApplication('RichTextEditor', RichTextEditor, globalStore);
+registerApplication('VegaLiteRenderer', VegaLiteRenderer, globalStore);
+registerApplication('LikertReportRenderer', LikertReportRenderer, globalStore);

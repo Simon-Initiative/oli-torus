@@ -569,6 +569,12 @@ defmodule OliWeb.Components.Delivery.Surveys do
     |> Repo.all()
   end
 
+  @spec get_activities_details(
+          any(),
+          atom() | %{:analytics_version => any(), :id => any(), optional(any()) => any()},
+          any(),
+          any()
+        ) :: any()
   def get_activities_details(activity_resource_ids, section, activity_types_map, page_resource_id) do
     multiple_choice_type_id =
       Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
@@ -689,8 +695,33 @@ defmodule OliWeb.Components.Delivery.Surveys do
         response_summary.activity_id == activity_attempt.resource_id
       end)
 
+    # we must consider the case where a transformed model is present and if so, then use it
+    # otherwise, use the revision model. This block also returns a corresponding updater function
+    {model, updater} =
+      case activity_attempt.transformed_model do
+        nil ->
+          {activity_attempt.revision.content,
+           fn activity_attempt, choices ->
+             update_in(
+               activity_attempt,
+               [Access.key!(:revision), Access.key!(:content)],
+               &Map.put(&1, "choices", choices)
+             )
+           end}
+
+        transformed_model ->
+          {transformed_model,
+           fn activity_attempt, choices ->
+             update_in(
+               activity_attempt,
+               [Access.key!(:transformed_model)],
+               &Map.put(&1, "choices", choices)
+             )
+           end}
+      end
+
     choices =
-      activity_attempt.transformed_model["choices"]
+      model["choices"]
       |> Enum.map(
         &Map.merge(&1, %{
           "frequency" =>
@@ -723,11 +754,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
         end
       end)
 
-    update_in(
-      activity_attempt,
-      [Access.key!(:transformed_model)],
-      &Map.put(&1, "choices", choices)
-    )
+    updater.(activity_attempt, choices)
   end
 
   defp add_likert_details(activity_attempt, response_summaries) do

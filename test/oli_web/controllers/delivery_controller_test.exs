@@ -75,8 +75,9 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
-    test "handles instructor with section and research consent form", %{
+    test "handles LMS instructor with section and redirects to instructor dashboard", %{
       conn: conn,
+      section: section,
       lti_param_ids: lti_param_ids,
       user: user
     } do
@@ -92,21 +93,8 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "Online Consent Form"
-    end
-
-    test "handles instructor with section and no research consent form", %{
-      conn: conn,
-      section_no_rc: section_no_rc,
-      lti_param_ids: lti_param_ids
-    } do
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_rc)
-        |> get(Routes.delivery_path(conn, :index))
-
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section_no_rc.slug}\">redirected"
+               "You are being <a href=\"/sections/#{section.slug}/instructor_dashboard/manage\">redirected"
     end
   end
 

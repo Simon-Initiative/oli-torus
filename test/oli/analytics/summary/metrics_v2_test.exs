@@ -132,7 +132,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert %{^user1_id => "High", ^user2_id => "Low"} = results
     end
 
-    test "proficiency_for_student_per_learning_objective/2", %{
+    test "proficiency_for_student_per_learning_objective/3", %{
       user1: user1,
       user2: user2,
       section: section,
@@ -156,7 +156,13 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
-      results = Metrics.proficiency_for_student_per_learning_objective(section, user1.id)
+      results =
+        Metrics.proficiency_for_student_per_learning_objective(
+          [o1.revision, o2.revision, o3.revision],
+          user1.id,
+          section
+        )
+
       assert Map.keys(results) |> Enum.count() == 3
       assert Map.get(results, id) == "Low"
       assert Map.get(results, id2) == "Medium"

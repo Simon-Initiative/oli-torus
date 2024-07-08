@@ -45,12 +45,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     course_collab_space_config =
       Collaboration.get_course_collab_space_config(section.root_section_resource_id)
 
-    course_discussions_enabled? =
-      case course_collab_space_config do
-        %Collaboration.CollabSpaceConfig{status: :enabled} -> true
-        _ -> false
-      end
-
     default_posts_params =
       case socket.assigns[:has_unread_discussions] do
         true -> Map.merge(@default_params, %{sort_by: "unread", sort_order: :desc})
@@ -77,6 +71,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       assign(socket,
         is_instructor: is_instructor,
         active_tab: :discussions,
+        active_sub_tab: if(socket.assigns.notes_enabled, do: :notes, else: :discussions),
         posts: posts,
         notes: notes,
         expanded_posts: %{},
@@ -86,7 +81,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         more_posts_exist?: more_posts_exist?,
         more_notes_exist?: more_notes_exist?,
         root_curriculum_resource_id: root_curriculum_resource_id,
-        course_discussions_enabled?: course_discussions_enabled?,
         posts_search_term: "",
         posts_search_results: nil,
         notes_search_term: "",
@@ -480,6 +474,10 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     end
   end
 
+  def handle_event("select_tab", %{"tab" => tab}, socket) do
+    {:noreply, assign(socket, active_sub_tab: String.to_existing_atom(tab))}
+  end
+
   def handle_info({:discussion_created, new_post}, socket) do
     {:noreply, assign(socket, :posts, [new_post | socket.assigns.posts])}
   end
@@ -543,30 +541,71 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       id="discussions_content"
       class="overflow-x-scroll md:overflow-x-auto flex flex-col py-6 px-16 mb-10 gap-6 items-start"
     >
-      <.posts_section
-        :if={@course_discussions_enabled?}
-        posts={@posts}
-        ctx={@ctx}
-        section_slug={@section.slug}
-        expanded_posts={@expanded_posts}
-        current_user={@current_user}
-        course_collab_space_config={@course_collab_space_config}
-        post_params={@post_params}
-        more_posts_exist?={@more_posts_exist?}
-        posts_search_term={@posts_search_term}
-        posts_search_results={@posts_search_results}
-      />
-      <.notes_section
-        :if={not @is_instructor}
-        ctx={@ctx}
-        section_slug={@section.slug}
-        current_user={@current_user}
-        notes={@notes}
-        note_params={@note_params}
-        more_notes_exist?={@more_notes_exist?}
-        notes_search_term={@notes_search_term}
-        notes_search_results={@notes_search_results}
-      />
+      <div class="flex gap-12">
+        <.tab
+          :if={@notes_enabled && not @is_instructor}
+          label="My Notes"
+          value={:notes}
+          active={@active_sub_tab}
+        />
+        <.tab
+          :if={@discussions_enabled}
+          label="Course Discussion"
+          value={:discussions}
+          active={@active_sub_tab}
+        />
+      </div>
+
+      <%= case @active_sub_tab do %>
+        <% :notes -> %>
+          <.notes_section
+            :if={@notes_enabled && not @is_instructor}
+            ctx={@ctx}
+            section_slug={@section.slug}
+            current_user={@current_user}
+            notes={@notes}
+            note_params={@note_params}
+            more_notes_exist?={@more_notes_exist?}
+            notes_search_term={@notes_search_term}
+            notes_search_results={@notes_search_results}
+          />
+        <% :discussions -> %>
+          <.posts_section
+            :if={@discussions_enabled}
+            posts={@posts}
+            ctx={@ctx}
+            section_slug={@section.slug}
+            expanded_posts={@expanded_posts}
+            current_user={@current_user}
+            course_collab_space_config={@course_collab_space_config}
+            post_params={@post_params}
+            more_posts_exist?={@more_posts_exist?}
+            posts_search_term={@posts_search_term}
+            posts_search_results={@posts_search_results}
+          />
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :label, :string, required: true
+  attr :value, :atom, required: true
+  attr :active, :atom, required: true
+
+  def tab(assigns) do
+    ~H"""
+    <div
+      class={[
+        "text-lg font-semibold py-2 border-b-2 cursor-pointer transition-colors duration-200",
+        if(@active == @value,
+          do: "text-gray-900 py-2 border-gray-900",
+          else: "text-gray-500 border-transparent hover:border-gray-500"
+        )
+      ]}
+      phx-click="select_tab"
+      phx-value-tab={@value}
+    >
+      <%= @label %>
     </div>
     """
   end
@@ -665,12 +704,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp posts_section(assigns) do
     ~H"""
     <section id="posts" class="container mx-auto flex flex-col items-start w-full gap-6">
-      <div role="posts header" class="flex justify-between items-center w-full self-stretch">
-        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          Course Discussions
-        </h3>
-      </div>
-
       <.posts_actions
         post_params={@post_params}
         course_collab_space_config={@course_collab_space_config}
@@ -728,12 +761,6 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   defp notes_section(assigns) do
     ~H"""
     <section id="notes" class="container mx-auto flex flex-col items-start w-full gap-6">
-      <div role="notes header" class="flex justify-between items-center w-full self-stretch">
-        <h3 class="text-2xl tracking-[0.02px] font-semibold dark:text-white">
-          My Notes
-        </h3>
-      </div>
-
       <.notes_actions note_params={@note_params} notes_search_term={@notes_search_term} />
 
       <%= case @notes_search_results do %>
@@ -786,8 +813,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp posts_actions(assigns) do
     ~H"""
-    <div role="posts actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3 justify-between">
+    <div role="posts actions" class="w-full flex">
+      <div class="flex flex-1 gap-6">
         <Annotations.search_box
           class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
@@ -836,16 +863,16 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           <span class="text-[14px] leading-[20px] mr-2">Sort</span>
           <Icons.chevron_down />
         </.dropdown>
-      </div>
 
-      <button
-        :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
-        role="new discussion"
-        phx-click={Modal.show_modal("new-discussion-modal")}
-        class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
-      >
-        <Icons.plus class="w-6 h-6 mr-[10px]" /> New Discussion
-      </button>
+        <button
+          :if={@course_collab_space_config && @course_collab_space_config.status == :enabled}
+          role="new discussion"
+          phx-click={Modal.show_modal("new-discussion-modal")}
+          class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
+        >
+          <Icons.plus class="w-6 h-6 mr-[10px]" /> New Discussion
+        </button>
+      </div>
     </div>
     """
   end
@@ -855,8 +882,8 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
 
   defp notes_actions(assigns) do
     ~H"""
-    <div role="notes actions" class="w-full flex gap-6">
-      <div class="flex flex-1 space-x-3 justify-between">
+    <div role="notes actions" class="w-full flex">
+      <div class="flex flex-1 gap-6">
         <Annotations.search_box
           class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}

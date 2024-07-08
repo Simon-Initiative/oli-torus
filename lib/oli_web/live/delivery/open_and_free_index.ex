@@ -78,7 +78,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
               <.form for={%{}} phx-change="search_section" class="w-[330px]">
                 <SearchInput.render
                   id="section_search_input"
-                  name="search"
+                  name="text_search"
                   placeholder="Search by course or instructor name"
                   text={@params.text_search}
                 />
@@ -103,7 +103,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                     )
                     |> JS.remove_class("opacity-100 translate-x-0")
                   }
-                  class="opacity-0 relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 text-black hover:text-black dark:text-white dark:hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
+                  class="opacity-0 relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
                   style={"background-image: url('#{cover_image(section)}');"}
                 >
                   <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
@@ -112,7 +112,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   <span
                     :if={section.progress == 100}
                     role={"complete_badge_for_section_#{section.id}"}
-                    class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-black text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
+                    class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
                   >
                     Complete
                   </span>
@@ -125,12 +125,12 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                   </span>
                   <div class="z-10 flex w-full items-center">
                     <div class="flex flex-col items-start gap-6">
-                      <h5 class="text-gray-900 text-[36px] leading-[49px] font-semibold dark:text-white">
+                      <h5 class="text-[36px] leading-[49px] font-semibold drop-shadow-md">
                         <%= section.title %>
                       </h5>
                       <div
                         :if={section.user_role == "student"}
-                        class="flex"
+                        class="flex drop-shadow-md"
                         role={"progress_for_section_#{section.id}"}
                       >
                         <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
@@ -139,7 +139,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                         <.progress_bar percent={section.progress} show_percent={true} width="100px" />
                       </div>
                     </div>
-                    <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] dark:text-white"></i>
+                    <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>
                   </div>
                 </.link>
                 <p :if={length(@filtered_sections) == 0} class="mt-4">
@@ -158,7 +158,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("search_section", %{"search" => text_search}, socket) do
+  def handle_event("search_section", %{"text_search" => text_search}, socket) do
     {:noreply, push_patch(socket, to: ~p"/sections?#{%{text_search: text_search}}")}
   end
 
