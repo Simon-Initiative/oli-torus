@@ -101,11 +101,11 @@ defmodule OliWeb.Components.Header do
       <a class="navbar-brand torus-logo my-1 mr-auto" href={~p"/"}>
         <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
       </a>
-      <.sign_in_button href="/authoring/session/new" request_path={assigns.conn.request_path}>
-        For Course Authors
-      </.sign_in_button>
       <.sign_in_button href="/session/new" request_path={assigns.conn.request_path}>
         For Instructors
+      </.sign_in_button>
+      <.sign_in_button href="/authoring/session/new" request_path={assigns.conn.request_path}>
+        For Course Authors
       </.sign_in_button>
       <.button
         id="support-button"
