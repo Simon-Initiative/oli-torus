@@ -699,4 +699,12 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     """
   end
+
+  def coalesce(first, second) do
+    case {first, second} do
+      {nil, nil} -> nil
+      {nil, s} -> s
+      {f, _s} -> f
+    end
+  end
 end

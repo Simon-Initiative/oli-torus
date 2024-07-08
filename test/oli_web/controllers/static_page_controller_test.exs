@@ -7,8 +7,8 @@ defmodule OliWeb.StaticPageControllerTest do
     conn = get(conn, "/")
 
     assert html_response(conn, 200) =~ "Welcome to"
-    assert html_response(conn, 200) =~ "Learner/Educator Sign In"
-    assert html_response(conn, 200) =~ "Authoring Sign In"
+    assert html_response(conn, 200) =~ "For Instructors"
+    assert html_response(conn, 200) =~ "For Course Authors"
   end
 
   describe "set_session" do

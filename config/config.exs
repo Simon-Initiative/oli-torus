@@ -301,6 +301,9 @@ config :ex_cldr,
 config :oli, :datashop,
   cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
 
+config :oli, :student_sign_in,
+  background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
