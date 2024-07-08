@@ -41,7 +41,7 @@ defmodule OliWeb.Common.PowTest do
       assert html_response(conn, 200) =~ "Course Author Sign In"
 
       assert html_response(conn, 200) =~
-               "Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">OLI</span><span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\"> Torus"
+               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
 
       assert html_response(conn, 200) =~
                "Create, deliver, and continuously improve course materials."
@@ -91,7 +91,7 @@ defmodule OliWeb.Common.PowTest do
       assert html_response(conn, 200) =~ "Student Sign In"
 
       assert html_response(conn, 200) =~
-               "Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">OLI</span><span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\"> Torus"
+               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
 
       assert html_response(conn, 200) =~
                "Easily access and engage with all your enrolled Torus courses"
