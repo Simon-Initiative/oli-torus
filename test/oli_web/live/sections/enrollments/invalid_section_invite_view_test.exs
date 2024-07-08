@@ -18,7 +18,7 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
       {:ok, view, _html} = live(conn, redirect_to)
 
       assert render(view) =~
-               "This enrollment link has expired or is invalid. If you already have a Torus student account, please <a href=\"/session/new\">sign in</a>."
+               "This enrollment link has expired or is invalid. If you already have a student account, please <a href=\"/session/new\">sign in</a>.\n</div></div>"
 
       assert element(view, "a[href=\"/session/new\"]") |> render() =~ "sign in"
     end
@@ -55,7 +55,7 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
       {:ok, view, _html} = live(conn, redirect_to)
 
       assert render(view) =~
-               "This enrollment link has expired or is invalid. If you already have a Torus student account, please <a href=\"/session/new\">sign in</a>."
+               "This enrollment link has expired or is invalid. If you already have a student account, please <a href=\"/session/new\">sign in</a>.\n</div></div>"
     end
 
     test "shows enroll view", %{conn: conn} do

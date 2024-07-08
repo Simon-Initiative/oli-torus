@@ -8,7 +8,7 @@ defmodule OliWeb.Sections.InvalidSectionInviteView do
   def render(assigns) do
     ~H"""
     <div class="p-10">
-      This enrollment link has expired or is invalid. If you already have a Torus student account, please <a href="/session/new">sign in</a>.
+      This enrollment link has expired or is invalid. If you already have a student account, please <a href="/session/new">sign in</a>.
     </div>
     """
   end
