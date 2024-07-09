@@ -17,46 +17,15 @@ export const CountdownTimer = {
     const parsedGracePeriodInMs = parseInt(gracePeriodInMins, 10) * 60 * 1000;
     const parsedAutoSubmit = autoSubmit === 'true';
 
-    this.isPageHidden = false;
-    this.submitButtonId = submitButtonId;
-
-    const currentTimeInMs = Date.now();
-
-    // Check if the current time is greater than or equal to the end time plus the grace period
-    if (currentTimeInMs >= parsedStartTimeInMs + parsedEffectiveTimeInMs + parsedGracePeriodInMs) {
-      this.submitForm();
-    } else {
-      // Start the countdown timer if it hasn't expired yet
-      countdownTimer(
-        timerId,
-        submitButtonId,
-        parsedTimeOutInMs,
-        parsedStartTimeInMs,
-        parsedEffectiveTimeInMs,
-        parsedGracePeriodInMs,
-        parsedAutoSubmit,
-      );
-    }
-
-    // Add event listeners to handle visibility changes and page unload
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-  },
-  destroyed() {
-    // Remove event listeners when the component is destroyed
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    window.removeEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-  },
-  handleVisibilityChange() {
-    this.isPageHidden = document.hidden;
-  },
-  handleBeforeUnload() {
-    if (this.isPageHidden) {
-      this.submitForm();
-    }
-  },
-  submitForm() {
-    do_auto_submit(this.submitButtonId);
+    countdownTimer(
+      timerId,
+      submitButtonId,
+      parsedTimeOutInMs,
+      parsedStartTimeInMs,
+      parsedEffectiveTimeInMs,
+      parsedGracePeriodInMs,
+      parsedAutoSubmit,
+    );
   },
 };
 

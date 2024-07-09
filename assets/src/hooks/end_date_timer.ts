@@ -8,24 +8,6 @@ export const EndDateTimer = {
     this.isPageHidden = false;
 
     endDateTimer(timerId, submitButtonId, parsedEffectiveTimeInMs, parsedAutoSubmit);
-
-    // Add event listeners to handle visibility changes and page unload
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this, submitButtonId));
-  },
-  destroyed() {
-    // Remove event listeners when the component is destroyed
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    window.removeEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-  },
-  handleVisibilityChange() {
-    this.isPageHidden = document.hidden;
-  },
-  handleBeforeUnload(submitButtonId: string) {
-    if (this.isPageHidden) {
-      const submitButton = document.getElementById(submitButtonId);
-      submitButton ? submitButton.click() : console.error('Submit button not found');
-    }
   },
 };
 
