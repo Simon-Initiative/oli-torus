@@ -6,7 +6,12 @@ import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
-import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
+import {
+  selectCurrentPartPropertyFocus,
+  selectCurrentSelection,
+  setCurrentPartPropertyFocus,
+  setCurrentSelection,
+} from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
@@ -17,7 +22,7 @@ const EditingCanvas: React.FC = () => {
   const _bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const _currentPartSelection = useSelector(selectCurrentSelection);
-
+  const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
@@ -81,7 +86,7 @@ const EditingCanvas: React.FC = () => {
         rightPanelActiveTab: !id.length ? RightPanelTabs.SCREEN : RightPanelTabs.COMPONENT,
       }),
     );
-
+    dispatch(setCurrentPartPropertyFocus({ focus: true }));
     return true;
   };
 
@@ -129,7 +134,7 @@ const EditingCanvas: React.FC = () => {
 
   useKeyDown(
     () => {
-      if (currentSelectedPartId && !configPartId?.length) {
+      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
@@ -138,23 +143,26 @@ const EditingCanvas: React.FC = () => {
       }
     },
     ['Delete', 'Backspace'],
-    { ctrlKey: true },
-    [currentSelectedPartId, configPartId],
+    {},
+    [currentSelectedPartId, configPartId, _currentPartPropertyFocus],
   );
 
   useKeyDown(
     () => {
-      if (currentSelectedPartId && !configPartId?.length) {
+      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
           payload: { id: currentSelectedPartId, type: 'Copy' },
         });
+      } else if (!_currentPartPropertyFocus) {
+        //if user first copies a part and then before pasting it, if they click on the properties and do a cntrl+c, we need to clear the existing cntrl+c for part
+        dispatch(setCopiedPart({ copiedPart: null }));
       }
     },
     ['KeyC'],
     { ctrlKey: true },
-    [currentSelectedPartId],
+    [currentSelectedPartId, _currentPartPropertyFocus],
   );
 
   const configEditorId = `config-editor-${currentActivityId}`;

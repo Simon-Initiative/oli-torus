@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
-import { selectCurrentSelection } from '../../../store/parts/slice';
+import { selectCurrentSelection, setCurrentPartPropertyFocus } from '../../../store/parts/slice';
 
 /*
  This component handles editing advanced feedback for a question type that has a fixed set of options.
@@ -115,15 +115,22 @@ const OptionFeedback: React.FC<OptionFeedbackProps> = ({
   feedback,
   onChange,
 }) => {
+  const dispatch = useDispatch();
   const labelOption = option || `Option ${index + 1}`;
   return (
     <div className="form-group">
       <label>{labelOption}</label>
       <input
-        onBlur={onBlur}
+        onBlur={() => {
+          onBlur();
+          dispatch(setCurrentPartPropertyFocus({ focus: true }));
+        }}
         className="form-control"
         value={feedback}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={() => {
+          dispatch(setCurrentPartPropertyFocus({ focus: false }));
+        }}
       />
     </div>
   );
