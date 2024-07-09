@@ -145,7 +145,6 @@ const EditingCanvas: React.FC = () => {
   useKeyDown(
     () => {
       if (currentSelectedPartId && !configPartId?.length) {
-        console.log('Trigger Cntrl + C');
         setNotificationStream({
           stamp: Date.now(),
           type: NotificationType.CHECK_SHORTCUT_ACTIONS,
