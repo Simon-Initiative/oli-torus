@@ -54,6 +54,18 @@
           >
             Sign In
           </a>
+          <a
+            :if={!assigns[:auto_enroll_as_guest]}
+            href={
+              Routes.pow_registration_path(@conn, :new,
+                section: @section.slug,
+                from_invitation_link?: assigns[:from_invitation_link?]
+              )
+            }
+            class="btn btn-md btn-outline-primary btn-block mt-2"
+          >
+            Sign Up
+          </a>
         <% else %>
           <%= submit("Enroll", class: "btn btn-md btn-primary btn-block") %>
         <% end %>
