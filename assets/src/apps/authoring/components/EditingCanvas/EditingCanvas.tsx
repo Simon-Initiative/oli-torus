@@ -3,9 +3,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
+import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
-import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
+import {
+  selectCurrentPartPropertyFocus,
+  selectCurrentSelection,
+  setCurrentPartPropertyFocus,
+  setCurrentSelection,
+} from '../../store/parts/slice';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
@@ -16,7 +22,7 @@ const EditingCanvas: React.FC = () => {
   const _bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const _currentPartSelection = useSelector(selectCurrentSelection);
-
+  const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
@@ -24,7 +30,7 @@ const EditingCanvas: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
   const [configPartId, setConfigPartId] = useState<string>('');
-
+  const [currentSelectedPartId, setCurrentSelectedPartId] = useState<string>('');
   const [notificationStream, setNotificationStream] = useState<{
     stamp: number;
     type: NotificationType;
@@ -74,13 +80,13 @@ const EditingCanvas: React.FC = () => {
   const handlePartSelect = async (id: string) => {
     /* console.log('[handlePartSelect]', { id }); */
     dispatch(setCurrentSelection({ selection: id }));
-
+    setCurrentSelectedPartId(id);
     dispatch(
       setRightPanelActiveTab({
         rightPanelActiveTab: !id.length ? RightPanelTabs.SCREEN : RightPanelTabs.COMPONENT,
       }),
     );
-
+    dispatch(setCurrentPartPropertyFocus({ focus: true }));
     return true;
   };
 
@@ -125,6 +131,39 @@ const EditingCanvas: React.FC = () => {
     dispatch(setCurrentSelection({ selection: '' }));
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   }, [currentActivityId]);
+
+  useKeyDown(
+    () => {
+      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
+        setNotificationStream({
+          stamp: Date.now(),
+          type: NotificationType.CHECK_SHORTCUT_ACTIONS,
+          payload: { id: currentSelectedPartId, type: 'Delete' },
+        });
+      }
+    },
+    ['Delete', 'Backspace'],
+    {},
+    [currentSelectedPartId, configPartId, _currentPartPropertyFocus],
+  );
+
+  useKeyDown(
+    () => {
+      if (currentSelectedPartId && !configPartId?.length && _currentPartPropertyFocus) {
+        setNotificationStream({
+          stamp: Date.now(),
+          type: NotificationType.CHECK_SHORTCUT_ACTIONS,
+          payload: { id: currentSelectedPartId, type: 'Copy' },
+        });
+      } else if (!_currentPartPropertyFocus) {
+        //if user first copies a part and then before pasting it, if they click on the properties and do a cntrl+c, we need to clear the existing cntrl+c for part
+        dispatch(setCopiedPart({ copiedPart: null }));
+      }
+    },
+    ['KeyC'],
+    { ctrlKey: true },
+    [currentSelectedPartId, _currentPartPropertyFocus],
+  );
 
   const configEditorId = `config-editor-${currentActivityId}`;
 
