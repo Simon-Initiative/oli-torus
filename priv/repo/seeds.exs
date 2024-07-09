@@ -18,25 +18,6 @@ alias Oli.Accounts
 alias Oli.Accounts.{User, Author}
 alias Oli.Repo
 alias Oli.Utils.DataGenerators.NameGenerator
-alias Oli.Host.HostIdentifier
-import Ecto.Query
-
-# Here we are checking if the host identifier has changed. If it has, we delete all background jobs
-# to prevent them from running twice on a different host that has a cloned database.
-#
-# skip the background job host check if the environment variable is set to "true"
-unless System.get_env("SKIP_BACKGROUND_JOBS_HOST_CHECK", "false") |> String.downcase() == "true" do
-  case Repo.get_by(HostIdentifier, id: 1) do
-    nil ->
-      # no host identifier has been set in the database, so create it
-      Repo.insert!(%HostIdentifier{hostname: System.get_env("HOST")})
-
-    %{hostname: hostname} ->
-      # check if the hostname has changed and delete all background jobs if it has
-      if hostname != System.get_env("HOST"),
-        do: Repo.delete_all(from(oj in "oban_jobs"))
-  end
-end
 
 # create system roles
 if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
