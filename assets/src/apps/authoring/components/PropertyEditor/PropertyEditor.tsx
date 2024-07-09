@@ -22,6 +22,7 @@ interface PropertyEditorProps {
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  onClickHandler?: (changes: unknown) => void;
   triggerOnChange?: boolean | string[];
 }
 
@@ -91,6 +92,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
             onChangeHandler(updatedData);
           }
         }
+      }}
+      onFocus={() => {
+        console.log('I am on focus now');
       }}
       onBlur={(key, changed) => {
         // key will look like root_Position_x

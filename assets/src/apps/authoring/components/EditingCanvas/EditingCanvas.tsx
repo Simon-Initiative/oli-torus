@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
+import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -24,7 +25,7 @@ const EditingCanvas: React.FC = () => {
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
   const [configPartId, setConfigPartId] = useState<string>('');
-
+  const [currentSelectedPartId, setCurrentSelectedPartId] = useState<string>('');
   const [notificationStream, setNotificationStream] = useState<{
     stamp: number;
     type: NotificationType;
@@ -74,7 +75,7 @@ const EditingCanvas: React.FC = () => {
   const handlePartSelect = async (id: string) => {
     /* console.log('[handlePartSelect]', { id }); */
     dispatch(setCurrentSelection({ selection: id }));
-
+    setCurrentSelectedPartId(id);
     dispatch(
       setRightPanelActiveTab({
         rightPanelActiveTab: !id.length ? RightPanelTabs.SCREEN : RightPanelTabs.COMPONENT,
@@ -125,6 +126,37 @@ const EditingCanvas: React.FC = () => {
     dispatch(setCurrentSelection({ selection: '' }));
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   }, [currentActivityId]);
+
+  useKeyDown(
+    () => {
+      if (currentSelectedPartId && !configPartId?.length) {
+        setNotificationStream({
+          stamp: Date.now(),
+          type: NotificationType.CHECK_SHORTCUT_ACTIONS,
+          payload: { id: currentSelectedPartId, type: 'Delete' },
+        });
+      }
+    },
+    ['Delete', 'Backspace'],
+    { ctrlKey: true },
+    [currentSelectedPartId, configPartId],
+  );
+
+  useKeyDown(
+    () => {
+      if (currentSelectedPartId && !configPartId?.length) {
+        console.log('Trigger Cntrl + C');
+        setNotificationStream({
+          stamp: Date.now(),
+          type: NotificationType.CHECK_SHORTCUT_ACTIONS,
+          payload: { id: currentSelectedPartId, type: 'Copy' },
+        });
+      }
+    },
+    ['KeyC'],
+    { ctrlKey: true },
+    [currentSelectedPartId],
+  );
 
   const configEditorId = `config-editor-${currentActivityId}`;
 
