@@ -65,6 +65,11 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       assert length(success) == 2
       assert length(failure) == 0
 
+      wait_while(fn ->
+        !(File.exists?("#{map.upload_directory}/1.jsonl") &&
+            File.exists?("#{map.upload_directory}/2.jsonl"))
+      end)
+
       # assert that #{map.upload_directory}/1.jsonl and #{map.upload_directory}/2.jsonl exist
       assert File.exists?("#{map.upload_directory}/1.jsonl")
       assert File.exists?("#{map.upload_directory}/2.jsonl")
