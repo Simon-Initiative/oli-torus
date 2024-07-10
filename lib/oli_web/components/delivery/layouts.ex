@@ -56,12 +56,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <div class={
             if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
           }>
-            <UserAccount.menu
-              id="user-account-menu"
-              ctx={@ctx}
-              section={@section}
-              is_system_admin={@is_system_admin}
-            />
+            <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
           </div>
         </div>
         <div class="flex items-center p-2 ml-auto">
@@ -190,7 +185,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
             id="mobile-user-account-menu-sidebar"
             ctx={@ctx}
             is_system_admin={@is_system_admin}
-            section={@section}
             dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
