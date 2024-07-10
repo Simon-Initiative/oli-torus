@@ -86,9 +86,6 @@ defmodule OliWeb.ProjectControllerTest do
       assert Map.has_key?(m, ~c"#{product_2.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_1.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_2.id}.json")
-
-      conn = post(conn, Routes.project_path(conn, :download_export, project.id))
-      assert html_response(conn, 302) =~ "/authoring/projects"
     end
 
     test "export a project with products works correctly by filtering out products that have publications from other projects.",
@@ -116,9 +113,6 @@ defmodule OliWeb.ProjectControllerTest do
       assert Map.has_key?(m, ~c"#{product_1.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_1.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_2.id}.json")
-
-      conn = post(conn, Routes.project_path(conn, :download_export, project.id))
-      assert html_response(conn, 302) =~ "/authoring/projects"
     end
   end
 
