@@ -64,7 +64,6 @@ defmodule OliWeb.ProjectControllerTest do
     setup [:admin_conn, :create_project_with_products]
 
     test "export a project with products works correctly", %{
-      conn: conn,
       project: project,
       product_1: product_1,
       product_2: product_2,
@@ -90,7 +89,6 @@ defmodule OliWeb.ProjectControllerTest do
 
     test "export a project with products works correctly by filtering out products that have publications from other projects.",
          %{
-           conn: conn,
            project: project,
            product_1: product_1,
            product_2: product_2,
