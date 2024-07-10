@@ -44,9 +44,7 @@ defmodule Oli.Authoring.ProjectExportWorker do
 
     random_string = Oli.Utils.random_string(16)
 
-    {:ok, file_timestamp} = timestamp |> Timex.format("%Y-%m-%d-%H%M%S", :strftime)
-
-    filename = "export_#{project_slug}_#{file_timestamp}.zip"
+    filename = "export_#{project_slug}.zip"
 
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
     project_export_path = Path.join(["exports", project_slug, random_string, filename])
