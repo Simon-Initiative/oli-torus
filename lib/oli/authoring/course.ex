@@ -563,46 +563,6 @@ defmodule Oli.Authoring.Course do
   end
 
   @doc """
-  Generates a project export for the given project if one is not already in progress
-  """
-  def generate_project_export(project) do
-    case project_export_status(project) do
-      {:in_progress} ->
-        {:error, "Project export is already in progress"}
-
-      _ ->
-        generate_project_export!(project)
-    end
-  end
-
-  defp generate_project_export!(project) do
-    %{project_slug: project.slug}
-    |> Oli.Authoring.ProjectExportWorker.new()
-    |> Oban.insert()
-  end
-
-  def project_export_status(project) do
-    if export_in_progress?(project.slug, "project_export") do
-      # export is in progress
-      {:in_progress}
-    else
-      case project do
-        # export is created and completed
-        %Project{
-          latest_export_url: export_url,
-          latest_export_timestamp: export_timestamp
-        }
-        when not is_nil(export_url) and not is_nil(export_timestamp) ->
-          {:available, export_url, export_timestamp}
-
-        # export has not been created yet
-        _ ->
-          {:not_available}
-      end
-    end
-  end
-
-  @doc """
   Returns an `%Ecto.Changeset{}` for tracking project changes.
   ## Examples
       iex> change_project(project, params)

@@ -9,12 +9,13 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Authoring.Course.Project
   alias Oli.Inventories
   alias Oli.Publishing
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
+  alias Oli.Authoring.ProjectExportWorker
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Common.SessionContext
@@ -41,7 +42,7 @@ defmodule OliWeb.Projects.OverviewLive do
       |> Enum.sort(:desc)
 
     {project_export_status, project_export_url, project_export_timestamp} =
-      case Course.project_export_status(project) do
+      case ProjectExportWorker.project_export_status(project) do
         {:available, url, timestamp} -> {:available, url, timestamp}
         {status} -> {status, nil, nil}
       end
@@ -422,7 +423,7 @@ defmodule OliWeb.Projects.OverviewLive do
               </span>
             <% _pub -> %>
               <.button
-                class="btn btn-link action-button"
+                class="btn btn-link action-button !px-3"
                 href={~p"/project/#{@project.slug}/datashop"}
               >
                 Datashop Analytics
@@ -431,7 +432,7 @@ defmodule OliWeb.Projects.OverviewLive do
           <% end %>
         </div>
 
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center mt-8">
           <button
             type="button"
             class="btn btn-link text-danger action-button"
@@ -598,7 +599,7 @@ defmodule OliWeb.Projects.OverviewLive do
   def handle_event("generate_project_export", _params, socket) do
     project = socket.assigns.project
 
-    case Course.generate_project_export(project) do
+    case ProjectExportWorker.generate_project_export(project) do
       {:ok, _job} ->
         Broadcaster.broadcast_project_export_status(project.slug, {:in_progress})
 
