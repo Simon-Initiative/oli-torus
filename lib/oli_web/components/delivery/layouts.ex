@@ -114,7 +114,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         md:flex
         flex-col
         justify-between
-        md:w-[190px]
+        md:w-[200px]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
@@ -258,7 +258,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         md:flex
         flex-col
         justify-between
-        md:w-[190px]
+        md:w-[200px]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
@@ -286,6 +286,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
             preview_mode={@preview_mode}
             url_params={@url_params}
           />
+          <div class="h-[24px]">
+            <h2
+              :if={@url_params.sidebar_expanded}
+              class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
+            >
+              WORKSPACE
+            </h2>
+          </div>
           <.workspace_sidebar_links preview_mode={@preview_mode} url_params={@url_params} />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
@@ -334,7 +342,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def workspace_sidebar_links(assigns) do
     ~H"""
-    <div class="w-full p-2 flex-col justify-center items-center gap-4 inline-flex">
+    <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
       <.nav_link
         id="course_author_workspace_nav_link"
         href={path_for_workspace(:course_author_workspace, @url_params)}
@@ -577,7 +585,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id={@id}
       navigate={@href}
-      class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
+      class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
     </.link>
@@ -589,7 +597,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id={@id}
       href={@href}
-      class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
+      class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content {assigns} />
     </.link>
