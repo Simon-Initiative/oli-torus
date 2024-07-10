@@ -43,6 +43,10 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
     PubSub.subscribe(Oli.PubSub, message_lock_released(project_slug, resource_id))
   end
 
+  def subscribe_to_project_export_status(project_slug) do
+    PubSub.subscribe(Oli.PubSub, message_project_export_status(project_slug))
+  end
+
   def subscribe_to_analytics_export_status(project_slug) do
     PubSub.subscribe(Oli.PubSub, message_analytics_export_status(project_slug))
   end

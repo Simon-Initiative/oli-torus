@@ -340,6 +340,18 @@ defmodule Oli.Authoring.Course do
     |> Repo.update()
   end
 
+  @doc """
+  Updates the latest_export_snapshot_url and latest_export_snapshot_timestamp for the given project.
+  """
+  def update_project_latest_export_url(project_slug, url, timestamp) do
+    get_project_by_slug(project_slug)
+    |> Project.changeset(%{
+      latest_export_url: url,
+      latest_export_timestamp: timestamp
+    })
+    |> Repo.update()
+  end
+
   def get_family!(id), do: Repo.get!(Family, id)
 
   def update_family(%Family{} = family, attrs) do
@@ -544,6 +556,46 @@ defmodule Oli.Authoring.Course do
           end
 
         # snapshot has not been created yet
+        _ ->
+          {:not_available}
+      end
+    end
+  end
+
+  @doc """
+  Generates a project export for the given project if one is not already in progress
+  """
+  def generate_project_export(project) do
+    case project_export_status(project) do
+      {:in_progress} ->
+        {:error, "Project export is already in progress"}
+
+      _ ->
+        generate_project_export!(project)
+    end
+  end
+
+  defp generate_project_export!(project) do
+    %{project_slug: project.slug}
+    |> Oli.Authoring.ProjectExportWorker.new()
+    |> Oban.insert()
+  end
+
+  def project_export_status(project) do
+    if export_in_progress?(project.slug, "project_export") do
+      # export is in progress
+      {:in_progress}
+    else
+      case project do
+        # export is created and completed
+        %Project{
+          latest_export_url: export_url,
+          latest_export_timestamp: export_timestamp
+        }
+        when not is_nil(export_url) and not is_nil(export_timestamp) ->
+          {:available, export_url, export_timestamp}
+
+        # export has not been created yet
         _ ->
           {:not_available}
       end
