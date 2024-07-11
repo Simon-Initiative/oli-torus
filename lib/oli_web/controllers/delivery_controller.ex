@@ -150,7 +150,7 @@ defmodule OliWeb.DeliveryController do
     )
   end
 
-  def show_research_consent(conn, params) do
+  def show_research_consent(conn, _params) do
     user = conn.assigns.current_user
 
     redirect_url =

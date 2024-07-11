@@ -435,7 +435,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         false
 
       # Direct delivery user
-      %User{independent_learner: true} = user ->
+      %User{independent_learner: true} ->
         case Delivery.get_research_consent_form_setting() do
           :oli_form ->
             true

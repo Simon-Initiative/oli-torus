@@ -156,7 +156,7 @@ defmodule OliWeb.Features.FeaturesLive do
         </h2>
       </div>
       <div class="flex flex-row">
-        <.form :let={f} phx-change="change_research_consent_form">
+        <.form :let={f} for={%{}} phx-change="change_research_consent_form">
           <label for="countries" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
             Direct Delivery Research Consent Form
           </label>
