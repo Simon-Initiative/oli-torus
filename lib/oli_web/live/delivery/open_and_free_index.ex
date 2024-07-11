@@ -261,7 +261,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
         </h5>
         <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
           <p style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">
-            Students will explore the structure, function, and diversity of living organisms, and diversity of living organisms, and diversity of living organisms, as well as the processes that govern life on Earth.
+            <%= @section.description %>
           </p>
         </div>
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
