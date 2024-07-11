@@ -28,11 +28,12 @@ defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
             </button>
           </div>
           <div class="modal-body">
-            <%= live_component(EnrollmentPicker,
-              id: "#{@id}_enrollment_picker",
-              section: @section,
-              ctx: @ctx
-            ) %>
+            <.live_component
+              module={OliWeb.Common.EnrollmentBrowser.EnrollmentPicker}
+              id={"#{@id}_enrollment_picker"}
+              section={@section}
+              ctx={@ctx}
+            />
           </div>
           <div class="modal-footer">
             <button

@@ -149,11 +149,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
           label="Projects"
           description="Projects that the Author has either created or is a collaborator within"
         >
-          <%= live_component(OliWeb.Users.AuthorProjects,
-            id: "author_projects",
-            user: @user,
-            ctx: @ctx
-          ) %>
+          <.live_component
+            module={OliWeb.Users.AuthorProjects}
+            id="author_projects"
+            user={@user}
+            ctx={@ctx}
+          />
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
