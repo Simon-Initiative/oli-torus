@@ -250,7 +250,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def section_details_header(%{section: nil} = assigns) do
     ~H"""
-
     """
   end
 
