@@ -1,10 +1,12 @@
 defmodule OliWeb.Delivery.OpenAndFreeIndex do
   use OliWeb, :live_view
 
-  alias Oli.Delivery.Sections
-  alias OliWeb.Components.Delivery.Utils
-  alias OliWeb.Common.{Params, SearchInput}
   alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Sections
+  alias OliWeb.Backgrounds
+  alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Components.Delivery.Utils
+  alias OliWeb.Icons
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
@@ -18,16 +20,19 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
+    params = decode_params(params)
+
     sections =
       Sections.list_user_open_and_free_sections(socket.assigns.current_user)
       |> add_user_role(socket.assigns.current_user)
+      |> filter_by_role(params.active_workspace)
       |> add_instructors()
       |> add_sections_progress(socket.assigns.current_user.id)
 
     {:ok,
      assign(socket,
        sections: sections,
-       params: decode_params(params),
+       params: params,
        filtered_sections: sections,
        show_role_badges: show_role_badges(sections)
      ), layout: {OliWeb.Layouts, :workspace}}
@@ -47,7 +52,140 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @impl Phoenix.LiveView
 
-  def render(assigns) do
+  def render(%{params: %{active_workspace: :instructor_workspace}} = assigns) do
+    ~H"""
+    <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
+      <div class="relative flex items-center h-[247px] w-full">
+        <div class="absolute top-0 left-0 h-full w-full">
+          <Backgrounds.instructor_dashboard_header />
+        </div>
+        <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
+          <div class="flex flex-row items-center gap-3">
+            <Icons.growing_bars stroke_class="stroke-white" width={36} height={36} />
+            <div class="text-white text-[32px] font-bold leading-normal">
+              Instructor Dashboard
+            </div>
+          </div>
+          <div class=" text-white text-base font-normal leading-normal">
+            Gain insights into student engagement, progress, and learning patterns.
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-start mt-[40px] gap-9 py-[60px] px-[63px]">
+        <div class="flex flex-col gap-4">
+          <h3 class="dark:text-violet-100 text-xl font-bold font-['Open Sans'] leading-normal whitespace-nowrap">
+            My courses
+          </h3>
+          <div
+            :if={!is_independent_instructor?(@current_user)}
+            class="dark:text-violet-100 text-base font-normal font-['Inter'] leading-normal"
+          >
+            To create course sections,
+            <button
+              onclick="window.showHelpModal();"
+              class="text-blue-400 text-base font-bold font-['Open Sans'] tracking-tight cursor-pointer"
+            >
+              contact support.
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center w-full gap-3">
+          <.link
+            href={if(is_independent_instructor?(@current_user), do: ~p"/sections/independent/create")}
+            class={[
+              "h-12 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
+              if(is_independent_instructor?(@current_user),
+                do: "bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]",
+                else: "bg-zinc-600 cursor-not-allowed"
+              )
+            ]}
+          >
+            <div class="w-3 h-5 relative">
+              <div class="w-5 h-5 left-[-8px] top-0 absolute text-white"><Icons.plus /></div>
+            </div>
+            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
+              Create New Section
+            </div>
+          </.link>
+          <.form for={%{}} phx-change="search_section" class="w-[330px]">
+            <SearchInput.render
+              id="section_search_input"
+              name="text_search"
+              placeholder="Search my courses..."
+              text={@params.text_search}
+            />
+          </.form>
+        </div>
+
+        <div class="flex w-full mb-10">
+          <%= if length(@sections) == 0 do %>
+            <p>You are not enrolled in any courses.</p>
+          <% else %>
+            <div class="flex flex-wrap w-full gap-3">
+              <.course_card
+                :for={{section, index} <- Enum.with_index(@filtered_sections)}
+                index={index}
+                section={section}
+              />
+              <p :if={length(@filtered_sections) == 0} class="mt-4">
+                No course found matching <strong>"<%= @params.text_search %>"</strong>
+              </p>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :section, :map
+  attr :index, :integer
+
+  def course_card(assigns) do
+    ~H"""
+    <div
+      phx-mounted={
+        JS.transition(
+          {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
+          time: 300 + @index * 60
+        )
+      }
+      class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
+    >
+      <div
+        class="w-96 h-[220px] bg-cover border-b-2 border-gray-700"
+        style={"background-image: url('#{cover_image(@section)}');"}
+      >
+      </div>
+      <div class="flex-col justify-start items-start gap-6 inline-flex p-8">
+        <h5
+          class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
+          style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
+        >
+          <%= @section.title %>
+        </h5>
+        <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
+          <p style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">
+            Students will explore the structure, function, and diversity of living organisms, and diversity of living organisms, and diversity of living organisms, as well as the processes that govern life on Earth.
+          </p>
+        </div>
+        <div class="self-stretch justify-end items-start gap-4 inline-flex">
+          <.link
+            href={get_course_url(@section)}
+            class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
+          >
+            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
+              View Course
+            </div>
+          </.link>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def render(%{params: %{active_workspace: :student_workspace}} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
@@ -187,6 +325,12 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
       Map.merge(section, %{progress: progress})
     end)
   end
+
+  defp filter_by_role(sections, :instructor_workspace),
+    do: Enum.filter(sections, fn s -> s.user_role == "instructor" end)
+
+  defp filter_by_role(sections, :student_workspace),
+    do: Enum.filter(sections, fn s -> s.user_role == "student" end)
 
   defp maybe_filter_by_text(sections, nil), do: sections
   defp maybe_filter_by_text(sections, ""), do: sections
