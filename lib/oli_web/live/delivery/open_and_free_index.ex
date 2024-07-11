@@ -139,52 +139,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     """
   end
 
-  attr :section, :map
-  attr :index, :integer
-
-  def course_card(assigns) do
-    ~H"""
-    <div
-      phx-mounted={
-        JS.transition(
-          {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
-          time: 300 + @index * 60
-        )
-      }
-      class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
-    >
-      <div
-        class="w-96 h-[220px] bg-cover border-b-2 border-gray-700"
-        style={"background-image: url('#{cover_image(@section)}');"}
-      >
-      </div>
-      <div class="flex-col justify-start items-start gap-6 inline-flex p-8">
-        <h5
-          class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
-          style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
-        >
-          <%= @section.title %>
-        </h5>
-        <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
-          <p style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">
-            Students will explore the structure, function, and diversity of living organisms, and diversity of living organisms, and diversity of living organisms, as well as the processes that govern life on Earth.
-          </p>
-        </div>
-        <div class="self-stretch justify-end items-start gap-4 inline-flex">
-          <.link
-            href={get_course_url(@section)}
-            class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
-          >
-            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
-              View Course
-            </div>
-          </.link>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
   def render(%{params: %{active_workspace: :student_workspace}} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
@@ -281,6 +235,52 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
             </p>
           </div>
         <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  attr :section, :map
+  attr :index, :integer
+
+  def course_card(assigns) do
+    ~H"""
+    <div
+      phx-mounted={
+        JS.transition(
+          {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
+          time: 300 + @index * 60
+        )
+      }
+      class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
+    >
+      <div
+        class="w-96 h-[220px] bg-cover border-b-2 border-gray-700"
+        style={"background-image: url('#{cover_image(@section)}');"}
+      >
+      </div>
+      <div class="flex-col justify-start items-start gap-6 inline-flex p-8">
+        <h5
+          class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
+          style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
+        >
+          <%= @section.title %>
+        </h5>
+        <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
+          <p style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">
+            Students will explore the structure, function, and diversity of living organisms, and diversity of living organisms, and diversity of living organisms, as well as the processes that govern life on Earth.
+          </p>
+        </div>
+        <div class="self-stretch justify-end items-start gap-4 inline-flex">
+          <.link
+            href={get_course_url(@section)}
+            class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
+          >
+            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
+              View Course
+            </div>
+          </.link>
+        </div>
       </div>
     </div>
     """
