@@ -61,12 +61,16 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
-            <Icons.growing_bars stroke_class="stroke-white" width={36} height={36} />
-            <h1 class="text-white text-[32px] font-bold leading-normal">
+            <Icons.growing_bars
+              stroke_class="stroke-[#353740] dark:stroke-white"
+              width={36}
+              height={36}
+            />
+            <h1 class="text-[#353740] dark:text-white text-[32px] font-bold leading-normal">
               Instructor Dashboard
             </h1>
           </div>
-          <h2 class=" text-white text-base font-normal leading-normal">
+          <h2 class="text-[#353740] dark:text-white text-base font-normal leading-normal">
             Gain insights into student engagement, progress, and learning patterns.
           </h2>
         </div>

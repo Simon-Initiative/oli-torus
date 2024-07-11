@@ -77,24 +77,38 @@ defmodule OliWeb.Backgrounds do
   def instructor_dashboard_header(assigns) do
     ~H"""
     <svg
-      class="w-full"
+      width="100%"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
       height="291"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
     >
       <g clip-path="url(#clip0_494_8778)">
-        <rect class="w-full" height="291" fill="#0CAF61" />
+        <rect width="100%" height="291" class="fill-[#87E1B6] dark:fill-[#0CAF61]" />
         <g filter="url(#filter0_f_494_8778)">
-          <ellipse cx="408.292" cy="291.135" rx="341.325" ry="130.815" fill="#0062F2" />
+          <ellipse
+            cx="408.292"
+            cy="291.135"
+            rx="341.325"
+            ry="130.815"
+            class="fill-[#9AC3FF] dark:fill-[#0062F2]"
+          />
         </g>
         <g filter="url(#filter1_f_494_8778)">
-          <ellipse cx="656.342" cy="145.366" rx="290.075" ry="111.146" fill="#0CAF61" />
+          <ellipse
+            cx="656.342"
+            cy="145.366"
+            rx="290.075"
+            ry="111.146"
+            class="fill-[#87E1B6] dark:fill-[#0CAF61]"
+          />
         </g>
         <g style="mix-blend-mode:color-burn" opacity="0.25">
-          <rect class="w-full" height="291" fill="url(#pattern0_494_8778)" />
+          <rect width="100%" height="291" fill="url(#pattern0_494_8778)" />
         </g>
-        <rect y="3" class="w-full" height="309" fill="black" fill-opacity="0.24" />
+        <rect y="0" width="100%" height="309" fill="black" fill-opacity="0.24" />
       </g>
       <defs>
         <filter
@@ -132,7 +146,7 @@ defmodule OliWeb.Backgrounds do
           <use xlink:href="#image0_494_8778" transform="scale(0.000114329 0.000515464)" />
         </pattern>
         <clipPath id="clip0_494_8778">
-          <rect class="w-full" height="291" fill="white" />
+          <rect width="100%" height="291" fill="white" />
         </clipPath>
       </defs>
     </svg>
