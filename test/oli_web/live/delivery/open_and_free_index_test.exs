@@ -49,8 +49,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
   describe "user" do
     setup [:user_conn]
 
-    test "can access when logged in as student", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections")
+    test "can access student workspace when logged in as student", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
 
       assert has_element?(view, "h3", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
@@ -73,7 +73,10 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
         }}} = live(conn, ~p"/sections")
     end
 
-    test "can access when user is unlocked after being locked", %{conn: conn, user: user} do
+    test "can access student workspace when user is unlocked after being locked", %{
+      conn: conn,
+      user: user
+    } do
       # Lock the user
       {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
       {:ok, user} = Accounts.update_user(user, %{locked_at: date})
@@ -81,13 +84,13 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       # Unlock the user
       UserContext.unlock(user)
 
-      {:ok, view, _html} = live(conn, ~p"/sections")
+      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
 
       assert has_element?(view, "h3", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
-    test "renders product title, image and description in sections index with a link to access to it",
+    test "in student workspace sees product title, image and description in sections index with a link to access to it",
          %{
            conn: conn,
            user: user
@@ -102,7 +105,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections")
+      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
@@ -119,20 +122,20 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections")
+      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;/images/course_default.png&#39;);\"|
     end
 
-    test "can search by course name", %{conn: conn, user: user} do
+    test "can search by course name in student workspace", %{conn: conn, user: user} do
       section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
       section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
 
       Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections")
+      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -159,7 +162,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       refute has_element?(view, "h5", "Maths")
     end
 
-    test "can search by instructor name", %{conn: conn, user: user} do
+    test "can search by instructor name in student workspace", %{conn: conn, user: user} do
       section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
       section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
       section_3 = insert(:section, %{open_and_free: true, title: "Elixir"})
@@ -177,7 +180,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       Sections.enroll(instructor_2.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(instructor_2.id, section_3.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections")
+      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
