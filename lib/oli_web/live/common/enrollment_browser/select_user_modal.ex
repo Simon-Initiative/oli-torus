@@ -1,8 +1,6 @@
 defmodule OliWeb.Common.EnrollmentBrowser.SelectUserModal do
   use OliWeb, :html
 
-  alias OliWeb.Common.EnrollmentBrowser.EnrollmentPicker
-
   attr :section, :map, required: true
   attr :ctx, :map, required: true
 
