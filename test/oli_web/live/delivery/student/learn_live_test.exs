@@ -2532,7 +2532,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can switch from Outline to Gallery view", %{conn: conn, section: section} do
       {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        )
 
       # selector text matches current view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
@@ -2550,7 +2553,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :gallery, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :gallery)
       )
 
       # selector text matches target view
@@ -2577,7 +2580,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :outline)
       )
 
       # selector text matches target view

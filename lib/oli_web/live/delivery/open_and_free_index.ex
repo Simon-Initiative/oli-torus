@@ -55,20 +55,20 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   def render(%{params: %{active_workspace: :instructor_workspace}} = assigns) do
     ~H"""
     <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
-      <div class="relative flex items-center h-[247px] w-full">
-        <div class="absolute top-0 left-0 h-full w-full">
+      <div class="relative flex items-center h-[247px]">
+        <div class="absolute top-0 h-full w-full">
           <Backgrounds.instructor_dashboard_header />
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
             <Icons.growing_bars stroke_class="stroke-white" width={36} height={36} />
-            <div class="text-white text-[32px] font-bold leading-normal">
+            <h1 class="text-white text-[32px] font-bold leading-normal">
               Instructor Dashboard
-            </div>
+            </h1>
           </div>
-          <div class=" text-white text-base font-normal leading-normal">
+          <h2 class=" text-white text-base font-normal leading-normal">
             Gain insights into student engagement, progress, and learning patterns.
-          </div>
+          </h2>
         </div>
       </div>
 
@@ -79,6 +79,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
           </h3>
           <div
             :if={!is_independent_instructor?(@current_user)}
+            role="create section instructions"
             class="dark:text-violet-100 text-base font-normal font-['Inter'] leading-normal"
           >
             To create course sections,
@@ -120,7 +121,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
         <div class="flex w-full mb-10">
           <%= if length(@sections) == 0 do %>
-            <p>You are not enrolled in any courses.</p>
+            <p>You are not enrolled in any courses as an instructor.</p>
           <% else %>
             <div class="flex flex-wrap w-full gap-3">
               <.course_card
@@ -239,6 +240,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   def course_card(assigns) do
     ~H"""
     <div
+      id={"course_card_#{@section.id}"}
       phx-mounted={
         JS.transition(
           {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
@@ -256,11 +258,15 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
         <h5
           class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
           style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
+          role="course title"
         >
           <%= @section.title %>
         </h5>
         <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
-          <p style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;">
+          <p
+            role="course description"
+            style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;"
+          >
             <%= @section.description %>
           </p>
         </div>
