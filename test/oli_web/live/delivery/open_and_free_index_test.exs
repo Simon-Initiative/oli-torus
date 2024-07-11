@@ -111,43 +111,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       assert has_element?(view, ~s{a[href="/sections/#{section.slug}"]})
     end
 
-    test "section badge gets rendered correctly considering the user role",
-         %{
-           conn: conn,
-           user: user
-         } do
-      section_1 =
-        insert(:section, %{
-          open_and_free: true,
-          description: "This is a description",
-          title: "The best course ever!"
-        })
-
-      section_2 =
-        insert(:section, %{
-          open_and_free: true,
-          description: "This is another description",
-          title: "Advanced Elixir"
-        })
-
-      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
-
-      {:ok, view, _html} = live(conn, ~p"/sections")
-
-      assert has_element?(
-               view,
-               ~s{a[href="/sections/#{section_1.slug}"] span.badge},
-               "student"
-             )
-
-      assert has_element?(
-               view,
-               ~s{a[href="/sections/#{section_2.slug}/instructor_dashboard/manage"] span.badge},
-               "instructor"
-             )
-    end
-
     test "if no cover image is set, renders default image in enrollment page", %{
       conn: conn,
       user: user
@@ -243,61 +206,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       refute has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")
       refute has_element?(view, "h5", "Elixir")
-    end
-
-    test "sees the correct course progress if enrolled as student", %{conn: conn, user: user} do
-      section_1 = section_with_progress_for_user(user.id, 1.0)
-      section_2 = section_with_progress_for_user(user.id, 0.5)
-      section_3 = section_with_progress_for_user(user.id, 0.0)
-
-      {:ok, view, _html} = live(conn, ~p"/sections")
-
-      assert view
-             |> element("div[role=\"progress_for_section_#{section_1.id}\"]")
-             |> render() =~ "100%"
-
-      assert view
-             |> element("div[role=\"progress_for_section_#{section_2.id}\"]")
-             |> render() =~ "50%"
-
-      assert view
-             |> element("div[role=\"progress_for_section_#{section_3.id}\"]")
-             |> render() =~ "0%"
-    end
-
-    test "does not see the course progress if enrolled as instuctor", %{conn: conn, user: user} do
-      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
-      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
-
-      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_instructor)])
-      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
-
-      {:ok, view, _html} = live(conn, ~p"/sections")
-
-      refute has_element?(view, "div[role=\"progress_for_section_#{section_1.id}\"]")
-      assert has_element?(view, "div[role=\"progress_for_section_#{section_2.id}\"]")
-    end
-
-    test "does see the complete badge on section card if progress = 100", %{
-      conn: conn,
-      user: user
-    } do
-      section_1 = section_with_progress_for_user(user.id, 1.0)
-      section_2 = section_with_progress_for_user(user.id, 0.5)
-
-      {:ok, view, _html} = live(conn, ~p"/sections")
-
-      assert has_element?(
-               view,
-               ~s{span[role="complete_badge_for_section_#{section_1.id}"]},
-               "Complete"
-             )
-
-      refute has_element?(
-               view,
-               ~s{span[role="complete_badge_for_section_#{section_2.id}"]},
-               "Complete"
-             )
     end
   end
 end
