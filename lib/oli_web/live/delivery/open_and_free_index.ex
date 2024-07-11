@@ -156,13 +156,6 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
           Courses available
         </h3>
         <div class="ml-auto flex items-center w-full justify-end gap-3">
-          <.link
-            :if={is_independent_instructor?(@current_user)}
-            href={~p"/sections/independent/create"}
-            class="torus-button primary !py-[10px] !px-5 !rounded-[3px] !text-sm flex items-center justify-center"
-          >
-            New Section
-          </.link>
           <.form for={%{}} phx-change="search_section" class="w-[330px]">
             <SearchInput.render
               id="section_search_input"
