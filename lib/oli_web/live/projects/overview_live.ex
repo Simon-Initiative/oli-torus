@@ -16,6 +16,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Components.Common
 
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)
@@ -54,7 +55,8 @@ defmodule OliWeb.Projects.OverviewLive do
         license_opts: cc_options,
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
-        latest_publication: latest_publication
+        latest_publication: latest_publication,
+        notes_config: %{}
       )
 
     {:ok, socket}
@@ -63,33 +65,61 @@ defmodule OliWeb.Projects.OverviewLive do
   def render(assigns) do
     ~H"""
     <div class="overview container mx-auto">
-      <.form :let={f} for={@changeset} phx-submit="update">
+      <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"
           description="Your project title and description will be shown to students when you publish this project."
         >
           <div class="form-label-group mb-3">
-            <%= label(f, :title, "Project ID", class: "control-label") %>
-            <%= text_input(f, :slug, class: "form-control", disabled: true) %>
+            <.input field={f[:slug]} label="Project ID" class="form-control" disabled />
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :title, "Project Title", class: "control-label") %>
-            <%= text_input(f, :title,
-              class: "form-control",
-              placeholder: "The title of your project...",
-              required: false
-            ) %>
+            <.input
+              field={f[:title]}
+              label="Project Title"
+              class="form-control"
+              placeholder="The title of your project..."
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :description, "Project Description", class: "control-label") %>
-            <%= textarea(f, :description,
-              class: "form-control",
-              placeholder: "A brief description of your project...",
-              required: false
-            ) %>
+            <.input
+              field={f[:description]}
+              label="Project Description"
+              type="textarea"
+              class="form-control"
+              placeholder="A brief description of your project..."
+              error_position={:top}
+              errors={f.errors}
+            />
+          </div>
+          <% welcome_title =
+            (fetch_field(f.source, :welcome_title) &&
+               fetch_field(f.source, :welcome_title)["children"]) || [] %>
+          <.rich_text_editor_field
+            id="welcome_title_field"
+            form={f}
+            value={welcome_title}
+            field_name={:welcome_title}
+            field_label="Welcome Message Title"
+            on_edit="welcome_title_change"
+            project_slug={@project.slug}
+            ctx={@ctx}
+          />
+          <div class="form-label-group mb-3">
+            <.input
+              field={f[:encouraging_subtitle]}
+              label="Encouraging Subtitle"
+              type="textarea"
+              class="form-control"
+              placeholder="Enter a subtitle to encourage students to begin the course..."
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :description, "Latest Publication", class: "control-label") %>
+            <Common.label class="control-label">Latest Publication</Common.label>
             <%= case @latest_published_publication do %>
               <% %{edition: edition, major: major, minor: minor} -> %>
                 <p class="text-secondary">
@@ -100,36 +130,42 @@ defmodule OliWeb.Projects.OverviewLive do
             <% end %>
           </div>
           <div class="form-label-group mb-3">
-            <%= label(f, :publisher_id, "Project Publisher", class: "control-label") %>
-            <%= select(f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
-              class: "form-control",
-              required: true
-            ) %>
+            <.input
+              field={f[:publisher_id]}
+              label="Project Publisher"
+              type="select"
+              class="form-control"
+              options={Enum.map(@publishers, &{&1.name, &1.id})}
+              error_position={:top}
+              errors={f.errors}
+            />
           </div>
 
           <div class="form-label-group mb-3">
-            <%= if @can_enable_experiments do %>
-              <div class="form-label-group mb-3 form-check">
-                <%= checkbox(f, :has_experiments, required: false) %>
-                <%= label(f, :has_experiments, "Enable Upgrade-based Experiments") %>
-              </div>
-            <% end %>
+            <div :if={@can_enable_experiments} class="form-label-group mb-3 form-check">
+              <.input
+                field={f[:has_experiments]}
+                label="Enable Upgrade-based Experiments"
+                type="checkbox"
+                error_position={:bottom}
+                errors={f.errors}
+              />
+            </div>
 
-            <%= if @project.has_experiments do %>
-              <a
-                type="button"
-                class="btn btn-link pl-0"
-                href={
-                  Routes.live_path(
-                    OliWeb.Endpoint,
-                    OliWeb.Experiments.ExperimentsView,
-                    @project.slug
-                  )
-                }
-              >
-                Manage Experiments
-              </a>
-            <% end %>
+            <a
+              :if={@project.has_experiments}
+              type="button"
+              class="btn btn-link pl-0"
+              href={
+                Routes.live_path(
+                  OliWeb.Endpoint,
+                  OliWeb.Experiments.ExperimentsView,
+                  @project.slug
+                )
+              }
+            >
+              Manage Experiments
+            </a>
           </div>
 
           <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
@@ -292,22 +328,15 @@ defmodule OliWeb.Projects.OverviewLive do
         session: %{"project_slug" => @project.slug}
       ) %>
 
-      <Overview.section
-        title="Collaboration Spaces"
-        description="Manage the Collaborative Spaces within the project."
-      >
-        <div class="container mx-auto">
-          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-            id: "project_collab_space_config",
-            session: %{
-              "collab_space_config" => @collab_space_config,
-              "project_slug" => @project.slug,
-              "resource_slug" => @revision_slug,
-              "is_overview_render" => true
-            }
-          ) %>
-        </div>
-      </Overview.section>
+      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+        id: "project_collab_space_config",
+        session: %{
+          "collab_space_config" => @collab_space_config,
+          "project_slug" => @project.slug,
+          "resource_slug" => @revision_slug,
+          "is_overview_render" => true
+        }
+      ) %>
 
       <Overview.section
         title="Required Survey"
@@ -479,15 +508,14 @@ defmodule OliWeb.Projects.OverviewLive do
 
   def handle_event("on_selected", %{"project" => project_attrs}, socket) do
     project = socket.assigns.project
-    changeset = Project.changeset(project, project_attrs)
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: Project.changeset(project, project_attrs))}
   end
 
   def handle_event("update", %{"project" => project_params}, socket) do
     project_params =
-      if project_params["license"] == "custom",
-        do: project_params,
-        else: Map.put(project_params, "custom_license_details", nil)
+      project_params
+      |> add_custom_license_details()
+      |> decode_welcome_title()
 
     project = socket.assigns.project
 
@@ -527,6 +555,43 @@ defmodule OliWeb.Projects.OverviewLive do
         {:noreply, socket}
     end
   end
+
+  def handle_event("welcome_title_change", %{"values" => welcome_title}, socket) do
+    changeset =
+      Ecto.Changeset.put_change(socket.assigns.changeset, :welcome_title, %{
+        "type" => "p",
+        "children" => welcome_title
+      })
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("validate", %{"project" => project_params}, socket) do
+    project_params =
+      project_params
+      |> add_custom_license_details()
+      |> decode_welcome_title()
+
+    changeset =
+      socket.assigns.project
+      |> Course.change_project(project_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params
+
+  defp add_custom_license_details(project_params),
+    do: Map.put(project_params, "custom_license_details", nil)
+
+  defp decode_welcome_title(%{"welcome_title" => nil} = project_params), do: project_params
+
+  defp decode_welcome_title(%{"welcome_title" => ""} = project_params),
+    do: %{project_params | "welcome_title" => nil}
+
+  defp decode_welcome_title(project_params),
+    do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
 
   defp datashop_link(assigns) do
     ~H"""

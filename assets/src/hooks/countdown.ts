@@ -4,14 +4,14 @@ export const Countdown = {
    *
    * This TypeScript module implements a countdown functionality for web elements with the `role="countdown"`
    * attribute. It updates each element's display in real-time, decrementing the time every second from a
-   * specified starting point in "HH:MM:SS" format until it reaches zero.
+   * specified starting point in "DD:HH:MM:SS" or "HH:MM:SS" format until it reaches zero.
    *
    * Use Case:
    * - Suitable for real-time events like timers where a countdown is needed.
    *
    * Features:
    * - Automatically finds and manages multiple countdowns on a single page.
-   * - Converts time format from "HH:MM:SS" to seconds for countdown operation, and updates the display accordingly.
+   * - Converts time format from "DD:HH:MM:SS" or "HH:MM:SS" to seconds for countdown operation, and updates the display accordingly.
    * - Stops the countdown at zero and displays "00:00:00".
    */
 
@@ -45,12 +45,20 @@ export const Countdown = {
   },
 
   timeToSeconds(time: string): number {
-    const [hours, minutes, seconds] = time.split(':').map(Number);
-    return hours * 3600 + minutes * 60 + seconds;
+    const parts = time.split(':').map(Number);
+
+    if (parts.length === 4) {
+      const [days, hours, minutes, seconds] = parts;
+      return days * 86400 + hours * 3600 + minutes * 60 + seconds;
+    } else {
+      const [hours, minutes, seconds] = time.split(':').map(Number);
+      return hours * 3600 + minutes * 60 + seconds;
+    }
   },
 
   secondsToTime(totalSeconds: number): string {
-    const hours = Math.floor(totalSeconds / 3600);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
@@ -58,6 +66,11 @@ export const Countdown = {
     const paddedMinutes = minutes.toString().padStart(2, '0');
     const paddedSeconds = seconds.toString().padStart(2, '0');
 
-    return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+    if (days > 0) {
+      const paddedDays = days.toString().padStart(2, '0');
+      return `${paddedDays}:${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+    } else {
+      return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+    }
   },
 };

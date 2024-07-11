@@ -86,11 +86,23 @@ defmodule OliWeb.Components.Delivery.Schedule do
                         </.link>
 
                         <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
-                          <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
-                            resource.end_date,
-                            ctx: @ctx,
-                            precision: :date
-                          ) %>
+                          <%= resource_scheduling_label(resource.scheduling_type) %>
+                          <%= if is_nil(effective_settings),
+                            do:
+                              date(
+                                Utils.coalesce(resource.end_date, resource.start_date),
+                                ctx: @ctx,
+                                precision: :date
+                              ),
+                            else:
+                              date(
+                                Utils.coalesce(
+                                  effective_settings.end_date,
+                                  effective_settings.start_date
+                                ),
+                                ctx: @ctx,
+                                precision: :date
+                              ) %>
                         </div>
                       </div>
                       <div :if={graded} class="flex flex-col">

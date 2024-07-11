@@ -3,14 +3,14 @@ defmodule OliWeb.Sections.ContentSettings do
 
   alias OliWeb.Common.Properties.Group
 
-  attr :changeset, :any, required: true
+  attr :form, :any, required: true
 
   def render(assigns) do
     ~H"""
     <Group.render label="Content Settings" description="Settings related to the course content">
       <div class="form-check">
         <.input
-          field={@changeset[:display_curriculum_item_numbering]}
+          field={@form[:display_curriculum_item_numbering]}
           type="checkbox"
           class="form-check-input"
           label="Display curriculum item numbers"

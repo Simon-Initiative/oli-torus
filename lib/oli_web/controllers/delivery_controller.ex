@@ -64,6 +64,9 @@ defmodule OliWeb.DeliveryController do
       nil ->
         render_course_not_configured(conn)
 
+      section when allow_configure_section ->
+        redirect_to_instructor_dashboard(conn, section)
+
       # section has been configured
       section ->
         {institution, _registration, _deployment} =
@@ -98,6 +101,12 @@ defmodule OliWeb.DeliveryController do
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn,
       to: ~p"/sections/#{section.slug}"
+    )
+  end
+
+  defp redirect_to_instructor_dashboard(conn, section) do
+    redirect(conn,
+      to: ~p"/sections/#{section.slug}/instructor_dashboard/manage"
     )
   end
 

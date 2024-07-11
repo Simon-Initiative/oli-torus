@@ -37,7 +37,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
           <% week_range = Utils.week_range(week, @section_start_date) %>
           <div
             id={"schedule_week_#{week_idx}"}
-            class="flex self-stretch h-fit flex flex-col justify-start items-start gap-3.5 pb-7"
+            class="flex self-stretch h-fit flex-col justify-start items-start gap-3.5 pb-7"
           >
             <div class="flex self-stretch justify-between items-baseline">
               <div role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
@@ -243,15 +243,12 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       </div>
       <%= if @resource.last_attempt[:state] == :active do %>
         <div class="justify-end items-end gap-1 flex ml-auto">
-          <div
-            :if={has_end_date?(@resource.effective_settings)}
-            class="justify-end items-end gap-1 flex ml-auto"
-          >
+          <div :if={attempt_expires?(@resource)} class="justify-end items-end gap-1 flex ml-auto">
             <div class="dark:text-white text-opacity-60 text-xs font-semibold ">
               Time Remaining:
             </div>
             <div role="countdown" class="dark:text-white text-xs font-semibold">
-              <%= Student.format_time_remaining(@resource.effective_settings.end_date) %>
+              <%= effective_attempt_expiration_date(@resource) |> Utils.format_time_remaining() %>
             </div>
           </div>
         </div>
@@ -292,7 +289,12 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             <%= if @completed do %>
               Completed
             <% else %>
-              <%= Utils.days_difference(hd(@resources).end_date) %>
+              <%= if is_nil(hd(@resources).effective_settings),
+                do: Utils.days_difference(hd(@resources).end_date, @ctx),
+                else:
+                  Utils.coalesce(hd(@resources).effective_settings.end_date, hd(@resources).end_date)
+                  |> Utils.coalesce(hd(@resources).effective_settings.start_date)
+                  |> Utils.days_difference(@ctx) %>
             <% end %>
           </div>
           <Icons.check :if={@completed} progress={1.0} />
@@ -422,10 +424,21 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp ordinal_indicator(number) when rem(number, 10) == 3, do: "rd"
   defp ordinal_indicator(_number), do: "th"
 
-  defp has_end_date?(effective_settings) do
-    case effective_settings.end_date do
-      nil -> false
-      _ -> true
-    end
+  defp attempt_expires?(resource) do
+    Utils.attempt_expires?(
+      resource.last_attempt[:state],
+      resource.effective_settings.time_limit,
+      resource.effective_settings.late_submit,
+      resource.effective_settings.end_date
+    )
+  end
+
+  defp effective_attempt_expiration_date(resource) do
+    Utils.effective_attempt_expiration_date(
+      resource.last_attempt[:inserted_at],
+      resource.effective_settings.time_limit,
+      resource.effective_settings.late_submit,
+      resource.effective_settings.end_date
+    )
   end
 end

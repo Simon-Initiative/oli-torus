@@ -641,6 +641,96 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Given a list of objective revisions it calculates the aggregated proficiency for each of those objectives
+  for a given student in a given course.
+
+  It returns a map:
+
+  %{
+    objective_1_resource_id: "Low",
+    ...
+    objective_n_resource_id: "Medium"
+  }
+
+  This implementation considers that an objective may have sub-objectives.
+  In that case, the proficiency for the given objectives will result from the aggregated raw proficiency of its contained sub-objectives.
+
+  Example:
+    Given the following parent-child learning objectives relationship:
+      - Objective 1:
+        - Sub-objective A (1 correct out of 1 attempt - resource_id: 1)
+        - Sub-objective B (0 correct out of 1 attempt - resource_id: 2)
+        - Sub-objective C (1 correct out of 1 attempt - resource_id: 3)
+
+      - Objective 2 (0 correct out of 1 attempt)
+
+      - Objective 3 (1 correct out of 1 attempt)
+
+    The student proficiency per objective will be:
+      - Objective 1: 2 correct out of 3 => 0.66 => "Low" (this proficiency is the result of agregating its sub-objectives)
+      - Objective 2: 0 correct out of 1 => 0.00 => "Medium"
+      - Objective 3: 1 correct out of 1 => 1.00 => "High"
+
+      %{1 => "Low", 2 => "Medium", 3 => "High"}
+  """
+
+  @spec proficiency_for_student_per_learning_objective(
+          learning_objectives :: [%Revision{}],
+          student_id :: integer,
+          section :: %Oli.Delivery.Sections.Section{}
+        ) :: map
+  def proficiency_for_student_per_learning_objective(
+        learning_objectives,
+        student_id,
+        section
+      ) do
+    unique_objective_and_subobjective_ids =
+      Enum.flat_map(learning_objectives, fn rev -> [rev.resource_id | rev.children] end)
+      |> Enum.uniq()
+
+    raw_proficiency_per_learning_objective =
+      raw_proficiency_for_student_per_learning_objective(
+        section,
+        student_id,
+        unique_objective_and_subobjective_ids
+      )
+
+    Enum.into(learning_objectives, %{}, fn rev ->
+      aggregated_proficiency =
+        if rev.children == [] do
+          [
+            Map.get(
+              raw_proficiency_per_learning_objective,
+              rev.resource_id,
+              nil
+            )
+          ]
+        else
+          Enum.map(rev.children, fn subobjective_id ->
+            Map.get(raw_proficiency_per_learning_objective, subobjective_id)
+          end)
+        end
+        |> Enum.reject(&is_nil/1)
+        |> aggregate_raw_proficiency()
+
+      {rev.resource_id, aggregated_proficiency}
+    end)
+  end
+
+  defp aggregate_raw_proficiency([]), do: proficiency_range(nil)
+
+  defp aggregate_raw_proficiency(raw_values) do
+    {total_correct, total_count} =
+      Enum.reduce(raw_values, {0, 0}, fn {correct, count}, acc ->
+        {correct + elem(acc, 0), count + elem(acc, 1)}
+      end)
+
+    proficiency_value = if total_count == 0, do: 0, else: total_correct / total_count
+
+    proficiency_range(proficiency_value)
+  end
+
   def raw_proficiency_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}) do
     query =
       from(sn in Snapshot,
@@ -685,9 +775,25 @@ defmodule Oli.Delivery.Metrics do
   end
 
   def raw_proficiency_for_student_per_learning_objective(
+        section,
+        studend_id,
+        objective_ids \\ nil
+      )
+
+  def raw_proficiency_for_student_per_learning_objective(
         %Section{analytics_version: :v1, slug: section_slug},
-        student_id
+        student_id,
+        objective_ids
       ) do
+    filter_by_objective_id =
+      case objective_ids do
+        nil ->
+          true
+
+        _ ->
+          dynamic([sn, _s], sn.objective_id in ^objective_ids)
+      end
+
     query =
       from(sn in Snapshot,
         join: s in Section,
@@ -695,6 +801,7 @@ defmodule Oli.Delivery.Metrics do
         where:
           sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
             sn.user_id == ^student_id,
+        where: ^filter_by_objective_id,
         group_by: sn.objective_id,
         select:
           {sn.objective_id,
@@ -710,9 +817,19 @@ defmodule Oli.Delivery.Metrics do
 
   def raw_proficiency_for_student_per_learning_objective(
         %Section{analytics_version: :v2, id: section_id},
-        student_id
+        student_id,
+        objective_ids
       ) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    filter_by_objective_id =
+      case objective_ids do
+        nil ->
+          true
+
+        _ ->
+          dynamic([summary], summary.resource_id in ^objective_ids)
+      end
 
     query =
       from(summary in Oli.Analytics.Summary.ResourceSummary,
@@ -722,6 +839,7 @@ defmodule Oli.Delivery.Metrics do
             summary.publication_id == -1 and
             summary.user_id == ^student_id and
             summary.resource_type_id == ^objective_type_id,
+        where: ^filter_by_objective_id,
         select: {
           summary.resource_id,
           summary.num_first_attempts_correct,
@@ -1131,77 +1249,6 @@ defmodule Oli.Delivery.Metrics do
     Repo.all(query)
     |> Enum.into(%{}, fn {page_id, proficiency} ->
       {page_id, proficiency_range(proficiency)}
-    end)
-  end
-
-  @doc """
-  Calculates the learning proficiency ("High", "Medium", "Low", "Not enough data")
-  for a given student in a given section.
-
-      It returns a map:
-
-      %{objective_id_1 => "High",
-        ...
-        objective_id_n => "Low"
-      }
-  """
-  @spec proficiency_for_student_per_learning_objective(
-          section :: %Oli.Delivery.Sections.Section{},
-          student_id :: integer
-        ) :: map
-  def proficiency_for_student_per_learning_objective(
-        %Section{slug: section_slug, analytics_version: :v1},
-        student_id
-      ) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
-            sn.user_id == ^student_id,
-        group_by: sn.objective_id,
-        select:
-          {sn.objective_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           )}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, proficiency} ->
-      {objective_id, proficiency_range(proficiency)}
-    end)
-  end
-
-  def proficiency_for_student_per_learning_objective(
-        %Section{id: section_id, analytics_version: :v2},
-        student_id
-      ) do
-    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-
-    query =
-      from(summary in Oli.Analytics.Summary.ResourceSummary,
-        where:
-          summary.section_id == ^section_id and
-            summary.project_id == -1 and
-            summary.publication_id == -1 and
-            summary.user_id == ^student_id and
-            summary.resource_type_id == ^objective_type_id,
-        group_by: summary.resource_id,
-        select:
-          {summary.resource_id,
-           fragment(
-             "CAST(SUM(?) as float) / NULLIF(CAST(SUM(?) as float), 0.0)",
-             summary.num_first_attempts_correct,
-             summary.num_first_attempts
-           )}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {objective_id, proficiency} ->
-      {objective_id, proficiency_range(proficiency)}
     end)
   end
 

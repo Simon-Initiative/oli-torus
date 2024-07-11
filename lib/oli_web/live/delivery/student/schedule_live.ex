@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
     <div
       id="schedule-view"
-      class="overflow-x-scroll md:overflow-x-auto container mx-auto"
+      class="overflow-x-scroll md:overflow-x-auto container mx-auto h-full"
       phx-hook="Scroller"
     >
       <.schedule
@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   def schedule(assigns) do
     ~H"""
-    <div class="my-8 px-16">
+    <div class="my-8 px-16" id="schedule_live" phx-hook="Countdown">
       <div class="mb-8">
         Scroll though your course schedule to find all critical due dates and when assignments are due.
         Use this schedule view to see which activities you've completed throughout your time in the course.

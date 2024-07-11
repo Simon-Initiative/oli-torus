@@ -1647,7 +1647,7 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
-  describe "get_container_label_and_numbering/2" do
+  describe "get_container_label_and_numbering/3" do
     setup _ do
       author = insert(:author)
       project = insert(:project, authors: [author])
@@ -1781,32 +1781,38 @@ defmodule Oli.Delivery.SectionsTest do
         Sections.get_section_resource(section.id, unit_2.resource_id)
 
       assert Sections.get_container_label_and_numbering(
-               section_1_section_resource,
+               section_1_section_resource.numbering_level,
+               section_1_section_resource.numbering_index,
                section.customizations
              ) == "Section 1"
 
       assert Sections.get_container_label_and_numbering(
-               section_2_section_resource,
+               section_2_section_resource.numbering_level,
+               section_2_section_resource.numbering_index,
                section.customizations
              ) == "Section 2"
 
       assert Sections.get_container_label_and_numbering(
-               module_1_section_resource,
+               module_1_section_resource.numbering_level,
+               module_1_section_resource.numbering_index,
                section.customizations
              ) == "Module 1"
 
       assert Sections.get_container_label_and_numbering(
-               module_2_section_resource,
+               module_2_section_resource.numbering_level,
+               module_2_section_resource.numbering_index,
                section.customizations
              ) == "Module 2"
 
       assert Sections.get_container_label_and_numbering(
-               unit_1_section_resource,
+               unit_1_section_resource.numbering_level,
+               unit_1_section_resource.numbering_index,
                section.customizations
              ) == "Unit 1"
 
       assert Sections.get_container_label_and_numbering(
-               unit_2_section_resource,
+               unit_2_section_resource.numbering_level,
+               unit_2_section_resource.numbering_index,
                section.customizations
              ) == "Unit 2"
     end
@@ -1841,32 +1847,38 @@ defmodule Oli.Delivery.SectionsTest do
       custom_labels = %{unit: "Volume", module: "Chapter", section: "Lesson"}
 
       assert Sections.get_container_label_and_numbering(
-               section_1_section_resource,
+               section_1_section_resource.numbering_level,
+               section_1_section_resource.numbering_index,
                custom_labels
              ) == "Lesson 1"
 
       assert Sections.get_container_label_and_numbering(
-               section_2_section_resource,
+               section_2_section_resource.numbering_level,
+               section_2_section_resource.numbering_index,
                custom_labels
              ) == "Lesson 2"
 
       assert Sections.get_container_label_and_numbering(
-               module_1_section_resource,
+               module_1_section_resource.numbering_level,
+               module_1_section_resource.numbering_index,
                custom_labels
              ) == "Chapter 1"
 
       assert Sections.get_container_label_and_numbering(
-               module_2_section_resource,
+               module_2_section_resource.numbering_level,
+               module_2_section_resource.numbering_index,
                custom_labels
              ) == "Chapter 2"
 
       assert Sections.get_container_label_and_numbering(
-               unit_1_section_resource,
+               unit_1_section_resource.numbering_level,
+               unit_1_section_resource.numbering_index,
                custom_labels
              ) == "Volume 1"
 
       assert Sections.get_container_label_and_numbering(
-               unit_2_section_resource,
+               unit_2_section_resource.numbering_level,
+               unit_2_section_resource.numbering_index,
                custom_labels
              ) == "Volume 2"
     end

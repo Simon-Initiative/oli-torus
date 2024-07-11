@@ -509,6 +509,8 @@ defmodule OliWeb.Router do
     delete("/:project/lock/:resource", Api.LockController, :release)
 
     get("/:project/alternatives", Api.ResourceController, :alternatives)
+
+    get("/:project/activities/with_report", Api.ResourceController, :activities_with_report)
   end
 
   # Storage Service
@@ -706,6 +708,13 @@ defmodule OliWeb.Router do
     post("/", Api.XAPIController, :emit)
   end
 
+  # Delivery facing Activity report endpoints
+  scope "/api/v1/activity/report/:section_id/:resource_id", OliWeb do
+    pipe_through([:api, :delivery_protected])
+
+    get("/", Api.ActivityReportDataController, :fetch)
+  end
+
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -779,6 +788,10 @@ defmodule OliWeb.Router do
     ])
 
     live("/", Delivery.OpenAndFreeIndex)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([:browser])
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -979,7 +992,7 @@ defmodule OliWeb.Router do
         live("/practice", Delivery.Student.PracticeLive)
       end
 
-      scope "/lesson/:revision_slug" do
+      scope "/prologue/:revision_slug" do
         live_session :delivery_lesson,
           root_layout: {OliWeb.LayoutView, :delivery},
           layout: {OliWeb.Layouts, :student_delivery_lesson},
@@ -987,6 +1000,25 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetUser,
             OliWeb.LiveSessionPlugs.SetSection,
             {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+            OliWeb.LiveSessionPlugs.RedirectToLesson,
+            OliWeb.LiveSessionPlugs.SetBrand,
+            OliWeb.LiveSessionPlugs.SetPreviewMode,
+            OliWeb.LiveSessionPlugs.RequireEnrollment,
+            OliWeb.LiveSessionPlugs.SetRequestPath
+          ] do
+          live("/", Delivery.Student.PrologueLive)
+        end
+      end
+
+      scope "/lesson/:revision_slug" do
+        live_session :delivery_prologue,
+          root_layout: {OliWeb.LayoutView, :delivery},
+          layout: {OliWeb.Layouts, :student_delivery_lesson},
+          on_mount: [
+            OliWeb.LiveSessionPlugs.SetUser,
+            OliWeb.LiveSessionPlugs.SetSection,
+            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+            OliWeb.LiveSessionPlugs.RedirectToPrologue,
             OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless,
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1032,10 +1064,10 @@ defmodule OliWeb.Router do
         ] do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/learn", Delivery.Student.LearnLive, :preview)
-        live("/discussions", Delivery.Student.DiscussionLive, :preview)
+        live("/discussions", Delivery.Student.DiscussionsLive, :preview)
         live("/assignments", Delivery.Student.ScheduleLive, :preview)
         live("/explorations", Delivery.Student.ExplorationsLive, :preview)
-        live("/practice", Delivery.Student.PracticeLive)
+        live("/practice", Delivery.Student.PracticeLive, :preview)
       end
     end
 

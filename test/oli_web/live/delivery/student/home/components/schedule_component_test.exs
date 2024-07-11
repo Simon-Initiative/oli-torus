@@ -241,8 +241,8 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
     })
 
     session_context = %OliWeb.Common.SessionContext{
-      browser_timezone: "Etc/UTC",
-      local_tz: "Etc/UTC",
+      browser_timezone: "America/Montevideo",
+      local_tz: "America/Montevideo",
       author: author,
       user: author,
       is_liveview: true
@@ -405,9 +405,9 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Last Submitted")
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Tue May 7, 2024")
 
-      # Exploration 1 is in progress and displays remaining time
+      # Exploration 1 is in progress and does not display remaining time (since the attempt does not have time limit)
       assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "Attempt 1 of ∞")
-      assert has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "Time Remaining")
+      refute has_element?(lcd, ~s{#schedule_item_2_1 div[role="details"]}, "Time Remaining")
     end
 
     test "it expands a lesson group", %{

@@ -42,7 +42,7 @@ defmodule Oli.Delivery.Sections.SectionCacheTest do
 
   test "clear/1 deletes all stored values for the given section in the cache" do
     Phoenix.PubSub.subscribe(Oli.PubSub, SectionCache.cache_topic())
-    slug = "test_slug"
+    slug = "another_test_slug"
 
     cache_ids =
       SectionCache.cache_keys()
@@ -60,5 +60,34 @@ defmodule Oli.Delivery.Sections.SectionCacheTest do
       cache_id = "#{slug}_#{key}"
       assert_receive({:delete, ^cache_id})
     end
+  end
+
+  test "clear/2 deletes the stored values for the given section keys in the cache" do
+    Phoenix.PubSub.subscribe(Oli.PubSub, SectionCache.cache_topic())
+    slug = "third_test_slug"
+
+    cache_ids =
+      SectionCache.cache_keys()
+      |> Enum.map(&"#{slug}_#{&1}")
+
+    for key <- cache_ids, do: SectionCache.put(key, "dummy_value")
+
+    SectionCache.clear(slug, [:ordered_container_labels])
+
+    # Only the specified key should have been deleted from the cache
+    for key <- cache_ids do
+      if key != "third_test_slug_ordered_container_labels" do
+        assert({:ok, "dummy_value"} == SectionCache.get(key))
+      else
+        assert({:ok, nil} == SectionCache.get("third_test_slug_ordered_container_labels"))
+      end
+    end
+
+    assert_receive({:delete, "third_test_slug_ordered_container_labels"})
+  end
+
+  test "clear/2 returns an error when a non-existing key is provided" do
+    assert {:error, :not_existing_cache_key} =
+             SectionCache.clear("some_section_slug", [:invented_key])
   end
 end

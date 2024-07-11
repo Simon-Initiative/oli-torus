@@ -485,8 +485,7 @@ defmodule Oli.Publishing do
       with {:ok, publication} <-
              create_publication(%{
                project_id: project.id,
-               root_resource_id: resource.id,
-               ids_added: true
+               root_resource_id: resource.id
              }),
            {:ok, published_resource} <-
              create_published_resource(%{
@@ -1029,8 +1028,7 @@ defmodule Oli.Publishing do
                {:ok, new_publication} <-
                  create_publication(%{
                    root_resource_id: active_publication.root_resource_id,
-                   project_id: active_publication.project_id,
-                   ids_added: true
+                   project_id: active_publication.project_id
                  }),
 
                # Release all locks
@@ -1051,8 +1049,7 @@ defmodule Oli.Publishing do
                      description: description,
                      edition: edition,
                      major: major,
-                     minor: minor,
-                     ids_added: true
+                     minor: minor
                    }
                  ) do
             Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
@@ -1480,6 +1477,35 @@ defmodule Oli.Publishing do
         preload: [:author]
     )
     |> Enum.filter(fn m -> !Locks.expired_or_empty?(m) end)
+  end
+
+  def determine_parent_pages(activity_resource_id, publication_ids)
+      when is_list(publication_ids) do
+    page_id = ResourceType.id_for_page()
+
+    sql = """
+    select r.title, r.slug, r.resource_id as id  from (
+      select distinct
+          rev.title,
+          rev.resource_id,
+          rev.slug,
+          cast(jsonb_path_query(rev.content,'$.model.** ? (@.type == "activity-reference").activity_id') as BIGINT) as act_id
+        from published_resources as mapping
+        join revisions as rev
+        on mapping.revision_id = rev.id
+        where mapping.publication_id in (#{Enum.join(publication_ids, ",")})
+          and rev.resource_type_id = #{page_id}
+          and rev.deleted is false) as r
+    where r.act_id = #{activity_resource_id}
+    limit 1
+    """
+
+    {:ok, %{columns: columns, rows: [rows]}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.with_index(columns)
+    |> Enum.reduce(%{}, fn {a, idx}, c ->
+      Map.put(c, a, Enum.at(rows, idx))
+    end)
   end
 
   @doc """

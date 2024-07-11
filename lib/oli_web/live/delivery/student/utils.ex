@@ -15,9 +15,10 @@ defmodule OliWeb.Delivery.Student.Utils do
   alias OliWeb.Icons
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Phoenix.LiveView.JS
+  alias OliWeb.Common.SessionContext
 
   attr :page_context, Oli.Delivery.Page.PageContext
-  attr :ctx, OliWeb.Common.SessionContext
+  attr :ctx, SessionContext
   attr :objectives, :list
   attr :index, :string
   attr :container_label, :string
@@ -32,7 +33,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             <div class="grow shrink basis-0 self-stretch justify-start items-center gap-3 flex">
               <div
                 role="container label"
-                class="opacity-50 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider"
+                class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider"
               >
                 <%= @container_label %>
               </div>
@@ -48,7 +49,7 @@ defmodule OliWeb.Delivery.Student.Utils do
                 role="graded page marker"
               >
                 <Icons.flag />
-                <div class="opacity-50 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-wider">
+                <div class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider">
                   Graded Page
                 </div>
               </div>
@@ -58,45 +59,42 @@ defmodule OliWeb.Delivery.Student.Utils do
               class="px-2 py-1 bg-gray-300 bg-opacity-10 dark:bg-white dark:bg-opacity-10 rounded-xl shadow justify-start items-center gap-1 flex"
               role="assignment marker"
             >
-              <div class="dark:text-white text-[10px] font-normal font-['Open Sans']">
+              <div class="dark:text-white text-[10px] font-normal">
                 Assignment requirement
               </div>
             </div>
           </div>
           <div role="page label" class="self-stretch justify-start items-start gap-2.5 inline-flex">
-            <div
-              role="page numbering index"
-              class="opacity-50 dark:text-white text-[38px] font-bold font-['Open Sans']"
-            >
+            <div role="page numbering index" class="opacity-50 dark:text-white text-[38px] font-bold">
               <%= @index %>.
             </div>
-            <div
-              role="page title"
-              class="grow shrink basis-0 dark:text-white text-[38px] font-bold font-['Open Sans']"
-            >
+            <div role="page title" class="grow shrink basis-0 dark:text-white text-[38px] font-bold">
               <%= @page_context.page.title %>
             </div>
           </div>
         </div>
         <div class="justify-start items-center gap-3 inline-flex">
-          <div class="opacity-50 justify-start items-center gap-1.5 flex">
+          <div
+            :if={@page_context.page.duration_minutes}
+            class="opacity-50 justify-start items-center gap-1.5 flex"
+          >
             <div role="page read time" class="justify-end items-center gap-1 flex">
               <div class="w-[18px] h-[18px] relative opacity-80">
                 <Icons.time />
               </div>
               <div class="justify-end items-end gap-0.5 flex">
-                <div class="text-right dark:text-white text-xs font-bold font-['Open Sans'] uppercase tracking-wide">
+                <div class="text-right dark:text-white text-xs font-bold uppercase tracking-wide">
                   <%= @page_context.page.duration_minutes %>
                 </div>
-                <div class="dark:text-white text-[9px] font-bold font-['Open Sans'] uppercase tracking-wide">
+                <div class="dark:text-white text-[9px] font-bold uppercase tracking-wide">
                   min
                 </div>
               </div>
             </div>
           </div>
           <div role="page schedule" class="justify-start items-start gap-1 flex">
-            <div class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">Due:</div>
-            <div class="dark:text-white text-xs font-normal font-['Open Sans']">
+            <div class="opacity-50 dark:text-white text-xs font-normal">Due:</div>
+            <div class="dark:text-white text-xs font-normal">
               <%= FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
                 @ctx,
@@ -129,22 +127,20 @@ defmodule OliWeb.Delivery.Student.Utils do
         </div>
         <div
           :for={{objective, index} <- Enum.with_index(@objectives, 1)}
-          class="self-stretch flex-col justify-start items-start flex ml-6"
-          role={"objective #{index}"}
+          class="self-stretch flex-col justify-start items-start ml-6 w-full"
+          role={"objective #{objective.resource_id}"}
         >
-          <div class="relative h-[21px] justify-start items-center gap-[19px] inline-flex">
+          <div class="relative justify-start items-center gap-[19px] inline-flex w-full">
             <.proficiency_icon_with_tooltip objective={objective} />
-            <div class="justify-start items-start gap-3.5 flex">
-              <div class="justify-start items-start gap-[17px] flex">
-                <div class="w-5 text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px]">
-                  L<%= index %>
-                </div>
-                <div
-                  role={"objective #{index} title"}
-                  class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
-                >
-                  <%= objective.title %>
-                </div>
+            <div class="justify-start items-start flex w-full">
+              <div class="text-neutral-800 dark:text-neutral-500 text-sm font-bold font-['Inter'] leading-[21px] min-w-[2rem]">
+                L<%= index %>
+              </div>
+              <div
+                role={"objective #{objective.resource_id} title"}
+                class="text-stone-700 dark:text-stone-300 text-sm font-normal font-['Open Sans'] leading-[21px]"
+              >
+                <%= objective.title %>
               </div>
             </div>
           </div>
@@ -215,7 +211,9 @@ defmodule OliWeb.Delivery.Student.Utils do
     >
     </div>
     <div class="w-6 h-6 flex items-center justify-center">
-      <Icons.proficiency proficiency={@objective.proficiency} />
+      <div class="absolute top-0 left-0">
+        <Icons.proficiency proficiency={@objective.proficiency} />
+      </div>
     </div>
     <div
       id={"objective_#{@objective.resource_id}_tooltip"}
@@ -246,6 +244,24 @@ defmodule OliWeb.Delivery.Student.Utils do
     </script>
     <script :for={script <- @scripts} type="text/javascript" src={"/js/#{script}"}>
     </script>
+    """
+  end
+
+  attr :activity_count, :integer, default: 0
+  attr :advanced_delivery, :boolean, default: false
+  attr :page_context, :map, required: true
+  attr :section_slug, :string, required: true
+
+  def reset_attempts_button(assigns) do
+    ~H"""
+    <button
+      :if={@activity_count > 0 && @page_context.review_mode == false && not @advanced_delivery}
+      id="reset_answers"
+      class="btn btn-link btn-sm text-center mb-10"
+      onClick={"window.OLI.finalize('#{@section_slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid}', false, 'reset_answers')"}
+    >
+      <i class="fa-solid fa-rotate-right mr-2"></i> Reset Answers
+    </button>
     """
   end
 
@@ -286,6 +302,26 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def lesson_live_path(section_slug, revision_slug, params),
     do: ~p"/sections/#{section_slug}/lesson/#{revision_slug}?#{params}"
+
+  @doc """
+  Generates a URL for the Prologue view for a given graded page.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `revision_slug`: The unique identifier for the lesson revision.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `prologue_live_path("math", "intro")` returns `"/sections/math/prologue/intro"`.
+    - `prologue_live_path("math", "intro", request_path: "some/previous/url")` returns `"/sections/math/prologue/intro?request_path=some/previous/url"`.
+  """
+  def prologue_live_path(section_slug, revision_slug, params \\ [])
+
+  def prologue_live_path(section_slug, revision_slug, []),
+    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}"
+
+  def prologue_live_path(section_slug, revision_slug, params),
+    do: ~p"/sections/#{section_slug}/prologue/#{revision_slug}?#{params}"
 
   @doc """
   Generates a URL for reviewing an attempt of a lesson.
@@ -360,7 +396,8 @@ defmodule OliWeb.Delivery.Student.Utils do
       end
 
     Sections.get_container_label_and_numbering(
-      container,
+      container.numbering_level,
+      container.numbering_index,
       section.customizations
     )
   end
@@ -467,22 +504,29 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   @doc """
   Calculates the number of days from today to the given end date of a resource and returns a human-readable string describing the difference.
+  It considers the user's timezone to calculate the difference.
 
   ## Parameters:
   - `resource_end_date`: The `DateTime` representing the end date of the resource.
+  - `context`: The `SessionContext` struct containing the user's timezone information.
 
   ## Returns:
   - A string indicating the number of days until or since the resource end date, such as "Due Today", "1 day left", or "Past Due by X days".
 
   ## Examples:
-      iex> days_difference(~U[2024-05-12T00:00:00Z])
+      iex> days_difference(~U[2024-05-12T00:00:00Z], %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
-  @spec days_difference(DateTime.t()) :: String.t()
-  def days_difference(resource_end_date) do
-    days = resource_end_date |> DateTime.to_date() |> Timex.diff(Oli.Date.utc_today(), :days)
+  @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
+  def days_difference(resource_end_date, context) do
+    localized_end_date =
+      resource_end_date
+      |> OliWeb.Common.FormatDateTime.maybe_localized_datetime(context)
+      |> DateTime.to_date()
 
-    case days do
+    today = context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()
+
+    case Timex.diff(localized_end_date, today, :days) do
       0 ->
         "Due Today"
 
@@ -490,7 +534,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         "1 day left"
 
       -1 ->
-        "Past Due"
+        "Past Due by a day"
 
       days when days < 0 ->
         "Past Due by #{abs(days)} days"
@@ -523,6 +567,144 @@ defmodule OliWeb.Delivery.Student.Utils do
       trunc(score)
     else
       score
+    end
+  end
+
+  @doc """
+  Evaluates if an attempt is expired based on the attempt state and the time limit, late submission policy, and end date.
+  An attempt can expire if its state is :active and either has a time limit and/or disallows late submissions.
+  """
+  @spec attempt_expires?(atom(), integer(), atom(), DateTime.t()) :: boolean()
+  def attempt_expires?(state, time_limit, late_submit, end_date) do
+    case {state, time_limit, late_submit, end_date} do
+      {state, _time_limit, _late_submit, _end_date} when state != :active ->
+        false
+
+      {:active, 0, :allow, _end_date} ->
+        false
+
+      {:active, time_limit, _late_submit, _end_date} when time_limit > 0 ->
+        true
+
+      {:active, _time_limit, :disallow, end_date} when end_date != nil ->
+        true
+
+      {_, _, _, _} ->
+        false
+    end
+  end
+
+  @doc """
+    Calculates the effective expiration date for an attempt based on the inserted date, time limit, late submission policy, and end date.
+
+    ## Parameters:
+    - `inserted_at`: The `DateTime` representing the time the attempt was inserted (when the attempt started).
+    - `time_limit`: The time limit in minutes for the attempt.
+    - `late_submit`: The policy for late submission, either `:allow` or `:disallow`.
+    - `end_date`: The `DateTime` representing the end date of the resource.
+
+    ## Returns:
+    - The effective expiration date for the attempt, which is the earlier of the time limit expiration and the end date (for the case late submissions are not allowed).
+
+    ## Examples:
+        iex> effective_attempt_expiration_date(~U[2024-05-12T00:00:00Z], 60, :allow, ~U[2024-05-12T00:30:00Z])
+        ~U[2024-05-12 01:00:00Z]
+        iex> effective_attempt_expiration_date(~U[2024-05-12T00:00:00Z], 60, :disallow, ~U[2024-05-12T00:30:00Z])
+        ~U[2024-05-12 00:30:00Z]
+        iex> effective_attempt_expiration_date(~U[2024-05-12T00:00:00Z], 15, :disallow, ~U[2024-05-12T00:30:00Z])
+        ~U[2024-05-12 00:15:00Z]
+  """
+  @spec effective_attempt_expiration_date(DateTime.t(), integer(), atom(), DateTime.t()) ::
+          DateTime.t()
+  def effective_attempt_expiration_date(inserted_at, time_limit, late_submit, end_date) do
+    case {inserted_at, time_limit, late_submit, end_date} do
+      {_inserted_at, 0, :disallow, end_date} ->
+        end_date
+
+      {inserted_at, time_limit, :allow, _end_date} when time_limit > 0 ->
+        Timex.shift(inserted_at, minutes: time_limit)
+
+      {inserted_at, time_limit, :disallow, end_date} when time_limit > 0 ->
+        datetime_with_limit = Timex.shift(inserted_at, minutes: time_limit)
+
+        if DateTime.compare(datetime_with_limit, end_date) == :lt,
+          do: datetime_with_limit,
+          else: end_date
+    end
+  end
+
+  @doc """
+  Calculates the time remaining from the current moment until a specified end date
+  and formats it as "DD:HH:MM:SS" or "HH:MM:SS" depending on the duration.
+
+  ## Parameters
+  - `end_date`: The resource `end_date` as a `DateTime`.
+
+  ## Returns
+  - A string representing the formatted time remaining as "DD:HH:MM:SS" or "HH:MM:SS". If the time difference is negative, it returns "00:00:00".
+
+  ## Examples
+      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 3661))
+      "01:01:01"
+      iex> format_time_remaining(Timex.shift(Timex.now(), seconds: 266460))
+      "03:02:01:00"
+  """
+
+  @spec format_time_remaining(DateTime.t()) :: String.t()
+  def format_time_remaining(end_date) do
+    # Get the current time
+    current_time = Oli.DateTime.utc_now()
+
+    # Calculate the difference in seconds, clamp negative values to 0
+    diff_seconds =
+      Timex.diff(end_date, current_time, :seconds)
+      |> max(0)
+
+    # Calculate days, hours, minutes and seconds
+    days = div(diff_seconds, 86400)
+    hours = div(rem(diff_seconds, 86400), 3600)
+    minutes = div(rem(diff_seconds, 3600), 60)
+    seconds = rem(diff_seconds, 60)
+
+    # Format the duration based on the number of days remaining (DD:HH:MM:SS or HH:MM:SS)
+    days_parsed =
+      (days
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+        ":"
+
+    if(days > 0, do: days_parsed, else: "") <>
+      (hours
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+      ":" <>
+      (minutes
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0")) <>
+      ":" <>
+      (seconds
+       |> Integer.to_string()
+       |> String.pad_leading(2, "0"))
+  end
+
+  attr :bib_app_params, :map, required: true
+  attr :ctx, :map, required: true
+
+  def references(assigns) do
+    ~H"""
+    <div class="content">
+      <%= OliWeb.Common.React.component(@ctx, "Components.References", @bib_app_params,
+        id: "references"
+      ) %>
+    </div>
+    """
+  end
+
+  def coalesce(first, second) do
+    case {first, second} do
+      {nil, nil} -> nil
+      {nil, s} -> s
+      {f, _s} -> f
     end
   end
 end

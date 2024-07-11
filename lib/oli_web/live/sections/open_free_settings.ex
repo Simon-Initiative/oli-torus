@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
 
   alias OliWeb.Common.Properties.Group
 
-  attr(:changeset, :any, required: true)
+  attr(:form, :any, required: true)
   attr(:disabled, :boolean, required: true)
   attr(:is_admin, :boolean, required: true)
   attr(:ctx, :map, required: true)
@@ -15,7 +15,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <div class="form-check">
           <.input
             type="checkbox"
-            field={@changeset[:registration_open]}
+            field={@form[:registration_open]}
             label="Registration open"
             class="form-check-input"
           />
@@ -24,7 +24,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <div class="form-check">
           <.input
             type="checkbox"
-            field={@changeset[:requires_enrollment]}
+            field={@form[:requires_enrollment]}
             label="Requires enrollment"
             class="form-check-input"
           />
@@ -33,7 +33,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <div class="form-check">
           <.input
             type="checkbox"
-            field={@changeset[:skip_email_verification]}
+            field={@form[:skip_email_verification]}
             label="Omit student email verification"
             class="form-check-input"
           />

@@ -53,6 +53,18 @@ defmodule Oli.Interop.ExportTest do
       assert type_labels["section"] == project.customizations.section
     end
 
+    test "project export preserves welcome title and encouraging subtitle", %{project: project} do
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
+
+      assert project_json["welcomeTitle"] == %{"test" => "test"}
+      assert project_json["encouragingSubtitle"] == "Subtitle test"
+    end
+
     test "export a project with nil revisions does not fail", %{project: project} do
       author = hd(project.authors)
 
@@ -91,7 +103,9 @@ defmodule Oli.Interop.ExportTest do
           unit: "Unit_Example",
           module: "Module_Example",
           section: "Section_Example"
-        }
+        },
+        welcome_title: %{test: "test"},
+        encouraging_subtitle: "Subtitle test"
       )
 
     container_revision =
