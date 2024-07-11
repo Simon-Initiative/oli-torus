@@ -324,6 +324,7 @@ module.exports = (env, options) => ({
         'phoenix_html@3.3.1': 'MIT',
         'phoenix_html@3.3.2': 'MIT',
         'phoenix_html@3.3.3': 'MIT',
+        'phoenix_html@3.3.4': 'MIT',
         'typed-function@2.0.0': 'MIT',
       },
       unacceptableLicenseTest: (licenseIdentifier) => {
