@@ -82,6 +82,28 @@ defmodule Oli.Institutions do
   end
 
   @doc """
+  Returns the institution that an LTI user is associated with.
+  """
+  def get_institution_by_lti_user(user) do
+    # using enrollment records, we can infer the user's institution. This is because
+    # an LTI user can be enrolled in multiple sections, but all sections must be from
+    # the same institution.
+    from(e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      join: u in User,
+      on: e.user_id == u.id,
+      join: institution in Institution,
+      on: s.institution_id == institution.id,
+      where: u.id == ^user.id and s.status == :active and e.status == :enrolled,
+      limit: 1,
+      select: institution
+    )
+    |> Repo.all()
+    |> List.first()
+  end
+
+  @doc """
   Gets an institution by clauses. Will raise an error if
   more than one matches the criteria.
 
