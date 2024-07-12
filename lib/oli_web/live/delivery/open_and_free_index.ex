@@ -132,6 +132,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                 :for={{section, index} <- Enum.with_index(@filtered_sections)}
                 index={index}
                 section={section}
+                params={@params}
               />
               <p :if={length(@filtered_sections) == 0} class="mt-4">
                 No course found matching <strong>"<%= @params.text_search %>"</strong>
@@ -240,6 +241,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   attr :section, :map
   attr :index, :integer
+  attr :params, :map
 
   def course_card(assigns) do
     ~H"""
