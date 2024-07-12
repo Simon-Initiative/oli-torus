@@ -15,6 +15,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
     socket =
       socket
       |> assign_notes_and_discussions_enabled(session["section_slug"])
+      |> assign(sidebar_expanded: session["sidebar_expanded"])
 
     if connected?(socket) do
       socket =
@@ -29,9 +30,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
       {:cont, socket}
     else
-      {:cont,
-       socket
-       |> assign(sidebar_expanded: true)}
+      {:cont, socket}
     end
   end
 

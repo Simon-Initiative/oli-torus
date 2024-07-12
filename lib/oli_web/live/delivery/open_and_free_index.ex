@@ -179,7 +179,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
           <div class="flex flex-col w-full gap-3">
             <.link
               :for={{section, index} <- Enum.with_index(@filtered_sections)}
-              href={get_course_url(section)}
+              href={get_course_url(section, @params.sidebar_expanded)}
               phx-click={JS.add_class("opacity-0", to: "#content")}
               phx-mounted={
                 JS.transition(
@@ -276,7 +276,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
         </div>
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
           <.link
-            href={get_course_url(@section)}
+            href={get_course_url(@section, @params.sidebar_expanded)}
             class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
           >
             <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
@@ -373,8 +373,11 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     end)
   end
 
-  defp get_course_url(%{user_role: "student", slug: slug}), do: ~p"/sections/#{slug}"
-  defp get_course_url(%{slug: slug}), do: ~p"/sections/#{slug}/instructor_dashboard/manage"
+  defp get_course_url(%{user_role: "student", slug: slug}, sidebar_expanded),
+    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
+
+  defp get_course_url(%{slug: slug}, sidebar_expanded),
+    do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
 
   defp decode_params(params) do
     %{
