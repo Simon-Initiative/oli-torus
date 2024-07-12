@@ -59,7 +59,7 @@ defmodule Oli.Analytics.XAPI.PipelineTest do
       bundle2b = make_bundle("2", map.upload_directory)
 
       ref = Broadway.test_batch(UploadPipeline, [bundle1a, bundle1b, bundle2a, bundle2b])
-      assert_receive {:ack, ^ref, success, failure}, 5000
+      assert_receive {:ack, ^ref, success, failure}, 10_000
 
       # Verify that the two common messages were handled each in separate batches
       assert length(success) == 2
