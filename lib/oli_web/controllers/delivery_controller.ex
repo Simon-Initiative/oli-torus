@@ -10,6 +10,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
@@ -120,8 +121,8 @@ defmodule OliWeb.DeliveryController do
         # check institution research consent setting
         institution = Institutions.get_institution_by_lti_user(user)
 
-        case institution.research_consent do
-          :oli_form ->
+        case institution do
+          %Institution{research_consent: :oli_form} ->
             conn
             |> assign(:research_opt_out, user_research_opt_out?(user))
             |> assign(:redirect_url, redirect_url)

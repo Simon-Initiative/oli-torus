@@ -7,6 +7,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -449,10 +450,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         # check institution research consent setting
         institution = Institutions.get_institution_by_lti_user(user)
 
-        case institution.research_consent do
-          :oli_form ->
+        case institution do
+          %Institution{research_consent: :oli_form} ->
             true
 
+          # if research consent is set to anything else or institution was
+          # not found for LTI user, do not show the link
           _ ->
             false
         end
