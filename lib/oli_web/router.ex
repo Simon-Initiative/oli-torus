@@ -253,6 +253,9 @@ defmodule OliWeb.Router do
 
     # keep a session active by periodically calling this endpoint
     get("/keep-alive", StaticPageController, :keep_alive)
+
+    get("/research_consent", DeliveryController, :show_research_consent)
+    post("/research_consent", DeliveryController, :research_consent)
   end
 
   scope "/authoring", as: :authoring do
@@ -1285,8 +1288,6 @@ defmodule OliWeb.Router do
 
     get("/", DeliveryController, :index)
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
-
-    post("/research_consent", DeliveryController, :research_consent)
   end
 
   ### Admin Dashboard / Telemetry
