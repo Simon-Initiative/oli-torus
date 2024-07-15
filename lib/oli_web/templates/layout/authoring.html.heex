@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="delivery" xmlns:m="http://www.w3.org/1998/Math/MathML">
+<html lang="en" xmlns:m="http://www.w3.org/1998/Math/MathML">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -9,23 +9,9 @@
       <%= assigns[:page_title] || assigns[:title] || brand_name() %>
     </Phoenix.Component.live_title>
 
-    <link
-      rel="apple-touch-icon"
-      sizes="180x180"
-      href={favicons("apple-touch-icon.png", assigns[:section])}
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="16x16"
-      href={favicons("favicon-16x16.png", assigns[:section])}
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="32x32"
-      href={favicons("favicon-32x32.png", assigns[:section])}
-    />
+    <link rel="apple-touch-icon" sizes="180x180" href={favicons("apple-touch-icon.png")} />
+    <link rel="icon" type="image/png" sizes="16x16" href={favicons("favicon-16x16.png")} />
+    <link rel="icon" type="image/png" sizes="32x32" href={favicons("favicon-32x32.png")} />
     <link rel="manifest" href="/site.webmanifest" />
     <!-- CSS -->
     <link id="styles" rel="stylesheet" href="/css/styles.css" />
@@ -62,6 +48,18 @@
       crossorigin="anonymous"
     >
     </script>
+    <!-- Typeahead -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js"
+    >
+    </script>
+    <!-- Moment.js https://momentjs.com -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+      integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+      crossorigin="anonymous"
+    >
+    </script>
     <!-- NProgress.js -->
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"
@@ -83,11 +81,6 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
-    <!-- Tabler Icons https://tabler.io/docs/icons/webfont -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"
-    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -95,9 +88,10 @@
       href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap"
       rel="stylesheet"
     />
+    <!-- Tabler Icons https://tabler.io/docs/icons/webfont -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap"
       rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"
     />
     <!-- Code Syntax Highlighting https://highlightjs.org/ -->
     <link
@@ -122,11 +116,6 @@
       referrerpolicy="no-referrer"
     >
     </script>
-
-    <%= unless Map.get(assigns, :vr_agent_active, false) do %>
-      <script src="https://polyfill.io/v3/polyfill.min.js?features=es6">
-      </script>
-    <% end %>
     <!-- ReCAPTCHA -->
     <script src="https://www.google.com/recaptcha/api.js">
     </script>
@@ -153,8 +142,8 @@
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/dark.js")}>
     </script>
   </head>
-  <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
-    <input type="hidden" id="layout-id" data-layout-id="delivery" />
+  <body class="dark:bg-body-dark dark:text-white">
+    <input type="hidden" id="layout-id" data-layout-id="authoring" />
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
 
