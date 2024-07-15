@@ -142,9 +142,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
   defp render_flash(assigns) do
     ~H"""
-    <%= if live_flash(@flash, :form_error) do %>
+    <%= if Phoenix.Flash.get(@flash, :form_error) do %>
       <div class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
-        <%= live_flash(@flash, :form_error) %>
+        <%= Phoenix.Flash.get(@flash, :form_error) %>
 
         <button
           type="button"
