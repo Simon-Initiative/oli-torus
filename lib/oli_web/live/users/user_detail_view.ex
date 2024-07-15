@@ -336,7 +336,7 @@ defmodule OliWeb.Users.UsersDetailView do
         {:noreply,
          socket
          |> put_flash(:info, "User successfully deleted.")
-         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
+         |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "User couldn't be deleted.")}

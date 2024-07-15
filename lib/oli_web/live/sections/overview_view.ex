@@ -505,7 +505,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
 
-    {:noreply, push_redirect(socket, to: Routes.delivery_path(socket, :index))}
+    {:noreply, push_navigate(socket, to: Routes.delivery_path(socket, :index))}
   end
 
   def handle_event("show_delete_modal", _params, socket) do

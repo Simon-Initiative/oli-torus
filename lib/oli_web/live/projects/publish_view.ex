@@ -242,7 +242,7 @@ defmodule OliWeb.Projects.PublishView do
       {:noreply,
        socket
        |> put_flash(:info, "Publish Successful!")
-       |> push_redirect(
+       |> push_navigate(
          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project.slug)
        )}
     else
@@ -252,7 +252,7 @@ defmodule OliWeb.Projects.PublishView do
         {:noreply,
          socket
          |> put_flash(:error, msg)
-         |> push_redirect(
+         |> push_navigate(
            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project.slug)
          )}
     end

@@ -254,7 +254,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
          socket
          |> hide_modal(modal_assigns: nil)
          |> put_flash(:info, "Author successfully deleted.")
-         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
+         |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Author couldn't be deleted.")}

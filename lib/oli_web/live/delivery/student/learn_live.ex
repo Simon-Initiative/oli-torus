@@ -623,7 +623,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     selected_view = values["view"] || :gallery
 
     {:noreply,
-     push_redirect(socket,
+     push_navigate(socket,
        to:
          resource_url(
            values["slug"],
