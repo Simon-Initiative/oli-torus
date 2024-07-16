@@ -362,4 +362,78 @@ defmodule Oli.Publishing.AuthoringResolver do
       )
     )
   end
+
+  @doc """
+  Returns a list of pages that contains hyperlinks pointing to the given page
+  """
+  @spec find_hyperlink_references(project_slug :: String.t(), page_slug :: String.t()) :: [
+          %{title: String.t(), slug: String.t()}
+        ]
+  def find_hyperlink_references(project_slug, page_slug) do
+    page_id = Oli.Resources.ResourceType.id_for_page()
+
+    PublishedResource
+    |> join(:inner, [pr], r in Revision, on: r.id == pr.revision_id)
+    |> where([pr, _r], pr.publication_id in subquery(project_working_publication(project_slug)))
+    |> where([_pr, r], r.resource_type_id == ^page_id)
+    |> where([_pr, r], r.deleted == false)
+    |> where(
+      [_pr, r],
+      not is_nil(fragment("SELECT * FROM get_hyperlink_references_from_revision(?)", r.content))
+    )
+    |> select([_pr, r], %{
+      slug: r.slug,
+      content: fragment("SELECT * FROM get_hyperlink_references_from_revision(?)", r.content),
+      title: r.title
+    })
+    |> Repo.all()
+    |> process_hyperlink_data(project_slug, page_slug)
+  end
+
+  # This function processes the data returned by the get_hyperlinks_by_project_slug function
+  # It filters the data to only include the hyperlinks that point to the page_slug
+  # It also maps the resource_id to the slug of the revision
+  defp process_hyperlink_data(hyperlinks_data, project_slug, page_slug) do
+    # Collect the resource_ids and transform the content from a map to a list
+    # For instance, %{content: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
+    # will be transformed to [1, "some_slug"]
+    {resource_ids, data_with_content_as_list} =
+      Enum.reduce(hyperlinks_data, {[], []}, fn
+        %{content: content} = data, acc ->
+          {hrefs, idrefs} =
+            Enum.reduce(content, {[], []}, fn
+              %{"href" => nil, "idref" => idref}, acc2 -> {elem(acc2, 0), [idref | elem(acc2, 1)]}
+              %{"href" => href, "idref" => nil}, acc2 -> {[href | elem(acc2, 0)], elem(acc2, 1)}
+            end)
+
+          resource_ids = idrefs ++ elem(acc, 0)
+          references_list = [%{data | content: hrefs ++ idrefs} | elem(acc, 1)]
+          {resource_ids, references_list}
+      end)
+
+    map_resource_id_slug =
+      from(m in PublishedResource,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          m.publication_id in subquery(project_working_publication(project_slug)) and
+            m.resource_id in ^resource_ids,
+        select: {rev.resource_id, rev.slug}
+      )
+      |> Repo.all()
+      |> Enum.into(%{})
+
+    # Map resource_ids and filter references by the given page_slug
+    Enum.reduce(data_with_content_as_list, [], fn data, acc ->
+      content_maped =
+        Enum.reduce(data.content, [], fn
+          reference, acc2 when is_number(reference) -> [map_resource_id_slug[reference] | acc2]
+          reference, acc2 -> [reference | acc2]
+        end)
+
+      if page_slug in content_maped,
+        do: [%{title: data.title, slug: data.slug} | acc],
+        else: acc
+    end)
+  end
 end
