@@ -61,7 +61,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     socket =
       assign(socket,
         active_tab: :learn,
-        units: get_or_compute_full_hierarchy(section)["children"],
         selected_module_per_unit_resource_id: %{},
         student_end_date_exceptions_per_resource_id: %{},
         student_visited_pages: %{},
@@ -78,9 +77,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         display_props_per_module_id: %{},
         selected_view: @default_selected_view
       )
+      |> stream(:units, get_or_compute_full_hierarchy(section)["children"])
+      |> stream(:unit_resource_ids, [])
       |> slim_assigns()
 
-    {:ok, socket, temporary_assigns: [units: [], unit_resource_ids: []]}
+    {:ok, socket}
   end
 
   defp slim_assigns(socket) do
@@ -113,7 +114,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)
+         |> stream(:units, full_hierarchy["children"], reset: true)
          |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
 
       %{"selected_view" => selected_view} ->
@@ -122,7 +123,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)}
+         |> stream(:units, full_hierarchy["children"], reset: true)}
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
@@ -339,7 +340,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply,
      socket
      |> assign(viewed_intro_video_resource_ids: updated_viewed_videos)
-     |> update(:units, fn units -> [selected_unit | units] end)
+     |> stream_insert(:units, selected_unit)
      |> push_event("play_video", %{
        "video_url" => video_url,
        "section_id" => section_id,
@@ -418,7 +419,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply,
      socket
      |> assign(display_props_per_module_id: display_props_per_module_id)
-     |> update(:units, fn units -> [selected_unit | units] end)}
+     |> stream_insert(:units, selected_unit)}
   end
 
   ## Tab navigation start ##
@@ -600,7 +601,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     socket
     |> assign(selected_module_per_unit_resource_id: selected_module_per_unit_resource_id)
-    |> update(:units, fn units -> [selected_unit | units] end)
+    |> stream_insert(:units, selected_unit)
     |> maybe_scroll_y_to_unit(unit_resource_id, auto_scroll?, scroll_behavior)
     |> maybe_scroll_x_to_card_in_slider(unit_resource_id, module_resource_id, auto_scroll?)
     |> maybe_pulse_target(pulse_target_id)
@@ -706,7 +707,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            end
          )
      )
-     |> update(:units, fn _units -> get_or_compute_full_hierarchy(section)["children"] end)
+     |> stream(:units, get_or_compute_full_hierarchy(section)["children"], reset: true)
      |> maybe_assign_gallery_data(selected_view)}
   end
 
@@ -766,7 +767,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
-      <div id="outline_rows" phx-update="append">
+      <div id="outline_rows" phx-update="stream">
         <.outline_row
           :for={row <- @units}
           row={row}
@@ -792,7 +793,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
-      <div id="all_units_as_gallery" phx-update="append">
+      <div id="all_units_as_gallery" phx-update="stream">
         <.gallery_row
           :for={unit <- @units}
           unit={unit}
@@ -2627,7 +2628,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       end)
 
     socket
-    |> update(:units, fn _units -> units_with_metrics end)
+    |> stream(:units, units_with_metrics, reset: true)
     |> assign(page_metrics_per_module_id: page_metrics_per_module_id(units_with_metrics))
     |> enable_gallery_slider_buttons()
   end
