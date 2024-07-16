@@ -77,8 +77,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         display_props_per_module_id: %{},
         selected_view: @default_selected_view
       )
-      |> stream(:units, get_or_compute_full_hierarchy(section)["children"])
-      |> stream(:unit_resource_ids, [])
+      |> stream(:units, get_or_compute_full_hierarchy(section)["children"],
+        dom_id: &"#{&1["uuid"]}"
+      )
+      |> stream(:unit_resource_ids, [], dom_id: &"#{&1}")
       |> slim_assigns()
 
     {:ok, socket}
@@ -103,6 +105,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         _uri,
         socket
       ) do
+    %{
+      student_visited_pages: student_visited_pages,
+      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
+      student_progress_per_resource_id: student_progress_per_resource_id
+    } = socket.assigns
+
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
     send(self(), :gc)
@@ -111,19 +119,41 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       %{"selected_view" => selected_view, "target_resource_id" => resource_id} ->
         selected_view = String.to_existing_atom(selected_view)
 
+        units =
+          full_hierarchy["children"]
+          |> Enum.map(fn unit ->
+            unit
+            |> mark_visited_and_completed_pages(
+              student_visited_pages,
+              student_raw_avg_score_per_page_id,
+              student_progress_per_resource_id
+            )
+          end)
+
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> stream(:units, full_hierarchy["children"], reset: true)
+         |> stream(:units, units, reset: true)
          |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
 
       %{"selected_view" => selected_view} ->
         selected_view = String.to_existing_atom(selected_view)
 
+        units =
+          full_hierarchy["children"]
+          |> Enum.map(fn unit ->
+            unit
+            |> mark_visited_and_completed_pages(
+              student_visited_pages,
+              student_raw_avg_score_per_page_id,
+              student_progress_per_resource_id
+            )
+          end)
+
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> stream(:units, full_hierarchy["children"], reset: true)}
+         |> stream(:units, units, reset: true)}
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
@@ -685,6 +715,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     send(self(), :gc)
 
+    units =
+      case selected_view do
+        :outline ->
+          get_or_compute_full_hierarchy(section)["children"]
+
+        :gallery ->
+          get_or_compute_full_hierarchy(section)["children"]
+      end
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          student_visited_pages,
+          student_raw_avg_score_per_page_id,
+          student_progress_per_resource_id
+        )
+      end)
+
     {:noreply,
      assign(socket,
        student_end_date_exceptions_per_resource_id: student_end_date_exceptions_per_resource_id,
@@ -707,8 +754,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            end
          )
      )
-     |> stream(:units, get_or_compute_full_hierarchy(section)["children"], reset: true)
-     |> maybe_assign_gallery_data(selected_view)}
+     |> stream(:units, units, reset: true)
+     |> maybe_assign_gallery_data(selected_view, units)}
   end
 
   def handle_info(
@@ -730,32 +777,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_info(_, socket), do: {:noreply, socket}
 
   def render(%{selected_view: :outline} = assigns) do
-    %{
-      units: units,
-      student_visited_pages: student_visited_pages,
-      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
-      student_progress_per_resource_id: student_progress_per_resource_id,
-      section: %{id: _section_id}
-    } = assigns
-
-    units_with_metrics =
-      units
-      |> Enum.map(fn unit ->
-        unit
-        |> mark_visited_and_completed_pages(
-          student_visited_pages,
-          student_raw_avg_score_per_page_id,
-          student_progress_per_resource_id
-        )
-
-        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
-        # |> fetch_learning_objectives(section_id)
-      end)
-
-    assigns =
-      Map.merge(assigns, %{
-        units: units_with_metrics
-      })
+    %{section: %{id: _section_id}} = assigns
 
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
@@ -769,7 +791,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div id="outline_rows" phx-update="stream">
         <.outline_row
-          :for={row <- @units}
+          :for={{_, row} <- @streams.units}
           row={row}
           section={@section}
           type={child_type(row)}
@@ -795,7 +817,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div id="all_units_as_gallery" phx-update="stream">
         <.gallery_row
-          :for={unit <- @units}
+          :for={{_, unit} <- @streams.units}
           unit={unit}
           ctx={@ctx}
           section={@section}
@@ -2604,46 +2626,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   When rendering learn page in gallery view, we need to calculate the unit and module metrics
   """
 
-  defp maybe_assign_gallery_data(socket, :gallery) do
-    %{
-      units: units,
-      student_visited_pages: student_visited_pages,
-      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
-      student_progress_per_resource_id: student_progress_per_resource_id,
-      section: _section
-    } = socket.assigns
-
-    units_with_metrics =
-      units
-      |> Enum.map(fn unit ->
-        unit
-        |> mark_visited_and_completed_pages(
-          student_visited_pages,
-          student_raw_avg_score_per_page_id,
-          student_progress_per_resource_id
-        )
-
-        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
-        # |> fetch_learning_objectives(section.id)
-      end)
-
+  defp maybe_assign_gallery_data(socket, :gallery, units_with_metrics) do
     socket
-    |> stream(:units, units_with_metrics, reset: true)
     |> assign(page_metrics_per_module_id: page_metrics_per_module_id(units_with_metrics))
-    |> enable_gallery_slider_buttons()
+    |> enable_gallery_slider_buttons(units_with_metrics)
   end
 
-  defp maybe_assign_gallery_data(socket, _another_view), do: socket
+  defp maybe_assign_gallery_data(socket, _another_view, _units_with_metrics), do: socket
 
   _docp = """
   When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons
   """
 
-  defp enable_gallery_slider_buttons(socket) do
+  defp enable_gallery_slider_buttons(socket, units) do
     push_event(socket, "enable-slider-buttons", %{
       unit_resource_ids:
         Enum.map(
-          socket.assigns.units,
+          units,
           & &1["resource_id"]
         )
     })
