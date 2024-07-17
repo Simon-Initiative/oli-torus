@@ -356,7 +356,7 @@ defmodule OliWeb.Resources.PagesView do
         proceed_with_deletion_warning(socket, container, project, author, revision)
 
       references ->
-        notify_hiperlink_dependency(socket, container, project, references, revision)
+        show_hyperlink_dependency_modal(socket, container, project, references, revision)
     end
   end
 
@@ -689,7 +689,7 @@ defmodule OliWeb.Resources.PagesView do
     ])
   end
 
-  defp notify_hiperlink_dependency(socket, container, project, references, revision) do
+  defp show_hyperlink_dependency_modal(socket, container, project, references, revision) do
     modal_assigns = %{
       id: "not_empty_#{revision.slug}",
       revision: revision,

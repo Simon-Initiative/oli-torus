@@ -366,8 +366,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
     case Enum.find(socket.assigns.children, fn r -> r.slug == slug end) do
       %{children: []} = item ->
         case AuthoringResolver.find_hyperlink_references(project.slug, slug) do
-          [] -> proceed_with_deletion_warning(socket, container, project, author, item)
-          references -> notify_hiperlink_dependency(socket, container, project, references, item)
+          [] ->
+            proceed_with_deletion_warning(socket, container, project, author, item)
+
+          references ->
+            show_hyperlink_dependency_modal(socket, container, project, references, item)
         end
 
       item ->
@@ -611,7 +614,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  defp notify_hiperlink_dependency(socket, container, project, hyperlinks, item) do
+  defp show_hyperlink_dependency_modal(socket, container, project, hyperlinks, item) do
     modal_assigns = %{
       id: "not_empty_#{item.slug}",
       revision: item,
