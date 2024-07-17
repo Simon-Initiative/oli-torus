@@ -29,7 +29,7 @@ defmodule OliWeb.Resources.PagesView do
   alias OliWeb.Curriculum.OptionsModalContent
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
-  alias OliWeb.Curriculum.HiperlinkDependenciesModal
+  alias OliWeb.Curriculum.HyperlinkDependencyModal
 
   @limit 25
 
@@ -700,7 +700,7 @@ defmodule OliWeb.Resources.PagesView do
 
     modal = fn assigns ->
       ~H"""
-      <HiperlinkDependenciesModal.render {@modal_assigns} />
+      <HyperlinkDependencyModal.render {@modal_assigns} />
       """
     end
 

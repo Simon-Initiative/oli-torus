@@ -21,7 +21,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     OptionsModalContent,
     DeleteModal,
     NotEmptyModal,
-    HiperlinkDependenciesModal
+    HyperlinkDependencyModal
   }
 
   alias OliWeb.Common.Hierarchy.MoveModal
@@ -625,7 +625,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     modal = fn assigns ->
       ~H"""
-      <HiperlinkDependenciesModal.render {@modal_assigns} />
+      <HyperlinkDependencyModal.render {@modal_assigns} />
       """
     end
 

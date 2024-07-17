@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.HiperlinkDependenciesModal do
+defmodule OliWeb.Curriculum.HyperlinkDependencyModal do
   use Phoenix.LiveComponent
   use Phoenix.HTML
   use OliWeb, :verified_routes
