@@ -22,7 +22,9 @@ interface PropertyEditorProps {
   uiSchema: UiSchema;
   onChangeHandler: (changes: unknown) => void;
   value: unknown;
+  onClickHandler?: (changes: unknown) => void;
   triggerOnChange?: boolean | string[];
+  onfocusHandler?: (changes: boolean) => void;
 }
 
 const widgets: any = {
@@ -46,6 +48,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   value,
   onChangeHandler,
   triggerOnChange = false,
+  onfocusHandler,
 }) => {
   const [formData, setFormData] = useState<any>(value);
 
@@ -92,6 +95,11 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           }
         }
       }}
+      onFocus={() => {
+        if (onfocusHandler) {
+          onfocusHandler(false);
+        }
+      }}
       onBlur={(key, changed) => {
         // key will look like root_Position_x
         // changed will be the new value
@@ -106,6 +114,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           // console.log('ONBLUR TRIGGER SAVE');
 
           onChangeHandler(formData);
+        } else if (onfocusHandler) {
+          onfocusHandler(true);
         }
       }}
       uiSchema={uiSchema}

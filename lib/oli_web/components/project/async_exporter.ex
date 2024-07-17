@@ -173,4 +173,55 @@ defmodule OliWeb.Components.Project.AsyncExporter do
     </button>
     """
   end
+
+  attr(:ctx, SessionContext, required: true)
+  attr(:project_export_status, :atom, values: [:not_available, :in_progress, :available, :error])
+  attr(:project_export_url, :string)
+  attr(:project_export_timestamp, :string)
+  attr(:on_generate_project_export, :string, default: "generate_project_export")
+
+  def project_export(assigns) do
+    ~H"""
+    <%= case @project_export_status do %>
+      <% status when status in [:not_available, :expired] -> %>
+        <.button variant={:link} class="!px-3" phx-click={@on_generate_project_export}>
+          Export
+        </.button>
+        <div>Download this project and its contents</div>
+      <% :in_progress -> %>
+        <.button variant={:link} class="!px-3" disabled>Export in Progress</.button>
+        <div class="flex flex-col">
+          <div>Download this project and its contents</div>
+          <div class="text-sm text-gray-500">
+            <i class="fa-solid fa-circle-notch fa-spin text-primary"></i>
+            Generating project export... this might take a while.
+          </div>
+        </div>
+      <% :available -> %>
+        <.button variant={:link} class="!px-3" href={@project_export_url} download>
+          <i class="fa-solid fa-download mr-1"></i> Download Latest Export
+        </.button>
+        <div class="flex flex-col">
+          <div>Download this project and its contents.</div>
+          <div class="text-sm text-gray-500">
+            Created <%= date(@project_export_timestamp, @ctx) %>.
+            <.button variant={:link} phx-click={@on_generate_project_export}>
+              <i class="fa-solid fa-rotate-right mr-1"></i>Regenerate
+            </.button>
+          </div>
+        </div>
+      <% :error -> %>
+        <.button variant={:link} class="!px-3" phx-click={@on_generate_project_export}>
+          Export
+        </.button>
+        <div class="flex flex-col">
+          <div>Download this project and its contents</div>
+          <div class="text-sm text-gray-500">
+            <i class="fa-solid fa-exclamation-circle text-red-500"></i>
+            Error generating project export. Please try again later or contact support.
+          </div>
+        </div>
+    <% end %>
+    """
+  end
 end

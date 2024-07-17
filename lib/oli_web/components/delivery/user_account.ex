@@ -6,6 +6,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias Phoenix.LiveView.JS
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Institutions
+  alias Oli.Institutions.Institution
+  alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
@@ -92,6 +95,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
+    <.maybe_research_consent_link ctx={@ctx} />
     <.menu_item_link
       href={Routes.session_path(OliWeb.Endpoint, :signout, type: :user)}
       method={:delete}
@@ -116,6 +120,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       Create account or sign in
     </.menu_item_link>
     <.menu_divider />
+    <.maybe_research_consent_link ctx={@ctx} />
     <.menu_item_link href={signout_path(@ctx)} method={:delete}>
       <%= if @ctx.user.guest, do: "Leave course", else: "Sign out" %>
     </.menu_item_link>
@@ -299,6 +304,19 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:ctx, SessionContext, required: true)
 
+  defp maybe_research_consent_link(assigns) do
+    ~H"""
+    <%= if show_research_consent_link?(@ctx.user) do %>
+      <.menu_item_link href={~p"/research_consent"}>
+        Research Consent
+      </.menu_item_link>
+      <.menu_divider />
+    <% end %>
+    """
+  end
+
+  attr(:ctx, SessionContext, required: true)
+
   def user_icon(assigns) do
     ~H"""
     <%= case @ctx do %>
@@ -410,4 +428,36 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   defp to_initials(_), do: "?"
+
+  defp show_research_consent_link?(user) do
+    case user do
+      nil ->
+        false
+
+      # Direct delivery user
+      %User{independent_learner: true} ->
+        case Delivery.get_research_consent_form_setting() do
+          :oli_form ->
+            true
+
+          _ ->
+            false
+        end
+
+      # LTI user
+      user ->
+        # check institution research consent setting
+        institution = Institutions.get_institution_by_lti_user(user)
+
+        case institution do
+          %Institution{research_consent: :oli_form} ->
+            true
+
+          # if research consent is set to anything else or institution was
+          # not found for LTI user, do not show the link
+          _ ->
+            false
+        end
+    end
+  end
 end
