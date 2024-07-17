@@ -4126,6 +4126,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: -10px;
 }
 
+.left-\[-8px\] {
+  left: -8px;
+}
+
 .left-\[100\.52px\] {
   left: 100.52px;
 }
@@ -4806,6 +4810,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 2px;
 }
 
+.mt-\[40px\] {
+  margin-top: 40px;
+}
+
 .mt-\[50px\] {
   margin-top: 50px;
 }
@@ -5002,6 +5010,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 0px;
 }
 
+.h-\[100px\] {
+  height: 100px;
+}
+
 .h-\[100vh\] {
   height: 100vh;
 }
@@ -5038,6 +5050,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 201px;
 }
 
+.h-\[220px\] {
+  height: 220px;
+}
+
 .h-\[22px\] {
   height: 22px;
 }
@@ -5072,6 +5088,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[334px\] {
   height: 334px;
+}
+
+.h-\[35px\] {
+  height: 35px;
 }
 
 .h-\[36px\] {
@@ -6882,6 +6902,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(28 25 23 / var(--tw-bg-opacity)) !important;
 }
 
+.bg-\[\#0080FF\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 128 255 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#0CAF61\] {
   --tw-bg-opacity: 1;
   background-color: rgb(12 175 97 / var(--tw-bg-opacity));
@@ -6929,8 +6954,27 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(129 84 153 / .25);
 }
 
+.bg-\[\#A8EED8\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(168 238 216 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#AAC3F0\]\/75 {
+  background-color: rgb(170 195 240 / 0.75);
+}
+
 .bg-\[\#B87439\]\/\[\.25\] {
   background-color: rgb(184 116 57 / .25);
+}
+
+.bg-\[\#F3F4F8\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 248 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#F4CFFF\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(244 207 255 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#dcdef6\] {
@@ -7326,6 +7370,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(161 161 170 / var(--tw-bg-opacity));
 }
 
+.bg-zinc-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(82 82 91 / var(--tw-bg-opacity));
+}
+
 .bg-zinc-900 {
   --tw-bg-opacity: 1;
   background-color: rgb(24 24 27 / var(--tw-bg-opacity));
@@ -7441,6 +7490,14 @@ table.table-striped tbody tr:nth-child(even) {
   fill: #7C40FF;
 }
 
+.fill-\[\#87E1B6\] {
+  fill: #87E1B6;
+}
+
+.fill-\[\#9AC3FF\] {
+  fill: #9AC3FF;
+}
+
 .fill-\[\#FF9040\] {
   fill: #FF9040;
 }
@@ -7501,6 +7558,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #333333;
 }
 
+.stroke-\[\#353740\] {
+  stroke: #353740;
+}
+
 .stroke-\[\#383A44\] {
   stroke: #383A44;
 }
@@ -7511,6 +7572,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-\[\#651FFF\] {
   stroke: #651FFF;
+}
+
+.stroke-\[\#757682\] {
+  stroke: #757682;
 }
 
 .stroke-\[\#7C40FF\] {
@@ -7769,6 +7834,11 @@ table.table-striped tbody tr:nth-child(even) {
 .px-\[5px\] {
   padding-left: 5px;
   padding-right: 5px;
+}
+
+.px-\[63px\] {
+  padding-left: 63px;
+  padding-right: 63px;
 }
 
 .px-\[80px\] {
@@ -8270,6 +8340,10 @@ table.table-striped tbody tr:nth-child(even) {
   font-size: 26px;
 }
 
+.text-\[32px\] {
+  font-size: 32px;
+}
+
 .text-\[36px\] {
   font-size: 36px;
 }
@@ -8467,6 +8541,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 1.25;
 }
 
+.tracking-\[-1\%\] {
+  letter-spacing: -1%;
+}
+
 .tracking-\[0\.02px\] {
   letter-spacing: 0.02px;
 }
@@ -8511,8 +8589,9 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.1em;
 }
 
-.\!text-black\/90 {
-  color: rgb(0 0 0 / 0.9) !important;
+.\!text-\[\#353740\] {
+  --tw-text-opacity: 1 !important;
+  color: rgb(53 55 64 / var(--tw-text-opacity)) !important;
 }
 
 .\!text-blue-500 {
@@ -8538,6 +8617,16 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#3399FF\] {
   --tw-text-opacity: 1;
   color: rgb(51 153 255 / var(--tw-text-opacity));
+}
+
+.text-\[\#353740\] {
+  --tw-text-opacity: 1;
+  color: rgb(53 55 64 / var(--tw-text-opacity));
+}
+
+.text-\[\#757682\] {
+  --tw-text-opacity: 1;
+  color: rgb(117 118 130 / var(--tw-text-opacity));
 }
 
 .text-\[18xl\] {
@@ -12859,6 +12948,20 @@ https://tailwindcss.com/docs/utility-first
   border-bottom-color: rgb(1 101 217 / 0.25);
 }
 
+.hover\:\!bg-\[\#A8EED8\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(168 238 216 / var(--tw-bg-opacity)) !important;
+}
+
+.hover\:\!bg-\[\#AAC3F0\]\/75:hover {
+  background-color: rgb(170 195 240 / 0.75) !important;
+}
+
+.hover\:\!bg-\[\#F4CFFF\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(244 207 255 / var(--tw-bg-opacity)) !important;
+}
+
 .hover\:\!bg-delivery-instructor-dashboard-header-700:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(59 59 77 / var(--tw-bg-opacity)) !important;
@@ -12866,6 +12969,11 @@ https://tailwindcss.com/docs/utility-first
 
 .hover\:bg-\[\#000000\]\/5:hover {
   background-color: rgb(0 0 0 / 0.05);
+}
+
+.hover\:bg-\[\#0075EB\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 117 235 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-black\/\[\.1\]:hover {
@@ -12990,9 +13098,8 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(232 149 9 / var(--tw-bg-opacity));
 }
 
-.hover\:bg-zinc-400:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(161 161 170 / var(--tw-bg-opacity));
+.hover\:bg-zinc-400\/10:hover {
+  background-color: rgb(161 161 170 / 0.1);
 }
 
 .hover\:bg-opacity-40:hover {
@@ -13873,8 +13980,18 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(30 41 59 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .dark\:bg-\[\#0062F2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 98 242 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#030105\]\/\[\.15\] {
   background-color: rgb(3 1 5 / .15);
+}
+
+.dark .dark\:bg-\[\#086F4E\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(8 111 78 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#0A0A17\] {
@@ -13902,6 +14019,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(36 37 51 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-\[\#2957A9\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(41 87 169 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#2f3147\] {
   --tw-bg-opacity: 1;
   background-color: rgb(47 49 71 / var(--tw-bg-opacity));
@@ -13915,6 +14037,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:bg-\[\#494b65\] {
   --tw-bg-opacity: 1;
   background-color: rgb(73 75 101 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-\[\#7E2899\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(126 40 153 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#DF8028\] {
@@ -14116,6 +14243,14 @@ https://tailwindcss.com/docs/utility-first
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.dark .dark\:fill-\[\#0062F2\] {
+  fill: #0062F2;
+}
+
+.dark .dark\:fill-\[\#0CAF61\] {
+  fill: #0CAF61;
+}
+
 .dark .dark\:fill-\[\#12E56A\] {
   fill: #12E56A;
 }
@@ -14180,6 +14315,10 @@ https://tailwindcss.com/docs/utility-first
   stroke: #B8B4BF;
 }
 
+.dark .dark\:stroke-\[\#BAB8BF\] {
+  stroke: #BAB8BF;
+}
+
 .dark .dark\:stroke-gray-200 {
   stroke: #e5e5e5;
 }
@@ -14218,6 +14357,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-\[\#6DD1DF\] {
   --tw-text-opacity: 1;
   color: rgb(109 209 223 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#B8B4BF\] {
+  --tw-text-opacity: 1;
+  color: rgb(184 180 191 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#BAB8BF\] {
@@ -14380,6 +14524,11 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(214 211 209 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-violet-100 {
+  --tw-text-opacity: 1;
+  color: rgb(237 233 254 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-white {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
@@ -14464,9 +14613,34 @@ https://tailwindcss.com/docs/utility-first
   border-color: rgb(255 255 255 / 0.02);
 }
 
+.dark .dark\:hover\:\!bg-\[\#086F4E\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(8 111 78 / var(--tw-bg-opacity)) !important;
+}
+
+.dark .dark\:hover\:\!bg-\[\#2957A9\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(41 87 169 / var(--tw-bg-opacity)) !important;
+}
+
+.dark .dark\:hover\:\!bg-\[\#7E2899\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(126 40 153 / var(--tw-bg-opacity)) !important;
+}
+
 .dark .dark\:hover\:\!bg-gray-900:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(23 23 23 / var(--tw-bg-opacity)) !important;
+}
+
+.dark .dark\:hover\:bg-\[\#0D70FF\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(13 112 255 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:hover\:bg-\[\#141416\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(20 20 22 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-\[\#33181A\]:hover {
@@ -15012,6 +15186,10 @@ https://tailwindcss.com/docs/utility-first
     margin-left: 190px;
   }
 
+  .md\:ml-\[200px\] {
+    margin-left: 200px;
+  }
+
   .md\:ml-\[60px\] {
     margin-left: 60px;
   }
@@ -15096,12 +15274,16 @@ https://tailwindcss.com/docs/utility-first
     width: 66.666667%;
   }
 
-  .md\:w-\[190px\] {
-    width: 190px;
+  .md\:w-\[200px\] {
+    width: 200px;
   }
 
   .md\:w-\[calc\(100\%-190px\)\] {
     width: calc(100% - 190px);
+  }
+
+  .md\:w-\[calc\(100\%-200px\)\] {
+    width: calc(100% - 200px);
   }
 
   .md\:w-\[calc\(100\%-60px\)\] {
