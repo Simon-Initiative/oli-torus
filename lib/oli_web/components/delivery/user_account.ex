@@ -15,7 +15,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
-  attr(:section, Section, default: nil)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
 

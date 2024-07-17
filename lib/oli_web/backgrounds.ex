@@ -74,6 +74,85 @@ defmodule OliWeb.Backgrounds do
     """
   end
 
+  def instructor_dashboard_header(assigns) do
+    ~H"""
+    <svg
+      width="100%"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      height="291"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+    >
+      <g clip-path="url(#clip0_494_8778)">
+        <rect width="100%" height="291" class="fill-[#87E1B6] dark:fill-[#0CAF61]" />
+        <g filter="url(#filter0_f_494_8778)">
+          <ellipse
+            cx="408.292"
+            cy="291.135"
+            rx="341.325"
+            ry="130.815"
+            class="fill-[#9AC3FF] dark:fill-[#0062F2]"
+          />
+        </g>
+        <g filter="url(#filter1_f_494_8778)">
+          <ellipse
+            cx="656.342"
+            cy="145.366"
+            rx="290.075"
+            ry="111.146"
+            class="fill-[#87E1B6] dark:fill-[#0CAF61]"
+          />
+        </g>
+        <g style="mix-blend-mode:color-burn" opacity="0.25">
+          <rect width="100%" height="291" fill="url(#pattern0_494_8778)" />
+        </g>
+        <rect y="0" width="100%" height="309" fill="black" fill-opacity="0.24" />
+      </g>
+      <defs>
+        <filter
+          id="filter0_f_494_8778"
+          x="-442.033"
+          y="-348.681"
+          width="1700.65"
+          height="1279.63"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_494_8778" />
+        </filter>
+        <filter
+          id="filter1_f_494_8778"
+          x="-142.733"
+          y="-474.78"
+          width="1598.15"
+          height="1240.29"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_494_8778" />
+        </filter>
+        <pattern
+          id="pattern0_494_8778"
+          patternContentUnits="objectBoundingBox"
+          width="0.228659"
+          height="1.03093"
+        >
+          <use xlink:href="#image0_494_8778" transform="scale(0.000114329 0.000515464)" />
+        </pattern>
+        <clipPath id="clip0_494_8778">
+          <rect width="100%" height="291" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
   defp student_signin_background_color do
     Application.fetch_env!(:oli, :student_sign_in)[:background_color]
   end
