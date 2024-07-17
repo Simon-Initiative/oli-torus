@@ -217,6 +217,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           <div
             :if={@attempt.lifecycle_state == :submitted}
             class="justify-end items-center gap-1 flex text-xs font-semibold tracking-tight"
+            role="attempt status"
           >
             Submitted
           </div>
