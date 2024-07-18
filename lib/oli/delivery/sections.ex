@@ -577,7 +577,6 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
-        preload: [:base_project],
         select: s
       )
 
