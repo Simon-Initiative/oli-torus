@@ -4546,10 +4546,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 0.5rem;
 }
 
-.mb-20 {
-  margin-bottom: 5rem;
-}
-
 .mb-24 {
   margin-bottom: 6rem;
 }
@@ -5261,6 +5257,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!w-10 {
   width: 2.5rem !important;
+}
+
+.\!w-\[2\.7rem\] {
+  width: 2.7rem !important;
 }
 
 .\!w-auto {
@@ -7636,6 +7636,10 @@ table.table-striped tbody tr:nth-child(even) {
      object-position: left;
 }
 
+.\!p-0 {
+  padding: 0px !important;
+}
+
 .p-0 {
   padding: 0px;
 }
@@ -7694,6 +7698,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .p-\[7px\] {
   padding: 7px;
+}
+
+.\!px-1 {
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
 }
 
 .\!px-5 {
@@ -7934,6 +7943,11 @@ table.table-striped tbody tr:nth-child(even) {
 .py-9 {
   padding-top: 2.25rem;
   padding-bottom: 2.25rem;
+}
+
+.py-\[0\.4rem\] {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
 }
 
 .py-\[10px\] {
@@ -8270,6 +8284,21 @@ table.table-striped tbody tr:nth-child(even) {
   font-family: Open Sans, sans-serif;
 }
 
+.\!text-4xl {
+  font-size: 2.25rem !important;
+  line-height: 2.5rem !important;
+}
+
+.\!text-5xl {
+  font-size: 3rem !important;
+  line-height: 1 !important;
+}
+
+.\!text-base {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
 .\!text-sm {
   font-size: 0.875rem !important;
   line-height: 1.25rem !important;
@@ -8443,6 +8472,10 @@ table.table-striped tbody tr:nth-child(even) {
 .ordinal {
   --tw-ordinal: ordinal;
   font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+}
+
+.\!leading-snug {
+  line-height: 1.375 !important;
 }
 
 .leading-10 {
@@ -9005,10 +9038,6 @@ table.table-striped tbody tr:nth-child(even) {
 .no-underline {
   -webkit-text-decoration-line: none;
           text-decoration-line: none;
-}
-
-.underline-offset-4 {
-  text-underline-offset: 4px;
 }
 
 .underline-offset-8 {
@@ -13244,11 +13273,6 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(232 149 9 / var(--tw-text-opacity));
 }
 
-.hover\:text-zinc-300:hover {
-  --tw-text-opacity: 1;
-  color: rgb(212 212 216 / var(--tw-text-opacity));
-}
-
 .hover\:text-opacity-80:hover {
   --tw-text-opacity: 0.8;
 }
@@ -15499,10 +15523,6 @@ https://tailwindcss.com/docs/utility-first
 
   .lg\:mt-0 {
     margin-top: 0px;
-  }
-
-  .lg\:mt-10 {
-    margin-top: 2.5rem;
   }
 
   .lg\:mt-2 {
