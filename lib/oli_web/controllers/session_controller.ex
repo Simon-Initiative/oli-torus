@@ -4,10 +4,33 @@ defmodule OliWeb.SessionController do
   import Pow.Phoenix.Controller, only: [require_authenticated: 2]
 
   alias Oli.AccountLookupCache
+  alias OliWeb.Pow.{PowHelpers, UserRoutes}
+  alias Pow.Plug
 
   plug :require_authenticated when action in [:signout]
 
   @shared_session_data_to_delete [:dismissed_messages]
+
+  def signin(conn, %{"user" => user_params}) do
+    is_authenticated? =
+      PowHelpers.use_pow_config(conn, :user)
+      |> Plug.authenticate_user(user_params)
+
+    case is_authenticated? do
+      {:ok, conn} ->
+        conn
+        |> redirect(to: UserRoutes.after_sign_in_path(conn))
+
+      {:error, conn} ->
+        conn
+        |> assign(:changeset, Plug.change_user(conn, conn.params["user"]))
+        |> put_flash(
+          :error,
+          "The provided login details did not work. Please verify your credentials, and try again."
+        )
+        |> redirect(to: ~p"/")
+    end
+  end
 
   def signout(conn, %{"type" => type}) do
     conn

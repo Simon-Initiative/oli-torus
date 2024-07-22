@@ -134,14 +134,25 @@ defmodule OliWeb.Pow.PowHelpers do
   end
 
   defp build_button_box(conn, provider) do
-    build_msg_box(conn, provider)
+    icon = provider_icon(provider)
+    provider_name = provider_name(provider, downcase: true)
+    msg_box = build_msg_box(conn, provider)
+
+    Tag.content_tag(:div, [icon, msg_box],
+      class: provider_name <> "-auth-container flex flex-row gap-x-2"
+    )
   end
 
   defp build_msg_box(conn, provider) do
-    AuthorizationController.extension_messages(conn).login_with_provider(%{
-      conn
-      | params: %{"provider" => provider}
-    })
+    msg =
+      AuthorizationController.extension_messages(conn).login_with_provider(%{
+        conn
+        | params: %{"provider" => provider}
+      })
+
+    Tag.content_tag(:div, msg,
+      class: "flex items-center !text-base !font-normal !font-['Open Sans'] !leading-snug"
+    )
   end
 
   defp build_otps(opts, conn, provider) do
@@ -151,7 +162,7 @@ defmodule OliWeb.Pow.PowHelpers do
 
     Keyword.merge(opts,
       class:
-        "btn btn-md flex items-center no-underline hover:no-underline hover:text-black w-80 m-auto mb-3 h-11 bg-zinc-300 rounded-md pl-10 text-center text-black text-base font-normal font-['Open Sans'] leading-snug"
+        "btn btn-md flex items-center no-underline hover:no-underline hover:text-black w-80 m-auto mb-2 h-11 bg-white rounded-md text-center text-black text-base font-normal font-['Open Sans'] leading-snug"
     )
   end
 
@@ -213,12 +224,12 @@ defmodule OliWeb.Pow.PowHelpers do
     case provider do
       :google ->
         HTML.raw(
-          "<div class=\"w-[64px] #{provider_name(provider, downcase: true)}-icon-container\"><img class=\"#{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
+          "<div class=\"w-auto !p-0 #{provider_name(provider, downcase: true)}-icon-container\"><img class=\"!text-5xl !p-0 !w-[2.7rem] #{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
         )
 
       :github ->
         HTML.raw(
-          "<div class=\"w-[64px] #{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github #{provider_name(provider, downcase: true)}-icon\"></i></div>"
+          "<div class=\"w-auto !px-1 !p-0 #{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github !text-4xl #{provider_name(provider, downcase: true)}-icon\"></i></div>"
         )
 
       _ ->

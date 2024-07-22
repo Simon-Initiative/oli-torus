@@ -33,7 +33,7 @@ defmodule OliWeb.Resources.PagesView do
   @limit 25
 
   defp limit, do: @limit
-  defp graded_opts, do: [{true, "Graded"}, {false, "Practice"}]
+  defp graded_opts, do: [{true, "Scored"}, {false, "Practice"}]
   defp type_opts, do: [{true, "Regular"}, {false, "Adaptive"}]
 
   @default_options %PageBrowseOptions{
@@ -214,7 +214,7 @@ defmodule OliWeb.Resources.PagesView do
                 class="custom-select custom-select mr-2"
                 style="width: 170px;"
               >
-                <option value="" selected>Grading Type</option>
+                <option value="" selected>Scoring Type</option>
                 <option
                   :for={
                     {value, str} <-
@@ -277,7 +277,7 @@ defmodule OliWeb.Resources.PagesView do
             Practice Page
           </button>
           <button type="button" class="dropdown-item" phx-click="create_page" phx-value-type="Scored">
-            Graded Assessment
+            Scored Assessment
           </button>
           <%= if Oli.Features.enabled?("adaptivity") do %>
             <button
@@ -627,7 +627,6 @@ defmodule OliWeb.Resources.PagesView do
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
-  # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("create_page", %{"type" => type}, socket) do
     %{
       project: project,

@@ -134,4 +134,31 @@ defmodule OliWeb.StaticPageControllerTest do
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
     end
   end
+
+  describe "enrollment info" do
+    test "shows enrollment info in students login", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "Course Enrollment"
+      assert response(conn, 200) =~ "Locate your Enrollment Link"
+
+      assert response(conn, 200) =~
+               "Your instructor will provide an enrollment link to sign up and access your course. Please contact your instructor if you have not received this link or have misplaced it."
+
+      assert response(conn, 200) =~ "Create an Account"
+
+      assert response(conn, 200) =~
+               "Follow your enrollment link to the account creation page where you will create a user ID and password."
+
+      assert response(conn, 200) =~ "Still need an account?"
+
+      assert response(conn, 200) =~
+               "Visit our FAQs document"
+
+      assert response(conn, 200) =~
+               "for help enrolling or setting up your Torus student account. If you require further assistance, please"
+
+      assert response(conn, 200) =~ "contact our support team."
+    end
+  end
 end
