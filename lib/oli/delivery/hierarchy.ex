@@ -338,7 +338,7 @@ defmodule Oli.Delivery.Hierarchy do
       ),
       join: p in Project,
       on: p.id == spp.project_id,
-      where: rev.resource_type_id in ^[page_id, container_id],
+      where: rev.resource_type_id in ^[page_id, container_id] and not sr.hidden,
       select: %{
         "id" => rev.id,
         "numbering" => %{"index" => sr.numbering_index, "level" => sr.numbering_level},
@@ -366,10 +366,9 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   defp build_updated_children(children_ids, nodes_by_sr_id) do
-    Enum.map(
-      children_ids,
-      &(Map.get(nodes_by_sr_id, &1) |> hierarchy_node_with_children(nodes_by_sr_id))
-    )
+    children_ids
+    |> Enum.filter(&Map.has_key?(nodes_by_sr_id, &1))
+    |> Enum.map(&(Map.get(nodes_by_sr_id, &1) |> hierarchy_node_with_children(nodes_by_sr_id)))
   end
 
   def reorder_children(
