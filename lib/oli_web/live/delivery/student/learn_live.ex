@@ -77,10 +77,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         display_props_per_module_id: %{},
         selected_view: @default_selected_view
       )
-      |> stream(:units, get_or_compute_full_hierarchy(section)["children"],
-        dom_id: &"#{&1["uuid"]}"
-      )
-      |> stream(:unit_resource_ids, [], dom_id: &"#{&1}")
+      |> stream_configure(:units, dom_id: &"units-#{&1["uuid"]}")
+      |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
+      |> stream(:unit_resource_ids, [])
       |> slim_assigns()
 
     {:ok, socket}
@@ -105,12 +104,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         _uri,
         socket
       ) do
-    %{
-      student_visited_pages: student_visited_pages,
-      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
-      student_progress_per_resource_id: student_progress_per_resource_id
-    } = socket.assigns
-
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
     send(self(), :gc)
@@ -119,49 +112,32 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       %{"selected_view" => selected_view, "target_resource_id" => resource_id} ->
         selected_view = String.to_existing_atom(selected_view)
 
-        units =
-          full_hierarchy["children"]
-          |> Enum.map(fn unit ->
-            unit
-            |> mark_visited_and_completed_pages(
-              student_visited_pages,
-              student_raw_avg_score_per_page_id,
-              student_progress_per_resource_id
-            )
-          end)
-
         {:noreply,
          socket
          |> assign(selected_view: selected_view)
-         |> stream(:units, units, reset: true)
+         |> stream(:units, full_hierarchy["children"], reset: true)
          |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
 
       %{"selected_view" => selected_view} ->
         selected_view = String.to_existing_atom(selected_view)
 
-        units =
-          full_hierarchy["children"]
-          |> Enum.map(fn unit ->
-            unit
-            |> mark_visited_and_completed_pages(
-              student_visited_pages,
-              student_raw_avg_score_per_page_id,
-              student_progress_per_resource_id
-            )
-          end)
-
-        {:noreply,
-         socket
-         |> assign(selected_view: selected_view)
-         |> stream(:units, units, reset: true)}
+        {
+          :noreply,
+          socket
+          |> assign(selected_view: selected_view)
+          |> stream(:units, full_hierarchy["children"], reset: true)
+        }
 
       %{"target_resource_id" => resource_id} ->
         {:noreply,
          socket
+         |> stream(:units, full_hierarchy["children"], reset: true)
          |> scroll_to_target_resource(resource_id, full_hierarchy, :gallery)}
 
       _ ->
-        {:noreply, socket}
+        {:noreply,
+         socket
+         |> stream(:units, full_hierarchy["children"], reset: true)}
     end
   end
 
@@ -716,13 +692,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     send(self(), :gc)
 
     units =
-      case selected_view do
-        :outline ->
-          get_or_compute_full_hierarchy(section)["children"]
-
-        :gallery ->
-          get_or_compute_full_hierarchy(section)["children"]
-      end
+      get_or_compute_full_hierarchy(section)["children"]
       |> Enum.map(fn unit ->
         unit
         |> mark_visited_and_completed_pages(
@@ -1816,7 +1786,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :progress, :float
 
   def index_item_icon(assigns) do
-    case {assigns.was_visited, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
+    case {assigns.was_visited || false, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
       {true, "page", false, _} ->
         # visited practice page (check icon shown when progress = 100%)
         ~H"""
