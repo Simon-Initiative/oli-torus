@@ -383,6 +383,7 @@ if config_env() == :prod do
       auto_submit: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOSUBMIT", "3")),
       analytics_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_ANALYTICS", "1")),
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
+      project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3"))
     ]
 end

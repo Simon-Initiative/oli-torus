@@ -214,15 +214,28 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           Attempt <%= @index %>:
         </div>
         <div class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500">
+          <div
+            :if={@attempt.lifecycle_state == :submitted}
+            class="justify-end items-center gap-1 flex text-xs font-semibold tracking-tight"
+            role="attempt status"
+          >
+            Submitted
+          </div>
+        </div>
+
+        <div
+          :if={@attempt.lifecycle_state == :evaluated}
+          class="py-1 justify-end items-center gap-1.5 flex text-green-700 dark:text-green-500"
+        >
           <div class="w-4 h-4 relative"><Icons.star /></div>
-          <div class="justify-end items-center gap-1 flex">
-            <div role="attempt score" class="text-xs font-semibold tracking-tight">
+          <div class="justify-end items-center gap-1 flex text-xs font-semibold tracking-tight">
+            <div role="attempt score">
               <%= Float.round(@attempt.score, 2) %>
             </div>
-            <div class="text-xs font-semibold tracking-[4px]">
+            <div class="tracking-[4px]">
               /
             </div>
-            <div role="attempt out of" lass="text-xs font-semibold tracking-tight">
+            <div role="attempt out of">
               <%= Float.round(@attempt.out_of, 2) %>
             </div>
           </div>

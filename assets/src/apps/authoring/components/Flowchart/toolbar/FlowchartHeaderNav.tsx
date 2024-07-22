@@ -207,7 +207,16 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     ['KeyZ'],
     { ctrlKey: true },
   );
-  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart, currentActivityTree]);
+  useKeyDown(
+    () => {
+      if (copiedPart) {
+        handlePartPasteClick();
+      }
+    },
+    ['KeyV'],
+    { ctrlKey: true },
+    [copiedPart, currentActivityTree],
+  );
 
   const handleAddComponent = useCallback(
     (partComponentType: string) => () => {

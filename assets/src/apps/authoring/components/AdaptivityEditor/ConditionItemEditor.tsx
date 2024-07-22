@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { CapiVariableTypes, JanusConditionProperties } from '../../../../adaptivity/capi';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import {
@@ -22,7 +24,7 @@ interface ConditionItemEditorProps {
 
 const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   const { condition, parentIndex, onChange, onDelete } = props;
-
+  const dispatch = useDispatch();
   const [fact, setFact] = useState<string>(condition.fact);
   const [targetType, setTargetType] = useState<CapiVariableTypes>(
     condition.type || inferTypeFromOperatorAndValue(condition.operator, condition.value),
@@ -120,7 +122,11 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
           placeholder="Target"
           value={fact}
           onChange={(e) => setFact(e.target.value)}
-          onBlur={(e) => handleFactChange(e.target.value)}
+          onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
+          onBlur={(e) => {
+            handleFactChange(e.target.value);
+            dispatch(setCurrentPartPropertyFocus({ focus: true }));
+          }}
           title={fact.toString()}
           tabIndex={0}
         />
@@ -171,7 +177,11 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         key={`value-${parentIndex}`}
         id={`value-${parentIndex}`}
         defaultValue={value}
-        onBlur={(e) => handleValueChange(e)}
+        onBlur={(e) => {
+          handleValueChange(e);
+          dispatch(setCurrentPartPropertyFocus({ focus: true }));
+        }}
+        onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
         title={value.toString()}
         placeholder="Value"
         tabIndex={0}

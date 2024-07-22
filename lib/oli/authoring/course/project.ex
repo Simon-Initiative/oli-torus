@@ -18,6 +18,8 @@ defmodule Oli.Authoring.Course.Project do
     field(:has_experiments, :boolean, default: false)
     field(:legacy_svn_root, :string)
     field(:allow_ecl_content_type, :boolean, default: false)
+    field(:latest_export_url, :string)
+    field(:latest_export_timestamp, :utc_datetime)
     field(:latest_analytics_snapshot_url, :string)
     field(:latest_analytics_snapshot_timestamp, :utc_datetime)
     field(:latest_datashop_snapshot_url, :string)
@@ -82,6 +84,8 @@ defmodule Oli.Authoring.Course.Project do
       :analytics_version,
       :publisher_id,
       :required_survey_resource_id,
+      :latest_export_url,
+      :latest_export_timestamp,
       :latest_analytics_snapshot_url,
       :latest_analytics_snapshot_timestamp,
       :latest_datashop_snapshot_url,

@@ -11,6 +11,7 @@ import {
   selectCopiedItem,
   selectCopiedType,
 } from 'apps/authoring/store/clipboard/slice';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import { clone } from '../../../../utils/common';
@@ -467,8 +468,14 @@ const IRulesList: React.FC<any> = (props: any) => {
                         value={ruleToEdit.name}
                         onClick={(e) => e.preventDefault()}
                         onChange={(e) => setRuleToEdit({ ...rule, name: e.target.value })}
-                        onFocus={(e) => e.target.select()}
-                        onBlur={() => handleRenameRule(rule)}
+                        onFocus={(e) => {
+                          e.target.select();
+                          dispatch(setCurrentPartPropertyFocus({ focus: false }));
+                        }}
+                        onBlur={() => {
+                          handleRenameRule(rule);
+                          dispatch(setCurrentPartPropertyFocus({ focus: true }));
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleRenameRule(rule);
                           if (e.key === 'Escape') setRuleToEdit(undefined);

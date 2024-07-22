@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Accordion, Dropdown, ListGroup, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { useToggle } from '../../../../components/hooks/useToggle';
@@ -88,6 +89,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
+    dispatch(setCurrentPartPropertyFocus({ focus: true }));
     dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
     dispatch(
       setRightPanelActiveTab({
@@ -505,8 +507,14 @@ const SequenceEditor: React.FC<any> = (props: any) => {
                           custom: { ...itemToRename.custom, sequenceName: e.target.value },
                         })
                       }
-                      onFocus={(e) => e.target.select()}
-                      onBlur={() => handleRenameItem(item)}
+                      onFocus={(e) => {
+                        e.target.select();
+                        dispatch(setCurrentPartPropertyFocus({ focus: false }));
+                      }}
+                      onBlur={() => {
+                        handleRenameItem(item);
+                        dispatch(setCurrentPartPropertyFocus({ focus: true }));
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleRenameItem(item);
                         if (e.key === 'Escape') setItemToRename(undefined);

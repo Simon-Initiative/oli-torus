@@ -1,66 +1,74 @@
 export const CountdownTimer = {
   mounted() {
-    const { timerId, submitButtonId, timeOutInMins, startTimeInMs, effectiveTimeInMs, autoSubmit } =
-      this.el.dataset;
-    const parsedTimeOutInMins = parseInt(timeOutInMins, 10);
+    const {
+      timerId,
+      submitButtonId,
+      timeOutInMins,
+      startTimeInMs,
+      effectiveTimeInMs,
+      gracePeriodInMins,
+      autoSubmit,
+    } = this.el.dataset;
+
+    // Parse the dataset values
+    const parsedTimeOutInMs = parseInt(timeOutInMins, 10) * 60 * 1000;
     const parsedStartTimeInMs = parseInt(startTimeInMs, 10);
     const parsedEffectiveTimeInMs = parseInt(effectiveTimeInMs, 10);
+    const parsedGracePeriodInMs = parseInt(gracePeriodInMins, 10) * 60 * 1000;
     const parsedAutoSubmit = autoSubmit === 'true';
 
     countdownTimer(
       timerId,
       submitButtonId,
-      parsedTimeOutInMins,
+      parsedTimeOutInMs,
       parsedStartTimeInMs,
       parsedEffectiveTimeInMs,
+      parsedGracePeriodInMs,
       parsedAutoSubmit,
     );
-    window.addEventListener('beforeunload', this.handleBeforeUnload.bind(this, submitButtonId));
-  },
-  destroyed() {
-    window.removeEventListener('beforeunload', this.handleBeforeUnload.bind(this));
-  },
-  handleBeforeUnload(submitButtonId: string) {
-    const submitButton = document.getElementById(submitButtonId);
-    submitButton ? submitButton.click() : console.error('Submit button not found');
   },
 };
 
 function countdownTimer(
   timerId: string,
   submitButtonId: string,
-  timeOutInMins: number,
+  timeOutInMs: number,
   startTimeInMs: number,
   effectiveTimeInMs: number,
+  gracePeriodInMs: number,
   autoSubmit: boolean,
 ) {
+  const endTimeInMs = startTimeInMs + timeOutInMs; // Calculates the end of the time limit period
+  const graceEndTimeInMs = endTimeInMs + gracePeriodInMs; // Calculates grace period end time
   const now = new Date().getTime();
 
-  if (effectiveTimeInMs > now) {
-    const timeOutInMs = timeOutInMins * 60 * 1000;
-    const now = new Date().getTime();
-
-    const timeLeft = effectiveTimeInMs - now;
-    const realDeadlineInMs = timeLeft < timeOutInMs ? now + timeLeft : timeOutInMs + startTimeInMs;
-
+  if (now < effectiveTimeInMs) {
     const interval = setInterval(function () {
       const now = new Date().getTime();
-      const timerMessage = formatTimerMessage(realDeadlineInMs, now);
-      update(timerId, timerMessage);
 
-      if (hasExpired(realDeadlineInMs, now)) {
+      if (now < endTimeInMs) {
+        // We are still within the time limit
+        const timerMessage = formatTimerMessage(endTimeInMs, now);
+        update(timerId, timerMessage);
+      } else if (now >= endTimeInMs && now < graceEndTimeInMs) {
+        // We are within the grace period
+        update(timerId, '');
+      } else {
+        // Both the time limit and grace period have expired
         clearInterval(interval);
         update(timerId, '');
 
-        if (autoSubmit) {
-          const submitButton = document.getElementById(submitButtonId);
-          submitButton ? submitButton.click() : console.error('Submit button not found');
-        } else {
-          update(timerId, 'This is a late submission');
-        }
+        autoSubmit ? do_auto_submit(submitButtonId) : update(timerId, 'This is a late submission');
       }
     }, 1000);
+  } else {
+    autoSubmit ? do_auto_submit(submitButtonId) : update(timerId, 'This is a late submission');
   }
+}
+
+function do_auto_submit(submitButtonId: string) {
+  const submitButton = document.getElementById(submitButtonId);
+  submitButton ? submitButton.click() : console.error('Submit button not found');
 }
 
 function update(id: string, content: string) {

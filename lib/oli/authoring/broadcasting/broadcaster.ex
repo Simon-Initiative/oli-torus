@@ -116,6 +116,17 @@ defmodule Oli.Authoring.Broadcaster do
   end
 
   @doc """
+  Broadcasts a project export status update
+  """
+  def broadcast_project_export_status(project_slug, status) do
+    PubSub.broadcast(
+      Oli.PubSub,
+      message_project_export_status(project_slug),
+      {:project_export_status, status}
+    )
+  end
+
+  @doc """
   Broadcasts a raw analytics export status update
   """
   def broadcast_analytics_export_status(project_slug, status) do

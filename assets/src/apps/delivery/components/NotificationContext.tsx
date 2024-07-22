@@ -11,6 +11,7 @@ export enum NotificationType {
   CONFIGURE = 'configure',
   CONFIGURE_SAVE = 'configureSave',
   CONFIGURE_CANCEL = 'configureCancel',
+  CHECK_SHORTCUT_ACTIONS = 'checkShortcutActions',
 }
 
 type UnsubscribeFn = () => void;

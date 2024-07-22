@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Modal } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import { QuillEditor } from '../../../../../components/parts/janus-text-flow/QuillEditor';
@@ -76,6 +78,7 @@ const OptionsEditor: React.FC<{
 }> = ({ value, onChange, onDelete }) => {
   const [editorOpen, , openEditor, closeEditor] = useToggle(false);
   const [tempValue, setTempValue] = useState<{ value: OptionsNodes }>({ value: [] });
+  const dispatch = useDispatch();
 
   const onSave = useCallback(() => {
     closeEditor();
@@ -85,11 +88,13 @@ const OptionsEditor: React.FC<{
     };
     onChange(newValue);
     console.info('onSave', newValue);
+    dispatch(setCurrentPartPropertyFocus({ focus: true }));
   }, [closeEditor, onChange, tempValue.value, value]);
 
   const onEdit = useCallback(() => {
     openEditor();
     setTempValue({ value: value.nodes });
+    dispatch(setCurrentPartPropertyFocus({ focus: false }));
   }, [openEditor, value.nodes]);
 
   return (
