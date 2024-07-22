@@ -51,6 +51,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :review_submission, Ecto.Enum, values: [:allow, :disallow], default: :allow
     field :feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled], default: :allow
     field :feedback_scheduled_date, :utc_datetime
+    field :hidden, :boolean, default: false
 
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
@@ -102,6 +103,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :review_submission,
       :feedback_mode,
       :feedback_scheduled_date,
+      :hidden,
       :scoring_strategy_id,
       :resource_id,
       :project_id,
