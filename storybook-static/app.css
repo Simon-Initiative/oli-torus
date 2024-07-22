@@ -7718,6 +7718,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 0.25rem !important;
 }
 
+.\!px-3 {
+  padding-left: 0.75rem !important;
+  padding-right: 0.75rem !important;
+}
+
 .\!px-5 {
   padding-left: 1.25rem !important;
   padding-right: 1.25rem !important;
@@ -13380,6 +13385,11 @@ https://tailwindcss.com/docs/utility-first
   margin-right: 0px;
 }
 
+.focus\:border-blue-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 118 211 / var(--tw-border-opacity));
+}
+
 .focus\:border-delivery-primary-200:focus {
   --tw-border-opacity: 1;
   border-color: rgb(206 231 255 / var(--tw-border-opacity));
@@ -14607,6 +14617,16 @@ https://tailwindcss.com/docs/utility-first
   --tw-text-opacity: 0.8;
 }
 
+.dark .dark\:placeholder-gray-400::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(163 163 163 / var(--tw-placeholder-opacity));
+}
+
+.dark .dark\:placeholder-gray-400::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(163 163 163 / var(--tw-placeholder-opacity));
+}
+
 .dark .dark\:opacity-100 {
   opacity: 1;
 }
@@ -14848,6 +14868,11 @@ https://tailwindcss.com/docs/utility-first
   outline-color: #52525b;
 }
 
+.dark .dark\:focus\:border-blue-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 118 211 / var(--tw-border-opacity));
+}
+
 .dark .dark\:focus\:bg-\[\#FFFFFF\]\/5:focus {
   background-color: rgb(255 255 255 / 0.05);
 }
@@ -14863,6 +14888,11 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:focus\:outline-zinc-600:focus {
   outline-color: #52525b;
+}
+
+.dark .dark\:focus\:ring-blue-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(59 118 211 / var(--tw-ring-opacity));
 }
 
 .dark .dark\:focus\:ring-blue-700:focus {
