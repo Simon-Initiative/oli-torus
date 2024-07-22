@@ -115,7 +115,16 @@ const AddComponentToolbar: React.FC<{
     dispatch(setCopiedPart({ copiedPart: null }));
   };
 
-  useKeyDown(handlePartPasteClick, ['KeyV'], { ctrlKey: true }, [copiedPart, currentActivityTree]);
+  useKeyDown(
+    () => {
+      if (copiedPart) {
+        handlePartPasteClick();
+      }
+    },
+    ['KeyV'],
+    { ctrlKey: true },
+    [copiedPart, currentActivityTree],
+  );
 
   return (
     <Fragment>

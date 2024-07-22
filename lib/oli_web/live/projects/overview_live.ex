@@ -9,14 +9,18 @@ defmodule OliWeb.Projects.OverviewLive do
   alias Oli.Authoring.Course.Project
   alias Oli.Inventories
   alias Oli.Publishing
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Activities
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
+  alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Broadcaster.Subscriber
+  alias Oli.Authoring.ProjectExportWorker
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
   alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Common
+  alias OliWeb.Components.Project.AsyncExporter
 
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)
@@ -37,6 +41,15 @@ defmodule OliWeb.Projects.OverviewLive do
       |> Enum.map(fn {k, v} -> {v.text, k} end)
       |> Enum.sort(:desc)
 
+    {project_export_status, project_export_url, project_export_timestamp} =
+      case ProjectExportWorker.project_export_status(project) do
+        {:available, url, timestamp} -> {:available, url, timestamp}
+        {status} -> {status, nil, nil}
+      end
+
+    # Subscribe to any project export progress updates for this project
+    Subscriber.subscribe_to_project_export_status(project.slug)
+
     socket =
       assign(socket,
         ctx: ctx,
@@ -56,7 +69,10 @@ defmodule OliWeb.Projects.OverviewLive do
         collab_space_config: collab_space_config,
         revision_slug: revision_slug,
         latest_publication: latest_publication,
-        notes_config: %{}
+        notes_config: %{},
+        project_export_status: project_export_status,
+        project_export_url: project_export_url,
+        project_export_timestamp: project_export_timestamp
       )
 
     {:ok, socket}
@@ -390,12 +406,12 @@ defmodule OliWeb.Projects.OverviewLive do
         </div>
 
         <div class="d-flex align-items-center">
-          <%= button("Export",
-            to: Routes.project_path(@socket, :download_export, @project),
-            method: :post,
-            class: "btn btn-link action-button"
-          ) %>
-          <span>Download this project and its contents.</span>
+          <AsyncExporter.project_export
+            ctx={@ctx}
+            project_export_status={@project_export_status}
+            project_export_url={@project_export_url}
+            project_export_timestamp={@project_export_timestamp}
+          />
         </div>
 
         <div :if={@is_admin} class="d-flex align-items-center">
@@ -407,7 +423,7 @@ defmodule OliWeb.Projects.OverviewLive do
               </span>
             <% _pub -> %>
               <.button
-                class="btn btn-link action-button"
+                class="btn btn-link action-button !px-3"
                 href={~p"/project/#{@project.slug}/datashop"}
               >
                 Datashop Analytics
@@ -416,7 +432,7 @@ defmodule OliWeb.Projects.OverviewLive do
           <% end %>
         </div>
 
-        <div class="d-flex align-items-center">
+        <div class="d-flex align-items-center mt-8">
           <button
             type="button"
             class="btn btn-link text-danger action-button"
@@ -578,6 +594,50 @@ defmodule OliWeb.Projects.OverviewLive do
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("generate_project_export", _params, socket) do
+    project = socket.assigns.project
+
+    case ProjectExportWorker.generate_project_export(project) do
+      {:ok, _job} ->
+        Broadcaster.broadcast_project_export_status(project.slug, {:in_progress})
+
+        {:noreply, socket}
+
+      {:error, _changeset} ->
+        socket =
+          socket
+          |> put_flash(:error, "Project export could not be generated.")
+
+        {:noreply, socket}
+    end
+  end
+
+  def handle_info(
+        {:project_export_status, {:available, project_export_url, project_export_timestamp}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       project_export_status: :available,
+       project_export_url: project_export_url,
+       project_export_timestamp: project_export_timestamp
+     )}
+  end
+
+  def handle_info(
+        {:project_export_status, {:error, _e}},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       project_export_status: :error
+     )}
+  end
+
+  def handle_info({:project_export_status, {status}}, socket) do
+    {:noreply, assign(socket, project_export_status: status)}
   end
 
   defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params

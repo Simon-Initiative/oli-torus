@@ -215,7 +215,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
             <UserAccount.menu
               id="user-account-menu"
               ctx={@ctx}
-              section={@section}
               class="hover:!bg-delivery-instructor-dashboard-header-700"
               dropdown_class="text-body-color dark:text-body-color-dark"
               is_system_admin={@is_system_admin}

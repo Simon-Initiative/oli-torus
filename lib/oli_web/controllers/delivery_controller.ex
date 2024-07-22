@@ -6,9 +6,11 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
   alias Oli.Analytics.DataTables.DataTable
+  alias Oli.Delivery
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
@@ -77,7 +79,7 @@ defmodule OliWeb.DeliveryController do
           )
 
         if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
-          render_research_consent(conn)
+          render_research_consent(conn, ~p"/sections/#{section.slug}")
         else
           redirect_to_page_delivery(conn, section)
         end
@@ -92,11 +94,50 @@ defmodule OliWeb.DeliveryController do
     render(conn, "getting_started.html")
   end
 
-  defp render_research_consent(conn) do
-    conn
-    |> assign(:opt_out, nil)
-    |> render("research_consent.html")
+  defp render_research_consent(conn, redirect_url) do
+    case conn.assigns.current_user do
+      nil ->
+        conn
+        |> put_flash(:error, "User not found")
+        |> redirect(to: Routes.delivery_path(conn, :index))
+
+      # Direct delivery users
+      %User{independent_learner: true} = user ->
+        case Delivery.get_research_consent_form_setting() do
+          :oli_form ->
+            conn
+            |> assign(:research_opt_out, user_research_opt_out?(user))
+            |> assign(:redirect_url, redirect_url)
+            |> render("research_consent.html")
+
+          _ ->
+            conn
+            |> put_flash(:error, "Research consent is not enabled for this platform")
+            |> redirect(to: Routes.delivery_path(conn, :index))
+        end
+
+      # LTI users
+      user ->
+        # check institution research consent setting
+        institution = Institutions.get_institution_by_lti_user(user)
+
+        case institution do
+          %Institution{research_consent: :oli_form} ->
+            conn
+            |> assign(:research_opt_out, user_research_opt_out?(user))
+            |> assign(:redirect_url, redirect_url)
+            |> render("research_consent.html")
+
+          _ ->
+            conn
+            |> put_flash(:error, "Research consent is not enabled for your institution")
+            |> redirect(to: Routes.delivery_path(conn, :index))
+        end
+    end
   end
+
+  defp user_research_opt_out?(%User{research_opt_out: true}), do: true
+  defp user_research_opt_out?(_), do: false
 
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn,
@@ -110,19 +151,38 @@ defmodule OliWeb.DeliveryController do
     )
   end
 
-  def research_consent(conn, %{"consent" => consent}) do
+  def show_research_consent(conn, _params) do
     user = conn.assigns.current_user
-    lti_params = conn.assigns.lti_params
-    section = Sections.get_section_from_lti_params(lti_params)
+
+    redirect_url =
+      case user do
+        %User{independent_learner: true} ->
+          case Map.get(conn.assigns, :section) do
+            nil -> ~p"/sections"
+            section -> ~p"/sections/#{section.slug}"
+          end
+
+        _ ->
+          ~p"/course"
+      end
+
+    conn
+    |> assign(:research_opt_out, user.research_opt_out)
+    |> render_research_consent(redirect_url)
+  end
+
+  def research_consent(conn, %{"consent" => consent, "redirect_url" => redirect_url}) do
+    user = conn.assigns.current_user
 
     case Accounts.update_user(user, %{research_opt_out: consent !== "true"}) do
       {:ok, _} ->
-        redirect_to_page_delivery(conn, section)
+        conn
+        |> redirect(to: redirect_url)
 
       {:error, _} ->
         conn
         |> put_flash(:error, "Unable to persist research consent option")
-        |> redirect_to_page_delivery(section)
+        |> redirect(to: redirect_url)
     end
   end
 

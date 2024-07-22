@@ -376,7 +376,10 @@ defmodule Oli.Delivery.Sections do
             enrollment_context_roles
         end)
 
-      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles,
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
 
       {:ok, enrollments}
     end)
@@ -577,7 +580,6 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
-        preload: [:base_project],
         select: s
       )
 

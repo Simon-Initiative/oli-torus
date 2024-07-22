@@ -340,6 +340,18 @@ defmodule Oli.Authoring.Course do
     |> Repo.update()
   end
 
+  @doc """
+  Updates the latest_export_snapshot_url and latest_export_snapshot_timestamp for the given project.
+  """
+  def update_project_latest_export_url(project_slug, url, timestamp) do
+    get_project_by_slug(project_slug)
+    |> Project.changeset(%{
+      latest_export_url: url,
+      latest_export_timestamp: timestamp
+    })
+    |> Repo.update()
+  end
+
   def get_family!(id), do: Repo.get!(Family, id)
 
   def update_family(%Family{} = family, attrs) do

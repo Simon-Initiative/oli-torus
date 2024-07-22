@@ -294,8 +294,8 @@ defmodule OliWeb.Sections.OverviewView do
       ) %>
 
       <Group.render
-        label="Grading"
-        description="View and manage student grades and progress"
+        label="Scoring"
+        description="View and manage student scores and progress"
         is_last={not @is_lms_or_system_admin or @section.open_and_free}
       >
         <ul class="link-list">
@@ -310,7 +310,7 @@ defmodule OliWeb.Sections.OverviewView do
               }
               class="btn btn-link"
             >
-              Score Manually Graded Activities
+              Review Manually Scored Activities
               <%= if @submission_count > 0 do %>
                 <span class="badge badge-primary"><%= @submission_count %></span>
               <% end %>
@@ -321,7 +321,7 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
               class="btn btn-link"
             >
-              View all Grades
+              View all Scores
             </a>
           </li>
           <li>
@@ -361,7 +361,7 @@ defmodule OliWeb.Sections.OverviewView do
                 }
                 class="btn btn-link"
               >
-                View Grades that failed to sync
+                View scores that failed to sync
               </a>
             </li>
             <%= if @is_lms_or_system_admin do %>
@@ -376,7 +376,7 @@ defmodule OliWeb.Sections.OverviewView do
                   }
                   class="btn btn-link"
                 >
-                  Observe grade updates in real-time
+                  Observe score updates in real-time
                 </a>
               </li>
             <% end %>
@@ -387,7 +387,7 @@ defmodule OliWeb.Sections.OverviewView do
                 }
                 class="btn btn-link"
               >
-                Browse LMS Grade Update Log
+                Browse LMS Score Update Log
               </a>
             </li>
           <% end %>

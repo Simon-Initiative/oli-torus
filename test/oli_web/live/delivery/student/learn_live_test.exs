@@ -2532,7 +2532,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can switch from Outline to Gallery view", %{conn: conn, section: section} do
       {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        )
 
       # selector text matches current view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
@@ -2550,7 +2553,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :gallery, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :gallery)
       )
 
       # selector text matches target view
@@ -2577,7 +2580,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :outline)
       )
 
       # selector text matches target view
@@ -2734,7 +2737,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
     end
 
-    test "exit course button redirects to sections view", %{
+    test "exit course button redirects to sections view with the student workspace selected", %{
       conn: conn,
       section: section
     } do
@@ -2745,7 +2748,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections")
+      assert_redirect(view, "/sections?active_workspace=student_workspace&sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{

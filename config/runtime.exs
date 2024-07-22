@@ -188,7 +188,12 @@ if config_env() == :prod do
         "VENDOR_PROPERTY_COMPANY_ADDRESS",
         "5000 Forbes Ave, Pittsburgh, PA 15213 US"
       ),
-    support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL")
+    support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL"),
+    faq_url:
+      System.get_env(
+        "VENDOR_PROPERTY_FAQ_URL",
+        "https://olihelp.zohodesk.com/portal/en/kb/articles/frqu"
+      )
 
   # optional emerald cloudlab configuration
   config :oli,
@@ -378,6 +383,7 @@ if config_env() == :prod do
       auto_submit: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_AUTOSUBMIT", "3")),
       analytics_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_ANALYTICS", "1")),
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
+      project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3"))
     ]
 end

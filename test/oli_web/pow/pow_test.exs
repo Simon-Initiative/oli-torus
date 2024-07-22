@@ -38,7 +38,16 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.authoring_pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Authoring Sign In"
+      assert html_response(conn, 200) =~ "Course Author Sign In"
+
+      assert html_response(conn, 200) =~
+               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
+
+      assert html_response(conn, 200) =~
+               "Create, deliver, and continuously improve course materials."
+
+      assert html_response(conn, 200) =~
+               "Create an Account"
 
       # sign author in
       conn =
@@ -79,19 +88,19 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Student Sign In"
+      assert html_response(conn, 200) =~ "Instructor Sign In"
 
       assert html_response(conn, 200) =~
-               "Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">OLI</span><span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\"> Torus"
+               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
 
       assert html_response(conn, 200) =~
-               "Easily access and engage with all your enrolled Torus courses"
+               "Gain insights into student engagement, progress, and learning patterns."
 
       assert html_response(conn, 200) =~
-               "Need an account?"
+               "Create an Account"
 
       # assert that background is set to the default background
-      assert html_response(conn, 200) =~ "fill=\"#FF82E4\""
+      assert html_response(conn, 200) =~ "fill=\"#0CAF61\""
 
       # sign user in
       conn =
@@ -120,7 +129,7 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.pow_session_path(conn, :new, from_invitation_link?: true))
 
-      assert html_response(conn, 200) =~ "Student Sign In"
+      assert html_response(conn, 200) =~ "Instructor Sign In"
 
       refute html_response(conn, 200) =~
                "Looking for Authoring or your LMS?"

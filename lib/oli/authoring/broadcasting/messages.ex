@@ -41,6 +41,10 @@ defmodule Oli.Authoring.Broadcaster.Messages do
     ["lock_released", project(project_slug), resource(resource_id)] |> join
   end
 
+  def message_project_export_status(project_slug) do
+    ["project_export_status", project(project_slug)] |> join
+  end
+
   def message_analytics_export_status(project_slug) do
     ["analytics_export_status", project(project_slug)] |> join
   end

@@ -126,7 +126,9 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
             group = Map.get(a, "group")
 
             {:ok, choice} =
-              Enum.at(choices, r - 1) |> JSONPointer.get("/content/0/children/0/text")
+              if is_integer(r),
+                do: Enum.at(choices, r - 1) |> JSONPointer.get("/content/0/children/0/text"),
+                else: {:ok, ""}
 
             {color, c} =
               case Map.get(Map.get(c, :colors), group) do
