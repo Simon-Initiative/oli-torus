@@ -35,10 +35,6 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
         ~p"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite_slig}&section=#{section.slug}&from_invitation_link%3F=true"
 
       assert redirected_to(conn, 302) == redirect_to
-
-      conn = get(conn, redirect_to)
-
-      assert html_response(conn, 200) =~ "Student Sign In"
     end
   end
 

@@ -594,7 +594,7 @@ defmodule Oli.Delivery.Attempts.Core do
       from(aa in ActivityAttempt,
         left_join: aa2 in ActivityAttempt,
         on:
-          aa.resource_attempt_id == aa2.resource_attempt_id and
+          aa.resource_id == aa2.resource_id and
             aa.id < aa2.id,
         join: ra in ResourceAttempt,
         on: ra.id == aa.resource_attempt_id,

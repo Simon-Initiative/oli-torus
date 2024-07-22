@@ -354,15 +354,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               </div>
               <.intro_content_input form={@form} target={@myself} />
               <div class="form-group">
-                <label for="grading_type">Grading Type</label>
+                <label for="grading_type">Scoring Type</label>
                 <.input
                   type="select"
                   class="form-control custom-select"
                   field={@form[:graded]}
-                  options={[{"Graded Assessment", "true"}, {"Ungraded Practice Page", "false"}]}
+                  options={[{"Scored Assessment", "true"}, {"Unscored Practice Page", "false"}]}
                 />
                 <small id="grading_type_description" class="form-text text-muted">
-                  Graded assessments report a grade to the grade book, while practice pages do not.
+                  Scored assessments report a score to the grade book, while practice pages do not.
                 </small>
               </div>
 
@@ -426,7 +426,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               options={@attempt_options}
             />
             <small id="number_of_attempts_description" class="form-text text-muted">
-              Graded assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.
+              Scored assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.
             </small>
           </div>
           <div class="form-group">

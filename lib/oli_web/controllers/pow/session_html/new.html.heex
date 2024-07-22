@@ -31,7 +31,7 @@
       </div>
       <div class="w-full lg:w-1/2 flex items-center justify-center">
         <div class="w-96 bg-neutral-700 rounded-md">
-          <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 pt-12 pb-8">
+          <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Course Author Sign In
           </div>
           <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
@@ -104,7 +104,7 @@
                   Routes.authoring_pow_registration_path(@conn, :new)
                 ),
               class:
-                "btn btn-md btn-link btn-block text-blue-400 text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-10"
+                "btn btn-md btn-link btn-block text-blue-400 text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
             ) %>
           <% end %>
         </div>
@@ -114,7 +114,7 @@
 <% else %>
   <div class="relative h-[calc(100vh-180px)] flex justify-center items-center">
     <div class="absolute h-[calc(100vh-180px)] w-full top-0 left-0">
-      <.student_sign_in />
+      <.instructor_sign_in />
     </div>
     <div class="flex flex-col gap-y-10 lg:flex-row w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
       <div class="w-full lg:w-1/2 flex items-start lg:pt-10 justify-center">
@@ -127,42 +127,25 @@
               <%= product_short_name() %>
             </span>
           </div>
-          <div class="w-48 h-11 justify-start items-end gap-1 inline-flex">
-            <div class="justify-start items-end gap-px flex">
-              <div class="grow shrink basis-0 self-start px-1 py-2 justify-center items-center flex">
-                <.graduation_cap />
+          <div class="w-auto h-11 justify-start items-end gap-1 inline-flex">
+            <div class="justify-start items-end gap-x-3 flex">
+              <div class="grow shrink basis-0 self-start py-[0.4rem] justify-center items-center flex">
+                <.bar_chart />
               </div>
-              <div class="w-40 h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
-                Student
+              <div class="w-full h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
+                Instructor
               </div>
             </div>
           </div>
           <div class="lg:mt-6 text-white text-xl font-normal leading-normal">
-            Easily access and engage with all your enrolled Torus courses.
-          </div>
-          <div class="lg:mt-10">
-            <div class="text-white text-xl font-normal leading-normal underline underline-offset-4">
-              <% registration_path =
-                case @conn.params["section"] do
-                  nil ->
-                    Routes.pow_registration_path(@conn, :new)
-
-                  section ->
-                    Routes.pow_registration_path(@conn, :new, section: section)
-                end %>
-              <%= link("Need an account?",
-                to: registration_path,
-                class:
-                  "text-white text-xl font-normal leading-normal underline underline-offset-4 hover:text-zinc-300"
-              ) %>
-            </div>
+            Gain insights into student engagement, progress, and learning patterns.
           </div>
         </div>
       </div>
       <div class="w-full lg:w-1/2 flex items-center justify-center">
         <div class="w-96 bg-neutral-700 rounded-md">
-          <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 pt-12 pb-8">
-            Student Sign In
+          <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
+            Instructor Sign In
           </div>
           <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
           <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
@@ -219,12 +202,27 @@
               <%= hidden_input(f, :section, value: @conn.params["section"]) %>
             <% end %>
 
-            <div class="flex justify-center">
+            <div class="flex flex-col justify-center">
               <%= submit("Sign In",
                 class:
-                  "w-80 h-11 bg-blue-600 mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-20 mt-2"
+                  "w-80 h-11 bg-blue-600 mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
               ) %>
+              <div class="w-80 h-px border border-white mx-auto"></div>
             </div>
+
+            <% registration_path =
+              case @conn.params["section"] do
+                nil ->
+                  Routes.pow_registration_path(@conn, :new)
+
+                section ->
+                  Routes.pow_registration_path(@conn, :new, section: section)
+              end %>
+            <%= link("Create an Account",
+              to: registration_path,
+              class:
+                "btn btn-md btn-link btn-block text-blue-400 text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
+            ) %>
           <% end %>
         </div>
       </div>

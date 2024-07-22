@@ -12,7 +12,6 @@ import {
   NotificationType,
   subscribeToNotification,
 } from 'apps/delivery/components/NotificationContext';
-import { useKeyDown } from 'hooks/useKeyDown';
 import { clone } from 'utils/common';
 import { contexts } from '../../../../../types/applicationContext';
 import PartComponent from '../common/PartComponent';
@@ -329,6 +328,14 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     }
   };
 
+  const handleShortcutActionNotifications = (payload: any) => {
+    const { type } = payload;
+    if (type === 'Delete') {
+      setShowConfirmDelete(true);
+    } else if (type === 'Copy') {
+      handleCopyComponent();
+    }
+  };
   useEffect(() => {
     if (!pusher) {
       return;
@@ -337,6 +344,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       NotificationType.CONFIGURE,
       NotificationType.CONFIGURE_CANCEL,
       NotificationType.CONFIGURE_SAVE,
+      NotificationType.CHECK_SHORTCUT_ACTIONS,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
@@ -346,6 +354,9 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         switch (notificationType) {
           case NotificationType.CONFIGURE_CANCEL:
             handlePartCancelConfigure(payload);
+            break;
+          case NotificationType.CHECK_SHORTCUT_ACTIONS:
+            handleShortcutActionNotifications(payload);
             break;
           case NotificationType.CONFIGURE_SAVE:
             // maybe layout editor should *only* do this for both cancel and save
@@ -364,7 +375,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         unsub();
       });
     };
-  }, [configurePartId, handlePartCancelConfigure, pusher]);
+  }, [configurePartId, handlePartCancelConfigure, selectedPartAndCapabilities, pusher]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -393,22 +404,6 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     },
     [dragSize, isDragging, selectedPartId],
   );
-
-  useKeyDown(
-    () => {
-      if (selectedPartAndCapabilities && !configurePartId.length) {
-        setShowConfirmDelete(true);
-      }
-    },
-    ['Delete', 'Backspace'],
-    { ctrlKey: true },
-    [selectedPartAndCapabilities, configurePartId],
-  );
-  useKeyDown(handleCopyComponent, ['KeyC'], { ctrlKey: true }, [
-    selectedPartAndCapabilities,
-    parts,
-    handleCopyComponent,
-  ]);
 
   return parts && parts.length ? (
     <NotificationContext.Provider value={pusher}>

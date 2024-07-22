@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { VegaLite, VisualizationSpec } from 'react-vega';
+// import { VegaLite, VisualizationSpec } from 'react-vega';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
@@ -37,84 +37,84 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
     projectSlug: projectSlug,
   });
 
-  const transformedData = {
-    values: model.choices
-      .filter((choice) => choice.frequency > 0)
-      .map((choice) => ({
-        label:
-          'text' in choice.content[0].children[0] ? choice.content[0].children[0].text : 'No text',
-        value: choice.frequency,
-      })),
-  };
+  // const transformedData = {
+  //   values: model.choices
+  //     .filter((choice) => choice.frequency > 0)
+  //     .map((choice) => ({
+  //       label:
+  //         'text' in choice.content[0].children[0] ? choice.content[0].children[0].text : 'No text',
+  //       value: choice.frequency,
+  //     })),
+  // };
 
-  const colorsList = [
-    'rgb(198, 207, 241)',
-    'rgb(220, 198, 224)',
-    'rgb(202, 233, 198)',
-    'rgb(209, 196, 233)',
-    'rgb(160, 219, 206)',
-    'rgb(242, 205, 176)',
-    'rgb(187, 223, 179)',
-    'rgb(231, 174, 125)',
-    'rgb(187, 192, 206)',
-    'rgb(241, 196, 198)',
-    'rgb(194, 220, 232)',
-    'rgb(236, 217, 203)',
-    'rgb(172, 225, 240)',
-    'rgb(247, 214, 199)',
-    'rgb(207, 241, 206)',
-  ];
+  // const colorsList = [
+  //   'rgb(198, 207, 241)',
+  //   'rgb(220, 198, 224)',
+  //   'rgb(202, 233, 198)',
+  //   'rgb(209, 196, 233)',
+  //   'rgb(160, 219, 206)',
+  //   'rgb(242, 205, 176)',
+  //   'rgb(187, 223, 179)',
+  //   'rgb(231, 174, 125)',
+  //   'rgb(187, 192, 206)',
+  //   'rgb(241, 196, 198)',
+  //   'rgb(194, 220, 232)',
+  //   'rgb(236, 217, 203)',
+  //   'rgb(172, 225, 240)',
+  //   'rgb(247, 214, 199)',
+  //   'rgb(207, 241, 206)',
+  // ];
 
-  const spec: VisualizationSpec = {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    data: transformedData,
-    title: {
-      text: model.activityTitle,
-      subtitle: model.items.map((item) =>
-        'text' in item.content[0].children[0] ? item.content[0].children[0].text : 'No text',
-      ),
-      subtitlePadding: 10,
-    },
-    mark: { type: 'bar' },
-    width: 500,
-    height: 200,
-    encoding: {
-      x: {
-        aggregate: 'sum',
-        field: 'value',
-        type: 'quantitative',
-        axis: { title: null },
-      },
-      y: {
-        field: 'category',
-        type: 'ordinal',
-        axis: { title: null, labels: false },
-      },
-      color: {
-        field: 'label',
-        type: 'nominal',
-        scale: {
-          range: colorsList,
-        },
-      },
-      tooltip: [
-        { field: 'value', type: 'quantitative', title: 'Value' },
-        { field: 'label', type: 'nominal', title: 'Text' },
-      ],
-    },
-    config: {
-      view: { stroke: 'transparent' },
-      axisX: { labels: true },
-      legend: {
-        orient: 'right',
-        title: null,
-        padding: 10,
-        rowPadding: 10,
-      },
-    },
-  };
+  // const spec: VisualizationSpec = {
+  //   $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+  //   data: transformedData,
+  //   title: {
+  //     text: model.activityTitle,
+  //     subtitle: model.items.map((item) =>
+  //       'text' in item.content[0].children[0] ? item.content[0].children[0].text : 'No text',
+  //     ),
+  //     subtitlePadding: 10,
+  //   },
+  //   mark: { type: 'bar' },
+  //   width: 500,
+  //   height: 200,
+  //   encoding: {
+  //     x: {
+  //       aggregate: 'sum',
+  //       field: 'value',
+  //       type: 'quantitative',
+  //       axis: { title: null },
+  //     },
+  //     y: {
+  //       field: 'category',
+  //       type: 'ordinal',
+  //       axis: { title: null, labels: false },
+  //     },
+  //     color: {
+  //       field: 'label',
+  //       type: 'nominal',
+  //       scale: {
+  //         range: colorsList,
+  //       },
+  //     },
+  //     tooltip: [
+  //       { field: 'value', type: 'quantitative', title: 'Value' },
+  //       { field: 'label', type: 'nominal', title: 'Text' },
+  //     ],
+  //   },
+  //   config: {
+  //     view: { stroke: 'transparent' },
+  //     axisX: { labels: true },
+  //     legend: {
+  //       orient: 'right',
+  //       title: null,
+  //       padding: 10,
+  //       rowPadding: 10,
+  //     },
+  //   },
+  // };
 
-  const dataLong = transformedData.values.length;
+  // const dataLong = transformedData.values.length;
 
   return (
     <React.Fragment>
@@ -125,6 +125,24 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             <br />
             <p>Choices:</p>
             <div className="flex flex-col lg:flex-row">
+              <div className="w-full">
+                <ChoicesAuthoring
+                  icon={<Radio.Unchecked />}
+                  choices={model.choices}
+                  setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+                  onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+                  onChangeEditorType={(id, editorType) =>
+                    dispatch(Choices.setEditor(id, editorType))
+                  }
+                  addOne={() => dispatch(LikertActions.addChoice())}
+                  onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
+                  onChangeEditorTextDirection={(id, textDirection) =>
+                    dispatch(Choices.setTextDirection(id, textDirection))
+                  }
+                />
+              </div>
+            </div>
+            {/* <div className="flex flex-col lg:flex-row">
               <div className={`${dataLong > 0 ? 'w-full lg:w-1/2' : 'w-full'}`}>
                 <ChoicesAuthoring
                   icon={<Radio.Unchecked />}
@@ -151,7 +169,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
                   </div>
                 </>
               )}
-            </div>
+            </div> */}
             <div className="form-check mb-2">
               <input
                 className="form-check-input"
