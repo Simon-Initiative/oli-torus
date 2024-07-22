@@ -209,6 +209,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :set_sidebar do
+    plug(Oli.Plugs.SetSidebar)
+  end
+
   pipeline :delivery_preview do
     plug(Oli.Plugs.DeliveryPreview)
   end
@@ -961,6 +965,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :set_sidebar,
       :require_section,
       :delivery,
       :delivery_protected,
