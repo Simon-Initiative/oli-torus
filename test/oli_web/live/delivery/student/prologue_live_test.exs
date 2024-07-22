@@ -630,7 +630,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
           date_submitted: ~U[2023-11-15 20:00:00Z],
           date_evaluated: ~U[2023-11-15 20:10:00Z],
           score: 10,
-          out_of: 10
+          out_of: 10,
+          lifecycle_state: :evaluated
         })
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
@@ -640,20 +641,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert has_element?(
                view,
-               "div[id='attempt_1_summary'] div[role='attempt score']",
-               "5.0"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_1_summary'] div[role='attempt out of']",
-               "10.0"
-             )
-
-      assert has_element?(
-               view,
-               "div[id='attempt_1_summary'] div[role='attempt submission']",
-               "Tue Nov 14, 2023"
+               "div[id='attempt_1_summary'] div[role='attempt status']",
+               "Submitted"
              )
 
       assert has_element?(
