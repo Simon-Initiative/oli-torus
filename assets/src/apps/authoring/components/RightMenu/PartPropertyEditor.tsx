@@ -10,7 +10,7 @@ import { clone } from '../../../../utils/common';
 import { IActivity } from '../../../delivery/store/features/activities/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectAppMode, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
-import { setCurrentSelection } from '../../store/parts/slice';
+import { setCurrentPartPropertyFocus, setCurrentSelection } from '../../store/parts/slice';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import AccordionTemplate from '../PropertyEditor/custom/AccordionTemplate';
@@ -317,6 +317,13 @@ export const PartPropertyEditor: React.FC<Props> = ({
     [currentActivity.id, currentPartInstance, currentPartSelection, dispatch],
   );
 
+  const componentPropertyFocusHandler = useCallback(
+    (partPropertyElementFocus: boolean) => {
+      dispatch(setCurrentPartPropertyFocus({ focus: partPropertyElementFocus }));
+    },
+    [currentActivity.id, currentPartInstance, currentPartSelection, dispatch],
+  );
+
   if (!partDef) return null;
 
   return (
@@ -360,6 +367,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
         value={currentComponentData}
         onChangeHandler={componentPropertyChangeHandler}
         triggerOnChange={true}
+        onfocusHandler={componentPropertyFocusHandler}
       />
     </div>
   );

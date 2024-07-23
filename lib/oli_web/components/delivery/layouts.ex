@@ -675,12 +675,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr :sidebar_expanded, :boolean, default: true
+  attr :target_workspace, :atom, default: :student_workspace
 
   def exit_course_button(assigns) do
     ~H"""
     <.link
       id="exit_course_button"
-      navigate={~p"/sections"}
+      navigate={
+        ~p"/sections?#{%{sidebar_expanded: @sidebar_expanded, active_workspace: @target_workspace}}"
+      }
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">

@@ -89,6 +89,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
        effective_end_time: effective_end_time,
        auto_submit: page_context.effective_settings.late_submit == :disallow,
        time_limit: page_context.effective_settings.time_limit,
+       grace_period: page_context.effective_settings.grace_period,
        attempt_start_time: resource_attempt.inserted_at |> to_epoch,
        review_mode: page_context.review_mode
      )
@@ -747,6 +748,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             data-time-out-in-mins={@time_limit}
             data-start-time-in-ms={@attempt_start_time}
             data-effective-time-in-ms={@effective_end_time}
+            data-grace-period-in-mins={@grace_period}
             data-auto-submit={if @auto_submit, do: "true", else: "false"}
           >
           </div>

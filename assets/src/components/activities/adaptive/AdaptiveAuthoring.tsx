@@ -35,6 +35,7 @@ const Adaptive = (
       NotificationType.CONFIGURE,
       NotificationType.CONFIGURE_CANCEL,
       NotificationType.CONFIGURE_SAVE,
+      NotificationType.CHECK_SHORTCUT_ACTIONS,
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (e: any) => {

@@ -7,6 +7,7 @@ defmodule OliWeb.Features.FeaturesLive do
 
   alias OliWeb.Common.Breadcrumb
   alias Oli.Features
+  alias Oli.Delivery
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++
@@ -16,13 +17,16 @@ defmodule OliWeb.Features.FeaturesLive do
   end
 
   def mount(_, _, socket) do
+    research_consent_form_setting = Delivery.get_research_consent_form_setting()
+
     {:ok,
      assign(socket,
        title: "Feature Flags",
        log_level: Logger.level(),
        active: :features,
        features: Features.list_features_and_states(),
-       breadcrumbs: set_breadcrumbs()
+       breadcrumbs: set_breadcrumbs(),
+       research_consent_form_setting: research_consent_form_setting
      )}
   end
 
@@ -145,6 +149,28 @@ defmodule OliWeb.Features.FeaturesLive do
           </table>
         </div>
       </div>
+
+      <div class="mt-5">
+        <h2 class="mb-5">
+          Research Consent
+        </h2>
+      </div>
+      <div class="flex flex-row">
+        <.form :let={f} for={%{}} phx-change="change_research_consent_form">
+          <label for="countries" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+            Direct Delivery Research Consent Form
+          </label>
+
+          <.input
+            field={f[:research_consent_form]}
+            type="select"
+            value={@research_consent_form_setting}
+            options={[{"OLI Form", :oli_form}, {"No Form", :no_form}]}
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+          </.input>
+        </.form>
+      </div>
     </div>
     """
   end
@@ -168,5 +194,17 @@ defmodule OliWeb.Features.FeaturesLive do
       end
 
     {:noreply, socket}
+  end
+
+  def handle_event(
+        "change_research_consent_form",
+        %{"research_consent_form" => research_consent_form},
+        socket
+      ) do
+    research_consent_form_selection = String.to_existing_atom(research_consent_form)
+
+    Delivery.update_research_consent_form_setting(research_consent_form_selection)
+
+    {:noreply, assign(socket, research_consent_form_setting: research_consent_form_selection)}
   end
 end

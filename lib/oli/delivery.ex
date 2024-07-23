@@ -11,6 +11,7 @@ defmodule Oli.Delivery do
   alias Oli.Repo
   alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess}
+  alias Oli.Delivery.ResearchConsent
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -431,6 +432,31 @@ defmodule Oli.Delivery do
           end
         end)
         |> Enum.all?(&(elem(&1, 1) == :evaluated))
+    end
+  end
+
+  @doc """
+  Returns the research consent form setting.
+
+  This record is created during migration so a single record is always expected to exist.
+  """
+  def get_research_consent_form_setting() do
+    Repo.one(ResearchConsent)
+    |> Map.get(:research_consent)
+  end
+
+  @doc """
+  Updates the research consent form setting.
+  """
+  def update_research_consent_form_setting(research_consent) do
+    case Repo.one(ResearchConsent) do
+      nil ->
+        Repo.insert!(%ResearchConsent{research_consent: research_consent})
+
+      %ResearchConsent{} = research_consent_form ->
+        research_consent_form
+        |> ResearchConsent.changeset(%{research_consent: research_consent})
+        |> Repo.update()
     end
   end
 end
