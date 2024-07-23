@@ -37,6 +37,9 @@ jobs:
     steps:
       - run: echo "Auto deploy enabled for ref ${{ vars.AUTO_DEPLOY_REF }}. Deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ vars.AUTO_DEPLOY_TARGET }}"
 
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+
       - name: 🧾 Build info
         id: info
         run: |
