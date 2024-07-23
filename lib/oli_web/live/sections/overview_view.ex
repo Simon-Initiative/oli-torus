@@ -266,12 +266,13 @@ defmodule OliWeb.Sections.OverviewView do
         description="Show a required to students who access the course for the first time"
       >
         <%= if @show_required_section_config do %>
-          <%= live_component(RequiredSurvey, %{
-            project: @section,
-            enabled: @section.required_survey_resource_id,
-            is_section: true,
-            id: "section-required-survey-section"
-          }) %>
+          <.live_component
+            module={RequiredSurvey}
+            project={@section}
+            enabled={@section.required_survey_resource_id}
+            is_section={true}
+            id="section-required-survey-section"
+          />
         <% else %>
           <div class="flex items-center h-full ml-8">
             <p class="m-0">
@@ -504,7 +505,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
 
-    {:noreply, push_redirect(socket, to: Routes.delivery_path(socket, :index))}
+    {:noreply, push_navigate(socket, to: Routes.delivery_path(socket, :index))}
   end
 
   def handle_event("show_delete_modal", _params, socket) do
