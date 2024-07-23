@@ -873,17 +873,18 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("HideResourceModal.toggle", %{"uuid" => uuid}, socket) do
-    %{hierarchy: hierarchy, section: section} = socket.assigns
+    %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    section_resource = Hierarchy.find_in_hierarchy(hierarchy, uuid).section_resource
+    hierarchy =
+      Hierarchy.find_and_toggle_hidden(hierarchy, uuid)
+      |> Hierarchy.finalize()
 
-    Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
-
-    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    # refresh active node
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
 
     {:noreply,
      socket
-     |> assign(hierarchy: hierarchy, active: hierarchy)
+     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
      |> hide_modal(modal_assigns: nil)}
   end
 

@@ -438,6 +438,36 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Toggles the hidden attribute of a node in the hierarchy with the given uuid
+  """
+
+  def find_and_toggle_hidden(hierarchy, uuid) do
+    find_and_toggle_hidden_r(hierarchy, uuid)
+    |> mark_unfinalized()
+  end
+
+  defp find_and_toggle_hidden_r(hierarchy, uuid) do
+    if hierarchy.uuid == uuid do
+      updated_section_resource =
+        case hierarchy.section_resource do
+          nil -> nil
+          sr -> Map.put(sr, :hidden, !sr.hidden)
+        end
+
+      %HierarchyNode{
+        hierarchy
+        | section_resource: updated_section_resource
+      }
+    else
+      %HierarchyNode{
+        hierarchy
+        | children:
+            Enum.map(hierarchy.children, fn child -> find_and_toggle_hidden_r(child, uuid) end)
+      }
+    end
+  end
+
+  @doc """
   Moves a node to a given container given by destination uuid
   """
   def move_node(hierarchy, node, destination_uuid) do

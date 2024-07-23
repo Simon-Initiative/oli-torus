@@ -137,7 +137,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     :delivery_policy_id,
     :scoring_strategy_id,
     :inserted_at,
-    :updated_at
+    :updated_at,
+    :hidden
   ]
 
   def to_map(%SectionResource{} = section_resource) do
