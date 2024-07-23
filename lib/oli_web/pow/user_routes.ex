@@ -9,7 +9,7 @@ defmodule OliWeb.Pow.UserRoutes do
   alias Oli.Delivery.Sections.Section
 
   @impl true
-  def after_sign_in_path(conn) do
+  def after_sign_in_path(conn, target_workspace \\ :instructor_workspace) do
     conn
     |> request_path_or(
       case conn.params do
@@ -17,10 +17,16 @@ defmodule OliWeb.Pow.UserRoutes do
           Routes.delivery_path(conn, :show_enroll, section_slug)
 
         _ ->
-          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
+          worskpace_path(conn, target_workspace)
       end
     )
   end
+
+  defp worskpace_path(conn, :instructor_workspace),
+    do: Routes.live_path(conn, OliWeb.Workspace.Instructor)
+
+  defp worskpace_path(conn, :student_workspace),
+    do: Routes.live_path(conn, OliWeb.Workspace.Student)
 
   @impl true
   def after_registration_path(conn) do
