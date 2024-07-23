@@ -12,8 +12,8 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment:
-      name: ${{ vars.AUTO_DEPLOY_REF }}
-      url: https://${{ vars.AUTO_DEPLOY_REF }}
+      name: ${{ vars.AUTO_DEPLOY_TARGET }}
+      url: https://${{ vars.AUTO_DEPLOY_TARGET }}
     outputs:
       enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
       auto_deploy_ref: ${{ steps.get_auto_deploy_ref.outputs.auto_deploy_ref }}
@@ -30,8 +30,8 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success' && github.ref == needs.check-auto-deploy.outputs.auto_deploy_ref && needs.check-auto-deploy.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     environment:
-      name: ${{ vars.AUTO_DEPLOY_REF }}
-      url: https://${{ vars.AUTO_DEPLOY_REF }}
+      name: ${{ vars.AUTO_DEPLOY_TARGET }}
+      url: https://${{ vars.AUTO_DEPLOY_TARGET }}
     needs: [check-auto-deploy]
 
     steps:
