@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { FeedbackAction } from 'apps/authoring/types';
 import guid from 'utils/guid';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
-import { useDispatch } from 'react-redux';
-import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
+
 interface ActionFeedbackEditorProps {
   action: FeedbackAction;
   onChange: (changes: any) => void;

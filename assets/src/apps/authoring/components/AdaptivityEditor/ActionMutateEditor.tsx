@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
@@ -11,8 +13,7 @@ import {
   typeOptions,
 } from './AdaptiveItemOptions';
 import { OverlayPlacements, VariablePicker } from './VariablePicker';
-import { useDispatch } from 'react-redux';
-import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
+
 interface ActionMutateEditorProps {
   action: MutateStateAction;
   onChange: (changes: MutateStateActionParams) => void;
