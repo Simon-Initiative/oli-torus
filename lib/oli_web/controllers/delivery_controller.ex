@@ -327,7 +327,7 @@ defmodule OliWeb.DeliveryController do
         conn = Pow.Plug.Session.do_delete(conn, get_pow_config(:author))
 
         if current_user.independent_learner do
-          redirect(conn, to: Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex))
+          redirect(conn, to: Routes.live_path(conn, OliWeb.Worksace.Student))
         else
           redirect(conn, to: Routes.delivery_path(conn, :index))
         end

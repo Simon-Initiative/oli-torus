@@ -54,7 +54,7 @@ defmodule OliWeb.Pow.UserRoutes do
     |> request_path_or(
       case conn.assigns[:current_user] do
         %User{independent_learner: true} ->
-          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
+          Routes.live_path(conn, OliWeb.Workspace.Student)
 
         _ ->
           Routes.delivery_path(conn, :index)

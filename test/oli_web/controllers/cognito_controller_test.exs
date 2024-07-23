@@ -659,7 +659,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert html =~
                "Would you like to\n<a href=\"/sections/independent/new?source_id=project%3A#{project.id}\">create a new section with this lesson</a>"
 
-      assert html =~ "<a href=\"/sections\">go to my existing sections</a>"
+      assert html =~ "<a href=\"/sections/workspace/instructor\">go to my existing sections</a>"
     end
   end
 
