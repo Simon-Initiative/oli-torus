@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>As a developer — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,89 +34,99 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/starting/developer.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/starting/developer.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>As a developer</span>
-</h1>
+    <span>As a developer</span>
+  </h1>
 
 <p>These instructions will set up a development environment
 with the Torus server running directly on the host machine.</p><h2 id="mostly-automated-steps" class="section-heading">
-  <a href="#mostly-automated-steps" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">mostly-automated-steps</p>
+  <a href="#mostly-automated-steps" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Mostly Automated Steps
+  <span class="text">Mostly Automated Steps</span>
 </h2>
 <ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.9</code>)</li></ul></li><li><p>Clone this repository <code class="inline">$ git clone https://github.com/Simon-Initiative/oli-torus</code></p></li><li><p>Run <code class="inline">$ sh ./devmode.sh</code></p></li><li><p>Run <code class="inline">$ mix phx.server</code></p></li><li><p>Open your web browser to <code class="inline">https://localhost</code>.</p></li></ol><h2 id="mostly-manual-steps" class="section-heading">
-  <a href="#mostly-manual-steps" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">mostly-manual-steps</p>
+  <a href="#mostly-manual-steps" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Mostly Manual Steps
+  <span class="text">Mostly Manual Steps</span>
 </h2>
 <ol><li><p>Install dependencies:</p><ul><li><a href="https://www.docker.com/">Docker</a> and docker-compose</li><li><a href="https://elixir-lang.org/">Elixir</a> (<code class="inline">$ brew install elixir</code>)</li><li><a href="https://www.phoenixframework.org/">Phoenix</a> (<code class="inline">$ mix archive.install hex phx_new 1.5.9</code>)</li></ul></li><li><p>Clone this repository <code class="inline">$ git clone https://github.com/Simon-Initiative/oli-torus</code></p></li><li><p>Create configuration env files:</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">cp oli.example.env oli.env
 </span><span class="gp unselectable">$ </span><span class="">cp postgres.example.env postgres.env
@@ -130,16 +141,16 @@ with the Torus server running directly on the host machine.</p><h2 id="mostly-au
 </span></code></pre></li><li><p>Load phoenix app configuration from environment file. This step is necessary anytime you change a configuration variable</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">source oli.env
 </span></code></pre></li><li><p>Start Phoenix server</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix phx.server
 </span></code></pre><blockquote><p><strong>Note</strong>: Use Ctrl+c to stop the Phoenix server</p></blockquote></li><li><p>Open your web browser to <code class="inline">https://localhost</code>.</p></li></ol><h3 id="notes" class="section-heading">
-  <a href="#notes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">notes</p>
+  <a href="#notes" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Notes
+  <span class="text">Notes</span>
 </h3>
 <blockquote><p>In order to sign in, you must use <strong>https</strong> and accept the self-signed cert browser warning to avoid CSRF issues. If you would like to provide your own cert instead of accepting the included one, simply replace <code class="inline">priv/ssl/localhost.crt</code> -or- use the localhost tunneling method below to generate a public URL with SSL enabled.</p></blockquote><blockquote><p>To access email verification message and activate your locally-created account, visit <code class="inline">http://localhost/dev/sent_emails</code>.</p></blockquote><blockquote><p>Default administrator credentials are defined in <code class="inline">oli.env</code> as <code class="inline">ADMIN_EMAIL</code> and <code class="inline">ADMIN_PASSWORD</code>. These values are only used to seed the database during <code class="inline">mix ecto.setup</code> / <code class="inline">mix ecto.reset</code>.</p></blockquote><blockquote><p>Docker is not a strict dependency. We use it here to simplify the install and running of Postgres. You can choose to install and run Postgres bare-metal, but you will not be able to use the <strong>Mostly Automated Steps</strong> above (since the <code class="inline">./devmode.sh</code> script depends on Docker).</p></blockquote><h2 id="running-tests" class="section-heading">
-  <a href="#running-tests" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">running-tests</p>
+  <a href="#running-tests" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Running Tests
+  <span class="text">Running Tests</span>
 </h2>
 <blockquote><p><strong>Note</strong>: If you are running using docker-compose as described in <a href="Quick-Start"><strong>Quick Start</strong></a>, you can create a bash session to execute any of the following commands using <code class="inline">docker-compose exec app bash</code></p></blockquote><ol><li><p>Run JavaScript tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">cd assets &amp;&amp; yarn test
 </span></code></pre></li><li><p>Run elixir tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix test
@@ -147,31 +158,34 @@ with the Torus server running directly on the host machine.</p><h2 id="mostly-au
 </span></code></pre><p>Re-run only failed tests</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix test.watch --failed --trace --seed 0 lib/some_dir/file_to_watch.ex
 </span></code></pre><p>Using fswatch, re-run only the test files that have changed as well as the tests that have gone stale due to changes in lib and pause on any failures</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">fswatch lib test | mix test --listen-on-stdin --stale --seed 0 --trace --max-failures 1
 </span></code></pre></li><li><p>Generate an html coverage report</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix coveralls.html
-</span></code></pre></li><li><p>Occasionally the test database will need to be reset (e.g. if tests were cancelled partway through)</p><pre><code class="makeup elixir" translate="no"><span class="w">   </span><span class="err">$</span><span class="w"> </span><span class="nc">MIX_ENV</span><span class="o">=</span><span class="n">test</span><span class="w"> </span><span class="n">mix</span><span class="w"> </span><span class="n">ecto</span><span class="o">.</span><span class="n">reset</span></code></pre></li></ol><h3 id="integration-hound-based-tests" class="section-heading">
-  <a href="#integration-hound-based-tests" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">integration-hound-based-tests</p>
+</span></code></pre></li><li><p>Occasionally the test database will need to be reset (e.g. if tests were cancelled partway through)</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">MIX_ENV=test mix ecto.reset
+</span></code></pre></li></ol><h3 id="integration-hound-based-tests" class="section-heading">
+  <a href="#integration-hound-based-tests" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Integration (Hound Based) tests
+  <span class="text">Integration (Hound Based) tests</span>
 </h3>
 <p>A set of <a href="https://github.com/HashNuke/hound">hound</a> based integration tests reside in the test/hound directory. These tests
 actually run a Torus server and interact with it via a browser. They're useful for testing multi-page flows through the
 application as a user would, especially if those tests interact with client side javascript.</p><p>These tests tend to be slower than unit tests, and have additional requirements to run, therefore they do not run by default
 when executing <a href="https://hexdocs.pm/mix/Mix.Tasks.Test.html"><code class="inline">mix test</code></a></p><p>To run these tests you will need:</p><ol><li>A browser that can be controlled by a web driver (Chrome is configured by default and is recommended)</li><li>A web driver for that browser (<a href="https://chromedriver.chromium.org/downloads">chromedriver</a> is recommended)</li></ol><p>To run the tests:</p><ol><li>Launch chromedriver <code class="inline">./chromedriver</code> - for most people, it should work with no additional arguments</li><li>While that's running, run the tests <a href="Mix.Tasks.Test.Hound.html"><code class="inline">mix test.hound</code></a></li></ol><p>Some notes:</p><ul><li>The tests run with MIX_ENV=hound</li><li>The tests run against the oli_test database, the same one used by <a href="https://hexdocs.pm/mix/Mix.Tasks.Test.html"><code class="inline">mix test</code></a></li></ul><p>While debugging or developing these tests, you can watch the browser by setting an env var HEADLESS=false
 <code class="inline">HEADLESS=false mix test.hound</code></p><h2 id="tunneling-localhost-connection-for-lti-development" class="section-heading">
-  <a href="#tunneling-localhost-connection-for-lti-development" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">tunneling-localhost-connection-for-lti-development</p>
+  <a href="#tunneling-localhost-connection-for-lti-development" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Tunneling localhost connection for LTI development
+  <span class="text">Tunneling localhost connection for LTI development</span>
 </h2>
 <p>When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use command line tool that does just this.</p><ol><li><a href="https://ngrok.com/">Download ngrok</a> and install using their instructions (Create a free account if required)</li><li>Run ngrok locally to tunnel to phoenix app on port 4000
 <code class="inline">ngrok http 4000</code></li><li>Access your running webapp using the generated https address (shown in console after <code class="inline">Forwarding</code>). This will be the same address used to configure the LMS LTI connection</li></ol><h2 id="configuring-an-lti-1-3-connection" class="section-heading">
-  <a href="#configuring-an-lti-1-3-connection" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">configuring-an-lti-1-3-connection</p>
+  <a href="#configuring-an-lti-1-3-connection" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Configuring an LTI 1.3 Connection
+  <span class="text">Configuring an LTI 1.3 Connection</span>
 </h2>
 <p>Torus supports LTI 1.3 integration and leverages the Learning Management System for course delivery.</p><p>To configure an LTI connection, refer to the <a href="https://github.com/Simon-Initiative/oli-torus/wiki/Torus-LTI-1.3-Configuration">Torus LTI 1.3 Manual Configuration</a>.</p>
-<div class="bottom-actions">
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="end-user.html" class="bottom-actions-button" rel="prev">
@@ -197,22 +211,33 @@ self-hosted
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

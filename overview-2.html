@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>Course material ingestion — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,97 +34,107 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/ingest/overview.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/ingest/overview.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>Course material ingestion</span>
-</h1>
+    <span>Course material ingestion</span>
+  </h1>
 
 <p>Torus supports importing, or ingesting, externally developed course material.</p><h2 id="overview" class="section-heading">
-  <a href="#overview" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">overview</p>
+  <a href="#overview" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Overview
+  <span class="text">Overview</span>
 </h2>
 <p>The Torus ingestion feature takes as input a <em>course digest archive</em> and converts that into a course project.</p><p>Course digest archives can be produced from a variety of different sources, either manually or via automated tools.</p><p>There is an automated tool that produces course digest
 archives from the legacy OLI XML course format.</p><p><a href="https://github.com/Simon-Initiative/course-digest">https://github.com/Simon-Initiative/course-digest</a></p><p>[[assets/ingest.png]]</p><h2 id="course-digest-format" class="section-heading">
-  <a href="#course-digest-format" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">course-digest-format</p>
+  <a href="#course-digest-format" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Course Digest Format
+  <span class="text">Course Digest Format</span>
 </h2>
 <p>Course digest archives are <code class="inline">zip</code> files that contain
 <code class="inline">JSON</code> files corresponding to curriculum resources.</p><p>In a course digest, the following are the minimally
 required files:</p><h3 id="_project-json" class="section-heading">
-  <a href="#_project-json" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">_project-json</p>
+  <a href="#_project-json" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  <code class="inline">_project.json</code>
+  <span class="text"><code class="inline">_project.json</code></span>
 </h3>
 <p>This file describes high level course meta data.</p><pre><code class="json">{
   &quot;slug&quot;: &quot;edx_bio_1&quot;,
@@ -131,10 +142,10 @@ required files:</p><h3 id="_project-json" class="section-heading">
   &quot;description&quot;: &quot;An introductory biology course suitable for non-majors&quot;,
   &quot;type&quot;: &quot;Manifest&quot;
 }</code></pre><h3 id="_hierarchy_-json" class="section-heading">
-  <a href="#_hierarchy_-json" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">_hierarchy_-json</p>
+  <a href="#_hierarchy_-json" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  <code class="inline">_hierarchy_.json</code>
+  <span class="text"><code class="inline">_hierarchy_.json</code></span>
 </h3>
 <p>This file describes the course outline, or hierarchy,
 defining the units and modules of a course and the
@@ -165,10 +176,10 @@ of a sample hierarchy file:</p><pre><code class="json">{
 represent a page reference). For &quot;item&quot; instances, the
 <code class="inline">idref</code> attribute is a reference to the <code class="inline">id</code> attribute
 of resource <code class="inline">JSON</code> file.</p><h3 id="_media-manifest_-json" class="section-heading">
-  <a href="#_media-manifest_-json" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">_media-manifest_-json</p>
+  <a href="#_media-manifest_-json" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  <code class="inline">_media-manifest_.json</code>
+  <span class="text"><code class="inline">_media-manifest_.json</code></span>
 </h3>
 <p>This file is a listing of all media assets that this
 course has prestaged into Torus S3 storage.</p><pre><code class="json">{
@@ -187,10 +198,10 @@ course has prestaged into Torus S3 storage.</p><pre><code class="json">{
       &quot;mimeType&quot;: &quot;image/png&quot;,
       &quot;md5&quot;: &quot;0c084906e4502a6e93739b20a4ac119f&quot;
     },</code></pre><h3 id="resource-files" class="section-heading">
-  <a href="#resource-files" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">resource-files</p>
+  <a href="#resource-files" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Resource Files
+  <span class="text">Resource Files</span>
 </h3>
 <p>Beyond the three require metadata files, a course digest
 archive also contains any number of resource specific
@@ -255,7 +266,9 @@ and Objective. All three follow the same format of requiring <code class="inline
                     &quot;text&quot;: &quot; &quot;
                   },
                   {</code></pre>
-<div class="bottom-actions">
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="config.html" class="bottom-actions-button" rel="prev">
@@ -281,22 +294,33 @@ Media assets
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

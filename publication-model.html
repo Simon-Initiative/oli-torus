@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>Publication Model — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,88 +34,98 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/publication-model.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/publication-model.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>Publication Model</span>
-</h1>
+    <span>Publication Model</span>
+  </h1>
 
 <h2 id="overview" class="section-heading">
-  <a href="#overview" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">overview</p>
+  <a href="#overview" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Overview
+  <span class="text">Overview</span>
 </h2>
 <p>Torus employs a publication model that is designed to support:</p><ul><li>The ability to allow forward development for an author without interferring with student and instructor visible content</li><li>The ability to track changes across revisions of a project resource</li><li>The ability to migrate changes for resources across different projects</li><li>The ability to allow instructors to preview and opt-in to using newly published content</li></ul><h2 id="data-model" class="section-heading">
-  <a href="#data-model" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">data-model</p>
+  <a href="#data-model" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Data Model
+  <span class="text">Data Model</span>
 </h2>
 <p>The primary components and their relationships are as follows:</p><p><img src="assets/pub-er.png" alt="publication model" title="Publication Model"/></p><p>A <code class="inline">Resource</code> in a course project can be a page (graded or ungraded),
 container (e.g. Unit, Module), an activity, or learning objective. A course
@@ -127,10 +138,10 @@ family.</p><p>Changes in the content of any particular resource, over time, are 
 either <code class="inline">published</code> (meaning it is available and visible to instructors to use)
 or it is <code class="inline">unpublished</code>. Course <code class="inline">Sections</code> that an instructor teaches reference
 exactly one <code class="inline">Publication</code> for the course projects that the section is using.</p><p>Finally, at the heart of the publication model, the <code class="inline">Published Resource</code> exists to tie together a specific revision for every resource in a course for a specific publication.</p><h2 id="example-data" class="section-heading">
-  <a href="#example-data" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">example-data</p>
+  <a href="#example-data" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Example Data
+  <span class="text">Example Data</span>
 </h2>
 <p>As an example of this publication model, consider the following table of
 <code class="inline">Published Resource</code> records, all from one course project that consists
@@ -140,7 +151,9 @@ look like:</p><table><thead><tr><th style="text-align: left;">Publication</th><t
 course sections teaching it will have their content unaffected by the new
 publication. Any course section that opts-in to using the <code class="inline">P2</code> publication
 will see the update to the <code class="inline">R2</code> resource.</p>
-<div class="bottom-actions">
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="high-level.html" class="bottom-actions-button" rel="prev">
@@ -166,22 +179,33 @@ Attempt design
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>NavigationAction — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,134 +34,146 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/NavigationAction.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/NavigationAction.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>NavigationAction</span>
-</h1>
+    <span>NavigationAction</span>
+  </h1>
 
 <p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / NavigationAction</p><h1>Interface: NavigationAction</h1><p>An action indicating that the current view should navigate
 to another view.  Currently not in use.</p><h2 id="hierarchy" class="section-heading">
-  <a href="#hierarchy" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">hierarchy</p>
+  <a href="#hierarchy" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Hierarchy
+  <span class="text">Hierarchy</span>
 </h2>
 <ul><li><p><a href="isaction.html"><code class="inline">IsAction</code></a></p><p>↳ <strong><code class="inline">NavigationAction</code></strong></p></li></ul><h2 id="table-of-contents" class="section-heading">
-  <a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">table-of-contents</p>
+  <a href="#table-of-contents" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Table of contents
+  <span class="text">Table of contents</span>
 </h2>
 <h3 id="properties" class="section-heading">
-  <a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties</p>
+  <a href="#properties" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Properties
+  <span class="text">Properties</span>
 </h3>
 <ul><li><a href="navigationaction.html#attempt_guid">attempt_guid</a></li><li><a href="navigationaction.html#error">error</a></li><li><a href="navigationaction.html#part_id">part_id</a></li><li><a href="navigationaction.html#to">to</a></li><li><a href="navigationaction.html#type">type</a></li></ul><h2 id="properties-1" class="section-heading">
-  <a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties-1</p>
+  <a href="#properties-1" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Properties
+  <span class="text">Properties</span>
 </h2>
 <h3 id="attempt_guid" class="section-heading">
-  <a href="#attempt_guid" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">attempt_guid</p>
+  <a href="#attempt_guid" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  attempt_guid
+  <span class="text">attempt_guid</span>
 </h3>
-<p>• <strong>attempt_guid</strong>: <code class="inline">string</code></p><h4>Inherited from</h4><p><a href="isaction.html">IsAction</a>.<a href="isaction.html#attempt_guid">attempt_guid</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L524">src/components/activities/types.ts:524</a></p><hr class="medium"/><h3 id="error" class="section-heading">
-  <a href="#error" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">error</p>
+<p>• <strong>attempt_guid</strong>: <code class="inline">string</code></p><h4>Inherited from</h4><p><a href="isaction.html">IsAction</a>.<a href="isaction.html#attempt_guid">attempt_guid</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L524">src/components/activities/types.ts:524</a></p><hr class="medium"/><h3 id="error" class="section-heading">
+  <a href="#error" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  error
+  <span class="text">error</span>
 </h3>
-<p>• <code class="inline">Optional</code> <strong>error</strong>: <code class="inline">string</code></p><h4>Inherited from</h4><p><a href="isaction.html">IsAction</a>.<a href="isaction.html#error">error</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L525">src/components/activities/types.ts:525</a></p><hr class="medium"/><h3 id="part_id" class="section-heading">
-  <a href="#part_id" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">part_id</p>
+<p>• <code class="inline">Optional</code> <strong>error</strong>: <code class="inline">string</code></p><h4>Inherited from</h4><p><a href="isaction.html">IsAction</a>.<a href="isaction.html#error">error</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L525">src/components/activities/types.ts:525</a></p><hr class="medium"/><h3 id="part_id" class="section-heading">
+  <a href="#part_id" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  part_id
+  <span class="text">part_id</span>
 </h3>
-<p>• <strong>part_id</strong>: <code class="inline">string</code></p><h4>Inherited from</h4><p><a href="isaction.html">IsAction</a>.<a href="isaction.html#part_id">part_id</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L526">src/components/activities/types.ts:526</a></p><hr class="medium"/><h3 id="to" class="section-heading">
-  <a href="#to" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">to</p>
+<p>• <strong>part_id</strong>: <code class="inline">string</code></p><h4>Inherited from</h4><p><a href="isaction.html">IsAction</a>.<a href="isaction.html#part_id">part_id</a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L526">src/components/activities/types.ts:526</a></p><hr class="medium"/><h3 id="to" class="section-heading">
+  <a href="#to" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  to
+  <span class="text">to</span>
 </h3>
-<p>• <strong>to</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L540">src/components/activities/types.ts:540</a></p><hr class="medium"/><h3 id="type" class="section-heading">
-  <a href="#type" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">type</p>
+<p>• <strong>to</strong>: <code class="inline">string</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L540">src/components/activities/types.ts:540</a></p><hr class="medium"/><h3 id="type" class="section-heading">
+  <a href="#type" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  type
+  <span class="text">type</span>
 </h3>
-<p>• <strong>type</strong>: <code class="inline">&quot;NavigationAction&quot;</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L539">src/components/activities/types.ts:539</a></p>
-<div class="bottom-actions">
+<p>• <strong>type</strong>: <code class="inline">&quot;NavigationAction&quot;</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L539">src/components/activities/types.ts:539</a></p>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="isaction.html" class="bottom-actions-button" rel="prev">
@@ -186,22 +199,33 @@ Part
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

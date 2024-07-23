@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>ActivityLevelScoring — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,115 +34,127 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/ActivityLevelScoring.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/ActivityLevelScoring.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>ActivityLevelScoring</span>
-</h1>
+    <span>ActivityLevelScoring</span>
+  </h1>
 
 <p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / ActivityLevelScoring</p><h1>Interface: ActivityLevelScoring</h1><h2 id="table-of-contents" class="section-heading">
-  <a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">table-of-contents</p>
+  <a href="#table-of-contents" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Table of contents
+  <span class="text">Table of contents</span>
 </h2>
 <h3 id="properties" class="section-heading">
-  <a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties</p>
+  <a href="#properties" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Properties
+  <span class="text">Properties</span>
 </h3>
 <ul><li><a href="activitylevelscoring.html#authoring">authoring</a></li><li><a href="activitylevelscoring.html#customscoring">customScoring</a></li><li><a href="activitylevelscoring.html#scoringstrategy">scoringStrategy</a></li></ul><h2 id="properties-1" class="section-heading">
-  <a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties-1</p>
+  <a href="#properties-1" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Properties
+  <span class="text">Properties</span>
 </h2>
 <h3 id="authoring" class="section-heading">
-  <a href="#authoring" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">authoring</p>
+  <a href="#authoring" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  authoring
+  <span class="text">authoring</span>
 </h3>
-<p>• <strong>authoring</strong>: <code class="inline">Object</code></p><h4>Type declaration</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">parts</code></td><td style="text-align: left;"><a href="part.html"><code class="inline">Part</code></a>[]</td></tr></tbody></table><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L622">src/components/activities/types.ts:622</a></p><hr class="medium"/><h3 id="customscoring" class="section-heading">
-  <a href="#customscoring" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">customscoring</p>
+<p>• <strong>authoring</strong>: <code class="inline">Object</code></p><h4>Type declaration</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">parts</code></td><td style="text-align: left;"><a href="part.html"><code class="inline">Part</code></a>[]</td></tr></tbody></table><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L622">src/components/activities/types.ts:622</a></p><hr class="medium"/><h3 id="customscoring" class="section-heading">
+  <a href="#customscoring" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  customScoring
+  <span class="text">customScoring</span>
 </h3>
-<p>• <code class="inline">Optional</code> <strong>customScoring</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L620">src/components/activities/types.ts:620</a></p><hr class="medium"/><h3 id="scoringstrategy" class="section-heading">
-  <a href="#scoringstrategy" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">scoringstrategy</p>
+<p>• <code class="inline">Optional</code> <strong>customScoring</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L620">src/components/activities/types.ts:620</a></p><hr class="medium"/><h3 id="scoringstrategy" class="section-heading">
+  <a href="#scoringstrategy" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  scoringStrategy
+  <span class="text">scoringStrategy</span>
 </h3>
-<p>• <code class="inline">Optional</code> <strong>scoringStrategy</strong>: <a href="scoringstrategy.html"><code class="inline">ScoringStrategy</code></a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/types.ts#L621">src/components/activities/types.ts:621</a></p>
-<div class="bottom-actions">
+<p>• <code class="inline">Optional</code> <strong>scoringStrategy</strong>: <a href="scoringstrategy.html"><code class="inline">ScoringStrategy</code></a></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/types.ts#L621">src/components/activities/types.ts:621</a></p>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="activitycontext.html" class="bottom-actions-button" rel="prev">
@@ -167,22 +180,33 @@ ActivityModelSchema
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>LTI 1.3 — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,82 +34,92 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/lti/implementing.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/lti/implementing.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>LTI 1.3</span>
-</h1>
+    <span>LTI 1.3</span>
+  </h1>
 
 <h2 id="lti-1-3-launch-overview" class="section-heading">
-  <a href="#lti-1-3-launch-overview" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">lti-1-3-launch-overview</p>
+  <a href="#lti-1-3-launch-overview" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  LTI 1.3 Launch Overview
+  <span class="text">LTI 1.3 Launch Overview</span>
 </h2>
 <p>This is a summary of the LTI 1.3 handshake outlined in the IMS Security Framework 1.0 Specification (<a href="https://www.imsglobal.org/spec/security/v1p0/#platform-originating-messages">5.1 Platform-Originating Messages</a>) geared toward elixir developers who wish to implement LTI 1.3 in their apps. This page assumes that both the tool and platform have been registered with each other.</p><p>Remember that registering requires a tool and platform to store important details about each other, such as:</p><p><strong>Example tool details</strong> registered with the platform:</p><pre><code class="makeup elixir" translate="no"><span class="ss">client_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1000000000001&quot;</span><span class="w">
 </span><span class="ss">keyset_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://tool.example.edu/.well-known/jwks.json&quot;</span><span class="w">
@@ -119,18 +130,18 @@ OLI Torus
 </span><span class="ss">key_set_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/.well-known/jwks.json&quot;</span><span class="w">
 </span><span class="ss">auth_token_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/access_tokens&quot;</span><span class="w">
 </span><span class="ss">auth_login_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/authorize_redirect&quot;</span></code></pre><p>This registration process happens out-of-band before the LTI launch itself can be performed. Typically this information is exchanged between two parties through some external form of communication (e.g. email) or automatic registration and approval process.</p><h3 id="lti-1-3-process" class="section-heading">
-  <a href="#lti-1-3-process" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">lti-1-3-process</p>
+  <a href="#lti-1-3-process" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  LTI 1.3 Process
+  <span class="text">LTI 1.3 Process</span>
 </h3>
 <p><img src="https://www.imsglobal.org/sites/default/files/specs/images/security/1p0/fig5p2-oidcflowv1.jpg" alt="LTI 1.3 Launch Flow"/></p><h3 id="step-1-third-party-initiated-login" class="section-heading">
-  <a href="#step-1-third-party-initiated-login" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">step-1-third-party-initiated-login</p>
+  <a href="#step-1-third-party-initiated-login" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Step 1: Third-party Initiated Login
+  <span class="text">Step 1: Third-party Initiated Login</span>
 </h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login">https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login</a></p><p>An LTI launch begins with a form submission (GET or POST) from a platform webpage. The <strong>platform</strong> crafts the form using the pre-registered tool configuration and platform details. The form can either target the current window by default or an iframe embedded in the page. For example, this form will target the iframe below it:</p><p><em>controller.ex</em></p><pre><code class="makeup elixir" translate="no"><span class="n">launch_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="3566267504-1">%{</span><span class="w">
+<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login">https://www.imsglobal.org/spec/security/v1p0/#step-1-third-party-initiated-login</a></p><p>An LTI launch begins with a form submission (GET or POST) from a platform webpage. The <strong>platform</strong> crafts the form using the pre-registered tool configuration and platform details. The form can either target the current window by default or an iframe embedded in the page. For example, this form will target the iframe below it:</p><p><em>controller.ex</em></p><pre><code class="makeup elixir" translate="no"><span class="n">launch_params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p" data-group-id="2709798716-1">%{</span><span class="w">
   </span><span class="c1"># client_id must match the value registered with the tool</span><span class="w">
   </span><span class="ss">client_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1000000000001&quot;</span><span class="p">,</span><span class="w">
 
@@ -145,43 +156,43 @@ OLI Torus
 
   </span><span class="c1"># unique token used later by the platform to associate the request with this user session</span><span class="w">
   </span><span class="ss">login_hint</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ac5cdc6e-1dd2-97f2-e2c8-0d4236e9b092&quot;</span><span class="p">,</span><span class="w">
-</span><span class="p" data-group-id="3566267504-1">}</span><span class="w">
+</span><span class="p" data-group-id="2709798716-1">}</span><span class="w">
 
-</span><span class="n">render</span><span class="p" data-group-id="3566267504-2">(</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;lti_launch.html&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">launch_params</span><span class="p">:</span><span class="w"> </span><span class="n">launch_params</span><span class="p" data-group-id="3566267504-2">)</span></code></pre><p><em>lti_launch.html.eex</em></p><pre><code class="makeup html" translate="no"><span class="p" data-group-id="9309319430-1">&lt;</span><span class="k">form</span><span class="w">
-  </span><span class="na">action</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9309319430-2">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.oidc_login_url</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9309319430-2">&gt;</span><span class="s">&quot;
+</span><span class="n">render</span><span class="p" data-group-id="2709798716-2">(</span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;lti_launch.html&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">launch_params</span><span class="p">:</span><span class="w"> </span><span class="n">launch_params</span><span class="p" data-group-id="2709798716-2">)</span></code></pre><p><em>lti_launch.html.eex</em></p><pre><code class="makeup html" translate="no"><span class="p" data-group-id="2776156286-1">&lt;</span><span class="k">form</span><span class="w">
+  </span><span class="na">action</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2776156286-2">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.oidc_login_url</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2776156286-2">&gt;</span><span class="s">&quot;
   method=&quot;post&quot;
   target=&quot;tool_content&quot;
-</span><span class="p" data-group-id="9309319430-1">&gt;</span><span class="s">
-  </span><span class="p" data-group-id="9309319430-3">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;iss&quot;</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;iss&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9309319430-4">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.iss</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9309319430-4">&gt;</span><span class="s">&quot; /&gt;
-  </span><span class="p" data-group-id="9309319430-5">&lt;</span><span class="k">input</span><span class="w">
+</span><span class="p" data-group-id="2776156286-1">&gt;</span><span class="s">
+  </span><span class="p" data-group-id="2776156286-3">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;iss&quot;</span><span class="w"> </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;iss&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2776156286-4">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.iss</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2776156286-4">&gt;</span><span class="s">&quot; /&gt;
+  </span><span class="p" data-group-id="2776156286-5">&lt;</span><span class="k">input</span><span class="w">
     </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w">
     </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;login_hint&quot;</span><span class="w">
     </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;login_hint&quot;</span><span class="w">
-    </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9309319430-6">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.login_hint</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9309319430-6">&gt;</span><span class="s">&quot;
+    </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2776156286-6">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.login_hint</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2776156286-6">&gt;</span><span class="s">&quot;
   /&gt;
-  </span><span class="p" data-group-id="9309319430-7">&lt;</span><span class="k">input</span><span class="w">
+  </span><span class="p" data-group-id="2776156286-7">&lt;</span><span class="k">input</span><span class="w">
     </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w">
     </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;client_id&quot;</span><span class="w">
     </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;client_id&quot;</span><span class="w">
-    </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9309319430-8">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.client_id</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9309319430-8">&gt;</span><span class="s">&quot;
+    </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2776156286-8">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.client_id</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2776156286-8">&gt;</span><span class="s">&quot;
   /&gt;
-  </span><span class="p" data-group-id="9309319430-9">&lt;</span><span class="k">input</span><span class="w">
+  </span><span class="p" data-group-id="2776156286-9">&lt;</span><span class="k">input</span><span class="w">
     </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w">
     </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;target_link_uri&quot;</span><span class="w">
     </span><span class="na">id</span><span class="o">=</span><span class="s">&quot;target_link_uri&quot;</span><span class="w">
-    </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9309319430-10">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.target_link_uri</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9309319430-10">&gt;</span><span class="s">&quot;
+    </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2776156286-10">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@launch_params.target_link_uri</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2776156286-10">&gt;</span><span class="s">&quot;
   /&gt;
 
-  </span><span class="p" data-group-id="9309319430-11">&lt;</span><span class="k">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p" data-group-id="9309319430-11">&gt;</span><span class="s">Launch LTI 1.3 Tool</span><span class="p" data-group-id="9309319430-12">&lt;/</span><span class="k">button</span><span class="p" data-group-id="9309319430-12">&gt;</span><span class="s">
-</span><span class="p" data-group-id="9309319430-13">&lt;/</span><span class="k">form</span><span class="p" data-group-id="9309319430-13">&gt;</span><span class="s">
+  </span><span class="p" data-group-id="2776156286-11">&lt;</span><span class="k">button</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="p" data-group-id="2776156286-11">&gt;</span><span class="s">Launch LTI 1.3 Tool</span><span class="p" data-group-id="2776156286-12">&lt;/</span><span class="k">button</span><span class="p" data-group-id="2776156286-12">&gt;</span><span class="s">
+</span><span class="p" data-group-id="2776156286-13">&lt;/</span><span class="k">form</span><span class="p" data-group-id="2776156286-13">&gt;</span><span class="s">
 
-</span><span class="p" data-group-id="9309319430-14">&lt;</span><span class="k">iframe</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="s">&quot;about:blank&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;tool_content&quot;</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;Tool</span><span class="w"> </span><span class="s">Content&quot;</span><span class="p" data-group-id="9309319430-14">&gt;</span><span class="p" data-group-id="9309319430-15">&lt;/</span><span class="k">iframe</span><span class="p" data-group-id="9309319430-15">&gt;</span></code></pre><p>When a user clicks the &quot;Launch LTI 1.3 Tool&quot; button the form request will be sent to the tool's OIDC login endpoint and the LTI 1.3 handshake will begin.</p><h3 id="step-2-authentication-request" class="section-heading">
-  <a href="#step-2-authentication-request" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">step-2-authentication-request</p>
+</span><span class="p" data-group-id="2776156286-14">&lt;</span><span class="k">iframe</span><span class="w"> </span><span class="na">src</span><span class="o">=</span><span class="s">&quot;about:blank&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;tool_content&quot;</span><span class="w"> </span><span class="na">title</span><span class="o">=</span><span class="s">&quot;Tool</span><span class="w"> </span><span class="s">Content&quot;</span><span class="p" data-group-id="2776156286-14">&gt;</span><span class="p" data-group-id="2776156286-15">&lt;/</span><span class="k">iframe</span><span class="p" data-group-id="2776156286-15">&gt;</span></code></pre><p>When a user clicks the &quot;Launch LTI 1.3 Tool&quot; button the form request will be sent to the tool's OIDC login endpoint and the LTI 1.3 handshake will begin.</p><h3 id="step-2-authentication-request" class="section-heading">
+  <a href="#step-2-authentication-request" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Step 2: Authentication Request
+  <span class="text">Step 2: Authentication Request</span>
 </h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request">https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request</a></p><p>When the request is recieved, the <strong>tool</strong> will validate the issuer and client_id match the registered platform, validate the login_hint param is present and issue a redirect to the platform's OIDC (OpenID Connect) endpoint to authenticate the user.</p><p>If validation is successful, the tool will craft the OIDC request with the following parameters:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5056118417-1">%{</span><span class="w">
+<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request">https://www.imsglobal.org/spec/security/v1p0/#step-2-authentication-request</a></p><p>When the request is recieved, the <strong>tool</strong> will validate the issuer and client_id match the registered platform, validate the login_hint param is present and issue a redirect to the platform's OIDC (OpenID Connect) endpoint to authenticate the user.</p><p>If validation is successful, the tool will craft the OIDC request with the following parameters:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="2243465334-1">%{</span><span class="w">
   </span><span class="c1"># OIDC and LTI 1.3 required params</span><span class="w">
   </span><span class="s">&quot;scope&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;openid&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;response_type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;id_token&quot;</span><span class="p">,</span><span class="w">
@@ -202,18 +213,18 @@ OLI Torus
 
   </span><span class="c1"># opaque string used by the platform to validate the user session associated with the request</span><span class="w">
   </span><span class="s">&quot;login_hint&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;some-login-hint&quot;</span><span class="p">,</span><span class="w">
-</span><span class="p" data-group-id="5056118417-1">}</span></code></pre><p>For example, the final request using GET to the platform will look something like:
+</span><span class="p" data-group-id="2243465334-1">}</span></code></pre><p>For example, the final request using GET to the platform will look something like:
 <code class="inline">GET /authorize_redirect?scope=openid&amp;response_type=id_token&amp;... etc.</code></p><h3 id="step-3-authentication-response" class="section-heading">
-  <a href="#step-3-authentication-response" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">step-3-authentication-response</p>
+  <a href="#step-3-authentication-response" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Step 3: Authentication Response
+  <span class="text">Step 3: Authentication Response</span>
 </h3>
-<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response">https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response</a></p><p>The <strong>platform</strong> will recieve the authorize_redirect request from the tool and it will validate the required OIDC params are present, validate the login_hint is associated with the current user session, validate the client_id is associated with a registered tool, validate the redirect_url matches one of the registered urls, and finally validate the nonce has not been used before. If valid, the platform will issue one final POST request to the tool's specified redirect_uri with the recieved state token and an id_token JWT containing the LTI 1.3 claims such as user details, context info, and any other LTI specific or custom claims that may be supported by the platform.</p><p>Here is an example of the LTI params within the id_token JWT. <a href="http://www.imsglobal.org/spec/lti/v1p3/#examplelinkrequest">Full example resource link request</a>.</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="0337752920-1">%{</span><span class="w">
+<p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response">https://www.imsglobal.org/spec/security/v1p0/#step-3-authentication-response</a></p><p>The <strong>platform</strong> will recieve the authorize_redirect request from the tool and it will validate the required OIDC params are present, validate the login_hint is associated with the current user session, validate the client_id is associated with a registered tool, validate the redirect_url matches one of the registered urls, and finally validate the nonce has not been used before. If valid, the platform will issue one final POST request to the tool's specified redirect_uri with the recieved state token and an id_token JWT containing the LTI 1.3 claims such as user details, context info, and any other LTI specific or custom claims that may be supported by the platform.</p><p>Here is an example of the LTI params within the id_token JWT. <a href="http://www.imsglobal.org/spec/lti/v1p3/#examplelinkrequest">Full example resource link request</a>.</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5794683584-1">%{</span><span class="w">
   </span><span class="c1"># security claims</span><span class="w">
   </span><span class="s">&quot;iss&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;sub&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;a6d5c443-1f51-4783-ba1a-7686ffe3b54a&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;aud&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-2">[</span><span class="s">&quot;962fa4d8-bcbf-49a0-94b2-2de05ad274af&quot;</span><span class="p" data-group-id="0337752920-2">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;aud&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-2">[</span><span class="s">&quot;962fa4d8-bcbf-49a0-94b2-2de05ad274af&quot;</span><span class="p" data-group-id="5794683584-2">]</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;exp&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">1510185728</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;iat&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">1510185228</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;azp&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;962fa4d8-bcbf-49a0-94b2-2de05ad274af&quot;</span><span class="p">,</span><span class="w">
@@ -233,28 +244,28 @@ OLI Torus
     </span><span class="s">&quot;07940580-b309-415e-a37c-914d387c1150&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/message_type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;LtiResourceLinkRequest&quot;</span><span class="p">,</span><span class="w">
   </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/version&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;1.3.0&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/roles&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-3">[</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/roles&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-3">[</span><span class="w">
     </span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/membership#Learner&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/membership#Mentor&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-3">]</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/role_scope_mentor&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-4">[</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-3">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/role_scope_mentor&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-4">[</span><span class="w">
     </span><span class="s">&quot;fad5fb29-a91c-770-3c110-1e687120efd9&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;5d7373de-c76c-e2b-01214-69e487e2bd33&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;d779cfd4-bc7b-019-9bf1a-04bf1915d4d0&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-4">]</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/context&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-5">{</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-4">]</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/context&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-5">{</span><span class="w">
       </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;c1d887f0-a1a3-4bca-ae25-c375edcc131a&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;label&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;ECON 1010&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Economics as a Social Science&quot;</span><span class="p">,</span><span class="w">
-      </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-6">[</span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering&quot;</span><span class="p" data-group-id="0337752920-6">]</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-5">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/resource_link&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-7">{</span><span class="w">
+      </span><span class="s">&quot;type&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-6">[</span><span class="s">&quot;http://purl.imsglobal.org/vocab/lis/v2/course#CourseOffering&quot;</span><span class="p" data-group-id="5794683584-6">]</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-5">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/resource_link&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-7">{</span><span class="w">
       </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;200d101f-2c14-434a-a0f3-57c2a42369fd&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;description&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Assignment to introduce who you are&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;Introduction Assignment&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-7">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/tool_platform&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-8">{</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-7">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/tool_platform&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-8">{</span><span class="w">
       </span><span class="s">&quot;guid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;ex/48bbb541-ce55-456e-8b7d-ebc59a38d435&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;contact_email&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;support@platform.example.edu&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;description&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;An Example Tool Platform&quot;</span><span class="p">,</span><span class="w">
@@ -262,71 +273,73 @@ OLI Torus
       </span><span class="s">&quot;url&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;product_family_code&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;ExamplePlatformVendor-Product&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;version&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;1.0&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-8">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-8">}</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;https://purl.imsglobal.org/spec/lti/claim/target_link_uri&quot;</span><span class="p">:</span><span class="w">
       </span><span class="s">&quot;https://tool.example.com/lti/48320/ruix8782rs&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/launch_presentation&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-9">{</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/launch_presentation&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-9">{</span><span class="w">
       </span><span class="s">&quot;document_target&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;iframe&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;height&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">320</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;width&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="mi">240</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;return_url&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://platform.example.edu/terms/201601/courses/7/sections/1/resources/2&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-9">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/lis&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-10">{</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-9">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/lis&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-10">{</span><span class="w">
       </span><span class="s">&quot;person_sourcedid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;example.edu:71ee7e42-f6d2-414a-80db-b69ac2defd4&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;course_offering_sourcedid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;example.edu:SI182-F16&quot;</span><span class="p">,</span><span class="w">
       </span><span class="s">&quot;course_section_sourcedid&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;example.edu:SI182-001-F16&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-10">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-10">}</span><span class="p">,</span><span class="w">
 
   </span><span class="c1"># additional custom claims</span><span class="w">
-  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/custom&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-11">{</span><span class="w">
+  </span><span class="s">&quot;https://purl.imsglobal.org/spec/lti/claim/custom&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-11">{</span><span class="w">
     </span><span class="s">&quot;xstart&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;2017-04-21T01:00:00Z&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;request_url&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;https://tool.com/link/123&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-11">}</span><span class="p">,</span><span class="w">
+  </span><span class="p" data-group-id="5794683584-11">}</span><span class="p">,</span><span class="w">
 
   </span><span class="c1"># additional extensions claims</span><span class="w">
-  </span><span class="s">&quot;http://www.ExamplePlatformVendor.com/session&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="0337752920-12">{</span><span class="w">
+  </span><span class="s">&quot;http://www.ExamplePlatformVendor.com/session&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="p" data-group-id="5794683584-12">{</span><span class="w">
       </span><span class="s">&quot;id&quot;</span><span class="w"> </span><span class="p">=&gt;</span><span class="w"> </span><span class="s">&quot;89023sj890dju080&quot;</span><span class="w">
-  </span><span class="p" data-group-id="0337752920-12">}</span><span class="w">
-</span><span class="p" data-group-id="0337752920-1">}</span></code></pre><p>These params are encoded and signed as a JWT using RSA256 and the platform's private JWK, which can later be verfied by the tool using the platforms publicly accessible JWK.</p><p>This redirect POST can be accomplished by rendering an html form and (if enabled) using javascript to submit on the user's behalf.</p><pre><code class="makeup html" translate="no"><span class="k">&lt;!DOCTYPE html&gt;</span><span class="w">
-</span><span class="p" data-group-id="2521988659-1">&lt;</span><span class="k">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p" data-group-id="2521988659-1">&gt;</span><span class="s">
-  </span><span class="p" data-group-id="2521988659-2">&lt;</span><span class="k">head</span><span class="p" data-group-id="2521988659-2">&gt;</span><span class="s">
-    </span><span class="p" data-group-id="2521988659-3">&lt;</span><span class="k">title</span><span class="p" data-group-id="2521988659-3">&gt;</span><span class="s">You are being redirected...</span><span class="p" data-group-id="2521988659-4">&lt;/</span><span class="k">title</span><span class="p" data-group-id="2521988659-4">&gt;</span><span class="s">
-  </span><span class="p" data-group-id="2521988659-5">&lt;/</span><span class="k">head</span><span class="p" data-group-id="2521988659-5">&gt;</span><span class="s">
-  </span><span class="p" data-group-id="2521988659-6">&lt;</span><span class="k">body</span><span class="p" data-group-id="2521988659-6">&gt;</span><span class="s">
-    </span><span class="p" data-group-id="2521988659-7">&lt;</span><span class="k">div</span><span class="p" data-group-id="2521988659-7">&gt;</span><span class="s">You are being redirected...</span><span class="p" data-group-id="2521988659-8">&lt;/</span><span class="k">div</span><span class="p" data-group-id="2521988659-8">&gt;</span><span class="s">
-    </span><span class="p" data-group-id="2521988659-9">&lt;</span><span class="k">form</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;post_redirect&quot;</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2521988659-10">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@redirect_uri</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2521988659-10">&gt;</span><span class="s">&quot; method=&quot;post&quot;</span><span class="p" data-group-id="2521988659-9">&gt;</span><span class="s">
-      </span><span class="p" data-group-id="2521988659-11">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;state&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2521988659-12">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@state</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2521988659-12">&gt;</span><span class="s">&quot; /&gt;
-      </span><span class="p" data-group-id="2521988659-13">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;id_token&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="2521988659-14">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@id_token</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="2521988659-14">&gt;</span><span class="s">&quot; /&gt;
+  </span><span class="p" data-group-id="5794683584-12">}</span><span class="w">
+</span><span class="p" data-group-id="5794683584-1">}</span></code></pre><p>These params are encoded and signed as a JWT using RSA256 and the platform's private JWK, which can later be verfied by the tool using the platforms publicly accessible JWK.</p><p>This redirect POST can be accomplished by rendering an html form and (if enabled) using javascript to submit on the user's behalf.</p><pre><code class="makeup html" translate="no"><span class="k">&lt;!DOCTYPE html&gt;</span><span class="w">
+</span><span class="p" data-group-id="9344671427-1">&lt;</span><span class="k">html</span><span class="w"> </span><span class="na">lang</span><span class="o">=</span><span class="s">&quot;en&quot;</span><span class="p" data-group-id="9344671427-1">&gt;</span><span class="s">
+  </span><span class="p" data-group-id="9344671427-2">&lt;</span><span class="k">head</span><span class="p" data-group-id="9344671427-2">&gt;</span><span class="s">
+    </span><span class="p" data-group-id="9344671427-3">&lt;</span><span class="k">title</span><span class="p" data-group-id="9344671427-3">&gt;</span><span class="s">You are being redirected...</span><span class="p" data-group-id="9344671427-4">&lt;/</span><span class="k">title</span><span class="p" data-group-id="9344671427-4">&gt;</span><span class="s">
+  </span><span class="p" data-group-id="9344671427-5">&lt;/</span><span class="k">head</span><span class="p" data-group-id="9344671427-5">&gt;</span><span class="s">
+  </span><span class="p" data-group-id="9344671427-6">&lt;</span><span class="k">body</span><span class="p" data-group-id="9344671427-6">&gt;</span><span class="s">
+    </span><span class="p" data-group-id="9344671427-7">&lt;</span><span class="k">div</span><span class="p" data-group-id="9344671427-7">&gt;</span><span class="s">You are being redirected...</span><span class="p" data-group-id="9344671427-8">&lt;/</span><span class="k">div</span><span class="p" data-group-id="9344671427-8">&gt;</span><span class="s">
+    </span><span class="p" data-group-id="9344671427-9">&lt;</span><span class="k">form</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;post_redirect&quot;</span><span class="w"> </span><span class="na">action</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9344671427-10">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@redirect_uri</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9344671427-10">&gt;</span><span class="s">&quot; method=&quot;post&quot;</span><span class="p" data-group-id="9344671427-9">&gt;</span><span class="s">
+      </span><span class="p" data-group-id="9344671427-11">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;state&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9344671427-12">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@state</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9344671427-12">&gt;</span><span class="s">&quot; /&gt;
+      </span><span class="p" data-group-id="9344671427-13">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;hidden&quot;</span><span class="w"> </span><span class="na">name</span><span class="o">=</span><span class="s">&quot;id_token&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;</span><span class="p" data-group-id="9344671427-14">&lt;</span><span class="s">%</span><span class="o">=</span><span class="w"> </span><span class="s">@id_token</span><span class="w"> </span><span class="s">%</span><span class="p" data-group-id="9344671427-14">&gt;</span><span class="s">&quot; /&gt;
 
-      </span><span class="p" data-group-id="2521988659-15">&lt;</span><span class="k">noscript</span><span class="p" data-group-id="2521988659-15">&gt;</span><span class="s">
-        </span><span class="p" data-group-id="2521988659-16">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;Click</span><span class="w"> </span><span class="s">here</span><span class="w"> </span><span class="s">to</span><span class="w"> </span><span class="s">continue&quot;</span><span class="w"> </span><span class="p" data-group-id="2521988659-16">/&gt;</span><span class="w">
-      </span><span class="p" data-group-id="2521988659-17">&lt;/</span><span class="na">noscript</span><span class="p" data-group-id="2521988659-17">&gt;</span><span class="s">
-    </span><span class="p" data-group-id="2521988659-18">&lt;/</span><span class="k">form</span><span class="p" data-group-id="2521988659-18">&gt;</span><span class="s">
+      </span><span class="p" data-group-id="9344671427-15">&lt;</span><span class="k">noscript</span><span class="p" data-group-id="9344671427-15">&gt;</span><span class="s">
+        </span><span class="p" data-group-id="9344671427-16">&lt;</span><span class="k">input</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;submit&quot;</span><span class="w"> </span><span class="na">value</span><span class="o">=</span><span class="s">&quot;Click</span><span class="w"> </span><span class="s">here</span><span class="w"> </span><span class="s">to</span><span class="w"> </span><span class="s">continue&quot;</span><span class="w"> </span><span class="p" data-group-id="9344671427-16">/&gt;</span><span class="w">
+      </span><span class="p" data-group-id="9344671427-17">&lt;/</span><span class="na">noscript</span><span class="p" data-group-id="9344671427-17">&gt;</span><span class="s">
+    </span><span class="p" data-group-id="9344671427-18">&lt;/</span><span class="k">form</span><span class="p" data-group-id="9344671427-18">&gt;</span><span class="s">
 
-    </span><span class="p" data-group-id="2521988659-19">&lt;</span><span class="k">script</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text/javascript&quot;</span><span class="p" data-group-id="2521988659-19">&gt;</span><span class="s">
+    </span><span class="p" data-group-id="9344671427-19">&lt;</span><span class="k">script</span><span class="w"> </span><span class="na">type</span><span class="o">=</span><span class="s">&quot;text/javascript&quot;</span><span class="p" data-group-id="9344671427-19">&gt;</span><span class="s">
       window.onload = function () {
         document.getElementsByName(&quot;post_redirect&quot;)[0].style.display = &quot;none&quot;;
         document.forms[&quot;post_redirect&quot;].submit();
       };
-    </span><span class="p" data-group-id="2521988659-20">&lt;/</span><span class="k">script</span><span class="p" data-group-id="2521988659-20">&gt;</span><span class="s">
-  </span><span class="p" data-group-id="2521988659-21">&lt;/</span><span class="k">body</span><span class="p" data-group-id="2521988659-21">&gt;</span><span class="s">
-</span><span class="p" data-group-id="2521988659-22">&lt;/</span><span class="k">html</span><span class="p" data-group-id="2521988659-22">&gt;</span></code></pre><h3 id="step-4-resource-is-displayed" class="section-heading">
-  <a href="#step-4-resource-is-displayed" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">step-4-resource-is-displayed</p>
+    </span><span class="p" data-group-id="9344671427-20">&lt;/</span><span class="k">script</span><span class="p" data-group-id="9344671427-20">&gt;</span><span class="s">
+  </span><span class="p" data-group-id="9344671427-21">&lt;/</span><span class="k">body</span><span class="p" data-group-id="9344671427-21">&gt;</span><span class="s">
+</span><span class="p" data-group-id="9344671427-22">&lt;/</span><span class="k">html</span><span class="p" data-group-id="9344671427-22">&gt;</span></code></pre><h3 id="step-4-resource-is-displayed" class="section-heading">
+  <a href="#step-4-resource-is-displayed" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Step 4: Resource is displayed
+  <span class="text">Step 4: Resource is displayed</span>
 </h3>
 <p><a href="https://www.imsglobal.org/spec/security/v1p0/#step-4-resource-is-displayed">https://www.imsglobal.org/spec/security/v1p0/#step-4-resource-is-displayed</a></p><p>Finally, if all validations have passed and the launch was successful, the LTI 1.3 resource will be displayed in the user's browser.</p><h3 id="references-and-useful-links" class="section-heading">
-  <a href="#references-and-useful-links" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">references-and-useful-links</p>
+  <a href="#references-and-useful-links" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  References and Useful Links
+  <span class="text">References and Useful Links</span>
 </h3>
 <ul><li>Learning Tools Interoperability Core Specification - <a href="http://www.imsglobal.org/spec/lti/v1p3/">http://www.imsglobal.org/spec/lti/v1p3/</a></li><li>IMS Security Framework - <a href="https://www.imsglobal.org/spec/security/v1p0">https://www.imsglobal.org/spec/security/v1p0</a></li><li>Canvas Platform Implementaion (authentication_controller.rb) - <a href="https://github.com/instructure/canvas-lms/blob/master/app/controllers/lti/ims/authentication_controller.rb">https://github.com/instructure/canvas-lms/blob/master/app/controllers/lti/ims/authentication_controller.rb</a></li><li>IMS PHP Tool Library <a href="https://github.com/IMSGlobal/lti-1-3-php-library">https://github.com/IMSGlobal/lti-1-3-php-library</a></li></ul>
-<div class="bottom-actions">
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
-      <a href="overview.html" class="bottom-actions-button" rel="prev">
+      <a href="overview-1.html" class="bottom-actions-button" rel="prev">
         <span class="subheader">
           ← Previous Page
         </span>
@@ -349,22 +362,33 @@ LTI 1.3 Configuration
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

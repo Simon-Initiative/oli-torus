@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>Miscelleanous — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,105 +34,117 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/misc.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/misc.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>Miscelleanous</span>
-</h1>
+    <span>Miscelleanous</span>
+  </h1>
 
 <h2 id="general-notes" class="section-heading">
-  <a href="#general-notes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">general-notes</p>
+  <a href="#general-notes" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  General Notes
+  <span class="text">General Notes</span>
 </h2>
 <ul><li><a href="https://github.com/riverrun/bcrypt_elixir">bcrypt_elixir</a> requires &gt;1 CPU core to function. If you have only one core, on say a small VPS, your release will crash without giving a useful error message!! For a single core host, use Pbkdf2 instead of Bcrypt. See here for more on this: <a href="https://github.com/riverrun/comeonin/wiki/Deployment">https://github.com/riverrun/comeonin/wiki/Deployment</a></li><li>Link account using social login will not work out of the box in development mode! This is because you must configure an exact url with the OAuth provider, and therefore a local ngrok tunnel address will not work. If you really need this to work, you can configure your OAuth provider with your temporary ngrok address e.g. <code class="inline">https://163400959f6a.ngrok.io/auth/google/link/callback</code>. Be sure to also set your HOST in oli.env to your ngrok address as well (e.g. <code class="inline">HOST=https://163400959f6a.ngrok.io</code>) or else you will be redirected to localhost by default after login and the user session will not be present for linking, because it was stored in the session for the ngrok address. Because of this complexity, it is recommended to simply use an email account to link accounts, which does not experience this issue.</li></ul><h2 id="access-generated-emails-in-development" class="section-heading">
-  <a href="#access-generated-emails-in-development" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">access-generated-emails-in-development</p>
+  <a href="#access-generated-emails-in-development" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Access Generated Emails in Development
+  <span class="text">Access Generated Emails in Development</span>
 </h2>
 <p>When the system generates email in production, generally it will be handed to an email service such as Amazon SES. Any email service supported by Bamboo can be configured in config/prod.exs. Refer to the Bamboo and Pow docs to see a list of all supported email adapters and how to configure them <a href="https://hexdocs.pm/pow/configuring_mailer.html#content">https://hexdocs.pm/pow/configuring_mailer.html#content</a>, <a href="https://hexdocs.pm/bamboo/readme.html">https://hexdocs.pm/bamboo/readme.html</a></p><p>In development mode, the system will use the Bamboo.LocalAdapter mailer, which stores sent mail in memory and is accessible via web browser at <code class="inline">https://localhost/dev/sent_emails</code>. There is also a specific test adapter configured for unit testing.</p><h2 id="create-registrations-from-seed" class="section-heading">
-  <a href="#create-registrations-from-seed" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">create-registrations-from-seed</p>
+  <a href="#create-registrations-from-seed" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Create Registrations from seed
+  <span class="text">Create Registrations from seed</span>
 </h2>
 <p>To ease the burden of creating a new registration after every database reset, there is the option to automatically create LTI registrations
-attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="7164468961-1">[</span><span class="p" data-group-id="7164468961-2">{</span><span class="w">
+attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="8155031112-1">[</span><span class="p" data-group-id="8155031112-2">{</span><span class="w">
   </span><span class="ss">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;client_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;XXXXXXXXXXXXX&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;key_set_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/security/jwks&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_token_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_login_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/authorize_redirect&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_server&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="w">
-</span><span class="p" data-group-id="7164468961-2">}</span><span class="p" data-group-id="7164468961-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
-<div class="bottom-actions">
+</span><span class="p" data-group-id="8155031112-2">}</span><span class="p" data-group-id="8155031112-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="gdpr.html" class="bottom-actions-button" rel="prev">
@@ -146,7 +159,7 @@ GDPR compliance
   </div>
   <div class="bottom-actions-item">
 
-      <a href="overview.html" class="bottom-actions-button" rel="next">
+      <a href="overview-1.html" class="bottom-actions-button" rel="next">
         <span class="subheader">
           Next Page →
         </span>
@@ -157,22 +170,33 @@ Overview
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>

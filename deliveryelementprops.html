@@ -4,21 +4,22 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.5">
+    <meta name="generator" content="ExDoc v0.34.2">
     <meta name="project" content="OLI Torus v0.29.0">
 
+
     <title>DeliveryElementProps — OLI Torus v0.29.0</title>
-    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
+    <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
-    <script src="dist/sidebar_items-64e16f6815.js"></script>
 
-      <script src="docs_config.js"></script>
-
-    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
-
+    <script src="dist/handlebars.runtime-NWIB6V2M.js"></script>
+    <script src="dist/handlebars.templates-K7URE6B4.js"></script>
+    <script src="dist/sidebar_items-ADA11C28.js"></script>
+    <script src="docs_config.js"></script>
+    <script async src="dist/html-YIPIRHGU.js"></script>
 
   </head>
-  <body data-type="extras">
+  <body data-type="extras" class="page-extra">
     <script>
 
       try {
@@ -33,207 +34,219 @@
       } catch (error) { }
     </script>
 
-<div class="main">
+<div class="body-wrapper">
 
+<button id="sidebar-menu" class="sidebar-button sidebar-toggle" aria-label="toggle sidebar" aria-controls="sidebar">
+  <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+</button>
 
-<section class="sidebar">
-  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
-    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
-  </button>
-
-  <form class="sidebar-search" action="search.html">
-    <button type="submit" class="search-button" aria-label="Submit Search">
-      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
-    </button>
-    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
-      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
-    </button>
-    <label class="search-label">
-      <p class="sr-only">Search</p>
-      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
-    </label>
-  </form>
-
-  <div class="autocomplete">
-    <div class="autocomplete-results">
-    </div>
-  </div>
+<nav id="sidebar" class="sidebar">
 
   <div class="sidebar-header">
+    <div class="sidebar-projectInfo">
 
-      <a href="http://oli.cmu.edu">
-        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
-      </a>
+        <a href="http://oli.cmu.edu" class="sidebar-projectImage">
+          <img src="assets/logo.png" alt="OLI Torus" />
+        </a>
 
-    <div class="sidebar-projectDetails">
-      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+      <div>
+        <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
 OLI Torus
-      </a>
-      <strong class="sidebar-projectVersion" translate="no">
-        v0.29.0
-      </strong>
+        </a>
+        <div class="sidebar-projectVersion" translate="no">
+          v0.29.0
+        </div>
+      </div>
     </div>
-    <ul class="sidebar-listNav">
-      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+    <ul id="sidebar-listNav" class="sidebar-listNav" role="tablist">
+      <li>
+        <button id="extras-list-tab-button" role="tab" data-type="extras" aria-controls="extras-tab-panel" aria-selected="true" tabindex="0">
+GUIDES
+        </button>
+      </li>
 
 
     </ul>
   </div>
 
-  <div class="gradient"></div>
-  <ul id="full-list" class="sidebar-fullList"></ul>
-</section>
+  <div id="extras-tab-panel" class="sidebar-tabpanel" role="tabpanel" aria-labelledby="extras-list-tab-button">
+    <ul id="extras-full-list" class="full-list"></ul>
+  </div>
 
-<section class="content">
+
+</nav>
+
+<main class="content">
   <output role="status" id="toast"></output>
-  <div class="content-outer">
-    <div id="content" class="content-inner">
 
-<h1>
-<button class="settings display-settings">
-  <i class="ri-settings-3-line"></i>
-  <span class="sr-only">Settings</span>
-</button>
+  <div id="content" class="content-inner">
+    <div class="top-search">
+      <div class="search-settings">
+        <form class="search-bar" action="search.html">
+          <label class="search-label">
+            <span class="sr-only">Search documentation of OLI Torus</span>
+            <input name="q" type="text" class="search-input" placeholder="Press / to search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          </label>
+          <button type="submit" class="search-button" aria-label="Submit Search">
+            <i class="ri-search-2-line ri-lg" aria-hidden="true" title="Submit search"></i>
+          </button>
+          <button type="button" tabindex="-1" class="search-close-button" aria-hidden="true">
+            <i class="ri-close-line ri-lg" title="Cancel search"></i>
+          </button>
+        </form>
+        <div class="autocomplete">
+        </div>
+        <button class="icon-settings display-settings">
+          <i class="ri-settings-3-line"></i>
+          <span class="sr-only">Settings</span>
+        </button>
+      </div>
+    </div>
+
+<div id="top-content">
+  <h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/DeliveryElementProps.md#L1" title="View Source" class="icon-action" rel="help">
+        <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+        <span class="sr-only">View Source</span>
+      </a>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/DeliveryElementProps.md#L1" title="View Source" class="view-source" rel="help">
-      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
-      <span class="sr-only">View Source</span>
-    </a>
-
-  <span>DeliveryElementProps</span>
-</h1>
+    <span>DeliveryElementProps</span>
+  </h1>
 
 <p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / DeliveryElementProps</p><h1>Interface: DeliveryElementProps&lt;T&gt;</h1><p>Delivery web component properties made available via the
 <code class="inline">render</code> method.</p><h2 id="type-parameters" class="section-heading">
-  <a href="#type-parameters" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">type-parameters</p>
+  <a href="#type-parameters" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Type parameters
+  <span class="text">Type parameters</span>
 </h2>
 <table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">T</code></td><td style="text-align: left;">extends <a href="activitymodelschema.html"><code class="inline">ActivityModelSchema</code></a></td></tr></tbody></table><h2 id="table-of-contents" class="section-heading">
-  <a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">table-of-contents</p>
+  <a href="#table-of-contents" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Table of contents
+  <span class="text">Table of contents</span>
 </h2>
 <h3 id="properties" class="section-heading">
-  <a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties</p>
+  <a href="#properties" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Properties
+  <span class="text">Properties</span>
 </h3>
 <ul><li><a href="deliveryelementprops.html#context">context</a></li><li><a href="deliveryelementprops.html#mode">mode</a></li><li><a href="deliveryelementprops.html#model">model</a></li><li><a href="deliveryelementprops.html#mountpoint">mountPoint</a></li><li><a href="deliveryelementprops.html#state">state</a></li></ul><h3 id="methods" class="section-heading">
-  <a href="#methods" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">methods</p>
+  <a href="#methods" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Methods
+  <span class="text">Methods</span>
 </h3>
 <ul><li><a href="deliveryelementprops.html#onreaduserstate">onReadUserState</a></li><li><a href="deliveryelementprops.html#onrequesthint">onRequestHint</a></li><li><a href="deliveryelementprops.html#onresetactivity">onResetActivity</a></li><li><a href="deliveryelementprops.html#onresetpart">onResetPart</a></li><li><a href="deliveryelementprops.html#onsaveactivity">onSaveActivity</a></li><li><a href="deliveryelementprops.html#onsavepart">onSavePart</a></li><li><a href="deliveryelementprops.html#onsubmitactivity">onSubmitActivity</a></li><li><a href="deliveryelementprops.html#onsubmitevaluations">onSubmitEvaluations</a></li><li><a href="deliveryelementprops.html#onsubmitpart">onSubmitPart</a></li><li><a href="deliveryelementprops.html#onwriteuserstate">onWriteUserState</a></li></ul><h2 id="properties-1" class="section-heading">
-  <a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">properties-1</p>
+  <a href="#properties-1" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Properties
+  <span class="text">Properties</span>
 </h2>
 <h3 id="context" class="section-heading">
-  <a href="#context" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">context</p>
+  <a href="#context" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  context
+  <span class="text">context</span>
 </h3>
-<p>• <strong>context</strong>: <a href="activitycontext.html"><code class="inline">ActivityContext</code></a></p><p>The larger context that this activity operates within.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L87">src/components/activities/DeliveryElement.ts:87</a></p><hr class="medium"/><h3 id="mode" class="section-heading">
-  <a href="#mode" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">mode</p>
+<p>• <strong>context</strong>: <a href="activitycontext.html"><code class="inline">ActivityContext</code></a></p><p>The larger context that this activity operates within.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L87">src/components/activities/DeliveryElement.ts:87</a></p><hr class="medium"/><h3 id="mode" class="section-heading">
+  <a href="#mode" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  mode
+  <span class="text">mode</span>
 </h3>
-<p>• <strong>mode</strong>: <a href="modules.html#deliverymode"><code class="inline">DeliveryMode</code></a></p><p>The current delivery mode.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L92">src/components/activities/DeliveryElement.ts:92</a></p><hr class="medium"/><h3 id="model" class="section-heading">
-  <a href="#model" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">model</p>
+<p>• <strong>mode</strong>: <a href="modules.html#deliverymode"><code class="inline">DeliveryMode</code></a></p><p>The current delivery mode.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L92">src/components/activities/DeliveryElement.ts:92</a></p><hr class="medium"/><h3 id="model" class="section-heading">
+  <a href="#model" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  model
+  <span class="text">model</span>
 </h3>
-<p>• <strong>model</strong>: <code class="inline">T</code></p><p>The model of the activity, pruned to remove the authoring specific portion.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L77">src/components/activities/DeliveryElement.ts:77</a></p><hr class="medium"/><h3 id="mountpoint" class="section-heading">
-  <a href="#mountpoint" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">mountpoint</p>
+<p>• <strong>model</strong>: <code class="inline">T</code></p><p>The model of the activity, pruned to remove the authoring specific portion.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L77">src/components/activities/DeliveryElement.ts:77</a></p><hr class="medium"/><h3 id="mountpoint" class="section-heading">
+  <a href="#mountpoint" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  mountPoint
+  <span class="text">mountPoint</span>
 </h3>
 <p>• <code class="inline">Optional</code> <strong>mountPoint</strong>: <code class="inline">HTMLElement</code></p><p>The HTML div element reference created by the abstract component for use in
-rendering by the concrete implementation.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L103">src/components/activities/DeliveryElement.ts:103</a></p><hr class="medium"/><h3 id="state" class="section-heading">
-  <a href="#state" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">state</p>
+rendering by the concrete implementation.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L103">src/components/activities/DeliveryElement.ts:103</a></p><hr class="medium"/><h3 id="state" class="section-heading">
+  <a href="#state" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  state
+  <span class="text">state</span>
 </h3>
-<p>• <strong>state</strong>: <a href="activitystate.html"><code class="inline">ActivityState</code></a></p><p>The state of the activity and part attempts.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L82">src/components/activities/DeliveryElement.ts:82</a></p><h2 id="methods-1" class="section-heading">
-  <a href="#methods-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">methods-1</p>
+<p>• <strong>state</strong>: <a href="activitystate.html"><code class="inline">ActivityState</code></a></p><p>The state of the activity and part attempts.</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L82">src/components/activities/DeliveryElement.ts:82</a></p><h2 id="methods-1" class="section-heading">
+  <a href="#methods-1" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  Methods
+  <span class="text">Methods</span>
 </h2>
 <h3 id="onreaduserstate" class="section-heading">
-  <a href="#onreaduserstate" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onreaduserstate</p>
+  <a href="#onreaduserstate" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onReadUserState
+  <span class="text">onReadUserState</span>
 </h3>
-<p>▸ <code class="inline">Optional</code> <strong>onReadUserState</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">payload</code>): <code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><p>Allows read access to the user state.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">payload</code></td><td style="text-align: left;"><code class="inline">any</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L108">src/components/activities/DeliveryElement.ts:108</a></p><hr class="medium"/><h3 id="onrequesthint" class="section-heading">
-  <a href="#onrequesthint" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onrequesthint</p>
+<p>▸ <code class="inline">Optional</code> <strong>onReadUserState</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">payload</code>): <code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><p>Allows read access to the user state.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">payload</code></td><td style="text-align: left;"><code class="inline">any</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L108">src/components/activities/DeliveryElement.ts:108</a></p><hr class="medium"/><h3 id="onrequesthint" class="section-heading">
+  <a href="#onrequesthint" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onRequestHint
+  <span class="text">onRequestHint</span>
 </h3>
-<p>▸ <strong>onRequestHint</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>): <code class="inline">Promise</code>&lt;<a href="requesthintresponse.html"><code class="inline">RequestHintResponse</code></a>&gt;</p><p>Requests a hint for a specific part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="requesthintresponse.html"><code class="inline">RequestHintResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L136">src/components/activities/DeliveryElement.ts:136</a></p><hr class="medium"/><h3 id="onresetactivity" class="section-heading">
-  <a href="#onresetactivity" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onresetactivity</p>
+<p>▸ <strong>onRequestHint</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>): <code class="inline">Promise</code>&lt;<a href="requesthintresponse.html"><code class="inline">RequestHintResponse</code></a>&gt;</p><p>Requests a hint for a specific part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="requesthintresponse.html"><code class="inline">RequestHintResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L136">src/components/activities/DeliveryElement.ts:136</a></p><hr class="medium"/><h3 id="onresetactivity" class="section-heading">
+  <a href="#onresetactivity" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onResetActivity
+  <span class="text">onResetActivity</span>
 </h3>
-<p>▸ <strong>onResetActivity</strong>(<code class="inline">attemptGuid</code>): <code class="inline">Promise</code>&lt;<a href="resetactivityresponse.html"><code class="inline">ResetActivityResponse</code></a>&gt;</p><p>Resets this activity attempt to create a new attempt.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="resetactivityresponse.html"><code class="inline">ResetActivityResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L131">src/components/activities/DeliveryElement.ts:131</a></p><hr class="medium"/><h3 id="onresetpart" class="section-heading">
-  <a href="#onresetpart" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onresetpart</p>
+<p>▸ <strong>onResetActivity</strong>(<code class="inline">attemptGuid</code>): <code class="inline">Promise</code>&lt;<a href="resetactivityresponse.html"><code class="inline">ResetActivityResponse</code></a>&gt;</p><p>Resets this activity attempt to create a new attempt.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="resetactivityresponse.html"><code class="inline">ResetActivityResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L131">src/components/activities/DeliveryElement.ts:131</a></p><hr class="medium"/><h3 id="onresetpart" class="section-heading">
+  <a href="#onresetpart" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onResetPart
+  <span class="text">onResetPart</span>
 </h3>
-<p>▸ <strong>onResetPart</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>): <code class="inline">Promise</code>&lt;<a href="partactivityresponse.html"><code class="inline">PartActivityResponse</code></a>&gt;</p><p>Resets the attempt for one part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="partactivityresponse.html"><code class="inline">PartActivityResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L159">src/components/activities/DeliveryElement.ts:159</a></p><hr class="medium"/><h3 id="onsaveactivity" class="section-heading">
-  <a href="#onsaveactivity" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onsaveactivity</p>
+<p>▸ <strong>onResetPart</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>): <code class="inline">Promise</code>&lt;<a href="partactivityresponse.html"><code class="inline">PartActivityResponse</code></a>&gt;</p><p>Resets the attempt for one part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="partactivityresponse.html"><code class="inline">PartActivityResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L159">src/components/activities/DeliveryElement.ts:159</a></p><hr class="medium"/><h3 id="onsaveactivity" class="section-heading">
+  <a href="#onsaveactivity" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onSaveActivity
+  <span class="text">onSaveActivity</span>
 </h3>
-<p>▸ <strong>onSaveActivity</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partResponses</code>): <code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><p>Initiates saving of the student response for all parts.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partResponses</code></td><td style="text-align: left;"><a href="modules.html#partresponse"><code class="inline">PartResponse</code></a>[]</td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L118">src/components/activities/DeliveryElement.ts:118</a></p><hr class="medium"/><h3 id="onsavepart" class="section-heading">
-  <a href="#onsavepart" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onsavepart</p>
+<p>▸ <strong>onSaveActivity</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partResponses</code>): <code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><p>Initiates saving of the student response for all parts.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partResponses</code></td><td style="text-align: left;"><a href="modules.html#partresponse"><code class="inline">PartResponse</code></a>[]</td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L118">src/components/activities/DeliveryElement.ts:118</a></p><hr class="medium"/><h3 id="onsavepart" class="section-heading">
+  <a href="#onsavepart" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onSavePart
+  <span class="text">onSavePart</span>
 </h3>
-<p>▸ <strong>onSavePart</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">response</code>): <code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><p>Saves the state of a specific part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">response</code></td><td style="text-align: left;"><a href="studentresponse.html"><code class="inline">StudentResponse</code></a></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L141">src/components/activities/DeliveryElement.ts:141</a></p><hr class="medium"/><h3 id="onsubmitactivity" class="section-heading">
-  <a href="#onsubmitactivity" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onsubmitactivity</p>
+<p>▸ <strong>onSavePart</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">response</code>): <code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><p>Saves the state of a specific part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">response</code></td><td style="text-align: left;"><a href="studentresponse.html"><code class="inline">StudentResponse</code></a></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="success.html"><code class="inline">Success</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L141">src/components/activities/DeliveryElement.ts:141</a></p><hr class="medium"/><h3 id="onsubmitactivity" class="section-heading">
+  <a href="#onsubmitactivity" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onSubmitActivity
+  <span class="text">onSubmitActivity</span>
 </h3>
-<p>▸ <strong>onSubmitActivity</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partResponses</code>): <code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><p>Submits all parts of the attempt for evaluation.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partResponses</code></td><td style="text-align: left;"><a href="modules.html#partresponse"><code class="inline">PartResponse</code></a>[]</td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L123">src/components/activities/DeliveryElement.ts:123</a></p><hr class="medium"/><h3 id="onsubmitevaluations" class="section-heading">
-  <a href="#onsubmitevaluations" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onsubmitevaluations</p>
+<p>▸ <strong>onSubmitActivity</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partResponses</code>): <code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><p>Submits all parts of the attempt for evaluation.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partResponses</code></td><td style="text-align: left;"><a href="modules.html#partresponse"><code class="inline">PartResponse</code></a>[]</td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L123">src/components/activities/DeliveryElement.ts:123</a></p><hr class="medium"/><h3 id="onsubmitevaluations" class="section-heading">
+  <a href="#onsubmitevaluations" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onSubmitEvaluations
+  <span class="text">onSubmitEvaluations</span>
 </h3>
-<p>▸ <strong>onSubmitEvaluations</strong>(<code class="inline">attemptGuid</code>, <code class="inline">clientEvaluations</code>): <code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><p>Submits client-side evaluations.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">clientEvaluations</code></td><td style="text-align: left;"><a href="modules.html#clientevaluation"><code class="inline">ClientEvaluation</code></a>[]</td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L164">src/components/activities/DeliveryElement.ts:164</a></p><hr class="medium"/><h3 id="onsubmitpart" class="section-heading">
-  <a href="#onsubmitpart" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onsubmitpart</p>
+<p>▸ <strong>onSubmitEvaluations</strong>(<code class="inline">attemptGuid</code>, <code class="inline">clientEvaluations</code>): <code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><p>Submits client-side evaluations.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">clientEvaluations</code></td><td style="text-align: left;"><a href="modules.html#clientevaluation"><code class="inline">ClientEvaluation</code></a>[]</td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L164">src/components/activities/DeliveryElement.ts:164</a></p><hr class="medium"/><h3 id="onsubmitpart" class="section-heading">
+  <a href="#onsubmitpart" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onSubmitPart
+  <span class="text">onSubmitPart</span>
 </h3>
-<p>▸ <strong>onSubmitPart</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">response</code>): <code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><p>Submits for evaluation one part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">response</code></td><td style="text-align: left;"><a href="studentresponse.html"><code class="inline">StudentResponse</code></a></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L150">src/components/activities/DeliveryElement.ts:150</a></p><hr class="medium"/><h3 id="onwriteuserstate" class="section-heading">
-  <a href="#onwriteuserstate" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
-  <p class="sr-only">onwriteuserstate</p>
+<p>▸ <strong>onSubmitPart</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">response</code>): <code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><p>Submits for evaluation one part.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">response</code></td><td style="text-align: left;"><a href="studentresponse.html"><code class="inline">StudentResponse</code></a></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<a href="evaluationresponse.html"><code class="inline">EvaluationResponse</code></a>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L150">src/components/activities/DeliveryElement.ts:150</a></p><hr class="medium"/><h3 id="onwriteuserstate" class="section-heading">
+  <a href="#onwriteuserstate" class="hover-link">
+    <i class="ri-link-m" aria-hidden="true"></i>
   </a>
-  onWriteUserState
+  <span class="text">onWriteUserState</span>
 </h3>
-<p>▸ <code class="inline">Optional</code> <strong>onWriteUserState</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">payload</code>): <code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><p>Allows writing to the user state.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">payload</code></td><td style="text-align: left;"><code class="inline">any</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/b4518e2/assets/src/components/activities/DeliveryElement.ts#L113">src/components/activities/DeliveryElement.ts:113</a></p>
-<div class="bottom-actions">
+<p>▸ <code class="inline">Optional</code> <strong>onWriteUserState</strong>(<code class="inline">attemptGuid</code>, <code class="inline">partAttemptGuid</code>, <code class="inline">payload</code>): <code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><p>Allows writing to the user state.</p><h4>Parameters</h4><table><thead><tr><th style="text-align: left;">Name</th><th style="text-align: left;">Type</th></tr></thead><tbody><tr><td style="text-align: left;"><code class="inline">attemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">partAttemptGuid</code></td><td style="text-align: left;"><code class="inline">string</code></td></tr><tr><td style="text-align: left;"><code class="inline">payload</code></td><td style="text-align: left;"><code class="inline">any</code></td></tr></tbody></table><h4>Returns</h4><p><code class="inline">Promise</code>&lt;<code class="inline">any</code>&gt;</p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/5bd73a1/assets/src/components/activities/DeliveryElement.ts#L113">src/components/activities/DeliveryElement.ts:113</a></p>
+</div>
+
+<div class="bottom-actions" id="bottom-actions">
   <div class="bottom-actions-item">
 
       <a href="creationcontext.html" class="bottom-actions-button" rel="prev">
@@ -259,22 +272,33 @@ EvaluationResponse
 
   </div>
 </div>
+    <footer class="footer">
+      <p>
 
-      <footer class="footer">
+        <span class="line">
+          <button class="a-main footer-button display-quick-switch" title="Search HexDocs packages">
+            Search HexDocs
+          </button>
 
-        <p>
-          Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+            <a href="OLI Torus.epub" title="ePub version">
+              Download ePub version
+            </a>
 
-            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </span>
+      </p>
 
-        </p>
-      </footer>
-    </div>
+      <p class="built-using">
+        Built using
+        <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.34.2) for the
+
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
+      </p>
+
+    </footer>
   </div>
-</section>
+</main>
 </div>
-
 
   </body>
 </html>
