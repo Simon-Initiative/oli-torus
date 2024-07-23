@@ -62,7 +62,11 @@
         <%= react_component("Components.OfflineDetector") %>
       </div>
       <.back_arrow
-        to={assigns[:request_path]}
+        to={
+          if assigns[:request_path] in [""],
+            do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
+            else: assigns[:request_path]
+        }
         show_sidebar={assigns[:show_sidebar]}
         view={assigns[:view]}
       />
