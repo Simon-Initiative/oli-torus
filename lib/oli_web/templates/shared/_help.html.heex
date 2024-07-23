@@ -197,7 +197,7 @@
                 const okButton = document.getElementById('help-form-ok-button');
                 okButton.classList.remove('hidden');
 
-                document.getElementById("support-button").classList.remove('underline', 'underline-offset-8');
+                document.getElementById("support-button")?.classList.remove('underline', 'underline-offset-8');
                 return json
               })
               .catch((error) => {
@@ -214,7 +214,7 @@
   });
 
   function maybe_remove_undeline_classes() {
-    document.getElementById("support-button").classList.remove('underline', 'underline-offset-8');
+    document.getElementById("support-button")?.classList.remove('underline', 'underline-offset-8');
   };
 
   document.addEventListener('click', (event) => {
