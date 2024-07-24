@@ -379,7 +379,7 @@ defmodule Oli.Publishing.AuthoringResolver do
   def find_hyperlink_references(project_slug, page_slug) do
     project_slug
     |> find_raw_references()
-    |> process_hyperlink_data(project_slug, page_slug)
+    |> process_and_filter_references(project_slug, page_slug)
   end
 
   defp find_raw_references(project_slug) do
@@ -393,9 +393,8 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> Repo.all()
   end
 
-  # process_hyperlink_data filters the references to include only the links that point to the specified page_slug
-  # It also maps the resource_id to the slug of the revision
-  defp process_hyperlink_data(raw_references_data, project_slug, page_slug) do
+  # Function that processes the given references to return only the ones pointing to the specified page slug.
+  defp process_and_filter_references(raw_references_data, project_slug, page_slug) do
     # Collect the resource_ids and transform the refs from a map to a list
     # For instance, %{refs: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
     # will be transformed to [1, "some_slug"]
