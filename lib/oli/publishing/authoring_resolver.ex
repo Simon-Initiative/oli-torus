@@ -391,7 +391,7 @@ defmodule Oli.Publishing.AuthoringResolver do
     |> where([_pr, r], r.resource_type_id == ^page_id)
     |> where([_pr, r], r.deleted == false)
     |> where([_pr, r], not is_nil(fragment(@fragment, r.content)))
-    |> select([_pr, r], %{slug: r.slug, content: fragment(@fragment, r.content), title: r.title})
+    |> select([_pr, r], %{slug: r.slug, refs: fragment(@fragment, r.content), title: r.title})
     |> Repo.all()
     |> process_hyperlink_data(project_slug, page_slug)
   end
@@ -403,17 +403,17 @@ defmodule Oli.Publishing.AuthoringResolver do
     # Collect the resource_ids and transform the refs from a map to a list
     # For instance, %{refs: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
     # will be transformed to [1, "some_slug"]
-    {resource_ids, data_with_content_as_list} =
+    {resource_ids, data_with_refs_as_list} =
       Enum.reduce(hyperlinks_data, {[], []}, fn
-        %{content: content} = data, acc ->
+        %{refs: refs} = data, acc ->
           {hrefs, idrefs} =
-            Enum.reduce(content, {[], []}, fn
+            Enum.reduce(refs, {[], []}, fn
               %{"href" => nil, "idref" => idref}, acc2 -> {elem(acc2, 0), [idref | elem(acc2, 1)]}
               %{"href" => href, "idref" => nil}, acc2 -> {[href | elem(acc2, 0)], elem(acc2, 1)}
             end)
 
           resource_ids = idrefs ++ elem(acc, 0)
-          references_list = [%{data | content: hrefs ++ idrefs} | elem(acc, 1)]
+          references_list = [%{data | refs: hrefs ++ idrefs} | elem(acc, 1)]
           {resource_ids, references_list}
       end)
 
@@ -430,14 +430,14 @@ defmodule Oli.Publishing.AuthoringResolver do
       |> Enum.into(%{})
 
     # Map resource_ids and filter references by the given page_slug
-    Enum.reduce(data_with_content_as_list, [], fn data, acc ->
-      content_maped =
-        Enum.reduce(data.content, [], fn
+    Enum.reduce(data_with_refs_as_list, [], fn data, acc ->
+      refs_maped =
+        Enum.reduce(data.refs, [], fn
           reference, acc2 when is_number(reference) -> [map_resource_id_slug[reference] | acc2]
           reference, acc2 -> [reference | acc2]
         end)
 
-      if page_slug in content_maped,
+      if page_slug in refs_maped,
         do: [%{title: data.title, slug: data.slug} | acc],
         else: acc
     end)
