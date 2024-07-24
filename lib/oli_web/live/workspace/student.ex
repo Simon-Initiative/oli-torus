@@ -17,8 +17,6 @@ defmodule OliWeb.Workspace.Student do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
-    params = decode_params(params)
-
     sections =
       Sections.list_user_open_and_free_sections(socket.assigns.current_user)
       |> add_user_role(socket.assigns.current_user)
@@ -38,7 +36,7 @@ defmodule OliWeb.Workspace.Student do
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
     %{sections: sections} = socket.assigns
-    params = decode_params(params)
+    params = decode_params(params, sections)
 
     {:noreply,
      assign(socket,
@@ -259,11 +257,27 @@ defmodule OliWeb.Workspace.Student do
   defp get_course_url(%{slug: slug}, sidebar_expanded),
     do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
 
-  defp decode_params(params) do
+  defp decode_params(params, sections) do
+    params = user_role_dependent_params(params, sections)
+
     %{
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       sidebar_expanded:
         Params.get_boolean_param(params, "sidebar_expanded", @default_params.sidebar_expanded)
     }
+  end
+
+  defp user_role_dependent_params(params, sections) do
+    sections
+    |> Enum.map(& &1.user_role)
+    |> case do
+      ["student"] ->
+        params
+        |> Map.put_new("active_workspace", "student_workspace")
+        |> Map.put_new("sidebar_expanded", "false")
+
+      _ ->
+        params
+    end
   end
 end
