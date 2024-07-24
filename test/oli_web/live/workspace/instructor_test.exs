@@ -7,8 +7,6 @@ defmodule OliWeb.Workspace.InstructorTest do
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
-  alias Oli.Accounts
-  alias OliWeb.Pow.UserContext
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session", %{

@@ -1,16 +1,9 @@
 defmodule OliWeb.Workspace.CourseAuthor do
   use OliWeb, :live_view
 
-  alias Oli.Delivery.Metrics
-  alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
-  alias OliWeb.Common.{Params, SearchInput}
-  alias OliWeb.Components.Delivery.Utils
+  alias OliWeb.Common.Params
   alias OliWeb.Icons
-
-  import Ecto.Query, warn: false
-  import OliWeb.Common.SourceImage
-  import OliWeb.Components.Delivery.Layouts
 
   @default_params %{
     sidebar_expanded: true

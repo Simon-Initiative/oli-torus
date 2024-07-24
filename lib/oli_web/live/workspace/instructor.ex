@@ -1,7 +1,6 @@
 defmodule OliWeb.Workspace.Instructor do
   use OliWeb, :live_view
 
-  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
@@ -10,7 +9,6 @@ defmodule OliWeb.Workspace.Instructor do
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
-  import OliWeb.Components.Delivery.Layouts
 
   @default_params %{
     text_search: "",
