@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Pow.PowHelpers
 
   @default_selected_view :gallery
 
@@ -1004,6 +1005,46 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       |> render_click
 
       assert_redirected(view, request_path)
+    end
+
+    test "back link correctly handle the path after ending an adaptive page attempt",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           graded_adaptive_page_revision: graded_adaptive_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # The following path simulate the one used after ending an adaptive page attempt
+      initial_path = ~p"/sections/#{section.slug}/page/#{graded_adaptive_page_revision.slug}"
+
+      conn = get(conn, initial_path)
+
+      redirect_path_1 = "/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}"
+      assert redirected_to(conn, 302) =~ redirect_path_1
+
+      conn = Pow.Plug.assign_current_user(recycle(conn), user, PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redirect_path_1)
+
+      redirect_path_2 =
+        "/sections/#{section.slug}/prologue/#{graded_adaptive_page_revision.slug}?request_path=&selected_view="
+
+      assert redirected_to(conn, 302) =~ redirect_path_2
+
+      conn = Pow.Plug.assign_current_user(recycle(conn), user, PowHelpers.get_pow_config(:user))
+      {:ok, view, _html} = live(conn, redirect_path_2)
+
+      [href] =
+        view
+        |> element(~s{div[role="back_link"] a})
+        |> render()
+        |> Floki.attribute("href")
+
+      assert href ==
+               "/sections/#{section.slug}/learn?target_resource_id=#{graded_adaptive_page_revision.resource_id}"
     end
   end
 
