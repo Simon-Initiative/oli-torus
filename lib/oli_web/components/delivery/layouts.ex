@@ -469,7 +469,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   defp toggled_workspace_path(active_workspace, sidebar_expanded) do
-    ~p"/sections/workspace/#{active_workspace}?#{%{sidebar_expanded: !sidebar_expanded}}"
+    params = %{
+      sidebar_expanded: !sidebar_expanded
+    }
+
+    case active_workspace do
+      :course_author -> ~p"/sections/workspace/course_author?#{params}"
+      :instructor -> ~p"/sections/workspace/instructor?#{params}"
+      :student -> ~p"/sections/workspace/student?#{params}"
+    end
   end
 
   defp path_for_workspace(target_workspace, sidebar_expanded) do
@@ -477,7 +485,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
       sidebar_expanded: sidebar_expanded
     }
 
-    ~p"/sections/workspace/#{target_workspace}?#{url_params}"
+    case target_workspace do
+      :course_author -> ~p"/sections/workspace/course_author?#{url_params}"
+      :instructor -> ~p"/sections/workspace/instructor?#{url_params}"
+      :student -> ~p"/sections/workspace/student?#{url_params}"
+    end
   end
 
   defp path_for(:index, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do

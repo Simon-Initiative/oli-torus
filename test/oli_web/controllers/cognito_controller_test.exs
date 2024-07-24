@@ -49,7 +49,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :index, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/sections/workspace/student\">redirected</a>.</body></html>"
     end
 
     test "creates new user and redirects user to my courses", %{
@@ -69,7 +69,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :index, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/sections/workspace/student\">redirected</a>.</body></html>"
 
       {:ok, claims} = Joken.peek_claims(id_token)
       user = Accounts.get_user_by(email: email)

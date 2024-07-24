@@ -87,7 +87,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <.menu_item_maybe_linked_account user={@ctx.user} />
     <.maybe_menu_item_edit_user_account user={@ctx.user} />
-    <.menu_item_link href={~p"/sections"}>
+    <.menu_item_link href={~p"/sections/workspace/student"}>
       My Courses
     </.menu_item_link>
     <.menu_divider />
@@ -188,7 +188,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_my_courses_link(assigns) do
     ~H"""
-    <.menu_item_link href={~p"/sections"}>
+    <.menu_item_link href={~p"/sections/workspace/student"}>
       My Courses
     </.menu_item_link>
     """
