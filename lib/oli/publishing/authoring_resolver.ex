@@ -363,6 +363,19 @@ defmodule Oli.Publishing.AuthoringResolver do
     )
   end
 
+  @fragment """
+            SELECT jsonb_agg(
+              jsonb_build_object(
+                'idref', (elem->>'idref')::INT,
+                'href', split_part(elem->>'href', '/', 4)
+              )
+            )
+            FROM LATERAL jsonb_path_query(
+              ?, 'strict $.** \\? ((@.type == "a" && @.linkType == "page") || @.type == "page_link")'
+            ) AS elem
+            """
+            |> String.replace(~r/\s+/, " ")
+
   @doc """
   Returns a list of pages that contains hyperlinks pointing to the given page
   """
@@ -373,19 +386,12 @@ defmodule Oli.Publishing.AuthoringResolver do
     page_id = Oli.Resources.ResourceType.id_for_page()
 
     PublishedResource
-    |> join(:inner, [pr], r in Revision, on: r.id == pr.revision_id)
+    |> join(:inner, [pr], r in Revision, on: r.id == pr.revision_id, as: :rev)
     |> where([pr, _r], pr.publication_id in subquery(project_working_publication(project_slug)))
     |> where([_pr, r], r.resource_type_id == ^page_id)
     |> where([_pr, r], r.deleted == false)
-    |> where(
-      [_pr, r],
-      not is_nil(fragment("SELECT * FROM get_hyperlink_references_from_revision(?)", r.content))
-    )
-    |> select([_pr, r], %{
-      slug: r.slug,
-      content: fragment("SELECT * FROM get_hyperlink_references_from_revision(?)", r.content),
-      title: r.title
-    })
+    |> where([_pr, r], not is_nil(fragment(@fragment, r.content)))
+    |> select([_pr, r], %{slug: r.slug, content: fragment(@fragment, r.content), title: r.title})
     |> Repo.all()
     |> process_hyperlink_data(project_slug, page_slug)
   end
@@ -394,8 +400,8 @@ defmodule Oli.Publishing.AuthoringResolver do
   # It filters the data to only include the hyperlinks that point to the page_slug
   # It also maps the resource_id to the slug of the revision
   defp process_hyperlink_data(hyperlinks_data, project_slug, page_slug) do
-    # Collect the resource_ids and transform the content from a map to a list
-    # For instance, %{content: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
+    # Collect the resource_ids and transform the refs from a map to a list
+    # For instance, %{refs: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
     # will be transformed to [1, "some_slug"]
     {resource_ids, data_with_content_as_list} =
       Enum.reduce(hyperlinks_data, {[], []}, fn
