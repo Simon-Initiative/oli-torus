@@ -17,6 +17,9 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   @behaviour Resolver
 
+  @page_id Oli.Resources.ResourceType.id_for_page()
+  @container_id Oli.Resources.ResourceType.id_for_container()
+
   @impl Resolver
   def from_resource_id(project_slug, resource_ids) when is_list(resource_ids) do
     fn ->
@@ -101,15 +104,13 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   @impl Resolver
   def all_pages(project_slug) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
     fn ->
       from(m in PublishedResource,
         join: rev in Revision,
         on: rev.id == m.revision_id,
         where:
           m.publication_id in subquery(project_working_publication(project_slug)) and
-            rev.resource_type_id == ^page_id and rev.deleted == false,
+            rev.resource_type_id == @page_id and rev.deleted == false,
         select: rev
       )
       |> Repo.all()
@@ -152,16 +153,13 @@ defmodule Oli.Publishing.AuthoringResolver do
 
   @impl Resolver
   def all_revisions_in_hierarchy(project_slug) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-    container_id = Oli.Resources.ResourceType.id_for_container()
-
     fn ->
       from(m in PublishedResource,
         join: rev in Revision,
         on: rev.id == m.revision_id,
         where:
           m.publication_id in subquery(project_working_publication(project_slug)) and
-            (rev.resource_type_id == ^page_id or rev.resource_type_id == ^container_id),
+            (rev.resource_type_id == @page_id or rev.resource_type_id == @container_id),
         select: rev
       )
       |> Repo.all()
@@ -297,8 +295,6 @@ defmodule Oli.Publishing.AuthoringResolver do
   """
 
   def get_by_purpose(project_slug, purpose) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
     Repo.all(
       from(
         revision in Revision,
@@ -308,7 +304,7 @@ defmodule Oli.Publishing.AuthoringResolver do
           pub_res.publication_id in subquery(project_working_publication(project_slug)) and
             revision.purpose ==
               ^purpose and
-            revision.resource_type_id == ^page_id and revision.deleted == false,
+            revision.resource_type_id == @page_id and revision.deleted == false,
         order_by: [asc: :resource_id]
       )
     )
@@ -325,8 +321,6 @@ defmodule Oli.Publishing.AuthoringResolver do
   """
 
   def targeted_via_related_to(project_slug, resource_id) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
-
     Repo.all(
       from(
         revision in Revision,
@@ -335,7 +329,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         where:
           pub_res.publication_id in subquery(project_working_publication(project_slug)) and
             ^resource_id in revision.relates_to and
-            revision.resource_type_id == ^page_id and
+            revision.resource_type_id == @page_id and
             revision.deleted == false,
         order_by: [asc: :resource_id]
       )
@@ -377,34 +371,36 @@ defmodule Oli.Publishing.AuthoringResolver do
             |> String.replace(~r/\s+/, " ")
 
   @doc """
-  Returns a list of pages that contains hyperlinks pointing to the given page
+  Returns a list of pages that contains links pointing to the given page
   """
   @spec find_hyperlink_references(project_slug :: String.t(), page_slug :: String.t()) :: [
           %{title: String.t(), slug: String.t()}
         ]
   def find_hyperlink_references(project_slug, page_slug) do
-    page_id = Oli.Resources.ResourceType.id_for_page()
+    project_slug
+    |> find_raw_references()
+    |> process_hyperlink_data(project_slug, page_slug)
+  end
 
+  defp find_raw_references(project_slug) do
     PublishedResource
     |> join(:inner, [pr], r in Revision, on: r.id == pr.revision_id, as: :rev)
     |> where([pr, _r], pr.publication_id in subquery(project_working_publication(project_slug)))
-    |> where([_pr, r], r.resource_type_id == ^page_id)
+    |> where([_pr, r], r.resource_type_id == @page_id)
     |> where([_pr, r], r.deleted == false)
     |> where([_pr, r], not is_nil(fragment(@fragment, r.content)))
     |> select([_pr, r], %{slug: r.slug, refs: fragment(@fragment, r.content), title: r.title})
     |> Repo.all()
-    |> process_hyperlink_data(project_slug, page_slug)
   end
 
-  # This function processes the data returned by the get_hyperlinks_by_project_slug function
-  # It filters the data to only include the hyperlinks that point to the page_slug
+  # process_hyperlink_data filters the references to include only the links that point to the specified page_slug
   # It also maps the resource_id to the slug of the revision
-  defp process_hyperlink_data(hyperlinks_data, project_slug, page_slug) do
+  defp process_hyperlink_data(raw_references_data, project_slug, page_slug) do
     # Collect the resource_ids and transform the refs from a map to a list
     # For instance, %{refs: [%{"href" => nil, "idref" => 1}, %{"href" => "some_slug", "idref" => nil}]}
     # will be transformed to [1, "some_slug"]
     {resource_ids, data_with_refs_as_list} =
-      Enum.reduce(hyperlinks_data, {[], []}, fn
+      Enum.reduce(raw_references_data, {[], []}, fn
         %{refs: refs} = data, acc ->
           {hrefs, idrefs} =
             Enum.reduce(refs, {[], []}, fn
@@ -417,23 +413,13 @@ defmodule Oli.Publishing.AuthoringResolver do
           {resource_ids, references_list}
       end)
 
-    map_resource_id_slug =
-      from(m in PublishedResource,
-        join: rev in Revision,
-        on: rev.id == m.revision_id,
-        where:
-          m.publication_id in subquery(project_working_publication(project_slug)) and
-            m.resource_id in ^resource_ids,
-        select: {rev.resource_id, rev.slug}
-      )
-      |> Repo.all()
-      |> Enum.into(%{})
+    res_id_to_rev_slug_map = map_resource_id_to_rev_slug(project_slug, resource_ids)
 
     # Map resource_ids and filter references by the given page_slug
     Enum.reduce(data_with_refs_as_list, [], fn data, acc ->
       refs_maped =
         Enum.reduce(data.refs, [], fn
-          reference, acc2 when is_number(reference) -> [map_resource_id_slug[reference] | acc2]
+          reference, acc2 when is_number(reference) -> [res_id_to_rev_slug_map[reference] | acc2]
           reference, acc2 -> [reference | acc2]
         end)
 
@@ -441,5 +427,18 @@ defmodule Oli.Publishing.AuthoringResolver do
         do: [%{title: data.title, slug: data.slug} | acc],
         else: acc
     end)
+  end
+
+  defp map_resource_id_to_rev_slug(project_slug, resource_ids) do
+    from(m in PublishedResource,
+      join: rev in Revision,
+      on: rev.id == m.revision_id,
+      where:
+        m.publication_id in subquery(project_working_publication(project_slug)) and
+          m.resource_id in ^resource_ids,
+      select: {rev.resource_id, rev.slug}
+    )
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 end
