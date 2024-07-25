@@ -23,7 +23,10 @@ defmodule OliWeb.Progress.PageAttemptSummary do
       ) do
     ~H"""
     <div class="list-group-item list-group-action flex-column align-items-start">
-      <%= live_redirect to: StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid), class: "block" do %>
+      <.link
+        href={StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid)}
+        class="block"
+      >
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
           <span>Not Submitted Yet</span>
@@ -32,7 +35,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <small class="text-muted">
           Time elapsed: <%= duration(@attempt.inserted_at, DateTime.utc_now()) %>.
         </small>
-      <% end %>
+      </.link>
       <%= if @revision.graded do %>
         <button
           class="btn btn-danger btn-sm"
@@ -49,7 +52,10 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   def do_render(%{attempt: %{lifecycle_state: :evaluated}} = assigns) do
     ~H"""
     <div class="list-group-item list-group-action flex-column align-items-start">
-      <%= live_redirect to: StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid), class: "block" do %>
+      <.link
+        href={StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid)}
+        class="block"
+      >
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
           <span><%= Utils.format_score(@attempt.score) %> / <%= @attempt.out_of || "-" %></span>
@@ -70,7 +76,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <small class="text-muted">
           Time elapsed: <%= duration(@attempt.inserted_at, @attempt.date_evaluated) %>.
         </small>
-      <% end %>
+      </.link>
     </div>
     """
   end
@@ -78,7 +84,10 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   def do_render(%{attempt: %{lifecycle_state: :submitted}} = assigns) do
     ~H"""
     <div class="list-group-item list-group-action flex-column align-items-start">
-      <%= live_redirect to: StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid), class: "block" do %>
+      <.link
+        href={StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid)}
+        class="block"
+      >
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Attempt <%= @attempt.attempt_number %></h5>
           <span>Submitted</span>
@@ -93,7 +102,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <small class="text-muted">
           Time elapsed: <%= duration(@attempt.inserted_at, @attempt.date_submitted) %>.
         </small>
-      <% end %>
+      </.link>
     </div>
     """
   end

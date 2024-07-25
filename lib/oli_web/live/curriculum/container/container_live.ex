@@ -280,7 +280,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            :info,
            "#{resource_type_label(revision) |> String.capitalize()} options saved"
          )
-         |> push_redirect(to: redirect_url)}
+         |> push_navigate(to: redirect_url)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}

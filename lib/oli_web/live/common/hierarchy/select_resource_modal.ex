@@ -38,14 +38,15 @@ defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
             </button>
           </div>
           <div class="modal-body">
-            <%= live_component(HierarchyPicker,
-              id: "#{@id}_hierarchy_picker",
-              hierarchy: @hierarchy,
-              active: @active,
-              select_mode: :single,
-              selection: @selection,
-              filter_items_fn: @filter_items_fn
-            ) %>
+            <.live_component
+              module={HierarchyPicker}
+              id={"#{@id}_hierarchy_picker"}
+              hierarchy={@hierarchy}
+              active={@active}
+              select_mode={:single}
+              selection={@selection}
+              filter_items_fn={@filter_items_fn}
+            />
           </div>
           <div class="modal-footer">
             <button
