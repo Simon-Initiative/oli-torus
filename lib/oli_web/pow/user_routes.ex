@@ -17,15 +17,15 @@ defmodule OliWeb.Pow.UserRoutes do
           Routes.delivery_path(conn, :show_enroll, section_slug)
 
         _ ->
-          worskpace_path(conn, target_workspace)
+          workspace_path(conn, target_workspace)
       end
     )
   end
 
-  defp worskpace_path(conn, :instructor_workspace),
+  defp workspace_path(conn, :instructor_workspace),
     do: Routes.live_path(conn, OliWeb.Workspace.Instructor)
 
-  defp worskpace_path(conn, :student_workspace),
+  defp workspace_path(conn, :student_workspace),
     do: Routes.live_path(conn, OliWeb.Workspace.Student)
 
   @impl true
