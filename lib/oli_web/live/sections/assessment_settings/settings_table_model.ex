@@ -97,7 +97,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       },
       %ColumnSpec{
         name: :assessment_mode,
-        label: "Presentation",
+        label: "PRESENTATION",
         render_fn: &__MODULE__.render_assessment_mode_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:assessment_mode)
