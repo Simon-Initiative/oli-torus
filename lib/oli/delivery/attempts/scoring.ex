@@ -111,9 +111,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
 
   defp safe_percentage(score, out_of) do
     case out_of do
-      nil -> 0.0
-      0.0 -> 0.0
-      0 -> 0.0
+      out_of when out_of in [nil, +0.0, -0.0, 0] -> 0.0
       _ -> score / out_of
     end
   end
