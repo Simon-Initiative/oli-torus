@@ -2737,7 +2737,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
     end
 
-    test "exit course button redirects to sections view", %{
+    test "exit course button redirects to sections view with the student workspace selected", %{
       conn: conn,
       section: section
     } do
@@ -2748,7 +2748,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections")
+      assert_redirect(view, "/sections?active_workspace=student_workspace&sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{

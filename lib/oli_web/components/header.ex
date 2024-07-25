@@ -97,7 +97,7 @@ defmodule OliWeb.Components.Header do
 
   def delivery_header(assigns) do
     ~H"""
-    <nav class="bg-primary-24 h-[111px] flex items-center pl-4 pr-10">
+    <nav class="bg-primary-24 dark h-[111px] flex items-center pl-4 pr-10">
       <a class="navbar-brand torus-logo my-1 mr-auto" href={~p"/"}>
         <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
       </a>

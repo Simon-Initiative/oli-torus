@@ -528,15 +528,17 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
           <div class="form-group">
             <label>Related Resource</label>
-            <%= live_component(HierarchySelector,
-              disabled:
+            <.live_component
+              module={HierarchySelector}
+              disabled={
                 !@revision.graded &&
-                  is_foundation(@form, @revision),
-              field_name: "revision[relates_to][]",
-              id: "related-resources-selector",
-              items: @project_hierarchy.children,
-              initial_values: get_selected_related_resources(@revision, @project_hierarchy)
-            ) %>
+                  is_foundation(@form, @revision)
+              }
+              field_name="revision[relates_to][]"
+              id="related-resources-selector"
+              items={@project_hierarchy.children}
+              initial_values={get_selected_related_resources(@revision, @project_hierarchy)}
+            />
           </div>
         <% else %>
           <div class="form-group">

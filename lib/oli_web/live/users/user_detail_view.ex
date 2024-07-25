@@ -196,13 +196,14 @@ defmodule OliWeb.Users.UsersDetailView do
           label="Enrolled Sections"
           description="Course sections to which the student is enrolled"
         >
-          <%= live_component(OliWeb.Users.UserEnrolledSections,
-            id: "user_enrolled_sections",
-            user: @user,
-            params: @params,
-            ctx: @ctx,
-            enrolled_sections: @enrolled_sections
-          ) %>
+          <.live_component
+            module={OliWeb.Users.UserEnrolledSections}
+            id="user_enrolled_sections"
+            user={@user}
+            params={@params}
+            ctx={@ctx}
+            enrolled_sections={@enrolled_sections}
+          />
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.independent_learner do %>
@@ -335,7 +336,7 @@ defmodule OliWeb.Users.UsersDetailView do
         {:noreply,
          socket
          |> put_flash(:info, "User successfully deleted.")
-         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
+         |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "User couldn't be deleted.")}

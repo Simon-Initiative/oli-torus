@@ -376,7 +376,10 @@ defmodule Oli.Delivery.Sections do
             enrollment_context_roles
         end)
 
-      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles,
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
 
       {:ok, enrollments}
     end)

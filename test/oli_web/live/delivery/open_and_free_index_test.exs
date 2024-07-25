@@ -80,13 +80,14 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=student_workspace")
+      {:ok, view, _html} =
+        live(conn, ~p"/sections?active_workspace=student_workspace&sidebar_expanded=true")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
 
       assert has_element?(view, "h5", "The best course ever!")
-      assert has_element?(view, ~s{a[href="/sections/#{section.slug}"]})
+      assert has_element?(view, ~s{a[href="/sections/#{section.slug}?sidebar_expanded=true"]})
     end
 
     test "if no cover image is set, renders default image in enrollment page in the student workspace",
@@ -224,7 +225,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections?active_workspace=instructor_workspace")
+      {:ok, view, _html} =
+        live(conn, ~p"/sections?active_workspace=instructor_workspace&sidebar_expanded=true")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
@@ -233,7 +235,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/instructor_dashboard/manage"]}
+               ~s{a[href="/sections/#{section.slug}/instructor_dashboard/manage?sidebar_expanded=true"]}
              )
     end
 
@@ -489,6 +491,23 @@ defmodule OliWeb.Delivery.OpenAndFreeIndexTest do
       |> render_click()
 
       assert_redirect(view, "/sections?active_workspace=student_workspace&sidebar_expanded=false")
+    end
+
+    test "if user is only a student, display student workspace with hidden sidebar",
+         %{
+           conn: conn,
+           user: user
+         } do
+      section = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections")
+
+      assert has_element?(view, "h3", "Courses available")
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, ~s{a[href="/sections/#{section.slug}?sidebar_expanded=false"]})
+
+      assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=false]})
     end
   end
 

@@ -3,10 +3,10 @@
   id="live_flash_container"
   class="flash container mx-auto px-0 top-[80px]"
 >
-  <%= if live_flash(@flash, :info) do %>
+  <%= if Phoenix.Flash.get(@flash, :info) do %>
     <div class="alert alert-info flex flex-row" role="alert">
       <div class="flex-1">
-        <%= live_flash(@flash, :info) %>
+        <%= Phoenix.Flash.get(@flash, :info) %>
       </div>
 
       <button
@@ -22,10 +22,10 @@
     </div>
   <% end %>
 
-  <%= if live_flash(@flash, :error) do %>
+  <%= if Phoenix.Flash.get(@flash, :error) do %>
     <div class="alert alert-danger flex flex-row" role="alert">
       <div class="flex-1">
-        <%= live_flash(@flash, :error) %>
+        <%= Phoenix.Flash.get(@flash, :error) %>
       </div>
 
       <button

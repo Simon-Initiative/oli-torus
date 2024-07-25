@@ -20,11 +20,14 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
-    params = decode_params(params)
-
     sections =
       Sections.list_user_open_and_free_sections(socket.assigns.current_user)
       |> add_user_role(socket.assigns.current_user)
+
+    params = decode_params(params, sections)
+
+    sections =
+      sections
       |> filter_by_role(params.active_workspace)
       |> add_instructors()
       |> add_sections_progress(socket.assigns.current_user.id)
@@ -41,7 +44,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
     %{sections: sections} = socket.assigns
-    params = decode_params(params)
+    params = decode_params(params, sections)
 
     {:noreply,
      assign(socket,
@@ -132,6 +135,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
                 :for={{section, index} <- Enum.with_index(@filtered_sections)}
                 index={index}
                 section={section}
+                params={@params}
               />
               <p :if={length(@filtered_sections) == 0} class="mt-4">
                 No course found matching <strong>"<%= @params.text_search %>"</strong>
@@ -179,7 +183,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
           <div class="flex flex-col w-full gap-3">
             <.link
               :for={{section, index} <- Enum.with_index(@filtered_sections)}
-              href={get_course_url(section)}
+              href={get_course_url(section, @params.sidebar_expanded)}
               phx-click={JS.add_class("opacity-0", to: "#content")}
               phx-mounted={
                 JS.transition(
@@ -240,6 +244,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   attr :section, :map
   attr :index, :integer
+  attr :params, :map
 
   def course_card(assigns) do
     ~H"""
@@ -276,7 +281,7 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
         </div>
         <div class="self-stretch justify-end items-start gap-4 inline-flex">
           <.link
-            href={get_course_url(@section)}
+            href={get_course_url(@section, @params.sidebar_expanded)}
             class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
           >
             <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
@@ -373,10 +378,15 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
     end)
   end
 
-  defp get_course_url(%{user_role: "student", slug: slug}), do: ~p"/sections/#{slug}"
-  defp get_course_url(%{slug: slug}), do: ~p"/sections/#{slug}/instructor_dashboard/manage"
+  defp get_course_url(%{user_role: "student", slug: slug}, sidebar_expanded),
+    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
 
-  defp decode_params(params) do
+  defp get_course_url(%{slug: slug}, sidebar_expanded),
+    do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
+
+  defp decode_params(params, sections) do
+    params = user_role_dependent_params(params, sections)
+
     %{
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       sidebar_expanded:
@@ -389,5 +399,19 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
           @default_params.active_workspace
         )
     }
+  end
+
+  defp user_role_dependent_params(params, sections) do
+    sections
+    |> Enum.map(& &1.user_role)
+    |> case do
+      ["student"] ->
+        params
+        |> Map.put_new("active_workspace", "student_workspace")
+        |> Map.put_new("sidebar_expanded", "false")
+
+      _ ->
+        params
+    end
   end
 end

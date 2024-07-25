@@ -1,8 +1,8 @@
 <div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
-  <%= if live_flash(@flash, :info) do %>
+  <%= if Phoenix.Flash.get(@flash, :info) do %>
     <div class="alert alert-info flex flex-row" role="alert">
       <div class="flex-1">
-        <%= live_flash(@flash, :info) %>
+        <%= Phoenix.Flash.get(@flash, :info) %>
       </div>
 
       <button
@@ -18,10 +18,10 @@
     </div>
   <% end %>
 
-  <%= if live_flash(@flash, :error) do %>
+  <%= if Phoenix.Flash.get(@flash, :error) do %>
     <div class="alert alert-danger flex flex-row" role="alert">
       <div class="flex-1">
-        <%= live_flash(@flash, :error) %>
+        <%= Phoenix.Flash.get(@flash, :error) %>
       </div>
 
       <button
@@ -62,7 +62,11 @@
         <%= react_component("Components.OfflineDetector") %>
       </div>
       <.back_arrow
-        to={assigns[:request_path]}
+        to={
+          if assigns[:request_path] in [""],
+            do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
+            else: assigns[:request_path]
+        }
         show_sidebar={assigns[:show_sidebar]}
         view={assigns[:view]}
       />
