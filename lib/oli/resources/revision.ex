@@ -61,6 +61,11 @@ defmodule Oli.Resources.Revision do
 
     field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
+
+    field :assessment_mode, Ecto.Enum,
+      values: [:traditional, :one_at_a_time],
+      default: :traditional
+
     field :parameters, :map
 
     embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
@@ -117,6 +122,7 @@ defmodule Oli.Resources.Revision do
       :time_limit,
       :scope,
       :retake_mode,
+      :assessment_mode,
       :parameters,
       :scoring_strategy_id,
       :activity_type_id,

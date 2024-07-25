@@ -216,6 +216,11 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert has_element?(
                view,
+               "form#revision-settings-form [name=\"revision[assessment_mode]\"]"
+             )
+
+      assert has_element?(
+               view,
                "form#revision-settings-form [name=\"revision[purpose]\"]"
              )
 
@@ -447,6 +452,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert %Oli.Resources.Revision{
                retake_mode: :normal,
+               assessment_mode: :traditional,
                duration_minutes: nil,
                graded: false,
                max_attempts: 0,
@@ -477,6 +483,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
           "poster_image" => "some_poster_image_url",
           "purpose" => "application",
           "retake_mode" => "targeted",
+          "assessment_mode" => "one_at_a_time",
           "scoring_strategy_id" => "2",
           "title" => "New Title!!",
           "intro_content" =>
@@ -505,6 +512,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert %Oli.Resources.Revision{
                retake_mode: :targeted,
+               assessment_mode: :one_at_a_time,
                duration_minutes: 5,
                graded: true,
                max_attempts: 10,
@@ -546,6 +554,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert %Oli.Resources.Revision{
                retake_mode: :normal,
+               assessment_mode: :traditional,
                duration_minutes: nil,
                graded: false,
                max_attempts: 0,
@@ -576,6 +585,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
           "poster_image" => "some_poster_image_url",
           "purpose" => "application",
           "retake_mode" => "targeted",
+          "assessment_mode" => "one_at_a_time",
           "scoring_strategy_id" => "2",
           "title" => "New Title!!"
         }
@@ -593,6 +603,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       assert %Oli.Resources.Revision{
                retake_mode: :targeted,
+               assessment_mode: :one_at_a_time,
                duration_minutes: 5,
                graded: true,
                max_attempts: 10,

@@ -491,6 +491,27 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           </div>
 
           <div class="form-group">
+            <label for="assessment_mode">Presentation</label>
+            <.input
+              type="select"
+              id="assessment_mode"
+              name="revision[assessment_mode]"
+              aria-describedby="assessment_mode_description"
+              placeholder="Presentation"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:assessment_mode]}
+              options={[
+                {"Traditional: Show all content and questions at once", :traditional},
+                {"One_at_a_time: Show one question at a time", :one_at_a_time}
+              ]}
+            />
+            <small id="assessment_mode_description" class="form-text text-muted">
+              The presentation determines how questions are displayed to students.
+            </small>
+          </div>
+
+          <div class="form-group">
             <label for="purpose">Purpose</label>
             <%= select(
               @form,
