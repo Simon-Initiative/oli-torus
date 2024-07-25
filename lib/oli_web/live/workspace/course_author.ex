@@ -10,8 +10,19 @@ defmodule OliWeb.Workspace.CourseAuthor do
   }
 
   @impl Phoenix.LiveView
-  def mount(params, _session, socket) do
-    {:ok, assign(socket, params: decode_params(params), active_workspace: :course_author)}
+  def mount(_params, _session, %{assigns: %{current_author: current_author}} = socket)
+      when not is_nil(current_author) do
+    {:ok,
+     assign(socket,
+       active_workspace: :course_author,
+       header_enabled?: true
+     )}
+  end
+
+  def mount(_params, _session, socket) do
+    # no current author case...
+    {:ok,
+     assign(socket, current_author: nil, active_workspace: :course_author, header_enabled?: false)}
   end
 
   @impl Phoenix.LiveView
@@ -20,6 +31,12 @@ defmodule OliWeb.Workspace.CourseAuthor do
   end
 
   @impl Phoenix.LiveView
+
+  def render(%{current_author: nil} = assigns) do
+    ~H"""
+    Placeholder for no current author case
+    """
+  end
 
   def render(assigns) do
     ~H"""

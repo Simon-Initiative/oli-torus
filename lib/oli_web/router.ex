@@ -156,6 +156,11 @@ defmodule OliWeb.Router do
     plug(:delivery_layout)
   end
 
+  pipeline :authoring_and_delivery do
+    plug(:delivery)
+    plug(:authoring)
+  end
+
   pipeline :authoring_protected do
     plug(:authoring)
 
@@ -789,6 +794,7 @@ defmodule OliWeb.Router do
   scope "/sections/workspace/", OliWeb.Workspace do
     pipe_through([
       :browser,
+      :authoring_and_delivery,
       :set_sidebar
     ])
 

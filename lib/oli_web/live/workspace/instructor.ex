@@ -16,25 +16,31 @@ defmodule OliWeb.Workspace.Instructor do
   }
 
   @impl Phoenix.LiveView
-  def mount(params, _session, socket) do
+  def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
+      when not is_nil(current_user) do
     sections =
-      Sections.list_user_open_and_free_sections(socket.assigns.current_user)
-      |> add_user_role(socket.assigns.current_user)
+      Sections.list_user_open_and_free_sections(current_user)
+      |> add_user_role(current_user)
       |> add_instructors()
       |> filter_by_role(:instructor)
 
     {:ok,
      assign(socket,
        sections: sections,
-       params: decode_params(params),
        filtered_sections: sections,
-       active_workspace: :instructor
+       active_workspace: :instructor,
+       header_enabled?: true
      )}
   end
 
+  def mount(_params, _session, socket) do
+    # no current user case...
+    {:ok,
+     assign(socket, current_user: nil, active_workspace: :instructor, header_enabled?: false)}
+  end
+
   @impl Phoenix.LiveView
-  def handle_params(params, _uri, socket) do
-    %{sections: sections} = socket.assigns
+  def handle_params(params, _uri, %{assigns: %{sections: sections}} = socket) do
     params = decode_params(params)
 
     {:noreply,
@@ -44,7 +50,16 @@ defmodule OliWeb.Workspace.Instructor do
      )}
   end
 
+  def handle_params(params, _uri, socket),
+    do: {:noreply, assign(socket, params: decode_params(params))}
+
   @impl Phoenix.LiveView
+
+  def render(%{current_user: nil} = assigns) do
+    ~H"""
+    Placeholder for no current user case
+    """
+  end
 
   def render(assigns) do
     ~H"""

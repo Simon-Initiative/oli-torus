@@ -16,27 +16,32 @@ defmodule OliWeb.Workspace.Student do
   }
 
   @impl Phoenix.LiveView
-  def mount(params, _session, socket) do
+  def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
+      when not is_nil(current_user) do
     sections =
-      Sections.list_user_open_and_free_sections(socket.assigns.current_user)
-      |> add_user_role(socket.assigns.current_user)
+      Sections.list_user_open_and_free_sections(current_user)
+      |> add_user_role(current_user)
       |> filter_by_role(:student)
       |> add_instructors()
-      |> add_sections_progress(socket.assigns.current_user.id)
+      |> add_sections_progress(current_user.id)
 
     {:ok,
      assign(socket,
        sections: sections,
-       params: params,
        filtered_sections: sections,
-       active_workspace: :student
+       active_workspace: :student,
+       header_enabled?: true
      )}
   end
 
+  def mount(_params, session, socket) do
+    # no current user case...
+    {:ok, assign(socket, current_user: nil, active_workspace: :student, header_enabled?: false)}
+  end
+
   @impl Phoenix.LiveView
-  def handle_params(params, _uri, socket) do
-    %{sections: sections} = socket.assigns
-    params = decode_params(params, sections)
+  def handle_params(params, _uri, %{assigns: %{sections: sections}} = socket) do
+    params = decode_params(params)
 
     {:noreply,
      assign(socket,
@@ -45,9 +50,18 @@ defmodule OliWeb.Workspace.Student do
      )}
   end
 
+  def handle_params(params, _uri, socket),
+    do: {:noreply, assign(socket, params: decode_params(params))}
+
   @impl Phoenix.LiveView
 
-  def render(%{active_workspace: :student} = assigns) do
+  def render(%{current_user: nil} = assigns) do
+    ~H"""
+    Placeholder for no current user case
+    """
+  end
+
+  def render(assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
@@ -257,27 +271,11 @@ defmodule OliWeb.Workspace.Student do
   defp get_course_url(%{slug: slug}, sidebar_expanded),
     do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
 
-  defp decode_params(params, sections) do
-    params = user_role_dependent_params(params, sections)
-
+  defp decode_params(params) do
     %{
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       sidebar_expanded:
         Params.get_boolean_param(params, "sidebar_expanded", @default_params.sidebar_expanded)
     }
-  end
-
-  defp user_role_dependent_params(params, sections) do
-    sections
-    |> Enum.map(& &1.user_role)
-    |> case do
-      ["student"] ->
-        params
-        |> Map.put_new("active_workspace", "student_workspace")
-        |> Map.put_new("sidebar_expanded", "false")
-
-      _ ->
-        params
-    end
   end
 end
