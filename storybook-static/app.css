@@ -6526,20 +6526,12 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-right-radius: 0.5rem;
 }
 
-.rounded-br-xl {
-  border-bottom-right-radius: 0.75rem;
-}
-
 .rounded-tl-\[52px\] {
   border-top-left-radius: 52px;
 }
 
 .rounded-tl-lg {
   border-top-left-radius: 0.5rem;
-}
-
-.rounded-tl-xl {
-  border-top-left-radius: 0.75rem;
 }
 
 .rounded-tr-lg {
