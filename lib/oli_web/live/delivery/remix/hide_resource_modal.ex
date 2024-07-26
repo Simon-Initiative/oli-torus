@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.Remix.HideResourceModal do
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
+  import OliWeb.Components.Common
+
   alias Oli.Delivery.Hierarchy.HierarchyNode
 
   def render(%{node: %HierarchyNode{}} = assigns) do
@@ -28,22 +30,23 @@ defmodule OliWeb.Delivery.Remix.HideResourceModal do
             Are you sure you want to <%= get_label_action(@node) %> <b><%= @node.revision.title %></b>?
           </div>
           <div class="modal-footer">
-            <button
+            <.button
               type="button"
-              class="btn btn-secondary"
+              variant={:info}
               data-bs-dismiss="modal"
               phx-click="HideResourceModal.cancel"
             >
               Cancel
-            </button>
-            <button
-              phx-click="HideResourceModal.toggle"
-              phx-key="enter"
+            </.button>
+            <.button
+              type="button"
+              variant={:danger}
               phx-value-uuid={@node.uuid}
-              class="btn btn-danger"
+              phx-key="enter"
+              phx-click="HideResourceModal.toggle"
             >
               <%= get_label_action(@node) |> String.capitalize() %>
-            </button>
+            </.button>
           </div>
         </div>
       </div>
