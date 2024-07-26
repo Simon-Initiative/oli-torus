@@ -1263,6 +1263,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :color, :string, default: "white"
+
   def pencil_writing(assigns) do
     ~H"""
     <svg width="33" height="31" viewBox="0 0 33 31" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1271,7 +1273,7 @@ defmodule OliWeb.Icons do
         stroke-width="2.5"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class="stroke-black dark:stroke-white"
+        class={"stroke-#{@color} dark:stroke-white"}
       />
     </svg>
     """
