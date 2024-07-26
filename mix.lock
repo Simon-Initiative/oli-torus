@@ -135,5 +135,5 @@
   "vega_lite": {:hex, :vega_lite, "0.1.9", "d7a288665f916181b68d0a3617f1b3611d16a4dcd5fafb51b847b71db1159d4c", [:mix], [{:table, "~> 0.1.0", [hex: :table, repo: "hexpm", optional: false]}], "hexpm", "c6a056e763162198e73ae6dfb46c09753bb0298474410fd085074e1cdcee7418"},
   "websock": {:hex, :websock, "0.5.3", "2f69a6ebe810328555b6fe5c831a851f485e303a7c8ce6c5f675abeb20ebdadc", [:mix], [], "hexpm", "6105453d7fac22c712ad66fab1d45abdf049868f253cf719b625151460b8b453"},
   "websock_adapter": {:hex, :websock_adapter, "0.5.6", "0437fe56e093fd4ac422de33bf8fc89f7bc1416a3f2d732d8b2c8fd54792fe60", [:mix], [{:bandit, ">= 0.6.0", [hex: :bandit, repo: "hexpm", optional: true]}, {:plug, "~> 1.14", [hex: :plug, repo: "hexpm", optional: false]}, {:plug_cowboy, "~> 2.6", [hex: :plug_cowboy, repo: "hexpm", optional: true]}, {:websock, "~> 0.5", [hex: :websock, repo: "hexpm", optional: false]}], "hexpm", "e04378d26b0af627817ae84c92083b7e97aca3121196679b73c73b99d0d133ea"},
-  "xml_builder": {:hex, :xml_builder, "2.1.4", "e60e21c0a39b9dd8dec1db5a2525c713f7fe4e85ed247caedf22a9bcdd2d5069", [:mix], [], "hexpm", "48188a4df8b9168ceb8318d128299bce064d272e18967349b2592347c434e677"},
+  "xml_builder": {:hex, :xml_builder, "2.3.0", "69d214c6ad41ae1300b36acff4367551cdfd9dc1b860affc16e103c6b1589053", [:mix], [], "hexpm", "972ec33346a225cd5acd14ab23d4e79042bd37cb904e07e24cd06992dde1a0ed"},
 }
