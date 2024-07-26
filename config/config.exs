@@ -30,7 +30,6 @@ config :oli,
   problematic_query_detection: false,
   problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
-  prometheus_port: 9568,
   build: %{
     version: Mix.Project.config()[:version],
     sha: System.get_env("SHA", default_sha),

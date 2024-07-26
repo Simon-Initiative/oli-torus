@@ -14,7 +14,6 @@ defmodule Oli.MixProject do
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "test.hound": :hound,
         test: :test,
         "test.ecto.reset": :test,
         coveralls: :test,
@@ -116,7 +115,6 @@ defmodule Oli.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:hound), do: ["lib", "test/support"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -156,17 +154,16 @@ defmodule Oli.MixProject do
       {:ex_cldr_calendars, "~> 1.21"},
       {:ex_cldr_dates_times, "~> 2.0"},
       {:ex_json_schema, "~> 0.9.1"},
-      {:ex_machina, "~> 2.7.0", only: [:hound, :test]},
+      {:ex_machina, "~> 2.7.0", only: [:test]},
       {:ex_money, "~> 5.12"},
       {:ex_money_sql, "~> 1.7"},
-      {:excoveralls, "~> 0.14.4", only: [:hound, :test]},
+      {:excoveralls, "~> 0.14.4", only: [:test]},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
       {:html_entities, "~> 0.5.2"},
       {:html_sanitize_ex, "~> 1.4"},
-      {:hound, "~> 1.0"},
       {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
@@ -178,7 +175,7 @@ defmodule Oli.MixProject do
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:monocle, "~> 0.0.1"},
-      {:mox, "~> 0.5", only: [:test, :hound]},
+      {:mox, "~> 0.5", only: [:test]},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.17.2"},
