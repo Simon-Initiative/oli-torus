@@ -4402,6 +4402,11 @@ table.table-striped tbody tr:nth-child(even) {
   margin: auto;
 }
 
+.mx-0 {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
 .mx-1 {
   margin-left: 0.25rem;
   margin-right: 0.25rem;
@@ -4549,6 +4554,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mb-11 {
   margin-bottom: 2.75rem;
+}
+
+.mb-12 {
+  margin-bottom: 3rem;
 }
 
 .mb-16 {
@@ -7475,6 +7484,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-repeat: no-repeat;
 }
 
+.fill-\[\#0062F2\] {
+  fill: #0062F2;
+}
+
 .fill-\[\#0CAF61\] {
   fill: #0CAF61;
 }
@@ -7501,6 +7514,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .fill-\[\#9AC3FF\] {
   fill: #9AC3FF;
+}
+
+.fill-\[\#B333CC\] {
+  fill: #B333CC;
 }
 
 .fill-\[\#FF9040\] {
@@ -7992,6 +8009,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .\!pl-6 {
   padding-left: 1.5rem !important;
+}
+
+.\!pl-9 {
+  padding-left: 2.25rem !important;
 }
 
 .pb-0 {
@@ -9087,6 +9108,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .opacity-100 {
   opacity: 1;
+}
+
+.opacity-25 {
+  opacity: 0.25;
 }
 
 .opacity-40 {
@@ -14429,6 +14454,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:text-\[\#DDD\] {
   --tw-text-opacity: 1;
   color: rgb(221 221 221 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#eeebf5\] {
+  --tw-text-opacity: 1;
+  color: rgb(238 235 245 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-black {
