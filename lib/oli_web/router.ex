@@ -156,6 +156,13 @@ defmodule OliWeb.Router do
     plug(:delivery_layout)
   end
 
+  pipeline :authoring_and_delivery do
+    plug(:delivery)
+    plug(OliWeb.EnsureUserNotLockedPlug)
+    plug(:authoring)
+    plug(OliWeb.EnsureUserNotLockedPlug)
+  end
+
   pipeline :authoring_protected do
     plug(:authoring)
 
@@ -789,9 +796,8 @@ defmodule OliWeb.Router do
   scope "/sections/workspace/", OliWeb do
     pipe_through([
       :browser,
-      :delivery_protected,
-      :set_sidebar,
-      :pow_email_layout
+      :authoring_and_delivery,
+      :set_sidebar
     ])
 
     live_session :delivery_workspace,
@@ -802,27 +808,9 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode
       ] do
+      live("/course_author", Workspace.CourseAuthor)
       live("/instructor", Workspace.Instructor)
       live("/student", Workspace.Student)
-    end
-  end
-
-  scope "/sections/workspace/", OliWeb do
-    pipe_through([
-      :browser,
-      :set_sidebar,
-      :authoring_protected
-    ])
-
-    live_session :authoring_workspace,
-      root_layout: {OliWeb.LayoutView, :delivery},
-      layout: {OliWeb.Layouts, :workspace},
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
-        OliWeb.LiveSessionPlugs.SetSidebar,
-        OliWeb.LiveSessionPlugs.SetPreviewMode
-      ] do
-      live("/course_author", Workspace.CourseAuthor)
     end
   end
 
