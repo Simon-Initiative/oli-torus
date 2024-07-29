@@ -312,7 +312,7 @@ defmodule Oli.Resources do
   end
 
   def create_revision_from_previous(previous_revision, attrs) do
-    attrs =
+    previous_attrs =
       Map.from_struct(previous_revision)
       |> Map.drop([
         :id,
@@ -328,7 +328,13 @@ defmodule Oli.Resources do
         :resource_type,
         :activity_type
       ])
-      |> Map.merge(convert_strings_to_atoms(attrs))
+      |> Map.put(:title, previous_revision.title)
+
+    attrs =
+      Map.merge(
+        previous_attrs,
+        convert_strings_to_atoms(attrs)
+      )
 
     create_revision(attrs)
   end
