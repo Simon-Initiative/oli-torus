@@ -159,17 +159,7 @@ with the Torus server running directly on the host machine.</p><h2 id="mostly-au
 </span></code></pre><p>Using fswatch, re-run only the test files that have changed as well as the tests that have gone stale due to changes in lib and pause on any failures</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">fswatch lib test | mix test --listen-on-stdin --stale --seed 0 --trace --max-failures 1
 </span></code></pre></li><li><p>Generate an html coverage report</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">mix coveralls.html
 </span></code></pre></li><li><p>Occasionally the test database will need to be reset (e.g. if tests were cancelled partway through)</p><pre><code class="makeup shell" translate="no"><span class="gp unselectable">$ </span><span class="">MIX_ENV=test mix ecto.reset
-</span></code></pre></li></ol><h3 id="integration-hound-based-tests" class="section-heading">
-  <a href="#integration-hound-based-tests" class="hover-link">
-    <i class="ri-link-m" aria-hidden="true"></i>
-  </a>
-  <span class="text">Integration (Hound Based) tests</span>
-</h3>
-<p>A set of <a href="https://github.com/HashNuke/hound">hound</a> based integration tests reside in the test/hound directory. These tests
-actually run a Torus server and interact with it via a browser. They're useful for testing multi-page flows through the
-application as a user would, especially if those tests interact with client side javascript.</p><p>These tests tend to be slower than unit tests, and have additional requirements to run, therefore they do not run by default
-when executing <a href="https://hexdocs.pm/mix/Mix.Tasks.Test.html"><code class="inline">mix test</code></a></p><p>To run these tests you will need:</p><ol><li>A browser that can be controlled by a web driver (Chrome is configured by default and is recommended)</li><li>A web driver for that browser (<a href="https://chromedriver.chromium.org/downloads">chromedriver</a> is recommended)</li></ol><p>To run the tests:</p><ol><li>Launch chromedriver <code class="inline">./chromedriver</code> - for most people, it should work with no additional arguments</li><li>While that's running, run the tests <a href="Mix.Tasks.Test.Hound.html"><code class="inline">mix test.hound</code></a></li></ol><p>Some notes:</p><ul><li>The tests run with MIX_ENV=hound</li><li>The tests run against the oli_test database, the same one used by <a href="https://hexdocs.pm/mix/Mix.Tasks.Test.html"><code class="inline">mix test</code></a></li></ul><p>While debugging or developing these tests, you can watch the browser by setting an env var HEADLESS=false
-<code class="inline">HEADLESS=false mix test.hound</code></p><h2 id="tunneling-localhost-connection-for-lti-development" class="section-heading">
+</span></code></pre></li></ol><h2 id="tunneling-localhost-connection-for-lti-development" class="section-heading">
   <a href="#tunneling-localhost-connection-for-lti-development" class="hover-link">
     <i class="ri-link-m" aria-hidden="true"></i>
   </a>
