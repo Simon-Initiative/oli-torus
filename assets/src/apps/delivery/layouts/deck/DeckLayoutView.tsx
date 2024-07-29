@@ -81,7 +81,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     backgroundClasses.push('background-scaled');
   }
   const getCustomClassAncestry = useCallback(() => {
-    console.log({ currentActivityTree });
     let className = '';
     if (currentActivityTree) {
       currentActivityTree.forEach((activity) => {
@@ -433,10 +432,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [scrollPosition, setScrollPosition] = useState(0);
 
   useEffect(() => {
-    console.log('localActivityTree', { localActivityTree });
-  }, [localActivityTree]);
-
-  useEffect(() => {
     if (currentActivityTree && currentActivityTree?.length > 1) {
       const currentActivity = currentActivityTree[currentActivityTree.length - 1];
       const previousActivity = currentActivityTree[currentActivityTree.length - 2];
@@ -479,10 +474,13 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       if (!currentActivityTree) {
         return null;
       }
-      //const myActivities = currentActivityTree.reverse();
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-      //const myActivity = myActivities[myActivities.length - 1];
-      console.log('currentActivityTree IN', { currentActivityTree });
+      if (reviewMode) {
+        currentActivityTree.reverse();
+      }
+      let currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      if (reviewMode) {
+        currentActivity = currentActivityTree[0];
+      }
       if (!currentLocalTree) {
         return currentActivityTree
           ? currentActivityTree.map((activity) => ({
@@ -497,22 +495,22 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
       const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
       // if the current and current local are the same, then we don't need to do anything
-      if (currentLocalActivity.id === currentActivity.id) {
+      if (currentLocalActivity.id === currentActivity.id && !reviewMode) {
         setTriggerWindowsScrollPosition(false);
         return currentLocalTree;
       }
       setTriggerWindowsScrollPosition(true);
       return currentActivityTree.map((activity) => ({
         ...activity,
-        activityKey: historyModeNavigation
-          ? `${activity.id}_${currentActivity.id}_history`
-          : activity.id,
+        activityKey:
+          historyModeNavigation || reviewMode
+            ? `${activity.id}_${currentActivity.id}_history`
+            : activity.id,
       }));
     });
   }, [currentActivityTree, historyModeNavigation, reviewMode]);
 
   const renderActivities = useCallback(() => {
-    console.log({ localActivityTree });
     if (!localActivityTree || !localActivityTree.length) {
       return <div>loading...</div>;
     }
@@ -565,7 +563,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // activities should then keep track of updates internally and if needed request updates
 
     const activities = localActivityTree.map((activity: any) => {
-      console.log('RENDERING -->', { activity });
       const attempt = currentActivityAttemptTree?.find(
         (a) => a?.activityId === activity.resourceId,
       );

@@ -173,14 +173,14 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         partsInitStatus,
       }); */
       if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
-        console.log('PARTS READY ON ONREADY HOST', {
+        /*     console.log('PARTS READY ON ONREADY HOST', {
           partId,
           scriptEnv,
           adaptivityDomain,
           props,
           currentAttemptState,
           sharedAttemptStateMap,
-        });
+        }); */
         if (props.onReady && !reviewMode) {
           const response: any = Array.from(partInitResponseMap);
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid, response);
@@ -205,12 +205,16 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
           partInitResponseMap.clear();
         } else {
+          let currentActivityId = activityId;
           if (sharedAttemptStateMap?.size) {
-            const currentActivityId = Array.from(sharedAttemptStateMap.keys()).pop();
+            currentActivityId =
+              sharedAttemptStateMap.size > 1 && reviewMode
+                ? sharedAttemptStateMap.entries().next().value[0]
+                : Array.from(sharedAttemptStateMap.keys()).pop();
             currentAttemptState = sharedAttemptStateMap.get(currentActivityId);
           }
           // when calling onReady normally it would do all the init state and fill in from attempt state too
-          const attemptStateMap = currentAttemptState.parts.reduce((collect: any, part: any) => {
+          currentAttemptState.parts.reduce((collect: any, part: any) => {
             // build like we do a responseMap
             const { response } = part;
             if (response) {
@@ -234,9 +238,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             state: props.context.pageState,
           }); */
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
-          const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
+          const snapshot = getLocalizedStateSnapshot([currentActivityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
-          console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
+          /*  console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
             partId,
             scriptEnv,
             adaptivityDomain,
@@ -245,7 +249,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             currentAttemptState,
             attemptStateMap,
             sharedAttemptStateMap,
-          });
+          }); */
           const context = {
             snapshot,
             context: { mode: 'REVIEW', host: props.mountPoint },
@@ -347,12 +351,18 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     }
     let currentActivityId: any = activityId;
     if (sharedAttemptStateMap?.size) {
+      if (reviewMode) {
+        currentActivityId =
+          sharedAttemptStateMap.size > 1 && reviewMode
+            ? sharedAttemptStateMap.entries().next().value[0]
+            : Array.from(sharedAttemptStateMap.keys()).pop();
+      }
       currentActivityId = Array.from(sharedAttemptStateMap.keys()).pop();
     }
     const currentAttemptState = sharedAttemptStateMap.get(currentActivityId);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
-    if (!partAttempt) {
+    if (!partAttempt && !reviewMode) {
       // throw err? if this happens we can't proceed...
       console.error(`part attempt guid for ${id} not found!`, { currentAttemptState });
       return;
@@ -360,7 +370,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     const response: ActivityTypes.StudentResponse = {
       input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
-    if (props.onSavePart && !isReviewMode) {
+    if (props.onSavePart && !reviewMode) {
       const result = await props.onSavePart(
         currentAttemptState.attemptGuid,
         partAttempt?.attemptGuid,
@@ -369,21 +379,23 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       // BS: this is the result from the layout pushed down, need to push down to part here?
       return result;
     } else {
-      console.warn('onSavePart not defined, not saving', { response, scriptEnv });
-      // should write to the scriptEnv so that all parts can have the full snapshot?
-      const statePrefix = `${activityId}|stage`;
-      const responseMap = response.input.reduce(
-        (result: { [x: string]: any }, item: { key: string; path: string }) => {
-          result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
-          return result;
-        },
-        {},
-      );
-      const evalResult = evalAssignScript(responseMap, scriptEnv);
-      console.log(`[${id}] review mode save evalResult`, evalResult);
+      if (!reviewMode) {
+        console.warn('onSavePart not defined, not saving', { response, scriptEnv });
+        // should write to the scriptEnv so that all parts can have the full snapshot?
+        const statePrefix = `${currentActivityId}|stage`;
+        const responseMap = response.input.reduce(
+          (result: { [x: string]: any }, item: { key: string; path: string }) => {
+            result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
+            return result;
+          },
+          {},
+        );
+        const evalResult = evalAssignScript(responseMap, scriptEnv);
+        console.log(`[${id}] review mode save evalResult`, evalResult);
+      }
       return {
         type: 'success',
-        snapshot: getLocalizedStateSnapshot([activityId], scriptEnv),
+        snapshot: getLocalizedStateSnapshot([currentActivityId], scriptEnv),
       };
     }
   };
