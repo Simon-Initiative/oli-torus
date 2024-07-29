@@ -333,11 +333,6 @@ defmodule Oli.Resources do
     create_revision(attrs)
   end
 
-  defp convert_legacy(nil), do: nil
-  defp convert_legacy(legacy) when is_struct(legacy), do: Map.from_struct(legacy)
-  defp convert_legacy(legacy) when is_map(legacy), do: legacy
-  defp convert_legacy(item), do: item
-
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking revision changes.
   ## Examples
