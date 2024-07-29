@@ -24,6 +24,9 @@ jobs:
       - name: Get AUTO_DEPLOY_REF config
         id: get_auto_deploy_ref
         run: echo "auto_deploy_ref=$(if [ -n "${{ vars.AUTO_DEPLOY_REF }}" ] ; then echo ${{ vars.AUTO_DEPLOY_REF }} ; else echo refs/heads/master ; fi)" >> $GITHUB_OUTPUT
+      - name: Echo head_branch
+        id: echo_head_branch
+        run: echo "${{ github.event.workflow_run.head_branch }}"
 
   auto-deploy:
     name: Auto Deploy
