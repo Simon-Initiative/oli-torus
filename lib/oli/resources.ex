@@ -312,6 +312,9 @@ defmodule Oli.Resources do
   end
 
   def create_revision_from_previous(previous_revision, attrs) do
+    previous_attrs = Map.from_struct(previous_revision) |> Map.drop([:id, :inserted_at, :primary_resource, :scoring_strategy, :warnings, :__meta__, :resource, :previous_revision, :updated_at, :author, :resource_type, :activity_type])
+
+    IO.inspect(previous_attrs)
     attrs =
       Map.merge(
         %{

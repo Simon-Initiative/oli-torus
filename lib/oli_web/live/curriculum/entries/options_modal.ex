@@ -503,7 +503,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               field={@form[:assessment_mode]}
               options={[
                 {"Traditional: Show all content and questions at once", :traditional},
-                {"One_at_a_time: Show one question at a time", :one_at_a_time}
+                {"One at a Time: Show one question at a time", :one_at_a_time}
               ]}
             />
             <small id="assessment_mode_description" class="form-text text-muted">
