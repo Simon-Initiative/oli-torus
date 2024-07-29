@@ -36,12 +36,26 @@ defmodule OliWeb.Workspace.Instructor do
 
   def mount(_params, _session, socket) do
     # no current user case...
+
+    provider_links =
+      %Plug.Conn{
+        private: %{
+          phoenix_router: OliWeb.Router,
+          phoenix_endpoint: OliWeb.Endpoint,
+          otp_app: :oli
+        },
+        secret_key_base: Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
+      }
+      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
+      |> OliWeb.Pow.PowHelpers.provider_links()
+
     {:ok,
      assign(socket,
        current_user: nil,
        active_workspace: :instructor,
        header_enabled?: false,
-       footer_enabled?: false
+       footer_enabled?: false,
+       provider_links: provider_links
      )}
   end
 
@@ -101,8 +115,11 @@ defmodule OliWeb.Workspace.Instructor do
             <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
               Instructor Sign In
             </div>
-            <%!-- <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@socket), do: raw(link) %> --%>
-            <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+            <%= for link <- @provider_links, do: raw(link) %>
+            <div
+              :if={@provider_links != []}
+              class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
+            >
               OR
             </div>
             <%= form_for :user, Routes.session_path(@socket, :signin, type: :user, after_sign_in_target: :instructor_workspace), [as: :user], fn f -> %>
