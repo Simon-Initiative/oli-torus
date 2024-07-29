@@ -29,9 +29,26 @@
       if(assigns[:header_enabled?] && true, do: "mt-14")
     ]}
   >
+    <div class="absolute z-50 top-0 p-2">
+      <%= if Phoenix.Flash.get(@flash, :info) do %>
+        <div>
+          <p class="alert alert-info" role="alert">
+            <%= Phoenix.Flash.get(@flash, :info) %>
+          </p>
+        </div>
+      <% end %>
+      <%= if Phoenix.Flash.get(@flash, :error) do %>
+        <div>
+          <p class="alert alert-danger" role="alert">
+            <%= Phoenix.Flash.get(@flash, :error) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
     <%= @inner_content %>
   </div>
   <div
+    :if={assigns[:footer_enabled?] && true}
     id="footer_contaner"
     class={[
       "relative transition-all duration-100 mt-14",

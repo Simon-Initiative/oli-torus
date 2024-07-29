@@ -11,15 +11,22 @@ defmodule OliWeb.SessionController do
 
   @shared_session_data_to_delete [:dismissed_messages]
 
-  def signin(conn, %{"user" => user_params}) do
+  def signin(conn, %{"user" => user_params} = params) do
+    pow_config_type =
+      (params["type"] || "user")
+      |> String.to_existing_atom()
+
+    after_sign_in_target =
+      (params["after_sign_in_target"] || "student_workspace") |> String.to_existing_atom()
+
     is_authenticated? =
-      PowHelpers.use_pow_config(conn, :user)
+      PowHelpers.use_pow_config(conn, pow_config_type)
       |> Plug.authenticate_user(user_params)
 
     case is_authenticated? do
       {:ok, conn} ->
         conn
-        |> redirect(to: UserRoutes.after_sign_in_path(conn, :student_workspace))
+        |> redirect(to: UserRoutes.after_sign_in_path(conn, after_sign_in_target))
 
       {:error, conn} ->
         conn

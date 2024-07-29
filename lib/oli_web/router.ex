@@ -158,7 +158,9 @@ defmodule OliWeb.Router do
 
   pipeline :authoring_and_delivery do
     plug(:delivery)
+    plug(OliWeb.EnsureUserNotLockedPlug)
     plug(:authoring)
+    plug(OliWeb.EnsureUserNotLockedPlug)
   end
 
   pipeline :authoring_protected do

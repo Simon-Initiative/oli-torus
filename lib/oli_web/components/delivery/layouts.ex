@@ -381,7 +381,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <:icon>
           <Icons.graduation_cap
             is_active={@active_workspace == :student}
-            class="stroke-[#757682] dark:stroke-[#BAB8BF]"
+            stroke="stroke-[#757682] dark:stroke-[#BAB8BF]"
           />
         </:icon>
         <:text>Student</:text>
