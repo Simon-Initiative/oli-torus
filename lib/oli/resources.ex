@@ -312,7 +312,7 @@ defmodule Oli.Resources do
   end
 
   def create_revision_from_previous(previous_revision, attrs) do
-    previous_attrs =
+    attrs =
       Map.from_struct(previous_revision)
       |> Map.drop([
         :id,
@@ -328,47 +328,7 @@ defmodule Oli.Resources do
         :resource_type,
         :activity_type
       ])
-
-    IO.inspect(previous_attrs)
-
-    attrs =
-      Map.merge(
-        %{
-          content: previous_revision.content,
-          objectives: previous_revision.objectives,
-          children: previous_revision.children,
-          deleted: previous_revision.deleted,
-          ids_added: previous_revision.ids_added,
-          slug: previous_revision.slug,
-          title: previous_revision.title,
-          graded: previous_revision.graded,
-          duration_minutes: previous_revision.duration_minutes,
-          intro_content: previous_revision.intro_content,
-          intro_video: previous_revision.intro_video,
-          poster_image: previous_revision.poster_image,
-          author_id: previous_revision.author_id,
-          resource_id: previous_revision.resource_id,
-          previous_revision_id: previous_revision.id,
-          resource_type_id: previous_revision.resource_type_id,
-          activity_type_id: previous_revision.activity_type_id,
-          scoring_strategy_id: previous_revision.scoring_strategy_id,
-          primary_resource_id: previous_revision.primary_resource_id,
-          max_attempts: previous_revision.max_attempts,
-          recommended_attempts: previous_revision.recommended_attempts,
-          time_limit: previous_revision.time_limit,
-          scope: previous_revision.scope,
-          retake_mode: previous_revision.retake_mode,
-          assessment_mode: previous_revision.assessment_mode,
-          parameters: previous_revision.parameters,
-          legacy: previous_revision.legacy |> convert_legacy,
-          tags: previous_revision.tags,
-          explanation_strategy: previous_revision.explanation_strategy,
-          collab_space_config: previous_revision.collab_space_config,
-          purpose: previous_revision.purpose,
-          relates_to: previous_revision.relates_to
-        },
-        convert_strings_to_atoms(attrs)
-      )
+      |> Map.merge(convert_strings_to_atoms(attrs))
 
     create_revision(attrs)
   end
