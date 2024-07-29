@@ -7,7 +7,6 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
-  import PhoenixStorybook.Router
 
   import Oli.Plugs.EnsureAdmin
 
@@ -232,10 +231,6 @@ defmodule OliWeb.Router do
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
-
-  scope "/" do
-    storybook_assets()
-  end
 
   scope "/" do
     pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
@@ -1582,8 +1577,6 @@ defmodule OliWeb.Router do
   if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
-
-    live_storybook("/storybook", backend_module: OliWeb.Storybook)
 
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])
