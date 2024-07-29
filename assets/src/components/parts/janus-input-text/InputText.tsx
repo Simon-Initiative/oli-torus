@@ -104,7 +104,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
+        console.log(`${notificationType.toString()} notification handled [InputText]`, payload);
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
@@ -133,16 +133,20 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts } = payload;
-              const sEnabled = initStateFacts[`stage.${id}.enabled`];
-              if (sEnabled !== undefined) {
-                setEnabled(parseBool(sEnabled));
-              }
+              console.log({ initStateFacts, payload, id });
               const sText = initStateFacts[`stage.${id}.text`];
               if (sText !== undefined) {
+                console.log('SETTING TEEXT--->', { sText });
                 setText(sText.toString());
                 saveTextLength(sText.toString());
                 saveInputText(sText.toString());
               }
+
+              const sEnabled = initStateFacts[`stage.${id}.enabled`];
+              if (sEnabled !== undefined) {
+                setEnabled(parseBool(sEnabled));
+              }
+
               const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);

@@ -206,8 +206,16 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     response: StudentResponse,
   ) => {
     /* console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response }); */
-
-    const result = await onActivitySavePart(activity.id, attemptGuid, partAttemptGuid, response);
+    let currentActivityId: any = activity.id;
+    if (sharedAttemptStateMap?.size) {
+      currentActivityId = Array.from(sharedAttemptStateMap.keys()).pop();
+    }
+    const result = await onActivitySavePart(
+      currentActivityId,
+      attemptGuid,
+      partAttemptGuid,
+      response,
+    );
 
     return result;
   };
@@ -400,7 +408,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         initObject.type !== CapiVariableTypes.MATH_EXPR &&
         updatedValue &&
         updatedValue.toString().indexOf('{') !== -1 &&
-        updatedValue.toString().indexOf('}') !== -1
+        updatedValue.toString().indexOf('}') !== -1 &&
+        currentActivityTree
       ) {
         // need handle the value expression i.e. value = MISSION CONTROL: Search the surface of {q:1476902665616:794|stage.simIFrame.Globals.SelectedObject} for the astrocache.
         // otherwise, it will never be replace with actual value on screen
@@ -674,6 +683,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       surveyId: null,
       bibParams: null,
       pageAttemptGuid: '', // TODO: don't think we use this currently, but might be good to have
+      reviewMode,
     }),
     mode: isPreviewMode ? 'preview' : 'delivery', // TODO: review
     model,

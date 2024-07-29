@@ -20,7 +20,7 @@ import {
   selectLessonEnd,
   setInitPhaseComplete,
 } from '../../store/features/adaptivity/slice';
-import { savePartState, savePartStateToTree } from '../../store/features/attempt/actions/savePart';
+import { savePartState } from '../../store/features/attempt/actions/savePart';
 import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
   selectCurrentActivityTree,
@@ -81,6 +81,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     backgroundClasses.push('background-scaled');
   }
   const getCustomClassAncestry = useCallback(() => {
+    console.log({ currentActivityTree });
     let className = '';
     if (currentActivityTree) {
       currentActivityTree.forEach((activity) => {
@@ -251,6 +252,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       if (historyModeNavigation || reviewMode) {
         console.log(
           '[AllActivitiesInit] historyModeNavigation or reviewMode is ON, clearing sharedActivityInit',
+          { currentActivityTree },
         );
         sharedActivityInit.clear();
       }
@@ -355,20 +357,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return true;
   };
 
-  const getStatePrefix = (path: string, activityId: string | number) => {
-    const parts = path.split('.');
-    const partId = parts[0];
-
-    const ownerActivity = currentActivityTree?.find(
-      (activity) => !!(activity.content?.partsLayout || []).find((p: any) => p.id === partId),
-    );
-    if (ownerActivity) {
-      return `${ownerActivity.id}|stage`;
-    } else {
-      return `${activityId}|stage`;
-    }
-  };
-
   const handleActivitySavePart = useCallback(
     async (
       activityId: string | number,
@@ -376,20 +364,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       partAttemptGuid: string,
       response: StudentResponse,
     ) => {
-      /* console.log('DECK HANDLE SAVE PART', {
-      activityId,
-      attemptGuid,
-      partAttemptGuid,
-      response,
-      currentActivityTree,
-    }); */
-      let statePrefix = `${activityId}|stage`;
-      if (response.input?.length) {
-        // Even if the current screen is a child screen, we always save the part component properties with their owner activity Id i.e. ownerActivityId|stage.iframe.visible = true.
-        // The entire response is from one part, so the path (i.e. partId.properyName) will be same for all input response
-        // Hence we check the owner activity id once.
-        statePrefix = getStatePrefix(response.input[0].path, activityId);
-      }
+      const statePrefix = `${activityId}|stage`;
       const responseMap = response.input.reduce(
         (result: { [x: string]: any }, item: { key: string; path: string }) => {
           result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
@@ -410,26 +385,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
 
       if (response?.input?.length) {
-        let result;
-        // in addition to the current part attempt, need to lookup in the tree
-        // if this part is an inherited part and also write to the child attempt records
-        const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-        if (currentActivity.id !== activityId) {
-          // this means that the part is inherted (we are a layer or parent screen)
-          // so we need to update all children in the tree with this part response as well
-          result = await dispatch(
-            savePartStateToTree({
-              attemptGuid,
-              partAttemptGuid,
-              response: responseMap,
-              activityTree: currentActivityTree,
-            }),
-          );
-        } else {
-          result = await dispatch(
-            savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
-          );
-        }
+        const result = await dispatch(
+          savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+        );
         return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
       } else {
         return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
@@ -475,6 +433,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const [scrollPosition, setScrollPosition] = useState(0);
 
   useEffect(() => {
+    console.log('localActivityTree', { localActivityTree });
+  }, [localActivityTree]);
+
+  useEffect(() => {
     if (currentActivityTree && currentActivityTree?.length > 1) {
       const currentActivity = currentActivityTree[currentActivityTree.length - 1];
       const previousActivity = currentActivityTree[currentActivityTree.length - 2];
@@ -517,9 +479,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       if (!currentActivityTree) {
         return null;
       }
-
+      //const myActivities = currentActivityTree.reverse();
       const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-
+      //const myActivity = myActivities[myActivities.length - 1];
+      console.log('currentActivityTree IN', { currentActivityTree });
       if (!currentLocalTree) {
         return currentActivityTree
           ? currentActivityTree.map((activity) => ({
@@ -549,6 +512,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   }, [currentActivityTree, historyModeNavigation, reviewMode]);
 
   const renderActivities = useCallback(() => {
+    console.log({ localActivityTree });
     if (!localActivityTree || !localActivityTree.length) {
       return <div>loading...</div>;
     }
@@ -599,7 +563,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // attempts are being constantly updated, if we are not careful it will re-render the activity
     // too many times. instead we want to only send the "initial" attempt state
     // activities should then keep track of updates internally and if needed request updates
+
     const activities = localActivityTree.map((activity: any) => {
+      console.log('RENDERING -->', { activity });
       const attempt = currentActivityAttemptTree?.find(
         (a) => a?.activityId === activity.resourceId,
       );

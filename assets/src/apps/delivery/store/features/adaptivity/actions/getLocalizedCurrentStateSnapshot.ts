@@ -11,8 +11,13 @@ export const getLocalizedCurrentStateSnapshot = createAsyncThunk(
     if (!currentActivityTree) {
       return { snapshot: {} };
     }
-    const currentActivityIds = currentActivityTree.map((a) => a.id);
-    const snapshot = getLocalizedStateSnapshot(currentActivityIds);
+    if (!currentActivityTree?.length) {
+      return { snapshot: {} };
+    }
+    const currentActivityIds = currentActivityTree[currentActivityTree.length - 1].id;
+    // Since we no longer save the values to its owener, we only need snapshot of current activity
+    const snapshot = getLocalizedStateSnapshot([currentActivityIds]);
+
     return { snapshot };
   },
 );

@@ -489,18 +489,21 @@ export const getLocalizedStateSnapshot = (
   activityIds: EntityId[],
   env: Environment = defaultGlobalEnv,
 ) => {
+  const activityId = activityIds[activityIds.length - 1];
   const snapshot = getEnvState(env);
   const finalState: any = { ...snapshot };
-  activityIds.forEach((activityId: string) => {
-    const activityState = Object.keys(snapshot)
-      .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
-      .reduce((collect: any, key) => {
-        const localizedKey = key.replace(`${activityId}|`, '');
-        collect[localizedKey] = snapshot[key];
-        return collect;
-      }, {});
-    Object.assign(finalState, activityState);
-  });
+
+  //activityIds.forEach((activityId: string) => {
+  const activityState = Object.keys(snapshot)
+    .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
+    .reduce((collect: any, key) => {
+      const localizedKey = key.replace(`${activityId}|`, '');
+      collect[localizedKey] = snapshot[key];
+      return collect;
+    }, {});
+  Object.assign(finalState, activityState);
+  //});
+
   return finalState;
 };
 

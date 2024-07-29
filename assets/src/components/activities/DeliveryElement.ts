@@ -64,6 +64,7 @@ export interface ActivityContext {
   renderPointMarkers: boolean;
   isAnnotationLevel: boolean;
   variables: any;
+  reviewMode?: boolean;
 }
 
 /**

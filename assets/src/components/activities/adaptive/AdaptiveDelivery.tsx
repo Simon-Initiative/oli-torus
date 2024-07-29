@@ -29,7 +29,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [sectionSlug, _setSectionSlug] = useState<string>(props.context.sectionSlug);
   const [currentUserId, _setCurrentUserId] = useState<number>(props.context.userId);
   const isReviewMode = mode === 'review';
-
+  const reviewMode = props.context.reviewMode;
   const [partsLayout, _setPartsLayout] = useState(
     props.model.content?.partsLayout || props.model.partsLayout || [],
   );
@@ -164,7 +164,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const partInit = useCallback(
     async (partId: string) => {
-      const currentAttemptState = sharedAttemptStateMap.get(activityId);
+      let currentAttemptState = sharedAttemptStateMap.get(activityId);
       const partsInitStatus = sharedInitMap.get(activityId);
       const partsInitDeferred = sharedPromiseMap.get(activityId);
       partsInitStatus[partId] = true;
@@ -173,7 +173,15 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         partsInitStatus,
       }); */
       if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
-        if (props.onReady && !isReviewMode) {
+        console.log('PARTS READY ON ONREADY HOST', {
+          partId,
+          scriptEnv,
+          adaptivityDomain,
+          props,
+          currentAttemptState,
+          sharedAttemptStateMap,
+        });
+        if (props.onReady && !reviewMode) {
           const response: any = Array.from(partInitResponseMap);
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid, response);
           const { env, domain } = readyResults;
@@ -197,6 +205,10 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
           partInitResponseMap.clear();
         } else {
+          if (sharedAttemptStateMap?.size) {
+            const currentActivityId = Array.from(sharedAttemptStateMap.keys()).pop();
+            currentAttemptState = sharedAttemptStateMap.get(currentActivityId);
+          }
           // when calling onReady normally it would do all the init state and fill in from attempt state too
           const attemptStateMap = currentAttemptState.parts.reduce((collect: any, part: any) => {
             // build like we do a responseMap
@@ -210,16 +222,17 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
               }, {});
               collect = { ...collect, ...responseElements };
             }
+
+            const _testRes = evalAssignScript(collect, scriptEnv);
             // TODO
             return collect;
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
-          const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
+          //const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
           /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
             state: props.context.pageState,
           }); */
-          const _testRes = evalAssignScript(attemptStateMap, scriptEnv);
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
@@ -230,14 +243,17 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             props,
             snapshot,
             currentAttemptState,
+            attemptStateMap,
+            sharedAttemptStateMap,
           });
           const context = {
             snapshot,
             context: { mode: 'REVIEW', host: props.mountPoint },
             env: scriptEnv,
             domain: adaptivityDomain,
-            initStateFacts: {},
+            initStateFacts: snapshot,
             initStateBindToFacts: {},
+            mutateChanges: snapshot,
           };
           partsInitDeferred.resolve(context);
           /* console.log('AD EMIT CONTEXT CHANGED', context); */
@@ -246,7 +262,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }
       return partsInitDeferred.promise;
     },
-    [partsLayout, adaptivityDomain],
+    [partsLayout, adaptivityDomain, isReviewMode],
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
@@ -329,7 +345,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       console.warn(`[onPartSave: ${id}] called with no responses`);
       return;
     }
-    const currentAttemptState = sharedAttemptStateMap.get(activityId);
+    let currentActivityId: any = activityId;
+    if (sharedAttemptStateMap?.size) {
+      currentActivityId = Array.from(sharedAttemptStateMap.keys()).pop();
+    }
+    const currentAttemptState = sharedAttemptStateMap.get(currentActivityId);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
