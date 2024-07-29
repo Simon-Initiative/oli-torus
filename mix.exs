@@ -190,7 +190,6 @@ defmodule Oli.MixProject do
       {:phoenix_live_reload, "~> 1.3", only: :dev},
       {:phoenix_live_view, "~> 0.20.17"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_storybook, "~> 0.5.6"},
       {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 5.0"},
@@ -237,7 +236,7 @@ defmodule Oli.MixProject do
       "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],
 
       # deploy tailwind assets
-      "assets.deploy": ["tailwind default --minify", "tailwind storybook --minify", "phx.digest"]
+      "assets.deploy": ["tailwind default --minify", "phx.digest"]
     ]
   end
 end
