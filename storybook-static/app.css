@@ -6916,6 +6916,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(28 25 23 / var(--tw-bg-opacity)) !important;
 }
 
+.bg-\[\#0062f2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 98 242 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#0080FF\] {
   --tw-bg-opacity: 1;
   background-color: rgb(0 128 255 / var(--tw-bg-opacity));
@@ -8699,6 +8704,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#353740\] {
   --tw-text-opacity: 1;
   color: rgb(53 55 64 / var(--tw-text-opacity));
+}
+
+.text-\[\#4ca6ff\] {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
 .text-\[\#757682\] {
