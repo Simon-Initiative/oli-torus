@@ -4,6 +4,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
   alias Oli.Seeder
   alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.ResourceType
 
   import Oli.Factory
   import Phoenix.ConnTest
@@ -620,6 +621,112 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
                  project.slug,
                  page_2.slug
                )
+    end
+  end
+
+  describe "Delete page" do
+    setup [:admin_conn]
+
+    test "renders deletion restriction message and lists linking resources", %{conn: conn} do
+      author = insert(:author)
+
+      project = insert(:project, authors: [author])
+
+      page_1_revision =
+        insert(:revision, %{
+          slug: "page_1",
+          title: "Page 1",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      page_2_revision =
+        insert(:revision, %{
+          slug: "page_2",
+          title: "Page 2",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      page_3_revision =
+        insert(:revision, %{
+          slug: "page_3",
+          title: "Page 3",
+          resource_type_id: ResourceType.id_for_page(),
+          author_id: author.id
+        })
+
+      container_revision =
+        insert(:revision, %{
+          objectives: %{},
+          resource_type_id: ResourceType.id_for_container(),
+          children: [
+            page_1_revision.resource_id,
+            page_2_revision.resource_id,
+            page_3_revision.resource_id
+          ],
+          content: %{},
+          slug: "root_container",
+          title: "Root Container",
+          author_id: author.id
+        })
+
+      all_revisions = [page_1_revision, page_2_revision, page_3_revision, container_revision]
+
+      # asociate resources to project
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{project_id: project.id, resource_id: revision.resource_id})
+      end)
+
+      # publish project
+      publication =
+        insert(:publication, %{
+          project: project,
+          root_resource_id: container_revision.resource_id,
+          published: nil
+        })
+
+      # publish resources
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      # Replace content to have a hyperlink pointing to page 3
+      Oli.Resources.update_revision(page_1_revision, %{
+        content: create_hyperlink_content("page_3")
+      })
+
+      # Replace content to have a page link pointing to page 3
+      Oli.Resources.update_revision(page_2_revision, %{
+        content: create_page_link_content(page_3_revision.resource_id)
+      })
+
+      {:ok, view, _html} = live(conn, ~p"/authoring/project/#{project.slug}/curriculum")
+
+      render_click(view, "show_delete_modal", %{"slug" => "#{page_3_revision.slug}"})
+
+      # Extract titles and hyperlinks all in one list
+      results =
+        view
+        |> element("#not_empty_#{page_3_revision.slug}")
+        |> render()
+        |> Floki.parse_document!()
+        |> Floki.find("li")
+        |> Enum.reduce([], fn a_tag, acc ->
+          href = Floki.find(a_tag, "a") |> Floki.attribute("href") |> List.first()
+          text = Floki.text(a_tag)
+          [text, href | acc]
+        end)
+
+      assert Enum.any?(results, fn result -> result =~ page_1_revision.title end)
+      assert Enum.any?(results, fn result -> result =~ page_2_revision.title end)
+      assert Enum.any?(results, fn result -> result =~ page_1_revision.slug end)
+      assert Enum.any?(results, fn result -> result =~ page_2_revision.slug end)
     end
   end
 

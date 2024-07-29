@@ -24,7 +24,7 @@ defmodule OliWeb.CognitoController do
         conn
         |> create_pow_user(:user, user)
         |> maybe_send_invite_email(author)
-        |> redirect(to: ~p"/sections")
+        |> redirect(to: ~p"/sections/workspace/instructor")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
