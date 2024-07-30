@@ -28,11 +28,11 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
     case AccountLookupCache.get_author(current_author_id) do
       {:ok, current_author} ->
         case current_author do
-          %Author{system_role_id: system_role_id} ->
+          %Author{} ->
             socket
             |> assign(
               current_author: current_author,
-              is_system_admin: system_role_id == Oli.Accounts.has_admin_role?(current_author)
+              is_system_admin: Oli.Accounts.is_system_admin?(current_author)
             )
 
           _ ->
