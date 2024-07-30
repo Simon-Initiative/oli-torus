@@ -34,10 +34,13 @@
           <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Student Sign In
           </div>
-          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
-          <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
-            OR
-          </div>
+          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <%= for link <- provider_links, do: raw(link) %>
+          <%= if provider_links != [] do %>
+            <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+              OR
+            </div>
+          <% end %>
           <%= form_for @conn, Routes.session_path(@conn, :signin), [as: :user], fn f -> %>
             <div class="flex flex-col gap-y-2">
               <div class="w-80 h-11 m-auto form-label-group border-none">
