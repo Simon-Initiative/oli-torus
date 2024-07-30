@@ -96,6 +96,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
+        name: :assessment_mode,
+        label: "PRESENTATION",
+        render_fn: &__MODULE__.render_assessment_mode_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:assessment_mode)
+      },
+      %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
@@ -306,6 +313,23 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     <select class="torus-select pr-32" name={"retake_mode-#{@id}"}>
       <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
       <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
+    </select>
+    """
+  end
+
+  def render_assessment_mode_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        assessment_mode: assessment.assessment_mode,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <select class="torus-select pr-32" name={"assessment_mode-#{@id}"}>
+      <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
+      <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
+        One at a time
+      </option>
     </select>
     """
   end

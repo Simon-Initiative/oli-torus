@@ -178,7 +178,7 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
         {:noreply,
          socket
          |> put_flash(:info, "Discount successfully created/updated.")
-         |> push_redirect(to: index_view(socket.assigns))}
+         |> push_navigate(to: index_view(socket.assigns))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,

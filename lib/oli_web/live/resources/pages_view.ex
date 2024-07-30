@@ -29,6 +29,7 @@ defmodule OliWeb.Resources.PagesView do
   alias OliWeb.Curriculum.OptionsModalContent
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
+  alias OliWeb.Curriculum.HyperlinkDependencyModal
 
   @limit 25
 
@@ -102,7 +103,7 @@ defmodule OliWeb.Resources.PagesView do
         _ ->
           socket
           |> put_flash(:info, "You do not have permission to access this course project")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
+          |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))
       end
 
     {:ok, socket}
@@ -348,38 +349,15 @@ defmodule OliWeb.Resources.PagesView do
         [container] -> container
       end
 
-    modal_assigns = %{
-      id: "delete_#{revision.slug}",
-      redirect_url:
-        Routes.live_path(
-          socket,
-          __MODULE__,
-          socket.assigns.project.slug,
-          %{
-            sort_by: socket.assigns.table_model.sort_by_spec.name,
-            sort_order: socket.assigns.table_model.sort_order,
-            offset: socket.assigns.offset,
-            text_search: socket.assigns.options.text_search
-          }
-        ),
-      revision: revision,
-      container: container,
-      project: project,
-      author: author
-    }
+    project = socket.assigns.project
 
-    modal = fn assigns ->
-      ~H"""
-      <OliWeb.Curriculum.DeleteModal.render {@modal_assigns} />
-      """
+    case AuthoringResolver.find_hyperlink_references(project.slug, slug) do
+      [] ->
+        proceed_with_deletion_warning(socket, container, project, author, revision)
+
+      references ->
+        show_hyperlink_dependency_modal(socket, container, project, references, revision)
     end
-
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
   end
 
   def handle_event("DeleteModal.delete", %{"slug" => slug}, socket) do
@@ -509,7 +487,7 @@ defmodule OliWeb.Resources.PagesView do
            :info,
            "#{resource_type_label(revision) |> String.capitalize()} options saved"
          )
-         |> push_redirect(to: redirect_url)}
+         |> push_navigate(to: redirect_url)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
@@ -698,12 +676,64 @@ defmodule OliWeb.Resources.PagesView do
     patch_with(socket, %{})
   end
 
+  def handle_event("dismiss", _, socket) do
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
+  end
+
+  defp show_hyperlink_dependency_modal(socket, container, project, references, revision) do
+    modal_assigns = %{
+      id: "not_empty_#{revision.slug}",
+      revision: revision,
+      container: container,
+      project: project,
+      hyperlinks: references
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <HyperlinkDependencyModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  defp proceed_with_deletion_warning(socket, container, project, author, revision) do
+    modal_assigns = %{
+      id: "delete_#{revision.slug}",
+      redirect_url:
+        Routes.live_path(
+          socket,
+          __MODULE__,
+          socket.assigns.project.slug,
+          %{
+            sort_by: socket.assigns.table_model.sort_by_spec.name,
+            sort_order: socket.assigns.table_model.sort_order,
+            offset: socket.assigns.offset,
+            text_search: socket.assigns.options.text_search
+          }
+        ),
+      revision: revision,
+      container: container,
+      project: project,
+      author: author
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <OliWeb.Curriculum.DeleteModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   defp disconnected_page_node(%Revision{} = revision, %Project{} = project) do

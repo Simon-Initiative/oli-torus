@@ -42,6 +42,11 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # assessment settings
     field :max_attempts, :integer, default: 0
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
+
+    field :assessment_mode, Ecto.Enum,
+      values: [:traditional, :one_at_a_time],
+      default: :traditional
+
     field :password, :string
     field :late_submit, Ecto.Enum, values: [:allow, :disallow], default: :allow
     field :late_start, Ecto.Enum, values: [:allow, :disallow], default: :allow
@@ -95,6 +100,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :max_attempts,
       :password,
       :retake_mode,
+      :assessment_mode,
       :late_submit,
       :late_start,
       :time_limit,

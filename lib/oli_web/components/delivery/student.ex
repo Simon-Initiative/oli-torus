@@ -296,7 +296,6 @@ defmodule OliWeb.Components.Delivery.Student do
 
   defp time_remaining(%{end_date: nil} = assigns) do
     ~H"""
-
     """
   end
 

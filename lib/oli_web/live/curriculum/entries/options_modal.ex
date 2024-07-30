@@ -491,6 +491,27 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           </div>
 
           <div class="form-group">
+            <label for="assessment_mode">Presentation</label>
+            <.input
+              type="select"
+              id="assessment_mode"
+              name="revision[assessment_mode]"
+              aria-describedby="assessment_mode_description"
+              placeholder="Presentation"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:assessment_mode]}
+              options={[
+                {"Traditional: Show all content and questions at once", :traditional},
+                {"One at a Time: Show one question at a time", :one_at_a_time}
+              ]}
+            />
+            <small id="assessment_mode_description" class="form-text text-muted">
+              The presentation determines how questions are displayed to students.
+            </small>
+          </div>
+
+          <div class="form-group">
             <label for="purpose">Purpose</label>
             <%= select(
               @form,
@@ -507,15 +528,17 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
           <div class="form-group">
             <label>Related Resource</label>
-            <%= live_component(HierarchySelector,
-              disabled:
+            <.live_component
+              module={HierarchySelector}
+              disabled={
                 !@revision.graded &&
-                  is_foundation(@form, @revision),
-              field_name: "revision[relates_to][]",
-              id: "related-resources-selector",
-              items: @project_hierarchy.children,
-              initial_values: get_selected_related_resources(@revision, @project_hierarchy)
-            ) %>
+                  is_foundation(@form, @revision)
+              }
+              field_name="revision[relates_to][]"
+              id="related-resources-selector"
+              items={@project_hierarchy.children}
+              initial_values={get_selected_related_resources(@revision, @project_hierarchy)}
+            />
           </div>
         <% else %>
           <div class="form-group">
