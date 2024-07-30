@@ -450,7 +450,7 @@ defmodule OliWeb.Backgrounds do
             <stop offset="1" stop-color="#737373" stop-opacity="0" />
           </linearGradient>
           <clipPath id="clip0_494_5035">
-            <rect width="1547" height="419" fill="white" transform="translate(-19 5)" />
+            <rect width="1570" height="427" fill="none" />
           </clipPath>
         </defs>
       </svg>
