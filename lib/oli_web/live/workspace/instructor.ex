@@ -34,6 +34,16 @@ defmodule OliWeb.Workspace.Instructor do
      )}
   end
 
+  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+    # admin case...
+    {:ok,
+     assign(socket,
+       active_workspace: :instructor,
+       header_enabled?: true,
+       footer_enabled?: true
+     )}
+  end
+
   def mount(_params, _session, socket) do
     # no current user case...
 
@@ -74,6 +84,41 @@ defmodule OliWeb.Workspace.Instructor do
     do: {:noreply, assign(socket, params: decode_params(params))}
 
   @impl Phoenix.LiveView
+
+  def render(%{has_admin_role: true} = assigns) do
+    ~H"""
+    <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
+      <div class="relative flex items-center h-[247px]">
+        <div class="absolute top-0 h-full w-full">
+          <Backgrounds.instructor_dashboard_header />
+        </div>
+        <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
+          <div class="flex flex-row items-center gap-3">
+            <Icons.growing_bars
+              stroke_class="stroke-[#353740] dark:stroke-white"
+              class="w-[36px] h-[36px]"
+            />
+            <h1 class="text-[#353740] dark:text-white text-[32px] font-bold leading-normal">
+              Instructor Dashboard
+            </h1>
+          </div>
+          <h2 class="text-[#353740] dark:text-white text-base font-normal leading-normal">
+            Gain insights into student engagement, progress, and learning patterns.
+          </h2>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-start mt-[40px] gap-9 py-[60px] px-[63px]">
+        <div class="flex flex-col gap-4">
+          <h3 class="w-full text-xl dark:text-white">
+            Instructor workspace with an admin account has not yet been developed.
+            To use this workspace please logout and sign in with an instructor account
+          </h3>
+        </div>
+      </div>
+    </div>
+    """
+  end
 
   def render(%{current_user: nil} = assigns) do
     ~H"""

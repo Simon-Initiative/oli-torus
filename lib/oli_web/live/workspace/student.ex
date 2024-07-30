@@ -36,6 +36,16 @@ defmodule OliWeb.Workspace.Student do
      )}
   end
 
+  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+    # admin case...
+    {:ok,
+     assign(socket,
+       active_workspace: :student,
+       header_enabled?: true,
+       footer_enabled?: true
+     )}
+  end
+
   def mount(_params, _session, socket) do
     # no current user case...
 
@@ -76,6 +86,28 @@ defmodule OliWeb.Workspace.Student do
     do: {:noreply, assign(socket, params: decode_params(params))}
 
   @impl Phoenix.LiveView
+
+  def render(%{has_admin_role: true} = assigns) do
+    ~H"""
+    <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
+      <div
+        class="absolute top-0 left-0 h-full w-full"
+        style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
+      />
+      <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
+        Hi, <span class="font-bold"><%= @ctx.author.given_name %></span>
+      </h1>
+    </div>
+    <div class="flex flex-col items-start py-[60px] px-[100px]">
+      <div class="flex mb-9 w-full">
+        <h3 class="w-full text-xl dark:text-white">
+          Student workspace with an admin account has not yet been developed.
+          To use this workspace please logout and sign in with a student account
+        </h3>
+      </div>
+    </div>
+    """
+  end
 
   def render(%{current_user: nil} = assigns) do
     ~H"""
