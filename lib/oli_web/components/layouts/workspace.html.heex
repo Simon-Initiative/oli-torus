@@ -4,10 +4,11 @@
     class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
   >
     <div class="max-w-[400px] my-auto ml-auto mr-3">
-      <Components.Delivery.UserAccount.menu
-        id="user-account-menu"
+      <Components.Delivery.UserAccount.workspace_menu
+        id="workspace-user-menu"
         ctx={@ctx}
-        is_system_admin={@is_system_admin}
+        has_admin_role={@has_admin_role}
+        active_workspace={@active_workspace}
       />
     </div>
   </div>

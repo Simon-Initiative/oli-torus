@@ -32,19 +32,21 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
             socket
             |> assign(
               current_author: current_author,
-              is_system_admin: Oli.Accounts.is_system_admin?(current_author)
+              is_system_admin: Oli.Accounts.is_system_admin?(current_author),
+              has_admin_role: Oli.Accounts.has_admin_role?(current_author)
             )
 
           _ ->
-            assign(socket, is_system_admin: false)
+            assign(socket, is_system_admin: false, has_admin_role: false)
         end
 
       _ ->
-        assign(socket, is_system_admin: false)
+        assign(socket, is_system_admin: false, has_admin_role: false)
     end
   end
 
-  def set_author(socket, _session), do: assign(socket, is_system_admin: false)
+  def set_author(socket, _session),
+    do: assign(socket, is_system_admin: false, has_admin_role: false)
 
   def set_user(socket, session, opts \\ [])
 
