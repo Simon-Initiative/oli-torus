@@ -9,6 +9,6 @@ defmodule Oli.Delivery.Attempts.GradingTest do
     assert {9.0, 9.0} == Graded.ensure_valid_grade({10, 9})
     assert {0.0, 1.0} == Graded.ensure_valid_grade({0.0, 0.0})
 
-    assert {0.0, 1.0} = %Result{score: -1.0, out_of: 0.0} |> Graded.ensure_valid_grade()
+    assert {0.0, 1.0} == %Result{score: -1.0, out_of: 0.0} |> Graded.ensure_valid_grade()
   end
 end

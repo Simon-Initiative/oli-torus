@@ -3,7 +3,6 @@ defmodule OliWeb.Workspace.Student do
 
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
-  alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Components.Delivery.Utils
 

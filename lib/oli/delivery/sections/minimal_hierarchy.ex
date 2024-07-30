@@ -32,6 +32,7 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
       collab_space_config: r.collab_space_config,
       max_attempts: r.max_attempts,
       retake_mode: r.retake_mode,
+      assessment_mode: r.assessment_mode,
       project_id: p.project_id,
       deleted: r.deleted
     })
@@ -61,6 +62,7 @@ defmodule Oli.Delivery.Sections.MinimalHierarchy do
       collab_space_config: r.collab_space_config,
       max_attempts: r.max_attempts,
       retake_mode: r.retake_mode,
+      assessment_mode: r.assessment_mode,
       deleted: r.deleted
     })
     |> Repo.all()

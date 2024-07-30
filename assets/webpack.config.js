@@ -34,7 +34,6 @@ const populateEntries = () => {
     keepalive: ['./src/phoenix/keep-alive.ts'],
     delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
     delivery_adaptive_themes_flowchart: ['./styles/adaptive/flowchart.scss'],
-    storybook: ['./js/storybook.js'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -79,9 +78,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-      2 * foundActivities.length +
-      2 * foundParts.length +
-      styleSheets.length
+    2 * foundActivities.length +
+    2 * foundParts.length +
+    styleSheets.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',

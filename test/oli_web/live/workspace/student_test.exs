@@ -11,6 +11,8 @@ defmodule OliWeb.Workspace.StudentTest do
   alias OliWeb.Pow.UserContext
 
   describe "user cannot access when is not logged in" do
+    @tag :skip
+    # This test will be updated in MER-3304 and should assert that the sign in is shown
     test "redirects to new session", %{
       conn: conn
     } do

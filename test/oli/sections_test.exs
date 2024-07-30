@@ -1165,6 +1165,7 @@ defmodule Oli.SectionsTest do
           },
           max_attempts: 200,
           retake_mode: :targeted,
+          assessment_mode: :one_at_a_time,
           # "I've got the same combination on my luggage"
           password: "12345",
           late_submit: :disallow,
@@ -1332,6 +1333,7 @@ defmodule Oli.SectionsTest do
       assert page1_sr.explanation_strategy.set_num_attempts == 10
       assert page1_sr.max_attempts == 200
       assert page1_sr.retake_mode == :targeted
+      assert page1_sr.assessment_mode == :one_at_a_time
       assert page1_sr.password == "12345"
       assert page1_sr.late_submit == :disallow
       assert page1_sr.late_start == :disallow
@@ -1413,6 +1415,7 @@ defmodule Oli.SectionsTest do
           },
           max_attempts: 200,
           retake_mode: :targeted,
+          assessment_mode: :one_at_a_time,
           # "I've got the same combination on my luggage"
           password: "12345",
           late_submit: :disallow,
@@ -1553,6 +1556,7 @@ defmodule Oli.SectionsTest do
       assert page1_sr.explanation_strategy.set_num_attempts == 10
       assert page1_sr.max_attempts == 200
       assert page1_sr.retake_mode == :targeted
+      assert page1_sr.assessment_mode == :one_at_a_time
       assert page1_sr.password == "12345"
       assert page1_sr.late_submit == :disallow
       assert page1_sr.late_start == :disallow
@@ -1633,6 +1637,7 @@ defmodule Oli.SectionsTest do
           },
           max_attempts: 200,
           retake_mode: :targeted,
+          assesment_mode: :one_at_a_time,
           # "I've got the same combination on my luggage"
           password: "12345",
           late_submit: :disallow,

@@ -23,6 +23,8 @@ export const FormulaEditor = (props: Props) => {
   }
 
   const onFormulaClick = () => {
+    console.log('onFormulaClick');
+
     window.oliDispatch(
       modalActions.display(
         <FormulaModal

@@ -7,38 +7,22 @@ on:
     types: [completed]
 
 jobs:
-  check-auto-deploy:
-    name: Check AUTO_DEPLOY_ENABLED config
-    if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    environment:
-      name: ${{ vars.AUTO_DEPLOY_TARGET }}
-      url: https://${{ vars.AUTO_DEPLOY_TARGET }}
-    outputs:
-      enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
-      auto_deploy_ref: ${{ steps.get_auto_deploy_ref.outputs.auto_deploy_ref }}
-    steps:
-      - name: Check whether AUTO_DEPLOY_ENABLED is set to TRUE
-        id: check_auto_deploy_enabled
-        run: echo "enabled=$(if [ "${{ vars.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
-      - name: Get AUTO_DEPLOY_REF config
-        id: get_auto_deploy_ref
-        run: echo "auto_deploy_ref=$(if [ -n "${{ vars.AUTO_DEPLOY_REF }}" ] ; then echo ${{ vars.AUTO_DEPLOY_REF }} ; else echo refs/heads/master ; fi)" >> $GITHUB_OUTPUT
-
   auto-deploy:
     name: Auto Deploy
-    if: github.event.workflow_run.conclusion == 'success' && github.ref == needs.check-auto-deploy.outputs.auto_deploy_ref && needs.check-auto-deploy.outputs.enabled == 'true'
+    if: vars.AUTO_DEPLOY_ENABLED == 'TRUE' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == vars.AUTO_DEPLOY_REF
     runs-on: ubuntu-latest
     environment:
       name: ${{ vars.AUTO_DEPLOY_TARGET }}
       url: https://${{ vars.AUTO_DEPLOY_TARGET }}
-    needs: [check-auto-deploy]
 
     steps:
-      - run: echo "Auto deploy enabled for ref ${{ vars.AUTO_DEPLOY_REF }}. Deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ vars.AUTO_DEPLOY_TARGET }}"
+      - run: echo "Auto deploy enabled for ref ${{ vars.AUTO_DEPLOY_REF }}. Deploying ${{ github.event.workflow_run.head_branch }} commit ${{ github.event.workflow_run.head_sha }} to ${{ vars.AUTO_DEPLOY_TARGET }}"
 
+      # checkout the commit from the Package workflow that triggered the Auto Deploy workflow
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: 🧾 Build info
         id: info

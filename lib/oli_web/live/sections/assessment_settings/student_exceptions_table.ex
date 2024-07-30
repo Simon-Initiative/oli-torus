@@ -897,6 +897,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             :scoring,
             :grace_period,
             :retake_mode,
+            :assessment_mode,
             :feedback_mode,
             :review_submission,
             :exceptions_count,
@@ -1048,6 +1049,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
                "late_submit",
                "late_start",
                "retake_mode",
+               "assessment_mode",
                "feedback_mode",
                "review_submission"
              ] ->
