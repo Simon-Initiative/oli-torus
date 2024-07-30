@@ -2,7 +2,6 @@ import React, { useContext, useRef } from 'react';
 import produce from 'immer';
 import { Maybe } from 'tsmonad';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { AuthoringElementProps } from './AuthoringElement';
 import { ActivityModelSchema, MediaItemRequest, PostUndoable } from './types';
 
@@ -54,7 +53,6 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
     <AuthoringElementContext.Provider
       value={{ projectSlug, editMode, dispatch, model, onRequestMedia, authoringContext }}
     >
-      <ModalDisplay />
       <ErrorBoundary>{children}</ErrorBoundary>
     </AuthoringElementContext.Provider>
   );

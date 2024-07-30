@@ -216,6 +216,7 @@ defmodule Oli.Delivery.SettingsTest do
       end_date: nil,
       max_attempts: 10,
       retake_mode: :normal,
+      assessment_mode: :traditional,
       late_submit: :allow,
       late_start: :allow,
       time_limit: 20,
@@ -232,6 +233,7 @@ defmodule Oli.Delivery.SettingsTest do
       end_date: ~U[2019-01-01 00:00:00Z],
       max_attempts: 1,
       retake_mode: :targeted,
+      assessment_mode: :one_at_a_time,
       late_submit: :disallow,
       late_start: :disallow,
       time_limit: 30,
@@ -248,6 +250,7 @@ defmodule Oli.Delivery.SettingsTest do
     assert combined.end_date == ~U[2019-01-01 00:00:00Z]
     assert combined.max_attempts == 1
     assert combined.retake_mode == :targeted
+    assert combined.assessment_mode == :one_at_a_time
     assert combined.late_submit == :disallow
     assert combined.late_start == :disallow
     assert combined.time_limit == 30
@@ -269,6 +272,7 @@ defmodule Oli.Delivery.SettingsTest do
       end_date: nil,
       max_attempts: 10,
       retake_mode: :normal,
+      assessment_mode: :traditional,
       late_submit: :allow,
       late_start: :allow,
       time_limit: 20,
@@ -286,6 +290,7 @@ defmodule Oli.Delivery.SettingsTest do
       end_date: ~U[2019-01-01 00:00:00Z],
       max_attempts: 1,
       retake_mode: nil,
+      assessment_mode: nil,
       late_submit: :disallow,
       late_start: :disallow,
       time_limit: 30,
@@ -302,6 +307,7 @@ defmodule Oli.Delivery.SettingsTest do
     assert combined.end_date == ~U[2019-01-01 00:00:00Z]
     assert combined.max_attempts == 1
     assert combined.retake_mode == :normal
+    assert combined.assessment_mode == :traditional
     assert combined.late_submit == :disallow
     assert combined.late_start == :disallow
     assert combined.time_limit == 30

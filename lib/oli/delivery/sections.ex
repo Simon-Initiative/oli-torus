@@ -2464,6 +2464,7 @@ defmodule Oli.Delivery.Sections do
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
+        assessment_mode: revision.assessment_mode,
         section_id: section.id
       }
       |> SectionResource.to_map()
@@ -2783,6 +2784,7 @@ defmodule Oli.Delivery.Sections do
              :explanation_strategy,
              :max_attempts,
              :retake_mode,
+             :assessment_mode,
              :password,
              :late_submit,
              :late_start,
@@ -3407,6 +3409,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3533,6 +3536,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3676,7 +3680,8 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode
+            retake_mode: revision.retake_mode,
+            assessment_mode: revision.assessment_mode
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -3695,6 +3700,7 @@ defmodule Oli.Delivery.Sections do
                  :explanation_strategy,
                  :max_attempts,
                  :retake_mode,
+                 :assessment_mode,
                  :password,
                  :late_submit,
                  :late_start,
@@ -3765,7 +3771,8 @@ defmodule Oli.Delivery.Sections do
               item.max_attempts
             end,
           scoring_strategy_id: item.scoring_strategy_id,
-          retake_mode: item.retake_mode
+          retake_mode: item.retake_mode,
+          assessment_mode: item.assessment_mode
         }
       end)
 

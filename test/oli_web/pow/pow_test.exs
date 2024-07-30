@@ -110,7 +110,7 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/sections/workspace/instructor"
 
       # user who is already signed in should be automatically redirected away from sign in page
       conn =
@@ -118,7 +118,7 @@ defmodule OliWeb.Common.PowTest do
         |> get(Routes.pow_session_path(conn, :new))
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/sections/workspace/instructor"
     end
 
     test "hides authoring sign in box when coming from an invitation link", %{
@@ -142,7 +142,7 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/sections/workspace/instructor"
 
       # user who is already signed in should be automatically redirected away from sign in page
       conn =
@@ -150,7 +150,7 @@ defmodule OliWeb.Common.PowTest do
         |> get(Routes.pow_session_path(conn, :new))
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/sections/workspace/instructor"
     end
 
     test "handles new session failure for non LMS user", %{conn: conn, user: user} do

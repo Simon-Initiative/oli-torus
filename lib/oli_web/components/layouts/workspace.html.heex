@@ -11,15 +11,15 @@
   <Components.Delivery.Layouts.workspace_sidebar_nav
     ctx={@ctx}
     is_system_admin={assigns[:is_system_admin] || false}
-    active_workspace={@params.active_workspace}
+    active_workspace={assigns[:active_workspace] || :student}
     preview_mode={@preview_mode}
-    url_params={@params}
+    sidebar_expanded={@sidebar_expanded}
   />
   <div
     id="content"
     class={[
       "transition-all duration-100 mt-14 min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
-      if(@params.sidebar_expanded,
+      if(@sidebar_expanded,
         do: "md:w-[calc(100%-200px)] md:ml-[200px]",
         else: "md:w-[calc(100%-60px)] md:ml-[60px]"
       )
@@ -31,7 +31,7 @@
     id="footer_contaner"
     class={[
       "relative transition-all duration-100 mt-14",
-      if(@params.sidebar_expanded,
+      if(@sidebar_expanded,
         do: "md:w-[calc(100%-200px)] md:ml-[200px]",
         else: "md:w-[calc(100%-60px)] md:ml-[60px]"
       )
