@@ -17,7 +17,7 @@ defmodule OliWeb.Workspace.InstructorTest do
       redirect_path = "/session/new?request_path=%2Fsections%2Fworkspace%2Finstructor"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, ~p"/sections/workspace/instructor")
+        live(conn, ~p"/workspaces/instructor")
     end
   end
 
@@ -25,7 +25,7 @@ defmodule OliWeb.Workspace.InstructorTest do
     setup [:user_conn]
 
     test "can access instructor workspace when logged in", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, "h1", "Instructor Dashboard")
       assert has_element?(view, "p", "You are not enrolled in any courses as an instructor.")
@@ -47,7 +47,7 @@ defmodule OliWeb.Workspace.InstructorTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
       {:ok, view, _html} =
-        live(conn, ~p"/sections/workspace/instructor?sidebar_expanded=true")
+        live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
@@ -69,7 +69,7 @@ defmodule OliWeb.Workspace.InstructorTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;/images/course_default.png&#39;);\"|
@@ -82,7 +82,7 @@ defmodule OliWeb.Workspace.InstructorTest do
       Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -127,7 +127,7 @@ defmodule OliWeb.Workspace.InstructorTest do
       Sections.enroll(instructor_2.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(instructor_2.id, section_3.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -168,7 +168,7 @@ defmodule OliWeb.Workspace.InstructorTest do
       Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       refute has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -177,7 +177,7 @@ defmodule OliWeb.Workspace.InstructorTest do
     test "can not create sections on instructor worskpace when logged in as student", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(
                view,
@@ -197,23 +197,23 @@ defmodule OliWeb.Workspace.InstructorTest do
     test "can navigate between the different workspaces through the left navbar", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(
                view,
-               "a[href='/sections/workspace/course_author?sidebar_expanded=true']",
+               "a[href='/workspaces/course_author?sidebar_expanded=true']",
                "Course Author"
              )
 
       assert has_element?(
                view,
-               "a[href='/sections/workspace/instructor?sidebar_expanded=true']",
+               "a[href='/workspaces/instructor?sidebar_expanded=true']",
                "Instructor"
              )
 
       assert has_element?(
                view,
-               "a[href='/sections/workspace/student?sidebar_expanded=true']",
+               "a[href='/workspaces/student?sidebar_expanded=true']",
                "Student"
              )
 
@@ -228,11 +228,11 @@ defmodule OliWeb.Workspace.InstructorTest do
 
       assert_redirected(
         view,
-        ~p"/sections/workspace/instructor?sidebar_expanded=true"
+        ~p"/workspaces/instructor?sidebar_expanded=true"
       )
 
       {:ok, view, _html} =
-        live(conn, ~p"/sections/workspace/instructor?sidebar_expanded=true")
+        live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 
       assert has_element?(view, "h1", "Instructor Dashboard")
       refute has_element?(view, "h3", "Courses available")
@@ -244,11 +244,11 @@ defmodule OliWeb.Workspace.InstructorTest do
 
       assert_redirected(
         view,
-        ~p"/sections/workspace/student?sidebar_expanded=true"
+        ~p"/workspaces/student?sidebar_expanded=true"
       )
 
       {:ok, view, _html} =
-        live(conn, ~p"/sections/workspace/student?sidebar_expanded=true")
+        live(conn, ~p"/workspaces/student?sidebar_expanded=true")
 
       refute has_element?(view, "h1", "Instructor Dashboard")
       assert has_element?(view, "h3", "Courses available")
@@ -260,14 +260,14 @@ defmodule OliWeb.Workspace.InstructorTest do
 
       assert_redirected(
         view,
-        ~p"/sections/workspace/course_author?sidebar_expanded=true"
+        ~p"/workspaces/course_author?sidebar_expanded=true"
       )
     end
 
     test "can see expanded/collapsed sidebar nav", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=true]})
 
@@ -279,7 +279,7 @@ defmodule OliWeb.Workspace.InstructorTest do
                |> render() =~ label
       end)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor?sidebar_expanded=false")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=false")
 
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=false]})
 
@@ -293,7 +293,7 @@ defmodule OliWeb.Workspace.InstructorTest do
     test "navbar expanded or collapsed state is kept after navigating to other menu link", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor?sidebar_expanded=true")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=true]})
 
@@ -301,9 +301,9 @@ defmodule OliWeb.Workspace.InstructorTest do
       |> element(~s{nav[id=desktop-workspace-nav-menu] a}, "Student")
       |> render_click()
 
-      assert_redirect(view, "/sections/workspace/student?sidebar_expanded=true")
+      assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor?sidebar_expanded=false")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=false")
 
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=false]})
 
@@ -311,7 +311,7 @@ defmodule OliWeb.Workspace.InstructorTest do
       |> element(~s{nav[id=desktop-workspace-nav-menu] a[id="student_workspace_nav_link"]})
       |> render_click()
 
-      assert_redirect(view, "/sections/workspace/student?sidebar_expanded=false")
+      assert_redirect(view, "/workspaces/student?sidebar_expanded=false")
     end
   end
 
@@ -321,7 +321,7 @@ defmodule OliWeb.Workspace.InstructorTest do
     test "can create sections on instructor worskpace when logged in", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/instructor")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       refute has_element?(
                view,

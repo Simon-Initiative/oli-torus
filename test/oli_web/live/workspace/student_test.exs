@@ -19,7 +19,7 @@ defmodule OliWeb.Workspace.StudentTest do
       redirect_path = "/session/new?request_path=%2Fsections%2Fworkspace%2Fstudent"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, ~p"/sections/workspace/student")
+        live(conn, ~p"/workspaces/student")
     end
   end
 
@@ -27,14 +27,14 @@ defmodule OliWeb.Workspace.StudentTest do
     setup [:user_conn]
 
     test "can access student workspace when logged in", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "h3", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
     test "can access student workspace when not enrolled to any section", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
@@ -47,7 +47,7 @@ defmodule OliWeb.Workspace.StudentTest do
         %{
           to: "/session/new",
           flash: %{"error" => "Sorry, your account is locked. Please contact support."}
-        }}} = live(conn, ~p"/sections/workspace/student")
+        }}} = live(conn, ~p"/workspaces/student")
     end
 
     test "can access student workspace when is unlocked after being locked", %{
@@ -61,7 +61,7 @@ defmodule OliWeb.Workspace.StudentTest do
       # Unlock the user
       UserContext.unlock(user)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "h3", "Courses available")
       assert has_element?(view, "p", "You are not enrolled in any courses.")
@@ -83,7 +83,7 @@ defmodule OliWeb.Workspace.StudentTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:ok, view, _html} =
-        live(conn, ~p"/sections/workspace/student?sidebar_expanded=true")
+        live(conn, ~p"/workspaces/student?sidebar_expanded=true")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;https://example.com/some-image-url.png&#39;);\"|
@@ -101,7 +101,7 @@ defmodule OliWeb.Workspace.StudentTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert render(view) =~
                ~s|style=\"background-image: url(&#39;/images/course_default.png&#39;);\"|
@@ -114,7 +114,7 @@ defmodule OliWeb.Workspace.StudentTest do
       Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -159,7 +159,7 @@ defmodule OliWeb.Workspace.StudentTest do
       Sections.enroll(instructor_2.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
       Sections.enroll(instructor_2.id, section_3.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "h5", "The best course ever!")
       assert has_element?(view, "h5", "Maths")
@@ -197,7 +197,7 @@ defmodule OliWeb.Workspace.StudentTest do
       Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")

@@ -2,6 +2,7 @@ defmodule OliWeb.Workspace.Student do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Metrics
+  alias OliWeb.Backgrounds
   alias Oli.Delivery.Sections
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Components.Delivery.Utils
@@ -356,7 +357,7 @@ defmodule OliWeb.Workspace.Student do
   def handle_event("search_section", %{"text_search" => text_search}, socket) do
     {:noreply,
      push_patch(socket,
-       to: ~p"/sections/workspace/student?#{%{socket.assigns.params | text_search: text_search}}"
+       to: ~p"/workspaces/student?#{%{socket.assigns.params | text_search: text_search}}"
      )}
   end
 

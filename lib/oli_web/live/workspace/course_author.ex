@@ -420,8 +420,7 @@ defmodule OliWeb.Workspace.CourseAuthor do
         changes
       )
 
-    {:noreply,
-     push_patch(socket, to: ~p"/sections/workspace/course_author?#{params}", replace: true)}
+    {:noreply, push_patch(socket, to: ~p"/workspaces/course_author?#{params}", replace: true)}
   end
 
   def handle_event("toggle_show_all", _, socket) do

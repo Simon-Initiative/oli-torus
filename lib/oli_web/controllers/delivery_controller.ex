@@ -158,7 +158,7 @@ defmodule OliWeb.DeliveryController do
       case user do
         %User{independent_learner: true} ->
           case Map.get(conn.assigns, :section) do
-            nil -> ~p"/sections/workspace/student"
+            nil -> ~p"/workspaces/student"
             section -> ~p"/sections/#{section.slug}"
           end
 

@@ -11,7 +11,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     test "shows sign in view if is not logged in as author/admin", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "div", "Course Author Sign In")
     end
@@ -23,7 +23,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     test "shows course author header if is logged in", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "h1", "Course Author")
 
@@ -35,7 +35,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     end
 
     test "loads correctly when there are no projects", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "#projects-table")
       assert has_element?(view, "p", "None exist")
@@ -46,7 +46,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       author_project = create_project_with_owner(author)
       another_project = insert(:author) |> create_project_with_owner()
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       author_project_row =
         view
@@ -65,7 +65,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       active_project = create_project_with_owner(author)
       deleted_project = create_project_with_owner(author, %{status: :deleted})
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       # shows only active projects by default
       assert has_element?(view, "##{active_project.id}")
@@ -88,7 +88,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
 
       last_p = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "##{first_p.id}")
       refute has_element?(view, "##{last_p.id}")
@@ -105,7 +105,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       create_project_with_owner(author, %{title: "Testing A"})
       create_project_with_owner(author, %{title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -127,7 +127,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     setup [:admin_conn, :set_timezone]
 
     test "loads correctly when there are no projects", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "#projects-table")
       assert has_element?(view, "p", "None exist")
@@ -137,7 +137,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     test "lists projects", %{conn: conn, admin: admin, ctx: ctx} do
       project = create_project_with_owner(admin)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       project_row =
         view
@@ -155,7 +155,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       admin_project = create_project_with_owner(admin)
       project = insert(:author) |> create_project_with_owner()
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       # shows all projects by default
       assert has_element?(view, "##{admin_project.id}")
@@ -174,7 +174,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       active_project = create_project_with_owner(admin)
       deleted_project = insert(:project, status: :deleted)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       # shows only active projects by default
       assert has_element?(view, "##{active_project.id}")
@@ -193,7 +193,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       [first_p | tail] = insert_list(26, :project) |> Enum.sort_by(& &1.title)
       last_p = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "##{first_p.id}")
       refute has_element?(view, "##{last_p.id}")
@@ -210,7 +210,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       insert(:project, %{title: "Testing A"})
       insert(:project, %{title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert view
              |> element("tr:first-child > td:first-child")

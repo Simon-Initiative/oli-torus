@@ -783,12 +783,8 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  ###
-  # Section Routes
-  ###
-
-  ### Sections - Workspaces
-  scope "/sections/workspace/", OliWeb.Workspace do
+  ### Workspaces
+  scope "/workspaces/", OliWeb.Workspace do
     pipe_through([
       :browser,
       :authoring_and_delivery,
@@ -808,6 +804,10 @@ defmodule OliWeb.Router do
       live("/student", Student)
     end
   end
+
+  ###
+  # Section Routes
+  ###
 
   scope "/sections", OliWeb do
     pipe_through([:browser])

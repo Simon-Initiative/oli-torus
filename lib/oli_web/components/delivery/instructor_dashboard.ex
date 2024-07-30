@@ -105,7 +105,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     """
   end
 
-  defp logo_link(nil, _), do: ~p"/sections/workspace/instructor"
+  defp logo_link(nil, _), do: ~p"/workspaces/instructor"
 
   defp logo_link(section, preview_mode) do
     if preview_mode do
@@ -249,7 +249,6 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
 
   def section_details_header(%{section: nil} = assigns) do
     ~H"""
-
     """
   end
 

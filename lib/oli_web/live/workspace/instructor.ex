@@ -376,8 +376,7 @@ defmodule OliWeb.Workspace.Instructor do
   def handle_event("search_section", %{"text_search" => text_search}, socket) do
     {:noreply,
      push_patch(socket,
-       to:
-         ~p"/sections/workspace/instructor?#{%{socket.assigns.params | text_search: text_search}}"
+       to: ~p"/workspaces/instructor?#{%{socket.assigns.params | text_search: text_search}}"
      )}
   end
 

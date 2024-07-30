@@ -113,9 +113,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  defp target_signout_path(:course_author), do: ~p"/sections/workspace/course_author"
-  defp target_signout_path(:instructor), do: ~p"/sections/workspace/instructor"
-  defp target_signout_path(:student), do: ~p"/sections/workspace/student"
+  defp target_signout_path(:course_author), do: ~p"/workspaces/course_author"
+  defp target_signout_path(:instructor), do: ~p"/workspaces/instructor"
+  defp target_signout_path(:student), do: ~p"/workspaces/student"
 
   attr(:label, :string, required: true)
   attr(:class, :string, default: "")
@@ -205,7 +205,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <.menu_item_maybe_linked_account user={@ctx.user} />
     <.maybe_menu_item_edit_user_account user={@ctx.user} />
-    <.menu_item_link href={~p"/sections/workspace/student"}>
+    <.menu_item_link href={~p"/workspaces/student"}>
       My Courses
     </.menu_item_link>
     <.menu_divider />
@@ -311,7 +311,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_my_courses_link(assigns) do
     ~H"""
-    <.menu_item_link href={~p"/sections/workspace/student"}>
+    <.menu_item_link href={~p"/workspaces/student"}>
       My Courses
     </.menu_item_link>
     """
