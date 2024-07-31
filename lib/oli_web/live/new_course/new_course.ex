@@ -269,7 +269,8 @@ defmodule OliWeb.Delivery.NewCourse do
                course_section_number: section_params.course_section_number,
                start_date: section_params.start_date,
                end_date: section_params.end_date,
-               preferred_scheduling_time: section_params.preferred_scheduling_time
+               preferred_scheduling_time: section_params.preferred_scheduling_time,
+               analytics_version: :v2
              }
            ) do
         {:ok, section} ->
