@@ -159,6 +159,8 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:encouraging_subtitle, :string)
 
+    field(:agenda, :boolean, default: false)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -219,7 +221,8 @@ defmodule Oli.Delivery.Sections.Section do
       :apply_major_updates,
       :assistant_enabled,
       :welcome_title,
-      :encouraging_subtitle
+      :encouraging_subtitle,
+      :agenda
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)
