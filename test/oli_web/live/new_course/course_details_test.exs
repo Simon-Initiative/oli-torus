@@ -1,5 +1,6 @@
 defmodule OliWeb.NewCourse.CourseDetailsTest do
   use ExUnit.Case, async: true
+  alias Oli.Delivery.Sections
   use OliWeb.ConnCase
 
   import Ecto.Query, warn: false
@@ -331,6 +332,39 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert blueprint_section.contains_explorations == true
 
       assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/course")
+    end
+
+    test "creates a section with analytics_version :v2 ", %{conn: conn} = context do
+      # Factory has a default analytics_version ==  :v1
+      %{section: section} = create_source(context)
+
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+
+      {:ok, section} = Sections.update_section(section, %{type: :blueprint})
+
+      select_source(:lms_instructor_conn, view, section)
+
+      complete_course_name_form(view)
+
+      view
+      |> element("#open_and_free_form")
+      |> render_hook("js_form_data_response", %{
+        "section" => %{
+          class_days: [:monday, :friday],
+          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
+          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
+          preferred_scheduling_time: ~T[23:59:59]
+        },
+        "current_step" => 3
+      })
+
+      # Wait until TaskSupervisor completes to create section
+      wait_for_completion()
+
+      assert [:v2] ==
+               Oli.Repo.all(Sections.Section)
+               |> Enum.filter(&(&1.id != section.id))
+               |> Enum.map(& &1.analytics_version)
     end
   end
 
