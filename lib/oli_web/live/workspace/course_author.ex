@@ -224,7 +224,7 @@ defmodule OliWeb.Workspace.CourseAuthor do
             >
               OR
             </div>
-            <%= form_for :user, Routes.session_path(@socket, :signin, type: :author, after_sign_in_target: :course_author_workspace), [as: :user], fn f -> %>
+            <%= form_for :user, Routes.authoring_pow_session_path(OliWeb.Endpoint, :create, request_path: ~p"/workspaces/course_author"), [as: :user], fn f -> %>
               <div class="flex flex-col gap-y-2">
                 <div class="w-80 h-11 m-auto form-label-group border-none">
                   <%= email_input(f, Pow.Ecto.Schema.user_id_field(@socket),
