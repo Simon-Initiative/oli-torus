@@ -22,7 +22,6 @@ defmodule OliWeb.DeliveryController do
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
-    PlatformRoles.get_role(:institution_instructor),
     ContextRoles.get_role(:context_administrator),
     ContextRoles.get_role(:context_instructor)
   ]
