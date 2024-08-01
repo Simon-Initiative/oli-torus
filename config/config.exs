@@ -30,7 +30,6 @@ config :oli,
   problematic_query_detection: false,
   problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
-  prometheus_port: 9568,
   build: %{
     version: Mix.Project.config()[:version],
     sha: System.get_env("SHA", default_sha),
@@ -288,14 +287,6 @@ config :tailwind,
       --config=tailwind.config.js
       --input=css/app.css
       --output=../priv/static/css/app.css
-    ),
-    cd: Path.expand("../assets", __DIR__)
-  ],
-  storybook: [
-    args: ~w(
-      --config=tailwind.config.js
-      --input=css/storybook.css
-      --output=../priv/static/assets/storybook.css
     ),
     cd: Path.expand("../assets", __DIR__)
   ]

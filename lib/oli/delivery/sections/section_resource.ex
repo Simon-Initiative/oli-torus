@@ -42,6 +42,11 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # assessment settings
     field :max_attempts, :integer, default: 0
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
+
+    field :assessment_mode, Ecto.Enum,
+      values: [:traditional, :one_at_a_time],
+      default: :traditional
+
     field :password, :string
     field :late_submit, Ecto.Enum, values: [:allow, :disallow], default: :allow
     field :late_start, Ecto.Enum, values: [:allow, :disallow], default: :allow
@@ -51,6 +56,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :review_submission, Ecto.Enum, values: [:allow, :disallow], default: :allow
     field :feedback_mode, Ecto.Enum, values: [:allow, :disallow, :scheduled], default: :allow
     field :feedback_scheduled_date, :utc_datetime
+    field :hidden, :boolean, default: false
 
     # an array of ids to other section resources
     field :children, {:array, :id}, default: []
@@ -95,6 +101,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :max_attempts,
       :password,
       :retake_mode,
+      :assessment_mode,
       :late_submit,
       :late_start,
       :time_limit,
@@ -102,6 +109,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :review_submission,
       :feedback_mode,
       :feedback_scheduled_date,
+      :hidden,
       :scoring_strategy_id,
       :resource_id,
       :project_id,
@@ -135,7 +143,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
     :delivery_policy_id,
     :scoring_strategy_id,
     :inserted_at,
-    :updated_at
+    :updated_at,
+    :hidden
   ]
 
   def to_map(%SectionResource{} = section_resource) do

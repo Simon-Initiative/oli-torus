@@ -90,6 +90,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
+        name: :assessment_mode,
+        label: "PRESENTATION",
+        render_fn: &__MODULE__.render_assessment_mode_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:assessment_mode)
+      },
+      %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
@@ -347,6 +354,26 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         <option disabled selected={@retake_mode == nil} hidden value="">-</option>
         <option selected={@retake_mode == :targeted} value={:targeted}>Targeted</option>
         <option selected={@retake_mode == :normal} value={:normal}>Normal</option>
+      </select>
+    </div>
+    """
+  end
+
+  def render_assessment_mode_column(assigns, student_exception, _) do
+    assigns =
+      Map.merge(assigns, %{
+        assessment_mode: student_exception.assessment_mode,
+        id: student_exception.user_id
+      })
+
+    ~H"""
+    <div class={data_class(@selected_assessment.assessment_mode, @assessment_mode)}>
+      <select class="torus-select pr-32" name={"assessment_mode-#{@id}"}>
+        <option disabled selected={@assessment_mode == nil} hidden value="">-</option>
+        <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
+        <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
+          One at a time
+        </option>
       </select>
     </div>
     """

@@ -183,14 +183,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     end
   end
 
-  def menu_item_my_courses_link(assigns) do
-    ~H"""
-    <.menu_item_link href={~p"/sections"}>
-      My Courses
-    </.menu_item_link>
-    """
-  end
-
   attr(:user, User, required: true)
 
   def menu_item_maybe_linked_account(assigns) do
@@ -244,7 +236,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def maybe_my_courses_menu_item_link(assigns) do
     ~H"""
     <%= if is_independent_learner?(@user) do %>
-      <.menu_item_link href={~p"/sections"}>
+      <.menu_item_link href={~p"/sections/workspace/student"}>
         My Courses
       </.menu_item_link>
 

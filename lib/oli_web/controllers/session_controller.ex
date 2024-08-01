@@ -19,7 +19,7 @@ defmodule OliWeb.SessionController do
     case is_authenticated? do
       {:ok, conn} ->
         conn
-        |> redirect(to: UserRoutes.after_sign_in_path(conn))
+        |> redirect(to: UserRoutes.after_sign_in_path(conn, :student_workspace))
 
       {:error, conn} ->
         conn

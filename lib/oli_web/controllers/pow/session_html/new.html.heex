@@ -17,7 +17,7 @@
           <div class="w-auto h-11 justify-start items-end gap-1 inline-flex">
             <div class="justify-start items-end gap-x-3 flex">
               <div class="grow shrink basis-0 self-start py-1 justify-center items-center flex">
-                <.pencil_writing />
+                <.pencil_writing color="white" />
               </div>
               <div class="w-full h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
                 Course Author
@@ -80,7 +80,7 @@
                   to: Routes.pow_reset_password_reset_password_path(@conn, :new),
                   tabindex: "1",
                   class:
-                    "text-center text-blue-400 text-base font-bold font-['Open Sans'] leading-snug"
+                    "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
                 ) %>
               </div>
             </div>
@@ -92,7 +92,7 @@
             <div class="flex flex-col justify-center">
               <%= submit("Sign In",
                 class:
-                  "w-80 h-11 bg-blue-600 mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
+                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
               ) %>
               <div class="w-80 h-px border border-white mx-auto"></div>
             </div>
@@ -104,7 +104,7 @@
                   Routes.authoring_pow_registration_path(@conn, :new)
                 ),
               class:
-                "btn btn-md btn-link btn-block text-blue-400 text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
+                "btn btn-block text-[#4ca6ff] text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
             ) %>
           <% end %>
         </div>

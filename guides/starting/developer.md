@@ -158,33 +158,6 @@ with the Torus server running directly on the host machine.
    $ MIX_ENV=test mix ecto.reset
    ```
 
-### Integration (Hound Based) tests
-
-A set of [hound](https://github.com/HashNuke/hound) based integration tests reside in the test/hound directory. These tests
-actually run a Torus server and interact with it via a browser. They're useful for testing multi-page flows through the
-application as a user would, especially if those tests interact with client side javascript.
-
-These tests tend to be slower than unit tests, and have additional requirements to run, therefore they do not run by default
-when executing `mix test`
-
-To run these tests you will need:
-
-1. A browser that can be controlled by a web driver (Chrome is configured by default and is recommended)
-2. A web driver for that browser ([chromedriver](https://chromedriver.chromium.org/downloads) is recommended)
-
-To run the tests:
-
-1. Launch chromedriver `./chromedriver` - for most people, it should work with no additional arguments
-2. While that's running, run the tests `mix test.hound`
-
-Some notes:
-
-- The tests run with MIX_ENV=hound
-- The tests run against the oli_test database, the same one used by `mix test`
-
-While debugging or developing these tests, you can watch the browser by setting an env var HEADLESS=false
-`HEADLESS=false mix test.hound`
-
 ## Tunneling localhost connection for LTI development
 
 When making an LTI connection from an LMS such as Canvas, we need an internet accessible FQDN with SSL to properly configure a connection. The service ngrok offers an easy to use command line tool that does just this.

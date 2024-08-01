@@ -117,5 +117,7 @@
   </head>
   <body>
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
+
+    <%= react_component("Components.ModalDisplay") %>
   </body>
 </html>

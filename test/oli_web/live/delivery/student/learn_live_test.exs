@@ -2033,6 +2033,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(view) =~ "Page 14"
       refute render(view) =~ "Page 15"
     end
+
+    test "do not show hidden pages", %{
+      conn: conn,
+      section: section,
+      page_7: page_7
+    } do
+      # Set page 7 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_7.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute render(view) =~ "Page 7"
+    end
   end
 
   describe "student" do
@@ -2737,7 +2751,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
     end
 
-    test "exit course button redirects to sections view with the student workspace selected", %{
+    test "exit course button redirects to the student workspace", %{
       conn: conn,
       section: section
     } do
@@ -2748,7 +2762,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections?active_workspace=student_workspace&sidebar_expanded=true")
+      assert_redirect(view, "/sections/workspace/student?sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{

@@ -1839,6 +1839,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -1924,6 +1925,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -2464,6 +2466,7 @@ defmodule Oli.Delivery.Sections do
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
+        assessment_mode: revision.assessment_mode,
         section_id: section.id
       }
       |> SectionResource.to_map()
@@ -2783,6 +2786,7 @@ defmodule Oli.Delivery.Sections do
              :explanation_strategy,
              :max_attempts,
              :retake_mode,
+             :assessment_mode,
              :password,
              :late_submit,
              :late_start,
@@ -3407,6 +3411,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3533,6 +3538,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3676,7 +3682,8 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode
+            retake_mode: revision.retake_mode,
+            assessment_mode: revision.assessment_mode
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -3695,6 +3702,7 @@ defmodule Oli.Delivery.Sections do
                  :explanation_strategy,
                  :max_attempts,
                  :retake_mode,
+                 :assessment_mode,
                  :password,
                  :late_submit,
                  :late_start,
@@ -3765,7 +3773,8 @@ defmodule Oli.Delivery.Sections do
               item.max_attempts
             end,
           scoring_strategy_id: item.scoring_strategy_id,
-          retake_mode: item.retake_mode
+          retake_mode: item.retake_mode,
+          assessment_mode: item.assessment_mode
         }
       end)
 
@@ -4328,7 +4337,8 @@ defmodule Oli.Delivery.Sections do
         left_join: ra in assoc(r_att, :resource_access),
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
-            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1 and
+            not sr.hidden,
         group_by: [
           rev.id,
           sr.numbering_index,
@@ -4409,7 +4419,7 @@ defmodule Oli.Delivery.Sections do
         rev.resource_type_id == ^page_resource_type_id and
           coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date) >=
             ^today and coalesce(ra.progress, 0) == 0 and
-          is_nil(r_att.id),
+          is_nil(r_att.id) and not sr.hidden,
       order_by: [
         asc:
           coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
