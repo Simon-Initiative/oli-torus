@@ -45,7 +45,7 @@
           <a
             :if={!assigns[:auto_enroll_as_guest]}
             href={
-              ~p"/session/new?#{[section: @section.slug, from_invitation_link?: assigns[:from_invitation_link?]]}"
+              ~p"/?#{[section: @section.slug, from_invitation_link?: assigns[:from_invitation_link?]]}"
             }
             class="btn btn-md btn-outline-primary btn-block mt-2"
           >
