@@ -670,6 +670,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     test "can access when enrolled to course", %{conn: conn, section: section} do
       stub_current_time(~U[2023-11-04 20:00:00Z])
 
+      Sections.update_section(section, %{
+        agenda: true
+      })
+
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
       assert has_element?(view, "span", "The best course ever!")
@@ -701,7 +705,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       Sections.update_section(section, %{
         welcome_title: welcome_title,
-        encouraging_subtitle: encouraging_subtitle
+        encouraging_subtitle: encouraging_subtitle,
+        agenda: true
       })
 
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
@@ -970,6 +975,42 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Course Progress")
 
       assert has_element?(view, "div", "17%")
+    end
+
+    test "can see upcoming agenda if this option is enabled", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      Sections.update_section(section, %{
+        agenda: true
+      })
+
+      stub_current_time(~U[2023-11-03 21:00:00Z])
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div", "Upcoming Agenda")
+      assert has_element?(view, "div", "This Week")
+      assert has_element?(view, "div", page_1.title)
+      assert has_element?(view, "div", page_2.title)
+      assert has_element?(view, "div", page_3.title)
+      assert has_element?(view, "div", page_4.title)
+    end
+
+    test "can not see upcoming agenda if this option is disabled", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      stub_current_time(~U[2023-11-03 21:00:00Z])
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      refute has_element?(view, "div", "Upcoming Agenda")
+      refute has_element?(view, "div", "This Week")
+      refute has_element?(view, "div", page_1.title)
     end
   end
 
