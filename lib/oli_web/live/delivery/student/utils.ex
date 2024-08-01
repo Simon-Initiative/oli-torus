@@ -519,12 +519,15 @@ defmodule OliWeb.Delivery.Student.Utils do
   """
   @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
   def days_difference(resource_end_date, context) do
-    localized_end_date =
-      resource_end_date
-      |> OliWeb.Common.FormatDateTime.maybe_localized_datetime(context)
-      |> DateTime.to_date()
+    {localized_end_date, today} =
+      case FormatDateTime.maybe_localized_datetime(resource_end_date, context) do
+        {:not_localized, datetime} ->
+          {DateTime.to_date(datetime), Oli.DateTime.utc_now() |> DateTime.to_date()}
 
-    today = context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()
+        localized_datetime ->
+          {DateTime.to_date(localized_datetime),
+           context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()}
+      end
 
     case Timex.diff(localized_end_date, today, :days) do
       0 ->
