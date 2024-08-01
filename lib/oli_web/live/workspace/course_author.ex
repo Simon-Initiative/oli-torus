@@ -271,11 +271,12 @@ defmodule OliWeb.Workspace.CourseAuthor do
                 </div>
               </div>
 
-              <div class="flex justify-center">
+              <div class="flex flex-col justify-center items-center gap-10 mb-16">
                 <%= submit("Sign In",
                   class:
-                    "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
+                    "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mt-2"
                 ) %>
+                <.create_authoring_account_link ctx={@ctx} />
               </div>
             <% end %>
           </div>
@@ -401,6 +402,40 @@ defmodule OliWeb.Workspace.CourseAuthor do
     </div>
     """
   end
+
+  attr :ctx, OliWeb.Common.SessionContext
+
+  # when a user has already a linked author account the "Create Account" link should not be shown
+  def create_authoring_account_link(%{ctx: %{user: %{author_id: author_id}}} = assigns)
+      when not is_nil(author_id) do
+    ~H"""
+    """
+  end
+
+  def create_authoring_account_link(assigns) do
+    ~H"""
+    <div class="w-[341px] h-[0px] border border-white"></div>
+    <.link
+      href={create_authoring_account_path(@ctx.user)}
+      class="text-center text-[#4ca6ff] text-xl font-bold font-['Open Sans'] leading-7"
+    >
+      Create Account
+    </.link>
+    """
+  end
+
+  defp create_authoring_account_path(nil),
+    do:
+      Routes.authoring_pow_registration_path(OliWeb.Endpoint, :new,
+        request_path: ~p"/workspaces/course_author"
+      )
+
+  defp create_authoring_account_path(_user),
+    do:
+      Routes.authoring_pow_registration_path(OliWeb.Endpoint, :new,
+        link_to_user_account?: "true",
+        request_path: ~p"/workspaces/course_author"
+      )
 
   def patch_with(socket, changes) do
     %{table_model: table_model, params: params, show_all: show_all, show_deleted: show_deleted} =
