@@ -202,5 +202,35 @@ defmodule OliWeb.Workspace.StudentTest do
       assert has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")
     end
+
+    test "shows sidebar if user is not only enrolled as student", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+
+      assert render(view) =~ "desktop-workspace-nav-menu"
+
+      assert has_element?(view, "h5", "The best course ever!")
+      refute has_element?(view, "h5", "Maths")
+    end
+
+    test "does not show sidebar if user is only enrolled as student", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
+
+      refute render(view) =~ "desktop-workspace-nav-menu"
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+    end
   end
 end
