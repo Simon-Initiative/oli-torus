@@ -5052,6 +5052,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 170px;
 }
 
+.h-\[18\.56px\] {
+  height: 18.56px;
+}
+
 .h-\[187px\] {
   height: 187px;
 }
@@ -5134,6 +5138,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[41px\] {
   height: 41px;
+}
+
+.h-\[427px\] {
+  height: 427px;
 }
 
 .h-\[42px\] {
@@ -6381,6 +6389,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .overscroll-none {
   overscroll-behavior: none;
+}
+
+.scroll-smooth {
+  scroll-behavior: smooth;
 }
 
 .truncate {
@@ -8671,9 +8683,9 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(53 55 64 / var(--tw-text-opacity)) !important;
 }
 
-.\!text-blue-400 {
+.\!text-\[\#4CA6FF\] {
   --tw-text-opacity: 1 !important;
-  color: rgb(93 141 219 / var(--tw-text-opacity)) !important;
+  color: rgb(76 166 255 / var(--tw-text-opacity)) !important;
 }
 
 .\!text-blue-500 {
@@ -8704,6 +8716,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#353740\] {
   --tw-text-opacity: 1;
   color: rgb(53 55 64 / var(--tw-text-opacity));
+}
+
+.text-\[\#4CA6FF\] {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
 .text-\[\#4ca6ff\] {
@@ -9097,6 +9114,10 @@ table.table-striped tbody tr:nth-child(even) {
 .no-underline {
   -webkit-text-decoration-line: none;
           text-decoration-line: none;
+}
+
+.underline-offset-4 {
+  text-underline-offset: 4px;
 }
 
 .underline-offset-8 {
@@ -13219,6 +13240,11 @@ https://tailwindcss.com/docs/utility-first
   font-weight: 500;
 }
 
+.hover\:text-\[\#4CA6FF\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(76 166 255 / var(--tw-text-opacity));
+}
+
 .hover\:text-black:hover {
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity));
@@ -13334,6 +13360,11 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-yellow-600:hover {
   --tw-text-opacity: 1;
   color: rgb(232 149 9 / var(--tw-text-opacity));
+}
+
+.hover\:text-zinc-300:hover {
+  --tw-text-opacity: 1;
+  color: rgb(212 212 216 / var(--tw-text-opacity));
 }
 
 .hover\:text-opacity-80:hover {
@@ -15500,6 +15531,10 @@ https://tailwindcss.com/docs/utility-first
     padding-left: 226px !important;
   }
 
+  .md\:pb-0 {
+    padding-bottom: 0px;
+  }
+
   .md\:pb-4 {
     padding-bottom: 1rem;
   }
@@ -15633,6 +15668,10 @@ https://tailwindcss.com/docs/utility-first
 
   .lg\:mt-0 {
     margin-top: 0px;
+  }
+
+  .lg\:mt-10 {
+    margin-top: 2.5rem;
   }
 
   .lg\:mt-2 {
