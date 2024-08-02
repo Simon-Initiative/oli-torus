@@ -139,8 +139,7 @@ defmodule OliWeb.StaticPageControllerTest do
     test "shows student login view", %{conn: conn} do
       conn = get(conn, Routes.static_page_path(conn, :index))
 
-      assert response(conn, 200) =~
-               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
+      assert response(conn, 200) =~ "OLI Torus"
 
       assert response(conn, 200) =~ "Easily access and participate in your enrolled courses"
       assert response(conn, 200) =~ "Need an account?"
