@@ -7,10 +7,9 @@ defmodule OliWeb.Pow.AuthorContext do
     repo: Oli.Repo,
     user: Oli.Accounts.Author
 
-  alias Oli.{Repo, Utils}
+  alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Accounts.Author
-  alias OliWeb.Router.Helpers, as: Routes
 
   @spec lock(map()) :: {:ok, map()} | {:error, map()}
   def lock(user) do
