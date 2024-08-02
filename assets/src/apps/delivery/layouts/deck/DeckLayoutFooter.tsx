@@ -299,9 +299,7 @@ const DeckLayoutFooter: React.FC = () => {
               (activity) =>
                 !!(activity.content?.partsLayout || []).find((p: any) => p.id === lstVar[1]),
             );
-            scopedTarget = ownerActivity
-              ? `${ownerActivity.id}|${op.params.target}`
-              : `${currentActivityId}|${op.params.target}`;
+            scopedTarget = `${currentActivityId || ownerActivity?.id}|${op.params.target}`;
 
             partAttemptGuid = partAttempt[0].attemptGuid;
             const response: any = [
