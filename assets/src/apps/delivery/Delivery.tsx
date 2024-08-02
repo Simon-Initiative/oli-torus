@@ -154,7 +154,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
 
-  // this is something SS does...
+  // this is something SS does....
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
