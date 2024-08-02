@@ -205,10 +205,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <.menu_item_maybe_linked_account user={@ctx.user} />
     <.maybe_menu_item_edit_user_account user={@ctx.user} />
-    <.menu_item_link href={~p"/workspaces/student"}>
-      My Courses
-    </.menu_item_link>
-    <.menu_divider />
+    <.maybe_my_courses_menu_item_link user={@ctx.user} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
@@ -309,14 +306,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     end
   end
 
-  def menu_item_my_courses_link(assigns) do
-    ~H"""
-    <.menu_item_link href={~p"/workspaces/student"}>
-      My Courses
-    </.menu_item_link>
-    """
-  end
-
   attr(:user, User, required: true)
 
   def menu_item_maybe_linked_account(assigns) do
@@ -327,6 +316,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
             Link authoring account
           </.menu_item_link>
+
           <.menu_divider />
         <% end %>
       <% linked_author_account_email -> %>
@@ -360,7 +350,21 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       Edit Account
     </.menu_item_link>
 
-    <.menu_divider />
+    <.menu_divider :if={is_independent_learner?(@user)} />
+    """
+  end
+
+  attr(:user, User, required: true)
+
+  def maybe_my_courses_menu_item_link(assigns) do
+    ~H"""
+    <%= if is_independent_learner?(@user) do %>
+      <.menu_item_link href={~p"/workspaces/student"}>
+        My Courses
+      </.menu_item_link>
+
+      <.menu_divider />
+    <% end %>
     """
   end
 
