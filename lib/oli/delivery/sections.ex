@@ -1839,6 +1839,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -1924,6 +1925,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -4335,7 +4337,8 @@ defmodule Oli.Delivery.Sections do
         left_join: ra in assoc(r_att, :resource_access),
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
-            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1 and
+            not sr.hidden,
         group_by: [
           rev.id,
           sr.numbering_index,
@@ -4416,7 +4419,7 @@ defmodule Oli.Delivery.Sections do
         rev.resource_type_id == ^page_resource_type_id and
           coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date) >=
             ^today and coalesce(ra.progress, 0) == 0 and
-          is_nil(r_att.id),
+          is_nil(r_att.id) and not sr.hidden,
       order_by: [
         asc:
           coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),

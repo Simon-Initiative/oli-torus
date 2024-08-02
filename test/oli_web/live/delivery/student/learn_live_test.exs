@@ -2033,6 +2033,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(view) =~ "Page 14"
       refute render(view) =~ "Page 15"
     end
+
+    test "do not show hidden pages", %{
+      conn: conn,
+      section: section,
+      page_7: page_7
+    } do
+      # Set page 7 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_7.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute render(view) =~ "Page 7"
+    end
   end
 
   describe "student" do

@@ -153,7 +153,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
-          <.exit_course_button sidebar_expanded={@sidebar_expanded} />
+          <.exit_course_button
+            :if={is_independent_learner?(@ctx.user)}
+            sidebar_expanded={@sidebar_expanded}
+          />
         </div>
       </nav>
       <nav
