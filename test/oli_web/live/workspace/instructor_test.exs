@@ -8,23 +8,69 @@ defmodule OliWeb.Workspace.InstructorTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
-  describe "user cannot access when is not logged in" do
-    @tag :skip
-    # This test will be updated in MER-3304 and should assert that the sign in is shown
-    test "redirects to new session", %{
-      conn: conn
-    } do
-      redirect_path = "/session/new?request_path=%2Fsections%2Fworkspace%2Finstructor"
+  describe "user not signed in" do
+    test "can access page", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
-      {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, ~p"/workspaces/instructor")
+      assert has_element?(view, "span", "Welcome to")
+      assert has_element?(view, "span", "OLI Torus")
+    end
+
+    test "can signin and get redirected back to the instructor workspace", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      # create an instructor account
+      post(
+        conn,
+        Routes.pow_registration_path(conn, :create),
+        %{
+          user: %{
+            email: "my_instructor@test.com",
+            email_confirmation: "my_instructor@test.com",
+            given_name: "me",
+            family_name: "too",
+            password: "some_password",
+            password_confirmation: "some_password",
+            can_create_sections: true
+          },
+          "g-recaptcha-response": "any"
+        }
+      )
+
+      # access without being singed in
+      conn = Phoenix.ConnTest.build_conn()
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(view, "div", "Instructor Sign In")
+
+      # we sign in and get redirected back to the instructor workspace
+      conn =
+        conn
+        |> post(
+          Routes.session_path(conn, :signin,
+            type: :user,
+            after_sign_in_target: :instructor_workspace
+          ),
+          user: %{email: "my_instructor@test.com", password: "some_password"}
+        )
+
+      assert conn.assigns.current_user.email == "my_instructor@test.com"
+      assert redirected_to(conn) == ~p"/workspaces/instructor"
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      # instructor is signed in
+      refute has_element?(view, "div", "Instructor Sign In")
+      assert has_element?(view, "h1", "Instructor Dashboard")
+      assert has_element?(view, "p", "You are not enrolled in any courses as an instructor.")
     end
   end
 
-  describe "user" do
+  describe "user logged in" do
     setup [:user_conn]
 
-    test "can access instructor workspace when logged in", %{conn: conn} do
+    test "can access instructor workspace", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, "h1", "Instructor Dashboard")
