@@ -791,7 +791,7 @@ defmodule OliWeb.Router do
       :set_sidebar
     ])
 
-    live_session :workspace,
+    live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
