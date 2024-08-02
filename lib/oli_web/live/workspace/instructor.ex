@@ -214,11 +214,18 @@ defmodule OliWeb.Workspace.Instructor do
                 </div>
               </div>
 
-              <div class="flex justify-center">
+              <div class="flex flex-col justify-center items-center gap-10 mb-16">
                 <%= submit("Sign In",
                   class:
-                    "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
+                    "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mt-2"
                 ) %>
+                <div class="w-[341px] h-[0px] border border-white"></div>
+                <.link
+                  href={Routes.pow_registration_path(OliWeb.Endpoint, :new)}
+                  class="text-center text-[#4ca6ff] text-xl font-bold font-['Open Sans'] leading-7"
+                >
+                  Create Account
+                </.link>
               </div>
             <% end %>
           </div>
