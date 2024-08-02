@@ -158,7 +158,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
-    <div className={parentDivClasses.join(' ')}>
+    <div className={`${parentDivClasses.join(' ')} ${localStorage?.theme || ''}`}>
       {previewMode && <PreviewTools model={content?.model} />}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
