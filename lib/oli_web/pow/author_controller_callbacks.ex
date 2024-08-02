@@ -7,6 +7,9 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
   use Pow.Extension.Phoenix.ControllerCallbacks.Base
   use OliWeb, :verified_routes
 
+  alias Oli.Utils
+  alias OliWeb.Router.Helpers, as: Routes
+
   def before_respond(
         Pow.Phoenix.SessionController,
         :create,
@@ -36,6 +39,50 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
       "Account '#{conn.assigns.current_author.email}' is now linked to '#{conn.assigns.current_user.email}'"
     )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
+  end
+
+  def before_respond(
+        Pow.Phoenix.RegistrationController,
+        :create,
+        {:error, author_changeset, conn},
+        _config
+      ) do
+    # for security reasons (possible account information leakage)
+    # we don't want to show the email "has already been taken" error message (see MER-3129)
+    already_taken_email = author_changeset.changes[:email]
+    updated_errors = Keyword.delete(author_changeset.errors, :email)
+
+    conn =
+      if updated_errors == [] and already_taken_email do
+        Oli.Email.create_email(
+          already_taken_email,
+          "Account already exists",
+          "account_already_exists.html",
+          %{
+            url:
+              Utils.ensure_absolute_url(Routes.authoring_pow_session_path(OliWeb.Endpoint, :new)),
+            forgot_password:
+              Utils.ensure_absolute_url(
+                Routes.authoring_pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
+              )
+          }
+        )
+        |> Oli.Mailer.deliver_now()
+
+        conn
+        |> Phoenix.Controller.put_flash(
+          :info,
+          """
+          To continue, check #{already_taken_email} for a confirmation email.\n
+          If you don’t receive this email, check your Spam folder or verify that #{already_taken_email} is correct.\n
+          You can close this tab if you received the email.
+          """
+        )
+      else
+        conn
+      end
+
+    {:error, %{author_changeset | errors: updated_errors}, conn}
   end
 
   def before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, author, conn}, _config) do
