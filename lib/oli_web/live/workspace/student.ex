@@ -269,13 +269,5 @@ defmodule OliWeb.Workspace.Student do
     }
   end
 
-  defp user_is_only_a_student?(sections) do
-    sections
-    |> Enum.map(& &1.user_role)
-    |> Enum.uniq()
-    |> case do
-      ["student"] -> true
-      _ -> false
-    end
-  end
+  defp user_is_only_a_student?(sections), do: Enum.all?(sections, &(&1.user_role == "student"))
 end

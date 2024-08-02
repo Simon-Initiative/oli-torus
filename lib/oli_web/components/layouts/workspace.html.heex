@@ -1,5 +1,8 @@
 <main role="main" class="relative flex flex-col">
-  <div class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]">
+  <div
+    :if={!@disable_sidebar?}
+    class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+  >
     <div class="max-w-[400px] my-auto ml-auto mr-3">
       <Components.Delivery.UserAccount.menu
         id="user-account-menu"
@@ -8,69 +11,48 @@
       />
     </div>
   </div>
-  <%= if assigns[:disable_sidebar?] do %>
-    <div class="w-full">
-      <Components.Delivery.Layouts.header
-        ctx={@ctx}
-        include_logo
-        is_system_admin={assigns[:is_system_admin] || false}
-        preview_mode={@preview_mode}
-        sidebar_expanded={@sidebar_expanded}
-      />
-      <div
-        id="content"
-        class={[
-          "transition-all duration-100 mt-14 min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
-          "md:w-[calc(100%-0px)] md:ml-[0px]"
-        ]}
-      >
-        <%= @inner_content %>
-      </div>
-      <div
-        id="footer_contaner"
-        class={[
-          "relative transition-all duration-100 mt-14",
-          "md:w-[calc(100%-0px)] md:ml-[0px]"
-        ]}
-      >
-        <OliWeb.Components.Footer.delivery_footer license={
-          Map.get(assigns, :has_license) && assigns[:license]
-        } />
-      </div>
-    </div>
-  <% else %>
-    <Components.Delivery.Layouts.workspace_sidebar_nav
-      ctx={@ctx}
-      is_system_admin={assigns[:is_system_admin] || false}
-      active_workspace={assigns[:active_workspace] || :student}
-      preview_mode={@preview_mode}
-      sidebar_expanded={@sidebar_expanded}
-    />
-    <div
-      id="content"
-      class={[
-        "transition-all duration-100 mt-14 min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
-        if(@sidebar_expanded,
-          do: "md:w-[calc(100%-200px)] md:ml-[200px]",
-          else: "md:w-[calc(100%-60px)] md:ml-[60px]"
-        )
-      ]}
-    >
-      <%= @inner_content %>
-    </div>
-    <div
-      id="footer_contaner"
-      class={[
-        "relative transition-all duration-100 mt-14",
-        if(@sidebar_expanded,
-          do: "md:w-[calc(100%-200px)] md:ml-[200px]",
-          else: "md:w-[calc(100%-60px)] md:ml-[60px]"
-        )
-      ]}
-    >
-      <OliWeb.Components.Footer.delivery_footer license={
-        Map.get(assigns, :has_license) && assigns[:license]
-      } />
-    </div>
-  <% end %>
+  <Components.Delivery.Layouts.workspace_sidebar_nav
+    :if={!@disable_sidebar?}
+    ctx={@ctx}
+    is_system_admin={assigns[:is_system_admin] || false}
+    active_workspace={assigns[:active_workspace] || :student}
+    preview_mode={@preview_mode}
+    sidebar_expanded={@sidebar_expanded}
+  />
+  <Components.Delivery.Layouts.header
+    :if={@disable_sidebar?}
+    ctx={@ctx}
+    include_logo
+    is_system_admin={assigns[:is_system_admin] || false}
+    preview_mode={@preview_mode}
+    sidebar_expanded={@sidebar_expanded}
+  />
+  <div
+    id="content"
+    class={[
+      "transition-all duration-100 mt-14 min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
+      if(@sidebar_expanded,
+        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
+        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
+      ),
+      if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
+    ]}
+  >
+    <%= @inner_content %>
+  </div>
+  <div
+    id="footer_contaner"
+    class={[
+      "relative transition-all duration-100 mt-14",
+      if(@sidebar_expanded,
+        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
+        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
+      ),
+      if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
+    ]}
+  >
+    <OliWeb.Components.Footer.delivery_footer license={
+      Map.get(assigns, :has_license) && assigns[:license]
+    } />
+  </div>
 </main>
