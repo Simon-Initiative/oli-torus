@@ -260,6 +260,41 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
              |> render() =~
                "Testing B"
     end
+
+    test "can signout from authoring account and return to course author workspace (and user account stays signed in)",
+         %{conn: conn} do
+      user = insert(:user, email: "user_not_author@test.com")
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert conn.assigns.current_author
+      assert conn.assigns.current_user
+      refute has_element?(view, "div", "Course Author Sign In")
+
+      view
+      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author"
+      )
+
+      conn = delete(conn, "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author")
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      refute conn.assigns.current_author
+      assert conn.assigns.current_user
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+    end
   end
 
   describe "course author workspace as admin" do
@@ -388,6 +423,41 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
         assert has_element?(view, "button[id=workspace-user-menu]", "TA")
         assert has_element?(view, "div[role='account label']", "Admin")
       end)
+    end
+
+    test "can signout from ADMIN authoring account and return to course author workspace (and user account stays signed in)",
+         %{conn: conn} do
+      user = insert(:user, email: "user_not_author@test.com")
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert conn.assigns.current_author
+      assert conn.assigns.current_user
+      refute has_element?(view, "div", "Course Author Sign In")
+
+      view
+      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author"
+      )
+
+      conn = delete(conn, "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author")
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      refute conn.assigns.current_author
+      assert conn.assigns.current_user
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
     end
   end
 

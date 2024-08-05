@@ -265,6 +265,41 @@ defmodule OliWeb.Workspace.StudentTest do
       assert has_element?(view, "h5", "The best course ever!")
       refute has_element?(view, "h5", "Maths")
     end
+
+    test "can signout from student account and return to student workspace (and author account stays signed in)",
+         %{conn: conn} do
+      author = insert(:author, email: "author_account@test.com")
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+      assert conn.assigns.current_author
+      assert conn.assigns.current_user
+      refute has_element?(view, "div", "Student Sign In")
+
+      view
+      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/course/signout?type=user&target=%2Fworkspaces%2Fstudent"
+      )
+
+      conn = delete(conn, "/course/signout?type=user&target=%2Fworkspaces%2Fstudent")
+
+      assert redirected_to(conn) == ~p"/workspaces/student"
+      assert conn.assigns.current_author
+      refute conn.assigns.current_user
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+      assert has_element?(view, "div", "Student Sign In")
+    end
   end
 
   describe "admin" do
