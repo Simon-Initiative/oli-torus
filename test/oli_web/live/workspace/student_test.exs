@@ -247,4 +247,18 @@ defmodule OliWeb.Workspace.StudentTest do
       refute has_element?(view, "h5", "Maths")
     end
   end
+
+  describe "admin" do
+    setup [:admin_conn]
+
+    test "can access student workspace when logged in", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      assert has_element?(
+               view,
+               "h3",
+               "Student workspace with an admin account has not yet been developed."
+             )
+    end
+  end
 end

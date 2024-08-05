@@ -384,4 +384,18 @@ defmodule OliWeb.Workspace.InstructorTest do
       assert has_element?(view, "a[href='/sections/independent/create']", "Create New Section")
     end
   end
+
+  describe "admin" do
+    setup [:admin_conn]
+
+    test "can access instructor workspace when logged in", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(
+               view,
+               "h3",
+               "Instructor workspace with an admin account has not yet been developed."
+             )
+    end
+  end
 end

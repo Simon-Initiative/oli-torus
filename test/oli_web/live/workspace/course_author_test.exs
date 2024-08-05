@@ -365,6 +365,30 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
              |> render() =~
                "Testing B"
     end
+
+    test "admin menu is shown in all workspaces (even if the conn has a user account)", %{
+      conn: conn
+    } do
+      user = insert(:user)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      [
+        ~p"/workspaces/course_author",
+        ~p"/workspaces/instructor",
+        ~p"/workspaces/student"
+      ]
+      |> Enum.each(fn workspace ->
+        {:ok, view, _html} = live(conn, workspace)
+        assert has_element?(view, "button[id=workspace-user-menu]", "TA")
+        assert has_element?(view, "div[role='account label']", "Admin")
+      end)
+    end
   end
 
   defp create_project_with_owner(owner, attrs \\ %{}) do
