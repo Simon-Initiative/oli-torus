@@ -7,13 +7,152 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
 
   alias OliWeb.Common.Utils
 
-  describe "user cannot access when is not logged in" do
-    test "shows sign in view if is not logged in as author/admin", %{
-      conn: conn
-    } do
+  describe "author not signed in" do
+    test "can access page", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "div", "Course Author Sign In")
+    end
+
+    test "can signin and get redirected back to the authoring workspace", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      # create author account
+      post(
+        conn,
+        Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create),
+        %{
+          user: %{
+            email: "my_author@test.com",
+            email_confirmation: "my_author@test.com",
+            given_name: "me",
+            family_name: "too",
+            password: "some_password",
+            password_confirmation: "some_password"
+          },
+          "g-recaptcha-response": "any"
+        }
+      )
+
+      # access without being singed in
+      conn = Phoenix.ConnTest.build_conn()
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      assert has_element?(view, "div", "Course Author Sign In")
+
+      # we sign in and get redirected back to the authoring workspace
+      conn =
+        conn
+        |> post(
+          Routes.authoring_pow_session_path(OliWeb.Endpoint, :create,
+            request_path: ~p"/workspaces/course_author"
+          ),
+          user: %{email: "my_author@test.com", password: "some_password"}
+        )
+
+      assert conn.assigns.current_author.email == "my_author@test.com"
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      # author is signed in
+      refute has_element?(view, "div", "Course Author Sign In")
+      assert has_element?(view, "h1", "Course Author")
+    end
+
+    test "can NOT create an authoring account if the current user already has an author account linked",
+         %{conn: conn} do
+      author = insert(:author)
+      user_with_account_linked = insert(:user, author: author)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user_with_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+      refute has_element?(view, "a", "Create Account")
+    end
+
+    test "can create an account if the current user does not yet have an author linked account",
+         %{conn: conn} do
+      user_with_no_account_linked = insert(:user, author: nil)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user_with_no_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+      assert has_element?(view, "a", "Create Account")
+    end
+
+    test "on account creation account gets linked automatically if current user has no linked authoring account",
+         %{conn: conn} do
+      user_with_no_account_linked = insert(:user, email: "some_user@test.com", author: nil)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user_with_no_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      element(view, "a", "Create Account")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/authoring/registration/new?link_to_user_account%3F=true&request_path=%2Fworkspaces%2Fcourse_author"
+      )
+
+      # create new author account
+      expect_recaptcha_http_post()
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Pow.Plug.assign_current_user(
+          user_with_no_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+        |> post(
+          Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create,
+            link_to_user_account?: "true",
+            request_path: ~p"/workspaces/course_author"
+          ),
+          %{
+            user: %{
+              email: "my_author@test.com",
+              email_confirmation: "my_author@test.com",
+              given_name: "me",
+              family_name: "too",
+              password: "some_password",
+              password_confirmation: "some_password"
+            },
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      # user gets redirected back to the authoring workspace and the account is linked
+      author_account = Oli.Accounts.get_author_by_email("my_author@test.com")
+      user_account = Oli.Accounts.get_user!(user_with_no_account_linked.id)
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      assert user_account.author_id == author_account.id
+    end
+
+    test "can create an account if there is no current user already signed in", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+      assert has_element?(view, "a", "Create Account")
     end
   end
 
