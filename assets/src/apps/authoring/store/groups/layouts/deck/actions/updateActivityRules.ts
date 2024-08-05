@@ -15,6 +15,7 @@ import {
 } from 'apps/authoring/components/AdaptivityEditor/AdaptiveItemOptions';
 import {
   findInSequence,
+  findInSequenceByResourceId,
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
@@ -193,7 +194,20 @@ export const updateActivityRules = createAsyncThunk(
               (part: any) => part.id === componentId,
             );
             if (partDef && partDef.inherited) {
-              referencedSequenceIds.push(partDef.owner);
+              const findCurrentActivityInSequence = findInSequenceByResourceId(
+                deck.children,
+                childActivity?.resourceId || -1,
+              );
+              const findOwnerActivityInSequence = findInSequence(deck.children, partDef.owner);
+              // we no longer find the owner of the part because each part gets saved in the current screen attempt
+              if (
+                findOwnerActivityInSequence?.custom.isLayer &&
+                findCurrentActivityInSequence?.custom.sequenceId
+              ) {
+                referencedSequenceIds.push(findCurrentActivityInSequence?.custom.sequenceId);
+              } else {
+                referencedSequenceIds.push(partDef.owner);
+              }
             }
           }
         });
