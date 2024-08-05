@@ -631,7 +631,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Enroll in Course Section"
 
       assert html_response(conn, 200) =~
-               ~s(<a href="/session/new?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+               ~s(<a href="/?section=#{section.slug}&amp;from_invitation_link%3F=true" )
     end
 
     test "shows enroll view and Sign Up link", %{conn: conn} do
