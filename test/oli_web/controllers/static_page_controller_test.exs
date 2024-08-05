@@ -135,6 +135,17 @@ defmodule OliWeb.StaticPageControllerTest do
     end
   end
 
+  describe "student login" do
+    test "shows student login view", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "OLI Torus"
+
+      assert response(conn, 200) =~ "Easily access and participate in your enrolled courses"
+      assert response(conn, 200) =~ "Need an account?"
+    end
+  end
+
   describe "enrollment info" do
     test "shows enrollment info in students login", %{conn: conn} do
       conn = get(conn, Routes.static_page_path(conn, :index))

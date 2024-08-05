@@ -34,8 +34,12 @@
           <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Course Author Sign In
           </div>
-          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
-          <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <%= for link <- provider_links, do: raw(link) %>
+          <div
+            :if={provider_links != []}
+            class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
+          >
             OR
           </div>
           <%= form_for @changeset, @action, [as: :user], fn f -> %>
@@ -147,8 +151,12 @@
           <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Instructor Sign In
           </div>
-          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
-          <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <%= for link <- provider_links, do: raw(link) %>
+          <div
+            :if={provider_links != []}
+            class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
+          >
             OR
           </div>
           <%= form_for @changeset, @action, [as: :user], fn f -> %>
