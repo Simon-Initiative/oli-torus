@@ -77,6 +77,25 @@ defmodule OliWeb.Workspace.StudentTest do
       assert has_element?(view, "p", "You are not enrolled in any courses.")
     end
 
+    test "does not see any label on user menu", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      refute has_element?(view, "div[role='account label']")
+    end
+
+    test "sees linked account email on user menu", %{conn: conn, user: user} do
+      author = insert(:author)
+      Accounts.link_user_author_account(user, author)
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      assert has_element?(
+               view,
+               "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
+               author.email
+             )
+    end
+
     test "can access student workspace when not enrolled to any section", %{conn: conn} do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 

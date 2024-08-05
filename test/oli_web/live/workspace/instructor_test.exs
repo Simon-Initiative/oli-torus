@@ -6,6 +6,7 @@ defmodule OliWeb.Workspace.InstructorTest do
   import Oli.Factory
 
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Accounts
   alias Oli.Delivery.Sections
 
   describe "user not signed in" do
@@ -67,7 +68,7 @@ defmodule OliWeb.Workspace.InstructorTest do
     end
   end
 
-  describe "user logged in" do
+  describe "user logged in as student" do
     setup [:user_conn]
 
     test "can access instructor workspace", %{conn: conn} do
@@ -75,6 +76,25 @@ defmodule OliWeb.Workspace.InstructorTest do
 
       assert has_element?(view, "h1", "Instructor Dashboard")
       assert has_element?(view, "p", "You are not enrolled in any courses as an instructor.")
+    end
+
+    test "does not see any label on user menu", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      refute has_element?(view, "div[role='account label']")
+    end
+
+    test "sees linked account email on user menu", %{conn: conn, user: user} do
+      author = insert(:author)
+      Accounts.link_user_author_account(user, author)
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(
+               view,
+               "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
+               author.email
+             )
     end
 
     test "can see product title, image and description in sections index with a link to manage it on instructor workspace",
@@ -382,6 +402,12 @@ defmodule OliWeb.Workspace.InstructorTest do
              )
 
       assert has_element?(view, "a[href='/sections/independent/create']", "Create New Section")
+    end
+
+    test "sees the instructor label on user menu", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(view, "div[role='account label']", "Instructor")
     end
   end
 

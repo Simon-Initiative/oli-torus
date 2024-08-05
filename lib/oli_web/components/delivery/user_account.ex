@@ -326,7 +326,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           <div class="text-xs font-semibold mb-1">Linked Authoring Account:</div>
           <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)} target="_blank">
             <div class="flex flex-row justify-between items-center">
-              <div><%= linked_author_account_email %></div>
+              <div role="linked authoring account email"><%= linked_author_account_email %></div>
               <div><i class="fas fa-external-link-alt ml-2"></i></div>
             </div>
           </a>
