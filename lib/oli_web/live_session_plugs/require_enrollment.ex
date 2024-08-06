@@ -26,7 +26,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
           {:halt,
            socket
            |> put_flash(:error, "You are not enrolled in this course")
-           |> redirect(to: ~p"/sections/workspace/student")}
+           |> redirect(to: ~p"/workspaces/student")}
         end
     end
   end
