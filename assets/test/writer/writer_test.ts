@@ -104,7 +104,7 @@ describe('parser', () => {
       screen.getByText((content, element) => {
         return (
           element?.tagName.toLowerCase() === 'a' &&
-          element.getAttribute('href') === '/sections/some_section/page/page_two' &&
+          element.getAttribute('href') === '/sections/some_section/lesson/page_two' &&
           content === 'Page Two'
         );
       }),

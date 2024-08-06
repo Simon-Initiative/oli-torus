@@ -33,6 +33,7 @@ describe('check all that apply delivery', () => {
         renderPointMarkers: false,
         isAnnotationLevel: false,
         variables: {},
+        pageLinkParams: {},
       },
       preview: false,
     };
