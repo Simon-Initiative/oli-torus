@@ -429,7 +429,14 @@ defmodule OliWeb.Delivery.Student.Utils do
       # to apparently not be used by the page template:
       #   project_slug: base_project_slug,
       #   submitted_surveys: submitted_surveys,
-      resource_attempt: hd(page_context.resource_attempts)
+      resource_attempt: hd(page_context.resource_attempts),
+      page_link_params:
+        build_page_link_params(
+          assigns.section.slug,
+          assigns.page_context.page,
+          assigns.request_path,
+          assigns.selected_view
+        )
     }
 
     attempt_content = get_attempt_content(page_context)
@@ -701,5 +708,26 @@ defmodule OliWeb.Delivery.Student.Utils do
       ) %>
     </div>
     """
+  end
+
+  def coalesce(first, second) do
+    case {first, second} do
+      {nil, nil} -> nil
+      {nil, s} -> s
+      {f, _s} -> f
+    end
+  end
+
+  defp build_page_link_params(section_slug, page, request_path, selected_view) do
+    current_page_path =
+      lesson_live_path(section_slug, page.slug,
+        request_path: request_path,
+        selected_view: selected_view
+      )
+
+    [
+      request_path: current_page_path,
+      selected_view: selected_view
+    ]
   end
 end

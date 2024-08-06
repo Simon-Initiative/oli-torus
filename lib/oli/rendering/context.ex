@@ -32,5 +32,6 @@ defmodule Oli.Rendering.Context do
             learning_language: nil,
             effective_settings: nil,
             is_liveview: false,
-            is_annotation_level: true
+            is_annotation_level: true,
+            page_link_params: []
 end
