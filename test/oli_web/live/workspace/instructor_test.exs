@@ -195,8 +195,15 @@ defmodule OliWeb.Workspace.InstructorTest do
     end
 
     test "can navigate between the different workspaces through the left navbar", %{
-      conn: conn
+      conn: conn,
+      user: user
     } do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
       {:ok, view, _html} = live(conn, ~p"/sections/workspace/student")
 
       assert has_element?(

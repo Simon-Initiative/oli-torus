@@ -17,9 +17,12 @@ defmodule OliWeb.Workspace.Student do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
-    sections =
+    all_sections =
       Sections.list_user_open_and_free_sections(socket.assigns.current_user)
       |> add_user_role(socket.assigns.current_user)
+
+    sections =
+      all_sections
       |> filter_by_role(:student)
       |> add_instructors()
       |> add_sections_progress(socket.assigns.current_user.id)
@@ -28,6 +31,7 @@ defmodule OliWeb.Workspace.Student do
      assign(socket,
        sections: sections,
        params: params,
+       disable_sidebar?: user_is_only_a_student?(all_sections),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -36,7 +40,7 @@ defmodule OliWeb.Workspace.Student do
   @impl Phoenix.LiveView
   def handle_params(params, _uri, socket) do
     %{sections: sections} = socket.assigns
-    params = decode_params(params, sections)
+    params = decode_params(params)
 
     {:noreply,
      assign(socket,
@@ -257,9 +261,7 @@ defmodule OliWeb.Workspace.Student do
   defp get_course_url(%{slug: slug}, sidebar_expanded),
     do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
 
-  defp decode_params(params, sections) do
-    params = user_role_dependent_params(params, sections)
-
+  defp decode_params(params) do
     %{
       text_search: Params.get_param(params, "text_search", @default_params.text_search),
       sidebar_expanded:
@@ -267,17 +269,5 @@ defmodule OliWeb.Workspace.Student do
     }
   end
 
-  defp user_role_dependent_params(params, sections) do
-    sections
-    |> Enum.map(& &1.user_role)
-    |> case do
-      ["student"] ->
-        params
-        |> Map.put_new("active_workspace", "student_workspace")
-        |> Map.put_new("sidebar_expanded", "false")
-
-      _ ->
-        params
-    end
-  end
+  defp user_is_only_a_student?(sections), do: Enum.all?(sections, &(&1.user_role == "student"))
 end
