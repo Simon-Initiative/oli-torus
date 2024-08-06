@@ -16,12 +16,25 @@ defmodule OliWeb.Workspace.Student do
     sidebar_expanded: true
   }
 
+  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+    # admin case...
+    {:ok,
+     assign(socket,
+       active_workspace: :student,
+       header_enabled?: true,
+       footer_enabled?: true
+     )}
+  end
+
   @impl Phoenix.LiveView
-  def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
+  def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
       when not is_nil(current_user) do
-    sections =
+    all_sections =
       Sections.list_user_open_and_free_sections(current_user)
       |> add_user_role(current_user)
+
+    sections =
+      all_sections
       |> filter_by_role(:student)
       |> add_instructors()
       |> add_sections_progress(current_user.id)
@@ -29,17 +42,9 @@ defmodule OliWeb.Workspace.Student do
     {:ok,
      assign(socket,
        sections: sections,
+       params: params,
+       disable_sidebar?: user_is_only_a_student?(all_sections),
        filtered_sections: sections,
-       active_workspace: :student,
-       header_enabled?: true,
-       footer_enabled?: true
-     )}
-  end
-
-  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
-    # admin case...
-    {:ok,
-     assign(socket,
        active_workspace: :student,
        header_enabled?: true,
        footer_enabled?: true
@@ -431,4 +436,6 @@ defmodule OliWeb.Workspace.Student do
         Params.get_boolean_param(params, "sidebar_expanded", @default_params.sidebar_expanded)
     }
   end
+
+  defp user_is_only_a_student?(sections), do: Enum.all?(sections, &(&1.user_role == "student"))
 end

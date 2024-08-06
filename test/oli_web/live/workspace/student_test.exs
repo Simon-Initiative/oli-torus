@@ -84,6 +84,12 @@ defmodule OliWeb.Workspace.StudentTest do
     end
 
     test "sees linked account email on user menu", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
       author = insert(:author)
       Accounts.link_user_author_account(user, author)
 
@@ -266,8 +272,44 @@ defmodule OliWeb.Workspace.StudentTest do
       refute has_element?(view, "h5", "Maths")
     end
 
+    test "shows sidebar if user is not only enrolled as student", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      assert render(view) =~ "desktop-workspace-nav-menu"
+
+      assert has_element?(view, "h5", "The best course ever!")
+      refute has_element?(view, "h5", "Maths")
+    end
+
+    test "does not show sidebar if user is only enrolled as student", %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      refute render(view) =~ "desktop-workspace-nav-menu"
+
+      assert has_element?(view, "h5", "The best course ever!")
+      assert has_element?(view, "h5", "Maths")
+    end
+
     test "can signout from student account and return to student workspace (and author account stays signed in)",
-         %{conn: conn} do
+         %{conn: conn, user: user} do
+      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
+      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
+
+      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
+
       author = insert(:author, email: "author_account@test.com")
 
       conn =
