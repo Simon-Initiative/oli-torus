@@ -32,7 +32,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<p data-point-marker=\"2652513352\">The American colonials proclaimed &quot;no taxation without representation"
 
       assert rendered_html_string =~
-               "<a class=\"internal-link\" href=\"/sections/some_section/page/page_two\">Page Two</a>"
+               "<a class=\"internal-link\" href=\"/sections/some_section/lesson/page_two\">Page Two</a>"
 
       assert rendered_html_string =~
                "<a class=\"external-link\" href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\" target=\"_blank\" rel=\"noreferrer\">Stamp Act Congress</a>"
