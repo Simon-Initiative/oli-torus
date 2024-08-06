@@ -15322,6 +15322,10 @@ https://tailwindcss.com/docs/utility-first
     margin-bottom: 2.5rem;
   }
 
+  .md\:\!ml-0 {
+    margin-left: 0px !important;
+  }
+
   .md\:-mr-\[30px\] {
     margin-right: -30px;
   }
@@ -15388,6 +15392,10 @@ https://tailwindcss.com/docs/utility-first
 
   .md\:\!w-\[60px\] {
     width: 60px !important;
+  }
+
+  .md\:\!w-full {
+    width: 100% !important;
   }
 
   .md\:w-1\/3 {
