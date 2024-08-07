@@ -99,12 +99,23 @@ describe('parser', () => {
   });
 
   it('renders internal link with context', () => {
-    render(parse(exampleContent, defaultWriterContext({ sectionSlug: 'some_section' })));
+    render(
+      parse(
+        exampleContent,
+        defaultWriterContext({
+          sectionSlug: 'some_section',
+          pageLinkParams: {
+            request_path: '/path/to/previous/page',
+          },
+        }),
+      ),
+    );
     expect(
       screen.getByText((content, element) => {
         return (
           element?.tagName.toLowerCase() === 'a' &&
-          element.getAttribute('href') === '/sections/some_section/lesson/page_two' &&
+          element.getAttribute('href') ===
+            '/sections/some_section/lesson/page_two?request_path=%2Fpath%2Fto%2Fprevious%2Fpage' &&
           content === 'Page Two'
         );
       }),
