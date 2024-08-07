@@ -28,6 +28,7 @@ export interface WriterContext {
   };
   renderPointMarkers?: boolean;
   isAnnotationLevel?: boolean;
+  pageLinkParams?: any;
 }
 
 export const defaultWriterContext = (params: Partial<WriterContext> = {}): WriterContext =>

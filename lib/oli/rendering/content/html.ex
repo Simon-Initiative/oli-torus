@@ -4,6 +4,9 @@ defmodule Oli.Rendering.Content.Html do
 
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
+
+  use OliWeb, :verified_routes
+
   import Oli.Utils
   import Oli.Rendering.Utils
 
@@ -710,7 +713,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp internal_link(
-         %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
+         %Context{section_slug: section_slug, mode: mode, project_slug: project_slug} = context,
          next,
          href,
          opts \\ []
@@ -733,7 +736,7 @@ defmodule Oli.Rendering.Content.Html do
               "/sections/#{section_slug}/preview/page/#{revision_slug_from_course_link(href)}"
 
             _ ->
-              "/sections/#{section_slug}/page/#{revision_slug_from_course_link(href)}"
+              ~p"/sections/#{section_slug}/lesson/#{revision_slug_from_course_link(href)}?#{context.page_link_params}"
           end
       end
 
