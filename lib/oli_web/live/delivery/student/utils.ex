@@ -403,7 +403,9 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   def build_html(assigns, mode) do
-    %{section: section, current_user: current_user, page_context: page_context} = assigns
+    %{section: section, current_user: current_user, page_context: %{effective_settings: effective_settings} = page_context} = assigns
+
+    IO.inspect(assigns)
 
     render_context = %Context{
       enrollment:
@@ -434,10 +436,26 @@ defmodule OliWeb.Delivery.Student.Utils do
 
     attempt_content = get_attempt_content(page_context)
 
+    attempt_content =
+      if page_context.effective_settings.assessment_mode == :one_at_a_time do
+        %{
+          "model" =>
+            Enum.filter(Map.get(attempt_content, "model"), fn e ->
+              if Map.get(e, "type") == "activity-reference", do: e
+            end)
+        }
+      else
+        attempt_content
+      end
+
+    IO.inspect(attempt_content)
+
     # Cache the page as text to allow the AI agent LV to access it.
     cache_page_as_text(render_context, attempt_content, page_context.page.id)
 
-    Page.render(render_context, attempt_content, Page.Html)
+    thepage = Page.render(render_context, attempt_content, Page.Html)
+    IO.inspect(thepage)
+    thepage
   end
 
   defp cache_page_as_text(render_context, content, page_id) do
