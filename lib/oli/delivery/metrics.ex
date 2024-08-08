@@ -718,7 +718,7 @@ defmodule Oli.Delivery.Metrics do
     end)
   end
 
-  defp aggregate_raw_proficiency([]), do: proficiency_range(nil)
+  defp aggregate_raw_proficiency([]), do: proficiency_range(nil, 0)
 
   defp aggregate_raw_proficiency(raw_values) do
     {total_correct, total_count} =
@@ -728,7 +728,7 @@ defmodule Oli.Delivery.Metrics do
 
     proficiency_value = if total_count == 0, do: 0, else: total_correct / total_count
 
-    proficiency_range(proficiency_value)
+    proficiency_range(proficiency_value, total_count)
   end
 
   def raw_proficiency_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}) do
@@ -945,12 +945,12 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct
-           )}
+           ), fragment("CAST(COUNT(*) as float)")}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency} ->
-      {student_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
+      {student_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -985,19 +985,19 @@ defmodule Oli.Delivery.Metrics do
             summary.user_id != -1 and
             summary.resource_type_id == ^page_type_id,
         where: ^filter_by_container,
-        group_by: summary.user_id,
+        group_by: [summary.user_id, summary.num_first_attempts],
         select:
           {summary.user_id,
            fragment(
              "CAST(SUM(?) as float) / NULLIF(CAST(SUM(?) as float), 0.0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
-           )}
+           ), summary.num_first_attempts}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency} ->
-      {student_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
+      {student_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -1088,12 +1088,12 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct
-           )}
+           ), fragment("CAST(COUNT(*) as float)")}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {resource_id, proficiency} ->
-      {resource_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {resource_id, proficiency, num_first_attempts} ->
+      {resource_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -1117,13 +1117,14 @@ defmodule Oli.Delivery.Metrics do
             "CAST(? as float) / NULLIF(CAST(? as float), 0.0)",
             summary.num_first_attempts_correct,
             summary.num_first_attempts
-          )
+          ),
+          summary.num_first_attempts
         }
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {resource_id, proficiency} ->
-      {resource_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {resource_id, proficiency, num_first_attempts} ->
+      {resource_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -1155,12 +1156,12 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct
-           )}
+           ), fragment("CAST(COUNT(*) as float)")}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency} ->
-      {student_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
+      {student_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -1182,12 +1183,12 @@ defmodule Oli.Delivery.Metrics do
              "CAST(? as float) / NULLIF(CAST(? as float), 0.0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
-           )}
+           ), summary.num_first_attempts}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency} ->
-      {student_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
+      {student_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -1216,12 +1217,12 @@ defmodule Oli.Delivery.Metrics do
            fragment(
              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
              sn.correct
-           )}
+           ), fragment("CAST(COUNT(*) as float)")}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {page_id, proficiency} ->
-      {page_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {page_id, proficiency, num_first_attempts} ->
+      {page_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
@@ -1243,19 +1244,20 @@ defmodule Oli.Delivery.Metrics do
              "? / NULLIF(?, 0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
-           )}
+           ), summary.num_first_attempts}
       )
 
     Repo.all(query)
-    |> Enum.into(%{}, fn {page_id, proficiency} ->
-      {page_id, proficiency_range(proficiency)}
+    |> Enum.into(%{}, fn {page_id, proficiency, num_first_attempts} ->
+      {page_id, proficiency_range(proficiency, num_first_attempts)}
     end)
   end
 
-  def proficiency_range(nil), do: "Not enough data"
-  def proficiency_range(proficiency) when proficiency <= 0.5, do: "Low"
-  def proficiency_range(proficiency) when proficiency <= 0.8, do: "Medium"
-  def proficiency_range(_proficiency), do: "High"
+  def proficiency_range(_, num_first_attempts) when num_first_attempts < 3, do: "Not enough data"
+  def proficiency_range(nil, _num_first_attempts), do: "Not enough data"
+  def proficiency_range(proficiency, _num_first_attempts) when proficiency <= 0.5, do: "Low"
+  def proficiency_range(proficiency, _num_first_attempts) when proficiency <= 0.8, do: "Medium"
+  def proficiency_range(_proficiency, _num_first_attempts), do: "High"
 
   def progress_range(nil), do: "Not enough data"
   def progress_range(progress) when progress <= 0.5, do: "Low"
@@ -1432,7 +1434,7 @@ defmodule Oli.Delivery.Metrics do
           _ -> correct / total
         end
 
-      {container_id, proficiency_range(proficiency)}
+      {container_id, proficiency_range(proficiency, total)}
     end)
   end
 
