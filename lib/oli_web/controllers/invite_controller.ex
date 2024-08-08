@@ -53,11 +53,11 @@ defmodule OliWeb.InviteController do
         {button_label, url} =
           case user.status do
             :new_user ->
-              token = PowInvitation.Plug.sign_invitation_token(conn, user)
-              {"Join now", Routes.delivery_pow_invitation_invitation_path(conn, :edit, token)}
+              {"Join now",
+               ~p"/registration/new?#{[section: section.slug, from_invitation_link?: true]}"}
 
             :existing_user ->
-              {"Go to the course", ~p"/sections/#{section.slug}"}
+              {"Go to the course", ~p"/sections/#{section.slug}?#{[from_invitation_link?: true]}"}
           end
 
         Oli.Email.invitation_email(user.email, :enrollment_invitation, %{
