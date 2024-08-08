@@ -153,12 +153,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
 
         {:error, e}
 
-      {:ok, :synced} ->
+      {:ok, :synced, receipt} ->
         track_success(
           resource_access,
           type,
           job,
-          section
+          section,
+          receipt
         )
 
       {:ok, :not_synced} ->
@@ -192,7 +193,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
          %ResourceAccess{id: resource_access_id, score: score, out_of: out_of},
          type,
          job,
-         section
+         section,
+         receipt \\ nil
        ) do
     persistence_result =
       case Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id) do
@@ -209,7 +211,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
             result: result,
             details: details,
             attempt_number: attempt,
-            resource_access_id: resource_access_id
+            resource_access_id: resource_access_id,
+            receipt: receipt
           }
 
           Repo.transaction(fn _ ->
@@ -264,14 +267,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     |> track(:failure, details, resource_access, type, job, section)
   end
 
-  def track_success(resource_access, type, job, section) do
+  def track_success(resource_access, type, job, section, receipt) do
     fn id ->
       %{
         last_grade_update_id: id,
         last_successful_grade_update_id: id
       }
     end
-    |> track(:success, nil, resource_access, type, job, section)
+    |> track(:success, nil, resource_access, type, job, section, receipt)
   end
 
   def track_not_synced(resource_access, type, job, section) do

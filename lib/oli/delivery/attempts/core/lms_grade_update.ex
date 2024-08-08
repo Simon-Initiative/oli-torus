@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
     field(:result, Ecto.Enum, values: [:success, :failure, :not_synced], default: :success)
     field(:details, :string, default: nil)
     field(:attempt_number, :integer)
+    field(:receipt, :string, default: nil)
 
     belongs_to(:resource_access, Oli.Delivery.Attempts.Core.ResourceAccess)
 
@@ -28,7 +29,8 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
       :result,
       :details,
       :attempt_number,
-      :resource_access_id
+      :resource_access_id,
+      :receipt
     ])
     |> validate_required([
       :score,
@@ -36,7 +38,8 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
       :type,
       :result,
       :attempt_number,
-      :resource_access_id
+      :resource_access_id,
+      :receipt
     ])
   end
 end

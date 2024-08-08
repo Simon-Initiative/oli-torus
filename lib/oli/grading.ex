@@ -26,7 +26,8 @@ defmodule Oli.Grading do
   If grade passback services 2.0 is enabled, sends the current state of a ResourceAccess
   score for the current user to the LMS.
 
-  If sent successfully, returns {:ok, :synced}
+  If sent successfully, returns {:ok, :synced, receipt} where receipt is the body of the
+  HTML response from the LMS for record keeping.
 
   If grade passback not enabled, returns {:ok, :not_synced}
 
@@ -70,7 +71,7 @@ defmodule Oli.Grading do
       {:ok, line_item} ->
         case to_score(user.sub, resource_access)
              |> AGS.post_score(line_item, token) do
-          {:ok, _} -> {:ok, :synced}
+          {:ok, receipt} -> {:ok, :synced, receipt}
           e -> e
         end
 
