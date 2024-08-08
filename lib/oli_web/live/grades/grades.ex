@@ -4,7 +4,6 @@ defmodule OliWeb.Grades.GradesLive do
   alias Oli.Grading
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.AGS.LineItem
-  alias Lti_1p3.Tool.Services.NRPS
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
@@ -193,32 +192,35 @@ defmodule OliWeb.Grades.GradesLive do
     provider.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
-  defp fetch_students(access_token, section) do
+  defp fetch_students(_access_token, section) do
     # Query the db to find all enrolled students
     students = Sections.fetch_students(section.slug)
 
-    # If NRPS is enabled, request the latest view of the course membership
-    # and filter our enrolled students to that list.  This step avoids us
-    # ever sending grade posts for students that have dropped the class.
-    # Those requests would simply fail, but this extra step eliminates making
-    # those requests altogether.
-    if section.nrps_enabled do
-      case NRPS.fetch_memberships(section.nrps_context_memberships_url, access_token) do
-        {:ok, memberships} ->
-          # get a set of the subs corresponding to Active students
-          subs =
-            Enum.filter(memberships, fn m -> m.status == "Active" end)
-            |> Enum.map(fn m -> m.user_id end)
-            |> MapSet.new()
+    # ## MER-3566 - Disable NRPS course membership filtering for now
+    # # If NRPS is enabled, request the latest view of the course membership
+    # # and filter our enrolled students to that list.  This step avoids us
+    # # ever sending grade posts for students that have dropped the class.
+    # # Those requests would simply fail, but this extra step eliminates making
+    # # those requests altogether.
+    # if section.nrps_enabled do
+    #   case NRPS.fetch_memberships(section.nrps_context_memberships_url, access_token) do
+    #     {:ok, memberships} ->
+    #       # get a set of the subs corresponding to Active students
+    #       subs =
+    #         Enum.filter(memberships, fn m -> m.status == "Active" end)
+    #         |> Enum.map(fn m -> m.user_id end)
+    #         |> MapSet.new()
 
-          Enum.filter(students, fn s -> MapSet.member?(subs, s.sub) end)
+    #       Enum.filter(students, fn s -> MapSet.member?(subs, s.sub) end)
 
-        _ ->
-          students
-      end
-    else
-      students
-    end
+    #     _ ->
+    #       students
+    #   end
+    # else
+    #   students
+    # end
+
+    students
   end
 
   # Sorts the given list of pages by the order within the hierarchy.
