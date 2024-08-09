@@ -46,9 +46,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
     case name do
       :title ->
         ~H"""
-        <.link navigate={
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.OverviewLive, @project.slug)
-        }>
+        <.link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)}>
           <%= @project.title %>
         </.link>
         """

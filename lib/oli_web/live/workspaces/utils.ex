@@ -42,19 +42,32 @@ defmodule OliWeb.Workspace.Utils do
   attr :sub_menu_item, :map
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: []} = item} = assigns) do
-    assigns = assign(assigns, :item_view, item.view)
+    base_module =
+      case assigns.active_workspace do
+        :course_author -> OliWeb.Workspaces.CourseAuthor
+        :instructor -> OliWeb.Workspaces.Instructor
+        :student -> OliWeb.Workspaces.Student
+        _ -> raise "Unknown workspace: #{assigns.active_workspace}"
+      end
+
+    item_view = item.view |> Atom.to_string() |> Macro.camelize()
+
+    view_module =
+      Module.concat([base_module, item_view <> "Live"])
+
+    assigns = assign(assigns, item: item, view_module: view_module)
 
     ~H"""
     <.link
       navigate={
-        ~p"/sections/workspace/#{@active_workspace}/#{@slug}/#{@item_view}?#{%{sidebar_expanded: @sidebar_expanded}}"
+        Routes.live_path(OliWeb.Endpoint, @view_module, @slug, sidebar_expanded: @sidebar_expanded)
       }
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content
-        is_active={@active_view == item.view}
+        is_active={@active_view == @item.view}
         sidebar_expanded={@sidebar_expanded}
-        sub_menu_item={item}
+        sub_menu_item={@item}
         active_view={@active_view}
       />
     </.link>
@@ -65,36 +78,39 @@ defmodule OliWeb.Workspace.Utils do
     expanded = assigns[:current_item] == item.text
     item_id = item.text |> String.downcase() |> String.replace(" ", "_")
 
+    assigns =
+      assign(assigns, item: item, item_id: item_id, children: children, expanded: expanded)
+
     ~H"""
     <div class="w-full relative">
       <.button
-        id={"button_for_#{item.parent_view}"}
+        id={"button_for_#{@item.parent_view}"}
         class="w-full h-[35px] px-0 flex-col justify-center items-center flex hover:no-underline"
         phx-click={
-          JS.toggle(to: "##{item_id}_children")
-          |> toggle_class("-rotate-90", to: "##{item_id}_expand_icon")
-          |> JS.remove_class("rotate-0", to: "##{item_id}_expand_icon")
+          JS.toggle(to: "##{@item_id}_children")
+          |> toggle_class("-rotate-90", to: "##{@item_id}_expand_icon")
+          |> JS.remove_class("rotate-0", to: "##{@item_id}_expand_icon")
         }
       >
         <.nav_link_content
-          is_active={@active_view == item.view}
+          is_active={@active_view == @item.view}
           sidebar_expanded={@sidebar_expanded}
-          sub_menu_item={item}
+          sub_menu_item={@item}
           active_view={@active_view}
         />
       </.button>
       <div
         role="expandable_submenu"
-        id={"#{item_id}_children"}
-        class={"pl-4 #{if expanded || active_view_in_children?(item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
-        phx-click-away={!@sidebar_expanded && JS.hide(to: "##{item_id}_children")}
+        id={"#{@item_id}_children"}
+        class={"pl-4 #{if @expanded || active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
+        phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
       >
         <.sub_menu_item
-          :for={child <- children}
+          :for={child <- @children}
           sub_menu_item={child}
           sidebar_expanded={@sidebar_expanded}
-          current_item={item.text}
-          target_to_expand={"#{item_id}_children"}
+          current_item={@item.text}
+          target_to_expand={"#{@item_id}_children"}
           active_workspace={@active_workspace}
           active_view={@active_view}
           slug={@slug}
@@ -113,6 +129,7 @@ defmodule OliWeb.Workspace.Utils do
 
   def nav_link_content(assigns) do
     item_id = assigns.sub_menu_item.text |> String.downcase() |> String.replace(" ", "_")
+    assigns = assign(assigns, :item_id, item_id)
 
     ~H"""
     <div class={[
@@ -128,7 +145,10 @@ defmodule OliWeb.Workspace.Utils do
         "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
-        <div :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)} class="whitespace-nowrap">
+        <div
+          :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)}
+          class="whitespace-nowrap"
+        >
           <%= @sub_menu_item.text %>
         </div>
 
@@ -144,10 +164,10 @@ defmodule OliWeb.Workspace.Utils do
             if !active_view_in_children?(@sub_menu_item.children, @active_view),
               do: "-rotate-90"
           }
-          id={"#{item_id}_expand_icon"}
+          id={"#{@item_id}_expand_icon"}
           phx-mounted={
             if active_view_in_children?(@sub_menu_item.children, @active_view),
-              do: JS.add_class("rotate-0") |> JS.show(to: "##{item_id}_children")
+              do: JS.add_class("rotate-0") |> JS.show(to: "##{@item_id}_children")
           }
         >
           <Icons.chevron_down class="text-[#bab8bf]" />
@@ -250,7 +270,6 @@ defmodule OliWeb.Workspace.Utils do
             children: [],
             class: ""
           }
-
         ],
         class: ""
       },

@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.Instructor do
+defmodule OliWeb.Workspaces.Instructor do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections
@@ -28,9 +28,7 @@ defmodule OliWeb.Workspace.Instructor do
      assign(socket,
        sections: sections,
        filtered_sections: sections,
-       active_workspace: :instructor,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :instructor
      )}
   end
 
@@ -38,9 +36,7 @@ defmodule OliWeb.Workspace.Instructor do
     # admin case...
     {:ok,
      assign(socket,
-       active_workspace: :instructor,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :instructor
      )}
   end
 

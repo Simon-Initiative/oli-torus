@@ -324,7 +324,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
           <%= if @project_slug do %>
-            <.exit_button
+            <.exit_workspace_button
               sidebar_expanded={@sidebar_expanded}
               title="Exit Project"
               target_workspace={:course_author}
@@ -505,18 +505,31 @@ defmodule OliWeb.Components.Delivery.Layouts do
       sidebar_expanded: !sidebar_expanded
     }
 
+    base_module =
+      case active_workspace do
+        :course_author -> OliWeb.Workspaces.CourseAuthor
+        :instructor -> OliWeb.Workspaces.Instructor
+        :student -> OliWeb.Workspaces.Student
+        _ -> raise {"Unknown workspace: #{active_workspace}"}
+      end
+
+    item_view = active_view |> Atom.to_string() |> Macro.camelize()
+
+    view_module =
+      Module.concat([base_module, item_view <> "Live"])
+
     case {active_workspace, active_view} do
       {:course_author, nil} ->
-        ~p"/sections/workspace/course_author?#{params}"
+        ~p"/workspaces/course_author?#{params}"
 
-      {:course_author, view_slug} ->
-        ~p"/sections/workspace/course_author/#{project_slug}/#{view_slug}?#{params}"
+      {:course_author, _view_slug} ->
+        Routes.live_path(OliWeb.Endpoint, view_module, project_slug, params)
 
       {:instructor, nil} ->
-        ~p"/sections/workspace/instructor?#{params}"
+        ~p"/workspaces/instructor?#{params}"
 
       {:student, nil} ->
-        ~p"/sections/workspace/student?#{params}"
+        ~p"/workspaces/student?#{params}"
     end
   end
 
@@ -711,16 +724,44 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr :sidebar_expanded, :boolean, default: true
-  attr :target_workspace, :atom, default: :student
-  attr :title, :string, default: "Exit Course"
+  attr :target_workspace, :atom, default: :student_workspace
 
-  def exit_button(assigns) do
+  def exit_course_button(assigns) do
     ~H"""
     <.link
       id="exit_course_button"
-      navigate={
-        ~p"/sections/workspace/#{@target_workspace}?#{%{sidebar_expanded: @sidebar_expanded}}"
-      }
+      navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+    >
+      <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
+          Exit Course
+        </div>
+      </div>
+    </.link>
+    """
+  end
+
+  attr :sidebar_expanded, :boolean, default: true
+  attr :target_workspace, :atom, default: :student
+  attr :title, :string, default: "Exit Course"
+
+  def exit_workspace_button(assigns) do
+    base_module =
+      case assigns.target_workspace do
+        :course_author -> OliWeb.Workspaces.CourseAuthor.IndexLive
+        :instructor -> OliWeb.Workspaces.Instructor
+        :student -> OliWeb.Workspaces.Student
+        _ -> raise "Unknown workspace: #{assigns.active_workspace}"
+      end
+
+    assigns = assign(assigns, base_module: base_module)
+
+    ~H"""
+    <.link
+      id="exit_course_button"
+      navigate={Routes.live_path(OliWeb.Endpoint, @base_module, sidebar_expanded: @sidebar_expanded)}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
