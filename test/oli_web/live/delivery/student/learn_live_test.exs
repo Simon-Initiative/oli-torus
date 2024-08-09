@@ -792,6 +792,42 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "h3", "Implementing LiveView")
     end
 
+    test "renders paywall message when grace period is not over (or gets redirected when over)",
+         %{
+           conn: conn,
+           section: section
+         } do
+      stub_current_time(~U[2024-10-15 20:00:00Z])
+
+      {:ok, product} =
+        Sections.update_section(section, %{
+          type: :blueprint,
+          registration_open: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          has_grace_period: true,
+          grace_period_days: 18,
+          start_date: ~U[2024-10-15 20:00:00Z],
+          end_date: ~U[2024-11-30 20:00:00Z]
+        })
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(product.slug))
+
+      assert has_element?(
+               view,
+               "div[id=pay_early_message]",
+               "You have 18 more days remaining in your grace period access of this course"
+             )
+
+      # Grace period is over
+      stub_current_time(~U[2024-11-13 20:00:00Z])
+
+      redirect_path = "/sections/#{product.slug}/payment"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, Utils.learn_live_path(product.slug))
+    end
+
     test "can see unit intro as first slider card and play the video (if provided)", %{
       conn: conn,
       section: section
@@ -2822,6 +2858,18 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
       assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
     end
+
+    # test "redirecto to payment path when grace period is over", %{conn: conn, user: user} do
+
+    #   product =
+    #   insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10), has_grace_period: true, grace_period_days: 10)
+
+    #   enroll_as_student(%{section: product, user: user})
+
+    #   {:ok, view, _html} = live(conn, "/sections/#{product.slug}")
+
+    #   open_browser(view)
+    # end
   end
 
   defp enable_all_sidebar_links(section, author, page_1, page_2, page_3) do

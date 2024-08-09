@@ -12,8 +12,7 @@ defmodule OliWeb.LiveSessionPlugs.SetPaywallSummary do
       when not is_nil(section) and not is_nil(current_user) do
     {:cont,
      assign(socket,
-       paywall_summary:
-         Paywall.summarize_access(current_user, section)
+       paywall_summary: Paywall.summarize_access(current_user, section)
      )}
   end
 
