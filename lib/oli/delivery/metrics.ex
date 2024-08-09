@@ -985,14 +985,14 @@ defmodule Oli.Delivery.Metrics do
             summary.user_id != -1 and
             summary.resource_type_id == ^page_type_id,
         where: ^filter_by_container,
-        group_by: [summary.user_id, summary.num_first_attempts],
+        group_by: summary.user_id,
         select:
           {summary.user_id,
            fragment(
              "CAST(SUM(?) as float) / NULLIF(CAST(SUM(?) as float), 0.0)",
              summary.num_first_attempts_correct,
              summary.num_first_attempts
-           ), summary.num_first_attempts}
+           ), sum(summary.num_first_attempts)}
       )
 
     Repo.all(query)
