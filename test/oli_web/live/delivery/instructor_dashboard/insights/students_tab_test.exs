@@ -585,6 +585,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       ## Filtering by Low Proficiency
       element(view, "div[phx-value-selected=\"low_proficiency\"]") |> render_click()
+
       assert has_element?(view, "p", "None exist")
 
       ## Filtering by Zero Interaction in a week
