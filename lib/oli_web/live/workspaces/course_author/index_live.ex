@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.CourseAuthor do
+defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
@@ -14,7 +14,8 @@ defmodule OliWeb.Workspace.CourseAuthor do
   alias OliWeb.Common.{PagedTable, Params, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Icons
-  alias OliWeb.Projects.{CreateProjectModal, TableModel}
+  alias OliWeb.Projects.CreateProjectModal
+  alias OliWeb.Workspaces.CourseAuthor.OverviewTableModel
 
   @default_params %{
     sidebar_expanded: true,
@@ -70,7 +71,7 @@ defmodule OliWeb.Workspace.CourseAuthor do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(ctx, projects)
+    {:ok, table_model} = OverviewTableModel.new(ctx, projects)
 
     total_count = determine_total(projects)
 
