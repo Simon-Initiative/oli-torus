@@ -384,19 +384,26 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                         )
                       }
                     />
-                    <%= case Map.get(@form[:explanation_strategy].value || %{}, :type) do %>
-                      <% :after_set_num_attempts -> %>
-                        <div class="ml-2">
-                          <.input
-                            name="revision[explanation_strategy][set_num_attempts]"
-                            type="number"
-                            class="form-control"
-                            placeholder="# of Attempts"
-                            field={es[:set_num_attempts]}
-                          />
-                        </div>
-                      <% _ -> %>
-                    <% end %>
+                    <div class="ml-2">
+                      <.input
+                        :if={
+                          Ecto.Changeset.get_field(
+                            @form.source,
+                            :explanation_strategy
+                          ) &&
+                            Ecto.Changeset.get_field(
+                              @form.source,
+                              :explanation_strategy
+                            ).type == :after_set_num_attempts
+                        }
+                        name="revision[explanation_strategy][set_num_attempts]"
+                        type="number"
+                        class="form-control"
+                        placeholder="# of Attempts"
+                        min={1}
+                        field={es[:set_num_attempts]}
+                      />
+                    </div>
                   </.inputs_for>
                 </div>
                 <small id="explanation_strategy_description" class="form-text text-muted">
