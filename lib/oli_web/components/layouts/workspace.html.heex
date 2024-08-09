@@ -1,6 +1,6 @@
 <main role="main" class="relative flex flex-col">
   <div
-    :if={assigns[:header_enabled?] && !@disable_sidebar?}
+    :if={assigns[:header_enabled?] && !@disable_sidebar? && assigns[:active_workspace]}
     class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
   >
     <div class={"mr-3 my-auto #{if assigns[:project_title], do: "flex items-center justify-between w-full", else: "ml-auto"}"}>

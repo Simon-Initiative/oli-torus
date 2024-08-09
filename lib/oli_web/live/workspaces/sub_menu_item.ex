@@ -18,7 +18,7 @@ defmodule OliWeb.Workspace.SubMenuItem do
     :view,
     :parent_view,
     :children,
-    :class,
+    :class
   ]
 
   @type t() :: %__MODULE__{
@@ -27,6 +27,6 @@ defmodule OliWeb.Workspace.SubMenuItem do
           view: atom(),
           parent_view: atom(),
           children: list(%__MODULE__{}),
-          class: String.t(),
+          class: String.t()
         }
 end

@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.Student do
+defmodule OliWeb.Workspaces.Student do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Metrics
@@ -20,9 +20,7 @@ defmodule OliWeb.Workspace.Student do
     # admin case...
     {:ok,
      assign(socket,
-       active_workspace: :student,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :student
      )}
   end
 
@@ -45,9 +43,7 @@ defmodule OliWeb.Workspace.Student do
        params: params,
        disable_sidebar?: user_is_only_a_student?(all_sections),
        filtered_sections: sections,
-       active_workspace: :student,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :student
      )}
   end
 

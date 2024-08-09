@@ -87,9 +87,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
        show_all: show_all,
        show_deleted: show_deleted,
        active_workspace: :course_author,
-       params: params,
-       header_enabled?: true,
-       footer_enabled?: true
+       params: params
      )}
   end
 

@@ -47,7 +47,7 @@ defmodule OliWeb.Workspace.Utils do
     ~H"""
     <.link
       navigate={
-        ~p"/sections/workspace/#{@active_workspace}/#{@slug}/#{@item_view}?#{%{sidebar_expanded: @sidebar_expanded}}"
+        ~p"/workspaces/#{@active_workspace}/#{@slug}/#{@item_view}?#{%{sidebar_expanded: @sidebar_expanded}}"
       }
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
@@ -128,7 +128,10 @@ defmodule OliWeb.Workspace.Utils do
         "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
-        <div :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)} class="whitespace-nowrap">
+        <div
+          :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)}
+          class="whitespace-nowrap"
+        >
           <%= @sub_menu_item.text %>
         </div>
 
@@ -250,7 +253,6 @@ defmodule OliWeb.Workspace.Utils do
             children: [],
             class: ""
           }
-
         ],
         class: ""
       },
