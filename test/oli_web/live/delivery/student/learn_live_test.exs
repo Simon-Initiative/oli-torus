@@ -2858,18 +2858,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
       assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
     end
-
-    # test "redirecto to payment path when grace period is over", %{conn: conn, user: user} do
-
-    #   product =
-    #   insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10), has_grace_period: true, grace_period_days: 10)
-
-    #   enroll_as_student(%{section: product, user: user})
-
-    #   {:ok, view, _html} = live(conn, "/sections/#{product.slug}")
-
-    #   open_browser(view)
-    # end
   end
 
   defp enable_all_sidebar_links(section, author, page_1, page_2, page_3) do
