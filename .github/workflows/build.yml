@@ -27,7 +27,7 @@ jobs:
           cp oli.example.env oli.env
 
       - name: 🗄 Start test database
-        run: docker-compose up -d postgres
+        run: docker compose up -d postgres
 
       - name: 💾 Restore the deps cache
         id: mix-deps-cache

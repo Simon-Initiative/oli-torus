@@ -567,7 +567,7 @@ defmodule OliWeb.Sections.OverviewView do
               if is_admin do
                 Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
               else
-                ~p"/sections/workspace/instructor"
+                ~p"/workspaces/instructor"
               end
 
             socket

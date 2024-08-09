@@ -97,7 +97,7 @@ defmodule OliWeb.StaticPageControllerTest do
     test "updates the user timezone preference and redirects correctly", context do
       {:ok, conn: conn, user: user} = user_conn(context)
       new_timezone = "America/Montevideo"
-      redirect_to = ~p"/sections/workspace/student"
+      redirect_to = ~p"/workspaces/student"
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{
@@ -132,6 +132,17 @@ defmodule OliWeb.StaticPageControllerTest do
 
       assert Accounts.get_user_preference(user.id, :timezone) == new_timezone
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
+    end
+  end
+
+  describe "student login" do
+    test "shows student login view", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "OLI Torus"
+
+      assert response(conn, 200) =~ "Easily access and participate in your enrolled courses"
+      assert response(conn, 200) =~ "Need an account?"
     end
   end
 

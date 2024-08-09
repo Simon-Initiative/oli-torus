@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { MutateStateAction, MutateStateActionParams } from 'apps/authoring/types';
 import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
@@ -20,7 +22,7 @@ interface ActionMutateEditorProps {
 
 const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   const { action, onChange, onDelete } = props;
-
+  const dispatch = useDispatch();
   const [target, setTarget] = useState(action.params.target);
   const [targetType, setTargetType] = useState(action.params.targetType);
   const [operator, setOperator] = useState(action.params.operator);
@@ -114,7 +116,11 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           id={`action-mutate-target-${uuid}`}
           value={target}
           onChange={(e) => setTarget(e.target.value)}
-          onBlur={(e) => handleTargetChange(e.target.value)}
+          onBlur={(e) => {
+            handleTargetChange(e.target.value);
+            dispatch(setCurrentPartPropertyFocus({ focus: true }));
+          }}
+          onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
           title={target}
           placeholder="Target"
         />
@@ -172,7 +178,11 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           id={`action-mutate-value-${uuid}`}
           value={value}
           onChange={(e) => handleValueChange(e)}
-          onBlur={() => setIsDirty(true)}
+          onBlur={() => {
+            setIsDirty(true);
+            dispatch(setCurrentPartPropertyFocus({ focus: true }));
+          }}
+          onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
           title={value}
           placeholder="Value"
         />

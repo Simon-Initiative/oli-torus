@@ -154,10 +154,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
-          <.exit_button
+          <.exit_course_button
+            :if={is_independent_learner?(@ctx.user)}
             sidebar_expanded={@sidebar_expanded}
-            title="Exit Course"
-            target_workspace={:student}
           />
         </div>
       </nav>
@@ -414,7 +413,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <:icon>
           <Icons.graduation_cap
             is_active={@active_workspace == :student}
-            class="stroke-[#757682] dark:stroke-[#BAB8BF]"
+            stroke="stroke-[#757682] dark:stroke-[#BAB8BF]"
           />
         </:icon>
         <:text>Student</:text>
@@ -527,9 +526,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
     }
 
     case target_workspace do
-      :course_author -> ~p"/sections/workspace/course_author?#{url_params}"
-      :instructor -> ~p"/sections/workspace/instructor?#{url_params}"
-      :student -> ~p"/sections/workspace/student?#{url_params}"
+      :course_author -> ~p"/workspaces/course_author?#{url_params}"
+      :instructor -> ~p"/workspaces/instructor?#{url_params}"
+      :student -> ~p"/workspaces/student?#{url_params}"
     end
   end
 
@@ -720,7 +719,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id="exit_course_button"
       navigate={
-        ~p"/sections/workspace/#{@target_workspace}?#{%{sidebar_expanded: @sidebar_expanded}}"
+        ~p"/workspaces/#{@target_workspace}?#{%{sidebar_expanded: @sidebar_expanded}}"
       }
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >

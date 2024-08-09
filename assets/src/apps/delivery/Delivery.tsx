@@ -154,11 +154,11 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
 
-  // this is something SS does...
+  // this is something SS does....
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
-    <div className={parentDivClasses.join(' ')}>
+    <div className={`${parentDivClasses.join(' ')} ${localStorage?.theme || ''}`}>
       {previewMode && <PreviewTools model={content?.model} />}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
