@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
 
   describe "days_difference/1" do
     setup do
-      stub_current_time(DateTime.utc_now())
+      stub_real_current_time()
 
       [
         context: %OliWeb.Common.SessionContext{

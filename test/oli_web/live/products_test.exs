@@ -32,6 +32,7 @@ defmodule OliWeb.ProductsLiveTest do
     product =
       insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
 
+    stub_real_current_time()
     Paywall.create_payment_codes(product.slug, 20)
 
     [product: product]

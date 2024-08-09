@@ -174,6 +174,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       instructor: instructor,
       conn: conn
     } do
+      stub_real_current_time()
+
       %{section: section, mod1_pages: mod1_pages, mod1_resource: mod1_resource} =
         Oli.Seeder.base_project_with_larger_hierarchy()
 
