@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Workspace.Utils, as: Workspace_Utils
 
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
@@ -222,12 +223,19 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean)
   attr(:active_workspace, :atom)
+  attr(:active_view, :atom, default: nil)
+  attr(:project_slug, :string, default: nil)
 
   def workspace_sidebar_toggler(assigns) do
     ~H"""
     <button
       role="toggle sidebar"
-      phx-click={JS.patch(toggled_workspace_path(@active_workspace, @sidebar_expanded))}
+      phx-click={
+        JS.patch(
+          toggled_workspace_path(@active_workspace, @active_view, @sidebar_expanded, @project_slug)
+        )
+        |> JS.hide(to: "div[role='expandable_submenu']")
+      }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
@@ -241,8 +249,11 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
   attr(:active_workspace, :atom)
+  attr(:active_view, :atom, default: nil)
   attr(:sidebar_expanded, :boolean)
   attr(:preview_mode, :boolean)
+  attr(:project_title, :string)
+  attr(:project_slug, :string)
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -263,7 +274,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-        overflow-hidden
       ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
         <div class="w-full">
           <div
@@ -282,8 +292,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
           </div>
           <.workspace_sidebar_toggler
             active_workspace={@active_workspace}
+            active_view={@active_view}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
+            project_slug={@project_slug}
           />
           <div class="h-[24px]">
             <h2
@@ -298,9 +310,26 @@ defmodule OliWeb.Components.Delivery.Layouts do
             sidebar_expanded={@sidebar_expanded}
             active_workspace={@active_workspace}
           />
+          <%= if @project_slug do %>
+            <Workspace_Utils.sub_menu
+              hierarchy={Workspace_Utils.hierarchy(@active_workspace)}
+              slug={@project_slug}
+              title={@project_title}
+              sidebar_expanded={@sidebar_expanded}
+              active_view={@active_view}
+              active_workspace={@active_workspace}
+            />
+          <% end %>
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
+          <%= if @project_slug do %>
+            <.exit_button
+              sidebar_expanded={@sidebar_expanded}
+              title="Exit Project"
+              target_workspace={:course_author}
+            />
+          <% end %>
         </div>
       </nav>
       <nav
@@ -471,15 +500,23 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  defp toggled_workspace_path(active_workspace, sidebar_expanded) do
+  defp toggled_workspace_path(active_workspace, active_view, sidebar_expanded, project_slug) do
     params = %{
       sidebar_expanded: !sidebar_expanded
     }
 
-    case active_workspace do
-      :course_author -> ~p"/workspaces/course_author?#{params}"
-      :instructor -> ~p"/workspaces/instructor?#{params}"
-      :student -> ~p"/workspaces/student?#{params}"
+    case {active_workspace, active_view} do
+      {:course_author, nil} ->
+        ~p"/sections/workspace/course_author?#{params}"
+
+      {:course_author, view_slug} ->
+        ~p"/sections/workspace/course_author/#{project_slug}/#{view_slug}?#{params}"
+
+      {:instructor, nil} ->
+        ~p"/sections/workspace/instructor?#{params}"
+
+      {:student, nil} ->
+        ~p"/sections/workspace/student?#{params}"
     end
   end
 
@@ -606,7 +643,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def nav_link_content(assigns) do
     ~H"""
     <div class={[
-      "w-full h-9 px-3 py-3 dark:hover:bg-[#141416] hover:bg-zinc-400/10 rounded-lg justify-start items-center gap-3 inline-flex",
+      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#141416] hover:bg-zinc-400/10 rounded-lg justify-start items-center gap-3 inline-flex",
       if(@is_active,
         do: @on_active_bg
       )
@@ -617,7 +654,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <div
         :if={@sidebar_expanded}
         class={[
-          "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex-1 flex flex-row justify-between",
+          "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
           if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
         ]}
       >
@@ -674,19 +711,22 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr :sidebar_expanded, :boolean, default: true
-  attr :target_workspace, :atom, default: :student_workspace
+  attr :target_workspace, :atom, default: :student
+  attr :title, :string, default: "Exit Course"
 
-  def exit_course_button(assigns) do
+  def exit_button(assigns) do
     ~H"""
     <.link
       id="exit_course_button"
-      navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
+      navigate={
+        ~p"/sections/workspace/#{@target_workspace}?#{%{sidebar_expanded: @sidebar_expanded}}"
+      }
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
-          Exit Course
+          <%= @title %>
         </div>
       </div>
     </.link>
