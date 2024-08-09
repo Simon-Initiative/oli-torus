@@ -400,6 +400,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                         type="number"
                         class="form-control"
                         placeholder="# of Attempts"
+                        min={1}
                         field={es[:set_num_attempts]}
                       />
                     </div>
