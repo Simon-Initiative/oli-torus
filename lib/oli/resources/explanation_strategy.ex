@@ -15,6 +15,7 @@ defmodule Oli.Resources.ExplanationStrategy do
   embedded_schema do
     field :type, Ecto.Enum,
       values: [
+        :none,
         :after_max_resource_attempts_exhausted,
         :after_set_num_attempts
       ]
