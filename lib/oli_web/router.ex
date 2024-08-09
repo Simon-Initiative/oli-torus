@@ -799,11 +799,24 @@ defmodule OliWeb.Router do
       on_mount: [
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
-        OliWeb.LiveSessionPlugs.SetPreviewMode
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProject
       ] do
-      live("/course_author", CourseAuthor)
-      live("/instructor", Instructor)
-      live("/student", Student)
+      live("/course_author", Workspaces.CourseAuthor.IndexLive)
+      live("/course_author/:project_id/overview", Workspaces.CourseAuthor.OverviewLive)
+      live("/course_author/:project_id/activity_bank", Workspaces.CourseAuthor.ActivityBankLive)
+      live("/course_author/:project_id/objectives", Workspaces.CourseAuthor.ObjectivesLive)
+      live("/course_author/:project_id/experiments", Workspaces.CourseAuthor.ExperimentsLive)
+      live("/course_author/:project_id/bibliography", Workspaces.CourseAuthor.BibliographyLive)
+      live("/course_author/:project_id/curriculum", Workspaces.CourseAuthor.CurriculumLive)
+      live("/course_author/:project_id/pages", Workspaces.CourseAuthor.PagesLive)
+      live("/course_author/:project_id/activities", Workspaces.CourseAuthor.ActivitiesLive)
+      live("/course_author/:project_id/review", Workspaces.CourseAuthor.ReviewLive)
+      live("/course_author/:project_id/publish", Workspaces.CourseAuthor.PublishLive)
+      live("/course_author/:project_id/products", Workspaces.CourseAuthor.ProductsLive)
+      live("/course_author/:project_id/insights", Workspaces.CourseAuthor.InsightsLive)
+      live("/instructor", Workspace.Instructor)
+      live("/student", Workspace.Student)
     end
   end
 
