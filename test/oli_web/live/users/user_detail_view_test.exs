@@ -267,7 +267,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
   end
 
   describe "Enrolled sections info" do
-    setup [:admin_conn, :enrolled_student_to_sections]
+    setup [:admin_conn, :enrolled_student_to_sections, :stub_real_current_time]
 
     test "shows enrolled sections section", %{
       conn: conn,

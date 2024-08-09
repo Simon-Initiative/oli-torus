@@ -979,7 +979,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
-          OliWeb.LiveSessionPlugs.SetNotificationBadges
+          OliWeb.LiveSessionPlugs.SetNotificationBadges,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1001,7 +1002,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.PrologueLive)
         end
@@ -1020,7 +1022,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.LessonLive)
           live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
@@ -1038,7 +1041,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.LessonLive, metadata: %{route_name: :adaptive_lesson})
         end

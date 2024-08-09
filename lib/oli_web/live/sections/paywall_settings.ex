@@ -101,7 +101,7 @@ defmodule OliWeb.Sections.PaywallSettings do
         />
       </div>
 
-      <button class="btn btn-primary mt-3" type="submit">Save</button>
+      <button :if={!@disabled} class="btn btn-primary mt-3" type="submit">Save</button>
     </Group.render>
     """
   end

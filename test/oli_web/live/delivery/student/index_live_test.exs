@@ -680,6 +680,42 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", "Upcoming Agenda")
     end
 
+    test "renders paywall message when grace period is not over (or gets redirected when over)",
+         %{
+           conn: conn,
+           section: section
+         } do
+      stub_current_time(~U[2024-10-15 20:00:00Z])
+
+      {:ok, product} =
+        Sections.update_section(section, %{
+          type: :blueprint,
+          registration_open: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          has_grace_period: true,
+          grace_period_days: 18,
+          start_date: ~U[2024-10-15 20:00:00Z],
+          end_date: ~U[2024-11-30 20:00:00Z]
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{product.slug}")
+
+      assert has_element?(
+               view,
+               "div[id=pay_early_message]",
+               "You have 18 more days remaining in your grace period access of this course"
+             )
+
+      # Grace period is over
+      stub_current_time(~U[2024-11-13 20:00:00Z])
+
+      redirect_path = "/sections/#{product.slug}/payment"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, ~p"/sections/#{product.slug}")
+    end
+
     # test this
     test "can see welcome title and encouraging subtitle when is set and the student just joined the course",
          %{

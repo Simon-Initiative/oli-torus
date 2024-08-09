@@ -33,6 +33,25 @@
           id: "dialogue-window"
         ) %>
       <% end %>
+      <div
+        :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+        id="pay_early_message"
+        class="absolute z-50 system-banner flex flex-row alert alert-warning m-6"
+        role="alert"
+      >
+        <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
+        <div class="flex whitespace-nowrap items-center">
+          <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
+            Pay Now
+          </.link>
+          <button
+            class="ml-10 stroke-gray-500 hover:stroke-gray-400"
+            phx-click={JS.hide(to: "#pay_early_message")}
+          >
+            <OliWeb.Icons.close />
+          </button>
+        </div>
+      </div>
       <%= @inner_content %>
     </div>
   </main>
