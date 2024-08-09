@@ -819,7 +819,8 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected,
+      :delivery,
+      :delivery_layout,
       :pow_email_layout
     ])
 

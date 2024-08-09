@@ -22,20 +22,6 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
 
       assert element(view, "a[href=\"/\"]") |> render() =~ "sign in"
     end
-
-    test "redirects to the Student Sign In page if the invitation link is valid", %{conn: conn} do
-      section_invite_slig = "12345"
-      %{section: section} = insert(:section_invite, slug: section_invite_slig)
-
-      conn = get(conn, ~p"/sections/join/#{section_invite_slig}")
-
-      assert conn.halted
-
-      redirect_to =
-        ~p"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite_slig}&section=#{section.slug}&from_invitation_link%3F=true"
-
-      assert redirected_to(conn, 302) == redirect_to
-    end
   end
 
   describe "course invitation with student account" do
