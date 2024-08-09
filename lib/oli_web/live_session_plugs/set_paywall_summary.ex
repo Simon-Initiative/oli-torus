@@ -13,7 +13,7 @@ defmodule OliWeb.LiveSessionPlugs.SetPaywallSummary do
     {:cont,
      assign(socket,
        paywall_summary:
-         Paywall.summarize_access(current_user, section) |> IO.inspect(label: "summary!!!!")
+         Paywall.summarize_access(current_user, section)
      )}
   end
 
