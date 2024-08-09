@@ -783,31 +783,44 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  ###
-  # Section Routes
-  ###
-
-  ### Sections - Workspaces
-  scope "/sections/workspace/", OliWeb do
+  ### Workspaces
+  scope "/workspaces/", OliWeb.Workspaces do
     pipe_through([
       :browser,
       :authoring_and_delivery,
       :set_sidebar
     ])
 
-    live_session :delivery_workspace,
+    live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
-        OliWeb.LiveSessionPlugs.SetPreviewMode
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProject
       ] do
-      live("/course_author", Workspace.CourseAuthor)
-      live("/instructor", Workspace.Instructor)
-      live("/student", Workspace.Student)
+      live("/course_author", CourseAuthor.IndexLive)
+      live("/course_author/:project_id/overview", CourseAuthor.OverviewLive)
+      live("/course_author/:project_id/activity_bank", CourseAuthor.ActivityBankLive)
+      live("/course_author/:project_id/objectives", CourseAuthor.ObjectivesLive)
+      live("/course_author/:project_id/experiments", CourseAuthor.ExperimentsLive)
+      live("/course_author/:project_id/bibliography", CourseAuthor.BibliographyLive)
+      live("/course_author/:project_id/curriculum", CourseAuthor.CurriculumLive)
+      live("/course_author/:project_id/pages", CourseAuthor.PagesLive)
+      live("/course_author/:project_id/activities", CourseAuthor.ActivitiesLive)
+      live("/course_author/:project_id/review", CourseAuthor.ReviewLive)
+      live("/course_author/:project_id/publish", CourseAuthor.PublishLive)
+      live("/course_author/:project_id/products", CourseAuthor.ProductsLive)
+      live("/course_author/:project_id/insights", CourseAuthor.InsightsLive)
+      live("/instructor", Instructor)
+      live("/student", Student)
     end
   end
+
+  ###
+  # Section Routes
+  ###
 
   scope "/sections", OliWeb do
     pipe_through([:browser])
