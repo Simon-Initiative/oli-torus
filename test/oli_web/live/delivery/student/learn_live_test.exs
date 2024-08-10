@@ -776,7 +776,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
     end
   end
 
