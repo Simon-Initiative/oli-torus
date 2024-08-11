@@ -1048,6 +1048,30 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       refute has_element?(view, "div", "This Week")
       refute has_element?(view, "div", page_1.title)
     end
+
+    test "do not show hidden pages in upcoming agenda", %{
+      conn: conn,
+      section: section,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+
+      # Set page 3 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      refute has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+    end
   end
 
   describe "my assignments" do
@@ -1272,6 +1296,92 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
 
       assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+    end
+
+    test "do not show hidden pages in latest assignments", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2024-04-22 21:00:00Z])
+
+      set_progress(section.id, page_3.resource_id, user.id, 0.3, page_3,
+        attempt_state: :evaluated,
+        updated_at: ~U[2023-11-01 22:00:00Z]
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      view
+      |> element("#latest_tab")
+      |> render_click()
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+
+      # First latest assignment
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=details] div[role=count]},
+               "Attempt 1/∞"
+             )
+
+      # Set page 3 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      # First latest assignment
+      refute has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      refute has_element?(
+               view,
+               first_assignment <> ~s{div[role=details] div[role=count]},
+               "Attempt 1/∞"
+             )
+    end
+
+    test "do not show hidden pages in upcoming assignments", %{
+      conn: conn,
+      section: section,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+
+      # First upcoming assignment
+      assert element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      # Set page 3 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      # First upcoming assignment
+      refute element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
     end
   end
 end

@@ -376,7 +376,10 @@ defmodule Oli.Delivery.Sections do
             enrollment_context_roles
         end)
 
-      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles,
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
 
       {:ok, enrollments}
     end)
@@ -577,7 +580,6 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
-        preload: [:base_project],
         select: s
       )
 
@@ -1837,6 +1839,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -1922,6 +1925,7 @@ defmodule Oli.Delivery.Sections do
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -2462,6 +2466,7 @@ defmodule Oli.Delivery.Sections do
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
+        assessment_mode: revision.assessment_mode,
         section_id: section.id
       }
       |> SectionResource.to_map()
@@ -2781,6 +2786,7 @@ defmodule Oli.Delivery.Sections do
              :explanation_strategy,
              :max_attempts,
              :retake_mode,
+             :assessment_mode,
              :password,
              :late_submit,
              :late_start,
@@ -3405,6 +3411,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3531,6 +3538,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3674,7 +3682,8 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode
+            retake_mode: revision.retake_mode,
+            assessment_mode: revision.assessment_mode
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -3693,6 +3702,7 @@ defmodule Oli.Delivery.Sections do
                  :explanation_strategy,
                  :max_attempts,
                  :retake_mode,
+                 :assessment_mode,
                  :password,
                  :late_submit,
                  :late_start,
@@ -3763,7 +3773,8 @@ defmodule Oli.Delivery.Sections do
               item.max_attempts
             end,
           scoring_strategy_id: item.scoring_strategy_id,
-          retake_mode: item.retake_mode
+          retake_mode: item.retake_mode,
+          assessment_mode: item.assessment_mode
         }
       end)
 
@@ -4326,7 +4337,8 @@ defmodule Oli.Delivery.Sections do
         left_join: ra in assoc(r_att, :resource_access),
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
-            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1 and
+            not sr.hidden,
         group_by: [
           rev.id,
           sr.numbering_index,
@@ -4399,11 +4411,20 @@ defmodule Oli.Delivery.Sections do
       on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
       left_join: r_att in ResourceAttempt,
       on: r_att.resource_access_id == ra.id,
+      left_join: se in Oli.Delivery.Settings.StudentException,
+      on:
+        se.resource_id == ra.resource_id and se.user_id == ^user_id and
+          se.section_id == ^section.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0 and
-          is_nil(r_att.id),
-      order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
+          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date) >=
+            ^today and coalesce(ra.progress, 0) == 0 and
+          is_nil(r_att.id) and not sr.hidden,
+      order_by: [
+        asc:
+          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
+        asc: sr.numbering_index
+      ],
       limit: ^lessons_count,
       select:
         map(rev, [
@@ -4418,8 +4439,8 @@ defmodule Oli.Delivery.Sections do
         ]),
       select_merge: %{
         numbering_index: sr.numbering_index,
-        start_date: sr.start_date,
-        end_date: sr.end_date
+        start_date: coalesce(se.start_date, sr.start_date),
+        end_date: coalesce(se.end_date, sr.end_date)
       }
     )
     |> where(^graded_filter)

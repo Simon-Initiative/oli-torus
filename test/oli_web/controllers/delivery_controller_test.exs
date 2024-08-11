@@ -539,6 +539,18 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Enroll in Course Section"
     end
+
+    test "does not display Sign Up link", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      refute html_response(conn, 200) =~ "Sign Up"
+
+      refute html_response(conn, 200) =~
+               ~s(<a href="/registration/new?section=#{section.slug}&amp;from_invitation_link%3F=true")
+    end
   end
 
   describe "enroll independent (as guest user)" do
@@ -619,7 +631,25 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Enroll in Course Section"
 
       assert html_response(conn, 200) =~
-               ~s(<a href="/session/new?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+               ~s(<a href="/?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+    end
+
+    test "shows enroll view and Sign Up link", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn =
+        get(
+          conn,
+          Routes.delivery_path(conn, :enroll_independent, section_invite.slug,
+            from_invitation_link?: true
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Sign Up"
+
+      assert html_response(conn, 200) =~
+               ~s(<a href="/registration/new?section=#{section.slug}&amp;from_invitation_link%3F=true")
     end
   end
 

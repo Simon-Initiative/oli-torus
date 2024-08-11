@@ -46,11 +46,11 @@ defmodule OliWeb.Delivery.Student.Utils do
               <div
                 :if={@page_context.page.graded}
                 class="justify-start items-center gap-1.5 flex"
-                role="graded page marker"
+                role="scored page marker"
               >
                 <Icons.flag />
                 <div class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider">
-                  Graded Page
+                  Scored Page
                 </div>
               </div>
             </div>

@@ -30,7 +30,6 @@ config :oli,
   problematic_query_detection: false,
   problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
-  prometheus_port: 9568,
   build: %{
     version: Mix.Project.config()[:version],
     sha: System.get_env("SHA", default_sha),
@@ -116,7 +115,12 @@ config :oli, :vendor_property,
       "VENDOR_PROPERTY_COMPANY_ADDRESS",
       "5000 Forbes Ave, Pittsburgh, PA 15213 US"
     ),
-  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL")
+  support_email: System.get_env("VENDOR_PROPERTY_SUPPORT_EMAIL"),
+  faq_url:
+    System.get_env(
+      "VENDOR_PROPERTY_FAQ_URL",
+      "https://olihelp.zohodesk.com/portal/en/kb/articles/frqu"
+    )
 
 config :oli, :stripe_provider,
   public_secret: System.get_env("STRIPE_PUBLIC_SECRET"),
@@ -285,14 +289,6 @@ config :tailwind,
       --output=../priv/static/css/app.css
     ),
     cd: Path.expand("../assets", __DIR__)
-  ],
-  storybook: [
-    args: ~w(
-      --config=tailwind.config.js
-      --input=css/storybook.css
-      --output=../priv/static/assets/storybook.css
-    ),
-    cd: Path.expand("../assets", __DIR__)
   ]
 
 config :ex_cldr,
@@ -301,6 +297,9 @@ config :ex_cldr,
 
 config :oli, :datashop,
   cache_limit: String.to_integer(System.get_env("DATASHOP_CACHE_LIMIT", "200"))
+
+config :oli, :student_sign_in,
+  background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

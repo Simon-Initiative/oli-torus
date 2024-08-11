@@ -912,25 +912,33 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Inserts or updates a user logged in via sso, and adds the user as a member of the given community.
+  Inserts or updates a user logged in via SSO, and adds the user as a member of the given community.
+  If `opts` includes `link_author: true`, an author is created and linked with the user.
 
   ## Examples
 
-      iex> setup_sso_user(fields, community_id)
-      {:ok, %User{}}    -> # Inserted or updated with success
-      {:error, changeset}         -> # Something went wrong
+      iex> setup_sso_user(fields, community_id, [])
+      {:ok, %User{}, nil}          # Inserted or updated successfully, no author linked
+
+      iex> setup_sso_user(fields, community_id, [link_author: true])
+      {:ok, %User{}, %Author{}}    # Inserted or updated successfully, author linked
+
+      iex> setup_sso_user(fields, community_id, [])
+      {:error, changeset}          # Something went wrong
 
   """
-  def setup_sso_user(fields, community_id) do
+  def setup_sso_user(fields, community_id, opts \\ []) do
     res =
       Multi.new()
       |> Multi.run(:user, &create_sso_user(&1, &2, fields))
       |> Multi.run(:community_account, &create_community_account(&1, &2, community_id))
+      |> Multi.run(:author, &maybe_invite_author(&1, &2, fields, opts))
+      |> Multi.run(:linked_user, &link_user_with_author(&1, &2))
       |> Repo.transaction()
 
     case res do
-      {:ok, %{user: user}} ->
-        {:ok, user}
+      {:ok, %{user: user, author: author}} ->
+        {:ok, user, author}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -962,11 +970,35 @@ defmodule Oli.Accounts do
     end
   end
 
-  defp link_user_with_author(_repo, %{user: user, author: author}) do
-    link_user_author_account(user, author)
-  end
+  defp link_user_with_author(_repo, %{user: user, author: nil}), do: {:ok, user}
+
+  defp link_user_with_author(_repo, %{user: user, author: author}),
+    do: link_user_author_account(user, author)
 
   defp create_community_account(_repo, %{user: %User{id: user_id}}, community_id) do
     Groups.find_or_create_community_user_account(user_id, community_id)
+  end
+
+  defp maybe_invite_author(_repo, %{user: user}, fields, opts) do
+    if Keyword.get(opts, :link_author, false) do
+      get_or_invite_author(user.email, fields)
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp get_or_invite_author(email, fields) do
+    case get_author_by_email(email) do
+      nil ->
+        email = Map.get(fields, "email")
+        username = Map.get(fields, "cognito:username")
+
+        %Author{}
+        |> Author.invite_changeset(nil, %{name: username, email: email})
+        |> Repo.insert()
+
+      author ->
+        {:ok, author}
+    end
   end
 end

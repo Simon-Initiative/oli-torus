@@ -317,10 +317,10 @@ defmodule Oli.AccountsTest do
                Accounts.get_author_with_community_admin_count(community_account.author_id)
     end
 
-    test "setup_sso_user/2 returns the created user and associates it to the given community" do
+    test "setup_sso_user/3 returns the created user and associates it to the given community" do
       community = insert(:community)
       fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
-      {:ok, user} = Accounts.setup_sso_user(fields, community.id)
+      {:ok, user, _author} = Accounts.setup_sso_user(fields, community.id)
 
       assert user.sub == "sub"
       assert user.preferred_username == "username"
@@ -331,7 +331,7 @@ defmodule Oli.AccountsTest do
                Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
     end
 
-    test "setup_sso_user/2 returns an error and rollbacks the insertions when data is invalid" do
+    test "setup_sso_user/3 returns an error and rollbacks the insertions when data is invalid" do
       fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
 
       assert {:error,
@@ -347,6 +347,47 @@ defmodule Oli.AccountsTest do
               }} = Accounts.setup_sso_user(fields, 0)
 
       refute Accounts.get_user_by(%{sub: "sub", email: "email"})
+    end
+
+    test "setup_sso_user/3 returns the created user and author and links them when link_author option is passed" do
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+      {:ok, user, author} = Accounts.setup_sso_user(fields, community.id, link_author: true)
+
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == "email"
+      assert user.can_create_sections
+
+      assert %CommunityAccount{} =
+               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
+
+      assert Accounts.get_user!(user.id).author_id == author.id
+      assert author.name == "username"
+      assert author.email == "email"
+      assert author.invitation_token
+      refute author.invitation_accepted_at
+    end
+
+    test "setup_sso_user/3 returns the created user and already existing author and links them when link_author option is passed" do
+      community = insert(:community)
+      author = insert(:author, email: "email", name: "another_name")
+
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => author.email}
+      {:ok, user, author} = Accounts.setup_sso_user(fields, community.id, link_author: true)
+
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == "email"
+      assert user.can_create_sections
+
+      assert %CommunityAccount{} =
+               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
+
+      assert Accounts.get_user!(user.id).author_id == author.id
+      assert author.name == "another_name"
+      assert author.email == "email"
+      refute author.invitation_token
     end
 
     test "setup_sso_author/2 creates author and user if do not exist and associates user to the given community" do

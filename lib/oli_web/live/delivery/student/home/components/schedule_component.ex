@@ -289,7 +289,12 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             <%= if @completed do %>
               Completed
             <% else %>
-              <%= Utils.days_difference(hd(@resources).end_date, @ctx) %>
+              <%= if is_nil(hd(@resources).effective_settings),
+                do: Utils.days_difference(hd(@resources).end_date, @ctx),
+                else:
+                  Utils.coalesce(hd(@resources).effective_settings.end_date, hd(@resources).end_date)
+                  |> Utils.coalesce(hd(@resources).effective_settings.start_date)
+                  |> Utils.days_difference(@ctx) %>
             <% end %>
           </div>
           <Icons.check :if={@completed} progress={1.0} />

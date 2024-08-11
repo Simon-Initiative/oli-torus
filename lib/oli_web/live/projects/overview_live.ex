@@ -558,7 +558,7 @@ defmodule OliWeb.Projects.OverviewLive do
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         {:noreply,
-         push_redirect(socket,
+         push_navigate(socket,
            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
          )}
 

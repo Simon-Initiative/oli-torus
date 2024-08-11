@@ -14,7 +14,7 @@
         </div>
       </div>
 
-      <%= form_for @conn, if(assigns[:auto_enroll_as_guest], do: ~p"/sections/#{@section.slug}/auto_enroll", else: Routes.delivery_path(@conn, :process_enroll, @section.slug)), fn _f -> %>
+      <%= form_for @conn, if(assigns[:auto_enroll_as_guest], do: ~p"/sections/#{@section.slug}/auto_enroll", else: ~p"/sections/#{@section.slug}/enroll"), fn _f -> %>
         <div class="form-label-group">
           <%= if user_is_guest?(assigns) or assigns.current_user == nil do %>
             <p>
@@ -45,14 +45,20 @@
           <a
             :if={!assigns[:auto_enroll_as_guest]}
             href={
-              Routes.pow_session_path(@conn, :new,
-                section: @section.slug,
-                from_invitation_link?: assigns[:from_invitation_link?]
-              )
+              ~p"/?#{[section: @section.slug, from_invitation_link?: assigns[:from_invitation_link?]]}"
             }
             class="btn btn-md btn-outline-primary btn-block mt-2"
           >
             Sign In
+          </a>
+          <a
+            :if={!assigns[:auto_enroll_as_guest]}
+            href={
+              ~p"/registration/new?#{[section: @section.slug, from_invitation_link?: assigns[:from_invitation_link?]]}"
+            }
+            class="btn btn-md btn-outline-primary btn-block mt-2"
+          >
+            Sign Up
           </a>
         <% else %>
           <%= submit("Enroll", class: "btn btn-md btn-primary btn-block") %>

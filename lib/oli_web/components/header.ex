@@ -95,6 +95,47 @@ defmodule OliWeb.Components.Header do
     """
   end
 
+  def delivery_header(assigns) do
+    ~H"""
+    <nav class="bg-primary-24 dark h-[111px] flex items-center pl-4 pr-10">
+      <a class="navbar-brand torus-logo my-1 mr-auto" href={~p"/"}>
+        <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
+      </a>
+      <.sign_in_button href="/session/new" request_path={assigns.conn.request_path}>
+        For Instructors
+      </.sign_in_button>
+      <.sign_in_button href="/authoring/session/new" request_path={assigns.conn.request_path}>
+        For Course Authors
+      </.sign_in_button>
+      <.button
+        id="support-button"
+        href="#"
+        class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
+        onclick="window.showHelpModal();"
+        phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
+      >
+        Support
+      </.button>
+    </nav>
+    """
+  end
+
+  attr :href, :string, required: true
+  attr :request_path, :string, required: true
+
+  slot :inner_block, required: true
+
+  def sign_in_button(assigns) do
+    ~H"""
+    <.button
+      href={@href}
+      class={"pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8" <> maybe_add_underlined_classes(@request_path, @href)}
+    >
+      <%= render_slot(@inner_block) %>
+    </.button>
+    """
+  end
+
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
 
@@ -114,4 +155,7 @@ defmodule OliWeb.Components.Header do
     <% end %>
     """
   end
+
+  defp maybe_add_underlined_classes(path, path), do: " underline underline-offset-8"
+  defp maybe_add_underlined_classes(_request_path, _href), do: ""
 end

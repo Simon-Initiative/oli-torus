@@ -12,7 +12,6 @@ import { TitleBar } from 'components/content/TitleBar';
 import { setDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import { AlternativesContextProvider } from 'components/hooks/useAlternatives';
 import { Banner } from 'components/messages/Banner';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { Editors } from 'components/resource/editors/Editors';
 import { Objectives } from 'components/resource/objectives/Objectives';
@@ -559,8 +558,6 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     return (
       <React.StrictMode>
         <AppsignalContext.Provider value={this.state.appsignal}>
-          <ModalDisplay />
-
           <ErrorBoundary>
             <div className="resource-editor row">
               <div className="col-span-12">

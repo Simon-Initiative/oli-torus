@@ -7,7 +7,6 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
-  import PhoenixStorybook.Router
 
   import Oli.Plugs.EnsureAdmin
 
@@ -156,6 +155,13 @@ defmodule OliWeb.Router do
     plug(:delivery_layout)
   end
 
+  pipeline :authoring_and_delivery do
+    plug(:delivery)
+    plug(OliWeb.EnsureUserNotLockedPlug)
+    plug(:authoring)
+    plug(OliWeb.EnsureUserNotLockedPlug)
+  end
+
   pipeline :authoring_protected do
     plug(:authoring)
 
@@ -209,6 +215,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :set_sidebar do
+    plug(Oli.Plugs.SetSidebar)
+  end
+
   pipeline :delivery_preview do
     plug(Oli.Plugs.DeliveryPreview)
   end
@@ -221,10 +231,6 @@ defmodule OliWeb.Router do
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
-
-  scope "/" do
-    storybook_assets()
-  end
 
   scope "/" do
     pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
@@ -301,6 +307,7 @@ defmodule OliWeb.Router do
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
+    post("/signin", SessionController, :signin)
   end
 
   scope "/", OliWeb do
@@ -780,15 +787,30 @@ defmodule OliWeb.Router do
   # Section Routes
   ###
 
-  ### Sections - View Public Open and Free Courses
-  scope "/sections", OliWeb do
+  ### Sections - Workspaces
+  scope "/sections/workspace/", OliWeb do
     pipe_through([
       :browser,
-      :delivery_protected,
-      :pow_email_layout
+      :authoring_and_delivery,
+      :set_sidebar
     ])
 
-    live("/", Delivery.OpenAndFreeIndex)
+    live_session :delivery_workspace,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+      ] do
+      live("/course_author", Workspace.CourseAuthor)
+      live("/instructor", Workspace.Instructor)
+      live("/student", Workspace.Student)
+    end
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([:browser])
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -956,6 +978,7 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :set_sidebar,
       :require_section,
       :delivery,
       :delivery_protected,
@@ -1558,8 +1581,6 @@ defmodule OliWeb.Router do
   if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
-
-    live_storybook("/storybook", backend_module: OliWeb.Storybook)
 
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])

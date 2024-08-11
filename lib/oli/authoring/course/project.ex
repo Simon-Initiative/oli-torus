@@ -29,6 +29,7 @@ defmodule Oli.Authoring.Course.Project do
     field(:welcome_title, :map, default: %{})
 
     field(:encouraging_subtitle, :string)
+    field(:auto_update_sections, :boolean, default: true)
 
     embeds_one(:customizations, CustomLabels, on_replace: :delete)
     embeds_one(:attributes, ProjectAttributes, on_replace: :delete)
@@ -92,7 +93,8 @@ defmodule Oli.Authoring.Course.Project do
       :latest_datashop_snapshot_timestamp,
       :allow_transfer_payment_codes,
       :welcome_title,
-      :encouraging_subtitle
+      :encouraging_subtitle,
+      :auto_update_sections
     ])
     |> cast_embed(:attributes, required: false)
     |> cast_embed(:customizations, required: false)
@@ -116,7 +118,8 @@ defmodule Oli.Authoring.Course.Project do
       :has_experiments,
       :legacy_svn_root,
       :allow_ecl_content_type,
-      :publisher_id
+      :publisher_id,
+      :auto_update_sections
     ])
     |> validate_required([:title, :version, :family_id, :publisher_id])
     |> foreign_key_constraint(:publisher_id)
