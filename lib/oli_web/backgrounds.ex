@@ -110,7 +110,11 @@ defmodule OliWeb.Backgrounds do
         <g style="mix-blend-mode:color-burn" opacity="0.25">
           <rect width="100%" height="291" fill="url(#pattern0_494_8778)" />
         </g>
-        <rect y="0" width="100%" height="309" fill="black" fill-opacity="0.24" />
+        <rect
+          width="100%"
+          height="309"
+          class="fill-white dark:fill-black opacity-[0.15] dark:opacity-[0.3]"
+        />
       </g>
       <defs>
         <filter
