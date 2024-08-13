@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
+  alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
@@ -15,20 +16,28 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
+    has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
     schedule_for_current_week_and_next_week =
-      Sections.get_schedule_for_current_and_next_week(section, current_user_id)
+      if has_scheduled_resources?,
+        do: Sections.get_schedule_for_current_and_next_week(section, current_user_id),
+        else: %{}
 
     nearest_upcoming_lesson =
       section
-      |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
+      |> Sections.get_nearest_upcoming_lessons(current_user_id, 1,
+        ignore_schedule: !has_scheduled_resources?
+      )
       |> List.first()
 
     latest_assignments =
       Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
 
     upcoming_assignments =
-      Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
+      Sections.get_nearest_upcoming_lessons(section, current_user_id, 3,
+        only_graded: true,
+        ignore_schedule: !has_scheduled_resources?
+      )
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section.slug, page_ids)
@@ -516,7 +525,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     <div role="details" class="w-full h-full flex flex-col items-stretch gap-5 relative">
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
-          <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
+          <div
+            :if={!is_nil(@lesson.start_date) and !is_nil(@lesson.end_date)}
+            class="text-right dark:text-white text-opacity-90 text-xs font-semibold"
+          >
             <%= if is_nil(@lesson.settings),
               do: Utils.coalesce(@lesson.end_date, @lesson.start_date) |> Utils.days_difference(@ctx),
               else:
