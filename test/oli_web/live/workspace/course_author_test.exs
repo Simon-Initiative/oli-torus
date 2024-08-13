@@ -538,6 +538,23 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       assert has_element?(view, "div", "Improve")
       assert has_element?(view, "div", "Insights")
     end
+
+    test "objectives menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/objectives")
+
+      assert has_element?(view, "h3", "Learning Objectives")
+
+      assert has_element?(
+               view,
+               "p",
+               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+             )
+
+      assert has_element?(view, "button", "Create new Objective")
+    end
   end
 
   defp create_project_with_owner(owner, attrs \\ %{}) do
