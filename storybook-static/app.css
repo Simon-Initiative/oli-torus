@@ -5537,12 +5537,24 @@ table.table-striped tbody tr:nth-child(even) {
   width: 330px;
 }
 
+.w-\[341px\] {
+  width: 341px;
+}
+
+.w-\[360px\] {
+  width: 360px;
+}
+
 .w-\[36px\] {
   width: 36px;
 }
 
 .w-\[38px\] {
   width: 38px;
+}
+
+.w-\[39px\] {
+  width: 39px;
 }
 
 .w-\[48px\] {
@@ -8708,6 +8720,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(12 175 97 / var(--tw-text-opacity));
 }
 
+.text-\[\#30DB9E\] {
+  --tw-text-opacity: 1;
+  color: rgb(48 219 158 / var(--tw-text-opacity));
+}
+
 .text-\[\#3399FF\] {
   --tw-text-opacity: 1;
   color: rgb(51 153 255 / var(--tw-text-opacity));
@@ -8731,6 +8748,16 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#757682\] {
   --tw-text-opacity: 1;
   color: rgb(117 118 130 / var(--tw-text-opacity));
+}
+
+.text-\[\#EC8CFF\] {
+  --tw-text-opacity: 1;
+  color: rgb(236 140 255 / var(--tw-text-opacity));
+}
+
+.text-\[\#F68E2E\] {
+  --tw-text-opacity: 1;
+  color: rgb(246 142 46 / var(--tw-text-opacity));
 }
 
 .text-\[18xl\] {
@@ -15714,6 +15741,14 @@ https://tailwindcss.com/docs/utility-first
     display: none;
   }
 
+  .lg\:h-\[27px\] {
+    height: 27px;
+  }
+
+  .lg\:h-\[36px\] {
+    height: 36px;
+  }
+
   .lg\:h-auto {
     height: auto;
   }
@@ -15738,6 +15773,10 @@ https://tailwindcss.com/docs/utility-first
     width: 33.333333%;
   }
 
+  .lg\:w-96 {
+    width: 24rem;
+  }
+
   .lg\:w-\[170px\] {
     width: 170px;
   }
@@ -15748,6 +15787,14 @@ https://tailwindcss.com/docs/utility-first
 
   .lg\:w-\[300px\] {
     width: 300px;
+  }
+
+  .lg\:w-\[36px\] {
+    width: 36px;
+  }
+
+  .lg\:w-\[39px\] {
+    width: 39px;
   }
 
   .lg\:w-\[400px\] {
@@ -15782,8 +15829,24 @@ https://tailwindcss.com/docs/utility-first
     justify-content: space-between;
   }
 
+  .lg\:gap-12 {
+    gap: 3rem;
+  }
+
+  .lg\:gap-3 {
+    gap: 0.75rem;
+  }
+
+  .lg\:gap-3\.5 {
+    gap: 0.875rem;
+  }
+
   .lg\:gap-6 {
     gap: 1.5rem;
+  }
+
+  .lg\:gap-px {
+    gap: 1px;
   }
 
   .lg\:gap-x-8 {
@@ -15923,9 +15986,23 @@ https://tailwindcss.com/docs/utility-first
     padding-top: 1.75rem;
   }
 
+  .lg\:text-center {
+    text-align: center;
+  }
+
+  .lg\:text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
   .lg\:text-4xl {
     font-size: 2.25rem;
     line-height: 2.5rem;
+  }
+
+  .lg\:text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 
   .lg\:shadow-lg {
@@ -15974,6 +16051,10 @@ https://tailwindcss.com/docs/utility-first
     flex-direction: row;
   }
 
+  .xl\:gap-32 {
+    gap: 8rem;
+  }
+
   .xl\:p-28 {
     padding: 7rem;
   }
@@ -15981,6 +16062,16 @@ https://tailwindcss.com/docs/utility-first
   .xl\:px-32 {
     padding-left: 8rem;
     padding-right: 8rem;
+  }
+
+  .xl\:text-4xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  .xl\:text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
   }
 }
 
