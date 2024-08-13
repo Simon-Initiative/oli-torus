@@ -4386,6 +4386,9 @@ defmodule Oli.Delivery.Sections do
   - `section`: The section struct containing details about the course section.
   - `user_id`: The ID of the user.
   - `lessons_count`: The number of upcoming lessons to retrieve.
+  - `opts`: Additional options to filter the lessons. The `:only_graded` option filters the lessons
+    to only include graded lessons. The `:ignore_schedule` option ignores the schedule and returns
+    all upcoming lessons, no matter if they do not have any scheduled date.
 
   ## Returns:
   - Returns a list of maps with details of the upcoming lessons.
@@ -4393,17 +4396,30 @@ defmodule Oli.Delivery.Sections do
   @spec get_nearest_upcoming_lessons(Section.t(), integer(), integer(), Keyword.t() | nil) ::
           list(map())
   def get_nearest_upcoming_lessons(section, user_id, lessons_count, opts \\ []) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     today =
       Oli.Date.utc_today()
       |> DateTime.new!(~T[00:00:00])
-
-    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     graded_filter =
       if opts[:only_graded] do
         dynamic([_sr, _s, _spp, _pr, rev, _ra], rev.graded)
       else
         true
+      end
+
+    schedule_filter =
+      if opts[:ignore_schedule] do
+        true
+      else
+        dynamic(
+          [sr, _s, _spp, _pr, _rev, _ra, _r_att, se],
+          coalesce(se.start_date, se.end_date)
+          |> coalesce(sr.start_date)
+          |> coalesce(sr.end_date) >=
+            ^today
+        )
       end
 
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
@@ -4417,9 +4433,8 @@ defmodule Oli.Delivery.Sections do
           se.section_id == ^section.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date) >=
-            ^today and coalesce(ra.progress, 0) == 0 and
           is_nil(r_att.id) and not sr.hidden,
+      where: ^schedule_filter,
       order_by: [
         asc:
           coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
