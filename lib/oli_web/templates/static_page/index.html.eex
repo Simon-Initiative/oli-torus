@@ -83,7 +83,7 @@
                   to: Routes.pow_reset_password_reset_password_path(@conn, :new),
                   tabindex: "1",
                   class:
-                    "text-center text-blue-400 text-base font-bold font-['Open Sans'] leading-snug"
+                    "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
                 ) %>
               </div>
             </div>
@@ -95,7 +95,7 @@
             <div class="flex justify-center">
               <%= submit("Sign In",
                 class:
-                  "w-80 h-11 bg-blue-600 mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
+                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
               ) %>
             </div>
           <% end %>
