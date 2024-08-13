@@ -783,19 +783,15 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  ###
-  # Section Routes
-  ###
-
-  ### Sections - Workspaces
-  scope "/sections/workspace/", OliWeb do
+  ### Workspaces
+  scope "/workspaces/", OliWeb.Workspace do
     pipe_through([
       :browser,
       :authoring_and_delivery,
       :set_sidebar
     ])
 
-    live_session :delivery_workspace,
+    live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
@@ -803,11 +799,15 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode
       ] do
-      live("/course_author", Workspace.CourseAuthor)
-      live("/instructor", Workspace.Instructor)
-      live("/student", Workspace.Student)
+      live("/course_author", CourseAuthor)
+      live("/instructor", Instructor)
+      live("/student", Student)
     end
   end
+
+  ###
+  # Section Routes
+  ###
 
   scope "/sections", OliWeb do
     pipe_through([:browser])

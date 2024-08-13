@@ -158,7 +158,7 @@ defmodule OliWeb.DeliveryController do
       case user do
         %User{independent_learner: true} ->
           case Map.get(conn.assigns, :section) do
-            nil -> ~p"/sections/workspace/student"
+            nil -> ~p"/workspaces/student"
             section -> ~p"/sections/#{section.slug}"
           end
 
@@ -327,7 +327,7 @@ defmodule OliWeb.DeliveryController do
         conn = Pow.Plug.Session.do_delete(conn, get_pow_config(:author))
 
         if current_user.independent_learner do
-          redirect(conn, to: Routes.live_path(conn, OliWeb.Worksace.Student))
+          redirect(conn, to: ~p"/workspaces/student")
         else
           redirect(conn, to: Routes.delivery_path(conn, :index))
         end

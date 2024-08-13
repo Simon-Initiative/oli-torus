@@ -369,6 +369,196 @@ defmodule OliWeb.Backgrounds do
     """
   end
 
+  def student_workspace_sign_in(assigns) do
+    ~H"""
+    <svg
+      class="w-full h-full"
+      viewBox="0 0 1312 1040"
+      preserveAspectRatio="none"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+    >
+      <g clip-path="url(#clip0_542_4263)">
+        <rect width="1796" height="1112" transform="translate(0 -28)" fill="#1F1F1F" />
+        <g filter="url(#filter0_f_542_4263)">
+          <ellipse cx="1445.69" cy="758.637" rx="880.695" ry="942.111" fill="#DB6C1E" />
+        </g>
+        <g filter="url(#filter1_f_542_4263)">
+          <ellipse cx="680.048" cy="1084.51" rx="680.048" ry="726.404" fill="#0062F2" />
+        </g>
+        <g style="mix-blend-mode:color-burn" opacity="0.5">
+          <rect y="-28" width="1796" height="1112" fill="url(#pattern0_542_4263)" />
+        </g>
+      </g>
+      <defs>
+        <filter
+          id="filter0_f_542_4263"
+          x="55.9917"
+          y="-692.474"
+          width="2779.39"
+          height="2902.22"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_542_4263" />
+        </filter>
+        <filter
+          id="filter1_f_542_4263"
+          x="-547"
+          y="-188.889"
+          width="2454.1"
+          height="2546.81"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="273.5" result="effect1_foregroundBlur_542_4263" />
+        </filter>
+        <pattern
+          id="pattern0_542_4263"
+          patternContentUnits="objectBoundingBox"
+          width="0.167038"
+          height="0.269784"
+        >
+          <use xlink:href="#image0_542_4263" transform="scale(8.35189e-05 0.000134892)" />
+        </pattern>
+        <clipPath id="clip0_542_4263">
+          <rect width="1796" height="1112" fill="white" transform="translate(0 -28)" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  def instructor_workspace_sign_in(assigns) do
+    ~H"""
+    <svg
+      class="w-full h-full"
+      preserveAspectRatio="none"
+      viewBox="0 0 1310 1010"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+    >
+      <g clip-path="url(#clip0_542_4075)">
+        <rect width="1528" height="1264" transform="translate(0 -18)" fill="#0CAF61" />
+        <g filter="url(#filter0_f_542_4075)">
+          <ellipse cx="475.51" cy="1246.58" rx="397.519" ry="568.215" fill="#0062F2" />
+        </g>
+        <g filter="url(#filter1_f_542_4075)">
+          <ellipse cx="764.398" cy="613.415" rx="337.831" ry="482.778" fill="#0CAF61" />
+        </g>
+        <g style="mix-blend-mode:color-burn" opacity="0.25">
+          <rect y="-18" width="1528" height="1264" fill="url(#pattern0_542_4075)" />
+        </g>
+        <rect y="-4.96924" width="1528" height="1342.19" fill="black" fill-opacity="0.3" />
+      </g>
+      <defs>
+        <filter
+          id="filter0_f_542_4075"
+          x="-431.008"
+          y="169.37"
+          width="1813.04"
+          height="2154.43"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_542_4075" />
+        </filter>
+        <filter
+          id="filter1_f_542_4075"
+          x="-82.4333"
+          y="-378.363"
+          width="1693.66"
+          height="1983.56"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_542_4075" />
+        </filter>
+        <pattern
+          id="pattern0_542_4075"
+          patternContentUnits="objectBoundingBox"
+          width="0.196335"
+          height="0.237342"
+        >
+          <use xlink:href="#image0_542_4075" transform="scale(9.81675e-05 0.000118671)" />
+        </pattern>
+        <clipPath id="clip0_542_4075">
+          <rect width="1528" height="1264" fill="white" transform="translate(0 -18)" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  def course_author_workspace_sign_in(assigns) do
+    ~H"""
+    <svg
+      class="w-full h-full"
+      preserveAspectRatio="none"
+      viewBox="0 0 1312 1007"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+    >
+      <g filter="url(#filter0_f_494_5035)">
+        <ellipse cx="544.285" cy="1263.62" rx="455.013" ry="599.233" fill="#0062F2" />
+      </g>
+      <g filter="url(#filter1_f_494_5035)">
+        <ellipse cx="874.955" cy="595.883" rx="386.693" ry="509.132" fill="#B333CC" />
+      </g>
+      <g style="mix-blend-mode:color-burn" opacity="0.25">
+        <rect y="-70" width="1749" height="1333" fill="url(#pattern0_494_5035)" />
+      </g>
+      <defs>
+        <filter
+          id="filter0_f_494_5035"
+          x="-419.728"
+          y="155.384"
+          width="1928.03"
+          height="2216.47"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_494_5035" />
+        </filter>
+        <filter
+          id="filter1_f_494_5035"
+          x="-20.7375"
+          y="-422.249"
+          width="1791.39"
+          height="2036.26"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_494_5035" />
+        </filter>
+        <pattern
+          id="pattern0_494_5035"
+          patternContentUnits="objectBoundingBox"
+          width="0.171527"
+          height="0.225056"
+        >
+          <use xlink:href="#image0_494_5035" transform="scale(8.57633e-05 0.000112528)" />
+        </pattern>
+      </defs>
+    </svg>
+    """
+  end
+
   def enrollment_info(assigns) do
     ~H"""
     <div class="flex justify-end relative w-full h-[427px]">

@@ -2762,7 +2762,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections/workspace/student?sidebar_expanded=true")
+      assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{
