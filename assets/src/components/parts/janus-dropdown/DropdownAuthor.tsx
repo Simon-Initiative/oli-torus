@@ -12,6 +12,7 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
   const dropDownStyle: CSSProperties = {
     width: 'auto',
     height: 'auto',
+    cursor: 'move',
   };
   if (!(showLabel && label)) {
     dropDownStyle.width = `${Number(width) - 10}px`;
@@ -57,7 +58,9 @@ const DropdownAuthor: React.FC<AuthorPartComponentProps<DropdownModel>> = (props
         id={`${id}-select`}
         value={-1}
         className={'dropdown '}
-        disabled={true}
+        onMouseDown={(e) => {
+          e.preventDefault();
+        }}
       >
         {dropdownOptions()}
       </select>
