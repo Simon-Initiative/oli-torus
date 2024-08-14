@@ -644,7 +644,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         live(conn, ~p"/sections/#{section.slug}")
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}&section=#{section.slug}"
     end
 
     test "can not access when not enrolled to course", context do

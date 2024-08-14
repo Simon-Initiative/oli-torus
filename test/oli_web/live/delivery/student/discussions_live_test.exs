@@ -184,7 +184,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
         live(conn, live_view_discussions_live_route(section.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fdiscussions&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Fdiscussions&section=#{section.slug}"
     end
   end
 
