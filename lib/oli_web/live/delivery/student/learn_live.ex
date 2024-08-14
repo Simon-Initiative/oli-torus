@@ -106,31 +106,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     send(self(), :gc)
 
-    case params do
-      %{"selected_view" => selected_view, "target_resource_id" => resource_id} ->
-        selected_view = String.to_existing_atom(selected_view)
-
-        {:noreply,
-         socket
-         |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)
-         |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
-
-      %{"selected_view" => selected_view} ->
-        selected_view = String.to_existing_atom(selected_view)
-
-        {:noreply,
-         socket
-         |> assign(selected_view: selected_view)
-         |> update(:units, fn _units -> full_hierarchy["children"] end)}
-
-      %{"target_resource_id" => resource_id} ->
-        {:noreply,
-         socket
-         |> scroll_to_target_resource(resource_id, full_hierarchy, :gallery)}
-
-      _ ->
-        {:noreply, socket}
+    with selected_view <- get_selected_view(params),
+         resource_id <- params["target_resource_id"] do
+      {:noreply,
+       socket
+       |> maybe_assign_selected_view(selected_view)
+       |> stream(:units, full_hierarchy["children"], reset: true)
+       |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
 
@@ -2823,4 +2805,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     Sections.get_container_label_and_numbering(numbering_level, numbering, customizations)
     |> String.upcase()
   end
+
+  defp get_selected_view(params) do
+    case params["selected_view"] do
+      nil -> nil
+      view when view not in ~w(gallery outline) -> @default_selected_view
+      view -> String.to_existing_atom(view)
+    end
+  end
+
+  defp maybe_assign_selected_view(socket, nil), do: socket
+  defp maybe_assign_selected_view(socket, view), do: assign(socket, selected_view: view)
+
+  defp maybe_scroll_to_target_resource(socket, nil, _full_hierarchy, _selected_view), do: socket
+
+  defp maybe_scroll_to_target_resource(socket, resource_id, full_hierarchy, nil),
+    do: scroll_to_target_resource(socket, resource_id, full_hierarchy, @default_selected_view)
+
+  defp maybe_scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view),
+    do: scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view)
 end
