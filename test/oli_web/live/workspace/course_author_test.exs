@@ -7,13 +7,152 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
 
   alias OliWeb.Common.Utils
 
-  describe "user cannot access when is not logged in" do
-    test "shows sign in view if is not logged in as author/admin", %{
-      conn: conn
-    } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+  describe "author not signed in" do
+    test "can access page", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
-      assert has_element?(view, "h1", "Sign In in progress")
+      assert has_element?(view, "div", "Course Author Sign In")
+    end
+
+    test "can signin and get redirected back to the authoring workspace", %{conn: conn} do
+      expect_recaptcha_http_post()
+
+      # create author account
+      post(
+        conn,
+        Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create),
+        %{
+          user: %{
+            email: "my_author@test.com",
+            email_confirmation: "my_author@test.com",
+            given_name: "me",
+            family_name: "too",
+            password: "some_password",
+            password_confirmation: "some_password"
+          },
+          "g-recaptcha-response": "any"
+        }
+      )
+
+      # access without being singed in
+      conn = Phoenix.ConnTest.build_conn()
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      assert has_element?(view, "div", "Course Author Sign In")
+
+      # we sign in and get redirected back to the authoring workspace
+      conn =
+        conn
+        |> post(
+          Routes.authoring_pow_session_path(OliWeb.Endpoint, :create,
+            request_path: ~p"/workspaces/course_author"
+          ),
+          user: %{email: "my_author@test.com", password: "some_password"}
+        )
+
+      assert conn.assigns.current_author.email == "my_author@test.com"
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      # author is signed in
+      refute has_element?(view, "div", "Course Author Sign In")
+      assert has_element?(view, "h1", "Course Author")
+    end
+
+    test "can NOT create an authoring account if the current user already has an author account linked",
+         %{conn: conn} do
+      author = insert(:author)
+      user_with_account_linked = insert(:user, author: author)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user_with_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+      refute has_element?(view, "a", "Create Account")
+    end
+
+    test "can create an account if the current user does not yet have an author linked account",
+         %{conn: conn} do
+      user_with_no_account_linked = insert(:user, author: nil)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user_with_no_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+      assert has_element?(view, "a", "Create Account")
+    end
+
+    test "on account creation account gets linked automatically if current user has no linked authoring account",
+         %{conn: conn} do
+      user_with_no_account_linked = insert(:user, email: "some_user@test.com", author: nil)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user_with_no_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      element(view, "a", "Create Account")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/authoring/registration/new?link_to_user_account%3F=true&request_path=%2Fworkspaces%2Fcourse_author"
+      )
+
+      # create new author account
+      expect_recaptcha_http_post()
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Pow.Plug.assign_current_user(
+          user_with_no_account_linked,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+        |> post(
+          Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create,
+            link_to_user_account?: "true",
+            request_path: ~p"/workspaces/course_author"
+          ),
+          %{
+            user: %{
+              email: "my_author@test.com",
+              email_confirmation: "my_author@test.com",
+              given_name: "me",
+              family_name: "too",
+              password: "some_password",
+              password_confirmation: "some_password"
+            },
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      # user gets redirected back to the authoring workspace and the account is linked
+      author_account = Oli.Accounts.get_author_by_email("my_author@test.com")
+      user_account = Oli.Accounts.get_user!(user_with_no_account_linked.id)
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      assert user_account.author_id == author_account.id
+    end
+
+    test "can create an account if there is no current user already signed in", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+      assert has_element?(view, "a", "Create Account")
     end
   end
 
@@ -23,7 +162,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     test "shows course author header if is logged in", %{
       conn: conn
     } do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "h1", "Course Author")
 
@@ -35,7 +174,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     end
 
     test "loads correctly when there are no projects", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "#projects-table")
       assert has_element?(view, "p", "None exist")
@@ -46,7 +185,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       author_project = create_project_with_owner(author)
       another_project = insert(:author) |> create_project_with_owner()
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       author_project_row =
         view
@@ -65,7 +204,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       active_project = create_project_with_owner(author)
       deleted_project = create_project_with_owner(author, %{status: :deleted})
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       # shows only active projects by default
       assert has_element?(view, "##{active_project.id}")
@@ -88,7 +227,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
 
       last_p = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "##{first_p.id}")
       refute has_element?(view, "##{last_p.id}")
@@ -105,7 +244,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       create_project_with_owner(author, %{title: "Testing A"})
       create_project_with_owner(author, %{title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -121,13 +260,48 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
              |> render() =~
                "Testing B"
     end
+
+    test "can signout from authoring account and return to course author workspace (and user account stays signed in)",
+         %{conn: conn} do
+      user = insert(:user, email: "user_not_author@test.com")
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert conn.assigns.current_author
+      assert conn.assigns.current_user
+      refute has_element?(view, "div", "Course Author Sign In")
+
+      view
+      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author"
+      )
+
+      conn = delete(conn, "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author")
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      refute conn.assigns.current_author
+      assert conn.assigns.current_user
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
+    end
   end
 
   describe "course author workspace as admin" do
     setup [:admin_conn, :set_timezone]
 
     test "loads correctly when there are no projects", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "#projects-table")
       assert has_element?(view, "p", "None exist")
@@ -137,7 +311,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     test "lists projects", %{conn: conn, admin: admin, ctx: ctx} do
       project = create_project_with_owner(admin)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       project_row =
         view
@@ -155,7 +329,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       admin_project = create_project_with_owner(admin)
       project = insert(:author) |> create_project_with_owner()
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       # shows all projects by default
       assert has_element?(view, "##{admin_project.id}")
@@ -174,7 +348,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       active_project = create_project_with_owner(admin)
       deleted_project = insert(:project, status: :deleted)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       # shows only active projects by default
       assert has_element?(view, "##{active_project.id}")
@@ -193,7 +367,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       [first_p | tail] = insert_list(26, :project) |> Enum.sort_by(& &1.title)
       last_p = List.last(tail)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert has_element?(view, "##{first_p.id}")
       refute has_element?(view, "##{last_p.id}")
@@ -210,7 +384,7 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       insert(:project, %{title: "Testing A"})
       insert(:project, %{title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, ~p"/sections/workspace/course_author")
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -225,6 +399,65 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
              |> element("tr:first-child > td:first-child")
              |> render() =~
                "Testing B"
+    end
+
+    test "admin menu is shown in all workspaces (even if the conn has a user account)", %{
+      conn: conn
+    } do
+      user = insert(:user)
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      [
+        ~p"/workspaces/course_author",
+        ~p"/workspaces/instructor",
+        ~p"/workspaces/student"
+      ]
+      |> Enum.each(fn workspace ->
+        {:ok, view, _html} = live(conn, workspace)
+        assert has_element?(view, "button[id=workspace-user-menu]", "TA")
+        assert has_element?(view, "div[role='account label']", "Admin")
+      end)
+    end
+
+    test "can signout from ADMIN authoring account and return to course author workspace (and user account stays signed in)",
+         %{conn: conn} do
+      user = insert(:user, email: "user_not_author@test.com")
+
+      conn =
+        Pow.Plug.assign_current_user(
+          conn,
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert conn.assigns.current_author
+      assert conn.assigns.current_user
+      refute has_element?(view, "div", "Course Author Sign In")
+
+      view
+      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author"
+      )
+
+      conn = delete(conn, "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author")
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+      refute conn.assigns.current_author
+      assert conn.assigns.current_user
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "div", "Course Author Sign In")
     end
   end
 

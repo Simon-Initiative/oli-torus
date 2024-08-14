@@ -2,7 +2,7 @@
   <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Create an Authoring Account"), bs_col_class: "sm:col-span-10 md:col-span-8 lg:col-span-6 col-xl-5 mx-auto"}) do %>
     <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
     <hr class="my-4" />
-    <%= form_for @changeset, @action, [as: :user], fn f -> %>
+    <%= form_for @changeset, @action <> "?" <> Plug.Conn.Query.encode(assigns.conn.query_params), [as: :user], fn f -> %>
       <div class="form-label-group">
         <%= email_input(f, Pow.Ecto.Schema.user_id_field(@changeset),
           maxlength: 255,
