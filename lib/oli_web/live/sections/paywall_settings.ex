@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.PaywallSettings do
     ~H"""
     <Group.render
       label="Payment Settings"
-      description="Settings related to requried student fee and optional grace periody"
+      description="Settings related to required student fee and optional grace period"
     >
       <div class="form-check">
         <.input
