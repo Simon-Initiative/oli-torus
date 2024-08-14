@@ -26,7 +26,7 @@ defmodule OliWeb.LayoutView do
         "Today is the last day of your grace period access for this course"
 
       fractional_days_remaining < 2.0 ->
-        "Tomorrow is the last day remaining in your grace period access of this course"
+        "Tomorrow is the last day remaining of your grace period access of this course"
 
       true ->
         "You have #{round(fractional_days_remaining)} more days remaining in your grace period access of this course"
