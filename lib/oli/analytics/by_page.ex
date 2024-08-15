@@ -65,7 +65,8 @@ defmodule Oli.Analytics.ByPage do
         number_of_attempts: analytics.number_of_attempts,
         relative_difficulty: analytics.relative_difficulty
       },
-      preload: [:resource_type]
+      preload: [:resource_type],
+      distinct: [activity]
     )
   end
 
