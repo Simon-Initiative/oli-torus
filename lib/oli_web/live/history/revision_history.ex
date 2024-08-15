@@ -59,7 +59,21 @@ defmodule OliWeb.RevisionHistory do
     Subscriber.subscribe_to_new_publications(project_slug)
 
     revisions = fetch_all_revisions(resource_id)
-    root = Enum.filter(revisions, fn r -> is_nil(r.previous_revision_id) end) |> hd
+
+    dbg(revisions)
+
+    root =
+      case Enum.filter(revisions, fn r -> is_nil(r.previous_revision_id) end) do
+        [r | _] ->
+          r
+
+        _ ->
+          # revisions are returned in descending order, so the last one is considered the root
+          List.last(revisions)
+      end
+
+    dbg(root)
+
     tree = Oli.Versioning.RevisionTree.Tree.build(revisions, resource_id)
 
     mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
