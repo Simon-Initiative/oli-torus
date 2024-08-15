@@ -78,8 +78,8 @@ defmodule Oli.Versioning.RevisionTree.Tree do
         nodes
 
       id ->
-        # Identified in MER-3625, duplicate revisions created in the system prior to the
-        # fix will have a previous revision that points to the old resource revision. This
+        # Identified in MER-3625, duplicated resources created in the system prior to the
+        # fix will have a first revision that points to the old resource revision. This
         # is a special case where we simply ignore the previous revision that is not in the
         # set of revisions we are tracking for the current resource.
         case Map.get(by_id, id) do

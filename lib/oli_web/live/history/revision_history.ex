@@ -60,8 +60,10 @@ defmodule OliWeb.RevisionHistory do
 
     revisions = fetch_all_revisions(resource_id)
 
-    dbg(revisions)
-
+    # Identified in MER-3625, duplicated resources created in the system prior to the
+    # fix will have a first revision that points to the old resource revision. This
+    # branch will identify those cases and fall back to using the first revision record
+    # for a resource as the root of the revision tree.
     root =
       case Enum.filter(revisions, fn r -> is_nil(r.previous_revision_id) end) do
         [r | _] ->
@@ -71,8 +73,6 @@ defmodule OliWeb.RevisionHistory do
           # revisions are returned in descending order, so the last one is considered the root
           List.last(revisions)
       end
-
-    dbg(root)
 
     tree = Oli.Versioning.RevisionTree.Tree.build(revisions, resource_id)
 
