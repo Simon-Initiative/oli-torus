@@ -59,7 +59,21 @@ defmodule OliWeb.RevisionHistory do
     Subscriber.subscribe_to_new_publications(project_slug)
 
     revisions = fetch_all_revisions(resource_id)
-    root = Enum.filter(revisions, fn r -> is_nil(r.previous_revision_id) end) |> hd
+
+    # Identified in MER-3625, duplicated resources created in the system prior to the
+    # fix will have a first revision that points to the old resource revision. This
+    # branch will identify those cases and fall back to using the first revision record
+    # for a resource as the root of the revision tree.
+    root =
+      case Enum.filter(revisions, fn r -> is_nil(r.previous_revision_id) end) do
+        [r | _] ->
+          r
+
+        _ ->
+          # revisions are returned in descending order, so the last one is considered the root
+          List.last(revisions)
+      end
+
     tree = Oli.Versioning.RevisionTree.Tree.build(revisions, resource_id)
 
     mappings = Publishing.get_all_mappings_for_resource(resource_id, project_slug)
