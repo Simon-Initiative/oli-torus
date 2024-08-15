@@ -406,14 +406,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
           :insights,
           :content,
           %{page_id: page2.id}
-        ),
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :insights,
-          :content,
-          %{page_id: page3.id}
         )
       ]
 
