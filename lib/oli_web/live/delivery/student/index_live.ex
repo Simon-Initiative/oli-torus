@@ -147,7 +147,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           />
         </div>
 
-        <div class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex">
+        <div
+          :if={not is_nil(@schedule_for_current_week_and_next_week)}
+          class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex"
+        >
           <.agenda
             section_slug={@section_slug}
             schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}

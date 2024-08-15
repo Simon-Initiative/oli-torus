@@ -776,7 +776,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
     end
   end
 
@@ -790,6 +790,42 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "h3", "Introduction")
       assert has_element?(view, "h3", "Building a Phoenix app")
       assert has_element?(view, "h3", "Implementing LiveView")
+    end
+
+    test "renders paywall message when grace period is not over (or gets redirected when over)",
+         %{
+           conn: conn,
+           section: section
+         } do
+      stub_current_time(~U[2024-10-15 20:00:00Z])
+
+      {:ok, product} =
+        Sections.update_section(section, %{
+          type: :blueprint,
+          registration_open: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          has_grace_period: true,
+          grace_period_days: 18,
+          start_date: ~U[2024-10-15 20:00:00Z],
+          end_date: ~U[2024-11-30 20:00:00Z]
+        })
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(product.slug))
+
+      assert has_element?(
+               view,
+               "div[id=pay_early_message]",
+               "You have 18 more days remaining in your grace period access of this course"
+             )
+
+      # Grace period is over
+      stub_current_time(~U[2024-11-13 20:00:00Z])
+
+      redirect_path = "/sections/#{product.slug}/payment"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, Utils.learn_live_path(product.slug))
     end
 
     test "can see unit intro as first slider card and play the video (if provided)", %{

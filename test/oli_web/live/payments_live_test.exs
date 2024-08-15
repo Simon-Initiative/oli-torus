@@ -68,7 +68,7 @@ defmodule OliWeb.PaymentsLiveTest do
   end
 
   describe "payments" do
-    setup [:admin_conn, :create_product]
+    setup [:admin_conn, :create_product, :stub_real_current_time]
 
     test "loads correctly when there are no payments", %{conn: conn, product: product} do
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))

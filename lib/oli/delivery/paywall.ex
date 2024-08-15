@@ -137,7 +137,7 @@ defmodule Oli.Delivery.Paywall do
             false
 
           _ ->
-            case Date.compare(Date.utc_today(), Date.add(start_date, days)) do
+            case Date.compare(Oli.Date.utc_today(), Date.add(start_date, days)) do
               :lt -> true
               :eq -> true
               _ -> false
@@ -145,7 +145,7 @@ defmodule Oli.Delivery.Paywall do
         end
 
       :relative_to_student ->
-        Date.compare(Date.utc_today(), Date.add(inserted_at, days)) == :lt
+        Date.compare(Oli.Date.utc_today(), Date.add(inserted_at, days)) == :lt
     end
   end
 
@@ -157,12 +157,15 @@ defmodule Oli.Delivery.Paywall do
     case strategy do
       :relative_to_section ->
         case start_date do
-          nil -> 0
-          _ -> -DateTime.diff(DateTime.utc_now(), DateTime.add(start_date, days * 24 * 60 * 60))
+          nil ->
+            0
+
+          _ ->
+            -DateTime.diff(Oli.DateTime.utc_now(), DateTime.add(start_date, days * 24 * 60 * 60))
         end
 
       :relative_to_student ->
-        -DateTime.diff(DateTime.utc_now(), DateTime.add(inserted_at, days * 24 * 60 * 60))
+        -DateTime.diff(Oli.DateTime.utc_now(), DateTime.add(inserted_at, days * 24 * 60 * 60))
     end
   end
 
@@ -195,7 +198,7 @@ defmodule Oli.Delivery.Paywall do
   end
 
   defp create_codes_for_section(%Section{id: id, amount: amount}, number_of_codes) do
-    now = DateTime.utc_now()
+    now = Oli.DateTime.utc_now()
 
     Repo.transaction(fn _ ->
       case unique_codes(number_of_codes) do
@@ -368,7 +371,7 @@ defmodule Oli.Delivery.Paywall do
               enrollment_id: id,
               pending_user_id: user.id,
               pending_section_id: section.id,
-              application_date: DateTime.utc_now()
+              application_date: Oli.DateTime.utc_now()
             })
 
           _ ->

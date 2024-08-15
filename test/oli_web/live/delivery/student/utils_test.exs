@@ -39,7 +39,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
 
   describe "days_difference/1" do
     setup do
-      stub_current_time(DateTime.utc_now())
+      stub_real_current_time()
 
       [
         context: %OliWeb.Common.SessionContext{
@@ -91,6 +91,13 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       # The end date is 2:59:59 AM in UTC, which is 11:59:59 PM the 23th in Montevideo
       previous_day = ~U[2024-06-24 02:59:59Z]
       assert Utils.days_difference(previous_day, ctx) == "Past Due by a day"
+    end
+
+    test "still returns 'X days left' when the resource end date cannot be localized" do
+      ctx = nil
+      days_ahead = 7
+      future_date = Oli.DateTime.utc_now() |> Timex.shift(days: days_ahead)
+      assert Utils.days_difference(future_date, ctx) == "#{days_ahead} days left"
     end
   end
 

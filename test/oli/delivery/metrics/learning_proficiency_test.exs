@@ -20,6 +20,13 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
     })
   end
 
+  defp set_snapshots(section, resource, objective, user, result) do
+    # proficiency calculation requires at least 3 snapshots
+    set_snapshot(section, resource, objective, user, result)
+    set_snapshot(section, resource, objective, user, result)
+    set_snapshot(section, resource, objective, user, result)
+  end
+
   defp create_project(_conn) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -397,25 +404,25 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       module_1: module_1,
       module_2: module_2
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_2, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_3, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_4, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_2, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_3, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_4, true)
 
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_2, false)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_3, false)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_4, false)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_2, false)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_3, false)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_4, false)
 
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_2, true)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_3, false)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_4, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_2, true)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_3, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_4, false)
 
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_1, false)
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_3, false)
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_4, false)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_1, false)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_2, true)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_3, false)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_4, false)
 
       proficiency_per_container =
         Metrics.proficiency_per_container(
@@ -445,21 +452,21 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       page_4_objective: page_4_obj,
       unit_1: unit_1
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_2, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_3, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_2, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_3, true)
 
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_2, false)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_3, false)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_2, false)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_3, false)
 
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, true)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_2, true)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_3, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_1, true)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_2, true)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_3, false)
 
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_1, true)
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_2, true)
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_3, false)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_1, true)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_2, true)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_3, false)
 
       proficiency_per_student_across = Metrics.proficiency_per_student_across(section)
 
@@ -493,10 +500,10 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       module_1: module_1,
       module_2: module_2
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, true)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
-      set_snapshot(section, page_4.resource, page_4_obj.resource, student_1, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, true)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshots(section, page_4.resource, page_4_obj.resource, student_1, true)
 
       proficiency_for_student_1_per_container =
         Metrics.proficiency_for_student_per_container(
@@ -520,8 +527,8 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       page_1_objective: page_1_obj,
       page_2_objective: page_2_obj
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, false)
 
       page_1_proficiency =
         Metrics.proficiency_per_student_for_page(section, page_1.resource_id)
@@ -548,15 +555,15 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       page_2_objective: page_2_obj,
       page_3_objective: page_3_obj
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_2, true)
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_3, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_2, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_3, true)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_2, false)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_3, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_2, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_3, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, false)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_2, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_3, true)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_2, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_3, true)
 
       proficiency_per_page =
         Metrics.proficiency_per_page(section, [
@@ -580,9 +587,9 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       page_2_objective: page_2_obj,
       page_3_objective: page_3_obj
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_1, false)
 
       proficiency_for_student_per_page =
         Metrics.proficiency_for_student_per_page(section, student_1.id)
@@ -610,12 +617,12 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
       page_4_objective: page_4_obj,
       page_5_objective: page_5_obj
     } do
-      set_snapshot(section, page_1.resource, page_1_obj.resource, student_1, true)
-      set_snapshot(section, page_2.resource, page_2_obj.resource, student_1, false)
-      set_snapshot(section, page_3.resource, page_3_obj.resource, student_1, false)
-      set_snapshot(section, page_5.resource, subobjective_a.resource, student_1, true)
-      set_snapshot(section, page_5.resource, subobjective_b.resource, student_1, true)
-      set_snapshot(section, page_5.resource, subobjective_c.resource, student_1, true)
+      set_snapshots(section, page_1.resource, page_1_obj.resource, student_1, true)
+      set_snapshots(section, page_2.resource, page_2_obj.resource, student_1, false)
+      set_snapshots(section, page_3.resource, page_3_obj.resource, student_1, false)
+      set_snapshots(section, page_5.resource, subobjective_a.resource, student_1, true)
+      set_snapshots(section, page_5.resource, subobjective_b.resource, student_1, true)
+      set_snapshots(section, page_5.resource, subobjective_c.resource, student_1, true)
 
       proficiency_for_student_per_learning_objective =
         Metrics.proficiency_for_student_per_learning_objective(
@@ -633,9 +640,9 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
 
       assert proficiency_for_student_per_learning_objective[page_5_obj.resource_id] == "High"
 
-      set_snapshot(section, page_5.resource, subobjective_a.resource, student_2, true)
-      set_snapshot(section, page_5.resource, subobjective_b.resource, student_2, false)
-      set_snapshot(section, page_5.resource, subobjective_c.resource, student_2, true)
+      set_snapshots(section, page_5.resource, subobjective_a.resource, student_2, true)
+      set_snapshots(section, page_5.resource, subobjective_b.resource, student_2, false)
+      set_snapshots(section, page_5.resource, subobjective_c.resource, student_2, true)
 
       proficiency_for_student_2_per_learning_objective =
         Metrics.proficiency_for_student_per_learning_objective(
@@ -651,9 +658,9 @@ defmodule Oli.Delivery.Metrics.LearningProficiencyTest do
 
       assert proficiency_for_student_2_per_learning_objective[page_5_obj.resource_id] == "Medium"
 
-      set_snapshot(section, page_5.resource, subobjective_a.resource, student_3, true)
-      set_snapshot(section, page_5.resource, subobjective_b.resource, student_3, false)
-      set_snapshot(section, page_5.resource, subobjective_c.resource, student_3, false)
+      set_snapshots(section, page_5.resource, subobjective_a.resource, student_3, true)
+      set_snapshots(section, page_5.resource, subobjective_b.resource, student_3, false)
+      set_snapshots(section, page_5.resource, subobjective_c.resource, student_3, false)
 
       proficiency_for_student_3_per_learning_objective =
         Metrics.proficiency_for_student_per_learning_objective(

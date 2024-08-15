@@ -4724,7 +4724,7 @@ defmodule Oli.Delivery.Sections do
             Map.merge(objective, %{
               objective: objective.title,
               objective_resource_id: objective.resource_id,
-              student_proficiency_obj: calc.(correct, total) |> Metrics.proficiency_range(),
+              student_proficiency_obj: Metrics.proficiency_range(calc.(correct, total), total),
               subobjective: "",
               subobjective_resource_id: nil,
               student_proficiency_subobj: ""
@@ -4744,10 +4744,11 @@ defmodule Oli.Delivery.Sections do
                 objective: objective.title,
                 objective_resource_id: objective.resource_id,
                 student_proficiency_obj:
-                  calc.(parent_correct, parent_total) |> Metrics.proficiency_range(),
+                  Metrics.proficiency_range(calc.(parent_correct, parent_total), parent_total),
                 subobjective: sub_objective.title,
                 subobjective_resource_id: sub_objective.resource_id,
-                student_proficiency_subobj: calc.(correct, total) |> Metrics.proficiency_range()
+                student_proficiency_subobj:
+                  Metrics.proficiency_range(calc.(correct, total), total)
               })
             end)
 

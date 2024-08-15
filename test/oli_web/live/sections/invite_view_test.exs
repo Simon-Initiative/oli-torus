@@ -47,7 +47,7 @@ defmodule OliWeb.Sections.InviteViewTest do
       conn = get(conn, live_view_invite_route(section.slug))
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finvitations&section=#{section.slug}"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finvitations"
 
       assert redirected_to(conn, 302) =~ redirect_path
     end
