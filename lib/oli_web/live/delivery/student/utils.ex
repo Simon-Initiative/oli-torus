@@ -429,7 +429,14 @@ defmodule OliWeb.Delivery.Student.Utils do
       # to apparently not be used by the page template:
       #   project_slug: base_project_slug,
       #   submitted_surveys: submitted_surveys,
-      resource_attempt: hd(page_context.resource_attempts)
+      resource_attempt: hd(page_context.resource_attempts),
+      page_link_params:
+        build_page_link_params(
+          assigns.section.slug,
+          assigns.page_context.page,
+          assigns.request_path,
+          assigns.selected_view
+        )
     }
 
     attempt_content = get_attempt_content(page_context)
@@ -519,12 +526,15 @@ defmodule OliWeb.Delivery.Student.Utils do
   """
   @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
   def days_difference(resource_end_date, context) do
-    localized_end_date =
-      resource_end_date
-      |> OliWeb.Common.FormatDateTime.maybe_localized_datetime(context)
-      |> DateTime.to_date()
+    {localized_end_date, today} =
+      case FormatDateTime.maybe_localized_datetime(resource_end_date, context) do
+        {:not_localized, datetime} ->
+          {DateTime.to_date(datetime), Oli.DateTime.utc_now() |> DateTime.to_date()}
 
-    today = context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()
+        localized_datetime ->
+          {DateTime.to_date(localized_datetime),
+           context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()}
+      end
 
     case Timex.diff(localized_end_date, today, :days) do
       0 ->
@@ -706,5 +716,18 @@ defmodule OliWeb.Delivery.Student.Utils do
       {nil, s} -> s
       {f, _s} -> f
     end
+  end
+
+  defp build_page_link_params(section_slug, page, request_path, selected_view) do
+    current_page_path =
+      lesson_live_path(section_slug, page.slug,
+        request_path: request_path,
+        selected_view: selected_view
+      )
+
+    [
+      request_path: current_page_path,
+      selected_view: selected_view
+    ]
   end
 end

@@ -723,7 +723,8 @@ defmodule Oli.Seeder do
         open_and_free: true,
         context_id: UUID.uuid4(),
         institution_id: mappings.institution.id,
-        base_project_id: project.id
+        base_project_id: project.id,
+        analytics_version: :v1
       })
       |> then(fn {:ok, section} -> section end)
       |> Sections.create_section_resources(pub1)

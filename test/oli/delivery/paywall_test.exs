@@ -22,6 +22,7 @@ defmodule Oli.Delivery.PaywallTest do
 
   describe "summarize_access" do
     setup do
+      stub_real_current_time()
       map = Seeder.base_project_with_resource2()
 
       {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)
@@ -180,6 +181,7 @@ defmodule Oli.Delivery.PaywallTest do
 
   describe "redeeming codes" do
     setup do
+      stub_real_current_time()
       map = Seeder.base_project_with_resource2()
 
       {:ok, _} = Publishing.publish_project(map.project, "some changes", map.author.id)

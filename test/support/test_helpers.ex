@@ -49,6 +49,13 @@ defmodule Oli.TestHelpers do
     end
   end
 
+  def stub_real_current_time(%{conn: conn}) do
+    stub_real_current_time()
+    {:ok, conn: conn}
+  end
+
+  def stub_real_current_time(), do: stub_current_time(DateTime.utc_now())
+
   def stub_current_time(utc_now) do
     Mox.stub(Oli.Test.DateTimeMock, :utc_now, fn -> utc_now end)
 

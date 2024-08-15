@@ -72,6 +72,7 @@ defmodule Oli.DeliveryTest do
           base_project: map.project,
           open_and_free: false,
           registration_open: false,
+          analytics_version: :v2,
           type: :blueprint,
           title: "Product 1",
           slug: "product_1"
@@ -141,6 +142,7 @@ defmodule Oli.DeliveryTest do
       assert returned_section.institution_id == context.institution.id
       assert returned_section.base_project_id == context.publication.project_id
       assert returned_section.lti_1p3_deployment_id == context.deployment.id
+      assert returned_section.analytics_version == :v2
 
       # User is enrolled as instructor
       instructors = Sections.instructors_per_section([returned_section.id])
@@ -228,11 +230,7 @@ defmodule Oli.DeliveryTest do
         )
 
       assert {:ok, returned_section} =
-               Delivery.create_section(
-                 "product:#{context.product.id}",
-                 context.user,
-                 lti_params
-               )
+               Delivery.create_section("product:#{context.product.id}", context.user, lti_params)
 
       # Check section fields
       assert returned_section.type == :enrollable

@@ -34,6 +34,7 @@ describe('multiple choice delivery', () => {
         renderPointMarkers: false,
         isAnnotationLevel: false,
         variables: {},
+        pageLinkParams: {},
       },
       graded: false,
       preview: false,
