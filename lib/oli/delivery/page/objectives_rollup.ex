@@ -20,9 +20,7 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
   end
 
   defp rollup(attached_objective_ids, resolver, section_slug) do
-    all =
-      resolver.from_resource_id(section_slug, attached_objective_ids)
-      |> Enum.reject(&is_nil(&1))
+    all = resolver.from_resource_id(section_slug, attached_objective_ids)
 
     parents = resolver.find_parent_objectives(section_slug, attached_objective_ids)
 
