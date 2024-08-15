@@ -79,7 +79,6 @@ defmodule Oli.Delivery.Page.ObjectivesRollupTest do
            p1: p1,
            p2: p2,
            p3: p3,
-           p4: p4,
            a1: a1,
            a2: a2
          } do
