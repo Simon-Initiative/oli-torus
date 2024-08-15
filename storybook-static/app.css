@@ -4632,6 +4632,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: 0.75rem;
 }
 
+.ml-32 {
+  margin-left: 8rem;
+}
+
 .ml-4 {
   margin-left: 1rem;
 }
@@ -7651,6 +7655,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .stroke-gray-300 {
   stroke: #d4d4d4;
+}
+
+.stroke-gray-500 {
+  stroke: #737373;
 }
 
 .stroke-gray-700 {
@@ -13248,6 +13256,10 @@ https://tailwindcss.com/docs/utility-first
 
 .hover\:stroke-black\/90:hover {
   stroke: rgb(0 0 0 / 0.9);
+}
+
+.hover\:stroke-gray-400:hover {
+  stroke: #a3a3a3;
 }
 
 .hover\:stroke-white\/50:hover {
