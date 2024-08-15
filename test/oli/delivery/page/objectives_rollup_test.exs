@@ -68,9 +68,26 @@ defmodule Oli.Delivery.Page.ObjectivesRollupTest do
         objectives: %{}
       }
 
+      map_2 =
+        Seeder.base_project_with_resource2()
+        |> Seeder.add_objective("objective from other project", :objective_from_other_project)
+
+      attrs4 = %{
+        title: "page1",
+        content: %{
+          "model" => [
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a1).resource.id},
+            %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
+          ]
+        },
+        objectives: %{"attached" => [map_2.objective_from_other_project.resource.id]}
+      }
+
       Seeder.add_page(map, attrs, :p1)
       |> Seeder.add_page(attrs2, :p2)
       |> Seeder.add_page(attrs3, :p3)
+      |> Seeder.add_page(attrs4, :p3)
+      |> Seeder.add_page(attrs4, :p4)
     end
 
     test "rolls up correctly when directly attached to page",
@@ -79,6 +96,7 @@ defmodule Oli.Delivery.Page.ObjectivesRollupTest do
            p1: p1,
            p2: p2,
            p3: p3,
+           p4: p4,
            a1: a1,
            a2: a2
          } do
@@ -106,6 +124,15 @@ defmodule Oli.Delivery.Page.ObjectivesRollupTest do
       assert [] ==
                ObjectivesRollup.rollup_objectives(
                  p3.revision,
+                 activity_revisions,
+                 Oli.Publishing.AuthoringResolver,
+                 project.slug
+               )
+
+      # Tests when objectives map contains objectives from other project
+      assert [] ==
+               ObjectivesRollup.rollup_objectives(
+                 p4.revision,
                  activity_revisions,
                  Oli.Publishing.AuthoringResolver,
                  project.slug
