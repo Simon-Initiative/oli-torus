@@ -224,7 +224,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:sidebar_expanded, :boolean)
   attr(:active_workspace, :atom)
   attr(:active_view, :atom, default: nil)
-  attr(:project_slug, :string, default: nil)
+  attr(:resource_slug, :string, default: nil)
+  attr(:active_tab, :atom, default: nil)
 
   def workspace_sidebar_toggler(assigns) do
     ~H"""
@@ -232,7 +233,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
       role="toggle sidebar"
       phx-click={
         JS.patch(
-          toggled_workspace_path(@active_workspace, @active_view, @sidebar_expanded, @project_slug)
+          toggled_workspace_path(
+            @active_workspace,
+            @active_view,
+            @sidebar_expanded,
+            @resource_slug,
+            @active_tab
+          )
         )
         |> JS.hide(to: "div[role='expandable_submenu']")
       }
@@ -252,8 +259,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_view, :atom, default: nil)
   attr(:sidebar_expanded, :boolean)
   attr(:preview_mode, :boolean)
-  attr(:project_title, :string, default: nil)
-  attr(:project_slug, :string, default: nil)
+  attr(:resource_title, :string)
+  attr(:resource_slug, :string)
+  attr(:active_tab, :atom)
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -295,7 +303,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             active_view={@active_view}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
-            project_slug={@project_slug}
+            resource_slug={@resource_slug}
+            active_tab={@active_tab}
           />
           <div class="h-[24px]">
             <h2
@@ -310,26 +319,24 @@ defmodule OliWeb.Components.Delivery.Layouts do
             sidebar_expanded={@sidebar_expanded}
             active_workspace={@active_workspace}
           />
-          <%= if @project_slug do %>
-            <WorkspaceUtils.sub_menu
-              hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
-              slug={@project_slug}
-              title={@project_title}
-              sidebar_expanded={@sidebar_expanded}
-              active_view={@active_view}
-              active_workspace={@active_workspace}
-            />
-          <% end %>
+          <WorkspaceUtils.sub_menu
+            :if={@resource_slug}
+            hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
+            resource_slug={@resource_slug}
+            resource_title={@resource_title}
+            sidebar_expanded={@sidebar_expanded}
+            active_view={@active_view}
+            active_workspace={@active_workspace}
+          />
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
-          <%= if @project_slug do %>
-            <.exit_workspace_button
-              sidebar_expanded={@sidebar_expanded}
-              title="Exit Project"
-              target_workspace={:course_author}
-            />
-          <% end %>
+          <.exit_workspace_button
+            :if={@resource_slug}
+            sidebar_expanded={@sidebar_expanded}
+            title={if @active_workspace == :course_author, do: "Exit Project", else: "Exit Section"}
+            target_workspace={@active_workspace}
+          />
         </div>
       </nav>
       <nav
@@ -500,10 +507,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  defp toggled_workspace_path(active_workspace, active_view, sidebar_expanded, project_slug) do
-    params = %{
-      sidebar_expanded: !sidebar_expanded
-    }
+  defp toggled_workspace_path(
+         active_workspace,
+         active_view,
+         sidebar_expanded,
+         resource_slug,
+         active_tab
+       ) do
+    params = %{sidebar_expanded: !sidebar_expanded}
 
     base_module =
       case active_workspace do
@@ -523,10 +534,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         ~p"/workspaces/course_author?#{params}"
 
       {:course_author, _view_slug} ->
-        Routes.live_path(OliWeb.Endpoint, view_module, project_slug, params)
+        Routes.live_path(OliWeb.Endpoint, view_module, resource_slug, params)
 
       {:instructor, nil} ->
         ~p"/workspaces/instructor?#{params}"
+
+      {:instructor, active_view} ->
+        ~p"/workspaces/instructor/#{resource_slug}/#{active_view}/#{active_tab}?#{params}"
 
       {:student, nil} ->
         ~p"/workspaces/student?#{params}"
@@ -751,7 +765,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     base_module =
       case assigns.target_workspace do
         :course_author -> OliWeb.Workspaces.CourseAuthor.IndexLive
-        :instructor -> OliWeb.Workspaces.Instructor
+        :instructor -> OliWeb.Workspaces.Instructor.IndexLive
         :student -> OliWeb.Workspaces.Student
         _ -> raise "Unknown workspace: #{assigns.active_workspace}"
       end

@@ -7,8 +7,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
 
     {:ok,
      assign(socket,
-       project_slug: project.slug,
-       project_title: project.title,
+       resource_slug: project.slug,
+       resource_title: project.title,
        active_workspace: :course_author,
        active_view: :publish
      )}

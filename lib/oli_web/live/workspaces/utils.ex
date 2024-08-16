@@ -14,8 +14,8 @@ defmodule OliWeb.Workspace.Utils do
   attr :sidebar_expanded, :boolean, default: true
   attr :active_view, :atom, default: nil
   attr :active_workspace, :atom, default: nil
-  attr :slug, :string
-  attr :title, :string
+  attr :resource_slug, :string
+  attr :resource_title, :string
 
   def sub_menu(assigns) do
     ~H"""
@@ -27,7 +27,7 @@ defmodule OliWeb.Workspace.Utils do
         sidebar_expanded={@sidebar_expanded}
         active_view={@active_view}
         active_workspace={@active_workspace}
-        slug={@slug}
+        resource_slug={@resource_slug}
       />
     </div>
     """
@@ -38,7 +38,7 @@ defmodule OliWeb.Workspace.Utils do
   attr :sidebar_expanded, :boolean, default: true
   attr :active_view, :atom, default: nil
   attr :active_workspace, :atom, default: nil
-  attr :slug, :string
+  attr :resource_slug, :string
   attr :sub_menu_item, :map
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: []} = item} = assigns) do
@@ -53,14 +53,38 @@ defmodule OliWeb.Workspace.Utils do
     item_view = item.view |> Atom.to_string() |> Macro.camelize()
 
     view_module =
-      Module.concat([base_module, item_view <> "Live"])
+      case assigns.active_workspace do
+        :course_author -> Module.concat([base_module, item_view <> "Live"])
+        :instructor -> Module.concat([base_module, "DashboardLive"])
+      end
 
     assigns = assign(assigns, item: item, view_module: view_module)
 
     ~H"""
     <.link
       navigate={
-        Routes.live_path(OliWeb.Endpoint, @view_module, @slug, sidebar_expanded: @sidebar_expanded)
+        case @active_workspace do
+          :course_author ->
+            Routes.live_path(OliWeb.Endpoint, @view_module, @resource_slug,
+              sidebar_expanded: @sidebar_expanded
+            )
+
+          :instructor ->
+            if Map.get(@item, :parent_view) do
+              Routes.live_path(
+                OliWeb.Endpoint,
+                @view_module,
+                @resource_slug,
+                @item.parent_view,
+                @item.view,
+                sidebar_expanded: @sidebar_expanded
+              )
+            else
+              Routes.live_path(OliWeb.Endpoint, @view_module, @resource_slug, @item.view,
+                sidebar_expanded: @sidebar_expanded
+              )
+            end
+        end
       }
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
@@ -75,11 +99,10 @@ defmodule OliWeb.Workspace.Utils do
   end
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: children} = item} = assigns) do
-    expanded = assigns[:current_item] == item.text
     item_id = item.text |> String.downcase() |> String.replace(" ", "_")
 
     assigns =
-      assign(assigns, item: item, item_id: item_id, children: children, expanded: expanded)
+      assign(assigns, item: item, item_id: item_id, children: children)
 
     ~H"""
     <div class="w-full relative">
@@ -102,18 +125,17 @@ defmodule OliWeb.Workspace.Utils do
       <div
         role="expandable_submenu"
         id={"#{@item_id}_children"}
-        class={"pl-4 #{if @expanded || active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
+        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
       >
         <.sub_menu_item
           :for={child <- @children}
           sub_menu_item={child}
           sidebar_expanded={@sidebar_expanded}
-          current_item={@item.text}
           target_to_expand={"#{@item_id}_children"}
           active_workspace={@active_workspace}
           active_view={@active_view}
-          slug={@slug}
+          resource_slug={@resource_slug}
         />
       </div>
     </div>
@@ -134,9 +156,7 @@ defmodule OliWeb.Workspace.Utils do
     ~H"""
     <div class={[
       "relative w-full h-9 px-3 py-3 dark:hover:bg-[#141416] hover:bg-zinc-400/10 rounded-lg justify-start items-center gap-3 inline-flex",
-      if(@is_active,
-        do: @on_active_bg
-      )
+      if(@is_active, do: @on_active_bg)
     ]}>
       <div :if={@sub_menu_item.icon} class="w-5 h-5 flex items-center justify-center">
         <%= apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns]) %>
@@ -178,14 +198,14 @@ defmodule OliWeb.Workspace.Utils do
   end
 
   attr :sidebar_expanded, :boolean, default: true
-  attr :title, :string, default: nil
+  attr :resource_title, :string, default: ""
 
   def title(assigns) do
     ~H"""
     <div class="w-full">
       <%= if @sidebar_expanded do %>
         <h2 class="truncate text-[14px] h-[24px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6 uppercase">
-          <%= @title %>
+          <%= @resource_title %>
         </h2>
       <% else %>
         <div class="w-9 m-auto border border-zinc-500"></div>
@@ -195,7 +215,7 @@ defmodule OliWeb.Workspace.Utils do
   end
 
   defp active_view_in_children?(children, active_view) do
-    Enum.any?(children, fn child -> child.view == active_view end)
+    Enum.any?(children, &(&1.view == active_view))
   end
 
   def hierarchy(:course_author) do
@@ -205,8 +225,7 @@ defmodule OliWeb.Workspace.Utils do
         icon: "author_overview",
         view: :overview,
         parent_view: nil,
-        children: [],
-        class: ""
+        children: []
       },
       %SubMenuItem{
         text: "Create",
@@ -219,59 +238,51 @@ defmodule OliWeb.Workspace.Utils do
             icon: nil,
             view: :objectives,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "Activity Bank",
             icon: nil,
             view: :activity_bank,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "Experiments",
             icon: nil,
             view: :experiments,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "Bibliography",
             icon: nil,
             view: :bibliography,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "Curriculum",
             icon: nil,
             view: :curriculum,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "All Pages",
             icon: nil,
             view: :pages,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "All Activities",
             icon: nil,
             view: :activities,
             parent_view: :create,
-            children: [],
-            class: ""
+            children: []
           }
-        ],
-        class: ""
+        ]
       },
       %SubMenuItem{
         text: "Publish",
@@ -284,27 +295,23 @@ defmodule OliWeb.Workspace.Utils do
             icon: nil,
             view: :review,
             parent_view: :author_publish,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "Publish",
             icon: nil,
             view: :publish,
             parent_view: :author_publish,
-            children: [],
-            class: ""
+            children: []
           },
           %SubMenuItem{
             text: "Products",
             icon: nil,
             view: :products,
             parent_view: :author_publish,
-            children: [],
-            class: ""
+            children: []
           }
-        ],
-        class: ""
+        ]
       },
       %SubMenuItem{
         text: "Improve",
@@ -317,17 +324,76 @@ defmodule OliWeb.Workspace.Utils do
             icon: nil,
             view: :insights,
             parent_view: :improve,
-            children: [],
-            class: ""
+            children: []
           }
-        ],
-        class: ""
+        ]
       }
     ]
   end
 
   def hierarchy(:instructor) do
-    []
+    [
+      %SubMenuItem{
+        text: "Overview",
+        icon: "list_search",
+        view: :overview,
+        children: [
+          %SubMenuItem{
+            text: "Course Content",
+            view: :course_content,
+            parent_view: :overview
+          },
+          %SubMenuItem{
+            text: "Students",
+            view: :students,
+            parent_view: :overview
+          }
+        ]
+      },
+      %SubMenuItem{
+        text: "Insights",
+        icon: "folder",
+        view: :insights,
+        children: [
+          %SubMenuItem{
+            text: "Content",
+            view: :content,
+            parent_view: :insights
+          },
+          %SubMenuItem{
+            text: "Learning Objectives",
+            view: :learning_objectives,
+            parent_view: :insights
+          },
+          %SubMenuItem{
+            text: "Scored Activities",
+            view: :scored_activities,
+            parent_view: :insights
+          },
+          %SubMenuItem{
+            text: "Practice Activities",
+            view: :practice_activities,
+            parent_view: :insights,
+            children: []
+          },
+          %SubMenuItem{
+            text: "Surveys",
+            view: :surveys,
+            parent_view: :insights
+          }
+        ]
+      },
+      %SubMenuItem{
+        text: "Manage",
+        icon: "settings",
+        view: :manage
+      },
+      %SubMenuItem{
+        text: "Activity",
+        icon: "message",
+        view: :activity
+      }
+    ]
   end
 
   def hierarchy(:student) do

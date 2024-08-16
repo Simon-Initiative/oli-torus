@@ -32,10 +32,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
 
-    {:ok,
-     assign(socket,
-       active_workspace: :instructor
-     )}
+    {:ok, assign(socket, active_workspace: :instructor)}
   end
 
   def mount(_params, _session, socket) do
