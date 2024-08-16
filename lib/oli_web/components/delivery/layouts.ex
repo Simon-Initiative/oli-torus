@@ -16,7 +16,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Workspace.Utils, as: Workspace_Utils
+  alias OliWeb.Workspace.Utils, as: WorkspaceUtils
 
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
@@ -252,8 +252,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_view, :atom, default: nil)
   attr(:sidebar_expanded, :boolean)
   attr(:preview_mode, :boolean)
-  attr(:project_title, :string)
-  attr(:project_slug, :string)
+  attr(:project_title, :string, default: nil)
+  attr(:project_slug, :string, default: nil)
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -311,8 +311,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             active_workspace={@active_workspace}
           />
           <%= if @project_slug do %>
-            <Workspace_Utils.sub_menu
-              hierarchy={Workspace_Utils.hierarchy(@active_workspace)}
+            <WorkspaceUtils.sub_menu
+              hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
               slug={@project_slug}
               title={@project_title}
               sidebar_expanded={@sidebar_expanded}
@@ -510,7 +510,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :course_author -> OliWeb.Workspaces.CourseAuthor
         :instructor -> OliWeb.Workspaces.Instructor
         :student -> OliWeb.Workspaces.Student
-        _ -> raise {"Unknown workspace: #{active_workspace}"}
+        _ -> raise "Unknown workspace: #{active_workspace}"
       end
 
     item_view = active_view |> Atom.to_string() |> Macro.camelize()

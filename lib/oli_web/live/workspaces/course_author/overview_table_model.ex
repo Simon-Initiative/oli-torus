@@ -10,7 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
       %ColumnSpec{
         name: :title,
         label: "Title",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :inserted_at,
@@ -20,12 +20,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
       %ColumnSpec{
         name: :name,
         label: "Created By",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       },
       %ColumnSpec{
         name: :status,
         label: "Status",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       }
     ]
 
