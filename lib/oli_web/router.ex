@@ -787,11 +787,7 @@ defmodule OliWeb.Router do
 
   ### Workspaces
   scope "/workspaces/", OliWeb.Workspaces do
-    pipe_through([
-      :browser,
-      :authoring_and_delivery,
-      :set_sidebar
-    ])
+    pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
 
     live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -800,22 +796,31 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetProject
+        OliWeb.LiveSessionPlugs.SetProject,
+        OliWeb.LiveSessionPlugs.SetSection
       ] do
-      live("/course_author", CourseAuthor.IndexLive)
-      live("/course_author/:project_id/overview", CourseAuthor.OverviewLive)
-      live("/course_author/:project_id/activity_bank", CourseAuthor.ActivityBankLive)
-      live("/course_author/:project_id/objectives", CourseAuthor.ObjectivesLive)
-      live("/course_author/:project_id/experiments", CourseAuthor.ExperimentsLive)
-      live("/course_author/:project_id/bibliography", CourseAuthor.BibliographyLive)
-      live("/course_author/:project_id/curriculum", CourseAuthor.CurriculumLive)
-      live("/course_author/:project_id/pages", CourseAuthor.PagesLive)
-      live("/course_author/:project_id/activities", CourseAuthor.ActivitiesLive)
-      live("/course_author/:project_id/review", CourseAuthor.ReviewLive)
-      live("/course_author/:project_id/publish", CourseAuthor.PublishLive)
-      live("/course_author/:project_id/products", CourseAuthor.ProductsLive)
-      live("/course_author/:project_id/insights", CourseAuthor.InsightsLive)
-      live("/instructor", Instructor)
+      scope "/course_author", CourseAuthor do
+        live("/", IndexLive)
+        live("/:project_id/overview", OverviewLive)
+        live("/:project_id/activity_bank", ActivityBankLive)
+        live("/:project_id/objectives", ObjectivesLive)
+        live("/:project_id/experiments", ExperimentsLive)
+        live("/:project_id/bibliography", BibliographyLive)
+        live("/:project_id/curriculum", CurriculumLive)
+        live("/:project_id/pages", PagesLive)
+        live("/:project_id/activities", ActivitiesLive)
+        live("/:project_id/review", ReviewLive)
+        live("/:project_id/publish", PublishLive)
+        live("/:project_id/products", ProductsLive)
+        live("/:project_id/insights", InsightsLive)
+      end
+
+      scope "/instructor", Instructor do
+        live("/", IndexLive)
+        live("/:section_slug/:view", DashboardLive)
+        live("/:section_slug/:view/:active_tab", DashboardLive)
+      end
+
       live("/student", Student)
     end
   end
@@ -844,11 +849,7 @@ defmodule OliWeb.Router do
 
   # Sections - Independent Learner Section Creation
   scope "/sections", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :require_independent_instructor
-    ])
+    pipe_through([:browser, :delivery_protected, :require_independent_instructor])
 
     live("/independent/create", Delivery.NewCourse, :independent_learner, as: :select_source)
     resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
@@ -856,12 +857,7 @@ defmodule OliWeb.Router do
 
   ### Sections - Payments
   scope "/sections", OliWeb do
-    pipe_through([
-      :browser,
-      :require_section,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :require_section, :delivery_protected, :pow_email_layout])
 
     get("/:section_slug/payment", PaymentController, :guard)
     get("/:section_slug/payment/new", PaymentController, :make_payment)
@@ -872,11 +868,7 @@ defmodule OliWeb.Router do
   ### Sections - Student Dashboard
 
   scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     live_session :student_dashboard,
       on_mount: [
@@ -907,12 +899,7 @@ defmodule OliWeb.Router do
   ### Sections - Instructor Dashboard
   #### preview routes must come before the non-preview routes to properly match
   scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :delivery, :delivery_protected, :pow_email_layout])
 
     live_session :instructor_dashboard_preview,
       on_mount: [
@@ -927,48 +914,14 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
-    get(
-      "/downloads/progress/:container_id",
-      MetricsController,
-      :download_container_progress
-    )
-
-    get(
-      "/downloads/course_content",
-      DeliveryController,
-      :download_course_content_info
-    )
-
-    get(
-      "/downloads/students_progress",
-      DeliveryController,
-      :download_students_progress
-    )
-
-    get(
-      "/downloads/learning_objectives",
-      DeliveryController,
-      :download_learning_objectives
-    )
-
-    get(
-      "/downloads/quiz_scores",
-      DeliveryController,
-      :download_quiz_scores
-    )
-
-    get(
-      "/",
-      DeliveryController,
-      :instructor_dashboard
-    )
-
+    get("/downloads/progress/:container_id", MetricsController, :download_container_progress)
+    get("/downloads/course_content", DeliveryController, :download_course_content_info)
+    get("/downloads/students_progress", DeliveryController, :download_students_progress)
+    get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
+    get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
+    get("/", DeliveryController, :instructor_dashboard)
     post("/enrollments", InviteController, :create_bulk)
 
     live_session :instructor_dashboard,
