@@ -23,7 +23,7 @@ defmodule OliWeb.Pow.UserRoutes do
   end
 
   defp workspace_path(conn, :instructor_workspace),
-    do: Routes.live_path(conn, OliWeb.Workspaces.Instructor)
+    do: Routes.live_path(conn, OliWeb.Workspaces.Instructor.IndexLive)
 
   defp workspace_path(conn, :student_workspace),
     do: Routes.live_path(conn, OliWeb.Workspaces.Student)
