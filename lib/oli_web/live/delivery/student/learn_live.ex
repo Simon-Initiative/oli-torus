@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {:noreply,
        socket
        |> maybe_assign_selected_view(selected_view)
-       |> stream(:units, full_hierarchy["children"], reset: true)
+       |> update(:units, fn _units -> full_hierarchy["children"] end)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
