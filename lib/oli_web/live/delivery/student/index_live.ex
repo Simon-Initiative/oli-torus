@@ -18,10 +18,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     current_user_id = socket.assigns[:current_user].id
     has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
-    schedule_for_current_week_and_next_week =
+    grouped_agenda_resources =
       if has_scheduled_resources?,
         do: Sections.get_schedule_for_current_and_next_week(section, current_user_id),
-        else: %{}
+        else: Sections.get_not_scheduled_agenda(section, current_user_id)
 
     nearest_upcoming_lesson =
       section
@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     {:ok,
      assign(socket,
        active_tab: :index,
-       schedule_for_current_week_and_next_week: schedule_for_current_week_and_next_week,
+       grouped_agenda_resources: grouped_agenda_resources,
        section_slug: section.slug,
        section_start_date: section.start_date,
        historical_graded_attempt_summary: nil,
@@ -148,12 +148,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
 
         <div
-          :if={not is_nil(@schedule_for_current_week_and_next_week)}
+          :if={not is_nil(@grouped_agenda_resources)}
           class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex"
         >
           <.agenda
             section_slug={@section_slug}
-            schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}
+            grouped_agenda_resources={@grouped_agenda_resources}
             section_start_date={@section_start_date}
             ctx={@ctx}
           />
@@ -663,7 +663,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   attr(:section_slug, :string, required: true)
   attr(:section_start_date, :string, required: true)
-  attr(:schedule_for_current_week_and_next_week, :map, required: true)
+  attr(:grouped_agenda_resources, :map, required: true)
   attr(:ctx, :map, required: true)
 
   defp agenda(assigns) do
@@ -692,7 +692,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           module={ScheduleComponent}
           ctx={@ctx}
           id="schedule_component"
-          schedule_for_current_week_and_next_week={@schedule_for_current_week_and_next_week}
+          grouped_agenda_resources={@grouped_agenda_resources}
           section_start_date={@section_start_date}
           section_slug={@section_slug}
         />
