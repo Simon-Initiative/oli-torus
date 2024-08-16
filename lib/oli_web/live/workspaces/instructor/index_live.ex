@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspaces.Instructor do
+defmodule OliWeb.Workspaces.Instructor.IndexLive do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections
@@ -10,10 +10,7 @@ defmodule OliWeb.Workspaces.Instructor do
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
 
-  @default_params %{
-    text_search: "",
-    sidebar_expanded: true
-  }
+  @default_params %{text_search: "", sidebar_expanded: true}
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
@@ -34,6 +31,7 @@ defmodule OliWeb.Workspaces.Instructor do
 
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
+
     {:ok,
      assign(socket,
        active_workspace: :instructor
@@ -76,8 +74,9 @@ defmodule OliWeb.Workspaces.Instructor do
      )}
   end
 
-  def handle_params(params, _uri, socket),
-    do: {:noreply, assign(socket, params: decode_params(params))}
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, params: decode_params(params))}
+  end
 
   @impl Phoenix.LiveView
 
