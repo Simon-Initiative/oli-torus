@@ -333,7 +333,7 @@ defmodule Oli.Delivery.ActivityProvider do
         where: pr.publication_id == ^publication_id,
         where: r.deleted == false,
         where: r.resource_type_id == ^activity_type_id,
-        where: r.scope == "banked",
+        where: r.scope == :banked,
         select: %{
           resource_id: pr.resource_id,
           tags: r.tags,
