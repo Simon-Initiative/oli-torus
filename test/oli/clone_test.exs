@@ -11,6 +11,7 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Delivery.Sections
 
   describe "need for new revision checks" do
     setup do
@@ -49,6 +50,63 @@ defmodule Oli.CloneTest do
         :duplicated,
         Repo.preload(duplicated_project, [:parent_project, :family])
       )
+    end
+
+    test "clone_project/2 with a product works well", %{
+      project: project,
+      author2: author2,
+      publication: publication
+    } do
+      # Create a course section, one for each publication
+      {:ok, product} =
+        Sections.create_section(%{
+          title: "Product 1",
+          registration_open: true,
+          type: :blueprint,
+          context_id: UUID.uuid4(),
+          base_project_id: project.id,
+          publisher_id: project.publisher_id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(publication)
+
+      {:ok, cloned_project} = Clone.clone_project(project.slug, author2)
+      cloned_product = Sections.get_section_by(%{base_project_id: cloned_project.id})
+
+      assert cloned_project.title == project.title <> " Copy"
+      assert cloned_project.id != project.id
+
+      cloned_publication =
+        Sections.get_current_publication(cloned_product.id, cloned_project.id)
+
+      original_publication =
+        Sections.get_current_publication(product.id, project.id)
+
+      assert Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: cloned_project.id,
+               section_id: cloned_product.id,
+               publication_id: cloned_publication.id
+             )
+
+      refute Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: cloned_project.id,
+               section_id: cloned_product.id,
+               publication_id: original_publication.id
+             )
+
+      project_id = project.id
+      cloned_project_id = cloned_project.id
+
+      # SectionResources are created well
+      assert [^project_id] =
+               Sections.get_section_resources(product.id)
+               |> Enum.map(& &1.project_id)
+               |> Enum.uniq()
+
+      assert [^cloned_project_id] =
+               Oli.Delivery.Sections.get_section_resources(cloned_product.id)
+               |> Enum.map(& &1.project_id)
+               |> Enum.uniq()
     end
 
     test "already_has_clone?/2 and existing_clones/2 works", %{
