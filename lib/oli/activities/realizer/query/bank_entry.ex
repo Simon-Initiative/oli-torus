@@ -11,17 +11,17 @@ defmodule Oli.Activities.Realizer.Query.BankEntry do
   ]
 
   @type t() :: %__MODULE__{
-    resource_id: integer(),
-    tags: list(),
-    objectives: list(),
-    activity_type_id: integer(),
-  }
+          resource_id: integer(),
+          tags: list(),
+          objectives: list(),
+          activity_type_id: integer()
+        }
 
   def from_map(m) do
-
-    objectives = Map.values(m.objectives)
-    |> List.flatten()
-    |> MapSet.new()
+    objectives =
+      Map.values(m.objectives)
+      |> List.flatten()
+      |> MapSet.new()
 
     %Oli.Activities.Realizer.Query.BankEntry{
       resource_id: m.resource_id,

@@ -55,7 +55,6 @@ defmodule Oli.Activities.Realizer.Selection do
   end
 
   def fulfill(%Selection{count: count} = selection, %Source{} = source) do
-
     {all, returned_count} = fulfill_from_bank(selection, source)
 
     if returned_count < count do
@@ -63,23 +62,21 @@ defmodule Oli.Activities.Realizer.Selection do
     else
       {:ok, %Result{rows: all, rowCount: returned_count, totalCount: returned_count}}
     end
-
   end
 
   def fulfill_from_bank(%Selection{count: count} = selection, %Source{bank: bank} = source) do
-
     blacklisted = MapSet.new(source.blacklisted_activity_ids)
 
-    expressions = case selection.logic.conditions do
-      nil -> []
-      %Logic.Clause{children: children} -> children
-      %Logic.Expression{} = e -> [e]
-    end
+    expressions =
+      case selection.logic.conditions do
+        nil -> []
+        %Logic.Clause{children: children} -> children
+        %Logic.Expression{} = e -> [e]
+      end
 
     Enum.reduce_while(bank, {[], 0}, fn activity, {all, total} ->
       case !MapSet.member?(blacklisted, activity.resource_id) and
-        Enum.all?(expressions, &evaluate_expression(&1, activity)) do
-
+             Enum.all?(expressions, &evaluate_expression(&1, activity)) do
         true ->
           if total == count do
             {:halt, {[activity | all], total + 1}}
@@ -91,7 +88,6 @@ defmodule Oli.Activities.Realizer.Selection do
           {:cont, {all, total}}
       end
     end)
-
   end
 
   defp evaluate_expression(%Expression{fact: :tags} = e, activity) do
@@ -104,22 +100,35 @@ defmodule Oli.Activities.Realizer.Selection do
 
   defp evaluate_expression(%Expression{fact: :type, operator: operator, value: value}, activity) do
     case operator do
-      :contains -> MapSet.new([activity.activity_type_id]) |> MapSet.subset?(MapSet.new(value))
-      :does_not_contain -> MapSet.new([activity.activity_type_id]) |> MapSet.subset?(MapSet.new(value)) |> Kernel.!
-      :equals -> value == activity.activity_type_id
-      :does_not_equal -> value != activity.activity_type_id
+      :contains ->
+        MapSet.new([activity.activity_type_id]) |> MapSet.subset?(MapSet.new(value))
+
+      :does_not_contain ->
+        MapSet.new([activity.activity_type_id]) |> MapSet.subset?(MapSet.new(value)) |> Kernel.!()
+
+      :equals ->
+        value == activity.activity_type_id
+
+      :does_not_equal ->
+        value != activity.activity_type_id
     end
   end
 
   defp do_evaluate_expression(%Expression{operator: operator, value: value}, activity, field) do
     case operator do
-      :contains -> MapSet.new(value) |> MapSet.subset?(Map.get(activity, field))
-      :does_not_contain -> MapSet.new(value) |> MapSet.subset?(Map.get(activity, field)) |> Kernel.!
-      :equals -> MapSet.equal?(Map.get(activity, field), MapSet.new(value))
-      :does_not_equal -> !MapSet.equal?(Map.get(activity, field), MapSet.new(value))
+      :contains ->
+        MapSet.new(value) |> MapSet.subset?(Map.get(activity, field))
+
+      :does_not_contain ->
+        MapSet.new(value) |> MapSet.subset?(Map.get(activity, field)) |> Kernel.!()
+
+      :equals ->
+        MapSet.equal?(Map.get(activity, field), MapSet.new(value))
+
+      :does_not_equal ->
+        !MapSet.equal?(Map.get(activity, field), MapSet.new(value))
     end
   end
-
 
   @doc """
   Tests the fulfillment of a selection by querying the database for matching activities.

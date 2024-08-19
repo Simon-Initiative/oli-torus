@@ -107,7 +107,10 @@ defmodule Oli.Activities.Query.ExecutorTest do
       }
 
       paging = %Paging{limit: 2, offset: 0}
-      logic = %Logic{conditions: %Expression{fact: :objectives, operator: :does_not_equal, value: [1]}}
+
+      logic = %Logic{
+        conditions: %Expression{fact: :objectives, operator: :does_not_equal, value: [1]}
+      }
 
       {:ok, %Result{rowCount: 1, totalCount: 1}} =
         Builder.build(logic, source, paging, :paged)

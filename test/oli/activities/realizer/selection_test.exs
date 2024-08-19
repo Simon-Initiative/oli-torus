@@ -32,7 +32,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "equals" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -72,7 +71,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "does not equal" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -112,7 +110,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "contains" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -152,7 +149,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "does not contain" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -188,12 +184,9 @@ defmodule Oli.Activities.ConditionsTest do
     {:ok, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 2
-
-
   end
 
   test "blacklisting" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -222,7 +215,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "multiple expressions" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -243,7 +235,9 @@ defmodule Oli.Activities.ConditionsTest do
       section_slug: ""
     }
 
-    selection = selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])])
+    selection =
+      selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])])
+
     {:partial, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 1
@@ -251,7 +245,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "multiple expressions AND blacklisting" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -272,14 +265,15 @@ defmodule Oli.Activities.ConditionsTest do
       section_slug: ""
     }
 
-    selection = selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])])
+    selection =
+      selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])])
+
     {:partial, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 0
   end
 
   test "item type contains" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -307,7 +301,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "item type does not contains" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -335,7 +328,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "item type equals" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -364,7 +356,6 @@ defmodule Oli.Activities.ConditionsTest do
   end
 
   test "item type does not equals" do
-
     source = %Source{
       bank: [
         %BankEntry{
@@ -390,7 +381,5 @@ defmodule Oli.Activities.ConditionsTest do
 
     assert length(result.rows) == 1
     assert Enum.at(result.rows, 0).resource_id == 1
-
   end
-
 end

@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.ActivityProvider do
-
   alias Oli.Repo
   import Ecto.Query, warn: false
 
@@ -325,31 +324,31 @@ defmodule Oli.Delivery.ActivityProvider do
   end
 
   defp populate_bank(fulfillment_state, publication_id) do
-
     activity_type_id = ResourceType.id_for_activity()
 
-    query = from r in Oli.Resources.Revision,
-          join: pr in Oli.Publishing.Publications.PublishedResource,
-          on: pr.revision_id == r.id,
-          where: pr.publication_id == ^publication_id,
-          where: r.deleted == false,
-          where: r.resource_type_id == ^activity_type_id,
-          where: r.scope == "banked",
-          select: %{
-            resource_id: pr.resource_id,
-            tags: r.tags,
-            objectives: r.objectives,
-            activity_type_id: r.activity_type_id,
-          }
+    query =
+      from r in Oli.Resources.Revision,
+        join: pr in Oli.Publishing.Publications.PublishedResource,
+        on: pr.revision_id == r.id,
+        where: pr.publication_id == ^publication_id,
+        where: r.deleted == false,
+        where: r.resource_type_id == ^activity_type_id,
+        where: r.scope == "banked",
+        select: %{
+          resource_id: pr.resource_id,
+          tags: r.tags,
+          objectives: r.objectives,
+          activity_type_id: r.activity_type_id
+        }
 
-    bank = Repo.all(query)
-    |> Enum.map(fn r -> BankEntry.from_map(r) end)
-    |> Enum.shuffle()
+    bank =
+      Repo.all(query)
+      |> Enum.map(fn r -> BankEntry.from_map(r) end)
+      |> Enum.shuffle()
 
     source = %Source{fulfillment_state.source | bank: bank}
 
     %{fulfillment_state | source: source}
-
   end
 
   defp reference_to_prototype(activity_reference, group_id, survey_id) do
@@ -362,7 +361,12 @@ defmodule Oli.Delivery.ActivityProvider do
     }
   end
 
-  defp revision_to_prototype(%BankEntry{resource_id: resource_id}, group_id, survey_id, selection_id) do
+  defp revision_to_prototype(
+         %BankEntry{resource_id: resource_id},
+         group_id,
+         survey_id,
+         selection_id
+       ) do
     %AttemptPrototype{
       activity_id: resource_id,
       survey_id: survey_id,
