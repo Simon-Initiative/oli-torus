@@ -195,10 +195,10 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
   This method supports duplication of enrollable sections to create a blueprint.
   """
-  def duplicate(%Section{} = section, attrs \\ %{}) do
+  def duplicate(%Section{} = section, attrs \\ %{}, publication_id \\ nil) do
     Repo.transaction(fn _ ->
       with {:ok, blueprint} <- dupe_section(section, attrs),
-           {:ok, _} <- dupe_section_project_publications(section, blueprint),
+           {:ok, _} <- dupe_section_project_publications(section, blueprint, publication_id),
            {:ok, duplicated_root_resource} <- dupe_section_resources(section, blueprint),
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
@@ -276,7 +276,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
         |> Enum.reduce([], fn p, resources_to_create ->
           resource =
             Map.merge(Sections.SectionResource.to_map(p), %{
-              section_id: blueprint.id
+              section_id: blueprint.id,
+              project_id: blueprint.base_project_id
             })
             |> Map.delete(:id)
 
@@ -318,7 +319,11 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  defp dupe_section_project_publications(%Section{id: id}, %Section{} = blueprint) do
+  defp dupe_section_project_publications(
+         %Section{id: id},
+         %Section{} = blueprint,
+         publication_id
+       ) do
     query =
       from(
         s in Oli.Delivery.Sections.SectionsProjectsPublications,
@@ -328,10 +333,12 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
     Repo.all(query)
     |> Enum.reduce_while({:ok, []}, fn p, {:ok, all} ->
+      publication_id = if publication_id, do: publication_id, else: p.publication_id
+
       attrs = %{
         section_id: blueprint.id,
-        project_id: p.project_id,
-        publication_id: p.publication_id
+        project_id: blueprint.base_project_id,
+        publication_id: publication_id
       }
 
       case Sections.create_section_project_publication(attrs) do
