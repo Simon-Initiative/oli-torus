@@ -328,7 +328,7 @@ defmodule Oli.Delivery.ActivityProvider do
 
     query =
       from r in Oli.Resources.Revision,
-        join: pr in Oli.Publishing.Publications.PublishedResource,
+        join: pr in Oli.Publishing.PublishedResource,
         on: pr.revision_id == r.id,
         where: pr.publication_id == ^publication_id,
         where: r.deleted == false,
