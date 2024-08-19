@@ -11,6 +11,7 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
   alias Oli.Delivery.ActivityProvider.AttemptPrototype
   alias Oli.Utils.BibUtils
+  alias Oli.Resources.ResourceType
 
   @doc """
   Realizes and resolves activities in a page.
