@@ -128,6 +128,65 @@ defmodule OliWeb.Components.Delivery.Schedule do
     """
   end
 
+  attr(:ctx, SessionContext, required: true)
+  attr(:non_scheduled_container_groups, :any, required: true)
+  attr(:section_slug, :string, required: true)
+  attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
+  attr(:request_path, :string, required: false)
+
+  def non_scheduled_container_groups(assigns) do
+    ~H"""
+    <div class="flex flex-row">
+      <div class="flex-1 flex flex-col">
+        <%= for %ScheduledContainerGroup{module_label: module_label, unit_label: unit_label, container_title: title, resources: scheduled_resources} <- @non_scheduled_container_groups do %>
+          <% container_label = module_label || unit_label %>
+          <div class="flex flex-row">
+            <div class="flex-1 flex flex-col mr-4">
+              <%= container_label %>: <%= title %>
+              <%= for %ScheduledSectionResource{
+                      resource: resource,
+                      purpose: purpose,
+                      progress: progress,
+                      raw_avg_score: raw_avg_score,
+                      resource_attempt_count: resource_attempt_count,
+                      effective_settings: effective_settings,
+                      graded: graded
+                    } <- scheduled_resources do %>
+                <div class="flex flex-row gap-4 mb-3">
+                  <.page_icon progress={progress} graded={graded} purpose={purpose} />
+                  <div class="flex-1">
+                    <.link
+                      href={
+                        Utils.lesson_live_path(@section_slug, resource.revision_slug,
+                          request_path: @request_path
+                        )
+                      }
+                      class="hover:no-underline"
+                    >
+                      <%= resource.title %>
+                    </.link>
+                  </div>
+                  <div :if={graded} class="flex flex-col">
+                    <Student.attempts_dropdown
+                      ctx={@ctx}
+                      section_slug={@section_slug}
+                      page_revision_slug={resource.revision_slug}
+                      attempt_summary={@historical_graded_attempt_summary}
+                      attempts_count={resource_attempt_count}
+                      effective_settings={effective_settings}
+                    />
+                    <Student.score_summary raw_avg_score={raw_avg_score} />
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
   attr(:is_current_week, :boolean, default: false)
 
   defp maybe_current_week_indicator(assigns) do
