@@ -226,11 +226,4 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     "jsonb_path_exists(objectives, '$.** ? (#{id_filter})')"
   end
 
-  defp build_objectives_conjunction(objective_ids) do
-    clauses =
-      Enum.map(objective_ids, fn id -> build_objectives_disjunction([id]) end)
-      |> Enum.join(" AND ")
-
-    "#{clauses}"
-  end
 end
