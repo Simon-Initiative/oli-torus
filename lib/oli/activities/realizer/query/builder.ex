@@ -19,9 +19,9 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       select(context, view_type)
       |> from()
       |> where(logic)
+      |> lateral_join()
       |> source(source)
       |> limit_offset(paging, view_type)
-      |> with_flattened_objectives()
       |> assemble()
 
     {sql, params}
@@ -32,10 +32,9 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       context,
       :sql,
       normalize_whitespace("""
-      #{context.with_flattened_objectives}
       #{context.select}
       #{context.from}
-      #{context.with_flattened_objectives_join}
+      #{context.lateral_join}
       WHERE #{context.source} AND (#{context.logic})
       #{context.limit_offset}
       """)
@@ -107,36 +106,20 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     end
   end
 
-  defp with_flattened_objectives(context) do
+  defp lateral_join(context) do
     Map.put(
       context,
-      :with_flattened_objectives,
+      :lateral_join,
       if context.exact_objectives do
         """
-        WITH flattened_objectives AS (
-          SELECT
-              revisions.id,
-              ARRAY_AGG(DISTINCT elem ORDER BY elem) AS objectives_array
-          FROM
-              revisions
-          JOIN
-              LATERAL (
-                  SELECT jsonb_array_elements_text(value) AS elem
-                  FROM jsonb_each(revisions.objectives)
-              ) AS elems ON true
-          GROUP BY
-              revisions.id
-        )
+        JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
+        from revisions, jsonb_each(revisions.objectives) group by id
+        ) AS count ON count.id = revisions.id
         """
       else
         ""
       end
     )
-    |> Map.put(:with_flattened_objectives_join,
-      if context.exact_objectives do
-        "JOIN flattened_objectives ON flattened_objectives.id = revisions.id"
-      else ""
-    end)
   end
 
   def normalize_whitespace(sql) do
@@ -182,11 +165,11 @@ defmodule Oli.Activities.Realizer.Query.Builder do
           ["(NOT (" <> build_objectives_disjunction(value) <> "))"]
 
         :equals ->
-          ["flattened_objectives.objectives_array = ARRAY[" <> Enum.join(value, ",") <> "]::text[]"]
+          ["(objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"]
 
         :does_not_equal ->
           [
-            "NOT (flattened_objectives.objectives_array = ARRAY[" <> Enum.join(value, ",") <> "]::text[])"
+            "NOT (objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"
           ]
       end
 
@@ -226,4 +209,11 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     "jsonb_path_exists(objectives, '$.** ? (#{id_filter})')"
   end
 
+  defp build_objectives_conjunction(objective_ids) do
+    clauses =
+      Enum.map(objective_ids, fn id -> build_objectives_disjunction([id]) end)
+      |> Enum.join(" AND ")
+
+    "#{clauses}"
+  end
 end
