@@ -16,7 +16,7 @@ defmodule Oli.Activities.Query.ExecutorTest do
       Seeder.create_activity(
         %{
           scope: :banked,
-          objectives: %{"1" => [1]},
+          objectives: %{"1" => [1], "2" => [1]},
           title: "1",
           content: %{model: %{stem: "this is the question"}}
         },
@@ -93,6 +93,21 @@ defmodule Oli.Activities.Query.ExecutorTest do
 
       paging = %Paging{limit: 1, offset: 0}
       logic = %Logic{conditions: %Expression{fact: :objectives, operator: :equals, value: [1]}}
+
+      {:ok, %Result{rowCount: 1, totalCount: 1}} =
+        Builder.build(logic, source, paging, :paged)
+        |> Executor.execute()
+    end
+
+    test "queries for NOT exact objectives via lateral join", %{publication: publication} do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 2, offset: 0}
+      logic = %Logic{conditions: %Expression{fact: :objectives, operator: :does_not_equal, value: [1]}}
 
       {:ok, %Result{rowCount: 1, totalCount: 1}} =
         Builder.build(logic, source, paging, :paged)

@@ -19,9 +19,9 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       select(context, view_type)
       |> from()
       |> where(logic)
-      |> lateral_join()
       |> source(source)
       |> limit_offset(paging, view_type)
+      |> with_flattened_objectives()
       |> assemble()
 
     {sql, params}
@@ -32,9 +32,10 @@ defmodule Oli.Activities.Realizer.Query.Builder do
       context,
       :sql,
       normalize_whitespace("""
+      #{context.with_flattened_objectives}
       #{context.select}
       #{context.from}
-      #{context.lateral_join}
+      #{context.with_flattened_objectives_join}
       WHERE #{context.source} AND (#{context.logic})
       #{context.limit_offset}
       """)
@@ -106,20 +107,36 @@ defmodule Oli.Activities.Realizer.Query.Builder do
     end
   end
 
-  defp lateral_join(context) do
+  defp with_flattened_objectives(context) do
     Map.put(
       context,
-      :lateral_join,
+      :with_flattened_objectives,
       if context.exact_objectives do
         """
-        JOIN LATERAL (select id, sum(jsonb_array_length(value)) as objectives_count
-        from revisions, jsonb_each(revisions.objectives) group by id
-        ) AS count ON count.id = revisions.id
+        WITH flattened_objectives AS (
+          SELECT
+              revisions.id,
+              ARRAY_AGG(DISTINCT elem ORDER BY elem) AS objectives_array
+          FROM
+              revisions
+          JOIN
+              LATERAL (
+                  SELECT jsonb_array_elements_text(value) AS elem
+                  FROM jsonb_each(revisions.objectives)
+              ) AS elems ON true
+          GROUP BY
+              revisions.id
+        )
         """
       else
         ""
       end
     )
+    |> Map.put(:with_flattened_objectives_join,
+      if context.exact_objectives do
+        "JOIN flattened_objectives ON flattened_objectives.id = revisions.id"
+      else ""
+    end)
   end
 
   def normalize_whitespace(sql) do
@@ -165,11 +182,11 @@ defmodule Oli.Activities.Realizer.Query.Builder do
           ["(NOT (" <> build_objectives_disjunction(value) <> "))"]
 
         :equals ->
-          ["(objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"]
+          ["flattened_objectives.objectives_array = ARRAY[" <> Enum.join(value, ",") <> "]::text[]"]
 
         :does_not_equal ->
           [
-            "NOT (objectives_count = #{length(value)} AND #{build_objectives_conjunction(value)})"
+            "NOT (flattened_objectives.objectives_array = ARRAY[" <> Enum.join(value, ",") <> "]::text[])"
           ]
       end
 
