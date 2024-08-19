@@ -5104,6 +5104,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 27px;
 }
 
+.h-\[291px\] {
+  height: 291px;
+}
+
 .h-\[30px\] {
   height: 30px;
 }
@@ -9198,6 +9202,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .opacity-90 {
   opacity: 0.9;
+}
+
+.opacity-\[0\.15\] {
+  opacity: 0.15;
 }
 
 .mix-blend-difference {
@@ -14743,6 +14751,10 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:opacity-80 {
   opacity: 0.8;
+}
+
+.dark .dark\:opacity-\[0\.3\] {
+  opacity: 0.3;
 }
 
 .dark .dark\:outline-neutral-700 {
