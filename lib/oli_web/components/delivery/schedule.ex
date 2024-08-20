@@ -201,20 +201,18 @@ defmodule OliWeb.Components.Delivery.Schedule do
     """
   end
 
-  def container_label(%{module_id: module_id, title: title} = assigns)
-      when not is_nil(module_id) do
+  def container_label(%{module_id: module_id} = assigns) when not is_nil(module_id) do
     ~H"""
     <h3 class="ml-12 dark:text-white text-base font-bold font-['Open Sans']">
-      <%= title %>
+      <%= @title %>
     </h3>
     """
   end
 
-  def container_label(%{unit_id: unit_id, unit_label: unit_label, title: title} = assigns)
-      when not is_nil(unit_id) do
+  def container_label(%{unit_id: unit_id} = assigns) when not is_nil(unit_id) do
     ~H"""
     <h3 class="dark:text-white text-xl font-bold font-['Open Sans']">
-      <%= "#{unit_label}: #{title}" %>
+      <%= "#{@unit_label}: #{@title}" %>
     </h3>
     """
   end
