@@ -56,7 +56,8 @@ defmodule Oli.Activities.Realizer.Selection do
 
   def fulfill(%Selection{count: count} = selection, %Source{} = source) do
 
-    {all, returned_count} = fulfill_from_bank(selection, source)
+    {all, _} = fulfill_from_bank(selection, source)
+    returned_count = Enum.count(all)
 
     if returned_count < count do
       {:partial, %Result{rows: all, rowCount: returned_count, totalCount: returned_count}}

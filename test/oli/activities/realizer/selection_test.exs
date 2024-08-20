@@ -131,7 +131,7 @@ defmodule Oli.Activities.ConditionsTest do
     }
 
     selection = selection(2, [expression(:objectives, :contains, [2])])
-    {:partial, result} = Selection.fulfill(selection, source)
+    {_, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 1
     assert Enum.at(result.rows, 0).resource_id == 2
