@@ -42,50 +42,20 @@ defmodule OliWeb.Workspace.Utils do
   attr :sub_menu_item, :map
 
   def sub_menu_item(%{sub_menu_item: %SubMenuItem{children: []} = item} = assigns) do
-    base_module =
-      case assigns.active_workspace do
-        :course_author -> OliWeb.Workspaces.CourseAuthor
-        :instructor -> OliWeb.Workspaces.Instructor
-        :student -> OliWeb.Workspaces.Student
-        _ -> raise "Unknown workspace: #{assigns.active_workspace}"
-      end
+    %{
+      active_workspace: active_workspace,
+      resource_slug: resource_slug,
+      sidebar_expanded: sidebar_expanded
+    } = assigns
 
-    item_view = item.view |> Atom.to_string() |> Macro.camelize()
+    route =
+      build_route(active_workspace, resource_slug, item.parent_view, item.view, sidebar_expanded)
 
-    view_module =
-      case assigns.active_workspace do
-        :course_author -> Module.concat([base_module, item_view <> "Live"])
-        :instructor -> Module.concat([base_module, "DashboardLive"])
-      end
-
-    assigns = assign(assigns, item: item, view_module: view_module)
+    assigns = assign(assigns, item: item, route: route)
 
     ~H"""
     <.link
-      navigate={
-        case @active_workspace do
-          :course_author ->
-            Routes.live_path(OliWeb.Endpoint, @view_module, @resource_slug,
-              sidebar_expanded: @sidebar_expanded
-            )
-
-          :instructor ->
-            if Map.get(@item, :parent_view) do
-              Routes.live_path(
-                OliWeb.Endpoint,
-                @view_module,
-                @resource_slug,
-                @item.parent_view,
-                @item.view,
-                sidebar_expanded: @sidebar_expanded
-              )
-            else
-              Routes.live_path(OliWeb.Endpoint, @view_module, @resource_slug, @item.view,
-                sidebar_expanded: @sidebar_expanded
-              )
-            end
-        end
-      }
+      navigate={@route}
       class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content
@@ -107,7 +77,7 @@ defmodule OliWeb.Workspace.Utils do
     ~H"""
     <div class="w-full relative">
       <.button
-        id={"button_for_#{@item.parent_view}"}
+        id={"button_for_#{@item.view}"}
         class="w-full h-[35px] px-0 flex-col justify-center items-center flex hover:no-underline"
         phx-click={
           JS.toggle(to: "##{@item_id}_children")
@@ -216,6 +186,38 @@ defmodule OliWeb.Workspace.Utils do
 
   defp active_view_in_children?(children, active_view) do
     Enum.any?(children, &(&1.view == active_view))
+  end
+
+  defp build_route(active_workspace, resource_slug, parent_view, view, sidebar_expanded) do
+    {_, _, [route]} =
+      case active_workspace do
+        :course_author ->
+          quote do:
+                  sigil_p(
+                    unquote(
+                      "/workspaces/course_author/#{resource_slug}/#{view}?sidebar_expanded=#{sidebar_expanded}"
+                    )
+                  )
+
+        :instructor ->
+          if parent_view do
+            quote do:
+                    sigil_p(
+                      unquote(
+                        "/workspaces/instructor/#{resource_slug}/#{parent_view}/#{view}?sidebar_expanded=#{sidebar_expanded}"
+                      )
+                    )
+          else
+            quote do:
+                    sigil_p(
+                      unquote(
+                        "/workspaces/instructor/#{resource_slug}/#{view}?sidebar_expanded=#{sidebar_expanded}"
+                      )
+                    )
+          end
+      end
+
+    route
   end
 
   def hierarchy(:course_author) do
