@@ -104,7 +104,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /*  console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
+        /* console.log(`${notificationType.toString()} notification handled [InputText]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
@@ -143,7 +143,6 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
                 saveTextLength(sText.toString());
                 saveInputText(sText.toString());
               }
-
               const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
