@@ -223,13 +223,7 @@ export const initializeActivity = createAsyncThunk(
     const stateOps = isHistoryMode ? globalizedInitState : [...sessionOps, ...globalizedInitState];
 
     const results = bulkApplyState(stateOps, defaultGlobalEnv);
-    console.log('INIT STATE', {
-      currentActivity,
-      currentActivityTree,
-      results,
-      globalizedInitState,
-      defaultGlobalEnv,
-    });
+    /* console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv }); */
 
     const applyStateHasErrors = results.some((r) => r.result !== null);
     if (applyStateHasErrors) {

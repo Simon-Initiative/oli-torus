@@ -251,7 +251,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       if (historyModeNavigation || reviewMode) {
         console.log(
           '[AllActivitiesInit] historyModeNavigation or reviewMode is ON, clearing sharedActivityInit',
-          { currentActivityTree },
         );
         sharedActivityInit.clear();
       }
@@ -561,7 +560,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // attempts are being constantly updated, if we are not careful it will re-render the activity
     // too many times. instead we want to only send the "initial" attempt state
     // activities should then keep track of updates internally and if needed request updates
-
     const activities = localActivityTree.map((activity: any) => {
       const attempt = currentActivityAttemptTree?.find(
         (a) => a?.activityId === activity.resourceId,
