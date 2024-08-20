@@ -1,11 +1,16 @@
 defmodule Oli.Delivery.ActivityProvider do
+  alias Oli.Repo
+  import Ecto.Query, warn: false
+
   alias Oli.Activities.Realizer.Query.Source
+  alias Oli.Activities.Realizer.Query.BankEntry
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
   alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
   alias Oli.Delivery.ActivityProvider.AttemptPrototype
   alias Oli.Utils.BibUtils
+  alias Oli.Resources.ResourceType
 
   @doc """
   Realizes and resolves activities in a page.
@@ -196,6 +201,20 @@ defmodule Oli.Delivery.ActivityProvider do
     |> Map.put(:prototypes, [prototype | Map.get(fulfillment_state, :prototypes)])
   end
 
+  # Just in time populate the meta data for activity bank questions
+  defp do_fulfill(
+         %{source: %{bank: nil, publication_id: publication_id}} = fulfillment_state,
+         %{"type" => "selection"} = model_component,
+         group_id,
+         survey_id,
+         user,
+         section_slug
+       ) do
+    fulfillment_state = populate_bank(fulfillment_state, publication_id)
+
+    do_fulfill(fulfillment_state, model_component, group_id, survey_id, user, section_slug)
+  end
+
   defp do_fulfill(
          fulfillment_state,
          %{"type" => "selection"} = model_component,
@@ -304,12 +323,55 @@ defmodule Oli.Delivery.ActivityProvider do
     )
   end
 
+  defp populate_bank(fulfillment_state, publication_id) do
+    activity_type_id = ResourceType.id_for_activity()
+
+    query =
+      from r in Oli.Resources.Revision,
+        join: pr in Oli.Publishing.PublishedResource,
+        on: pr.revision_id == r.id,
+        where: pr.publication_id == ^publication_id,
+        where: r.deleted == false,
+        where: r.resource_type_id == ^activity_type_id,
+        where: r.scope == :banked,
+        select: %{
+          resource_id: pr.resource_id,
+          tags: r.tags,
+          objectives: r.objectives,
+          activity_type_id: r.activity_type_id
+        }
+
+    bank =
+      Repo.all(query)
+      |> Enum.map(fn r -> BankEntry.from_map(r) end)
+      |> Enum.shuffle()
+
+    source = %Source{fulfillment_state.source | bank: bank}
+
+    %{fulfillment_state | source: source}
+  end
+
   defp reference_to_prototype(activity_reference, group_id, survey_id) do
     %AttemptPrototype{
       activity_id: activity_reference["activity_id"],
       survey_id: survey_id,
       group_id: group_id,
       selection_id: nil,
+      inherit_state_from_previous: false
+    }
+  end
+
+  defp revision_to_prototype(
+         %BankEntry{resource_id: resource_id},
+         group_id,
+         survey_id,
+         selection_id
+       ) do
+    %AttemptPrototype{
+      activity_id: resource_id,
+      survey_id: survey_id,
+      group_id: group_id,
+      selection_id: selection_id,
       inherit_state_from_previous: false
     }
   end

@@ -99,6 +99,24 @@ defmodule Oli.Activities.Query.ExecutorTest do
         |> Executor.execute()
     end
 
+    test "queries for NOT exact objectives via lateral join", %{publication: publication} do
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: ""
+      }
+
+      paging = %Paging{limit: 2, offset: 0}
+
+      logic = %Logic{
+        conditions: %Expression{fact: :objectives, operator: :does_not_equal, value: [1]}
+      }
+
+      {:ok, %Result{rowCount: 1, totalCount: 1}} =
+        Builder.build(logic, source, paging, :paged)
+        |> Executor.execute()
+    end
+
     test "queries for full text", %{publication: publication} do
       source = %Source{
         publication_id: publication.id,
