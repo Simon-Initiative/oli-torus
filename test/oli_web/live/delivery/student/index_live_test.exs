@@ -1036,7 +1036,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", page_4.title)
     end
 
-    test "can not see upcoming agenda if this option is disabled", %{
+    test "can see upcoming agenda even if the section is not yet scheduled", %{
       conn: conn,
       section: section,
       page_1: page_1
@@ -1044,9 +1044,8 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       stub_current_time(~U[2023-11-03 21:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      refute has_element?(view, "div", "Upcoming Agenda")
-      refute has_element?(view, "div", "This Week")
-      refute has_element?(view, "div", page_1.title)
+      assert has_element?(view, "div", "Upcoming Agenda")
+      assert has_element?(view, "div", page_1.title)
     end
 
     test "do not show hidden pages in upcoming agenda", %{
