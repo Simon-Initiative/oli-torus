@@ -93,6 +93,9 @@ defmodule OliWeb.Pow.UserRoutes do
 
           # if section is a string, then it represents a section slug from a confirmation email
           # where a user will be automatically redirected to the enroll page after sign in
+          %{section: _section, user_type: :student} ->
+            ~p"/?#{params_for(conn, [:request_path, :section, :from_invitation_link?])}"
+
           %{section: _section} ->
             Pow.Phoenix.Routes.session_path(
               conn,

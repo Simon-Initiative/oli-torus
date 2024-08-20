@@ -111,7 +111,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker.TableModel do
     assigns = Map.merge(assigns, %{graded: data.revision.graded})
 
     ~H"""
-    <%= if @graded, do: "Graded", else: "Practice" %>
+    <%= if @graded, do: "Scored", else: "Practice" %>
     """
   end
 

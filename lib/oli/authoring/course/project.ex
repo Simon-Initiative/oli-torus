@@ -24,7 +24,7 @@ defmodule Oli.Authoring.Course.Project do
     field(:latest_analytics_snapshot_timestamp, :utc_datetime)
     field(:latest_datashop_snapshot_url, :string)
     field(:latest_datashop_snapshot_timestamp, :utc_datetime)
-    field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v1)
+    field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
     field(:allow_transfer_payment_codes, :boolean, default: false)
     field(:welcome_title, :map, default: %{})
 

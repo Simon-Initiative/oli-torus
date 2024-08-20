@@ -33,6 +33,7 @@ describe('ordering delivery', () => {
         renderPointMarkers: false,
         isAnnotationLevel: false,
         variables: {},
+        pageLinkParams: {},
       },
       preview: false,
     };

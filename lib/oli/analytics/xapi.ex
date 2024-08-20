@@ -79,6 +79,7 @@ defmodule Oli.Analytics.XAPI do
     # the context for the video event plus the page_attempt_number and page
     # resource_id
 
+    # only get the latest attempt for the page if there are multiple attempts
     query =
       from p in Oli.Delivery.Attempts.Core.ResourceAttempt,
         join: a in Oli.Delivery.Attempts.Core.ResourceAccess,
@@ -88,6 +89,8 @@ defmodule Oli.Analytics.XAPI do
         join: sr in Oli.Delivery.Sections.SectionResource,
         on: a.resource_id == sr.resource_id and a.section_id == sr.section_id,
         where: p.attempt_guid == ^page_attempt_guid,
+        order_by: [desc: p.attempt_number],
+        limit: 1,
         select:
           {p.attempt_number, a.resource_id, a.section_id, a.user_id, sr.project_id,
            spp.publication_id}

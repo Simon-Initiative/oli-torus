@@ -231,7 +231,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   defp maybe_filter_by_card(students, :low_proficiency, filter_by) do
     Enum.filter(students, fn student ->
-      Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
+      student.overall_proficiency == "Low" ||
         (is_nil(student.overall_proficiency) and is_learner_selected(student, filter_by))
     end)
   end
@@ -1292,8 +1292,8 @@ defmodule OliWeb.Components.Delivery.Students do
         end),
       low_proficiency:
         Enum.count(students, fn student ->
-          (Metrics.proficiency_range(student.overall_proficiency) == "Low" ||
-             is_nil(student.overall_proficiency)) and is_learner_selected(student, filter_by)
+          student.overall_proficiency == "Low" ||
+            (is_nil(student.overall_proficiency) and is_learner_selected(student, filter_by))
         end),
       zero_interaction_in_a_week:
         Enum.count(students, fn student ->

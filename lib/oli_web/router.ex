@@ -226,6 +226,8 @@ defmodule OliWeb.Router do
   pipeline :put_license, do: plug(:set_license)
   def set_license(conn, _), do: Plug.Conn.assign(conn, :has_license, true)
 
+  pipeline :student, do: plug(Oli.Plugs.SetUserType, :student)
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -819,7 +821,8 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected,
+      :delivery,
+      :delivery_layout,
       :pow_email_layout
     ])
 
@@ -981,6 +984,7 @@ defmodule OliWeb.Router do
       :set_sidebar,
       :require_section,
       :delivery,
+      :student,
       :delivery_protected,
       :require_exploration_pages,
       :maybe_gated_resource,
@@ -1002,7 +1006,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
-          OliWeb.LiveSessionPlugs.SetNotificationBadges
+          OliWeb.LiveSessionPlugs.SetNotificationBadges,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1024,7 +1029,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.PrologueLive)
         end
@@ -1043,7 +1049,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.LessonLive)
           live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
@@ -1061,7 +1068,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.LessonLive, metadata: %{route_name: :adaptive_lesson})
         end

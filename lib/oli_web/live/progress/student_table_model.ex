@@ -30,7 +30,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
           title: node.revision.title,
           type:
             if node.revision.graded do
-              "Graded"
+              "Scored"
             else
               "Practice"
             end,
@@ -132,7 +132,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
     {fn r ->
        case name do
          :score ->
-           if r.type == "Graded" and !is_nil(r.score) and r.out_of != 0 do
+           if r.type == "Scored" and !is_nil(r.score) and r.out_of != 0 do
              r.score / r.out_of
            else
              0.0
@@ -161,7 +161,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
   end
 
   def custom_render(_assigns, row, %ColumnSpec{name: :score}) do
-    if row.type == "Graded" and !is_nil(row.score) do
+    if row.type == "Scored" and !is_nil(row.score) do
       "#{row.score} / #{row.out_of}"
     else
       ""

@@ -22,7 +22,6 @@ defmodule OliWeb.DeliveryController do
   @allow_configure_section_roles [
     PlatformRoles.get_role(:system_administrator),
     PlatformRoles.get_role(:institution_administrator),
-    PlatformRoles.get_role(:institution_instructor),
     ContextRoles.get_role(:context_administrator),
     ContextRoles.get_role(:context_instructor)
   ]
@@ -400,41 +399,30 @@ defmodule OliWeb.DeliveryController do
   end
 
   def show_enroll(conn, params) do
-    case Sections.available?(conn.assigns.section) do
-      {:available, section} ->
-        # redirect to course index if user is already signed in and enrolled
-        with {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
-             true <- Sections.is_enrolled?(user.id, section.slug) do
-          redirect(conn,
-            to: ~p"/sections/#{section.slug}"
-          )
-        else
-          {:redirect, nil} ->
-            # guest user cant access courses that require enrollment
-            login_params = [
-              section: section.slug,
-              from_invitation_link?: params["from_invitation_link?"] || false
-            ]
+    section = conn.assigns.section
+    from_invitation_link? = params["from_invitation_link?"] || false
 
-            redirect_path =
-              ~p"/session/new?#{login_params}"
-
-            conn
-            |> redirect(to: redirect_path)
-
-          _ ->
-            section = Oli.Repo.preload(section, [:base_project])
-
-            render(conn, "enroll.html",
-              section: section,
-              from_invitation_link?: params["from_invitation_link?"] || false,
-              auto_enroll_as_guest: params["auto_enroll_as_guest"] || false
-            )
-        end
-
+    with {:available, section} <- Sections.available?(section),
+         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
+         {:enrolled?, false} <- {:enrolled?, Sections.is_enrolled?(user.id, section.slug)} do
+      render(conn, "enroll.html",
+        section: Oli.Repo.preload(section, [:base_project]),
+        from_invitation_link?: from_invitation_link?,
+        auto_enroll_as_guest: params["auto_enroll_as_guest"] || false
+      )
+    else
       {:unavailable, reason} ->
-        conn
-        |> render_section_unavailable(reason)
+        render_section_unavailable(conn, reason)
+
+      # redirect to course index if user is already signed in and enrolled
+      {:enrolled?, true} ->
+        redirect(conn, to: ~p"/sections/#{section.slug}")
+
+      # guest user cannot access courses that require enrollment
+      {:redirect, nil} ->
+        redirect(conn,
+          to: ~p"/?#{[section: section.slug, from_invitation_link?: from_invitation_link?]}"
+        )
     end
   end
 

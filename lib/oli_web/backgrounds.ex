@@ -79,10 +79,10 @@ defmodule OliWeb.Backgrounds do
   def instructor_dashboard_header(assigns) do
     ~H"""
     <svg
-      width="100%"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
+      width="120%"
       height="291"
+      viewBox="0 0 100% 291"
+      preserveAspectRatio="none"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -110,7 +110,11 @@ defmodule OliWeb.Backgrounds do
         <g style="mix-blend-mode:color-burn" opacity="0.25">
           <rect width="100%" height="291" fill="url(#pattern0_494_8778)" />
         </g>
-        <rect y="0" width="100%" height="309" fill="black" fill-opacity="0.24" />
+        <rect
+          width="100%"
+          height="309"
+          class="fill-white dark:fill-black opacity-[0.15] dark:opacity-[0.3]"
+        />
       </g>
       <defs>
         <filter
@@ -505,55 +509,50 @@ defmodule OliWeb.Backgrounds do
     <svg
       class="w-full h-full"
       preserveAspectRatio="none"
-      viewBox="0 0 1312 1007"
+      viewBox="0 0 1322 1007"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
     >
-      <g filter="url(#filter0_f_494_5035)">
-        <ellipse cx="544.285" cy="1263.62" rx="455.013" ry="599.233" fill="#0062F2" />
-      </g>
-      <g filter="url(#filter1_f_494_5035)">
-        <ellipse cx="874.955" cy="595.883" rx="386.693" ry="509.132" fill="#B333CC" />
-      </g>
-      <g style="mix-blend-mode:color-burn" opacity="0.25">
-        <rect y="-70" width="1749" height="1333" fill="url(#pattern0_494_5035)" />
+      <g clip-path="url(#clip0_26_6935)">
+        <rect width="1322" height="1007" fill="#B333CC" />
+        <g filter="url(#filter0_f_26_6935)">
+          <ellipse cx="411.404" cy="1007.47" rx="343.927" ry="452.684" fill="#0062F2" />
+        </g>
+        <g filter="url(#filter1_f_26_6935)">
+          <ellipse cx="661.344" cy="503.034" rx="292.286" ry="384.618" fill="#B333CC" />
+        </g>
+        <rect x="-2.01514" width="1322" height="1069.29" fill="black" fill-opacity="0.24" />
       </g>
       <defs>
         <filter
-          id="filter0_f_494_5035"
-          x="-419.728"
-          y="155.384"
-          width="1928.03"
-          height="2216.47"
+          id="filter0_f_26_6935"
+          x="-441.523"
+          y="45.7825"
+          width="1705.85"
+          height="1923.37"
           filterUnits="userSpaceOnUse"
           color-interpolation-filters="sRGB"
         >
           <feFlood flood-opacity="0" result="BackgroundImageFix" />
           <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
-          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_494_5035" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_26_6935" />
         </filter>
         <filter
-          id="filter1_f_494_5035"
-          x="-20.7375"
-          y="-422.249"
-          width="1791.39"
-          height="2036.26"
+          id="filter1_f_26_6935"
+          x="-139.941"
+          y="-390.584"
+          width="1602.57"
+          height="1787.24"
           filterUnits="userSpaceOnUse"
           color-interpolation-filters="sRGB"
         >
           <feFlood flood-opacity="0" result="BackgroundImageFix" />
           <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
-          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_494_5035" />
+          <feGaussianBlur stdDeviation="254.5" result="effect1_foregroundBlur_26_6935" />
         </filter>
-        <pattern
-          id="pattern0_494_5035"
-          patternContentUnits="objectBoundingBox"
-          width="0.171527"
-          height="0.225056"
-        >
-          <use xlink:href="#image0_494_5035" transform="scale(8.57633e-05 0.000112528)" />
-        </pattern>
+        <clipPath id="clip0_26_6935">
+          <rect width="1322" height="1007" fill="white" />
+        </clipPath>
       </defs>
     </svg>
     """
