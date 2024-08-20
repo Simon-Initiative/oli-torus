@@ -19,16 +19,18 @@ defmodule OliWeb.Workspace.Utils do
 
   def sub_menu(assigns) do
     ~H"""
-    <.title {assigns} />
-    <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
-      <.sub_menu_item
-        :for={sub_menu_item <- @hierarchy}
-        sub_menu_item={sub_menu_item}
-        sidebar_expanded={@sidebar_expanded}
-        active_view={@active_view}
-        active_workspace={@active_workspace}
-        resource_slug={@resource_slug}
-      />
+    <div id="sub_menu">
+      <.title {assigns} />
+      <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
+        <.sub_menu_item
+          :for={sub_menu_item <- @hierarchy}
+          sub_menu_item={sub_menu_item}
+          sidebar_expanded={@sidebar_expanded}
+          active_view={@active_view}
+          active_workspace={@active_workspace}
+          resource_slug={@resource_slug}
+        />
+      </div>
     </div>
     """
   end
@@ -172,14 +174,8 @@ defmodule OliWeb.Workspace.Utils do
 
   def title(assigns) do
     ~H"""
-    <div class="w-full">
-      <%= if @sidebar_expanded do %>
-        <h2 class="truncate text-[14px] h-[24px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6 uppercase">
-          <%= @resource_title %>
-        </h2>
-      <% else %>
-        <div class="w-9 m-auto border border-zinc-500"></div>
-      <% end %>
+    <div class={"#{if @sidebar_expanded, do: "block", else: "hidden"} truncate text-[14px] h-[24px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6 uppercase"}>
+      <%= @resource_title %>
     </div>
     """
   end

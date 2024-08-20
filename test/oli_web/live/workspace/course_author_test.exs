@@ -507,7 +507,6 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
-      assert has_element?(view, "h2", project.title)
       assert has_element?(view, "div", project.title)
     end
 
