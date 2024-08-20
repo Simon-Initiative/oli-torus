@@ -1878,6 +1878,18 @@ defmodule Oli.Delivery.Sections do
     scheduled_section_resources
   end
 
+  @doc """
+  This function is the equivalent to get_ordered_schedule/3 but without the scheduling information,
+  and it is aimed to be used in sections that do not have a schedule yet.
+
+  Returns a map of all section resources for the given section, grouped by container and sorted by numbering index.
+
+  %{{nil, nil} => sorted_container_groups}
+
+  * {nil, nil} is used as a key instead of {month, year}, since the section is not yet scheduled
+  and we need to respect the same expected output format as get_ordered_schedule/3.
+  """
+
   def get_not_scheduled_agenda(%Section{analytics_version: :v1} = section, current_user_id) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
