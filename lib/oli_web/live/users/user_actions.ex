@@ -9,7 +9,7 @@ defmodule OliWeb.Users.Actions do
   attr(:csrf_token, :any, required: true)
   attr(:password_reset_link, :string, default: "")
 
-  def render(assigns) do
+  def user_actions(assigns) do
     {resend, reset} =
       case assigns.for_author do
         true -> {:resend_author_confirmation_link, :send_author_password_reset_link}
@@ -102,11 +102,28 @@ defmodule OliWeb.Users.Actions do
         </button>
       <% end %>
 
+      <button class="btn btn-warning" phx-click="act_as_user" phx-value-id={@user.id}>
+        Act as User
+      </button>
+
       <div class="dropdown-divider"></div>
 
       <button class="btn btn-danger" phx-click="show_delete_account_modal" phx-value-id={@user.id}>
         Delete Account
       </button>
+    </div>
+    """
+  end
+
+  def lti_user_actions(assigns) do
+    ~H"""
+    <div>
+      <div class="text-secondary my-4">LTI users are managed by their LMS</div>
+      <div>
+        <button class="btn btn-warning" phx-click="act_as_user" phx-value-id={@user.id}>
+          Act as User
+        </button>
+      </div>
     </div>
     """
   end

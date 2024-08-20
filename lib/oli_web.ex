@@ -34,6 +34,19 @@ defmodule OliWeb do
     end
   end
 
+  def new_controller do
+    quote do
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: OliWeb.Layouts]
+
+      import Plug.Conn
+      import OliWeb.Gettext
+
+      unquote(verified_routes())
+    end
+  end
+
   def html do
     quote do
       use Phoenix.Component

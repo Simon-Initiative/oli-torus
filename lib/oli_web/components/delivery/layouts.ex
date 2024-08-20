@@ -109,20 +109,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div>
       <nav id="desktop-nav-menu" class={["
-        fixed
-        z-50
-        w-full
-        hidden
-        h-[100vh]
-        md:flex
-        flex-col
-        justify-between
-        md:w-[190px]
-        shadow-sm
-        bg-delivery-navbar
-        dark:bg-delivery-navbar-dark
-        overflow-hidden
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
+          fixed
+          z-50
+          w-full
+          hidden
+          h-[100vh]
+          md:flex
+          flex-col
+          justify-between
+          md:w-[190px]
+          shadow-sm
+          bg-delivery-navbar
+          dark:bg-delivery-navbar-dark
+          overflow-hidden
+        ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
         <div class="w-full">
           <div
             class={[
@@ -162,17 +162,17 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <nav
         id="mobile-nav-menu"
         class="
-        fixed
-        z-50
-        w-full
-        mt-14
-        hidden
-        md:hidden
-        flex-col
-        shadow-sm
-        bg-delivery-navbar
-        dark:bg-delivery-navbar-dark
-      "
+          fixed
+          z-50
+          w-full
+          mt-14
+          hidden
+          md:hidden
+          flex-col
+          shadow-sm
+          bg-delivery-navbar
+          dark:bg-delivery-navbar-dark
+        "
         phx-click-away={JS.hide()}
       >
         <.sidebar_links
@@ -197,6 +197,40 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </nav>
     </div>
     """
+  end
+
+  attr :ctx, SessionContext, required: true
+  slot :inner_block, required: true
+
+  def maybe_masquerade_as(assigns) do
+    if assigns[:ctx].masquerading_as do
+      ~H"""
+      <div class="relative h-screen w-full border border-color-[#d946ef]">
+        <div class="bg-[#d946ef] text-white px-6 py-2">
+          <div class="container mx-auto">
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="text-lg font-bold">
+                  Acting as <%= OliWeb.Components.Delivery.Utils.user_name(dbg(@ctx.user.name)) %>
+                </p>
+              </div>
+              <div>
+                <%= form_for %{}, ~p"/admin/unmasquerade", fn _f -> %>
+                  <button type="submit" class="px-2 py-1.5 border border-white rounded">Exit</button>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%= render_slot(@inner_block) %>
+      </div>
+      """
+    else
+      ~H"""
+      <%= render_slot(@inner_block) %>
+      """
+    end
   end
 
   attr(:section, Section, default: nil)
