@@ -2199,7 +2199,11 @@ defmodule Oli.Delivery.Sections do
         unit_label: get_in(containers_data_map, [unit_id, :label]),
         container_title: get_in(containers_data_map, [parent_id, :title]),
         progress: progress_percentage(progress_per_resource_id[parent_id]),
-        resources: scheduled_resources,
+        resources:
+          if(opts[:include_min_contained_numbering_index],
+            do: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
+            else: scheduled_resources
+          ),
         min_contained_numbering_index:
           if(opts[:include_min_contained_numbering_index],
             do:
@@ -2229,7 +2233,11 @@ defmodule Oli.Delivery.Sections do
         container_title: get_in(containers_data_map, [parent_id, :title]),
         progress: progress_percentage(progress_per_resource_id[parent_id]),
         graded: graded,
-        resources: scheduled_resources,
+        resources:
+          if(opts[:include_min_contained_numbering_index],
+            do: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
+            else: scheduled_resources
+          ),
         min_contained_numbering_index:
           if(opts[:include_min_contained_numbering_index],
             do:

@@ -1400,21 +1400,11 @@ defmodule Oli.Delivery.SectionsTest do
     test "get_not_scheduled_agenda", %{
       section: section,
       student1: student1,
-      unit1: unit1,
-      unscored_page1: page1,
-      scored_page2: page2,
-      page3: page3,
-      page4: page4,
-      page5: page5
+      unit1: unit1
     } do
       {:ok, _} = Sections.rebuild_contained_pages(section)
 
       unit1_resource_id = unit1.resource_id
-      page1_resource_id = page1.resource_id
-      page2_resource_id = page2.resource_id
-      page3_resource_id = page3.resource_id
-      page4_resource_id = page4.resource_id
-      page5_resource_id = page5.resource_id
 
       assert %{
                {nil, nil} => [
@@ -1423,182 +1413,21 @@ defmodule Oli.Delivery.SectionsTest do
                    unit_label: "Unit 1",
                    graded: nil,
                    progress: nil,
-                   resources: [
-                     %ScheduledSectionResource{
-                       resource: %Oli.Delivery.Sections.SectionResource{
-                         resource_id: ^page1_resource_id,
-                         title: "Unscored page one"
-                       },
-                       purpose: :foundation,
-                       progress: nil,
-                       raw_avg_score: nil,
-                       resource_attempt_count: 0,
-                       effective_settings: %Oli.Delivery.Settings.Combined{
-                         resource_id: ^page1_resource_id
-                       }
-                     },
-                     %ScheduledSectionResource{
-                       resource: %Oli.Delivery.Sections.SectionResource{
-                         resource_id: ^page2_resource_id,
-                         title: "Scored page two"
-                       },
-                       purpose: :foundation,
-                       progress: nil,
-                       raw_avg_score: nil,
-                       resource_attempt_count: 0,
-                       effective_settings: %Oli.Delivery.Settings.Combined{
-                         resource_id: ^page2_resource_id
-                       }
-                     },
-                     %ScheduledSectionResource{
-                       resource: %Oli.Delivery.Sections.SectionResource{
-                         resource_id: ^page3_resource_id,
-                         title: "Assessment 3"
-                       },
-                       purpose: :foundation,
-                       progress: nil,
-                       raw_avg_score: nil,
-                       resource_attempt_count: 0,
-                       effective_settings: %Oli.Delivery.Settings.Combined{
-                         resource_id: ^page3_resource_id
-                       }
-                     },
-                     %ScheduledSectionResource{
-                       resource: %Oli.Delivery.Sections.SectionResource{
-                         resource_id: ^page4_resource_id,
-                         title: "Assessment 4"
-                       },
-                       purpose: :foundation,
-                       progress: nil,
-                       raw_avg_score: nil,
-                       resource_attempt_count: 0,
-                       effective_settings: %Oli.Delivery.Settings.Combined{
-                         resource_id: ^page4_resource_id
-                       }
-                     },
-                     %ScheduledSectionResource{
-                       resource: %Oli.Delivery.Sections.SectionResource{
-                         resource_id: ^page5_resource_id,
-                         title: "Assessment 5"
-                       },
-                       purpose: :foundation,
-                       progress: nil,
-                       raw_avg_score: nil,
-                       resource_attempt_count: 0,
-                       effective_settings: %Oli.Delivery.Settings.Combined{
-                         resource_id: ^page5_resource_id
-                       }
-                     }
-                   ]
+                   resources: ordered_resources
                  }
                ]
              } =
                Sections.get_not_scheduled_agenda(section, student1.id)
 
-      # [
-      #   {
-      #     {1, 2023},
-      #     [
-      #       {1,
-      #        [
-      #          {{~U[2023-01-25 23:59:59Z], ~U[2023-01-27 23:59:59Z]},
-      #           [
-      #             %ScheduledContainerGroup{
-      #               unit_id: ^unit1_resource_id,
-      #               unit_label: "Unit 1",
-      #               graded: true,
-      #               progress: nil,
-      #               resources: [
-      #                 %ScheduledSectionResource{
-      #                   resource: %Oli.Delivery.Sections.SectionResource{
-      #                     scheduling_type: :due_by,
-      #                     manually_scheduled: true,
-      #                     start_date: ~U[2023-01-25 23:59:59Z],
-      #                     end_date: ~U[2023-01-27 23:59:59Z],
-      #                     resource_id: ^page3_resource_id,
-      #                     title: "Assessment 3"
-      #                   },
-      #                   purpose: :foundation,
-      #                   progress: nil,
-      #                   raw_avg_score: nil,
-      #                   resource_attempt_count: 0,
-      #                   effective_settings: %Oli.Delivery.Settings.Combined{
-      #                     resource_id: ^page3_resource_id
-      #                   }
-      #                 }
-      #               ]
-      #             }
-      #           ]}
-      #        ]}
-      #     ]
-      #   },
-      #   {{2, 2023},
-      #    [
-      #      {2,
-      #       [
-      #         {{~U[2023-02-01 23:59:59Z], ~U[2023-02-04 23:59:59Z]},
-      #          [
-      #            %ScheduledContainerGroup{
-      #              unit_id: ^unit1_resource_id,
-      #              unit_label: "Unit 1",
-      #              graded: true,
-      #              progress: nil,
-      #              resources: [
-      #                %ScheduledSectionResource{
-      #                  resource: %Oli.Delivery.Sections.SectionResource{
-      #                    scheduling_type: :due_by,
-      #                    manually_scheduled: true,
-      #                    start_date: ~U[2023-02-01 23:59:59Z],
-      #                    end_date: ~U[2023-02-04 23:59:59Z],
-      #                    resource_id: ^page4_resource_id,
-      #                    title: "Assessment 4"
-      #                  },
-      #                  purpose: :foundation,
-      #                  progress: nil,
-      #                  raw_avg_score: nil,
-      #                  resource_attempt_count: 0,
-      #                  effective_settings: %Oli.Delivery.Settings.Combined{
-      #                    resource_id: ^page4_resource_id
-      #                  }
-      #                }
-      #              ]
-      #            }
-      #          ]}
-      #       ]},
-      #      {3,
-      #       [
-      #         {{~U[2023-02-06 23:59:59Z], ~U[2023-02-08 23:59:59Z]},
-      #          [
-      #            %ScheduledContainerGroup{
-      #              unit_id: ^unit1_resource_id,
-      #              unit_label: "Unit 1",
-      #              graded: true,
-      #              progress: nil,
-      #              resources: [
-      #                %ScheduledSectionResource{
-      #                  resource: %Oli.Delivery.Sections.SectionResource{
-      #                    scheduling_type: :due_by,
-      #                    manually_scheduled: true,
-      #                    start_date: ~U[2023-02-06 23:59:59Z],
-      #                    end_date: ~U[2023-02-08 23:59:59Z],
-      #                    resource_id: ^page5_resource_id,
-      #                    title: "Assessment 5"
-      #                  },
-      #                  purpose: :foundation,
-      #                  progress: nil,
-      #                  raw_avg_score: nil,
-      #                  resource_attempt_count: 0,
-      #                  effective_settings: %Oli.Delivery.Settings.Combined{
-      #                    resource_id: ^page5_resource_id
-      #                  }
-      #                }
-      #              ]
-      #            }
-      #          ]}
-      #       ]}
-      #    ]}
-      # ] =
-      #   Sections.get_not_scheduled_agenda(section, student1.id)
+      # verify that the resources are sorted by hierarchy (numbering index)
+      assert [
+               "Unscored page one",
+               "Scored page two",
+               "Assessment 4",
+               "Assessment 5",
+               "Assessment 3"
+             ] =
+               Enum.map(ordered_resources, fn res -> res.resource.title end)
     end
   end
 
