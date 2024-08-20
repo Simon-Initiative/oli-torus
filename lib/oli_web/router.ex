@@ -7,7 +7,6 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
-  import PhoenixStorybook.Router
 
   import Oli.Plugs.EnsureAdmin
 
@@ -227,15 +226,13 @@ defmodule OliWeb.Router do
   pipeline :put_license, do: plug(:set_license)
   def set_license(conn, _), do: Plug.Conn.assign(conn, :has_license, true)
 
+  pipeline :student, do: plug(Oli.Plugs.SetUserType, :student)
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
-
-  scope "/" do
-    storybook_assets()
-  end
 
   scope "/" do
     pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
@@ -788,19 +785,15 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  ###
-  # Section Routes
-  ###
-
-  ### Sections - Workspaces
-  scope "/sections/workspace/", OliWeb do
+  ### Workspaces
+  scope "/workspaces/", OliWeb.Workspace do
     pipe_through([
       :browser,
       :authoring_and_delivery,
       :set_sidebar
     ])
 
-    live_session :delivery_workspace,
+    live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
@@ -808,11 +801,15 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode
       ] do
-      live("/course_author", Workspace.CourseAuthor)
-      live("/instructor", Workspace.Instructor)
-      live("/student", Workspace.Student)
+      live("/course_author", CourseAuthor)
+      live("/instructor", Instructor)
+      live("/student", Student)
     end
   end
+
+  ###
+  # Section Routes
+  ###
 
   scope "/sections", OliWeb do
     pipe_through([:browser])
@@ -824,7 +821,8 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected,
+      :delivery,
+      :delivery_layout,
       :pow_email_layout
     ])
 
@@ -986,6 +984,7 @@ defmodule OliWeb.Router do
       :set_sidebar,
       :require_section,
       :delivery,
+      :student,
       :delivery_protected,
       :require_exploration_pages,
       :maybe_gated_resource,
@@ -1007,7 +1006,8 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
-          OliWeb.LiveSessionPlugs.SetNotificationBadges
+          OliWeb.LiveSessionPlugs.SetNotificationBadges,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
@@ -1029,7 +1029,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.PrologueLive)
         end
@@ -1048,7 +1049,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.LessonLive)
           live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
@@ -1066,7 +1068,8 @@ defmodule OliWeb.Router do
             OliWeb.LiveSessionPlugs.SetBrand,
             OliWeb.LiveSessionPlugs.SetPreviewMode,
             OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath
+            OliWeb.LiveSessionPlugs.SetRequestPath,
+            OliWeb.LiveSessionPlugs.SetPaywallSummary
           ] do
           live("/", Delivery.Student.LessonLive, metadata: %{route_name: :adaptive_lesson})
         end
@@ -1582,8 +1585,6 @@ defmodule OliWeb.Router do
   if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
-
-    live_storybook("/storybook", backend_module: OliWeb.Storybook)
 
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])

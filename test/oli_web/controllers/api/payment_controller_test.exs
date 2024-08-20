@@ -218,6 +218,8 @@ defmodule OliWeb.PaymentControllerTest do
   end
 
   defp setup_session(%{conn: conn}) do
+    stub_real_current_time()
+
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)

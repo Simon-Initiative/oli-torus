@@ -776,7 +776,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
     end
   end
 
@@ -790,6 +790,42 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, "h3", "Introduction")
       assert has_element?(view, "h3", "Building a Phoenix app")
       assert has_element?(view, "h3", "Implementing LiveView")
+    end
+
+    test "renders paywall message when grace period is not over (or gets redirected when over)",
+         %{
+           conn: conn,
+           section: section
+         } do
+      stub_current_time(~U[2024-10-15 20:00:00Z])
+
+      {:ok, product} =
+        Sections.update_section(section, %{
+          type: :blueprint,
+          registration_open: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 10),
+          has_grace_period: true,
+          grace_period_days: 18,
+          start_date: ~U[2024-10-15 20:00:00Z],
+          end_date: ~U[2024-11-30 20:00:00Z]
+        })
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(product.slug))
+
+      assert has_element?(
+               view,
+               "div[id=pay_early_message]",
+               "You have 18 more days remaining in your grace period access of this course"
+             )
+
+      # Grace period is over
+      stub_current_time(~U[2024-11-13 20:00:00Z])
+
+      redirect_path = "/sections/#{product.slug}/payment"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, Utils.learn_live_path(product.slug))
     end
 
     test "can see unit intro as first slider card and play the video (if provided)", %{
@@ -2033,6 +2069,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(view) =~ "Page 14"
       refute render(view) =~ "Page 15"
     end
+
+    test "do not show hidden pages", %{
+      conn: conn,
+      section: section,
+      page_7: page_7
+    } do
+      # Set page 7 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_7.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute render(view) =~ "Page 7"
+    end
   end
 
   describe "student" do
@@ -2748,7 +2798,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections/workspace/student?sidebar_expanded=true")
+      assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{

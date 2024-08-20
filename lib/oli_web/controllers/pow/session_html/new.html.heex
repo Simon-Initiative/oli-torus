@@ -34,8 +34,12 @@
           <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Course Author Sign In
           </div>
-          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
-          <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <%= for link <- provider_links, do: raw(link) %>
+          <div
+            :if={provider_links != []}
+            class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
+          >
             OR
           </div>
           <%= form_for @changeset, @action, [as: :user], fn f -> %>
@@ -80,7 +84,7 @@
                   to: Routes.pow_reset_password_reset_password_path(@conn, :new),
                   tabindex: "1",
                   class:
-                    "text-center text-blue-400 text-base font-bold font-['Open Sans'] leading-snug"
+                    "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
                 ) %>
               </div>
             </div>
@@ -92,7 +96,7 @@
             <div class="flex flex-col justify-center">
               <%= submit("Sign In",
                 class:
-                  "w-80 h-11 bg-blue-600 mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
+                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
               ) %>
               <div class="w-80 h-px border border-white mx-auto"></div>
             </div>
@@ -104,7 +108,7 @@
                   Routes.authoring_pow_registration_path(@conn, :new)
                 ),
               class:
-                "btn btn-md btn-link btn-block text-blue-400 text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
+                "btn btn-block text-[#4ca6ff] text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
             ) %>
           <% end %>
         </div>
@@ -147,8 +151,12 @@
           <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Instructor Sign In
           </div>
-          <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
-          <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <%= for link <- provider_links, do: raw(link) %>
+          <div
+            :if={provider_links != []}
+            class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
+          >
             OR
           </div>
           <%= form_for @changeset, @action, [as: :user], fn f -> %>
@@ -193,7 +201,7 @@
                   to: Routes.pow_reset_password_reset_password_path(@conn, :new),
                   tabindex: "1",
                   class:
-                    "text-center text-blue-400 text-base font-bold font-['Open Sans'] leading-snug"
+                    "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
                 ) %>
               </div>
             </div>
@@ -205,7 +213,7 @@
             <div class="flex flex-col justify-center">
               <%= submit("Sign In",
                 class:
-                  "w-80 h-11 bg-blue-600 mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
+                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-8 mt-2"
               ) %>
               <div class="w-80 h-px border border-white mx-auto"></div>
             </div>
@@ -221,7 +229,7 @@
             <%= link("Create an Account",
               to: registration_path,
               class:
-                "btn btn-md btn-link btn-block text-blue-400 text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
+                "btn btn-block text-[#4ca6ff] text-lg font-bold font-['Open Sans'] leading-7 mt-3 pb-8"
             ) %>
           <% end %>
         </div>

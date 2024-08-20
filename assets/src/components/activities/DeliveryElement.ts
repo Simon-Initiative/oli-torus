@@ -65,6 +65,7 @@ export interface ActivityContext {
   isAnnotationLevel: boolean;
   variables: any;
   reviewMode?: boolean;
+  pageLinkParams: any;
 }
 
 /**

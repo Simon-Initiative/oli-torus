@@ -37,6 +37,7 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
     resourceAttemptGuid: props.context.pageAttemptGuid,
     renderPointMarkers: props.context.renderPointMarkers,
     isAnnotationLevel: props.context.isAnnotationLevel,
+    pageLinkParams: props.context.pageLinkParams,
   });
 
   return (

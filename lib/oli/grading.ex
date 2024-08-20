@@ -232,9 +232,13 @@ defmodule Oli.Grading do
         join: rev in Revision,
         on: rev.id == pr.revision_id,
         left_join: ra in ResourceAccess,
-        on: ra.resource_id == rev.resource_id and ra.user_id == ^student_id,
+        on:
+          ra.section_id == ^section_id and ra.resource_id == sr.resource_id and
+            ra.user_id == ^student_id,
         where:
-          sec.id == ^section_id and rev.deleted == false and
+          sec.id == ^section_id and
+            sr.section_id == ^section_id and
+            rev.deleted == false and
             rev.resource_type_id == ^resource_type_id and
             rev.graded == true,
         select: %GradebookScore{

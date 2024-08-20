@@ -530,7 +530,10 @@ export class HtmlParser implements WriterImpl {
       let internalHref = href;
       if (context.sectionSlug) {
         const revisionSlug = href.replace(/^\/course\/link\//, '');
-        internalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
+        const params = new URLSearchParams(context.pageLinkParams);
+        const queryString = params.toString();
+
+        internalHref = `/sections/${context.sectionSlug}/lesson/${revisionSlug}?${queryString}`;
       } else {
         internalHref = '#';
       }

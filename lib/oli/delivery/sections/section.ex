@@ -38,7 +38,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:open_and_free, :boolean, default: false)
     field(:requires_enrollment, :boolean, default: false)
     field(:has_experiments, :boolean, default: false)
-    field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v1)
+    field(:analytics_version, Ecto.Enum, values: [:v1, :v2], default: :v2)
 
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
@@ -159,6 +159,8 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:encouraging_subtitle, :string)
 
+    field(:agenda, :boolean, default: false)
+
     timestamps(type: :utc_datetime)
   end
 
@@ -219,7 +221,8 @@ defmodule Oli.Delivery.Sections.Section do
       :apply_major_updates,
       :assistant_enabled,
       :welcome_title,
-      :encouraging_subtitle
+      :encouraging_subtitle,
+      :agenda
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)

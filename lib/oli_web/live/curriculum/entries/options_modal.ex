@@ -384,19 +384,26 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                         )
                       }
                     />
-                    <%= case Map.get(@form[:explanation_strategy].value || %{}, :type) do %>
-                      <% :after_set_num_attempts -> %>
-                        <div class="ml-2">
-                          <.input
-                            name="revision[explanation_strategy][set_num_attempts]"
-                            type="number"
-                            class="form-control"
-                            placeholder="# of Attempts"
-                            field={es[:set_num_attempts]}
-                          />
-                        </div>
-                      <% _ -> %>
-                    <% end %>
+                    <div class="ml-2">
+                      <.input
+                        :if={
+                          Ecto.Changeset.get_field(
+                            @form.source,
+                            :explanation_strategy
+                          ) &&
+                            Ecto.Changeset.get_field(
+                              @form.source,
+                              :explanation_strategy
+                            ).type == :after_set_num_attempts
+                        }
+                        name="revision[explanation_strategy][set_num_attempts]"
+                        type="number"
+                        class="form-control"
+                        placeholder="# of Attempts"
+                        min={1}
+                        field={es[:set_num_attempts]}
+                      />
+                    </div>
                   </.inputs_for>
                 </div>
                 <small id="explanation_strategy_description" class="form-text text-muted">
@@ -487,6 +494,27 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             />
             <small id="retake_mode_description" class="form-text text-muted">
               The retake mode determines how subsequent attempts are presented to students.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="assessment_mode">Presentation</label>
+            <.input
+              type="select"
+              id="assessment_mode"
+              name="revision[assessment_mode]"
+              aria-describedby="assessment_mode_description"
+              placeholder="Presentation"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:assessment_mode]}
+              options={[
+                {"Traditional: Show all content and questions at once", :traditional},
+                {"One at a Time: Show one question at a time", :one_at_a_time}
+              ]}
+            />
+            <small id="assessment_mode_description" class="form-text text-muted">
+              The presentation determines how questions are displayed to students.
             </small>
           </div>
 

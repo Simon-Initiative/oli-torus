@@ -528,7 +528,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
         live(conn, ~p"/sections/#{section.slug}/assignments")
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fassignments&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Fassignments&section=#{section.slug}"
     end
   end
 

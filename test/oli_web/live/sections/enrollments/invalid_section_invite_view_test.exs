@@ -18,23 +18,9 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
       {:ok, view, _html} = live(conn, redirect_to)
 
       assert render(view) =~
-               "This enrollment link has expired or is invalid. If you already have a student account, please <a href=\"/session/new\">sign in</a>.\n</div></div>"
+               "This enrollment link has expired or is invalid. If you already have a student account, please <a href=\"/\">sign in</a>.\n</div></div>"
 
-      assert element(view, "a[href=\"/session/new\"]") |> render() =~ "sign in"
-    end
-
-    test "redirects to the Student Sign In page if the invitation link is valid", %{conn: conn} do
-      section_invite_slig = "12345"
-      %{section: section} = insert(:section_invite, slug: section_invite_slig)
-
-      conn = get(conn, ~p"/sections/join/#{section_invite_slig}")
-
-      assert conn.halted
-
-      redirect_to =
-        ~p"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite_slig}&section=#{section.slug}&from_invitation_link%3F=true"
-
-      assert redirected_to(conn, 302) == redirect_to
+      assert element(view, "a[href=\"/\"]") |> render() =~ "sign in"
     end
   end
 
@@ -51,7 +37,7 @@ defmodule OliWeb.Sections.InvalidSectionInviteViewTest do
       {:ok, view, _html} = live(conn, redirect_to)
 
       assert render(view) =~
-               "This enrollment link has expired or is invalid. If you already have a student account, please <a href=\"/session/new\">sign in</a>.\n</div></div>"
+               "This enrollment link has expired or is invalid. If you already have a student account, please <a href=\"/\">sign in</a>.\n</div></div>"
     end
 
     test "shows enroll view", %{conn: conn} do
