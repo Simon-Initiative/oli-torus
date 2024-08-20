@@ -55,7 +55,6 @@ defmodule Oli.Activities.Realizer.Selection do
   end
 
   def fulfill(%Selection{count: count} = selection, %Source{} = source) do
-
     {all, returned_count} = fulfill_from_bank(selection, source)
 
     if returned_count < count do
