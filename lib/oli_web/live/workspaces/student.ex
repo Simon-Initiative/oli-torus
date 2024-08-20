@@ -50,19 +50,13 @@ defmodule OliWeb.Workspaces.Student do
   def mount(_params, _session, socket) do
     # no current user case...
 
-    app_config = %{
-      phoenix_router: OliWeb.Router,
-      phoenix_endpoint: OliWeb.Endpoint,
-      otp_app: :oli
-    }
+    app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
+    secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
 
     provider_links =
       %Plug.Conn{}
-      |> Map.replace(:private, app_config)
-      |> Map.replace(
-        :secret_key_base,
-        Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
-      )
+      |> Map.replace(:private, app_conf)
+      |> Map.replace(:secret_key_base, secret_key_base)
       |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
       |> OliWeb.Pow.PowHelpers.provider_links()
 
