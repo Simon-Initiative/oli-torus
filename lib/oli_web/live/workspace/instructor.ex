@@ -239,7 +239,7 @@ defmodule OliWeb.Workspace.Instructor do
     ~H"""
     <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
       <div class="relative flex items-center h-[247px]">
-        <div class="absolute top-0 h-full w-full">
+        <div class="absolute top-0 h-[291px] w-full overflow-x-hidden">
           <Backgrounds.instructor_dashboard_header />
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">

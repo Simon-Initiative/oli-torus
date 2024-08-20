@@ -79,10 +79,10 @@ defmodule OliWeb.Backgrounds do
   def instructor_dashboard_header(assigns) do
     ~H"""
     <svg
-      width="100%"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
+      width="120%"
       height="291"
+      viewBox="0 0 100% 291"
+      preserveAspectRatio="none"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -110,7 +110,11 @@ defmodule OliWeb.Backgrounds do
         <g style="mix-blend-mode:color-burn" opacity="0.25">
           <rect width="100%" height="291" fill="url(#pattern0_494_8778)" />
         </g>
-        <rect y="0" width="100%" height="309" fill="black" fill-opacity="0.24" />
+        <rect
+          width="100%"
+          height="309"
+          class="fill-white dark:fill-black opacity-[0.15] dark:opacity-[0.3]"
+        />
       </g>
       <defs>
         <filter
