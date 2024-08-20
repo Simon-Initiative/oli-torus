@@ -173,14 +173,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         partsInitStatus,
       }); */
       if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
-        /*     console.log('PARTS READY ON ONREADY HOST', {
-          partId,
-          scriptEnv,
-          adaptivityDomain,
-          props,
-          currentAttemptState,
-          sharedAttemptStateMap,
-        }); */
         if (props.onReady && !reviewMode) {
           const response: any = Array.from(partInitResponseMap);
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid, response);
@@ -226,17 +218,18 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
               }, {});
               collect = { ...collect, ...responseElements };
             }
-
             const _testRes = evalAssignScript(collect, scriptEnv);
             // TODO
             return collect;
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
-          //const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
-          /* console.log('PAGE STATE APPLY RESULTS', {
+          if (props?.context?.pageState) {
+            const _pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
+            /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
             state: props.context.pageState,
           }); */
+          }
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([currentActivityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
@@ -247,8 +240,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             props,
             snapshot,
             currentAttemptState,
-            attemptStateMap,
-            sharedAttemptStateMap,
           }); */
           const context = {
             snapshot,
