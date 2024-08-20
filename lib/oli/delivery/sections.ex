@@ -1878,7 +1878,39 @@ defmodule Oli.Delivery.Sections do
     scheduled_section_resources
   end
 
-  def get_not_scheduled_agenda(section, current_user_id) do
+  def get_not_scheduled_agenda(%Section{analytics_version: :v1} = section, current_user_id) do
+    {containers_data_map, page_to_containers_map, progress_per_resource_id,
+     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    sorted_container_groups =
+      Scheduling.retrieve(section, :pages)
+      |> Enum.reject(& &1.hidden)
+      |> attach_section_resource_metadata(
+        page_to_containers_map,
+        progress_per_resource_id,
+        raw_avg_score_per_page_id,
+        user_resource_attempt_counts,
+        combined_settings_for_all_resources,
+        last_attempt_per_page_id
+      )
+      |> group_by_container_and_graded()
+      |> attach_container_metadata(
+        containers_data_map,
+        progress_per_resource_id,
+        :v1,
+        include_min_contained_numbering_index: true
+      )
+      |> Enum.sort_by(fn scg ->
+        scg.min_contained_numbering_index
+      end)
+
+    # %{{month, year} => sorted_container_groups}
+    # month and year are nil since the section is not yet scheduled
+    %{{nil, nil} => sorted_container_groups}
+  end
+
+  def get_not_scheduled_agenda(%Section{analytics_version: :v2} = section, current_user_id) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
@@ -1898,7 +1930,7 @@ defmodule Oli.Delivery.Sections do
       |> attach_container_metadata(
         containers_data_map,
         progress_per_resource_id,
-        section.analytics_version,
+        :v2,
         include_min_contained_numbering_index: true
       )
       |> Enum.sort_by(fn scg ->
