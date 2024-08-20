@@ -55,6 +55,7 @@ defmodule Oli.Activities.Realizer.Selection do
   end
 
   def fulfill(%Selection{count: count} = selection, %Source{} = source) do
+
     {all, returned_count} = fulfill_from_bank(selection, source)
 
     if returned_count < count do
@@ -74,7 +75,7 @@ defmodule Oli.Activities.Realizer.Selection do
         %Logic.Expression{} = e -> [e]
       end
 
-    Enum.reduce_while(bank, {[], 0}, fn activity, {all, total} ->
+    Enum.reduce_while(bank, {[], 1}, fn activity, {all, total} ->
       case !MapSet.member?(blacklisted, activity.resource_id) and
              Enum.all?(expressions, &evaluate_expression(&1, activity)) do
         true ->
