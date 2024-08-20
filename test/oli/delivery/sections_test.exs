@@ -1384,48 +1384,6 @@ defmodule Oli.Delivery.SectionsTest do
         },
         section_tag: :section
       )
-      # |> then(fn seeds ->
-      #   section = seeds[:section]
-      #   page3 = seeds[:page3]
-      #   page4 = seeds[:page4]
-      #   page5 = seeds[:page5]
-
-      #   # create soft scheduling for pages
-      #   scheduled_resources =
-      #     Sections.Scheduling.retrieve(section)
-      #     |> Enum.reduce(%{}, fn sr, acc -> Map.put(acc, sr.resource_id, sr) end)
-
-      #   assert {:ok, 3} =
-      #            Sections.Scheduling.update(
-      #              section,
-      #              [
-      #                %{
-      #                  id: scheduled_resources[page3.resource_id].id,
-      #                  scheduling_type: "due_by",
-      #                  start_date: "2023-01-25",
-      #                  end_date: "2023-01-27",
-      #                  manually_scheduled: true
-      #                },
-      #                %{
-      #                  id: scheduled_resources[page4.resource_id].id,
-      #                  scheduling_type: "due_by",
-      #                  start_date: "2023-02-01",
-      #                  end_date: "2023-02-04",
-      #                  manually_scheduled: true
-      #                },
-      #                %{
-      #                  id: scheduled_resources[page5.resource_id].id,
-      #                  scheduling_type: "due_by",
-      #                  start_date: "2023-02-06",
-      #                  end_date: "2023-02-08",
-      #                  manually_scheduled: true
-      #                }
-      #              ],
-      #              "Etc/UTC"
-      #            )
-
-      #   seeds
-      # end)
       |> Seeder.Section.create_and_enroll_learner(
         ref(:section),
         %{},
