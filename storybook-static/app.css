@@ -4110,6 +4110,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: 50%;
 }
 
+.left-12 {
+  left: 3rem;
+}
+
 .left-2 {
   left: 0.5rem;
 }
@@ -4628,6 +4632,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: 0.5rem;
 }
 
+.ml-20 {
+  margin-left: 5rem;
+}
+
 .ml-3 {
   margin-left: 0.75rem;
 }
@@ -4646,6 +4654,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .ml-6 {
   margin-left: 1.5rem;
+}
+
+.ml-60 {
+  margin-left: 15rem;
 }
 
 .ml-8 {
@@ -5852,6 +5864,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .-rotate-90 {
   --tw-rotate: -90deg;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.rotate-0 {
+  --tw-rotate: 0deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -8770,6 +8787,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#F68E2E\] {
   --tw-text-opacity: 1;
   color: rgb(246 142 46 / var(--tw-text-opacity));
+}
+
+.text-\[\#bab8bf\] {
+  --tw-text-opacity: 1;
+  color: rgb(186 184 191 / var(--tw-text-opacity));
 }
 
 .text-\[18xl\] {
@@ -14182,6 +14204,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:bg-\[\#0F6CF5\] {
   --tw-bg-opacity: 1;
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-\[\#222126\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 33 38 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#242533\] {
