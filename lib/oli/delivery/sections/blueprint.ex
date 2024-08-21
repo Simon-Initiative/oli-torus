@@ -195,10 +195,10 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
   This method supports duplication of enrollable sections to create a blueprint.
   """
-  def duplicate(%Section{} = section, attrs \\ %{}, publication_id \\ nil) do
+  def duplicate(%Section{} = section, attrs \\ %{}) do
     Repo.transaction(fn _ ->
       with {:ok, blueprint} <- dupe_section(section, attrs),
-           {:ok, _} <- dupe_section_project_publications(section, blueprint, publication_id),
+           {:ok, _} <- dupe_section_project_publications(section, blueprint),
            {:ok, duplicated_root_resource} <- dupe_section_resources(section, blueprint),
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
@@ -320,9 +320,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section_project_publications(
-         %Section{id: id},
-         %Section{} = blueprint,
-         publication_id
+         %Section{id: id, base_project_id: original_base_project_id},
+         %Section{} = blueprint
        ) do
     query =
       from(
@@ -333,12 +332,23 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
     Repo.all(query)
     |> Enum.reduce_while({:ok, []}, fn p, {:ok, all} ->
-      publication_id = if publication_id, do: publication_id, else: p.publication_id
+      # In the case where a project is cloned with products, these products are associated with the
+      # original project id. When cloning the spp records, we must ensure that the project_id
+      # used is the base_project_id from the blueprint, not the original project id
+      #
+      # In the other cases where we are simply duplicating a blueprint, the project_id should remain
+      # the same as the original project id, which is the base_project_id of the blueprint
+      project_id =
+        if p.project_id == original_base_project_id do
+          blueprint.base_project_id
+        else
+          p.project_id
+        end
 
       attrs = %{
         section_id: blueprint.id,
-        project_id: blueprint.base_project_id,
-        publication_id: publication_id
+        project_id: project_id,
+        publication_id: p.publication_id
       }
 
       case Sections.create_section_project_publication(attrs) do
