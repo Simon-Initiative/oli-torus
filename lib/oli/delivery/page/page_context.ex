@@ -166,12 +166,16 @@ defmodule Oli.Delivery.Page.PageContext do
   and activities that may be present in the content of the page. This
   information is collected and then assembled in a fashion that can be given
   to a renderer.
+
+  The `opts` parameter is a keyword list that can contain the following options:
+  - track_access: a boolean that determines whether to track access to the page. Defaults to true.
   """
   def create_for_visit(
         %Section{slug: section_slug, id: section_id},
         page_slug,
         user,
-        datashop_session_id
+        datashop_session_id,
+        opts \\ [track_access: true]
       ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
@@ -179,7 +183,8 @@ defmodule Oli.Delivery.Page.PageContext do
     effective_settings =
       Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
 
-    Attempts.track_access(page_revision.resource_id, section_id, user.id)
+    if opts[:track_access],
+      do: Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
