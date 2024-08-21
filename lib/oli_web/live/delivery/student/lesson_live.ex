@@ -46,10 +46,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         nil
       )
 
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
-
-    emit_page_viewed_event(socket)
 
     {:ok,
      socket
@@ -67,9 +66,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       ) do
     %{page_context: page_context} = socket.assigns
 
-    emit_page_viewed_event(socket)
-
     if connected?(socket) do
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
 
@@ -102,9 +100,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}}} =
           socket
       ) do
-    emit_page_viewed_event(socket)
-
     if connected?(socket) do
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
 
