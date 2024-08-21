@@ -21,9 +21,10 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         revision_slug,
         current_user,
         datashop_session_id,
-        # LiveView lifecycle will pass twice through this function when mounting the page,
-        # so we want to avoid tracking the access twice for the same page access.
-        track_access: Phoenix.LiveView.connected?(socket)
+        # to avoid triggering the tracking of the page access twice, we will only track it
+        # in the initial stateless HTTP Request (when the socket is not yet mounted)
+        # see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#module-life-cycle
+        track_access: !Phoenix.LiveView.connected?(socket)
       )
 
     {:cont,
