@@ -1318,6 +1318,119 @@ defmodule Oli.Delivery.SectionsTest do
     end
   end
 
+  describe "get_not_scheduled_agenda/2" do
+    setup do
+      %{}
+      |> Seeder.Project.create_author(author_tag: :author)
+      |> Seeder.Project.create_sample_project(
+        ref(:author),
+        project_tag: :proj,
+        publication_tag: :pub,
+        curriculum_revision_tag: :curriculum,
+        unit1_tag: :unit1,
+        unscored_page1_tag: :unscored_page1,
+        unscored_page1_activity_tag: :unscored_page1_activity,
+        scored_page2_tag: :scored_page2,
+        scored_page2_activity_tag: :scored_page2_activity
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Assessment 3",
+          graded: true
+        },
+        resource_tag: :page3_resource,
+        revision_tag: :page3
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Assessment 4",
+          graded: true
+        },
+        resource_tag: :page4_resource,
+        revision_tag: :page4
+      )
+      |> Seeder.Project.create_page(
+        ref(:author),
+        ref(:proj),
+        nil,
+        %{
+          title: "Assessment 5",
+          graded: true
+        },
+        resource_tag: :page5_resource,
+        revision_tag: :page5
+      )
+      # attach pages to unit in a different order than creation
+      |> Seeder.Project.attach_to(
+        [ref(:page4_resource), ref(:page5_resource), ref(:page3_resource)],
+        ref(:unit1),
+        ref(:pub),
+        container_revision_tag: :unit1
+      )
+      |> Seeder.Project.ensure_published(ref(:pub), publication_tag: :pub)
+      |> Seeder.Section.create_section(
+        ref(:proj),
+        ref(:pub),
+        nil,
+        %{
+          slug: "section_#{UUID.uuid4()}",
+          start_date: ~U[2023-01-24 23:59:59Z]
+        },
+        section_tag: :section
+      )
+      |> Seeder.Section.create_and_enroll_learner(
+        ref(:section),
+        %{},
+        user_tag: :student1
+      )
+      |> Seeder.Section.create_and_enroll_instructor(
+        ref(:section),
+        %{},
+        user_tag: :instructor1
+      )
+    end
+
+    @tag capture_log: true
+    test "get_not_scheduled_agenda", %{
+      section: section,
+      student1: student1,
+      unit1: unit1
+    } do
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      unit1_resource_id = unit1.resource_id
+
+      assert %{
+               {nil, nil} => [
+                 %ScheduledContainerGroup{
+                   unit_id: ^unit1_resource_id,
+                   unit_label: "Unit 1",
+                   graded: nil,
+                   progress: nil,
+                   resources: ordered_resources
+                 }
+               ]
+             } =
+               Sections.get_not_scheduled_agenda(section, student1.id)
+
+      # verify that the resources are sorted by hierarchy (numbering index)
+      assert [
+               "Unscored page one",
+               "Scored page two",
+               "Assessment 4",
+               "Assessment 5",
+               "Assessment 3"
+             ] =
+               Enum.map(ordered_resources, fn res -> res.resource.title end)
+    end
+  end
+
   describe "get_graded_pages/2" do
     setup do
       %{}

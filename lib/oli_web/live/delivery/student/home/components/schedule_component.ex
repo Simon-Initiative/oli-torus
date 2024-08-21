@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   end
 
   attr(:ctx, SessionContext, required: true)
-  attr(:schedule_for_current_week_and_next_week, :any, required: true)
+  attr(:grouped_agenda_resources, :any, required: true)
   attr(:section_start_date, :string, required: true)
   attr(:section_slug, :string, required: true)
   attr(:expanded_items, :list, default: [])
@@ -33,13 +33,15 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
     ~H"""
     <div class="justify-start items-center gap-1 inline-flex self-stretch">
       <div class="text-base font-normal tracking-tight grow">
-        <%= for {{week, scheduled_groups}, week_idx} <- Enum.with_index(@schedule_for_current_week_and_next_week, 1) do %>
-          <% week_range = Utils.week_range(week, @section_start_date) %>
+        <%= for {{week, scheduled_groups}, week_idx} <- Enum.with_index(@grouped_agenda_resources, 1) do %>
+          <% week_range =
+            if week != {nil, nil},
+              do: Utils.week_range(week, @section_start_date) %>
           <div
             id={"schedule_week_#{week_idx}"}
             class="flex self-stretch h-fit flex-col justify-start items-start gap-3.5 pb-7"
           >
-            <div class="flex self-stretch justify-between items-baseline">
+            <div :if={week_range} class="flex self-stretch justify-between items-baseline">
               <div role="schedule_title" class="dark:text-white text-lg font-bold tracking-tight">
                 <%= this_or_next_week(week_range) %>
               </div>
