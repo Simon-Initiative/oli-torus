@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.CourseAuthor do
+defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
@@ -14,7 +14,8 @@ defmodule OliWeb.Workspace.CourseAuthor do
   alias OliWeb.Common.{PagedTable, Params, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Icons
-  alias OliWeb.Projects.{CreateProjectModal, TableModel}
+  alias OliWeb.Projects.CreateProjectModal
+  alias OliWeb.Workspaces.CourseAuthor.OverviewTableModel
 
   @default_params %{
     sidebar_expanded: true,
@@ -27,15 +28,13 @@ defmodule OliWeb.Workspace.CourseAuthor do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{ctx: %{author: nil}}} = socket) do
+    app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
+    secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
+
     provider_links =
-      %Plug.Conn{
-        private: %{
-          phoenix_router: OliWeb.Router,
-          phoenix_endpoint: OliWeb.Endpoint,
-          otp_app: :oli
-        },
-        secret_key_base: Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
-      }
+      %Plug.Conn{}
+      |> Map.replace(:private, app_conf)
+      |> Map.replace(:secret_key_base, secret_key_base)
       |> OliWeb.Pow.PowHelpers.use_pow_config(:author)
       |> OliWeb.Pow.PowHelpers.provider_links()
 
@@ -70,7 +69,7 @@ defmodule OliWeb.Workspace.CourseAuthor do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(ctx, projects)
+    {:ok, table_model} = OverviewTableModel.new(ctx, projects)
 
     total_count = determine_total(projects)
 
@@ -86,9 +85,7 @@ defmodule OliWeb.Workspace.CourseAuthor do
        show_all: show_all,
        show_deleted: show_deleted,
        active_workspace: :course_author,
-       params: params,
-       header_enabled?: true,
-       footer_enabled?: true
+       params: params
      )}
   end
 

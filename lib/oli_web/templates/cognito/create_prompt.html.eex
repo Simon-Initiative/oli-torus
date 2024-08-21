@@ -6,7 +6,7 @@
 
   <p>Would you like to
     <%= link "create a new section with this lesson", to: @create_section_url %>
-    or <%= link "go to my existing sections", to: Routes.live_path(@conn, OliWeb.Workspace.Instructor) %>?
+    or <%= link "go to my existing sections", to: Routes.live_path(@conn, OliWeb.Workspaces.Instructor.IndexLive) %>?
   </p>
 
 </div>
