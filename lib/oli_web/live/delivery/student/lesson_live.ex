@@ -826,6 +826,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <%= react_component("Components.Delivery", @app_params) %>
     </div>
 
+    <%= OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets}) %>
+
     <script>
       window.userToken = "<%= @user_token %>";
     </script>
