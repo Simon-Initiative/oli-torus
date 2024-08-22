@@ -17,14 +17,21 @@ defmodule OliWeb.LiveSessionPlugs.AuthorizeProject do
          |> redirect(to: ~p"/workspaces/course_author")}
 
       %Author{} ->
-        if Accounts.can_access?(current_author, project) &&
-             project.status === :active do
-          {:cont, socket}
-        else
-          {:halt,
-           socket
-           |> put_flash(:error, "You don't have access to that project")
-           |> redirect(to: ~p"/workspaces/course_author")}
+        case {Accounts.can_access?(current_author, project), project.status} do
+          {true, :active} ->
+            {:cont, socket}
+
+          {false, _} ->
+            {:halt,
+             socket
+             |> put_flash(:error, "You don't have access to that project")
+             |> redirect(to: ~p"/workspaces/course_author")}
+
+          {_, :deleted} ->
+            {:halt,
+             socket
+             |> put_flash(:error, "That project is not active")
+             |> redirect(to: ~p"/workspaces/course_author")}
         end
     end
   end
