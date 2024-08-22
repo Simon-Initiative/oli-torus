@@ -266,7 +266,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def workspace_sidebar_nav(assigns) do
     ~H"""
     <div>
-      <nav id="desktop-workspace-nav-menu" class={["
+      <nav
+        id="desktop-workspace-nav-menu"
+        class={["
         transition-all
         duration-100
         fixed
@@ -282,7 +284,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
+        aria-expanded={"#{@sidebar_expanded}"}
+      >
         <div class="w-full">
           <div
             class={[
