@@ -20,8 +20,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
            is_admin?: is_admin?,
            revision_history_link: is_admin?,
            scripts: Oli.Activities.get_activity_scripts(),
-           project_slug: project.slug,
-           project_title: project.title,
+           resource_slug: project.slug,
+           resource_title: project.title,
            active_workspace: :course_author,
            active_view: :activity_bank,
            ctx: ctx
