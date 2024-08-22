@@ -19,8 +19,8 @@ import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
-import { References } from './bibliography/References';
 import ActivityBank from './bank/ActivityBank';
+import { References } from './bibliography/References';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
