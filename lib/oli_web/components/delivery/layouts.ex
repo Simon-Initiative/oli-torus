@@ -205,8 +205,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def maybe_masquerade_as(assigns) do
     if assigns[:ctx] && assigns[:ctx].masquerading_as do
       ~H"""
-      <div class="fixed top-0 bottom-0 left-0 right-0 overflow-auto border-4 border-solid border-[#d946ef]">
-        <div class="bg-[#d946ef] text-white px-6 py-2">
+      <div class="fixed top-0 bottom-0 left-0 right-0 overflow-auto border-4 border-solid border-fuchsia-500">
+        <div class="bg-fuchsia-500 text-white px-6 py-2">
           <div class="flex justify-between items-center">
             <div>
               <p class="text-white text-lg font-bold">

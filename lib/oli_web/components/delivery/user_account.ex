@@ -27,7 +27,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div class="relative">
       <button
         id={@id}
-        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
+        class={[
+          "flex flex-row items-center justify-center rounded-full",
+          @class,
+          user_icon_outline_classes(@ctx)
+        ]}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
         <.user_icon ctx={@ctx} />
@@ -49,6 +53,16 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </.dropdown_menu>
     </div>
     """
+  end
+
+  defp user_icon_outline_classes(ctx) do
+    case ctx.masquerading_as do
+      nil ->
+        "outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600"
+
+      _user_id ->
+        "outline outline-2 outline-fuchsia-500 dark:outline-fuchsia-500 hover:outline-4 hover:dark:outline-fuchsia-500 focus:outline-4 focus:outline-fuchsia-500 dark:focus:outline-fuchsia-500"
+    end
   end
 
   def toggle_menu(id, js \\ %JS{}) do
@@ -358,6 +372,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
+  attr(:ctx, SessionContext, required: true)
+
   def preview_user_menu(assigns) do
     ~H"""
     <div class="flex">
@@ -381,7 +397,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         aria-expanded="false"
       >
         <div class="user-icon">
-          <.user_picture_icon />
+          <.user_picture_icon ctx={@ctx} />
         </div>
         <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
           <div class="username">
