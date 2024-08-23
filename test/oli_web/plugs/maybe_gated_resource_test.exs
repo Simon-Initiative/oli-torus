@@ -115,9 +115,13 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       {:ok, section} = Gating.update_resource_gating_index(section)
 
+      # since this graded page has no attempts, the user will be first redirected to the prologue page
+      # from ~p"/sections/#{section.slug}/lesson/#{revision.slug}" to ~p"/sections/#{section.slug}/prologue/#{revision.slug}"
+      # and then the maybe_gated_resource plug will block access to the graded page
+
       conn =
         conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
+        |> get(~p"/sections/#{section.slug}/prologue/#{revision.slug}")
 
       assert html_response(conn, 403) =~
                "You are trying to access a resource that is gated by the following condition"
@@ -188,9 +192,13 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       {:ok, section} = Gating.update_resource_gating_index(section)
 
+      # since this graded page has no attempts, the user will be first redirected to the prologue page
+      # from ~p"/sections/#{section.slug}/lesson/#{revision.slug}" to ~p"/sections/#{section.slug}/prologue/#{revision.slug}"
+      # and then the maybe_gated_resource plug will block access to the graded page
+
       conn =
         conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
+        |> get(~p"/sections/#{section.slug}/prologue/#{revision.slug}")
 
       assert html_response(conn, 403) =~
                "You are trying to access a resource that is gated by the following condition"
