@@ -210,7 +210,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
                blueprint,
                cloned_from_project_publication_ids
              ),
-           {:ok, duplicated_root_resource} <- dupe_section_resources(section, blueprint, cloned_from_project_publication_ids),
+           {:ok, duplicated_root_resource} <-
+             dupe_section_resources(section, blueprint, cloned_from_project_publication_ids),
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
@@ -289,17 +290,18 @@ defmodule Oli.Delivery.Sections.Blueprint do
           # same process as sections_project_publications, if this blueprint was duplicated
           # as part of a project cloning, we need to update the project_id of the section_resource
           # if the section_resource belongs to the original project
-          project_id = case cloned_from_project_publication_ids do
-            {cloned_from_project_id, _} ->
-              if p.project_id == cloned_from_project_id do
-                blueprint.base_project_id
-              else
-                p.project_id
-              end
+          project_id =
+            case cloned_from_project_publication_ids do
+              {cloned_from_project_id, _} ->
+                if p.project_id == cloned_from_project_id do
+                  blueprint.base_project_id
+                else
+                  p.project_id
+                end
 
               _ ->
                 p.project_id
-          end
+            end
 
           resource =
             Map.merge(Sections.SectionResource.to_map(p), %{
@@ -367,17 +369,18 @@ defmodule Oli.Delivery.Sections.Blueprint do
       #
       # In the other cases where we are simply duplicating a blueprint, the project_id should remain
       # the same as the original project id, which is the base_project_id of the blueprint
-      {project_id, publication_id} = case cloned_from_project_publication_ids do
-        {cloned_from_project_id, cloned_publication_id} ->
-          if spp.project_id == cloned_from_project_id do
-            {blueprint.base_project_id, cloned_publication_id}
-          else
-            {spp.project_id, spp.publication_id}
-          end
+      {project_id, publication_id} =
+        case cloned_from_project_publication_ids do
+          {cloned_from_project_id, cloned_publication_id} ->
+            if spp.project_id == cloned_from_project_id do
+              {blueprint.base_project_id, cloned_publication_id}
+            else
+              {spp.project_id, spp.publication_id}
+            end
 
-        _ ->
-          {spp.project_id, spp.publication_id}
-      end
+          _ ->
+            {spp.project_id, spp.publication_id}
+        end
 
       attrs = %{
         section_id: blueprint.id,
