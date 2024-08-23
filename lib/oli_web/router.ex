@@ -121,10 +121,6 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
-  pipeline :require_exploration_pages do
-    plug(Oli.Plugs.RequireExplorationPages)
-  end
-
   pipeline :force_required_survey do
     plug(Oli.Plugs.ForceRequiredSurvey)
   end
@@ -963,7 +959,6 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :delivery_protected,
-      :require_exploration_pages,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
@@ -1122,7 +1117,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :require_exploration_pages,
       :authorize_section_preview,
       :delivery_protected,
       :delivery_layout,
