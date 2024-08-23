@@ -195,7 +195,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
   This method supports duplication of enrollable sections to create a blueprint.
 
-  If this method is called with a `clone_from_base_project_id` parameter, it will update the
+  If this method is called with a `cloned_from_project_publication_ids` parameter, it will update the
   section_project_publications an section_resource records corresponding to that project id.
   This is useful when duplicating a blueprint/product that was part of a project that is being
   cloned. If this parameter is not provided, then the project_id of the section_project_publications
