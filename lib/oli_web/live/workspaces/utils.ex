@@ -221,64 +221,47 @@ defmodule OliWeb.Workspace.Utils do
       %SubMenuItem{
         text: "Overview",
         icon: "author_overview",
-        view: :overview,
-        parent_view: nil,
-        children: []
+        view: :overview
       },
       %SubMenuItem{
         text: "Create",
         icon: "author_create",
         view: :create,
-        parent_view: nil,
         children: [
           %SubMenuItem{
             text: "Objectives",
-            icon: nil,
             view: :objectives,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Activity Bank",
-            icon: nil,
             view: :activity_bank,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Experiments",
-            icon: nil,
             view: :experiments,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Bibliography",
-            icon: nil,
             view: :bibliography,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Curriculum",
-            icon: nil,
             view: :curriculum,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "All Pages",
-            icon: nil,
             view: :pages,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "All Activities",
-            icon: nil,
             view: :activities,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           }
         ]
       },
@@ -286,28 +269,21 @@ defmodule OliWeb.Workspace.Utils do
         text: "Publish",
         icon: "author_publish",
         view: :author_publish,
-        parent_view: nil,
         children: [
           %SubMenuItem{
             text: "Review",
-            icon: nil,
             view: :review,
-            parent_view: :author_publish,
-            children: []
+            parent_view: :author_publish
           },
           %SubMenuItem{
             text: "Publish",
-            icon: nil,
             view: :publish,
-            parent_view: :author_publish,
-            children: []
+            parent_view: :author_publish
           },
           %SubMenuItem{
             text: "Products",
-            icon: nil,
             view: :products,
-            parent_view: :author_publish,
-            children: []
+            parent_view: :author_publish
           }
         ]
       },
@@ -315,14 +291,11 @@ defmodule OliWeb.Workspace.Utils do
         text: "Improve",
         icon: "author_improve",
         view: :improve,
-        parent_view: nil,
         children: [
           %SubMenuItem{
             text: "Insights",
-            icon: nil,
             view: :insights,
-            parent_view: :improve,
-            children: []
+            parent_view: :improve
           }
         ]
       }
