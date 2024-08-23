@@ -6,7 +6,7 @@
     <div class={"mr-3 my-auto #{if assigns[:resource_title], do: "flex items-center justify-between w-full", else: "ml-auto"}"}>
       <div
         :if={assigns[:resource_title]}
-        class={"text-[#757682] font-medium #{if @sidebar_expanded, do: "ml-60", else: "ml-20"}"}
+        class={"text-[#757682] dark:text-[#FFF] font-medium #{if @sidebar_expanded, do: "ml-60", else: "ml-20"}"}
       >
         <%= @resource_title %>
       </div>
