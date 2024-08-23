@@ -29,7 +29,7 @@
   </div>
 </Modal.modal>
 
-<div id="curriculum-container" class="container mx-auto curriculum-editor">
+<div id="curriculum-container" class="container flex flex-col gap-y-6 p-8 curriculum-editor">
   <div class="flex justify-between items-center mb-3">
     <p>
       Create and arrange your learning materials below.
@@ -40,9 +40,6 @@
         navigate={~p[/project/#{@project.slug}/history/slug/#{@container.slug}]}
       >
         <i class="fas fa-history"></i> View revision history
-      </.link>
-      <.link href={~p"/authoring/project/#{@project.slug}/pages"} role="go_to_all_pages">
-        All Pages
       </.link>
     </div>
   </div>
