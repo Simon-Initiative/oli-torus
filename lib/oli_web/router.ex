@@ -959,7 +959,6 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :delivery_protected,
-      :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
       :force_required_survey,
