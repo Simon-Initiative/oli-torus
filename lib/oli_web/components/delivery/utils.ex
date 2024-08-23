@@ -90,7 +90,7 @@ defmodule OliWeb.Components.Delivery.Utils do
         "#"
 
       is_open_and_free_section?(assigns) or is_independent_learner?(assigns) ->
-        ~p"/sections"
+        ~p"/workspaces/student"
 
       true ->
         Routes.static_page_path(OliWeb.Endpoint, :index)

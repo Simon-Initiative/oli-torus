@@ -225,19 +225,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
       section: section,
       section_page: section_page
     } do
-      end_date = DateTime.utc_now() |> DateTime.add(10, :hour) |> DateTime.truncate(:second)
-
-      section_page
-      |> Ecto.Changeset.change(%{graded: true})
-      |> Repo.update()
-
-      Oli.Delivery.Sections.SectionResource
-      |> where([sr], sr.resource_id == ^section_page.resource.id)
-      |> select([sr], sr)
-      |> limit(1)
-      |> Repo.one()
-      |> Ecto.Changeset.change(%{scheduling_type: :due_by, end_date: end_date})
-      |> Repo.update()
+      set_schedule_for_page(10, section_page, section.id)
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
@@ -250,24 +238,46 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
              )
     end
 
+    test "\"remind student of deadlines\" action redirects to Scored Activities tab correctly", %{
+      conn: conn,
+      section: section,
+      section_page: section_page
+    } do
+      set_schedule_for_page(10, section_page, section.id)
+
+      {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
+
+      assert has_element?(view, "h4", "Remind Students of Deadlines")
+
+      assert has_element?(
+               view,
+               "span",
+               "There are assessments due soon, review and remind students"
+             )
+
+      assert has_element?(
+               view,
+               "a[href=\"/sections/#{section.slug}/instructor_dashboard/insights/scored_activities\"]"
+             )
+
+      element(
+        view,
+        "a[href=\"/sections/#{section.slug}/instructor_dashboard/insights/scored_activities\"]"
+      )
+      |> render_click()
+
+      assert_redirected(
+        view,
+        ~p"/sections/#{section.slug}/instructor_dashboard/insights/scored_activities"
+      )
+    end
+
     test "does not render the \"remind student of deadlines\" action when not necessary", %{
       conn: conn,
       section: section,
       section_page: section_page
     } do
-      end_date = DateTime.utc_now() |> DateTime.add(25, :hour) |> DateTime.truncate(:second)
-
-      section_page
-      |> Ecto.Changeset.change(%{graded: true})
-      |> Repo.update()
-
-      Oli.Delivery.Sections.SectionResource
-      |> where([sr], sr.resource_id == ^section_page.resource.id)
-      |> select([sr], sr)
-      |> limit(1)
-      |> Repo.one()
-      |> Ecto.Changeset.change(%{scheduling_type: :due_by, end_date: end_date})
-      |> Repo.update()
+      set_schedule_for_page(25, section_page, section.id)
 
       {:ok, view, _html} = live(conn, instructor_course_content_path(section.slug))
 
@@ -279,5 +289,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.Overview.RecommendedActionsTest do
                "There are assessments due soon, review and remind students"
              )
     end
+  end
+
+  defp set_schedule_for_page(hours, section_page, section_id) do
+    end_date = DateTime.utc_now() |> DateTime.add(hours, :hour) |> DateTime.truncate(:second)
+
+    section_page
+    |> Ecto.Changeset.change(%{graded: true})
+    |> Repo.update()
+
+    Oli.Delivery.Sections.SectionResource
+    |> where([sr], sr.resource_id == ^section_page.resource.id and sr.section_id == ^section_id)
+    |> select([sr], sr)
+    |> limit(1)
+    |> Repo.one()
+    |> Ecto.Changeset.change(%{scheduling_type: :due_by, end_date: end_date})
+    |> Repo.update()
   end
 end

@@ -4,9 +4,10 @@ defmodule OliWeb.StaticPageController do
   import Oli.Branding
 
   alias Oli.Accounts
+  alias OliWeb.Pow.PowHelpers
 
   def index(conn, _params) do
-    render(conn, "index.html")
+    render(PowHelpers.use_pow_config(conn, :user), "index.html")
   end
 
   def unauthorized(conn, _params) do

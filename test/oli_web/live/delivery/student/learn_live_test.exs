@@ -776,7 +776,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
     end
   end
 
@@ -2069,6 +2069,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(view) =~ "Page 14"
       refute render(view) =~ "Page 15"
     end
+
+    test "do not show hidden pages", %{
+      conn: conn,
+      section: section,
+      page_7: page_7
+    } do
+      # Set page 7 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_7.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute render(view) =~ "Page 7"
+    end
   end
 
   describe "student" do
@@ -2568,7 +2582,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can switch from Outline to Gallery view", %{conn: conn, section: section} do
       {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        )
 
       # selector text matches current view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
@@ -2586,7 +2603,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :gallery, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :gallery)
       )
 
       # selector text matches target view
@@ -2613,7 +2630,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :outline)
       )
 
       # selector text matches target view
@@ -2770,7 +2787,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
     end
 
-    test "exit course button redirects to sections view", %{
+    test "exit course button redirects to the student workspace", %{
       conn: conn,
       section: section
     } do
@@ -2781,7 +2798,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections")
+      assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{

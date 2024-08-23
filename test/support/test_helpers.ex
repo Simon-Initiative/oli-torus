@@ -3581,4 +3581,83 @@ defmodule Oli.TestHelpers do
       end
     end
   end
+
+  def create_hyperlink_content(revision_2_slug) do
+    %{
+      "model" => [
+        %{
+          "children" => [
+            %{
+              "children" => [
+                %{"text" => " "},
+                %{
+                  "children" => [%{"text" => "link"}],
+                  "href" => "/course/link/#{revision_2_slug}",
+                  "id" => "1914651063",
+                  "target" => "self",
+                  "type" => "a",
+                  "linkType" => "page"
+                },
+                %{"text" => ""}
+              ],
+              "id" => "3636822762",
+              "type" => "p"
+            }
+          ],
+          "id" => "481882791",
+          "purpose" => "None",
+          "type" => "content"
+        }
+      ]
+    }
+  end
+
+  def create_page_link_content(revision_2_resource_id) do
+    """
+    {
+    "model": [
+      {
+        "id": "961779836",
+        "type": "content",
+        "editor": "slate",
+        "children": [
+          {
+            "id": "3761056253",
+            "type": "p",
+            "children": [
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "id": "3722062784",
+            "type": "page_link",
+            "idref": "#{revision_2_resource_id}",
+            "purpose": "none",
+            "children": [
+              {
+                "text": ""
+              }
+            ]
+          },
+          {
+            "id": "2711915655",
+            "type": "p",
+            "children": [
+              {
+                "text": ""
+              }
+            ]
+          }
+        ],
+        "textDirection": "ltr"
+      }
+    ],
+    "bibrefs": [],
+    "version": "0.1.0"
+    }
+    """
+    |> Jason.decode!()
+  end
 end

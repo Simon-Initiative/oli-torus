@@ -12,7 +12,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSection do
         {:halt,
          socket
          |> put_flash(:error, "Section not found")
-         |> push_navigate(to: ~p"/sections")}
+         |> push_navigate(to: ~p"/workspaces/student")}
 
       section ->
         section =

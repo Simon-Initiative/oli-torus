@@ -66,8 +66,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="datetime-local"
-                onChange={onChangeAvailableFromHandler}
-                value={dateWithTimeLabel(selectedItem.startDateTime) || ''}
+                onBlur={onChangeAvailableFromHandler}
+                defaultValue={dateWithTimeLabel(selectedItem.startDateTime) || ''}
               />
             </InputField>
           </InputRow>
@@ -89,8 +89,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="date"
-                onChange={onChangeEndHandler}
-                value={dateWithoutTimeLabel(selectedItem.endDate) || ''}
+                onBlur={onChangeEndHandler}
+                defaultValue={dateWithoutTimeLabel(selectedItem.endDate) || ''}
               />
             )}
 
@@ -98,8 +98,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="datetime-local"
-                onChange={onChangeDueEndHandler}
-                value={dateWithTimeLabel(selectedItem.endDateTime) || ''}
+                onBlur={onChangeDueEndHandler}
+                defaultValue={dateWithTimeLabel(selectedItem.endDateTime) || ''}
               />
             )}
           </InputField>

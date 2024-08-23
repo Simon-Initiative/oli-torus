@@ -1,5 +1,6 @@
 defmodule OliWeb.CognitoControllerTest do
   use OliWeb.ConnCase
+  use Bamboo.Test
 
   import Oli.Factory
   import Mox
@@ -49,13 +50,14 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :index, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/workspaces/instructor\">redirected</a>.</body></html>"
     end
 
-    test "creates new user and redirects user to my courses", %{
-      conn: conn,
-      community: community
-    } do
+    test "creates new user and author, sends author setup email and redirects user to my courses",
+         %{
+           conn: conn,
+           community: community
+         } do
       email = "new_user@email.com"
       {id_token, jwk, issuer} = generate_token(email)
       jwks_url = issuer <> "/.well-known/jwks.json"
@@ -69,7 +71,55 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :index, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/workspaces/instructor\">redirected</a>.</body></html>"
+
+      {:ok, claims} = Joken.peek_claims(id_token)
+      user = Accounts.get_user_by(email: email)
+      author = Accounts.get_author_by_email(email)
+
+      assert user.sub == claims["sub"]
+      assert user.preferred_username == claims["cognito:username"]
+      assert user.name == claims["name"]
+      assert user.can_create_sections == true
+      assert user.author_id == author.id
+
+      assert author.email == email
+      assert author.name == claims["cognito:username"]
+      assert author.invitation_token
+      refute author.invitation_accepted_at
+
+      assert_delivered_email_matches(%{to: [{_, ^email}], subject: subject, text_body: text_body})
+
+      assert subject == "Create Course Author Password"
+
+      assert text_body =~
+               "We received notice that you have been approved as an Infiniscope\ninstructor"
+
+      assert text_body =~ "Create Password"
+      assert text_body =~ ~r{/authoring/invitations/.*/edit}
+    end
+
+    test "creates new user but does not create author nor send email when it already exists",
+         %{
+           conn: conn,
+           community: community
+         } do
+      email = "new_user@email.com"
+      author = insert(:author, email: email)
+
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params = valid_index_params(community.id, id_token)
+
+      refute Accounts.get_user_by(email: email)
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/workspaces/instructor\">redirected</a>.</body></html>"
 
       {:ok, claims} = Joken.peek_claims(id_token)
       user = Accounts.get_user_by(email: email)
@@ -78,6 +128,9 @@ defmodule OliWeb.CognitoControllerTest do
       assert user.preferred_username == claims["cognito:username"]
       assert user.name == claims["name"]
       assert user.can_create_sections == true
+      assert user.author_id == author.id
+
+      assert_no_emails_delivered()
     end
 
     test "redirects to provided error_url with missing params", %{
@@ -659,7 +712,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert html =~
                "Would you like to\n<a href=\"/sections/independent/new?source_id=project%3A#{project.id}\">create a new section with this lesson</a>"
 
-      assert html =~ "<a href=\"/sections\">go to my existing sections</a>"
+      assert html =~ "<a href=\"/workspaces/instructor\">go to my existing sections</a>"
     end
   end
 

@@ -2,6 +2,8 @@ defmodule Oli.Interop.ExportTest do
   use OliWeb.ConnCase
 
   alias Oli.Interop.Export
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources
   import Oli.Factory
 
   describe "export" do

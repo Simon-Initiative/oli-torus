@@ -9,7 +9,7 @@ defmodule OliWeb.Pow.UserRoutes do
   alias Oli.Delivery.Sections.Section
 
   @impl true
-  def after_sign_in_path(conn) do
+  def after_sign_in_path(conn, after_sign_in_target \\ :instructor_workspace) do
     conn
     |> request_path_or(
       case conn.params do
@@ -17,10 +17,19 @@ defmodule OliWeb.Pow.UserRoutes do
           Routes.delivery_path(conn, :show_enroll, section_slug)
 
         _ ->
-          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
+          workspace_path(conn, after_sign_in_target)
       end
     )
   end
+
+  defp workspace_path(conn, :instructor_workspace),
+    do: Routes.live_path(conn, OliWeb.Workspaces.Instructor.IndexLive)
+
+  defp workspace_path(conn, :student_workspace),
+    do: Routes.live_path(conn, OliWeb.Workspaces.Student)
+
+  defp workspace_path(conn, :course_author_workspace),
+    do: Routes.live_path(conn, OliWeb.Workspaces.CourseAuthor)
 
   @impl true
   def after_registration_path(conn) do
@@ -48,7 +57,7 @@ defmodule OliWeb.Pow.UserRoutes do
     |> request_path_or(
       case conn.assigns[:current_user] do
         %User{independent_learner: true} ->
-          Routes.live_path(conn, OliWeb.Delivery.OpenAndFreeIndex)
+          Routes.live_path(conn, OliWeb.Workspace.Student)
 
         _ ->
           Routes.delivery_path(conn, :index)
@@ -84,6 +93,9 @@ defmodule OliWeb.Pow.UserRoutes do
 
           # if section is a string, then it represents a section slug from a confirmation email
           # where a user will be automatically redirected to the enroll page after sign in
+          %{section: _section, user_type: :student} ->
+            ~p"/?#{params_for(conn, [:request_path, :section, :from_invitation_link?])}"
+
           %{section: _section} ->
             Pow.Phoenix.Routes.session_path(
               conn,

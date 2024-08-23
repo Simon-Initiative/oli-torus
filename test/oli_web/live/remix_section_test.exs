@@ -371,6 +371,186 @@ defmodule OliWeb.RemixSectionLiveTest do
         ~p"/sections/#{section.slug}/remix"
       )
     end
+
+    test "show and hide pages works correctly", %{
+      conn: conn,
+      map: %{section_1: section, revision1: revision1}
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      # Find the uuid of the first node
+      node_uuid =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_hide_resource_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> hd()
+
+      # Assert the button is showing "Hide", as the page is not hidden
+      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+
+      # Click the button to show the modal to hide the page
+      view
+      |> element(
+        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
+      )
+      |> render_click()
+
+      # Assert the modal is showing the correct title
+      assert has_element?(
+               view,
+               ".modal-body",
+               "Are you sure you want to hide #{revision1.title}?"
+             )
+
+      # Click the button to hide the page and confirm the action
+      view
+      |> element("button[phx-click=\"HideResourceModal.toggle\"]", "Hide")
+      |> render_click()
+
+      # Find again the uuid of the first node
+      node_uuid =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_hide_resource_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> hd()
+
+      # Assert the button is showing "Show", as the page is hidden
+      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Show")
+
+      # Save the changes
+      view |> element("#save") |> render_click()
+
+      # Check the page is hidden
+      sr_updated = Sections.get_section_resource(section.id, revision1.resource_id)
+
+      assert sr_updated.hidden == true
+    end
+
+    test "cancel button in hide/show page modal works correctly", %{
+      conn: conn,
+      map: %{section_1: section, revision1: revision1}
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      # Find the uuid of the first node
+      node_uuid =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_hide_resource_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> hd()
+
+      # Assert the button is showing "Hide", as the page is not hidden
+      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+
+      # Click the button to show the modal to hide the page
+      view
+      |> element(
+        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
+      )
+      |> render_click()
+
+      # Assert the modal is showing the correct title
+      assert has_element?(
+               view,
+               ".modal-body",
+               "Are you sure you want to hide #{revision1.title}?"
+             )
+
+      # Click the button to cancel
+      view
+      |> element("button[phx-click=\"HideResourceModal.cancel\"]", "Cancel")
+      |> render_click()
+
+      # Find again the uuid of the first node
+      node_uuid =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_hide_resource_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> hd()
+
+      # Assert the button is showing "Hide", as the page is not hidden
+      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+
+      # Check the page is not hidden
+      sr_updated = Sections.get_section_resource(section.id, revision1.resource_id)
+
+      assert sr_updated.hidden == false
+    end
+
+    test "cancel button after hide/show page works correctly", %{
+      conn: conn,
+      map: %{section_1: section, revision1: revision1}
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      # Find the uuid of the first node
+      node_uuid =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_hide_resource_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> hd()
+
+      # Assert the button is showing "Hide", as the page is not hidden
+      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Hide")
+
+      # Click the button to show the modal to hide the page
+      view
+      |> element(
+        "button[phx-click=\"show_hide_resource_modal\"][phx-value-uuid=\"#{node_uuid}\"]"
+      )
+      |> render_click()
+
+      # Assert the modal is showing the correct title
+      assert has_element?(
+               view,
+               ".modal-body",
+               "Are you sure you want to hide #{revision1.title}?"
+             )
+
+      # Click the button to hide the page and confirm the action
+      view
+      |> element("button[phx-click=\"HideResourceModal.toggle\"]", "Hide")
+      |> render_click()
+
+      # Find again the uuid of the first node
+      node_uuid =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{button[phx-click="show_hide_resource_modal"]})
+        |> Floki.attribute("phx-value-uuid")
+        |> hd()
+
+      # Assert the button is showing "Show", as the page is hidden
+      assert has_element?(view, "button[phx-value-uuid=\"#{node_uuid}\"]", "Show")
+
+      # Cancel the changes
+      view |> element("#cancel") |> render_click()
+
+      # Check the page is not hidden
+      sr_updated = Sections.get_section_resource(section.id, revision1.resource_id)
+
+      assert sr_updated.hidden == false
+    end
   end
 
   describe "remix section as product manager" do

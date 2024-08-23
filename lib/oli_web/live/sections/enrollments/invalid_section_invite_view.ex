@@ -7,8 +7,8 @@ defmodule OliWeb.Sections.InvalidSectionInviteView do
 
   def render(assigns) do
     ~H"""
-    <div>
-      This section invitation link has expired or is invalid.
+    <div class="p-10">
+      This enrollment link has expired or is invalid. If you already have a student account, please <a href="/">sign in</a>.
     </div>
     """
   end

@@ -7,8 +7,8 @@ defmodule OliWeb.StaticPageControllerTest do
     conn = get(conn, "/")
 
     assert html_response(conn, 200) =~ "Welcome to"
-    assert html_response(conn, 200) =~ "Learner/Educator Sign In"
-    assert html_response(conn, 200) =~ "Authoring Sign In"
+    assert html_response(conn, 200) =~ "For Instructors"
+    assert html_response(conn, 200) =~ "For Course Authors"
   end
 
   describe "set_session" do
@@ -97,7 +97,7 @@ defmodule OliWeb.StaticPageControllerTest do
     test "updates the user timezone preference and redirects correctly", context do
       {:ok, conn: conn, user: user} = user_conn(context)
       new_timezone = "America/Montevideo"
-      redirect_to = ~p"/sections"
+      redirect_to = ~p"/workspaces/student"
 
       conn =
         post(conn, Routes.static_page_path(conn, :update_timezone), %{
@@ -132,6 +132,44 @@ defmodule OliWeb.StaticPageControllerTest do
 
       assert Accounts.get_user_preference(user.id, :timezone) == new_timezone
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
+    end
+  end
+
+  describe "student login" do
+    test "shows student login view", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "OLI Torus"
+
+      assert response(conn, 200) =~ "Easily access and participate in your enrolled courses"
+      assert response(conn, 200) =~ "Need an account?"
+    end
+  end
+
+  describe "enrollment info" do
+    test "shows enrollment info in students login", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "Course Enrollment"
+      assert response(conn, 200) =~ "Locate your Enrollment Link"
+
+      assert response(conn, 200) =~
+               "Your instructor will provide an enrollment link to sign up and access your course. Please contact your instructor if you have not received this link or have misplaced it."
+
+      assert response(conn, 200) =~ "Create an Account"
+
+      assert response(conn, 200) =~
+               "Follow your enrollment link to the account creation page where you will create a user ID and password."
+
+      assert response(conn, 200) =~ "Still need an account?"
+
+      assert response(conn, 200) =~
+               "Visit our FAQs document"
+
+      assert response(conn, 200) =~
+               "for help enrolling or setting up your Torus student account. If you require further assistance, please"
+
+      assert response(conn, 200) =~ "contact our support team."
     end
   end
 end

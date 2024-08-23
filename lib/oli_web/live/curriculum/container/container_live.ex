@@ -20,7 +20,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     Entry,
     OptionsModalContent,
     DeleteModal,
-    NotEmptyModal
+    NotEmptyModal,
+    HyperlinkDependencyModal
   }
 
   alias OliWeb.Common.Hierarchy.MoveModal
@@ -280,7 +281,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
            :info,
            "#{resource_type_label(revision) |> String.capitalize()} options saved"
          )
-         |> push_redirect(to: redirect_url)}
+         |> push_navigate(to: redirect_url)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
@@ -364,7 +365,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     case Enum.find(socket.assigns.children, fn r -> r.slug == slug end) do
       %{children: []} = item ->
-        proceed_with_deletion_warning(socket, container, project, author, item)
+        case AuthoringResolver.find_hyperlink_references(project.slug, slug) do
+          [] ->
+            proceed_with_deletion_warning(socket, container, project, author, item)
+
+          references ->
+            show_hyperlink_dependency_modal(socket, container, project, references, item)
+        end
 
       item ->
         notify_not_empty(socket, container, project, author, item)
@@ -548,7 +555,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, assign(socket, dragging: nil)}
   end
 
-  # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("add", %{"type" => type, "scored" => scored}, socket) do
     case ContainerEditor.add_new(
            socket.assigns.container,
@@ -604,12 +610,25 @@ defmodule OliWeb.Curriculum.ContainerLive do
       """
     end
 
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  defp show_hyperlink_dependency_modal(socket, container, project, hyperlinks, item) do
+    modal_assigns = %{
+      id: "not_empty_#{item.slug}",
+      revision: item,
+      container: container,
+      project: project,
+      hyperlinks: hyperlinks
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <HyperlinkDependencyModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   defp notify_not_empty(socket, container, project, author, item) do
@@ -627,12 +646,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
       """
     end
 
-    {:noreply,
-     show_modal(
-       socket,
-       modal,
-       modal_assigns: modal_assigns
-     )}
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   defp update_author_view_pref(author, curriculum_view) do

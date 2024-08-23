@@ -1,22 +1,133 @@
-<div class="container mx-auto my-5 text-center">
-  <%= if author_signed_in?(@conn) do %>
-    <h1><%= gettext "Welcome back %{name}!", name: @conn.assigns.current_author.name %></h1>
+<div class="relative h-[calc(100vh-112px)] flex justify-center items-center">
+    <div class="absolute h-[calc(100vh-112px)] w-full top-0 left-0">
+      <%= OliWeb.Backgrounds.student_sign_in(%{}) %>
+    </div>
+    <div class="flex flex-col gap-y-10 lg:flex-row w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
+      <div class="w-full lg:w-1/2 flex items-start lg:pt-10 justify-center">
+        <div class="w-96 flex-col justify-start items-start gap-3.5 inline-flex">
+          <div class="text-left">
+            <span class="text-white text-4xl font-normal font-['Open Sans'] leading-10">
+              Welcome to
+            </span>
+            <span class="text-white text-4xl font-bold font-['Open Sans'] leading-10">
+              <%= Oli.VendorProperties.product_short_name() %>
+            </span>
+          </div>
+          <div class="w-48 h-11 justify-start items-end gap-1 inline-flex">
+            <div class="justify-start items-end gap-px flex">
+              <div class="grow shrink basis-0 self-start px-1 py-2 justify-center items-center flex">
+                <%= OliWeb.Icons.graduation_cap(%{}) %>
+              </div>
+              <div class="w-40 h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
+                Student
+              </div>
+            </div>
+          </div>
+          <div class="lg:mt-6 text-white text-xl font-normal leading-normal">
+            Easily access and participate in your enrolled courses
+          </div>
+          <a href="#enrollment_info" class="w-auto h-[18.56px] text-white text-xl font-normal font-['Inter'] leading-normal mt-4 lg:mt-10 underline underline-offset-4 hover:text-zinc-300">Need an account?</a>
+        </div>
+      </div>
+      <div class="w-full lg:w-1/2 flex items-center justify-center">
+        <div class="w-96 bg-neutral-700 rounded-md">
+          <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
+            Student Sign In
+          </div>
+          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <%= for link <- provider_links, do: raw(link) %>
+          <%= if provider_links != [] do %>
+            <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
+              OR
+            </div>
+          <% end %>
+          <%= form_for @conn, Routes.session_path(@conn, :signin), [as: :user], fn f -> %>
+            <div class="flex flex-col gap-y-2">
+              <div class="w-80 h-11 m-auto form-label-group border-none">
+                <%= email_input(f, Pow.Ecto.Schema.user_id_field(@conn),
+                  class:
+                    "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
+                  placeholder: "Email",
+                  required: true,
+                  autofocus: true
+                ) %>
+                <%= error_tag(f, Pow.Ecto.Schema.user_id_field(@conn)) %>
+              </div>
+              <div class="w-80 h-11 m-auto form-label-group border-none">
+                <%= password_input(f, :password,
+                  class:
+                    "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
+                  placeholder: "Password",
+                  required: true
+                ) %>
+                <%= error_tag(f, :password) %>
+              </div>
+            </div>
+            <div class="mb-4 d-flex flex-row justify-between px-8 pb-2 pt-6">
+              <%= unless Application.fetch_env!(:oli, :always_use_persistent_login_sessions) do %>
+                <div class="flex items-center gap-x-2 custom-control custom-checkbox">
+                  <%= checkbox(f, :persistent_session,
+                    class: "w-4 h-4 !border !border-white",
+                    style: "background-color: #171717"
+                  ) %>
+                  <%= label(f, :persistent_session, "Remember me",
+                    class:
+                      "text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
+                  ) %>
+                </div>
+              <% else %>
+                <div></div>
+              <% end %>
+              <div class="custom-control">
+                <%= link("Forgot password?",
+                  to: Routes.pow_reset_password_reset_password_path(@conn, :new),
+                  tabindex: "1",
+                  class:
+                    "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
+                ) %>
+              </div>
+            </div>
 
-    <p class="my-2 py-2">
-      <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive), class: "btn btn-outline-primary mx-2" do %>
-        Authoring Workspace <i class="fa fa-arrow-right"></i>
-      <% end %>
-    </p>
+            <%= if @conn.params["section"] do %>
+              <%= hidden_input(f, :section, value: @conn.params["section"]) %>
+            <% end %>
 
-  <% else %>
-    <h1>Welcome to <%= Oli.VendorProperties.product_short_name() %></h1>
-    <p>Create, deliver and continuously improve course materials.</p>
-
-    <p class="my-2 py-2">
-      <%= link to: Routes.authoring_pow_session_path(@conn, :new), class: "btn btn-outline-primary" do %>
-        Authoring Sign In <i class="fa fa-arrow-right"></i>
-      <% end %>
-    </p>
-  <% end %>
-
-</div>
+            <div class="flex justify-center">
+              <%= submit("Sign In",
+                class:
+                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
+              ) %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="enrollment_info" class="relative h-screen flex justify-center items-center">
+    <div class="absolute h-screen w-full top-0 left-0">
+      <div class="flex flex-col w-full bg-black h-full">
+        <%= OliWeb.Backgrounds.enrollment_info(%{}) %>
+        <div class="text-left -top-24 md:-top-40 lg:-top-56 mx-20 lg:mx-48 relative text-white text-2xl lg:text-4xl font-normal font-['Open Sans'] leading-10">Course Enrollment</div>
+        <div style="min-height: 18rem;" class="flex flex-col lg:flex-row relative -top-16 lg:-top-28 w-full lg:h-auto self-center px-8 lg:px-32 gap-y-4 lg:gap-x-8 overflow-y-scroll">
+          <div class="w-auto lg:w-1/3 h-auto bg-white rounded-md py-8 px-10">
+            <div class="text-black text-xl font-bold font-['Inter']">Locate your Enrollment Link</div>
+            <p class="text-black text-base font-medium font-['Inter'] pt-10">Your instructor will provide an enrollment link to sign up and access your course. Please contact your instructor if you have not received this link or have misplaced it.</p>
+          </div>
+          <div class="w-auto lg:w-1/3 h-auto bg-white rounded-md py-8 px-10">
+            <div class="text-black text-xl !font-bold font-['Inter']">Create an Account</div>
+            <p class="text-black text-base font-medium font-['Inter'] pt-10">Follow your enrollment link to the account creation page where you will create a user ID and password.</p>
+          </div>
+          <div class="w-auto lg:w-1/3 h-auto bg-white rounded-md py-8 px-10">
+            <div class="text-black text-xl !font-bold font-['Inter']">Still need an account?</div>
+            <div class="pt-10 pb-8 md:pb-0">
+              <p class="text-stone-900 font-medium text-base font-['Inter']">
+                <a href="<%= Oli.VendorProperties.company_faq_url() %>" target="_blank" class="!text-[#4CA6FF] text-base font-bold font-['Inter'] hover:text-[#4CA6FF]">Visit our FAQs document</a>
+                for help enrolling or setting up your Torus student account. If you require further assistance, please
+                <a onclick="window.showHelpModal();" class="text-[#4CA6FF] text-base font-bold font-['Inter'] hover:text-[#4CA6FF]">contact our support team.</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

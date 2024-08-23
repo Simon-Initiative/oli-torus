@@ -635,6 +635,10 @@ defmodule OliWeb.PublishLiveTest do
       |> element("form[phx-submit=\"publish_active\"")
       |> render_submit(%{description: "New description"})
 
+      view
+      |> element("button", "Ok")
+      |> render_click()
+
       flash = assert_redirected(view, live_view_publish_route(project.slug))
       assert flash["info"] == "Publish Successful!"
     end
@@ -656,6 +660,10 @@ defmodule OliWeb.PublishLiveTest do
       view
       |> element("form[phx-submit=\"publish_active\"")
       |> render_submit(%{description: "New description"})
+
+      view
+      |> element("button", "Ok")
+      |> render_click()
 
       # Two jobs are enqueued (only page revisions are considered, the objective revision is ignored)
       assert_enqueued(
@@ -690,6 +698,10 @@ defmodule OliWeb.PublishLiveTest do
       view
       |> element("form[phx-submit=\"publish_active\"")
       |> render_submit(%{description: "New description"})
+
+      view
+      |> element("button", "Ok")
+      |> render_click()
 
       # No jobs are enqueued
       refute_enqueued(

@@ -18,7 +18,7 @@ defmodule OliWeb.Pow.UserContextTest do
         )
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/workspaces/instructor"
     end
   end
 

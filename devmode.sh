@@ -19,7 +19,7 @@ if [ ! -f .devmode ]; then
   printf "\n\nDB_HOST=localhost" >> oli.env
 
   echo "## Starting postgres database..."
-  docker-compose up -d postgres && sleep 5
+  docker compose up -d postgres && sleep 5
 
   echo "## Creating database and running migration..."
   set -a
@@ -35,9 +35,9 @@ else
 fi
 
 # start database if it's not running
-if ! docker-compose ps | grep -iq "oli_postgres.\+Up"; then
+if ! docker compose ps | grep -iq "oli_postgres.\+Up"; then
   echo "## Starting postgres database..."
-  docker-compose up -d postgres && sleep 5
+  docker compose up -d postgres && sleep 5
 fi
 
 echo "## NOTICE: Running 'reload-env' will apply any configuration set in oli.env"

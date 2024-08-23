@@ -4,11 +4,11 @@
   </a>
 
   <div class="default">
-    <Components.Header.header {assigns} />
+    <Components.Header.delivery_header {assigns} />
 
-    <main role="main" id="main-content" class="pb-20">
+    <main role="main" id="main-content">
       <%= @inner_content %>
     </main>
-    <%= OliWeb.Components.Footer.global_footer(%{}) %>
+    <%= OliWeb.Components.Footer.login_footer(%{}) %>
   </div>
 <% end %>
