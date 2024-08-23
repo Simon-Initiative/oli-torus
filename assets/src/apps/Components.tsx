@@ -19,6 +19,7 @@ import { registerApplication } from 'apps/app';
 import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
+import ActivityBank from './bank/ActivityBank';
 import { References } from './bibliography/References';
 
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
@@ -41,3 +42,4 @@ registerApplication('OfflineDetector', OfflineDetector, globalStore);
 registerApplication('RichTextEditor', RichTextEditor, globalStore);
 registerApplication('VegaLiteRenderer', VegaLiteRenderer, globalStore);
 registerApplication('LikertReportRenderer', LikertReportRenderer, globalStore);
+registerApplication('ActivityBank', ActivityBank, globalStore);
