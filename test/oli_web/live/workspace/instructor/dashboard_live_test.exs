@@ -21,34 +21,34 @@ defmodule OliWeb.Workspace.Instructor.DashboardLiveTest do
       data_expected = %{
         1 =>
           {"Course Content",
-           "/workspaces/instructor/examplesection0/overview/course_content?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/overview/course_content?sidebar_expanded=true"},
         2 =>
           {"Students",
-           "/workspaces/instructor/examplesection0/overview/students?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/overview/students?sidebar_expanded=true"},
         3 =>
           {"Quiz Scores",
-           "/workspaces/instructor/examplesection0/overview/quiz_cores?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/overview/quiz_cores?sidebar_expanded=true"},
         4 =>
           {"Recommended Actions",
-           "/workspaces/instructor/examplesection0/overview/recommended_actions?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/overview/recommended_actions?sidebar_expanded=true"},
         5 =>
           {"Content",
-           "/workspaces/instructor/examplesection0/insights/content?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/insights/content?sidebar_expanded=true"},
         6 =>
           {"Learning Objectives",
-           "/workspaces/instructor/examplesection0/insights/learning_objectives?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/insights/learning_objectives?sidebar_expanded=true"},
         7 =>
           {"Scored Activities",
-           "/workspaces/instructor/examplesection0/insights/scored_activities?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/insights/scored_activities?sidebar_expanded=true"},
         8 =>
           {"Practice Activities",
-           "/workspaces/instructor/examplesection0/insights/practice_activities?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/insights/practice_activities?sidebar_expanded=true"},
         9 =>
           {"Surveys",
-           "/workspaces/instructor/examplesection0/insights/surveys?sidebar_expanded=true"},
-        10 => {"Manage", "/workspaces/instructor/examplesection0/manage?sidebar_expanded=true"},
+           "/workspaces/instructor/#{section.slug}/insights/surveys?sidebar_expanded=true"},
+        10 => {"Manage", "/workspaces/instructor/#{section.slug}/manage?sidebar_expanded=true"},
         11 =>
-          {"Activity", "/workspaces/instructor/examplesection0/activity?sidebar_expanded=true"}
+          {"Activity", "/workspaces/instructor/#{section.slug}/activity?sidebar_expanded=true"}
       }
 
       data_obtained =
