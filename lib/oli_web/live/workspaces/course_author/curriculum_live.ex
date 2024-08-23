@@ -7,7 +7,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   import OliWeb.Curriculum.Utils
 
   alias Oli.Authoring.Editing.ContainerEditor
-  alias Oli.Authoring.Course
 
   alias OliWeb.Curriculum.{
     Rollup,
@@ -143,97 +142,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     {:noreply, socket}
   end
 
-  # Load either a specific container, or if the slug is nil the root. After loaded,
-  # scrub the container's children to ensure that there a no duplicate ids that may
-  # have crept in.
-  defp load_and_scrub_container(container_slug, project_slug, root_container) do
-    container =
-      if is_nil(container_slug) do
-        root_container
-      else
-        AuthoringResolver.from_revision_slug(project_slug, container_slug)
-      end
-
-    {deduped, _} =
-      Enum.reduce(container.children, {[], MapSet.new()}, fn id, {all, map} ->
-        case MapSet.member?(map, id) do
-          true -> {all, map}
-          false -> {[id | all], MapSet.put(map, id)}
-        end
-      end)
-
-    # Now see if the deduping actually led to any change in the number of children,
-    # remembering though that the deduped children ids are in reverse order.
-    if length(deduped) != length(container.children) do
-      Repo.transaction(fn ->
-        ChangeTracker.track_revision(project_slug, container, %{
-          # restore correct order
-          children: Enum.reverse(deduped)
-        })
-      end)
-    else
-      {:ok, container}
-    end
-  end
-
-  defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
-    socket
-    |> assign(:page_title, "Options")
-    |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
-  end
-
-  defp apply_action(socket, _action, _params) do
-    socket
-    |> assign(:page_title, "Curriculum | " <> socket.assigns.project.title)
-    |> assign(:revision, nil)
-  end
-
-  # spin up subscriptions for the container and for all of its children, activities and attached objectives
-  defp subscribe(
-         container,
-         children,
-         %Rollup{activity_map: activity_map, objective_map: objective_map},
-         project_slug
-       ) do
-    Enum.each(children, fn child ->
-      Subscriber.subscribe_to_locks_acquired(project_slug, child.resource_id)
-      Subscriber.subscribe_to_locks_released(project_slug, child.resource_id)
-    end)
-
-    activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
-    objective_ids = Enum.map(objective_map, fn {id, _} -> id end)
-
-    ids =
-      [container.resource_id] ++
-        Enum.map(children, fn c -> c.resource_id end) ++ activity_ids ++ objective_ids
-
-    Enum.each(ids, fn id ->
-      Subscriber.subscribe_to_new_revisions_in_project(id, project_slug)
-    end)
-
-    Subscriber.subscribe_to_new_resources_of_type(
-      Oli.Resources.ResourceType.id_for_objective(),
-      project_slug
-    )
-
-    ids
-  end
-
-  # release a collection of subscriptions
-  defp unsubscribe(ids, children, project_slug) do
-    Subscriber.unsubscribe_to_new_resources_of_type(
-      Oli.Resources.ResourceType.id_for_objective(),
-      project_slug
-    )
-
-    Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
-
-    Enum.each(children, fn child ->
-      Subscriber.unsubscribe_to_locks_acquired(project_slug, child.resource_id)
-      Subscriber.unsubscribe_to_locks_released(project_slug, child.resource_id)
-    end)
-  end
-
+  @impl Phoenix.LiveView
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project, children: children} =
       socket.assigns
@@ -596,6 +505,175 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
      )}
   end
 
+  # Here we respond to notifications for edits made
+  # to the container or to its child children, contained activities and attached objectives
+  @impl Phoenix.LiveView
+  def handle_info({:updated, revision, _}, socket) do
+    socket =
+      case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
+        "activity" -> handle_updated_activity(socket, revision)
+        "objective" -> handle_updated_objective(socket, revision)
+        "page" -> handle_updated_page(socket, revision)
+        "container" -> handle_updated_container(socket, revision)
+      end
+
+    # redo all subscriptions
+    unsubscribe(
+      socket.assigns.subscriptions,
+      socket.assigns.children,
+      socket.assigns.project.slug
+    )
+
+    subscriptions =
+      subscribe(
+        socket.assigns.container,
+        socket.assigns.children,
+        socket.assigns.rollup,
+        socket.assigns.project.slug
+      )
+
+    {:noreply, assign(socket, subscriptions: subscriptions)}
+  end
+
+  # listens for creation of new objectives
+  def handle_info({:new_resource, revision, _}, socket) do
+    # include it in our objective map
+    rollup = Rollup.objective_updated(socket.assigns.rollup, revision)
+
+    # now listen to it for future edits
+    Subscriber.subscribe_to_new_revisions_in_project(
+      revision.resource_id,
+      socket.assigns.project.slug
+    )
+
+    subscriptions = [revision.resource_id | socket.assigns.subscriptions]
+
+    {:noreply, assign(socket, rollup: rollup, subscriptions: subscriptions)}
+  end
+
+  def handle_info(
+        {:lock_acquired, publication_id, resource_id, author_id},
+        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} =
+          socket
+      ) do
+    # Check to see if the lock_acquired message is intended for this specific project/publication's resource.
+    # This check could be optimized by crafting a more specific message that embeds the publication_id, but then the
+    # latest active publication_id would need to be tracked in the assigns and updated if a project is published.
+    # Same thing applies to the :lock_released handler below.
+    if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
+      author = Accounts.get_author(author_id)
+
+      new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
+      {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info(
+        {:lock_released, publication_id, resource_id},
+        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} =
+          socket
+      ) do
+    if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
+      new_resources_being_edited = Map.delete(resources_being_edited, resource_id)
+      {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # Load either a specific container, or if the slug is nil the root. After loaded,
+  # scrub the container's children to ensure that there a no duplicate ids that may
+  # have crept in.
+  defp load_and_scrub_container(container_slug, project_slug, root_container) do
+    container =
+      if is_nil(container_slug) do
+        root_container
+      else
+        AuthoringResolver.from_revision_slug(project_slug, container_slug)
+      end
+
+    {deduped, _} =
+      Enum.reduce(container.children, {[], MapSet.new()}, fn id, {all, map} ->
+        case MapSet.member?(map, id) do
+          true -> {all, map}
+          false -> {[id | all], MapSet.put(map, id)}
+        end
+      end)
+
+    # Now see if the deduping actually led to any change in the number of children,
+    # remembering though that the deduped children ids are in reverse order.
+    if length(deduped) != length(container.children) do
+      Repo.transaction(fn ->
+        ChangeTracker.track_revision(project_slug, container, %{
+          # restore correct order
+          children: Enum.reverse(deduped)
+        })
+      end)
+    else
+      {:ok, container}
+    end
+  end
+
+  defp apply_action(socket, :edit, %{"project_id" => project_id, "revision_slug" => revision_slug}) do
+    socket
+    |> assign(:page_title, "Options")
+    |> assign(:revision, AuthoringResolver.from_revision_slug(project_id, revision_slug))
+  end
+
+  defp apply_action(socket, _action, _params) do
+    socket
+    |> assign(:page_title, "Curriculum | " <> socket.assigns.project.title)
+    |> assign(:revision, nil)
+  end
+
+  # spin up subscriptions for the container and for all of its children, activities and attached objectives
+  defp subscribe(
+         container,
+         children,
+         %Rollup{activity_map: activity_map, objective_map: objective_map},
+         project_slug
+       ) do
+    Enum.each(children, fn child ->
+      Subscriber.subscribe_to_locks_acquired(project_slug, child.resource_id)
+      Subscriber.subscribe_to_locks_released(project_slug, child.resource_id)
+    end)
+
+    activity_ids = Enum.map(activity_map, fn {id, _} -> id end)
+    objective_ids = Enum.map(objective_map, fn {id, _} -> id end)
+
+    ids =
+      [container.resource_id] ++
+        Enum.map(children, fn c -> c.resource_id end) ++ activity_ids ++ objective_ids
+
+    Enum.each(ids, fn id ->
+      Subscriber.subscribe_to_new_revisions_in_project(id, project_slug)
+    end)
+
+    Subscriber.subscribe_to_new_resources_of_type(
+      Oli.Resources.ResourceType.id_for_objective(),
+      project_slug
+    )
+
+    ids
+  end
+
+  # release a collection of subscriptions
+  defp unsubscribe(ids, children, project_slug) do
+    Subscriber.unsubscribe_to_new_resources_of_type(
+      Oli.Resources.ResourceType.id_for_objective(),
+      project_slug
+    )
+
+    Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
+
+    Enum.each(children, fn child ->
+      Subscriber.unsubscribe_to_locks_acquired(project_slug, child.resource_id)
+      Subscriber.unsubscribe_to_locks_released(project_slug, child.resource_id)
+    end)
+  end
+
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
     modal_assigns = %{
       id: "delete_#{item.slug}",
@@ -757,86 +835,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     end
   end
 
-  # Here we respond to notifications for edits made
-  # to the container or to its child children, contained activities and attached objectives
-  def handle_info({:updated, revision, _}, socket) do
-    socket =
-      case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
-        "activity" -> handle_updated_activity(socket, revision)
-        "objective" -> handle_updated_objective(socket, revision)
-        "page" -> handle_updated_page(socket, revision)
-        "container" -> handle_updated_container(socket, revision)
-      end
-
-    # redo all subscriptions
-    unsubscribe(
-      socket.assigns.subscriptions,
-      socket.assigns.children,
-      socket.assigns.project.slug
-    )
-
-    subscriptions =
-      subscribe(
-        socket.assigns.container,
-        socket.assigns.children,
-        socket.assigns.rollup,
-        socket.assigns.project.slug
-      )
-
-    {:noreply, assign(socket, subscriptions: subscriptions)}
-  end
-
-  # listens for creation of new objectives
-  def handle_info({:new_resource, revision, _}, socket) do
-    # include it in our objective map
-    rollup = Rollup.objective_updated(socket.assigns.rollup, revision)
-
-    # now listen to it for future edits
-    Subscriber.subscribe_to_new_revisions_in_project(
-      revision.resource_id,
-      socket.assigns.project.slug
-    )
-
-    subscriptions = [revision.resource_id | socket.assigns.subscriptions]
-
-    {:noreply, assign(socket, rollup: rollup, subscriptions: subscriptions)}
-  end
-
-  def handle_info(
-        {:lock_acquired, publication_id, resource_id, author_id},
-        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} =
-          socket
-      ) do
-    # Check to see if the lock_acquired message is intended for this specific project/publication's resource.
-    # This check could be optimized by crafting a more specific message that embeds the publication_id, but then the
-    # latest active publication_id would need to be tracked in the assigns and updated if a project is published.
-    # Same thing applies to the :lock_released handler below.
-    if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
-      author = Accounts.get_author(author_id)
-
-      new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
-      {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
-    else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_info(
-        {:lock_released, publication_id, resource_id},
-        %{assigns: %{resources_being_edited: resources_being_edited, project: %{id: project_id}}} =
-          socket
-      ) do
-    if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
-      new_resources_being_edited = Map.delete(resources_being_edited, resource_id)
-      {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}
-    else
-      {:noreply, socket}
-    end
-  end
-
   # Resources currently being edited by an author (has a lock present)
   # : %{ resource_id => author }
-  def get_resources_being_edited(resource_ids, project_id) do
+  defp get_resources_being_edited(resource_ids, project_id) do
     project_id
     |> Publishing.get_unpublished_publication_id!()
     |> (&Publishing.retrieve_lock_info(resource_ids, &1)).()
