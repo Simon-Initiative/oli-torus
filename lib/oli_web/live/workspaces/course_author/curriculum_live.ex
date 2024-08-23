@@ -295,10 +295,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
         container: container,
         project: project,
         author: author,
-        revision: revision,
-        redirect_url: redirect_url
+        revision: revision
       }
     } = socket.assigns
+
+    redirect_url = Routes.live_path(socket, __MODULE__, socket.assigns.project.slug)
 
     case container do
       nil ->
@@ -491,17 +492,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     end
   end
 
-  def handle_event("change-view", %{"view" => view}, socket) do
+  def handle_event("change-view", params, socket) do
     {:noreply,
      push_patch(socket,
-       to:
-         Routes.container_path(
-           socket,
-           :index,
-           socket.assigns.project.slug,
-           socket.assigns.container.slug,
-           %{view: view}
-         )
+       to: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
      )}
   end
 
