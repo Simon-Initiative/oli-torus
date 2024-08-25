@@ -54,7 +54,9 @@ defmodule Oli.Delivery.Experiments.LogWorker do
 
         s ->
           case out_of do
-            out_of when out_of in [+0.0, -0.0] -> 0.0
+            out_of when out_of in [+0.0, -0.0] ->
+              0.0
+
             o ->
               try do
                 s / o
