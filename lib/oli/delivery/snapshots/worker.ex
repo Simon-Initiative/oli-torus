@@ -119,8 +119,10 @@ defmodule Oli.Delivery.Snapshots.Worker do
                bulk_attrs ++ all_bulk_attrs
              end)
 
-           Repo.insert_all(Snapshot, attrs_list)
-           attempt_group
+          Repo.insert_all(Snapshot, attrs_list, on_conflict: :nothing)
+
+          attempt_group
+
          end) do
       {:ok, attempt_group} ->
         if with_v2_support and attempt_group != nil and Application.get_env(:oli, :env) != :test do
