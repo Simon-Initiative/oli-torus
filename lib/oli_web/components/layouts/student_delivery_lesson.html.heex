@@ -83,7 +83,7 @@
       </div>
       <.back_arrow
         to={
-          if assigns[:request_path] in [""],
+          if assigns[:request_path] in [nil, ""],
             do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
             else: assigns[:request_path]
         }
