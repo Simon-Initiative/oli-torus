@@ -119,7 +119,8 @@ defmodule Oli.Delivery.Snapshots.Worker do
                bulk_attrs ++ all_bulk_attrs
              end)
 
-           Repo.insert_all(Snapshot, attrs_list)
+           Repo.insert_all(Snapshot, attrs_list, on_conflict: :nothing)
+
            attempt_group
          end) do
       {:ok, attempt_group} ->

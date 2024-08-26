@@ -166,9 +166,16 @@ defmodule Oli.Delivery.Experiments do
       })
 
     case http().post(url("/api/log"), body, headers()) do
-      {:ok, %{status_code: 200, body: body}} ->
+      {:ok, %{body: body}} ->
         Logger.info("Logged experiment for [#{enrollment_id}]")
         Poison.decode(body)
+
+      {:ok, result} ->
+        Kernel.to_string(result)
+        |> Oli.Utils.Appsignal.capture_error(result)
+
+        Logger.error("Could not log experiment for [#{enrollment_id}]")
+        {:error, result}
 
       {:error, e} ->
         Oli.Utils.Appsignal.capture_error(e)
