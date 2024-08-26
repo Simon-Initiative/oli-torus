@@ -489,20 +489,23 @@ export const getLocalizedStateSnapshot = (
   activityIds: EntityId[],
   env: Environment = defaultGlobalEnv,
 ) => {
-  const activityId = activityIds[activityIds.length - 1];
+  let localActivityIds = activityIds;
   const snapshot = getEnvState(env);
   const finalState: any = { ...snapshot };
-
-  //activityIds.forEach((activityId: string) => {
-  const activityState = Object.keys(snapshot)
-    .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
-    .reduce((collect: any, key) => {
-      const localizedKey = key.replace(`${activityId}|`, '');
-      collect[localizedKey] = snapshot[key];
-      return collect;
-    }, {});
-  Object.assign(finalState, activityState);
-  //});
+  const attempType = getValue('app.attempType', defaultGlobalEnv);
+  if (attempType == 'New') {
+    // Since we no longer save the values to its owener, we only need snapshot of current activity
+    localActivityIds = [activityIds[activityIds.length - 1]];
+  }
+    const activityState = Object.keys(snapshot)
+      .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
+      .reduce((collect: any, key) => {
+        const localizedKey = key.replace(`${activityId}|`, '');
+        collect[localizedKey] = snapshot[key];
+        return collect;
+      }, {});
+    Object.assign(finalState, activityState);
+  });
 
   return finalState;
 };
