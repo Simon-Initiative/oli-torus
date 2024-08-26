@@ -18,21 +18,38 @@ defmodule OliWeb.Workspace.Instructor.DashboardLiveTest do
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor/#{section.slug}/overview")
 
-      common = "/workspaces/instructor/#{section.slug}"
-      url_params = "?sidebar_expanded=true"
-
-      data_expected =
-        %{
-          1 => {"Course Content", "#{common}/overview/course_content#{url_params}"},
-          2 => {"Students", "#{common}/overview/students#{url_params}"},
-          3 => {"Content", "#{common}/insights/content#{url_params}"},
-          4 => {"Learning Objectives", "#{common}/insights/learning_objectives#{url_params}"},
-          5 => {"Scored Activities", "#{common}/insights/scored_activities#{url_params}"},
-          6 => {"Practice Activities", "#{common}/insights/practice_activities#{url_params}"},
-          7 => {"Surveys", "#{common}/insights/surveys#{url_params}"},
-          8 => {"Manage", "#{common}/manage#{url_params}"},
-          9 => {"Activity", "#{common}/activity#{url_params}"}
-        }
+      data_expected = %{
+        1 =>
+          {"Course Content",
+           "/workspaces/instructor/#{section.slug}/overview/course_content?sidebar_expanded=true"},
+        2 =>
+          {"Students",
+           "/workspaces/instructor/#{section.slug}/overview/students?sidebar_expanded=true"},
+        3 =>
+          {"Quiz Scores",
+           "/workspaces/instructor/#{section.slug}/overview/quiz_cores?sidebar_expanded=true"},
+        4 =>
+          {"Recommended Actions",
+           "/workspaces/instructor/#{section.slug}/overview/recommended_actions?sidebar_expanded=true"},
+        5 =>
+          {"Content",
+           "/workspaces/instructor/#{section.slug}/insights/content?sidebar_expanded=true"},
+        6 =>
+          {"Learning Objectives",
+           "/workspaces/instructor/#{section.slug}/insights/learning_objectives?sidebar_expanded=true"},
+        7 =>
+          {"Scored Activities",
+           "/workspaces/instructor/#{section.slug}/insights/scored_activities?sidebar_expanded=true"},
+        8 =>
+          {"Practice Activities",
+           "/workspaces/instructor/#{section.slug}/insights/practice_activities?sidebar_expanded=true"},
+        9 =>
+          {"Surveys",
+           "/workspaces/instructor/#{section.slug}/insights/surveys?sidebar_expanded=true"},
+        10 => {"Manage", "/workspaces/instructor/#{section.slug}/manage?sidebar_expanded=true"},
+        11 =>
+          {"Activity", "/workspaces/instructor/#{section.slug}/activity?sidebar_expanded=true"}
+      }
 
       data_obtained =
         view

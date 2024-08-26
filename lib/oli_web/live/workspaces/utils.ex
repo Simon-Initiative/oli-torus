@@ -117,7 +117,7 @@ defmodule OliWeb.Workspace.Utils do
   attr :is_active, :boolean, default: false
   attr :sidebar_expanded, :boolean, default: true
   attr :badge, :integer, default: nil
-  attr :on_active_bg, :string, default: "bg-zinc-400 bg-opacity-20"
+  attr :on_active_bg, :string, default: "bg-[#E6E9F2] dark:bg-[#222126]"
   attr :sub_menu_item, :map
   attr :active_view, :atom, default: nil
 
@@ -127,7 +127,7 @@ defmodule OliWeb.Workspace.Utils do
 
     ~H"""
     <div class={[
-      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#141416] hover:bg-zinc-400/10 rounded-lg justify-start items-center gap-3 inline-flex",
+      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#222126] hover:bg-[#E6E9F2] rounded-lg justify-start items-center gap-3 inline-flex",
       if(@is_active, do: @on_active_bg)
     ]}>
       <div :if={@sub_menu_item.icon} class="w-5 h-5 flex items-center justify-center">
@@ -221,64 +221,47 @@ defmodule OliWeb.Workspace.Utils do
       %SubMenuItem{
         text: "Overview",
         icon: "author_overview",
-        view: :overview,
-        parent_view: nil,
-        children: []
+        view: :overview
       },
       %SubMenuItem{
         text: "Create",
         icon: "author_create",
         view: :create,
-        parent_view: nil,
         children: [
           %SubMenuItem{
             text: "Objectives",
-            icon: nil,
             view: :objectives,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Activity Bank",
-            icon: nil,
             view: :activity_bank,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Experiments",
-            icon: nil,
             view: :experiments,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Bibliography",
-            icon: nil,
             view: :bibliography,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "Curriculum",
-            icon: nil,
             view: :curriculum,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "All Pages",
-            icon: nil,
             view: :pages,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           },
           %SubMenuItem{
             text: "All Activities",
-            icon: nil,
             view: :activities,
-            parent_view: :create,
-            children: []
+            parent_view: :create
           }
         ]
       },
@@ -286,28 +269,21 @@ defmodule OliWeb.Workspace.Utils do
         text: "Publish",
         icon: "author_publish",
         view: :author_publish,
-        parent_view: nil,
         children: [
           %SubMenuItem{
             text: "Review",
-            icon: nil,
             view: :review,
-            parent_view: :author_publish,
-            children: []
+            parent_view: :author_publish
           },
           %SubMenuItem{
             text: "Publish",
-            icon: nil,
             view: :publish,
-            parent_view: :author_publish,
-            children: []
+            parent_view: :author_publish
           },
           %SubMenuItem{
             text: "Products",
-            icon: nil,
             view: :products,
-            parent_view: :author_publish,
-            children: []
+            parent_view: :author_publish
           }
         ]
       },
@@ -315,14 +291,11 @@ defmodule OliWeb.Workspace.Utils do
         text: "Improve",
         icon: "author_improve",
         view: :improve,
-        parent_view: nil,
         children: [
           %SubMenuItem{
             text: "Insights",
-            icon: nil,
             view: :insights,
-            parent_view: :improve,
-            children: []
+            parent_view: :improve
           }
         ]
       }
@@ -344,6 +317,16 @@ defmodule OliWeb.Workspace.Utils do
           %SubMenuItem{
             text: "Students",
             view: :students,
+            parent_view: :overview
+          },
+          %SubMenuItem{
+            text: "Quiz Scores",
+            view: :quiz_cores,
+            parent_view: :overview
+          },
+          %SubMenuItem{
+            text: "Recommended Actions",
+            view: :recommended_actions,
             parent_view: :overview
           }
         ]
