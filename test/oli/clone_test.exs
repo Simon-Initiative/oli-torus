@@ -81,6 +81,14 @@ defmodule Oli.CloneTest do
       # Clone the project
       {:ok, duplicated_project} = Clone.clone_project(project.slug, author2)
 
+      duplicated_publication =
+        Publishing.project_working_publication(duplicated_project.slug)
+
+      %{}
+      |> Oli.Utils.Seeder.Project.ensure_published(duplicated_publication,
+        publication_tag: :publication
+      )
+
       # Check if the products are cloned
       duplicated_product_1 =
         Sections.get_section_by(base_project_id: duplicated_project.id, title: "Product 1 Copy")
@@ -96,13 +104,13 @@ defmodule Oli.CloneTest do
       assert Repo.get_by(Sections.SectionsProjectsPublications,
                project_id: duplicated_project.id,
                section_id: duplicated_product_1.id,
-               publication_id: publication.id
+               publication_id: duplicated_publication.id
              )
 
       assert Repo.get_by(Sections.SectionsProjectsPublications,
                project_id: duplicated_project.id,
                section_id: duplicated_product_2.id,
-               publication_id: publication.id
+               publication_id: duplicated_publication.id
              )
 
       # Create a new section from duplicated product 1
@@ -114,7 +122,7 @@ defmodule Oli.CloneTest do
       assert Repo.get_by(Sections.SectionsProjectsPublications,
                project_id: duplicated_project.id,
                section_id: section.id,
-               publication_id: publication.id
+               publication_id: duplicated_publication.id
              )
     end
 
