@@ -140,7 +140,6 @@ export const loadInitialPageState = createAsyncThunk(
           return acc;
         }, 0);
         evalAssignScript(
-          { 'session.tutorialScore': totalScore, 'session.currentQuestionScore': 0 },
           {
             'session.tutorialScore': totalScore,
             'app.attempType': 'Resume',
