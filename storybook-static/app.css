@@ -7035,6 +7035,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(184 116 57 / .25);
 }
 
+.bg-\[\#E6E9F2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(230 233 242 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#F3F4F8\] {
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 248 / var(--tw-bg-opacity));
@@ -13154,6 +13159,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(0 117 235 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-\[\#E6E9F2\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(230 233 242 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-black\/\[\.1\]:hover {
   background-color: rgb(0 0 0 / .1);
 }
@@ -14571,6 +14581,11 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(221 221 221 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#FFF\] {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#eeebf5\] {
   --tw-text-opacity: 1;
   color: rgb(238 235 245 / var(--tw-text-opacity));
@@ -14857,6 +14872,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:hover\:bg-\[\#141416\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(20 20 22 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:hover\:bg-\[\#222126\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(34 33 38 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-\[\#33181A\]:hover {
