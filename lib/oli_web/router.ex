@@ -1053,13 +1053,13 @@ defmodule OliWeb.Router do
     ])
 
     scope "/prologue/:revision_slug" do
-      live_session :delivery_lesson,
+      live_session :delivery_prologue,
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
           OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetSection,
-          {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+          {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
@@ -1071,7 +1071,7 @@ defmodule OliWeb.Router do
     end
 
     scope "/lesson/:revision_slug" do
-      live_session :delivery_prologue,
+      live_session :delivery_lesson,
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [

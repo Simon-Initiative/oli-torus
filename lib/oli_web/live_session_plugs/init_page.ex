@@ -4,8 +4,25 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   import Phoenix.Component, only: [assign: 2, update: 3]
 
   alias Oli.Delivery.{PreviousNextIndex, Settings}
-  alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Page.{PageContext, PrologueContext}
   alias OliWeb.Router.Helpers, as: Routes
+
+  def on_mount(:set_prologue_context, %{"revision_slug" => revision_slug}, _session, socket) do
+    %{section: section, current_user: current_user} = socket.assigns
+
+    page_context =
+      PrologueContext.create_for_visit(
+        section,
+        revision_slug,
+        current_user
+      )
+
+    {:cont, prologue_assigns(socket, page_context)}
+  end
+
+  def on_mount(:set_prologue_context, :not_mounted_at_router, _session, socket) do
+    {:cont, socket}
+  end
 
   def on_mount(:set_page_context, :not_mounted_at_router, _session, socket) do
     {:cont, socket}
@@ -49,7 +66,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       PreviousNextIndex.retrieve(assigns.section, resource_id, skip: [:section])
 
     socket =
-      case assigns.view do
+      case assigns[:view] do
         :adaptive_chromeless ->
           previous_url = url_from_desc(assigns.section.slug, previous)
           next_url = url_from_desc(assigns.section.slug, next)
@@ -281,7 +298,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
       end
 
     assign(socket,
-      page_context: %PageContext{page_context | historical_attempts: resource_attempts},
+      page_context: %{page_context | historical_attempts: resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
       attempt_message: attempt_message
     )

@@ -483,7 +483,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert redirect_path ==
                live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug) <>
-                 "?request_path%3Dsome_request_path%26selected_view%3Dgallery"
+                 "?request_path=some_request_path&selected_view=gallery"
     end
 
     test "can see default logo", %{
