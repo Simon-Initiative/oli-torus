@@ -14,6 +14,45 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
 
+  defp create_attempt(student, section, revision, resource_attempt_data) do
+    resource_access = get_or_insert_resource_access(student, section, revision)
+
+    resource_attempt =
+      insert(:resource_attempt, %{
+        resource_access: resource_access,
+        revision: revision,
+        date_submitted: resource_attempt_data[:date_submitted] || ~U[2023-11-14 20:00:00Z],
+        date_evaluated: resource_attempt_data[:date_evaluated] || ~U[2023-11-14 20:30:00Z],
+        score: resource_attempt_data[:score] || 5,
+        out_of: resource_attempt_data[:out_of] || 10,
+        lifecycle_state: resource_attempt_data[:lifecycle_state] || :submitted,
+        content: resource_attempt_data[:content] || %{model: []}
+      })
+
+    resource_attempt
+  end
+
+  defp get_or_insert_resource_access(student, section, revision) do
+    Oli.Repo.get_by(
+      ResourceAccess,
+      resource_id: revision.resource_id,
+      section_id: section.id,
+      user_id: student.id
+    )
+    |> case do
+      nil ->
+        insert(:resource_access, %{
+          user: student,
+          section: section,
+          resource: revision.resource,
+          resource_id: revision.resource_id
+        })
+
+      resource_access ->
+        resource_access
+    end
+  end
+
   describe "page_delivery_controller build_hierarchy" do
     setup [:setup_tags, :setup_lti_session]
 
@@ -467,34 +506,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     } do
       enroll_as_student(%{section: section, user: user})
 
-      conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
-
-      # now start the attempt
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn =
-        get(
-          conn,
-          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
-        )
-
-      # verify the redirection
-      redir_path = redirected_to(conn, 302)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, redir_path)
-
-      # fetch the resource that will have been created
-      [attempt] = Oli.Repo.all(ResourceAttempt)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      attempt = create_attempt(user, section, page_revision, %{lifecycle_state: :active})
 
       post(
         conn,
@@ -506,7 +518,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
           "action" => "finalize",
           "section_slug" => section.slug,
           "revision_slug" => page_revision.slug,
-          "attempt_guid" => attempt.attempt_guid
+          "attempt_guid" => attempt.attempt_guid,
+          "resource_id" => page_revision.resource_id
         }
       )
 
@@ -524,34 +537,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       {:ok, section} = Sections.update_section(section, %{grade_passback_enabled: true})
       enroll_as_student(%{section: section, user: user})
 
-      conn = get(conn, ~p"/sections/#{section.slug}/lesson/#{page_revision.slug}")
-
-      # now start the attempt
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn =
-        get(
-          conn,
-          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
-        )
-
-      # verify the redirection
-      redir_path = redirected_to(conn, 302)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, redir_path)
-
-      # fetch the resource attempt that will have been created
-      [attempt] = Oli.Repo.all(ResourceAttempt)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      attempt = create_attempt(user, section, page_revision, %{lifecycle_state: :active})
 
       post(
         conn,
