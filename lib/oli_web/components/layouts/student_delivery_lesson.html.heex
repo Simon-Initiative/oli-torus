@@ -1,7 +1,6 @@
 <%= if assigns[:loading?] do %>
   <div></div>
 <% else %>
-
   <div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
     <%= if live_flash(@flash, :info) do %>
       <div class="alert alert-info flex flex-row" role="alert">

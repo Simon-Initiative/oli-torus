@@ -31,18 +31,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   }
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-
     %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
-    IO.inspect "mounting practice page"
-    IO.inspect connected?(socket)
-
+    IO.inspect("mounting practice page")
+    IO.inspect(connected?(socket))
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
-
       async_load_annotations(
         section,
         page_context.page.resource_id,
@@ -57,21 +54,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       emit_page_viewed_event(socket)
 
       {:ok,
-      socket
-      |> assign_html_and_scripts()
-      |> annotations_assigns(page_context.collab_space_config, is_instructor)
-      |> assign(loading?: false, is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
-      |> assign_objectives()
-      |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
-
-
-
+       socket
+       |> assign_html_and_scripts()
+       |> annotations_assigns(page_context.collab_space_config, is_instructor)
+       |> assign(
+         loading?: false,
+         is_instructor: is_instructor,
+         page_resource_id: page_context.page.resource_id
+       )
+       |> assign_objectives()
+       |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
     else
       {:ok, assign(socket, loading?: true)}
-
     end
-
-
   end
 
   def mount(
@@ -642,7 +637,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, socket}
   end
 
-  def render(%{loading?: :true} = assigns) do
+  def render(%{loading?: true} = assigns) do
     ~H"""
     <div></div>
     """

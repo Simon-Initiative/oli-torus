@@ -41,7 +41,6 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
     else
       {:cont, socket}
     end
-
   end
 
   def on_mount(
@@ -63,13 +62,13 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
         }
         when progress_state in [:revised, :in_progress] ->
           {:halt,
-          redirect(socket,
-            to:
-              adaptive_chromeless_url(section_slug, revision_slug,
-                request_path: params["request_path"],
-                selected_view: params["selected_view"]
-              )
-          )}
+           redirect(socket,
+             to:
+               adaptive_chromeless_url(section_slug, revision_slug,
+                 request_path: params["request_path"],
+                 selected_view: params["selected_view"]
+               )
+           )}
 
         _ ->
           {:cont, socket}

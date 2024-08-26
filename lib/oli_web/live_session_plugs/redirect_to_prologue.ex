@@ -40,7 +40,6 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToPrologue do
     else
       {:cont, socket}
     end
-
   end
 
   def on_mount(:default, _params, _session, socket) do

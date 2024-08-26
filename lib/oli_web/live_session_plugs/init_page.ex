@@ -12,10 +12,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   end
 
   def on_mount(:set_page_context, %{"revision_slug" => revision_slug}, _session, socket) do
-
     if Phoenix.LiveView.connected?(socket) do
-
-      IO.inspect "Setting page context"
+      IO.inspect("Setting page context")
 
       %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
         socket.assigns
@@ -29,17 +27,15 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         )
 
       {:cont,
-        assign(socket,
-          page_context: page_context,
-          # the page context will be a temporary assign,
-          # that is why we need to "duplicate" the page context progress state in another socket assign
-          page_progress_state: page_context.progress_state
-        )}
-
+       assign(socket,
+         page_context: page_context,
+         # the page context will be a temporary assign,
+         # that is why we need to "duplicate" the page context progress state in another socket assign
+         page_progress_state: page_context.progress_state
+       )}
     else
       {:cont, socket}
     end
-
   end
 
   def on_mount(
@@ -48,11 +44,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         %{assigns: assigns} = socket
       ) do
-
     if Phoenix.LiveView.connected?(socket) do
-
-
-      IO.inspect "Setting page prev and next"
+      IO.inspect("Setting page prev and next")
       resource_id = assigns.page_context.page.resource_id
 
       # note will all be nil for case of "loose" linked pages not in hierarchy
@@ -76,15 +69,14 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         end
 
       {:cont,
-      assign(socket,
-        previous_page: previous,
-        next_page: next,
-        current_page: current
-      )}
+       assign(socket,
+         previous_page: previous,
+         next_page: next,
+         current_page: current
+       )}
     else
       {:cont, socket}
     end
-
   end
 
   def on_mount(
@@ -93,13 +85,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         socket
       ) do
-
     if Phoenix.LiveView.connected?(socket) do
       {:cont, init_context_state(socket, params)}
     else
       {:cont, socket}
     end
-
   end
 
   # Handles the 2 cases of adaptive delivery
