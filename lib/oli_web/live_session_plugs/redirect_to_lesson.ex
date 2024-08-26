@@ -21,21 +21,26 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToLesson do
         _session,
         socket
       ) do
-    case socket.assigns.page_context do
-      %PageContext{progress_state: progress_state}
-      when progress_state in [:revised, :in_progress] ->
-        {:halt,
-         redirect(socket,
-           to:
-             Utils.lesson_live_path(section_slug, revision_slug,
-               request_path: params["request_path"],
-               selected_view: params["selected_view"]
-             )
-         )}
+    if Phoenix.LiveView.connected?(socket) do
+      case socket.assigns.page_context do
+        %PageContext{progress_state: progress_state}
+        when progress_state in [:revised, :in_progress] ->
+          {:halt,
+           redirect(socket,
+             to:
+               Utils.lesson_live_path(section_slug, revision_slug,
+                 request_path: params["request_path"],
+                 selected_view: params["selected_view"]
+               )
+           )}
 
-      _ ->
-        {:cont, socket}
+        _ ->
+          {:cont, socket}
+      end
+    else
+      {:cont, socket}
     end
+
   end
 
   def on_mount(:default, _params, _session, socket) do

@@ -22,21 +22,26 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
         _session,
         socket
       ) do
-    if is_adaptive_chromeless_view?(revision_slug) do
-      {:halt,
-       redirect(socket,
-         to:
-           adaptive_chromeless_revision_url(
-             section_slug,
-             revision_slug,
-             attempt_guid,
-             request_path: params["request_path"],
-             selected_view: params["selected_view"]
-           )
-       )}
+    if Phoenix.LiveView.connected?(socket) do
+      if is_adaptive_chromeless_view?(revision_slug) do
+        {:halt,
+         redirect(socket,
+           to:
+             adaptive_chromeless_revision_url(
+               section_slug,
+               revision_slug,
+               attempt_guid,
+               request_path: params["request_path"],
+               selected_view: params["selected_view"]
+             )
+         )}
+      else
+        {:cont, socket}
+      end
     else
       {:cont, socket}
     end
+
   end
 
   def on_mount(
@@ -45,28 +50,32 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
         _session,
         socket
       ) do
-    case socket.assigns.page_context do
-      %PageContext{
-        page: %{
-          content: %{
-            "advancedDelivery" => true,
-            "displayApplicationChrome" => false
-          }
-        },
-        progress_state: progress_state
-      }
-      when progress_state in [:revised, :in_progress] ->
-        {:halt,
-         redirect(socket,
-           to:
-             adaptive_chromeless_url(section_slug, revision_slug,
-               request_path: params["request_path"],
-               selected_view: params["selected_view"]
-             )
-         )}
+    if Phoenix.LiveView.connected?(socket) do
+      case socket.assigns.page_context do
+        %PageContext{
+          page: %{
+            content: %{
+              "advancedDelivery" => true,
+              "displayApplicationChrome" => false
+            }
+          },
+          progress_state: progress_state
+        }
+        when progress_state in [:revised, :in_progress] ->
+          {:halt,
+          redirect(socket,
+            to:
+              adaptive_chromeless_url(section_slug, revision_slug,
+                request_path: params["request_path"],
+                selected_view: params["selected_view"]
+              )
+          )}
 
-      _ ->
-        {:cont, socket}
+        _ ->
+          {:cont, socket}
+      end
+    else
+      {:cont, socket}
     end
   end
 

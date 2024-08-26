@@ -31,12 +31,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   }
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
+
     %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+
+    IO.inspect "mounting practice page"
+    IO.inspect connected?(socket)
+
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
+
       async_load_annotations(
         section,
         page_context.page.resource_id,
@@ -46,17 +52,26 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         nil
       )
 
-      emit_page_viewed_event(socket)
       send(self(), :gc)
+
+      emit_page_viewed_event(socket)
+
+      {:ok,
+      socket
+      |> assign_html_and_scripts()
+      |> annotations_assigns(page_context.collab_space_config, is_instructor)
+      |> assign(loading?: false, is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
+      |> assign_objectives()
+      |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
+
+
+
+    else
+      {:ok, assign(socket, loading?: true)}
+
     end
 
-    {:ok,
-     socket
-     |> assign_html_and_scripts()
-     |> annotations_assigns(page_context.collab_space_config, is_instructor)
-     |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
-     |> assign_objectives()
-     |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
+
   end
 
   def mount(
@@ -110,6 +125,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     {:ok, assign_scripts(socket) |> slim_assigns(),
      layout: false, temporary_assigns: [scripts: [], page_context: %{}]}
+  end
+
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, loading?: true)}
   end
 
   def handle_event(
@@ -621,6 +640,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     :erlang.garbage_collect(socket.transport_pid)
     :erlang.garbage_collect(self())
     {:noreply, socket}
+  end
+
+  def render(%{loading?: :true} = assigns) do
+    ~H"""
+    <div></div>
+    """
   end
 
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
