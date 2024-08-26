@@ -522,11 +522,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       <div class="pr-2 pl-1 self-end">
         <div class="flex items-end gap-1">
           <div class="text-right dark:text-white text-opacity-90 text-xs font-semibold">
-            <%= case @lesson do %>
-              <% %{end_date: nil} -> %>
-              <% %{end_date: end_date} -> %>
-                <%= Utils.days_difference(end_date, @ctx) %>
-            <% end %>
+            <%= Utils.days_difference(@lesson.end_date, @ctx) %>
           </div>
         </div>
       </div>
