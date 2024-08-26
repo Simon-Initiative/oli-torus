@@ -497,6 +497,7 @@ export const getLocalizedStateSnapshot = (
     // Since we no longer save the values to its owener, we only need snapshot of current activity
     localActivityIds = [activityIds[activityIds.length - 1]];
   }
+  localActivityIds.forEach((activityId: string) => {
     const activityState = Object.keys(snapshot)
       .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
       .reduce((collect: any, key) => {
