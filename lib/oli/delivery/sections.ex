@@ -1501,50 +1501,55 @@ defmodule Oli.Delivery.Sections do
       [%{page_id: 1, containers: [%{id: 10, title: "Introduction", numbering_level: 1}]}]
   """
   def get_ordered_containers_per_page(section, page_ids \\ []) do
+    section =
+      case section.previous_next_index do
+        nil ->
+          {:ok, section} = Oli.Delivery.PreviousNextIndex.rebuild(section)
+          section
 
-    section = case section.previous_next_index do
-      nil ->
-        {:ok, section} = Oli.Delivery.PreviousNextIndex.rebuild(section)
-        section
-      _ -> section
-    end
+        _ ->
+          section
+      end
 
-    child_to_parent = Map.values(section.previous_next_index)
-    |> Enum.reduce(%{}, fn item, map ->
-      Map.get(item, "children")
-      |> Enum.reduce(map, fn child, map ->
-        Map.put(map, child, Map.get(item, "id"))
-      end)
-    end)
-
-    all_pages = Map.values(section.previous_next_index)
-    |> Enum.filter(fn item -> Map.get(item, "type") == "page" end)
-    |> Enum.map(fn item ->
-      page_id = Map.get(item, "id")
-      ancestors = build_ancestors(page_id, [], child_to_parent)
-
-      %{
-        page_id: String.to_integer(page_id),
-        containers: Enum.map(ancestors, fn ancestor_id ->
-
-          a = Map.get(section.previous_next_index, ancestor_id)
-          %{
-            "id" => String.to_integer(ancestor_id),
-            "title" => a["title"],
-            "numbering_level" => a["level"] |> String.to_integer()
-          }
+    child_to_parent =
+      Map.values(section.previous_next_index)
+      |> Enum.reduce(%{}, fn item, map ->
+        Map.get(item, "children")
+        |> Enum.reduce(map, fn child, map ->
+          Map.put(map, child, Map.get(item, "id"))
         end)
-      }
+      end)
 
-    end)
+    all_pages =
+      Map.values(section.previous_next_index)
+      |> Enum.filter(fn item -> Map.get(item, "type") == "page" end)
+      |> Enum.map(fn item ->
+        page_id = Map.get(item, "id")
+        ancestors = build_ancestors(page_id, [], child_to_parent)
+
+        %{
+          page_id: String.to_integer(page_id),
+          containers:
+            Enum.map(ancestors, fn ancestor_id ->
+              a = Map.get(section.previous_next_index, ancestor_id)
+
+              %{
+                "id" => String.to_integer(ancestor_id),
+                "title" => a["title"],
+                "numbering_level" => a["level"] |> String.to_integer()
+              }
+            end)
+        }
+      end)
 
     case page_ids do
-      [] -> all_pages
+      [] ->
+        all_pages
+
       _ ->
         page_ids_mapset = MapSet.new(page_ids)
         Enum.filter(all_pages, fn page -> Enum.member?(page_ids_mapset, page.page_id) end)
     end
-
   end
 
   def build_ancestors(resource_id, entries, child_to_parent) do

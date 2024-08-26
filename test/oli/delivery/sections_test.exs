@@ -2041,7 +2041,6 @@ defmodule Oli.Delivery.SectionsTest do
         refute Enum.member?(result, fn pc -> pc[:page_id] == page.resource_id end)
       end
     end
-
   end
 
   describe "container_titles/1" do
