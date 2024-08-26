@@ -134,7 +134,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       |> halt()
       |> assign(:already_been_redirected?, true)
       |> Phoenix.Controller.redirect(
-        to: ~p"/sections/#{section_slug}/#{path_type}/#{revision_slug}?#{conn.query_string}"
+        to: "/sections/#{section_slug}/#{path_type}/#{revision_slug}?#{conn.query_string}"
       )
     end
   end
