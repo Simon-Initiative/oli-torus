@@ -141,6 +141,11 @@ export const loadInitialPageState = createAsyncThunk(
         }, 0);
         evalAssignScript(
           { 'session.tutorialScore': totalScore, 'session.currentQuestionScore': 0 },
+          {
+            'session.tutorialScore': totalScore,
+            'app.attempType': 'Resume',
+            'session.currentQuestionScore': 0,
+          },
           defaultGlobalEnv,
         );
         const updateSessionState = clone(sessionState);
@@ -173,6 +178,14 @@ export const loadInitialPageState = createAsyncThunk(
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));
       } else {
+        if (!isReviewMode) {
+          evalAssignScript(
+            {
+              'app.attempType': 'New',
+            },
+            defaultGlobalEnv,
+          );
+        }
         dispatch(navigateToFirstActivity());
       }
     }

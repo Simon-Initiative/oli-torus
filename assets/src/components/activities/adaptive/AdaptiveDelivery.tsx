@@ -198,12 +198,23 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           partInitResponseMap.clear();
         } else {
           let currentActivityId = activityId;
-          if (sharedAttemptStateMap?.size) {
-            currentActivityId =
-              sharedAttemptStateMap.size > 1 && reviewMode
-                ? sharedAttemptStateMap.entries().next().value[0]
-                : Array.from(sharedAttemptStateMap.keys()).pop();
-            currentAttemptState = sharedAttemptStateMap.get(currentActivityId);
+          const response: any = Array.from(partInitResponseMap);
+          if (props.onReady) {
+            const readyResults: any = await props.onReady(
+              currentAttemptState.attemptGuid,
+              response,
+            );
+            const { snapshot } = readyResults;
+            const attempType = snapshot['app.attempType'];
+            if (attempType === 'New') {
+              if (sharedAttemptStateMap?.size) {
+                currentActivityId =
+                  sharedAttemptStateMap.size > 1 && reviewMode
+                    ? sharedAttemptStateMap.entries().next().value[0]
+                    : Array.from(sharedAttemptStateMap.keys()).pop();
+                currentAttemptState = sharedAttemptStateMap.get(currentActivityId);
+              }
+            }
           }
           // when calling onReady normally it would do all the init state and fill in from attempt state too
           currentAttemptState.parts.reduce((collect: any, part: any) => {
