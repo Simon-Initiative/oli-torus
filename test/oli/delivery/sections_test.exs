@@ -1970,7 +1970,7 @@ defmodule Oli.Delivery.SectionsTest do
     setup [:create_elixir_project]
 
     test "fetches and orders containers by numbering level", %{section: section} = context do
-      result = Sections.get_ordered_containers_per_page(section.slug)
+      result = Sections.get_ordered_containers_per_page(section)
       # There are exactly 4 pages
       assert length(result) == 4
 
@@ -2016,7 +2016,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "fetches only specified page ids",
          %{section: section, page_1: page_1} = context do
-      result = Sections.get_ordered_containers_per_page(section.slug, [page_1.resource_id])
+      result = Sections.get_ordered_containers_per_page(section, [page_1.resource_id])
       assert length(result) == 1
 
       # Only Page 1 is returned
@@ -2040,10 +2040,6 @@ defmodule Oli.Delivery.SectionsTest do
       for {_, page} <- Map.take(context, [:page_2, :page_3, :page_4]) do
         refute Enum.member?(result, fn pc -> pc[:page_id] == page.resource_id end)
       end
-    end
-
-    test "returns an empty list for non-existent sections", %{section: _section} do
-      assert Sections.get_ordered_containers_per_page("non-existent-section") == []
     end
   end
 
