@@ -177,7 +177,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         bibReferences: page_context.bib_revisions
       }
     })
-    |> prologue_assigns(page_context)
   end
 
   # Display practice pages
@@ -219,7 +218,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         bibReferences: page_context.bib_revisions
       }
     })
-    |> prologue_assigns(page_context)
   end
 
   defp init_context_state(
@@ -300,7 +298,8 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     assign(socket,
       page_context: %{page_context | historical_attempts: resource_attempts},
       allow_attempt?: new_attempt_allowed == {:allowed},
-      attempt_message: attempt_message
+      attempt_message: attempt_message,
+      view: :prologue
     )
   end
 
