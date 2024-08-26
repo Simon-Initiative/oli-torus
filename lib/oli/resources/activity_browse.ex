@@ -32,10 +32,10 @@ defmodule Oli.Resources.ActivityBrowse do
           |> Enum.join(" & ")
 
         dynamic(
-          [rev, _, _, _],
+          [rev, ar, _, _, _],
           fragment(
             "to_tsvector('simple', ?) @@ to_tsquery('simple', ?)",
-            rev.title,
+            ar.petite_label,
             ^search_term
           )
         )
@@ -59,15 +59,20 @@ defmodule Oli.Resources.ActivityBrowse do
 
     query =
       Revision
-      |> join(:left, [rev], pr in Oli.Publishing.PublishedResource, on: pr.revision_id == rev.id)
-      |> join(:left, [_, pr], pub in Oli.Publishing.Publications.Publication,
+      |> join(:left, [rev], ar in Oli.Activities.ActivityRegistration,
+        on: ar.id == rev.activity_type_id
+      )
+      |> join(:left, [rev, _ar], pr in Oli.Publishing.PublishedResource,
+        on: pr.revision_id == rev.id
+      )
+      |> join(:left, [_, _, pr], pub in Oli.Publishing.Publications.Publication,
         on: pr.publication_id == pub.id
       )
-      |> join(:left, [_, _, pub], proj in Oli.Authoring.Course.Project,
+      |> join(:left, [_, _, _, pub], proj in Oli.Authoring.Course.Project,
         on: pub.project_id == proj.id
       )
       |> where(
-        [rev, _, pub, proj],
+        [rev, _, _, pub, proj],
         proj.id == ^project_id and is_nil(pub.published) and
           rev.resource_type_id == ^activity_resource_type_id
       )
