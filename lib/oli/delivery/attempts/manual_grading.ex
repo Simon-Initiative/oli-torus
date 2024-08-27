@@ -20,7 +20,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   }
 
   def has_submitted_attempts(%Section{id: section_id}) do
-
     query =
       ActivityAttempt
       |> join(:left, [aa], resource_attempt in ResourceAttempt,
@@ -35,7 +34,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       )
 
     Repo.exists?(query)
-
   end
 
   @doc """
