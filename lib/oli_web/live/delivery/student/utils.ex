@@ -526,6 +526,7 @@ defmodule OliWeb.Delivery.Student.Utils do
       "1 day left"
   """
   @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
+
   def days_difference(nil, _context), do: "Not yet scheduled"
 
   def days_difference(resource_end_date, context) do

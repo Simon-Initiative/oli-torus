@@ -21,7 +21,7 @@
       </tr>
       <tr>
         <td><strong>URL:</strong></td>
-        <td><%= external_link Routes.page_delivery_url(@conn, :index, @section.slug), to: Routes.page_delivery_url(@conn, :index, @section.slug) %></td>
+        <td><%= url(~p"/sections/#{@section.slug}") %></td>
       </tr>
       <tr>
         <td><strong>Start Date:</strong></td>
@@ -57,7 +57,7 @@
   </table>
   <p class="mb-2">
     <h5>Remix</h5>
-    <%= link "Curriculum Remix", to: Routes.open_and_free_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug), class: "btn btn-sm btn-primary" %>
+    <%= link "Curriculum Remix", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug), class: "btn btn-sm btn-primary" %>
   </p>
   <p>
     <h5>Manage Source Materials</h5>

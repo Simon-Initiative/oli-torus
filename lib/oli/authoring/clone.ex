@@ -11,8 +11,8 @@ defmodule Oli.Authoring.Clone do
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Delivery.Sections.Blueprint
 
-  def clone_bluprints(blueprints) do
-    Enum.map(blueprints, &Blueprint.duplicate/1)
+  def clone_blueprints(blueprints, cloned_from_project_publication_ids) do
+    Enum.map(blueprints, &Blueprint.duplicate(&1, %{}, cloned_from_project_publication_ids))
   end
 
   def clone_project(project_slug, author, opts \\ []) do
@@ -54,7 +54,7 @@ defmodule Oli.Authoring.Clone do
            _ <- clone_all_project_activity_registrations(base_project.id, cloned_project.id),
            Blueprint.get_blueprint_by_base_project(base_project)
            |> Enum.map(fn blueprint -> %{blueprint | base_project_id: cloned_project.id} end)
-           |> clone_bluprints() do
+           |> clone_blueprints({base_project.id, cloned_publication.id}) do
         cloned_project
       else
         {:error, error} -> Repo.rollback(error)

@@ -750,7 +750,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(
                view,
                "div[id=pay_early_message]",
-               "You have 18 more days remaining in your grace period access of this course"
+               "You have 18 days left of your grace period for accessing this course"
              )
 
       # Grace period is over
@@ -1082,6 +1082,19 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert has_element?(view, "div", page_4.title)
     end
 
+    test "can not see upcoming agenda if this option is disabled", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      stub_current_time(~U[2023-11-03 21:00:00Z])
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      refute has_element?(view, "div", "Upcoming Agenda")
+      refute has_element?(view, "div", "This Week")
+      refute has_element?(view, "div", page_1.title)
+    end
+
     test "do not show hidden pages in upcoming agenda", %{
       conn: conn,
       section: section,
@@ -1115,18 +1128,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       :enroll_as_student,
       :mark_section_visited
     ]
-
-    test "can see upcoming agenda", %{
-      conn: conn,
-      section: section,
-      module_1: module_1
-    } do
-      stub_current_time(~U[2023-11-03 21:00:00Z])
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
-
-      assert has_element?(view, "div", "Upcoming Agenda")
-      assert has_element?(view, "div", module_1.title)
-    end
 
     test "displays three upcoming assignments", %{
       conn: conn,

@@ -287,8 +287,7 @@ defmodule Oli.Publishing.DeliveryResolver do
       join: rev in Revision,
       on: rev.id == pr.revision_id,
       where: rev.resource_type_id == ^resource_type_id and rev.deleted == false,
-      select: rev,
-      distinct: [rev]
+      select: rev
     )
   end
 

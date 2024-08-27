@@ -44,6 +44,38 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToLessonTest do
               }}
   end
 
+  test "redirects a graded page to lesson page when page state is revised" do
+    graded_page_revision = graded_page_revision()
+
+    {:halt, updated_socket} =
+      RedirectToLesson.on_mount(
+        :default,
+        %{
+          "section_slug" => "some-section-slug",
+          "revision_slug" => graded_page_revision.slug,
+          "request_path" => "some-request-path",
+          "selected_view" => "gallery"
+        },
+        %{},
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: graded_page_revision,
+                progress_state: :revised
+              )
+          }
+        }
+      )
+
+    assert updated_socket.redirected ==
+             {:redirect,
+              %{
+                to:
+                  "/sections/some-section-slug/lesson/#{graded_page_revision.slug}?request_path=some-request-path&selected_view=gallery"
+              }}
+  end
+
   test "does not redirect a graded page when page state is not in progress" do
     graded_page_revision = graded_page_revision()
 

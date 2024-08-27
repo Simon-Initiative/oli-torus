@@ -14,41 +14,6 @@ defmodule OliWeb.RemixSectionLiveTest do
   describe "remix section as admin" do
     setup [:setup_admin_session]
 
-    test "remix section remove a pege and verify activities of this page has been deleted", %{
-      conn: conn
-    } do
-      map =
-        Seeder.base_project_with_pages()
-
-      assert Sections.get_section_resource(map.section.id, map.revision3.resource_id).resource_id ==
-               map.revision3.resource_id
-
-      conn =
-        get(
-          conn,
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, map.section.slug)
-        )
-
-      {:ok, view, _html} = live(conn)
-
-      node_children_uuids =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{button[phx-click="show_remove_modal"]})
-        |> Floki.attribute("phx-value-uuid")
-
-      open_modal_and_confirm_removal(node_children_uuids, view)
-
-      assert render(view) =~ "<p>There&#39;s nothing here.</p>"
-
-      view
-      |> element("#save")
-      |> render_click()
-
-      assert Sections.get_section_resource(map.section.id, map.revision3.resource_id) == nil
-    end
-
     test "mount as admin", %{
       conn: conn,
       map: %{
@@ -988,26 +953,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   end
 
   defp setup_admin_session(%{conn: conn}) do
-    map =
-      Seeder.base_project_with_resource4()
-      |> Seeder.add_activity(%{title: "one"}, :publication, :project, :author, :a1)
-
-    attrs = %{
-      title: "page1",
-      content: %{
-        "model" => [
-          %{
-            "type" => "activity-reference",
-            "activity_id" => Map.get(map, :a1).resource.id,
-            "custom" => %{}
-          }
-        ],
-        "advancedDelivery" => false
-      },
-      graded: false
-    }
-
-    map = Seeder.add_page(map, attrs, :p1)
+    map = Seeder.base_project_with_resource4()
 
     admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
@@ -1035,9 +981,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     author = insert(:author, %{email: "my_custom@email.com"})
 
-    proj_1 =
-      insert(:project, title: "Project 1", authors: [author])
-
+    proj_1 = insert(:project, title: "Project 1", authors: [author])
     proj_2 = insert(:project, title: "Project 2", authors: [author])
     proj_3 = insert(:project, title: "Project 3", authors: [author])
     proj_4 = insert(:project, title: "Project 4", authors: [author])
@@ -1154,8 +1098,7 @@ defmodule OliWeb.RemixSectionLiveTest do
   end
 
   defp setup_instructor_session(%{conn: conn}) do
-    map =
-      Seeder.base_project_with_resource4()
+    map = Seeder.base_project_with_resource4()
 
     {:ok, instructor} =
       Accounts.update_user_platform_roles(

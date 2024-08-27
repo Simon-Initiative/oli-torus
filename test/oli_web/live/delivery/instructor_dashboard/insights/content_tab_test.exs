@@ -343,15 +343,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
            instructor: instructor,
            conn: conn
          } do
-      %{
-        page1: page1,
-        revision1: revision1,
-        page2: page2,
-        revision2: revision2,
-        page3: page3,
-        revision3: revision3,
-        section: section
-      } =
+      %{page1: page1, revision1: revision1, page2: page2, revision2: revision2, section: section} =
         Oli.Seeder.base_project_with_pages()
 
       user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
@@ -377,11 +369,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       set_progress(section.id, page2.id, user_3.id, 0.8, revision2)
       set_progress(section.id, page2.id, user_4.id, 0.8, revision2)
 
-      set_progress(section.id, page3.id, user_1.id, 0.9, revision3)
-      set_progress(section.id, page3.id, user_2.id, 0.6, revision3)
-      set_progress(section.id, page3.id, user_3.id, 0, revision3)
-      set_progress(section.id, page3.id, user_4.id, 0.3, revision3)
-
       {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
 
       progress =
@@ -391,7 +378,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
         |> Floki.find(~s{.instructor_dashboard_table tr [data-progress-check]})
         |> Enum.map(fn div_tag -> Floki.text(div_tag) |> String.trim() end)
 
-      assert progress == ["45%", "80%", "45%"]
+      assert progress == ["45%", "80%"]
 
       ### links to students tab with page_id as url param
       links =
@@ -419,14 +406,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
           :insights,
           :content,
           %{page_id: page2.id}
-        ),
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :insights,
-          :content,
-          %{page_id: page3.id}
         )
       ]
 
