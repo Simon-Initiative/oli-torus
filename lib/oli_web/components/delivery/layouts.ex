@@ -202,7 +202,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr :ctx, SessionContext, required: true
   slot :inner_block, required: true
 
-  def maybe_masquerade_as(assigns) do
+  def maybe_masquerading_as(assigns) do
     if assigns[:ctx] && assigns[:ctx].masquerading_as do
       ~H"""
       <div class="fixed top-0 bottom-0 left-0 right-0 overflow-auto border-4 border-solid border-fuchsia-500">

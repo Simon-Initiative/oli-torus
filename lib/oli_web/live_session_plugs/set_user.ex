@@ -1,10 +1,9 @@
 defmodule OliWeb.LiveSessionPlugs.SetUser do
-  import Phoenix.Component, only: [assign: 2, live_flash: 2]
+  import Phoenix.Component, only: [assign: 2]
 
   alias Oli.Accounts
-  alias Oli.Accounts.{User, Author}
+  alias Oli.Accounts.{User}
   alias Oli.AccountLookupCache
-  alias OliWeb.Router.Helpers, as: Routes
 
   def on_mount(:with_preloads, _, session, socket) do
     {:cont,
@@ -48,7 +47,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
          user <- Accounts.get_user(user_id, preload: [:platform_roles, :author]) do
       socket
       |> assign(current_user: user)
-      |> assign(masquerade_as: user)
+      |> assign(masquerading_as: user)
       |> assign(datashop_session_id: nil)
       |> set_user_token
       |> update_ctx(session)

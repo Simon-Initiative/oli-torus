@@ -336,23 +336,24 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <%= case @ctx do %>
       <% %SessionContext{user: user} when user != nil -> %>
-        <.user_picture_icon user={user} />
+        <.user_picture_icon picture={user.picture} initials={to_initials(user)} />
       <% %SessionContext{author: author} when author != nil -> %>
-        <.user_picture_icon user={author} />
+        <.user_picture_icon picture={author.picture} initials={to_initials(author)} />
       <% _ -> %>
         <.default_user_icon />
     <% end %>
     """
   end
 
-  attr(:user, :map)
+  attr :picture, :string
+  attr :initials, :string, required: true
 
   def user_picture_icon(assigns) do
     ~H"""
-    <%= case @user.picture do %>
+    <%= case @picture do %>
       <% nil -> %>
         <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
-          <%= to_initials(@user) %>
+          <%= @initials %>
         </div>
       <% picture -> %>
         <div class="flex justify-center items-center">

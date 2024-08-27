@@ -70,7 +70,7 @@ defmodule Oli.Plugs.SetCurrentUser do
              user <- Accounts.get_user(user_id, preload: [:platform_roles, :author]) do
           conn
           |> assign(:current_user, user)
-          |> assign(:masquerade_as, user)
+          |> assign(:masquerading_as, user)
         else
           false ->
             conn
