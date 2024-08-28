@@ -4,13 +4,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   import OliWeb.Delivery.Student.Utils,
     only: [
       page_header: 1,
-      scripts: 1,
       references: 1,
       reset_attempts_button: 1,
       emit_page_viewed_event: 1
     ]
-
-  import Ecto.Query
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
