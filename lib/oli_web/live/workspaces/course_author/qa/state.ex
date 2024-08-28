@@ -1,6 +1,5 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Qa.State do
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.Breadcrumb
 
   @default_filters MapSet.new(["pedagogy", "content", "accessibility", "equity"])
 
@@ -13,7 +12,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Qa.State do
     parent_pages: %{},
     warnings_by_type: %{},
     warning_types: [],
-    breadcrumbs: [Breadcrumb.new(%{full_title: "Review"})],
     project: nil,
     author: nil
   }
