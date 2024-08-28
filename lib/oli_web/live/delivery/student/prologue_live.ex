@@ -44,7 +44,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
        password: page_context.effective_settings.password,
        page_revision: page_context.page,
        effective_settings: page_context.effective_settings,
-       view: :prologue
+       view: :prologue,
+       scripts_loaded: true
      )
      |> slim_assigns(), temporary_assigns: [page_context: %{}]}
   end
