@@ -1092,18 +1092,13 @@ defmodule OliWeb.Router do
     scope "/adaptive_lesson/:revision_slug" do
       live_session :delivery_adaptive_lesson,
         root_layout: {OliWeb.LayoutView, :chromeless},
-        layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
           OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetSection,
-          {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
-          OliWeb.LiveSessionPlugs.SetBrand,
-          OliWeb.LiveSessionPlugs.SetPreviewMode,
-          OliWeb.LiveSessionPlugs.RequireEnrollment,
-          OliWeb.LiveSessionPlugs.SetRequestPath,
-          OliWeb.LiveSessionPlugs.SetPaywallSummary
+          {OliWeb.LiveSessionPlugs.InitPage, :set_adaptive_page_context},
+          OliWeb.LiveSessionPlugs.SetRequestPath
         ] do
-        live("/", Delivery.Student.LessonLive, metadata: %{route_name: :adaptive_lesson})
+        live("/", Delivery.Student.AdaptiveLessonLive, metadata: %{route_name: :adaptive_lesson})
       end
     end
   end
