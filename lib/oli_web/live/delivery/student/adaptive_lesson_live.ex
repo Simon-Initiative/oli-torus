@@ -27,6 +27,12 @@ defmodule OliWeb.Delivery.Student.AdaptiveLessonLive do
     {:ok, slim_assigns(socket), temporary_assigns: [page_context: %{}]}
   end
 
+  def handle_info(:gc, socket) do
+    :erlang.garbage_collect(socket.transport_pid)
+    :erlang.garbage_collect(self())
+    {:noreply, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <!-- ACTIVITIES -->
