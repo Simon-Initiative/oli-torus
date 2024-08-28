@@ -1090,16 +1090,7 @@ defmodule OliWeb.Router do
     end
 
     scope "/adaptive_lesson/:revision_slug" do
-      live_session :delivery_adaptive_lesson,
-        root_layout: {OliWeb.LayoutView, :chromeless},
-        on_mount: [
-          OliWeb.LiveSessionPlugs.SetUser,
-          OliWeb.LiveSessionPlugs.SetSection,
-          {OliWeb.LiveSessionPlugs.InitPage, :set_adaptive_page_context},
-          OliWeb.LiveSessionPlugs.SetRequestPath
-        ] do
-        live("/", Delivery.Student.AdaptiveLessonLive, metadata: %{route_name: :adaptive_lesson})
-      end
+      get("/", PageDeliveryController, :page_fullscreen)
     end
   end
 

@@ -53,22 +53,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     end
   end
 
-  def on_mount(:set_adaptive_page_context, %{"revision_slug" => revision_slug}, _session, socket) do
-    %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
-      socket.assigns
-
-    {:cont,
-     assign(socket,
-       page_context:
-         PageContext.create_for_visit(
-           section,
-           revision_slug,
-           current_user,
-           datashop_session_id
-         )
-     )}
-  end
-
   def on_mount(
         :previous_next_index,
         _params,
@@ -107,15 +91,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     else
       {:cont, socket}
     end
-  end
-
-  def on_mount(
-        :init_adaptive_context_state,
-        params,
-        _session,
-        socket
-      ) do
-    {:cont, init_context_state(socket, params)}
   end
 
   def on_mount(
