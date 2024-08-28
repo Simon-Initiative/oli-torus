@@ -402,7 +402,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     )
   end
 
-  def build_html(assigns, mode) do
+  def build_html(assigns, mode, opts \\ []) do
     %{section: section, current_user: current_user, page_context: page_context} = assigns
 
     render_context = %Context{
@@ -436,7 +436,8 @@ defmodule OliWeb.Delivery.Student.Utils do
           assigns.page_context.page,
           assigns.request_path,
           assigns.selected_view
-        )
+        ),
+      is_liveview: opts[:is_liveview] || false
     }
 
     attempt_content = get_attempt_content(page_context)
