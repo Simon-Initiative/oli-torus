@@ -130,8 +130,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         update_latest_visited_page(section_slug, user.id, page_revision.resource_id)
 
       {graded, latest_resource_attempt} =
-        get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
-        |> handle_type_transitions(page_revision)
+        Appsignal.instrument("PageLifeCycle: get_latest_resource_attempt", fn ->
+          get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
+          |> handle_type_transitions(page_revision)
+        end)
 
       publication_id =
         Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)

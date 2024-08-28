@@ -47,7 +47,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
       end
     else
       {:ok, attempt_state} =
-        AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+        Appsignal.instrument("Ungraded: AttemptState.fetch_attempt_state", fn ->
+          AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+        end)
 
       {:ok, {:in_progress, attempt_state}}
     end

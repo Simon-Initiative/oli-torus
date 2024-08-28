@@ -178,7 +178,9 @@ defmodule Oli.Delivery.Page.PageContext do
         opts \\ [track_access: true]
       ) do
     # resolve the page revision per section
-    page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
+    page_revision = Appsignal.instrument("resolve page revision", fn ->
+      DeliveryResolver.from_revision_slug(section_slug, page_slug)
+    end)
 
     effective_settings =
       Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
@@ -284,15 +286,18 @@ defmodule Oli.Delivery.Page.PageContext do
         t -> t
       end
 
-    {state, [resource_attempt], latest_attempts,
-     ActivityContext.create_context_map(
-       page_revision.graded,
-       latest_attempts,
-       resource_attempt,
-       page_revision,
-       assign_ordinals_from: content_for_ordinal_assignment,
-       show_feedback: show_feedback
-     )}
+    final_context = Appsignal.instrument("ActivityContext.create_context_map", fn ->
+      ActivityContext.create_context_map(
+        page_revision.graded,
+        latest_attempts,
+        resource_attempt,
+        page_revision,
+        assign_ordinals_from: content_for_ordinal_assignment,
+        show_feedback: show_feedback
+      )
+    end)
+
+    {state, [resource_attempt], latest_attempts, final_context}
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
@@ -306,6 +311,8 @@ defmodule Oli.Delivery.Page.PageContext do
     activity_revisions =
       Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)
 
-    ObjectivesRollup.rollup_objectives(page_rev, activity_revisions, resolver, section_slug)
+    Appsignal.instrument("rollup objectives", fn ->
+      ObjectivesRollup.rollup_objectives(page_rev, activity_revisions, resolver, section_slug)
+    end)
   end
 end
