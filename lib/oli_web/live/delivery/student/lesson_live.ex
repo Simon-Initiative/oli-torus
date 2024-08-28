@@ -2,7 +2,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   use OliWeb, :live_view
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, scripts: 1, references: 1, reset_attempts_button: 1]
+    only: [
+      page_header: 1,
+      scripts: 1,
+      references: 1,
+      reset_attempts_button: 1,
+      emit_page_viewed_event: 1
+    ]
 
   import Ecto.Query
 
@@ -46,11 +52,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         nil
       )
 
-      emit_page_viewed_event(socket)
       send(self(), :gc)
 
       socket =
         socket
+        |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> annotations_assigns(page_context.collab_space_config, is_instructor)
         |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
@@ -77,7 +83,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     %{page_context: page_context} = socket.assigns
 
     if connected?(socket) do
-      emit_page_viewed_event(socket)
       send(self(), :gc)
       resource_attempt = hd(page_context.resource_attempts)
 
@@ -87,6 +92,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
       socket =
         socket
+        |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> assign_objectives()
         |> assign(
@@ -123,11 +129,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket
       ) do
     if connected?(socket) do
-      emit_page_viewed_event(socket)
       send(self(), :gc)
 
       socket =
         socket
+        |> emit_page_viewed_event()
         |> assign_scripts()
         |> slim_assigns()
 
@@ -1189,79 +1195,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           %Collaboration.Post{post | status: :deleted}
         end)
     )
-  end
-
-  defp emit_page_viewed_event(socket) do
-    section = socket.assigns.section
-    context = socket.assigns.page_context
-
-    page_sub_type =
-      if Map.get(context.page.content, "advancedDelivery", false) do
-        "advanced"
-      else
-        "basic"
-      end
-
-    {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
-
-    emit_page_viewed_helper(
-      %Oli.Analytics.XAPI.Events.Context{
-        user_id: socket.assigns.current_user.id,
-        host_name: host_name(),
-        section_id: section.id,
-        project_id: project_id,
-        publication_id: publication_id
-      },
-      %{
-        attempt_guid: List.first(context.resource_attempts).attempt_guid,
-        attempt_number: List.first(context.resource_attempts).attempt_number,
-        resource_id: context.page.resource_id,
-        timestamp: DateTime.utc_now(),
-        page_sub_type: page_sub_type
-      }
-    )
-
-    socket
-  end
-
-  defp emit_page_viewed_helper(
-         %Oli.Analytics.XAPI.Events.Context{} = context,
-         %{
-           attempt_guid: _page_attempt_guid,
-           attempt_number: _page_attempt_number,
-           resource_id: _page_id,
-           timestamp: _timestamp,
-           page_sub_type: _page_sub_type
-         } = page_details
-       ) do
-    event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
-    Oli.Analytics.XAPI.emit(:page_viewed, event)
-  end
-
-  defp get_project_and_publication_ids(section_id, revision_id) do
-    # From the SectionProjectPublication table, get the project_id and publication_id
-    # where a published resource exists for revision_id
-    # and the section_id matches the section_id
-
-    query =
-      from sp in Oli.Delivery.Sections.SectionsProjectsPublications,
-        join: pr in Oli.Publishing.PublishedResource,
-        on: pr.publication_id == sp.publication_id,
-        where: sp.section_id == ^section_id and pr.revision_id == ^revision_id,
-        select: {sp.project_id, sp.publication_id}
-
-    # Return nil if somehow we cannot resolve this resource.  This is just a guaranteed that
-    # we can never throw an error here
-    case Oli.Repo.all(query) do
-      [] -> {nil, nil}
-      other -> hd(other)
-    end
-  end
-
-  defp host_name() do
-    Application.get_env(:oli, OliWeb.Endpoint)
-    |> Keyword.get(:url)
-    |> Keyword.get(:host)
   end
 
   defp slim_assigns(socket) do
