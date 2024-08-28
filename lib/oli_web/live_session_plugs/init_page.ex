@@ -32,25 +32,25 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
       socket.assigns
 
-    page_context =
-      PageContext.create_for_visit(
-        section,
-        revision_slug,
-        current_user,
-        datashop_session_id,
-        # to avoid triggering the tracking of the page access twice, we will only track it
-        # in the initial stateless HTTP Request (when the socket is not yet mounted)
-        # see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#module-life-cycle
-        track_access: !Phoenix.LiveView.connected?(socket)
-      )
+    if Phoenix.LiveView.connected?(socket) do
+      page_context =
+        PageContext.create_for_visit(
+          section,
+          revision_slug,
+          current_user,
+          datashop_session_id
+        )
 
-    {:cont,
-     assign(socket,
-       page_context: page_context,
-       # the page context will be a temporary assign,
-       # that is why we need to "duplicate" the page context progress state in another socket assign
-       page_progress_state: page_context.progress_state
-     )}
+      {:cont,
+       assign(socket,
+         page_context: page_context,
+         # the page context will be a temporary assign,
+         # that is why we need to "duplicate" the page context progress state in another socket assign
+         page_progress_state: page_context.progress_state
+       )}
+    else
+      {:cont, socket}
+    end
   end
 
   def on_mount(
@@ -59,34 +59,38 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         %{assigns: assigns} = socket
       ) do
-    resource_id = assigns.page_context.page.resource_id
+    if Phoenix.LiveView.connected?(socket) do
+      resource_id = assigns.page_context.page.resource_id
 
-    # note will all be nil for case of "loose" linked pages not in hierarchy
-    {:ok, {previous, next, current}, _} =
-      PreviousNextIndex.retrieve(assigns.section, resource_id, skip: [:section])
+      # note will all be nil for case of "loose" linked pages not in hierarchy
+      {:ok, {previous, next, current}, _} =
+        PreviousNextIndex.retrieve(assigns.section, resource_id, skip: [:section])
 
-    socket =
-      case assigns[:view] do
-        :adaptive_chromeless ->
-          previous_url = url_from_desc(assigns.section.slug, previous)
-          next_url = url_from_desc(assigns.section.slug, next)
+      socket =
+        case assigns.view do
+          :adaptive_chromeless ->
+            previous_url = url_from_desc(assigns.section.slug, previous)
+            next_url = url_from_desc(assigns.section.slug, next)
 
-          update(
-            socket,
-            :app_params,
-            &Map.merge(&1, %{previousPageURL: previous_url, nextPageURL: next_url})
-          )
+            update(
+              socket,
+              :app_params,
+              &Map.merge(&1, %{previousPageURL: previous_url, nextPageURL: next_url})
+            )
 
-        _ ->
-          socket
-      end
+          _ ->
+            socket
+        end
 
-    {:cont,
-     assign(socket,
-       previous_page: previous,
-       next_page: next,
-       current_page: current
-     )}
+      {:cont,
+       assign(socket,
+         previous_page: previous,
+         next_page: next,
+         current_page: current
+       )}
+    else
+      {:cont, socket}
+    end
   end
 
   def on_mount(
@@ -95,7 +99,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         _session,
         socket
       ) do
-    {:cont, init_context_state(socket, params)}
+    if Phoenix.LiveView.connected?(socket) do
+      {:cont, init_context_state(socket, params)}
+    else
+      {:cont, socket}
+    end
   end
 
   # Handles the 2 cases of adaptive delivery
