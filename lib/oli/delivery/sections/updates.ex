@@ -130,26 +130,34 @@ defmodule Oli.Delivery.Sections.Updates do
 
     mark = Oli.Timing.mark()
 
-    diff
-    |> filter_for_revisions(:added)
-    |> bulk_create_section_resources(section, project_id)
+    IO.inspect diff.changes
 
-    diff
-    |> filter_for_revisions(:deleted)
-    |> bulk_delete_section_resources(section)
+    case diff
+      |> filter_for_revisions(:added)
+      |> bulk_create_section_resources(section, project_id) do
 
-    Sections.update_section_project_publication(section, project_id, new_publication.id)
+      {:ok, _} ->
+        diff
+        |> filter_for_revisions(:deleted)
+        |> bulk_delete_section_resources(section)
 
-    Logger.info(
-      "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
-    )
+        Sections.update_section_project_publication(section, project_id, new_publication.id)
+
+        Logger.info(
+          "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+        )
+        {:ok, :ok}
+
+      {:error, _} ->
+        {:error, :unexpected_count}
+    end
 
   end
 
   defp filter_for_revisions(%PublicationDiff{} = diff, desired_type) do
     Map.filter(diff.changes, fn {_k, {this_type, _}} -> this_type == desired_type end)
     |> Map.values()
-    |> Enum.map(fn {_, {_, %{revision: r}}} -> r end)
+    |> Enum.map(fn {_, %{revision: r}} -> r end)
   end
 
   defp bulk_create_section_resources(revisions, section, project_id) do
@@ -170,15 +178,26 @@ defmodule Oli.Delivery.Sections.Updates do
       }
     end)
 
-    Oli.Utils.Database.batch_insert_all(SectionResource, section_resource_rows,
+    IO.inspect "bulk create section resources"
+    IO.inspect section_resource_rows
+
+    expected_count = Enum.count(section_resource_rows)
+
+    case Oli.Utils.Database.batch_insert_all(SectionResource, section_resource_rows,
       placeholders: placeholders,
       on_conflict: @section_resources_on_conflict,
-      conflict_target: [:section_id, :resource_id]
-    )
+      conflict_target: [:section_id, :resource_id]) do
+
+      {^expected_count, _} -> {:ok, Enum.count(section_resource_rows)}
+      _ -> {:error, :unexpected_count}
+    end
   end
 
   defp bulk_delete_section_resources(revisions, %Section{id: section_id}) do
     resource_ids = Enum.map(revisions, & &1.resource_id)
+
+    IO.inspect "bulk delete section resources"
+    IO.inspect resource_ids
 
     from(sr in SectionResource,
       where: sr.section_id == ^section_id and sr.resource_id in ^resource_ids
