@@ -27,24 +27,35 @@ defmodule OliWeb.PaymentProviders.CashnetController do
         _ -> Decimal.to_string(decimal)
       end
 
-    case Cashnet.create_form(section, user, conn.host) do
-      {:ok, %{payment_ref: _payment_ref, cashnet_form: cashnet_form}} ->
-        # This is necessary since this controller has been delegated by PaymentController
-        Phoenix.Controller.put_view(conn, OliWeb.PaymentProviders.CashnetView)
-        |> render("index.html",
-          api_key: Application.fetch_env!(:oli, :stripe_provider)[:public_secret],
-          purchase: Jason.encode!(%{user_id: user.id, section_slug: section.slug}),
-          section: section,
-          cost: cost,
-          cashnet_form: cashnet_form,
-          user: user,
-          user_name:
-            safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
-        )
+    if Sections.is_enrolled?(user.id, section.slug) do
+      # Now ask Cashnet to create a payment form, which also results in a %Payment record
+      # created in the system but in a "pending" state
+      case Cashnet.create_form(section, user, conn.host) do
+        {:ok, %{payment_ref: _payment_ref, cashnet_form: cashnet_form}} ->
+          # This is necessary since this controller has been delegated by PaymentController
+          Phoenix.Controller.put_view(conn, OliWeb.PaymentProviders.CashnetView)
+          |> render("index.html",
+            api_key: Application.fetch_env!(:oli, :stripe_provider)[:public_secret],
+            purchase: Jason.encode!(%{user_id: user.id, section_slug: section.slug}),
+            section: section,
+            cost: cost,
+            cashnet_form: cashnet_form,
+            user: user,
+            user_name:
+              safe_get(user.family_name, "Unknown") <>
+                ", " <> safe_get(user.given_name, "Unknown")
+          )
 
-      e ->
-        {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)
-        error(conn, 500, msg)
+        e ->
+          {_, msg} = Oli.Utils.log_error("CashnetController:show failed.", e)
+          error(conn, 500, msg)
+      end
+    else
+      Logger.error(
+        "CashnetController caught attempt to initialize payment for non-enrolled student"
+      )
+
+      render(conn, "not_enrolled.html", section_slug: section.slug)
     end
   end
 
