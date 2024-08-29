@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Page.PageContext do
   @moduledoc """
   Defines the context required to render a page in delivery mode.
   """
+  use Appsignal.Instrumentation.Decorators
 
   @enforce_keys [
     :user,
@@ -58,6 +59,7 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
+  @decorate transaction_event()
   def create_for_review(section_slug, attempt_guid, user, is_admin?) do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
 
@@ -149,6 +151,7 @@ defmodule Oli.Delivery.Page.PageContext do
   # For the given resource attempt, retrieve all historical activity attempt records,
   # assembling them into a map of activity_id to a list of the activity attempts, including
   # the latest attempt
+  @decorate transaction_event()
   defp retrieve_historical_attempts(resource_attempt) do
     Oli.Delivery.Attempts.Core.get_all_activity_attempts(resource_attempt.id)
     |> Enum.sort(fn a1, a2 -> a1.attempt_number < a2.attempt_number end)
@@ -170,6 +173,7 @@ defmodule Oli.Delivery.Page.PageContext do
   The `opts` parameter is a keyword list that can contain the following options:
   - track_access: a boolean that determines whether to track access to the page. Defaults to true.
   """
+  @decorate transaction_event()
   def create_for_visit(
         %Section{slug: section_slug, id: section_id},
         page_slug,
@@ -178,7 +182,10 @@ defmodule Oli.Delivery.Page.PageContext do
         opts \\ [track_access: true]
       ) do
     # resolve the page revision per section
-    page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
+    page_revision =
+      Appsignal.instrument("resolve page revision", fn ->
+        DeliveryResolver.from_revision_slug(section_slug, page_slug)
+      end)
 
     effective_settings =
       Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
@@ -189,25 +196,27 @@ defmodule Oli.Delivery.Page.PageContext do
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
     {progress_state, resource_attempts, latest_attempts, activities} =
-      case PageLifecycle.visit(
-             page_revision,
-             section_slug,
-             datashop_session_id,
-             user,
-             effective_settings,
-             activity_provider
-           ) do
-        {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
-          {:not_started, resource_attempts, %{}, nil}
+      Appsignal.instrument("PageLifecycle.visit", fn ->
+        case PageLifecycle.visit(
+               page_revision,
+               section_slug,
+               datashop_session_id,
+               user,
+               effective_settings,
+               activity_provider
+             ) do
+          {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
+            {:not_started, resource_attempts, %{}, nil}
 
-        {:ok,
-         {state,
-          %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-          assemble_final_context(state, resource_attempt, latest_attempts, page_revision, true)
+          {:ok,
+           {state,
+            %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
+            assemble_final_context(state, resource_attempt, latest_attempts, page_revision, true)
 
-        {:error, _} ->
-          {:error, [], %{}}
-      end
+          {:error, _} ->
+            {:error, [], %{}}
+        end
+      end)
 
     # Fetch the revision pinned to the resource attempt if it was revised since this attempt began. This
     # is what enables existing attempts that are being revisited after a change was published to the page
@@ -233,7 +242,12 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     {:ok, collab_space_config} =
-      Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
+      Appsignal.instrument("get collab space config", fn ->
+        Collaboration.get_collab_space_config_for_page_in_section(
+          page_revision.slug,
+          section_slug
+        )
+      end)
 
     user_roles = Sections.get_user_roles(user, section_slug)
 
@@ -271,6 +285,7 @@ defmodule Oli.Delivery.Page.PageContext do
     {state, [resource_attempt], latest_attempts, latest_attempts}
   end
 
+  @decorate transaction_event()
   defp assemble_final_context(
          state,
          resource_attempt,
@@ -284,15 +299,17 @@ defmodule Oli.Delivery.Page.PageContext do
         t -> t
       end
 
-    {state, [resource_attempt], latest_attempts,
-     ActivityContext.create_context_map(
-       page_revision.graded,
-       latest_attempts,
-       resource_attempt,
-       page_revision,
-       assign_ordinals_from: content_for_ordinal_assignment,
-       show_feedback: show_feedback
-     )}
+    final_context =
+      ActivityContext.create_context_map(
+        page_revision.graded,
+        latest_attempts,
+        resource_attempt,
+        page_revision,
+        assign_ordinals_from: content_for_ordinal_assignment,
+        show_feedback: show_feedback
+      )
+
+    {state, [resource_attempt], latest_attempts, final_context}
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
@@ -302,6 +319,7 @@ defmodule Oli.Delivery.Page.PageContext do
     []
   end
 
+  @decorate transaction_event()
   defp rollup_objectives(page_rev, latest_attempts, resolver, section_slug) do
     activity_revisions =
       Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)

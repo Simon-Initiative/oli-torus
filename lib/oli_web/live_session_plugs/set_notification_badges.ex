@@ -2,7 +2,7 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
   use OliWeb, :verified_routes
 
   import Phoenix.Component, only: [assign: 2]
-
+  use Appsignal.Instrumentation.Decorators
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.DeliveryResolver
 
@@ -22,6 +22,7 @@ defmodule OliWeb.LiveSessionPlugs.SetNotificationBadges do
   defp maybe_load_discussions_badge(socket, nil, _user), do: socket
   defp maybe_load_discussions_badge(socket, _section, nil), do: socket
 
+  @decorate transaction_event()
   defp maybe_load_discussions_badge(socket, section, user) do
     # Load the discussions badge
     %{resource_id: root_curriculum_resource_id} =

@@ -4,6 +4,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   """
   use Phoenix.Component
   use OliWeb, :verified_routes
+  use Appsignal.Instrumentation.Decorators
 
   import Ecto.Query, warn: false
 
@@ -444,7 +445,9 @@ defmodule OliWeb.Delivery.Student.Utils do
     # Cache the page as text to allow the AI agent LV to access it.
     cache_page_as_text(render_context, attempt_content, page_context.page.id)
 
-    Page.render(render_context, attempt_content, Page.Html)
+    Appsignal.instrument("Page.render", fn ->
+      Page.render(render_context, attempt_content, Page.Html)
+    end)
   end
 
   defp cache_page_as_text(render_context, content, page_id) do
@@ -464,6 +467,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     |> Enum.uniq()
   end
 
+  @decorate transaction_event()
   def get_required_activity_scripts(_page_context) do
     # TODO Optimization: get only activity scripts of activities contained in the page.
     # We could infer the contained activities from the page revision content model.
