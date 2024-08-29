@@ -603,6 +603,25 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
     end
 
+    @tag isolation: "serializable"
+    test "timer will not be shown on practice pages", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: ungraded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/lesson/#{ungraded_page.slug}")
+
+      ensure_content_is_visible(view)
+
+      assert render(view) =~ ungraded_page.title
+      refute render(view) =~ "<div id=\"countdown_timer_display\""
+    end
+
     test "can not see `reset answers` button on practice pages without activities", %{
       conn: conn,
       user: user,
@@ -689,12 +708,18 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       _first_attempt_in_progress =
         create_attempt(user, section, exploration_1, %{lifecycle_state: :active})
 
-      {:ok, view, html} =
-        live(conn, live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug))
+      conn =
+        get(
+          conn,
+          live_view_adaptive_lesson_live_route(
+            section.slug,
+            exploration_1.slug
+          )
+        )
 
-      assert has_element?(view, "div[id='delivery_container']")
+      assert html_response(conn, 200) =~ ~s{<div id=\"delivery_container\">}
       # It loads the adaptive themes
-      assert html =~ "/css/delivery_adaptive_themes_default_light.css"
+      assert html_response(conn, 200) =~ "/css/delivery_adaptive_themes_default_light.css"
     end
 
     test "back button of an adaptive page (NOT an exploration one) points to the provided url param 'request_path'",
@@ -714,8 +739,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       request_path = "some_request_path"
 
-      {:ok, view, _html} =
-        live(
+      conn =
+        get(
           conn,
           live_view_adaptive_lesson_live_route(
             section.slug,
@@ -724,8 +749,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           )
         )
 
-      assert view
-             |> render()
+      assert conn.resp_body
              |> Floki.parse_fragment!()
              |> Floki.find(~s{div[data-react-class="Components.Delivery"]})
              |> Floki.attribute("data-react-props")
@@ -750,8 +774,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       request_path = "some_other_request_path"
 
-      {:ok, view, _html} =
-        live(
+      conn =
+        get(
           conn,
           live_view_adaptive_lesson_live_route(
             section.slug,
@@ -760,8 +784,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           )
         )
 
-      assert view
-             |> render()
+      assert conn.resp_body
              |> Floki.parse_fragment!()
              |> Floki.find(~s{div[data-react-class="Components.Delivery"]})
              |> Floki.attribute("data-react-props")
@@ -791,8 +814,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       request_path = nil
 
-      {:ok, view, _html} =
-        live(
+      conn =
+        get(
           conn,
           live_view_adaptive_lesson_live_route(
             section.slug,
@@ -801,8 +824,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           )
         )
 
-      refute view
-             |> render()
+      refute conn.resp_body
              |> Floki.parse_fragment!()
              |> Floki.find(~s{div[data-react-class="Components.Delivery"]})
              |> Floki.attribute("data-react-props")

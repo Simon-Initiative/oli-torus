@@ -4,6 +4,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   import Mox
   import Oli.Factory
   import Oli.Utils.Seeder.Utils
+  import Phoenix.LiveViewTest
 
   alias Oli.Authoring.Course
   alias Oli.Seeder
@@ -13,6 +14,14 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Router.Helpers, as: Routes
+
+  defp ensure_content_is_visible(view) do
+    # the content of the page will not be rendered until the socket is connected
+    # and the client side confirms that the scripts are loaded
+    view
+    |> element("#eventIntercept")
+    |> render_hook("survey_scripts_loaded", %{"loaded" => true})
+  end
 
   defp create_attempt(student, section, revision, resource_attempt_data) do
     resource_access = get_or_insert_resource_access(student, section, revision)
@@ -222,22 +231,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(~p"/sections/#{section.slug}")
 
-      assert html_response(conn, 200) =~ section.title
-    end
-
-    test "handles student page access by an enrolled student", %{
-      conn: conn,
-      revision: revision,
-      user: user,
-      section: section
-    } do
-      enroll_as_student(%{section: section, user: user})
-
-      conn =
-        conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
-
-      assert html_response(conn, 200) =~ "Page one"
       assert html_response(conn, 200) =~ section.title
     end
 
@@ -1331,49 +1324,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "id=\"top_page_navigator\""
       assert html_response(conn, 200) =~ "id=\"bottom_page_navigator\""
-    end
-
-    @tag isolation: "serializable"
-    test "timer will not be shown if revision is ungraded", %{
-      conn: conn,
-      user: user,
-      section: section,
-      map: map
-    } do
-      %{ungraded_page: ungraded_page} = map
-
-      enroll_as_student(%{section: section, user: user})
-
-      effective_settings =
-        Oli.Delivery.Settings.get_combined_settings(ungraded_page.revision, section.id, user.id)
-
-      datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
-
-      Oli.Delivery.Sections.get_section_resource(section.id, ungraded_page.resource.id)
-      |> Oli.Delivery.Sections.update_section_resource(%{time_limit: 5})
-
-      insert(:resource_access,
-        user: user,
-        section: section,
-        resource: ungraded_page.resource
-      )
-
-      Oli.Delivery.Attempts.PageLifecycle.start(
-        ungraded_page.revision.slug,
-        section.slug,
-        datashop_session_id,
-        user,
-        effective_settings,
-        activity_provider
-      )
-
-      conn =
-        conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{ungraded_page.revision.slug}")
-
-      assert html_response(conn, 200) =~ ungraded_page.revision.title
-      refute html_response(conn, 200) =~ "<div id=\"countdown_timer_display\""
     end
 
     @tag :skip
@@ -2783,17 +2733,16 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map
         |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
 
-      conn =
-        get(
-          conn,
-          ~p"/sections/#{section.slug}/lesson/#{page_with_audience_groups.slug}"
-        )
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/lesson/#{page_with_audience_groups.slug}")
 
-      assert html_response(conn, 200) =~ "group content with unset audience"
-      assert html_response(conn, 200) =~ "group content with always audience"
-      refute html_response(conn, 200) =~ "group content with instructor audience"
-      refute html_response(conn, 200) =~ "group content with feedback audience"
-      refute html_response(conn, 200) =~ "group content with never audience"
+      ensure_content_is_visible(view)
+
+      assert render(view) =~ "group content with unset audience"
+      assert render(view) =~ "group content with always audience"
+      refute render(view) =~ "group content with instructor audience"
+      refute render(view) =~ "group content with feedback audience"
+      refute render(view) =~ "group content with never audience"
     end
 
     test "instructor sees the appropriate content according to audience",
@@ -2806,17 +2755,16 @@ defmodule OliWeb.PageDeliveryControllerTest do
         map
         |> Oli.Utils.Seeder.Session.login_as_user(ref(:student1))
 
-      conn =
-        get(
-          conn,
-          ~p"/sections/#{section.slug}/lesson/#{page_with_audience_groups.slug}"
-        )
+      {:ok, view, _html} =
+        live(conn, "/sections/#{section.slug}/lesson/#{page_with_audience_groups.slug}")
 
-      assert html_response(conn, 200) =~ "group content with unset audience"
-      assert html_response(conn, 200) =~ "group content with always audience"
-      refute html_response(conn, 200) =~ "group content with instructor audience"
-      refute html_response(conn, 200) =~ "group content with feedback audience"
-      refute html_response(conn, 200) =~ "group content with never audience"
+      ensure_content_is_visible(view)
+
+      assert render(view) =~ "group content with unset audience"
+      assert render(view) =~ "group content with always audience"
+      refute render(view) =~ "group content with instructor audience"
+      refute render(view) =~ "group content with feedback audience"
+      refute render(view) =~ "group content with never audience"
     end
 
     @tag isolation: "serializable"
