@@ -525,7 +525,8 @@ defmodule OliWeb.Delivery.Student.Utils do
       iex> days_difference(~U[2024-05-12T00:00:00Z], %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
-  @spec days_difference(DateTime.t(), SessionContext.t()) :: String.t()
+  def days_difference(nil, _context), do: nil
+
   def days_difference(resource_end_date, context) do
     {localized_end_date, today} =
       case FormatDateTime.maybe_localized_datetime(resource_end_date, context) do

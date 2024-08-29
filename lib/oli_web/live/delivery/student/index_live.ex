@@ -33,7 +33,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
-    containers_per_page = build_containers_per_page(section.slug, page_ids)
+    containers_per_page = build_containers_per_page(section, page_ids)
 
     combined_settings =
       Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
@@ -737,9 +737,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts
 
-  defp build_containers_per_page(section_slug, page_ids) do
+  defp build_containers_per_page(section, page_ids) do
     containers_label_map =
-      Sections.get_ordered_container_labels(section_slug, short_label: true)
+      Sections.get_ordered_container_labels(section.slug, short_label: true)
       |> Enum.reduce(%{}, fn {container_id, label}, acc ->
         Map.put(acc, container_id, label)
       end)
@@ -749,7 +749,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         Map.put(container, "label", containers_label_map[container["id"]])
       end)
 
-    Sections.get_ordered_containers_per_page(section_slug, page_ids)
+    Sections.get_ordered_containers_per_page(section, page_ids)
     |> Enum.reduce(%{}, fn elem, acc ->
       Map.put(acc, elem[:page_id], add_label_to_containers.(elem[:containers]))
     end)

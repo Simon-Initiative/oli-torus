@@ -84,8 +84,8 @@ defmodule OliWeb.Sections.OverviewView do
            user: user,
            section: section,
            updates_count: updates_count,
-           submission_count:
-             Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section),
+           has_submitted_attempts:
+             Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
            collab_space_config: collab_space_config,
            resource_slug: revision_slug,
            show_required_section_config: show_required_section_config,
@@ -114,7 +114,7 @@ defmodule OliWeb.Sections.OverviewView do
   attr(:section, :any, default: nil)
   attr(:instructors, :list, default: [])
   attr(:updates_count, :integer)
-  attr(:submission_count, :integer)
+  attr(:has_submitted_attempts, :boolean)
   attr(:section_has_student_data, :boolean)
 
   def render(assigns) do
@@ -324,8 +324,8 @@ defmodule OliWeb.Sections.OverviewView do
               class="btn btn-link"
             >
               Score Manually Graded Activities
-              <%= if @submission_count > 0 do %>
-                <span class="badge badge-primary"><%= @submission_count %></span>
+              <%= if @has_submitted_attempts do %>
+                <span class="badge badge-primary">*</span>
               <% end %>
             </a>
           </li>
