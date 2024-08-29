@@ -114,7 +114,10 @@
     }
 
     // override tailwind styles to ensure borders, text visible against feedback background & no dark mode change
-    table {
+    table,
+    th,
+    tr,
+    td {
       color: var(--color-feedback-table-color);
       border-color: var(--color-feedback-table-color);
     }
