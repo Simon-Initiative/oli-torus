@@ -7,7 +7,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   """
 
   alias Oli.Repo
-
+  use Appsignal.Instrumentation.Decorators
   import Oli.Delivery.Attempts.Core
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
@@ -47,6 +47,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   `{:error, {:no_more_attempts}}` if no more attempts are present
 
   """
+  @decorate transaction_event("PageLifeCycle: start")
   def start(
         revision_slug,
         section_slug,
@@ -58,40 +59,38 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     Repo.transaction(fn ->
       Repo.query!("set transaction isolation level SERIALIZABLE;")
 
-      Appsignal.instrument("PageLifeCycle.start", fn ->
+      case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
+        nil ->
+          Repo.rollback({:not_found})
 
-        case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
-          nil ->
-            Repo.rollback({:not_found})
+        page_revision ->
+          latest_resource_attempt =
+            get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
 
-          page_revision ->
-            latest_resource_attempt =
-              get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
+          publication_id =
+            Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
 
-            publication_id =
-              Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
+          context = %VisitContext{
+            publication_id: publication_id,
+            blacklisted_activity_ids: [],
+            latest_resource_attempt: latest_resource_attempt,
+            page_revision: page_revision,
+            section_slug: section_slug,
+            user: user,
+            audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
+            datashop_session_id: datashop_session_id,
+            activity_provider: activity_provider,
+            effective_settings: effective_settings
+          }
 
-            context = %VisitContext{
-              publication_id: publication_id,
-              blacklisted_activity_ids: [],
-              latest_resource_attempt: latest_resource_attempt,
-              page_revision: page_revision,
-              section_slug: section_slug,
-              user: user,
-              audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
-              datashop_session_id: datashop_session_id,
-              activity_provider: activity_provider,
-              effective_settings: effective_settings
-            }
+          impl = determine_page_impl(page_revision.graded)
 
-            impl = determine_page_impl(page_revision.graded)
+          case impl.start(context) do
+            {:ok, results} -> results
+            {:error, error} -> Repo.rollback(error)
+          end
+      end
 
-            case impl.start(context) do
-              {:ok, results} -> results
-              {:error, error} -> Repo.rollback(error)
-            end
-        end
-      end)
     end)
   end
 
@@ -120,6 +119,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
           {:ok, {:in_progress | :revised, AttemptState.t()}}
           | {:ok, {:not_started, HistorySummary.t()}}
           | {:error, any}
+  @decorate transaction_event("PageLifeCycle: visit")
   def visit(
         page_revision,
         section_slug,
@@ -163,6 +163,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     end)
   end
 
+  @decorate transaction_event("PageLifeCycle: update_latest_visited_page")
   defp update_latest_visited_page(section_slug, user_id, resource_id) do
     Sections.get_enrollment(section_slug, user_id)
     |> Sections.update_enrollment(%{most_recently_visited_resource_id: resource_id})
@@ -183,6 +184,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:error, {:not_found}}`
   """
+  @decorate transaction_event("PageLifeCycle: review")
   def review(resource_attempt_guid) do
     Repo.transaction(fn ->
       case get_resource_attempt_by(attempt_guid: resource_attempt_guid) do
@@ -215,6 +217,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:error, {:already_submitted}}`
   """
+  @decorate transaction_event("PageLifeCycle: finalize")
   def finalize(section_slug, resource_attempt_guid, datashop_session_id) do
     result =
       Repo.transaction(fn _ ->
@@ -276,6 +279,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   its attempt guid.  A user can access a resource attempt if that user is either an
   instructor enrolled in that section, or the student that originated the attempt.
   """
+  @decorate transaction_event("PageLifeCycle: can_access_attempt")
   def can_access_attempt?(resource_attempt_guid, %User{id: user_id} = user, %Section{
         slug: section_slug,
         id: section_id
@@ -300,6 +304,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   #
   # 1. Use the current revision if no resource attempt is present, or if the current revision is set to "graded"
   # 2. Otherwise return "graded" value of the resource attempt revision.
+  @decorate transaction_event("PageLifeCycle: handle_type_transitions")
   defp handle_type_transitions(resource_attempt, resource_revision) do
     if is_nil(resource_attempt) || resource_attempt.revision.graded === resource_revision.graded do
       # There is no latest attempt, or the latest attempt revision's graded status doesn't differ from the current revisions
