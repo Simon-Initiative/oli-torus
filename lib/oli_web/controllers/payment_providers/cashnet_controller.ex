@@ -42,7 +42,8 @@ defmodule OliWeb.PaymentProviders.CashnetController do
             cashnet_form: cashnet_form,
             user: user,
             user_name:
-              safe_get(user.family_name, "Unknown") <> ", " <> safe_get(user.given_name, "Unknown")
+              safe_get(user.family_name, "Unknown") <>
+                ", " <> safe_get(user.given_name, "Unknown")
           )
 
         e ->
@@ -53,9 +54,9 @@ defmodule OliWeb.PaymentProviders.CashnetController do
       Logger.error(
         "CashnetController caught attempt to initialize payment for non-enrolled student"
       )
+
       render(conn, "not_enrolled.html", section_slug: section.slug)
     end
-
   end
 
   defp safe_get(item, default_value) do

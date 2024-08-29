@@ -46,9 +46,11 @@ defmodule OliWeb.PaymentController do
           context: context,
           pay_by_card?:
             direct_payments_enabled?() and
-              (section.payment_options == :direct or section.payment_options == :direct_and_deferred),
+              (section.payment_options == :direct or
+                 section.payment_options == :direct_and_deferred),
           pay_by_code?:
-            section.payment_options == :deferred or section.payment_options == :direct_and_deferred,
+            section.payment_options == :deferred or
+              section.payment_options == :direct_and_deferred,
           section_slug: section_slug,
           section_title: section.title,
           section: section,
@@ -61,7 +63,6 @@ defmodule OliWeb.PaymentController do
     else
       render(conn, "not_enrolled.html", section_slug: section_slug)
     end
-
   end
 
   # Returns the module for the configured payment provider

@@ -79,8 +79,6 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
       assert html_response(conn, 302) =~
                "You are being <a href=\"/sections/#{section.slug}\">redirected"
     end
-
-
   end
 
   @moduletag :capture_log
@@ -104,7 +102,6 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
 
       conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
       assert html_response(conn, 200) =~ "You are not enrolled in this course section"
-
     end
 
     test "return unauthorized if user is not enrolled", %{
