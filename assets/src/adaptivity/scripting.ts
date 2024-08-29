@@ -492,7 +492,7 @@ export const getLocalizedStateSnapshot = (
   let localActivityIds = activityIds;
   const snapshot = getEnvState(env);
   const finalState: any = { ...snapshot };
-  const attempType = getValue('app.attempType', defaultGlobalEnv);
+  const attempType = getValue('session.attempType', defaultGlobalEnv);
   if (attempType == 'New') {
     // Since we no longer save the values to its owener, we only need snapshot of current activity
     localActivityIds = [activityIds[activityIds.length - 1]];

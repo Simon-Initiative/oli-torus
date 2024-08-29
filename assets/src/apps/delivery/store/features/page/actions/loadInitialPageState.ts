@@ -132,17 +132,22 @@ export const loadInitialPageState = createAsyncThunk(
       if (shouldResume && !isReviewMode) {
         //sessionState variable already have this info so lets get it from there because sometimes the defaultGlobalEnv state was not up to date by now
         const resumeId = sessionState['session.resume'];
-        const oldAttemptResumeActivityId = sessionState['app.old.attempt.resume'];
-        const appAttempType = sessionState['app.attempType'];
+        const oldAttemptResumeActivityId = sessionState['session.old.attempt.resume'];
+        const appAttempType = sessionState['session.attempType'];
         //If the studemt is resuming an event which was already based on the 'New' saving approach then we don't need to do anything
         // However, if half of the activity is saved based on the 'Old' save approach and once student resumes the lesson, it's going
         // to be saved based on 'New' approach. To identify that, setting the attempt type to 'Resume'
-        const attemptType = appAttempType == 'New' ? 'New' : 'Resume';
+        const attemptType = appAttempType == 'New' ? 'New' : 'Mixed';
         const OldApproachAttemptResumeActivityId =
-          appAttempType == 'Resume' && oldAttemptResumeActivityId?.length
+          appAttempType == 'Mixed' && oldAttemptResumeActivityId?.length
             ? oldAttemptResumeActivityId
             : resumeId;
-        /* console.log('RESUMING!: ', { attempts, resumeId }); */
+        console.log('RESUMING!: ', {
+          attempts,
+          resumeId,
+          attemptType,
+          OldApproachAttemptResumeActivityId,
+        });
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
         const totalScore = attempts.reduce((acc: number, attempt: any) => {
@@ -152,17 +157,17 @@ export const loadInitialPageState = createAsyncThunk(
         evalAssignScript(
           {
             'session.tutorialScore': totalScore,
-            'app.attempType': attemptType,
+            'session.attempType': attemptType,
             'session.currentQuestionScore': 0,
-            'app.old.attempt.resume': OldApproachAttemptResumeActivityId,
+            'session.old.attempt.resume': OldApproachAttemptResumeActivityId,
           },
           defaultGlobalEnv,
         );
         const updateSessionState = clone(sessionState);
         updateSessionState['session.tutorialScore'] = totalScore;
         updateSessionState['session.currentQuestionScore'] = 0;
-        updateSessionState['app.attempType'] = attemptType;
-        updateSessionState['app.old.attempt.resume'] = OldApproachAttemptResumeActivityId;
+        updateSessionState['session.attempType'] = attemptType;
+        updateSessionState['session.old.attempt.resume'] = OldApproachAttemptResumeActivityId;
         //No need to wite anything to server in REVIEW mode
         if (!params.previewMode && !isReviewMode) {
           await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, updateSessionState);
@@ -193,7 +198,7 @@ export const loadInitialPageState = createAsyncThunk(
         if (!isReviewMode) {
           evalAssignScript(
             {
-              'app.attempType': 'New',
+              'session.attempType': 'New',
             },
             defaultGlobalEnv,
           );

@@ -205,7 +205,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
               response,
             );
             const { snapshot } = readyResults;
-            const attempType = snapshot['app.attempType'];
+            const attempType = snapshot['session.attempType'];
             if (attempType === 'New') {
               if (sharedAttemptStateMap?.size) {
                 currentActivityId =
