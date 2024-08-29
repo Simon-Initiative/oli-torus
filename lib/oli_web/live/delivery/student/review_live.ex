@@ -153,8 +153,6 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         </div>
       </div>
     </div>
-
-    <.scripts scripts={@scripts} user_token={@user_token} />
     """
   end
 

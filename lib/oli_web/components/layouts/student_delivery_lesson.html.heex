@@ -3,9 +3,6 @@
     <script>
       window.userToken = "<%= @user_token %>";
     </script>
-    <script>
-      OLI.initActivityBridge('eventIntercept');
-    </script>
     <div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
       <%= if live_flash(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">

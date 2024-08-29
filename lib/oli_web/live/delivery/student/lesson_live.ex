@@ -853,9 +853,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <script>
           window.userToken = "<%= @user_token %>";
         </script>
-        <script>
-          OLI.initActivityBridge('eventIntercept');
-        </script>
         <%= OliWeb.Common.React.component(
           %{is_liveview: true},
           "Components.Delivery",
