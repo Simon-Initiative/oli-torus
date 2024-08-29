@@ -58,37 +58,40 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     Repo.transaction(fn ->
       Repo.query!("set transaction isolation level SERIALIZABLE;")
 
-      case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
-        nil ->
-          Repo.rollback({:not_found})
+      Appsignal.instrument("PageLifeCycle.start", fn ->
 
-        page_revision ->
-          latest_resource_attempt =
-            get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
+        case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
+          nil ->
+            Repo.rollback({:not_found})
 
-          publication_id =
-            Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
+          page_revision ->
+            latest_resource_attempt =
+              get_latest_resource_attempt(page_revision.resource_id, section_slug, user.id)
 
-          context = %VisitContext{
-            publication_id: publication_id,
-            blacklisted_activity_ids: [],
-            latest_resource_attempt: latest_resource_attempt,
-            page_revision: page_revision,
-            section_slug: section_slug,
-            user: user,
-            audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
-            datashop_session_id: datashop_session_id,
-            activity_provider: activity_provider,
-            effective_settings: effective_settings
-          }
+            publication_id =
+              Publishing.get_publication_id_for_resource(section_slug, page_revision.resource_id)
 
-          impl = determine_page_impl(page_revision.graded)
+            context = %VisitContext{
+              publication_id: publication_id,
+              blacklisted_activity_ids: [],
+              latest_resource_attempt: latest_resource_attempt,
+              page_revision: page_revision,
+              section_slug: section_slug,
+              user: user,
+              audience_role: Oli.Delivery.Audience.audience_role(user, section_slug),
+              datashop_session_id: datashop_session_id,
+              activity_provider: activity_provider,
+              effective_settings: effective_settings
+            }
 
-          case impl.start(context) do
-            {:ok, results} -> results
-            {:error, error} -> Repo.rollback(error)
-          end
-      end
+            impl = determine_page_impl(page_revision.graded)
+
+            case impl.start(context) do
+              {:ok, results} -> results
+              {:error, error} -> Repo.rollback(error)
+            end
+        end
+      end)
     end)
   end
 

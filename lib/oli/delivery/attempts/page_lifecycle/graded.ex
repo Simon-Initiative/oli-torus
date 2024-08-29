@@ -11,7 +11,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     Lifecycle,
     Hierarchy
   }
-
+  use Appsignal.Instrumentation.Decorators
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Attempts.Scoring
@@ -31,6 +31,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   @behaviour Lifecycle
 
   @impl Lifecycle
+  @decorate transaction_event("Graded.visit")
   def visit(%VisitContext{
         latest_resource_attempt: latest_resource_attempt,
         page_revision: page_revision,
@@ -73,6 +74,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   @impl Lifecycle
+  @decorate transaction_event("Graded.start")
   def start(
         %VisitContext{
           page_revision: page_revision,
@@ -131,11 +133,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   @impl Lifecycle
+  @decorate transaction_event("Graded.review")
   def review(%ReviewContext{} = context) do
     Common.review(context)
   end
 
   @impl Lifecycle
+  @decorate transaction_event("Graded.finalize")
   def finalize(%FinalizationContext{
         resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
         section_slug: section_slug,
@@ -195,6 +199,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
   def finalize(_), do: {:error, {:already_submitted}}
 
+  @decorate transaction_event("Graded.finalize_activity_and_part_attempts")
   defp finalize_activity_and_part_attempts(resource_attempt, datashop_session_id) do
     case resource_attempt.revision do
       # For adaptive pages, we never want to evaluate anything at finalization time
@@ -226,6 +231,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     Core.update_resource_attempt(ra, %{auto_submit_job_id: nil})
   end
 
+  @decorate transaction_event("Graded.roll_up_activities_to_resource_attempt")
   def roll_up_activities_to_resource_attempt(resource_attempt, %Combined{} = effective_settings) do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of its state, and to separately fetch the list of most recent attempts for each
@@ -252,6 +258,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
+  @decorate transaction_event("Graded.apply_evaluation")
   defp apply_evaluation(
          resource_attempt,
          activity_attempts,
@@ -282,6 +289,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     })
   end
 
+  @decorate transaction_event("Graded.apply_submission")
   defp apply_submission(resource_attempt, %Combined{} = effective_settings) do
     case resource_attempt.lifecycle_state do
       :active ->
@@ -351,6 +359,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
+  @decorate transaction_event("Graded.roll_up_resource_attempts_to_access")
   def roll_up_resource_attempts_to_access(
         %{scoring_strategy_id: scoring_strategy_id},
         _section_slug,

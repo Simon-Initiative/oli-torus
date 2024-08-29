@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.Student.LessonLive do
   use OliWeb, :live_view
+  use Appsignal.Instrumentation.Decorators
 
   import OliWeb.Delivery.Student.Utils,
     only: [page_header: 1, scripts: 1, references: 1, reset_attempts_button: 1]
@@ -30,6 +31,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     current_user: {[:id, :name, :email], %User{}}
   }
 
+  @decorate transaction_event()
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
     %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
     is_instructor = Sections.has_instructor_role?(current_user, section.slug)
@@ -895,18 +897,21 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     |> assign_html()
   end
 
+  @decorate transaction_event()
   defp assign_scripts(socket) do
     assign(socket,
       scripts: Utils.get_required_activity_scripts(socket.assigns.page_context)
     )
   end
 
+  @decorate transaction_event()
   defp assign_html(socket) do
     assign(socket,
       html: Utils.build_html(socket.assigns, :delivery)
     )
   end
 
+  @decorate transaction_event()
   defp assign_objectives(socket) do
     %{page_context: %{page: page}, current_user: current_user, section: section} =
       socket.assigns

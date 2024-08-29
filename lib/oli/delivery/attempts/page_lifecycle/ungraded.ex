@@ -26,10 +26,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   in the case that the attempt was pinned to an older revision of the resource. This allows newly published
   changes to the resource to be seen after a user has visited the resource previously.
   """
+  use Appsignal.Instrumentation.Decorators
 
   @behaviour Lifecycle
 
   @impl Lifecycle
+  @decorate transaction_event("Ungraded.visit")
   def visit(
         %VisitContext{
           latest_resource_attempt: latest_resource_attempt,
@@ -37,7 +39,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
         } = context
       ) do
     if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id or
-         latest_resource_attempt.lifecycle_state == :evaluated do
+        latest_resource_attempt.lifecycle_state == :evaluated do
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
           {:ok, {:in_progress, attempt_state}}
@@ -56,6 +58,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   end
 
   @impl Lifecycle
+  @decorate transaction_event("Ungraded.finalize")
   def finalize(%FinalizationContext{
         resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
         effective_settings: effective_settings
@@ -69,13 +72,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     })
 
     {:ok,
-     %FinalizationSummary{
-       graded: false,
-       lifecycle_state: :evaluated,
-       resource_access: nil,
-       part_attempt_guids: nil,
-       effective_settings: effective_settings
-     }}
+    %FinalizationSummary{
+      graded: false,
+      lifecycle_state: :evaluated,
+      resource_access: nil,
+      part_attempt_guids: nil,
+      effective_settings: effective_settings
+    }}
   end
 
   @impl Lifecycle
@@ -83,11 +86,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           {:ok,
            {:finalized, Oli.Delivery.Attempts.PageLifecycle.AttemptState.t()}
            | {:in_progress, Oli.Delivery.Attempts.PageLifecycle.AttemptState.t()}}
+  @decorate transaction_event("Ungraded.review")
   def review(%ReviewContext{} = context) do
     Common.review(context)
   end
 
   @impl Lifecycle
+  @decorate transaction_event("Ungraded.start")
   def start(%VisitContext{} = context) do
     {:ok, resource_attempt} = Hierarchy.create(context)
 
@@ -95,6 +100,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     |> update_progress(resource_attempt)
   end
 
+  @decorate transaction_event("Ungraded.update_progress")
   defp update_progress({:ok, state}, %ResourceAttempt{
          resource_access_id: resource_access_id
        }) do
@@ -117,6 +123,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     |> do_update_progress(number_of_scorable_activities)
 
     {:ok, state}
+
   end
 
   defp update_progress(other, _) do

@@ -1,6 +1,6 @@
 defmodule OliWeb.Delivery.Student.IndexLive do
   use OliWeb, :live_view
-
+  use Appsignal.Instrumentation.Decorators
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
@@ -12,6 +12,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
 
+  @decorate transaction_event("IndexLive")
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
@@ -21,24 +22,28 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         do: Sections.get_schedule_for_current_and_next_week(section, current_user_id),
         else: nil
 
-    nearest_upcoming_lesson =
+    nearest_upcoming_lesson = Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
       section
       |> Sections.get_nearest_upcoming_lessons(current_user_id, 1)
       |> List.first()
+    end)
 
-    latest_assignments =
+    latest_assignments = Appsignal.instrument("IndexLive: latest_assignments", fn ->
       Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+    end)
 
-    upcoming_assignments =
+    upcoming_assignments = Appsignal.instrument("IndexLive: upcoming_assignments", fn ->
       Sections.get_nearest_upcoming_lessons(section, current_user_id, 3, only_graded: true)
+    end)
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section, page_ids)
 
-    combined_settings =
+    combined_settings = Appsignal.instrument("IndexLive: combined_settings", fn ->
       Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
+    end)
 
-    [last_open_and_unfinished_page, nearest_upcoming_lesson] =
+    [last_open_and_unfinished_page, nearest_upcoming_lesson] = Appsignal.instrument("IndexLive: last_open_and_unfinished_page", fn ->
       Enum.map(
         [
           Sections.get_last_open_and_unfinished_page(section, current_user_id),
@@ -61,6 +66,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             Map.put(page, :module_index, page_module_index)
         end
       )
+      end)
 
     {:ok,
      assign(socket,
