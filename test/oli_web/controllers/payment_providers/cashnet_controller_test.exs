@@ -79,11 +79,33 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
       assert html_response(conn, 302) =~
                "You are being <a href=\"/sections/#{section.slug}\">redirected"
     end
+
+
   end
 
   @moduletag :capture_log
   describe "init intent" do
     setup [:user_conn, :create_section]
+
+    test "displays not enrolled message when not enrolled", %{
+      conn: conn
+    } do
+      product = insert(:section)
+
+      section =
+        insert(:section, %{
+          type: :enrollable,
+          open_and_free: true,
+          requires_enrollment: true,
+          requires_payment: true,
+          amount: Money.new(:USD, 25),
+          blueprint: product
+        })
+
+      conn = get(conn, Routes.payment_path(conn, :guard, section.slug))
+      assert html_response(conn, 200) =~ "You are not enrolled in this course section"
+
+    end
 
     test "return unauthorized if user is not enrolled", %{
       conn: conn,
