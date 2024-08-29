@@ -46,13 +46,14 @@ defmodule OliWeb.PaymentProviders.CashnetController do
           )
 
         e ->
-          {_, msg} = Oli.Utils.log_error("CashnetController:init_form failed.", e)
+          {_, msg} = Oli.Utils.log_error("CashnetController:show failed.", e)
           error(conn, 500, msg)
       end
     else
       Logger.error(
         "CashnetController caught attempt to initialize payment for non-enrolled student"
       )
+      render(conn, "not_enrolled.html", section_slug: section.slug)
     end
 
   end
