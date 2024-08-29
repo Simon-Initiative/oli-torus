@@ -34,39 +34,40 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
-      socket =
-        if PageLifecycle.can_access_attempt?(attempt_guid, user, section) and
-             review_allowed?(page_context) do
+      if PageLifecycle.can_access_attempt?(attempt_guid, user, section) and
+           review_allowed?(page_context) do
+        socket =
           socket
           |> assign(page_context: page_context)
           |> assign(page_revision: page_revision)
           |> assign_html_and_scripts()
           |> assign_objectives()
           |> slim_assigns()
-        else
-          socket
-          |> put_flash(:error, "You are not allowed to review this attempt.")
-          |> redirect(to: Utils.learn_live_path(section.slug))
-        end
 
-      script_sources =
-        Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+        script_sources =
+          Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-      send(self(), :gc)
+        send(self(), :gc)
 
-      {:ok,
-       push_event(socket, "load_survey_scripts", %{
-         script_sources: script_sources
-       })}
+        {:ok,
+         push_event(socket, "load_survey_scripts", %{
+           script_sources: script_sources
+         })}
 
-      # These temp assigns were disabled in MER-3672
-      #  temporary_assigns: [
-      #    scripts: [],
-      #    html: [],
-      #    page_context: %{},
-      #    page_revision: %{},
-      #    objectives: []
-      #  ]}
+        # These temp assigns were disabled in MER-3672
+        #  temporary_assigns: [
+        #    scripts: [],
+        #    html: [],
+        #    page_context: %{},
+        #    page_revision: %{},
+        #    objectives: []
+        #  ]}
+      else
+        {:ok,
+         socket
+         |> put_flash(:error, "You are not allowed to review this attempt.")
+         |> redirect(to: Utils.learn_live_path(section.slug))}
+      end
     else
       {:ok, socket}
     end
