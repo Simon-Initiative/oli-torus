@@ -161,24 +161,6 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   then it should be redirected to the prologue path.
   """
 
-  defp ensure_path(conn, :prologue) do
-    section_slug = conn.params["section_slug"]
-    revision_slug = conn.params["revision_slug"]
-
-    if String.contains?(
-         conn.request_path,
-         "/sections/#{section_slug}/prologue"
-       ) do
-      conn
-      |> assign(:already_been_redirected?, false)
-    else
-      conn
-      |> halt()
-      |> assign(:already_been_redirected?, true)
-      |> Phoenix.Controller.redirect(to: "/sections/#{section_slug}/prologue/#{revision_slug}")
-    end
-  end
-
   defp ensure_path(conn, :review, :adaptive) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
@@ -219,6 +201,24 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       |> Phoenix.Controller.redirect(
         to: "/sections/#{section_slug}/lesson/#{revision_slug}/attempt/#{attempt_guid}/review"
       )
+    end
+  end
+
+  defp ensure_path(conn, :prologue) do
+    section_slug = conn.params["section_slug"]
+    revision_slug = conn.params["revision_slug"]
+
+    if String.contains?(
+         conn.request_path,
+         "/sections/#{section_slug}/prologue"
+       ) do
+      conn
+      |> assign(:already_been_redirected?, false)
+    else
+      conn
+      |> halt()
+      |> assign(:already_been_redirected?, true)
+      |> Phoenix.Controller.redirect(to: "/sections/#{section_slug}/prologue/#{revision_slug}")
     end
   end
 

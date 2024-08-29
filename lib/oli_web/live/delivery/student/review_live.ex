@@ -4,8 +4,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
-  import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, scripts: 1]
+  import OliWeb.Delivery.Student.Utils, only: [page_header: 1]
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
