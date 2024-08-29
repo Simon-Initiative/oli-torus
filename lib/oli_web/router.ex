@@ -1091,6 +1091,12 @@ defmodule OliWeb.Router do
 
     scope "/adaptive_lesson/:revision_slug" do
       get("/", PageDeliveryController, :page_fullscreen)
+
+      get(
+        "/attempt/:attempt_guid/review",
+        PageDeliveryController,
+        :review_attempt
+      )
     end
   end
 
