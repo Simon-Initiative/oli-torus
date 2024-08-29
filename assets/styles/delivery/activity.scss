@@ -112,6 +112,12 @@
         margin-right: 3px;
       }
     }
+
+    // override tailwind styles to ensure borders, text visible against feedback background & no dark mode change
+    table {
+      color: black;
+      border-color: black;
+    }
   }
 }
 
@@ -162,8 +168,6 @@
     /* MER-2961 - Some wide content (specifically formulas) were getting cut off in hints, making it scrollable
     */
     overflow-x: auto;
-
-
   }
 
   p:last-of-type {
