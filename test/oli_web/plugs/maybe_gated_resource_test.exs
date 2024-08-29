@@ -1,6 +1,8 @@
 defmodule Oli.Plugs.MaybeGatedResourceTest do
   use OliWeb.ConnCase
 
+  import Phoenix.LiveViewTest
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Gating
   alias Oli.Seeder
@@ -58,12 +60,10 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
         })
 
       {:ok, section} = Gating.update_resource_gating_index(section)
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/lesson/#{revision.slug}")
+      ensure_content_is_visible(view)
 
-      conn =
-        conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
-
-      assert html_response(conn, 200) =~ "Page one"
+      assert render(view) =~ "Page one"
     end
 
     test "blocks access to gated resource with a closed gating condition", %{
@@ -242,11 +242,9 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       {:ok, section} = Gating.update_resource_gating_index(section)
 
-      conn =
-        conn
-        |> get(~p"/sections/#{section.slug}/prologue/#{revision.slug}")
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/prologue/#{revision.slug}")
 
-      assert html_response(conn, 200) =~ "Attempts 1/2"
+      assert render(view) =~ "Attempts 1/2"
     end
 
     test "allows student to resume an active attempt with :allows_review policy and active attempt present",
@@ -279,12 +277,18 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       {:ok, section} = Gating.update_resource_gating_index(section)
 
-      conn =
-        conn
-        |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
-
-      assert html_response(conn, 200) =~ "Page one"
+      {:ok, view, _html} = live(conn, "/sections/#{section.slug}/lesson/#{revision.slug}")
+      ensure_content_is_visible(view)
+      assert render(view) =~ "Page one"
     end
+  end
+
+  defp ensure_content_is_visible(view) do
+    # the content of the page will not be rendered until the socket is connected
+    # and the client side confirms that the scripts are loaded
+    view
+    |> element("#eventIntercept")
+    |> render_hook("survey_scripts_loaded", %{"loaded" => true})
   end
 
   defp setup_session(%{conn: conn}) do
