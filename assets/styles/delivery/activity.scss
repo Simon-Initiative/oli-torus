@@ -113,7 +113,8 @@
       }
     }
 
-    // override tailwind styles to ensure borders, text visible against feedback background & no dark mode change
+    // override tailwind table styles to ensure table borders and text are
+    // legible against colored feedback background and no dark mode change
     table,
     th,
     tr,
