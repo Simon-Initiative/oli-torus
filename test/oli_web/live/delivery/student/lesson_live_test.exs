@@ -498,6 +498,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
+      ensure_content_is_visible(view)
+
       assert element(view, "#header_logo_button") |> render() =~ "/images/oli_torus_logo.png"
     end
 
@@ -511,7 +513,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
-
+      ensure_content_is_visible(view)
       assert element(view, "#header_logo_button") |> render() =~ "www.logo.com"
     end
 
@@ -527,6 +529,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+
+      ensure_content_is_visible(view)
 
       assert has_element?(view, "span", "The best course ever!")
 
@@ -568,6 +572,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         })
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(product.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       assert has_element?(
                view,
@@ -594,7 +599,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
-
+      ensure_content_is_visible(view)
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
     end
 
@@ -622,6 +627,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       assert has_element?(
                view,
@@ -643,6 +649,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
 
+      ensure_content_is_visible(view)
+
       assert has_element?(
                view,
                "div[data-live-react-class='Components.References']"
@@ -662,7 +670,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         create_attempt(user, section, page_3, %{lifecycle_state: :active})
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
-
+      ensure_content_is_visible(view)
       refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
       refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
       assert has_element?(view, "div[role='page content']")
@@ -813,7 +821,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
-
+      ensure_content_is_visible(view)
       assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
@@ -848,6 +856,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+
+      ensure_content_is_visible(view)
 
       # if we render_click() on PROFICIENCY to show the modal, a JS command should be triggered.
       # But, since the phx-click does not have any push command, we get "no push command found within JS commands".
@@ -894,6 +904,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       |> Enum.each(&add_resource_summary(&1))
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_2.slug))
+      ensure_content_is_visible(view)
 
       assert has_element?(
                view,
@@ -959,6 +970,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -1002,6 +1014,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           )
         )
 
+      ensure_content_is_visible(view)
+
       view
       |> element(~s{div[role="next_page"] a})
       |> render_click
@@ -1035,6 +1049,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           Utils.lesson_live_path(section.slug, page_2.slug, selected_view: @default_selected_view)
         )
 
+      ensure_content_is_visible(view)
+
       view
       |> element(~s{div[role="next_page"] a})
       |> render_click
@@ -1049,6 +1065,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # previous page is a container
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="prev_page"] a})
@@ -1072,11 +1089,16 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_1, %{lifecycle_state: :active})
+
       {:ok, view, _html} =
         live(
           conn,
           Utils.lesson_live_path(section.slug, page_1.slug, selected_view: @default_selected_view)
         )
+
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="back_link"] a})
@@ -1101,6 +1123,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} =
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug, request_path: request_path))
+
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="back_link"] a})
@@ -1146,6 +1170,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
+      ensure_content_is_visible(view)
+
       assert has_element?(
                view,
                "button[phx-click='toggle_sidebar']"
@@ -1162,7 +1188,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
-
+      ensure_content_is_visible(view)
       assert has_element?(view, "button[id=user-account-menu]")
     end
   end
@@ -1180,6 +1206,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{button[phx-click='toggle_sidebar']})
@@ -1201,6 +1228,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{button[phx-click='toggle_sidebar']})
@@ -1229,6 +1257,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       create_post(user, section, page_1, "This is another class note")
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{button[phx-click='toggle_sidebar']})
@@ -1275,6 +1304,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       react_to_post(post_1, user3, :like)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{button[phx-click='toggle_sidebar']})
@@ -1310,6 +1340,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{button[phx-click='toggle_sidebar']})
@@ -1391,6 +1422,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         })
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{button[phx-click='toggle_sidebar']})
@@ -1453,7 +1485,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         create_attempt(user, section, graded_page, %{lifecycle_state: :active})
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
-
+      ensure_content_is_visible(view)
       assert has_element?(view, "div[id='offline_detector']")
     end
 
@@ -1470,7 +1502,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         create_attempt(user, section, practice_page, %{lifecycle_state: :active})
 
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, practice_page.slug))
-
+      ensure_content_is_visible(view)
       assert has_element?(view, "div[id='offline_detector']")
     end
   end
@@ -1494,5 +1526,13 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
   defp react_to_post(post, user, reaction) do
     Oli.Resources.Collaboration.toggle_reaction(post.id, user.id, reaction)
+  end
+
+  defp ensure_content_is_visible(view) do
+    # the content of the page will not be rendered until the socket is connected
+    # and the client side confirms that the scripts are loaded
+    view
+    |> element("#eventIntercept")
+    |> render_hook("survey_scripts_loaded", %{"loaded" => true})
   end
 end
