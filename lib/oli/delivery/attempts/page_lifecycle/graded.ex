@@ -11,6 +11,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     Lifecycle,
     Hierarchy
   }
+
   use Appsignal.Instrumentation.Decorators
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.Combined

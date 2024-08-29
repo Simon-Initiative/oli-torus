@@ -8,21 +8,21 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   @decorate transaction_event("SetUser")
   def on_mount(:with_preloads, _, session, socket) do
     {:cont,
-      socket
-      |> set_author(session)
-      |> set_user(session, preload: [:platform_roles, :author])
-      |> set_user_token
-      |> update_ctx(session)}
+     socket
+     |> set_author(session)
+     |> set_user(session, preload: [:platform_roles, :author])
+     |> set_user_token
+     |> update_ctx(session)}
   end
 
   @decorate transaction_event("SetUser")
   def on_mount(_default, _, session, socket) do
     {:cont,
-      socket
-      |> set_author(session)
-      |> set_user(session)
-      |> set_user_token
-      |> update_ctx(session)}
+     socket
+     |> set_author(session)
+     |> set_user(session)
+     |> set_user_token
+     |> update_ctx(session)}
   end
 
   def set_author(socket, %{"current_author_id" => current_author_id})

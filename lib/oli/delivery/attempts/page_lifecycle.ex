@@ -90,7 +90,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             {:error, error} -> Repo.rollback(error)
           end
       end
-
     end)
   end
 

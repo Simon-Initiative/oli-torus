@@ -39,7 +39,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
         } = context
       ) do
     if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id or
-        latest_resource_attempt.lifecycle_state == :evaluated do
+         latest_resource_attempt.lifecycle_state == :evaluated do
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
           {:ok, {:in_progress, attempt_state}}
@@ -72,13 +72,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     })
 
     {:ok,
-    %FinalizationSummary{
-      graded: false,
-      lifecycle_state: :evaluated,
-      resource_access: nil,
-      part_attempt_guids: nil,
-      effective_settings: effective_settings
-    }}
+     %FinalizationSummary{
+       graded: false,
+       lifecycle_state: :evaluated,
+       resource_access: nil,
+       part_attempt_guids: nil,
+       effective_settings: effective_settings
+     }}
   end
 
   @impl Lifecycle
@@ -123,7 +123,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     |> do_update_progress(number_of_scorable_activities)
 
     {:ok, state}
-
   end
 
   defp update_progress(other, _) do

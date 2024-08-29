@@ -182,9 +182,10 @@ defmodule Oli.Delivery.Page.PageContext do
         opts \\ [track_access: true]
       ) do
     # resolve the page revision per section
-    page_revision = Appsignal.instrument("resolve page revision", fn ->
-      DeliveryResolver.from_revision_slug(section_slug, page_slug)
-    end)
+    page_revision =
+      Appsignal.instrument("resolve page revision", fn ->
+        DeliveryResolver.from_revision_slug(section_slug, page_slug)
+      end)
 
     effective_settings =
       Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
@@ -197,26 +198,25 @@ defmodule Oli.Delivery.Page.PageContext do
     {progress_state, resource_attempts, latest_attempts, activities} =
       Appsignal.instrument("PageLifecycle.visit", fn ->
         case PageLifecycle.visit(
-             page_revision,
-             section_slug,
-             datashop_session_id,
-             user,
-             effective_settings,
-             activity_provider
-           ) do
-        {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
-          {:not_started, resource_attempts, %{}, nil}
+               page_revision,
+               section_slug,
+               datashop_session_id,
+               user,
+               effective_settings,
+               activity_provider
+             ) do
+          {:ok, {:not_started, %HistorySummary{resource_attempts: resource_attempts}}} ->
+            {:not_started, resource_attempts, %{}, nil}
 
-        {:ok,
-         {state,
-          %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-          assemble_final_context(state, resource_attempt, latest_attempts, page_revision, true)
+          {:ok,
+           {state,
+            %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
+            assemble_final_context(state, resource_attempt, latest_attempts, page_revision, true)
 
-        {:error, _} ->
-          {:error, [], %{}}
+          {:error, _} ->
+            {:error, [], %{}}
         end
       end)
-
 
     # Fetch the revision pinned to the resource attempt if it was revised since this attempt began. This
     # is what enables existing attempts that are being revisited after a change was published to the page
@@ -243,7 +243,10 @@ defmodule Oli.Delivery.Page.PageContext do
 
     {:ok, collab_space_config} =
       Appsignal.instrument("get collab space config", fn ->
-        Collaboration.get_collab_space_config_for_page_in_section(page_revision.slug, section_slug)
+        Collaboration.get_collab_space_config_for_page_in_section(
+          page_revision.slug,
+          section_slug
+        )
       end)
 
     user_roles = Sections.get_user_roles(user, section_slug)
@@ -296,14 +299,15 @@ defmodule Oli.Delivery.Page.PageContext do
         t -> t
       end
 
-    final_context = ActivityContext.create_context_map(
-      page_revision.graded,
-      latest_attempts,
-      resource_attempt,
-      page_revision,
-      assign_ordinals_from: content_for_ordinal_assignment,
-      show_feedback: show_feedback
-    )
+    final_context =
+      ActivityContext.create_context_map(
+        page_revision.graded,
+        latest_attempts,
+        resource_attempt,
+        page_revision,
+        assign_ordinals_from: content_for_ordinal_assignment,
+        show_feedback: show_feedback
+      )
 
     {state, [resource_attempt], latest_attempts, final_context}
   end
