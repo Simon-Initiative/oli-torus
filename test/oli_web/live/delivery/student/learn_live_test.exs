@@ -816,7 +816,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                "div[id=pay_early_message]",
-               "You have 18 more days remaining in your grace period access of this course"
+               "You have 18 days left of your grace period for accessing this course"
              )
 
       # Grace period is over

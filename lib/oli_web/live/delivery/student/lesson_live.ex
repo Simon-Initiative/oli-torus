@@ -46,10 +46,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         nil
       )
 
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
-
-    emit_page_viewed_event(socket)
 
     {:ok,
      socket
@@ -69,9 +68,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       when progress_state in [:revised, :in_progress] do
     %{page_context: page_context} = socket.assigns
 
-    emit_page_viewed_event(socket)
-
     if connected?(socket) do
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
 
@@ -105,9 +103,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           socket
       )
       when progress_state in [:revised, :in_progress] do
-    emit_page_viewed_event(socket)
-
     if connected?(socket) do
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
 
@@ -828,6 +825,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div id="delivery_container" phx-update="ignore">
       <%= react_component("Components.Delivery", @app_params) %>
     </div>
+
+    <%= OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets}) %>
 
     <script>
       window.userToken = "<%= @user_token %>";

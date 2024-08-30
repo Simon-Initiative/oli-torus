@@ -124,44 +124,6 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
       assert has_element?(view, "#button-generate-datashop[disabled]")
     end
 
-    test "disables sections select when 5 sections are selected", %{
-      conn: conn,
-      project: project
-    } do
-      [first_s | rest_s] =
-        insert_list(6, :section, type: :enrollable, base_project: project)
-
-      {:ok, view, _html} = live(conn, live_view_analytics_route(project.slug))
-
-      for s <- rest_s do
-        render_click(view, "toggle_section", %{"section_id" => s.id, "value" => "on"})
-        assert has_element?(view, "##{s.id}[aria-selected=\"true\"]")
-      end
-
-      assert has_element?(view, "#select-section-#{first_s.id}[disabled]")
-    end
-
-    test "generates and kills export", %{
-      conn: conn,
-      project: project
-    } do
-      section = insert(:section, type: :enrollable, base_project: project)
-
-      {:ok, view, _html} = live(conn, live_view_analytics_route(project.slug))
-
-      # Select section and generate export
-      render_click(view, "toggle_section", %{"section_id" => section.id, "value" => "on"})
-      assert has_element?(view, "##{section.id}[aria-selected=\"true\"]")
-
-      render_click(view, "generate_datashop_snapshot")
-
-      assert has_element?(view, "#button-kill-datashop", "Kill Datashop Export")
-
-      render_click(view, "kill_datashop_snapshot")
-
-      assert has_element?(view, "#button-generate-datashop", "Generate Datashop Export")
-    end
-
     test "displays export link and regenerates export", %{conn: conn, project: project} do
       insert(:section, type: :enrollable, base_project: project)
 

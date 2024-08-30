@@ -194,12 +194,24 @@ defmodule Oli.Delivery.Sections.Blueprint do
   as well as deep copying all SectionResource and SectionProjectPublication records.
 
   This method supports duplication of enrollable sections to create a blueprint.
+
+  If this method is called with a `cloned_from_project_publication_ids` parameter, it will update the
+  section_project_publications an section_resource records corresponding to that project id.
+  This is useful when duplicating a blueprint/product that was part of a project that is being
+  cloned. If this parameter is not provided, then the project_id of the section_project_publications
+  will remain the same as the original project id.
   """
-  def duplicate(%Section{} = section, attrs \\ %{}) do
+  def duplicate(%Section{} = section, attrs \\ %{}, cloned_from_project_publication_ids \\ nil) do
     Repo.transaction(fn _ ->
       with {:ok, blueprint} <- dupe_section(section, attrs),
-           {:ok, _} <- dupe_section_project_publications(section, blueprint),
-           {:ok, duplicated_root_resource} <- dupe_section_resources(section, blueprint),
+           {:ok, _} <-
+             dupe_section_project_publications(
+               section,
+               blueprint,
+               cloned_from_project_publication_ids
+             ),
+           {:ok, duplicated_root_resource} <-
+             dupe_section_resources(section, blueprint, cloned_from_project_publication_ids),
            {:ok, blueprint} <-
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
@@ -257,7 +269,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
 
   defp dupe_section_resources(
          %Section{id: id, root_section_resource_id: root_id},
-         %Section{} = blueprint
+         %Section{} = blueprint,
+         cloned_from_project_publication_ids
        ) do
     Repo.transaction(fn ->
       query =
@@ -274,9 +287,26 @@ defmodule Oli.Delivery.Sections.Blueprint do
       resources_to_create =
         Enum.reverse(resources)
         |> Enum.reduce([], fn p, resources_to_create ->
+          # same process as sections_project_publications, if this blueprint was duplicated
+          # as part of a project cloning, we need to update the project_id of the section_resource
+          # if the section_resource belongs to the original project
+          project_id =
+            case cloned_from_project_publication_ids do
+              {cloned_from_project_id, _} ->
+                if p.project_id == cloned_from_project_id do
+                  blueprint.base_project_id
+                else
+                  p.project_id
+                end
+
+              _ ->
+                p.project_id
+            end
+
           resource =
             Map.merge(Sections.SectionResource.to_map(p), %{
-              section_id: blueprint.id
+              section_id: blueprint.id,
+              project_id: project_id
             })
             |> Map.delete(:id)
 
@@ -318,7 +348,11 @@ defmodule Oli.Delivery.Sections.Blueprint do
     end)
   end
 
-  defp dupe_section_project_publications(%Section{id: id}, %Section{} = blueprint) do
+  defp dupe_section_project_publications(
+         %Section{id: id},
+         %Section{} = blueprint,
+         cloned_from_project_publication_ids
+       ) do
     query =
       from(
         s in Oli.Delivery.Sections.SectionsProjectsPublications,
@@ -327,11 +361,31 @@ defmodule Oli.Delivery.Sections.Blueprint do
       )
 
     Repo.all(query)
-    |> Enum.reduce_while({:ok, []}, fn p, {:ok, all} ->
+    |> Enum.reduce_while({:ok, []}, fn spp, {:ok, all} ->
+      # In the case where a project is cloned with products, these product blueprints are no longer associated with the
+      # original project id. So we must use the provided project id in `cloned_from_project_publication_ids` to identify the
+      # section_project_publication record associated with the original project id and update it to
+      # the new project and publication ids.
+      #
+      # In the other cases where we are simply duplicating a blueprint, the project_id should remain
+      # the same as the original project id, which is the base_project_id of the blueprint
+      {project_id, publication_id} =
+        case cloned_from_project_publication_ids do
+          {cloned_from_project_id, cloned_publication_id} ->
+            if spp.project_id == cloned_from_project_id do
+              {blueprint.base_project_id, cloned_publication_id}
+            else
+              {spp.project_id, spp.publication_id}
+            end
+
+          _ ->
+            {spp.project_id, spp.publication_id}
+        end
+
       attrs = %{
         section_id: blueprint.id,
-        project_id: p.project_id,
-        publication_id: p.publication_id
+        project_id: project_id,
+        publication_id: publication_id
       }
 
       case Sections.create_section_project_publication(attrs) do

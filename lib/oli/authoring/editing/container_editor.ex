@@ -394,6 +394,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
       |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
       |> Map.put(:title, "#{original_page.title} (copy)")
       |> Map.put(:content, nil)
+      |> Map.put(:previous_revision_id, nil)
       |> then(fn map ->
         if is_nil(map.legacy) do
           map

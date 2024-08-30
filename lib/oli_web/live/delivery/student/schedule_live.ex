@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Scheduling
   alias OliWeb.Components.Delivery.{Schedule, Utils}
   alias Oli.Delivery.Attempts
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
@@ -11,7 +12,12 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
 
-    schedule = Sections.get_ordered_schedule(section, current_user_id)
+    has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
+
+    schedule =
+      if has_scheduled_resources?,
+        do: Sections.get_ordered_schedule(section, current_user_id),
+        else: Sections.get_not_scheduled_agenda(section, current_user_id) |> Map.values() |> hd()
 
     current_datetime = DateTime.utc_now()
     current_week = Utils.week_number(section.start_date, current_datetime)
@@ -27,7 +33,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
        section_slug: section.slug,
        current_week: current_week,
        current_month: current_month,
-       historical_graded_attempt_summary: nil
+       historical_graded_attempt_summary: nil,
+       has_scheduled_resources?: has_scheduled_resources?
      )}
   end
 
@@ -35,7 +42,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     {:noreply, socket}
   end
 
-  def render(assigns) do
+  def render(%{has_scheduled_resources?: true} = assigns) do
     ~H"""
     <.hero_banner class="bg-schedule">
       <h1 class="text-4xl md:text-6xl mb-8">Course Schedule</h1>
@@ -58,6 +65,29 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     """
   end
 
+  def render(%{has_scheduled_resources?: false} = assigns) do
+    ~H"""
+    <.hero_banner class="bg-schedule">
+      <h1 class="text-4xl md:text-6xl mb-8">Course Schedule</h1>
+    </.hero_banner>
+
+    <div id="schedule-view" class="overflow-x-scroll md:overflow-x-auto container mx-auto h-full">
+      <div class="my-8 px-16">
+        <.schedule_header />
+        <div class="flex flex-col">
+          <Schedule.non_scheduled_container_groups
+            ctx={@ctx}
+            non_scheduled_container_groups={@schedule}
+            section_slug={@section_slug}
+            historical_graded_attempt_summary={@historical_graded_attempt_summary}
+            request_path={~p"/sections/#{@section_slug}/assignments"}
+          />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr(:ctx, SessionContext, required: true)
   attr(:schedule, :any, required: true)
   attr(:section_slug, :string, required: true)
@@ -68,11 +98,6 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   def schedule(assigns) do
     ~H"""
     <div class="my-8 px-16" id="schedule_live" phx-hook="Countdown">
-      <div class="mb-8">
-        Scroll though your course schedule to find all critical due dates and when assignments are due.
-        Use this schedule view to see which activities you've completed throughout your time in the course.
-      </div>
-
       <div class="flex flex-col">
         <%= for {{month, _year}, weekly_schedule} <- @schedule do %>
           <div class="flex flex-col md:flex-row">
@@ -110,6 +135,15 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
           </div>
         <% end %>
       </div>
+    </div>
+    """
+  end
+
+  def schedule_header(assigns) do
+    ~H"""
+    <div class="mb-8">
+      Scroll though your course schedule to find all critical due dates and when assignments are due.
+      Use this schedule view to see which activities you've completed throughout your time in the course.
     </div>
     """
   end

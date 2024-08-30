@@ -98,6 +98,38 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromelessTest do
               }}
   end
 
+  test "redirects an adaptive chromeless page with an attempt in revised state" do
+    adaptive_chromeless_page_revision = adaptive_chromeless_page_revision()
+
+    {:halt, updated_socket} =
+      RedirectAdaptiveChromeless.on_mount(
+        :default,
+        %{
+          "section_slug" => "some-section-slug",
+          "revision_slug" => adaptive_chromeless_page_revision.slug,
+          "request_path" => "some-request-path",
+          "selected_view" => "gallery"
+        },
+        %{},
+        %Phoenix.LiveView.Socket{
+          assigns: %{
+            page_context:
+              build(:page_context,
+                page: adaptive_chromeless_page_revision,
+                progress_state: :revised
+              )
+          }
+        }
+      )
+
+    assert updated_socket.redirected ==
+             {:redirect,
+              %{
+                to:
+                  "/sections/some-section-slug/adaptive_lesson/#{adaptive_chromeless_page_revision.slug}?request_path=some-request-path&selected_view=gallery"
+              }}
+  end
+
   test "does not redirect a non-adaptive chromeless page review" do
     non_adaptive_chromeless_page_revision = page_revision()
 

@@ -241,18 +241,8 @@ defmodule OliWeb.Datashop.AnalyticsLive do
 
     selected_sections = toggle_fn.(socket.assigns.selected_sections, section_id)
 
-    rows =
-      Enum.map(
-        socket.assigns.table_model.rows,
-        &Map.put(&1, :selected, MapSet.member?(selected_sections, &1.id))
-      )
-
-    {:ok, table_model} =
-      SectionsTableModel.new(
-        socket.assigns.ctx,
-        rows,
-        selected_sections
-      )
+    data = %{socket.assigns.table_model.data | selected_sections: selected_sections}
+    table_model = Map.put(socket.assigns.table_model, :data, data)
 
     {:noreply, assign(socket, table_model: table_model, selected_sections: selected_sections)}
   end

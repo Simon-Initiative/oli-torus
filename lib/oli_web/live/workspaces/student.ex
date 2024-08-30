@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.Student do
+defmodule OliWeb.Workspaces.Student do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Metrics
@@ -20,9 +20,7 @@ defmodule OliWeb.Workspace.Student do
     # admin case...
     {:ok,
      assign(socket,
-       active_workspace: :student,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :student
      )}
   end
 
@@ -45,28 +43,20 @@ defmodule OliWeb.Workspace.Student do
        params: params,
        disable_sidebar?: user_is_only_a_student?(all_sections),
        filtered_sections: sections,
-       active_workspace: :student,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :student
      )}
   end
 
   def mount(_params, _session, socket) do
     # no current user case...
 
-    app_config = %{
-      phoenix_router: OliWeb.Router,
-      phoenix_endpoint: OliWeb.Endpoint,
-      otp_app: :oli
-    }
+    app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
+    secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
 
     provider_links =
       %Plug.Conn{}
-      |> Map.replace(:private, app_config)
-      |> Map.replace(
-        :secret_key_base,
-        Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
-      )
+      |> Map.replace(:private, app_conf)
+      |> Map.replace(:secret_key_base, secret_key_base)
       |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
       |> OliWeb.Pow.PowHelpers.provider_links()
 

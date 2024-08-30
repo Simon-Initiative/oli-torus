@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.Instructor do
+defmodule OliWeb.Workspaces.Instructor.IndexLive do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections
@@ -10,10 +10,7 @@ defmodule OliWeb.Workspace.Instructor do
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
 
-  @default_params %{
-    text_search: "",
-    sidebar_expanded: true
-  }
+  @default_params %{text_search: "", sidebar_expanded: true}
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
@@ -28,34 +25,26 @@ defmodule OliWeb.Workspace.Instructor do
      assign(socket,
        sections: sections,
        filtered_sections: sections,
-       active_workspace: :instructor,
-       header_enabled?: true,
-       footer_enabled?: true
+       active_workspace: :instructor
      )}
   end
 
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
-    {:ok,
-     assign(socket,
-       active_workspace: :instructor,
-       header_enabled?: true,
-       footer_enabled?: true
-     )}
+
+    {:ok, assign(socket, active_workspace: :instructor)}
   end
 
   def mount(_params, _session, socket) do
     # no current user case...
 
+    app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
+    secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
+
     provider_links =
-      %Plug.Conn{
-        private: %{
-          phoenix_router: OliWeb.Router,
-          phoenix_endpoint: OliWeb.Endpoint,
-          otp_app: :oli
-        },
-        secret_key_base: Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
-      }
+      %Plug.Conn{}
+      |> Map.replace(:private, app_conf)
+      |> Map.replace(:secret_key_base, secret_key_base)
       |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
       |> OliWeb.Pow.PowHelpers.provider_links()
 
@@ -80,8 +69,9 @@ defmodule OliWeb.Workspace.Instructor do
      )}
   end
 
-  def handle_params(params, _uri, socket),
-    do: {:noreply, assign(socket, params: decode_params(params))}
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, params: decode_params(params))}
+  end
 
   @impl Phoenix.LiveView
 

@@ -12,11 +12,12 @@ defmodule Oli.Activities.Realizer.Query.Source do
   """
 
   @enforce_keys [:publication_id, :blacklisted_activity_ids, :section_slug]
-  defstruct [:publication_id, :blacklisted_activity_ids, :section_slug]
+  defstruct [:publication_id, :blacklisted_activity_ids, :section_slug, :bank]
 
   @type t() :: %__MODULE__{
           publication_id: integer(),
           blacklisted_activity_ids: [integer()],
-          section_slug: String.t()
+          section_slug: String.t(),
+          bank: list()
         }
 end

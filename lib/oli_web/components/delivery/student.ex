@@ -197,27 +197,27 @@ defmodule OliWeb.Components.Delivery.Student do
     ~H"""
     <div class="flex flex-col">
       <div class="flex flex-row justify-between gap-10 text-xs">
-        <div class="flex flex-row gap-1 text-xs font-semibold">
+        <div class="flex flex-row gap-10 text-xs font-semibold w-full">
           <div class="font-semibold uppercase text-gray-500 mr-1">Attempt <%= @index %>:</div>
-        </div>
-        <.time_remaining
-          :if={attempt_expires?(@attempt, @effective_settings)}
-          end_date={effective_attempt_expiration_date(@attempt, @effective_settings)}
-        />
-      </div>
-      <div class="flex flex-row justify-end">
-        <div
-          :if={allow_review_submission?(@effective_settings)}
-          class="w-[124px] py-1 justify-end items-center gap-2.5 inline-flex"
-        >
-          <.link
-            href={~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}"}
-            role="review_attempt_link"
-          >
-            <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
-              Continue
+          <div class="ml-auto flex flex-col gap-1 items-end">
+            <.time_remaining
+              :if={attempt_expires?(@attempt, @effective_settings)}
+              end_date={effective_attempt_expiration_date(@attempt, @effective_settings)}
+            />
+            <div
+              :if={allow_review_submission?(@effective_settings)}
+              class="w-[124px] justify-end items-center gap-2.5 inline-flex"
+            >
+              <.link
+                href={~p"/sections/#{@section_slug}/lesson/#{@page_revision_slug}"}
+                role="review_attempt_link"
+              >
+                <div class="cursor-pointer hover:opacity-40 text-blue-500 text-xs font-semibold font-['Open Sans'] uppercase tracking-wide">
+                  Continue
+                </div>
+              </.link>
             </div>
-          </.link>
+          </div>
         </div>
       </div>
     </div>
