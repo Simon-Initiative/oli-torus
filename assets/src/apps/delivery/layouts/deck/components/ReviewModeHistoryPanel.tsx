@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setShowHistory } from 'apps/delivery/store/features/page/slice';
+import { setAttemptType, setShowHistory } from 'apps/delivery/store/features/page/slice';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
@@ -9,20 +9,36 @@ import { ReviewEntry } from './ReviewModeNavigation';
 interface ReviewModeHistoryPanelProps {
   items: ReviewEntry[];
   onMinimize: any; // function?
+  oldAttemptTypeActivityIdIndex?: number;
+  appAttemptType?: string;
 }
 
-const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({ items }) => {
+const ReviewModeHistoryPanel: React.FC<ReviewModeHistoryPanelProps> = ({
+  items,
+  oldAttemptTypeActivityIdIndex,
+  appAttemptType,
+}) => {
   const dispatch = useDispatch();
   const currentActivityId = useSelector(selectCurrentActivityId);
   // TODO: we need to track this as a separate ID
   const currentHistoryActiveActivityId = currentActivityId;
 
   const itemClickHandler = (item: ReviewEntry) => {
-    dispatch(navigateToActivity(item.id));
-
     const nextHistoryActivityIndex = items.findIndex(
       (historyItem: any) => historyItem.id === item.id,
     );
+    if (
+      nextHistoryActivityIndex - 1 > 0 &&
+      appAttemptType == 'Mixed' &&
+      oldAttemptTypeActivityIdIndex
+    ) {
+      if (nextHistoryActivityIndex - 1 >= oldAttemptTypeActivityIdIndex) {
+        dispatch(setAttemptType({ attemptType: 'New' }));
+      } else {
+        dispatch(setAttemptType({ attemptType: appAttemptType }));
+      }
+    }
+    dispatch(navigateToActivity(item.id));
     dispatch(
       setHistoryNavigationTriggered({
         historyModeNavigation: nextHistoryActivityIndex !== 0,

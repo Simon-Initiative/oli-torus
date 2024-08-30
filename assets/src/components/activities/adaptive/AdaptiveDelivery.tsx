@@ -204,9 +204,9 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
               currentAttemptState.attemptGuid,
               response,
             );
-            const { snapshot } = readyResults;
+            const { snapshot, currentAttemptType } = readyResults;
             const attempType = snapshot['session.attempType'];
-            if (attempType === 'New') {
+            if (attempType === 'New' || currentAttemptType == 'New') {
               if (sharedAttemptStateMap?.size) {
                 currentActivityId =
                   sharedAttemptStateMap.size > 1 && reviewMode

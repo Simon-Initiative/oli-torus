@@ -27,6 +27,7 @@ export interface PageState {
   screenIdleTimeOutInSeconds: number;
   screenIdleExpireTime?: number;
   reviewMode?: boolean;
+  attemptType?: string;
 }
 
 const initialState: PageState = {
@@ -81,6 +82,7 @@ const pageSlice = createSlice({
       state.finalizeGradedURL = action.payload.finalizeGradedURL;
       state.screenIdleTimeOutInSeconds = action.payload.screenIdleTimeOutInSeconds;
       state.reviewMode = action.payload.reviewMode;
+      state.attemptType = action.payload.attemptType;
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
       }
@@ -90,6 +92,9 @@ const pageSlice = createSlice({
     },
     setScore(state, action: PayloadAction<{ score: number }>) {
       state.score = action.payload.score;
+    },
+    setAttemptType(state, action: PayloadAction<{ attemptType: string }>) {
+      state.attemptType = action.payload.attemptType;
     },
     setScreenIdleExpirationTime(state, action: PayloadAction<{ screenIdleExpireTime: number }>) {
       if (state.screenIdleTimeOutInSeconds) {
@@ -112,6 +117,7 @@ export const {
   setScore,
   setShowHistory,
   setScreenIdleExpirationTime,
+  setAttemptType,
 } = pageSlice.actions;
 
 export const selectState = (state: DeliveryRootState): PageState => state[PageSlice];
@@ -119,6 +125,7 @@ export const selectDeliveryContentMode = createSelector(
   selectState,
   (state) => state.content?.custom?.contentMode,
 );
+export const selectAttemptType = createSelector(selectState, (state) => state.attemptType);
 export const selectSectionSlug = createSelector(selectState, (state) => state.sectionSlug);
 export const selectPageTitle = createSelector(selectState, (state) => state.pageTitle);
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);

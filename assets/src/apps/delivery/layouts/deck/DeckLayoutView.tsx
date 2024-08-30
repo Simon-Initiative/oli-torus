@@ -28,6 +28,7 @@ import {
   selectSequence,
 } from '../../store/features/groups/selectors/deck';
 import {
+  selectAttemptType,
   selectPageSlug,
   selectReviewMode,
   selectSectionSlug,
@@ -63,6 +64,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const reviewMode = useSelector(selectReviewMode);
   const isEnd = useSelector(selectLessonEnd);
   const sequence = useSelector(selectSequence);
+  const currentAttemptType = useSelector(selectAttemptType);
   const defaultClasses: any[] = useMemo(
     () => ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'],
     [previewMode],
@@ -314,6 +316,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
             mode: historyModeNavigation || reviewMode ? contexts.REVIEW : contexts.VIEWER,
           },
+          currentAttemptType,
         };
 
         console.log('DECK HANDLE READY (ALL ACTIVITIES DONE INIT)', { context });
@@ -332,6 +335,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       historyModeNavigation,
       reviewMode,
       initCurrentActivity,
+      currentAttemptType,
     ],
   );
 
@@ -379,7 +383,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
       //if user navigated from history, don't save anything and just return the saved state
       if (historyModeNavigation || reviewMode) {
-        return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+        return {
+          result: null,
+          snapshot: getLocalizedStateSnapshot(currentActivityIds),
+          currentAttemptType,
+        };
       }
 
       if (response?.input?.length) {
@@ -391,7 +399,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
       }
     },
-    [currentActivityTree, dispatch, historyModeNavigation, reviewMode],
+    [currentActivityTree, dispatch, historyModeNavigation, reviewMode, currentAttemptType],
   );
 
   const handleActivitySubmitPart = useCallback(

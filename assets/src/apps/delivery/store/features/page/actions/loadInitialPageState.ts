@@ -19,7 +19,13 @@ import {
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
 import PageSlice from '../name';
-import { PageState, loadPageState, selectResourceAttemptGuid, selectReviewMode } from '../slice';
+import {
+  PageState,
+  loadPageState,
+  selectResourceAttemptGuid,
+  selectReviewMode,
+  setAttemptType,
+} from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -163,6 +169,7 @@ export const loadInitialPageState = createAsyncThunk(
           },
           defaultGlobalEnv,
         );
+        dispatch(setAttemptType({ attemptType }));
         const updateSessionState = clone(sessionState);
         updateSessionState['session.tutorialScore'] = totalScore;
         updateSessionState['session.currentQuestionScore'] = 0;

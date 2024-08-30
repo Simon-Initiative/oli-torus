@@ -1,12 +1,16 @@
 /* eslint-disable react/prop-types */
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
-import { selectShowHistory, setShowHistory } from '../../../store/features/page/slice';
+import {
+  selectShowHistory,
+  setAttemptType,
+  setShowHistory,
+} from '../../../store/features/page/slice';
 import ReviewModeHistoryPanel from './ReviewModeHistoryPanel';
 
 export interface ReviewEntry {
@@ -22,7 +26,8 @@ const ReviewModeNavigation: React.FC = () => {
   const showHistory = useSelector(selectShowHistory);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
-
+  let oldAttemptTypeActivityIdIndex = -1;
+  let attemptType = '';
   const snapshot = getEnvState(defaultGlobalEnv);
 
   // Get the activities students visited
@@ -63,6 +68,24 @@ const ReviewModeNavigation: React.FC = () => {
   );
   const isFirst = currentHistoryActivityIndex === 0;
   const isLast = currentHistoryActivityIndex === historyItems.length - 1;
+
+  useEffect(() => {
+    const oldAttemptResumeActivityId = snapshot['session.old.attempt.resume'];
+    const appAttemptType = snapshot['session.attempType'];
+    const oldAttemptActivityIdIndex = historyItems.findIndex(
+      (item: any) => item.id === oldAttemptResumeActivityId,
+    );
+    attemptType = appAttemptType;
+    oldAttemptTypeActivityIdIndex = oldAttemptActivityIdIndex;
+    if (currentHistoryActivityIndex > 0 && appAttemptType == 'Mixed') {
+      if (currentHistoryActivityIndex >= oldAttemptActivityIdIndex) {
+        dispatch(setAttemptType({ attemptType: 'New' }));
+        attemptType = 'New';
+      } else {
+        dispatch(setAttemptType({ attemptType: appAttemptType }));
+      }
+    }
+  }, [currentHistoryActivityIndex]);
 
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex + 1];
@@ -137,6 +160,8 @@ const ReviewModeNavigation: React.FC = () => {
                 <ReviewModeHistoryPanel
                   items={historyItems}
                   onMinimize={minimizeHandler}
+                  oldAttemptTypeActivityIdIndex={oldAttemptTypeActivityIdIndex}
+                  appAttemptType={attemptType}
                 ></ReviewModeHistoryPanel>
               )}
             </div>
