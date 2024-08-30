@@ -34,12 +34,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   }
 
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
-    is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
+
+      %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
+      is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+
       async_load_annotations(
         section,
         page_context.page.resource_id,
