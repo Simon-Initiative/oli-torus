@@ -811,7 +811,9 @@ defmodule Oli.Rendering.Content.Html do
           "element" => element,
           "inline" => true
         },
-        html_element: "span"
+        html_element: "span",
+        container_tag: "span",
+        id: "popup_#{UUID.uuid4()}"
       )
 
     rendered

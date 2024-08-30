@@ -178,8 +178,7 @@ defmodule Oli.Delivery.Page.PageContext do
         %Section{slug: section_slug, id: section_id},
         page_slug,
         user,
-        datashop_session_id,
-        opts \\ [track_access: true]
+        datashop_session_id
       ) do
     # resolve the page revision per section
     page_revision =
@@ -190,8 +189,7 @@ defmodule Oli.Delivery.Page.PageContext do
     effective_settings =
       Oli.Delivery.Settings.get_combined_settings(page_revision, section_id, user.id)
 
-    if opts[:track_access],
-      do: Attempts.track_access(page_revision.resource_id, section_id, user.id)
+    Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 

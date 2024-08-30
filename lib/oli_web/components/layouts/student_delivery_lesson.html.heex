@@ -1,119 +1,128 @@
-<div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
-  <%= if live_flash(@flash, :info) do %>
-    <div class="alert alert-info flex flex-row" role="alert">
-      <div class="flex-1">
-        <%= live_flash(@flash, :info) %>
-      </div>
+<div id="eventIntercept" phx-hook="LoadSurveyScripts">
+  <div :if={Phoenix.LiveView.connected?(@socket) and assigns[:scripts_loaded]}>
+    <script>
+      window.userToken = "<%= @user_token %>";
+    </script>
+    <div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
+      <%= if live_flash(@flash, :info) do %>
+        <div class="alert alert-info flex flex-row" role="alert">
+          <div class="flex-1">
+            <%= live_flash(@flash, :info) %>
+          </div>
 
-      <button
-        type="button"
-        class="close"
-        data-bs-dismiss="alert"
-        aria-label="Close"
-        phx-click="lv:clear-flash"
-        phx-value-key="info"
-      >
-        <i class="fa-solid fa-xmark fa-lg"></i>
-      </button>
-    </div>
-  <% end %>
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+            phx-click="lv:clear-flash"
+            phx-value-key="info"
+          >
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
+        </div>
+      <% end %>
 
-  <%= if live_flash(@flash, :error) do %>
-    <div class="alert alert-danger flex flex-row" role="alert">
-      <div class="flex-1">
-        <%= live_flash(@flash, :error) %>
-      </div>
+      <%= if live_flash(@flash, :error) do %>
+        <div class="alert alert-danger flex flex-row" role="alert">
+          <div class="flex-1">
+            <%= live_flash(@flash, :error) %>
+          </div>
 
-      <button
-        type="button"
-        class="close"
-        data-bs-dismiss="alert"
-        aria-label="Close"
-        phx-click="lv:clear-flash"
-        phx-value-key="error"
-      >
-        <i class="fa-solid fa-xmark fa-lg"></i>
-      </button>
-    </div>
-  <% end %>
-</div>
-
-<div class="h-screen flex flex-col overscroll-none overflow-hidden">
-  <Components.Delivery.Layouts.header
-    :if={@section}
-    ctx={@ctx}
-    is_system_admin={assigns[:is_system_admin] || false}
-    section={@section}
-    preview_mode={@preview_mode}
-    force_show_user_menu={true}
-    include_logo={true}
-  />
-
-  <div class="flex-1 flex flex-col mt-14 overflow-hidden">
-    <div
-      :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-      id="pay_early_message"
-      class="absolute z-50 system-banner flex flex-row alert alert-warning ml-32 m-6"
-      role="alert"
-    >
-      <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
-      <div class="flex whitespace-nowrap items-center">
-        <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
-          Pay Now
-        </.link>
-        <button
-          class="ml-10 stroke-gray-500 hover:stroke-gray-400"
-          phx-click={JS.hide(to: "#pay_early_message")}
-        >
-          <OliWeb.Icons.close />
-        </button>
-      </div>
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+            phx-click="lv:clear-flash"
+            phx-value-key="error"
+          >
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
+        </div>
+      <% end %>
     </div>
 
-    <div
-      :if={@section}
-      id="page-content"
-      class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
-    >
-      <div
-        :if={@view in [:graded_page, :practice_page] and @page_progress_state == :in_progress}
-        id="offline_detector"
-      >
-        <%= react_component("Components.OfflineDetector") %>
-      </div>
-      <.back_arrow
-        to={
-          if assigns[:request_path] in [""],
-            do: ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
-            else: assigns[:request_path]
-        }
-        show_sidebar={assigns[:show_sidebar]}
-        view={assigns[:view]}
+    <div class="h-screen flex flex-col overscroll-none overflow-hidden">
+      <Components.Delivery.Layouts.header
+        :if={@section}
+        ctx={@ctx}
+        is_system_admin={assigns[:is_system_admin] || false}
+        section={@section}
+        preview_mode={@preview_mode}
+        force_show_user_menu={true}
+        include_logo={true}
       />
 
-      <%= @inner_content %>
+      <div class="flex-1 flex flex-col mt-14 overflow-hidden">
+        <div
+          :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+          id="pay_early_message"
+          class="absolute z-50 system-banner flex flex-row alert alert-warning ml-32 m-6"
+          role="alert"
+        >
+          <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
+          <div class="flex whitespace-nowrap items-center">
+            <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
+              Pay Now
+            </.link>
+            <button
+              class="ml-10 stroke-gray-500 hover:stroke-gray-400"
+              phx-click={JS.hide(to: "#pay_early_message")}
+            >
+              <OliWeb.Icons.close />
+            </button>
+          </div>
+        </div>
+
+        <div
+          :if={@section}
+          id="page-content"
+          phx-hook="EvaluateMathJaxExpressions"
+          class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
+        >
+          <div
+            :if={@view in [:graded_page, :practice_page] and @page_progress_state == :in_progress}
+            id="offline_detector"
+          >
+            <%= react_component("Components.OfflineDetector") %>
+          </div>
+          <.back_arrow
+            to={
+              if assigns[:request_path] in [nil, ""],
+                do:
+                  ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
+                else: assigns[:request_path]
+            }
+            show_sidebar={assigns[:show_sidebar]}
+            view={assigns[:view]}
+          />
+
+          <%= @inner_content %>
+        </div>
+
+        <Components.Delivery.Layouts.previous_next_nav
+          :if={assigns[:page_context]}
+          current_page={@current_page}
+          previous_page={@previous_page}
+          next_page={@next_page}
+          section_slug={@section.slug}
+          request_path={assigns[:request_path]}
+          selected_view={assigns[:selected_view]}
+        />
+      </div>
+
+      <%= if @section do %>
+        <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+          session: %{
+            "section_slug" => @section.slug,
+            "resource_id" => @current_page["id"],
+            "revision_id" => @page_context.page.id,
+            "is_page" => true
+          },
+          id: "dialogue-window"
+        ) %>
+      <% end %>
     </div>
-
-    <Components.Delivery.Layouts.previous_next_nav
-      :if={assigns[:page_context]}
-      current_page={@current_page}
-      previous_page={@previous_page}
-      next_page={@next_page}
-      section_slug={@section.slug}
-      request_path={assigns[:request_path]}
-      selected_view={assigns[:selected_view]}
-    />
   </div>
-
-  <%= if @section do %>
-    <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
-      session: %{
-        "section_slug" => @section.slug,
-        "resource_id" => @current_page["id"],
-        "revision_id" => @page_context.page.id,
-        "is_page" => true
-      },
-      id: "dialogue-window"
-    ) %>
-  <% end %>
 </div>

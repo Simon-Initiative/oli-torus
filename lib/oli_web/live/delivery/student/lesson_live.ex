@@ -3,9 +3,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   use Appsignal.Instrumentation.Decorators
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, scripts: 1, references: 1, reset_attempts_button: 1]
-
-  import Ecto.Query
+    only: [
+      page_header: 1,
+      references: 1,
+      reset_attempts_button: 1,
+      emit_page_viewed_event: 1
+    ]
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -33,12 +36,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   @decorate transaction_event()
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
-    %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
-    is_instructor = Sections.has_instructor_role?(current_user, section.slug)
-
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
+      %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
+      is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+
       async_load_annotations(
         section,
         page_context.page.resource_id,
@@ -48,70 +51,123 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         nil
       )
 
-      emit_page_viewed_event(socket)
       send(self(), :gc)
-    end
 
-    {:ok,
-     socket
-     |> assign_html_and_scripts()
-     |> annotations_assigns(page_context.collab_space_config, is_instructor)
-     |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
-     |> assign_objectives()
-     |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
+      socket =
+        socket
+        |> emit_page_viewed_event()
+        |> assign_html_and_scripts()
+        |> annotations_assigns(page_context.collab_space_config, is_instructor)
+        |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
+        |> assign_objectives()
+        |> slim_assigns()
+
+      script_sources =
+        Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+
+      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
+      # These temp assigns were disabled in MER-3672
+      #  temporary_assigns: [scripts: [], html: [], page_context: %{}]}
+    else
+      {:ok, socket}
+    end
   end
 
   def mount(
         _params,
         _session,
-        %{assigns: %{view: :graded_page, page_context: %{progress_state: progress_state}}} =
+        %{assigns: %{view: :graded_page}} =
           socket
-      )
-      when progress_state in [:revised, :in_progress] do
+      ) do
     %{page_context: page_context} = socket.assigns
 
     if connected?(socket) do
-      emit_page_viewed_event(socket)
       send(self(), :gc)
+      resource_attempt = hd(page_context.resource_attempts)
+
+      effective_end_time =
+        Settings.determine_effective_deadline(resource_attempt, page_context.effective_settings)
+        |> to_epoch()
+
+      socket =
+        socket
+        |> emit_page_viewed_event()
+        |> assign_html_and_scripts()
+        |> assign_objectives()
+        |> assign(
+          revision_slug: page_context.page.slug,
+          attempt_guid: hd(page_context.resource_attempts).attempt_guid,
+          effective_end_time: effective_end_time,
+          auto_submit: page_context.effective_settings.late_submit == :disallow,
+          time_limit: page_context.effective_settings.time_limit,
+          grace_period: page_context.effective_settings.grace_period,
+          attempt_start_time: resource_attempt.inserted_at |> to_epoch,
+          review_mode: page_context.review_mode
+        )
+        |> slim_assigns()
+
+      script_sources =
+        Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+
+      {:ok,
+       push_event(socket, "load_survey_scripts", %{
+         script_sources: script_sources
+       })}
+
+      # These temp assigns were disabled in MER-3672
+      #  , temporary_assigns: [scripts: [], html: [], page_context: %{}]}
+    else
+      {:ok, socket}
     end
-
-    resource_attempt = hd(page_context.resource_attempts)
-
-    effective_end_time =
-      Settings.determine_effective_deadline(resource_attempt, page_context.effective_settings)
-      |> to_epoch()
-
-    {:ok,
-     socket
-     |> assign_html_and_scripts()
-     |> assign_objectives()
-     |> assign(
-       revision_slug: page_context.page.slug,
-       attempt_guid: hd(page_context.resource_attempts).attempt_guid,
-       effective_end_time: effective_end_time,
-       auto_submit: page_context.effective_settings.late_submit == :disallow,
-       time_limit: page_context.effective_settings.time_limit,
-       grace_period: page_context.effective_settings.grace_period,
-       attempt_start_time: resource_attempt.inserted_at |> to_epoch,
-       review_mode: page_context.review_mode
-     )
-     |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
   end
 
   def mount(
         _params,
         _session,
-        %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: progress_state}}} =
+        %{assigns: %{view: :adaptive_chromeless}} =
           socket
-      )
-      when progress_state in [:revised, :in_progress] do
+      ) do
     if connected?(socket) do
-      emit_page_viewed_event(socket)
       send(self(), :gc)
-    end
 
-    {:ok, assign_scripts(socket) |> slim_assigns(),
-     layout: false, temporary_assigns: [scripts: [], page_context: %{}]}
+      socket =
+        socket
+        |> emit_page_viewed_event()
+        |> assign_scripts()
+        |> slim_assigns()
+
+      authoring_scripts =
+        Enum.map(socket.assigns.activity_types, fn at -> at.authoring_script end)
+
+      script_sources =
+        Enum.map(
+          socket.assigns.scripts ++
+            socket.assigns.part_scripts ++ ["delivery.js"] ++ authoring_scripts,
+          fn script ->
+            "/js/#{script}"
+          end
+        )
+
+      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
+       layout: false}
+
+      # These temp assigns were disabled in MER-3672
+      #  , temporary_assigns: [scripts: [], page_context: %{}]}
+    else
+      {:ok, socket}
+    end
+  end
+
+  def mount(_params, _session, socket) do
+    {:ok, socket}
+  end
+
+  def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
+    {:noreply, assign(socket, error: true)}
+  end
+
+  def handle_event("survey_scripts_loaded", _params, socket) do
+    {:noreply, assign(socket, scripts_loaded: true)}
   end
 
   def handle_event(
@@ -642,7 +698,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:header>
 
       <div
-        id="eventIntercept"
+        id="page_content"
         class="content"
         phx-update="ignore"
         role="page content"
@@ -695,8 +751,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         />
       </:sidebar>
     </.page_content_with_sidebar_layout>
-
-    <.scripts scripts={@scripts} user_token={@user_token} />
     """
   end
 
@@ -714,7 +768,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
 
-          <div id="eventIntercept" class="content" phx-update="ignore" role="page content">
+          <div id="page_content" class="content" phx-update="ignore" role="page content">
             <%= raw(@html) %>
             <div class="flex w-full justify-center">
               <.reset_attempts_button
@@ -729,13 +783,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
       </div>
     </div>
-
-    <.scripts scripts={@scripts} user_token={@user_token} />
     """
   end
 
-  def render(%{view: :graded_page, page_context: %{progress_state: progress_state}} = assigns)
-      when progress_state in [:revised, :in_progress] do
+  def render(%{view: :graded_page} = assigns) do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
@@ -778,7 +829,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" class="content w-full" phx-update="ignore" role="page content">
+          <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
             <div class="flex w-full justify-center">
               <button
@@ -794,45 +845,32 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
       </div>
     </div>
-
-    <.scripts scripts={@scripts} user_token={@user_token} />
     """
   end
 
-  def render(
-        %{view: :adaptive_chromeless, page_context: %{progress_state: progress_state}} = assigns
-      )
-      when progress_state in [:revised, :in_progress] do
+  def render(%{view: :adaptive_chromeless} = assigns) do
     ~H"""
-    <!-- ACTIVITIES -->
-    <%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
-      <script
-        :if={slug == "oli_adaptive"}
-        type="text/javascript"
-        src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}
-      >
-      </script>
-    <% end %>
-    <!-- PARTS -->
-    <script
-      :for={script <- @part_scripts}
-      type="text/javascript"
-      src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}
-    >
-    </script>
+    <div id="eventIntercept" phx-hook="LoadSurveyScripts">
+      <div :if={connected?(@socket) and assigns[:scripts_loaded]}>
+        <script>
+          window.userToken = "<%= @user_token %>";
+        </script>
+        <%= OliWeb.Common.React.component(
+          %{is_liveview: true},
+          "Components.Delivery",
+          @app_params,
+          id: "adaptive_content"
+        ) %>
+      </div>
 
-    <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/delivery.js")}>
-    </script>
-
-    <div id="delivery_container" phx-update="ignore">
-      <%= react_component("Components.Delivery", @app_params) %>
+      <%= OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets}) %>
     </div>
+    """
+  end
 
-    <%= OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets}) %>
-
-    <script>
-      window.userToken = "<%= @user_token %>";
-    </script>
+  def render(assigns) do
+    ~H"""
+    <div></div>
     """
   end
 
@@ -907,7 +945,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   @decorate transaction_event()
   defp assign_html(socket) do
     assign(socket,
-      html: Utils.build_html(socket.assigns, :delivery)
+      html: Utils.build_html(socket.assigns, :delivery, is_liveview: true)
     )
   end
 
@@ -1156,79 +1194,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           %Collaboration.Post{post | status: :deleted}
         end)
     )
-  end
-
-  defp emit_page_viewed_event(socket) do
-    section = socket.assigns.section
-    context = socket.assigns.page_context
-
-    page_sub_type =
-      if Map.get(context.page.content, "advancedDelivery", false) do
-        "advanced"
-      else
-        "basic"
-      end
-
-    {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
-
-    emit_page_viewed_helper(
-      %Oli.Analytics.XAPI.Events.Context{
-        user_id: socket.assigns.current_user.id,
-        host_name: host_name(),
-        section_id: section.id,
-        project_id: project_id,
-        publication_id: publication_id
-      },
-      %{
-        attempt_guid: List.first(context.resource_attempts).attempt_guid,
-        attempt_number: List.first(context.resource_attempts).attempt_number,
-        resource_id: context.page.resource_id,
-        timestamp: DateTime.utc_now(),
-        page_sub_type: page_sub_type
-      }
-    )
-
-    socket
-  end
-
-  defp emit_page_viewed_helper(
-         %Oli.Analytics.XAPI.Events.Context{} = context,
-         %{
-           attempt_guid: _page_attempt_guid,
-           attempt_number: _page_attempt_number,
-           resource_id: _page_id,
-           timestamp: _timestamp,
-           page_sub_type: _page_sub_type
-         } = page_details
-       ) do
-    event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
-    Oli.Analytics.XAPI.emit(:page_viewed, event)
-  end
-
-  defp get_project_and_publication_ids(section_id, revision_id) do
-    # From the SectionProjectPublication table, get the project_id and publication_id
-    # where a published resource exists for revision_id
-    # and the section_id matches the section_id
-
-    query =
-      from sp in Oli.Delivery.Sections.SectionsProjectsPublications,
-        join: pr in Oli.Publishing.PublishedResource,
-        on: pr.publication_id == sp.publication_id,
-        where: sp.section_id == ^section_id and pr.revision_id == ^revision_id,
-        select: {sp.project_id, sp.publication_id}
-
-    # Return nil if somehow we cannot resolve this resource.  This is just a guaranteed that
-    # we can never throw an error here
-    case Oli.Repo.all(query) do
-      [] -> {nil, nil}
-      other -> hd(other)
-    end
-  end
-
-  defp host_name() do
-    Application.get_env(:oli, OliWeb.Endpoint)
-    |> Keyword.get(:url)
-    |> Keyword.get(:host)
   end
 
   defp slim_assigns(socket) do

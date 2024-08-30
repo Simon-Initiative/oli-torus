@@ -403,7 +403,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     )
   end
 
-  def build_html(assigns, mode) do
+  def build_html(assigns, mode, opts \\ []) do
     %{section: section, current_user: current_user, page_context: page_context} = assigns
 
     render_context = %Context{
@@ -437,7 +437,8 @@ defmodule OliWeb.Delivery.Student.Utils do
           assigns.page_context.page,
           assigns.request_path,
           assigns.selected_view
-        )
+        ),
+      is_liveview: opts[:is_liveview] || false
     }
 
     attempt_content = get_attempt_content(page_context)
@@ -734,5 +735,78 @@ defmodule OliWeb.Delivery.Student.Utils do
       request_path: current_page_path,
       selected_view: selected_view
     ]
+  end
+
+  def emit_page_viewed_event(socket) do
+    section = socket.assigns.section
+    context = socket.assigns.page_context
+
+    page_sub_type =
+      if Map.get(context.page.content, "advancedDelivery", false) do
+        "advanced"
+      else
+        "basic"
+      end
+
+    {project_id, publication_id} = get_project_and_publication_ids(section.id, context.page.id)
+
+    emit_page_viewed_helper(
+      %Oli.Analytics.XAPI.Events.Context{
+        user_id: socket.assigns.current_user.id,
+        host_name: host_name(),
+        section_id: section.id,
+        project_id: project_id,
+        publication_id: publication_id
+      },
+      %{
+        attempt_guid: List.first(context.resource_attempts).attempt_guid,
+        attempt_number: List.first(context.resource_attempts).attempt_number,
+        resource_id: context.page.resource_id,
+        timestamp: DateTime.utc_now(),
+        page_sub_type: page_sub_type
+      }
+    )
+
+    socket
+  end
+
+  defp emit_page_viewed_helper(
+         %Oli.Analytics.XAPI.Events.Context{} = context,
+         %{
+           attempt_guid: _page_attempt_guid,
+           attempt_number: _page_attempt_number,
+           resource_id: _page_id,
+           timestamp: _timestamp,
+           page_sub_type: _page_sub_type
+         } = page_details
+       ) do
+    event = Oli.Analytics.XAPI.Events.Attempt.PageViewed.new(context, page_details)
+    Oli.Analytics.XAPI.emit(:page_viewed, event)
+  end
+
+  defp get_project_and_publication_ids(section_id, revision_id) do
+    # From the SectionProjectPublication table, get the project_id and publication_id
+    # where a published resource exists for revision_id
+    # and the section_id matches the section_id
+
+    query =
+      from sp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        join: pr in Oli.Publishing.PublishedResource,
+        on: pr.publication_id == sp.publication_id,
+        where: sp.section_id == ^section_id and pr.revision_id == ^revision_id,
+        select: {sp.project_id, sp.publication_id}
+
+    # Return nil if somehow we cannot resolve this resource.  This is just a guaranteed that
+    # we can never throw an error here
+    case Oli.Repo.all(query) do
+      [] -> {nil, nil}
+      other -> hd(other)
+    end
+  end
+
+  defp host_name() do
+    Application.get_env(:oli, OliWeb.Endpoint)
+    |> Keyword.get(:url)
+    |> Keyword.get(:host)
   end
 end

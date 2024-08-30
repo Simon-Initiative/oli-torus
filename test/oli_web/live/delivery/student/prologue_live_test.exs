@@ -1030,7 +1030,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       conn = get(conn, redirect_path_1)
 
       redirect_path_2 =
-        "/sections/#{section.slug}/prologue/#{graded_adaptive_page_revision.slug}?request_path=&selected_view="
+        "/sections/#{section.slug}/prologue/#{graded_adaptive_page_revision.slug}"
 
       assert redirected_to(conn, 302) =~ redirect_path_2
 
