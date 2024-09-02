@@ -55,12 +55,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     cond do
       # Explicitly routing to root_container, strip off the container param
       container_slug == root_container.slug && socket.assigns.live_action == :index ->
-        {:ok, redirect(socket, to: Routes.container_path(socket, :index, project_slug))}
+        {:ok, redirect(socket, to: Routes.live_path(socket, __MODULE__, project_slug))}
 
       # Routing to missing container
       container_slug && is_nil(AuthoringResolver.from_revision_slug(project_slug, container_slug)) ->
         {:ok,
-         redirect(socket, to: Routes.resource_path(socket, :edit, project_slug, container_slug))}
+         redirect(socket, to: Routes.live_path(socket, __MODULE__, project_slug, container_slug))}
 
       # Implicitly routing to root container or explicitly routing to sub-container
       true ->
@@ -147,7 +147,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     %{container: container, project: project, children: children} =
       socket.assigns
 
-    redirect_url = ContainerLiveHelpers.build_redirect_url(socket, project.slug, container.slug)
+    redirect_url = Routes.live_path(socket, __MODULE__, project.slug, container.slug)
 
     {:noreply,
      assign(socket,
@@ -671,7 +671,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
     modal_assigns = %{
       id: "delete_#{item.slug}",
-      redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
+      redirect_url: Routes.live_path(socket, __MODULE__, project.slug, container.slug),
       revision: item,
       container: container,
       project: project,
