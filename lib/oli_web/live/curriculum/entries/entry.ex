@@ -7,7 +7,6 @@ defmodule OliWeb.Curriculum.Entry do
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.{Actions, Details, LearningSummary}
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
 
   attr(:ctx, :map, required: true)
