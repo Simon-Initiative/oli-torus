@@ -82,6 +82,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
+     |> maybe_assign_questions(page_context.effective_settings.assessment_mode)
      |> assign_objectives()
      |> assign(
        revision_slug: page_context.page.slug,
@@ -732,6 +733,45 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  def render(
+        %{
+          view: :graded_page,
+          page_context: %{
+            progress_state: progress_state,
+            effective_settings: %{assessment_mode: :one_at_a_time}
+          }
+        } = assigns
+      )
+      when progress_state in [:revised, :in_progress] do
+    ~H"""
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+      <div class="flex flex-col items-center w-full">
+        <.scored_page_banner />
+        <.countdown {assigns} />
+        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+          <.page_header
+            page_context={@page_context}
+            ctx={@ctx}
+            objectives={@objectives}
+            index={@current_page["index"]}
+            container_label={Utils.get_container_label(@current_page["id"], @section)}
+          />
+
+          <div id="eventIntercept" class="content w-full" phx-update="ignore" role="page content">
+            <div :for={{index, question} <- @questions} id={"question_#{index}"}>
+              <%= raw(question.raw_content) %>
+            </div>
+
+            <.references ctx={@ctx} bib_app_params={@bib_app_params} />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <.scripts scripts={@scripts} user_token={@user_token} />
+    """
+  end
+
   def render(%{view: :graded_page, page_context: %{progress_state: progress_state}} = assigns)
       when progress_state in [:revised, :in_progress] do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
@@ -739,35 +779,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <%= if !@review_mode and @time_limit > 0 do %>
-          <div
-            id="countdown_timer_display"
-            class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
-            phx-hook="CountdownTimer"
-            data-timer-id="countdown_timer_display"
-            data-submit-button-id="submit_answers"
-            data-time-out-in-mins={@time_limit}
-            data-start-time-in-ms={@attempt_start_time}
-            data-effective-time-in-ms={@effective_end_time}
-            data-grace-period-in-mins={@grace_period}
-            data-auto-submit={if @auto_submit, do: "true", else: "false"}
-          >
-          </div>
-        <% else %>
-          <%= if !@review_mode and !is_nil(@effective_end_time) do %>
-            <div
-              id="countdown_timer_display"
-              class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
-              phx-hook="EndDateTimer"
-              data-timer-id="countdown_timer_display"
-              data-submit-button-id="submit_answers"
-              data-effective-time-in-ms={@effective_end_time}
-              data-auto-submit={if @auto_submit, do: "true", else: "false"}
-            >
-            </div>
-          <% end %>
-        <% end %>
-
+        <.countdown {assigns} />
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -833,6 +845,40 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     </script>
     """
   end
+
+  def countdown(assigns) do
+    ~H"""
+    <%= if !@review_mode and @time_limit > 0 do %>
+      <div
+        id="countdown_timer_display"
+        class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
+        phx-hook="CountdownTimer"
+        data-timer-id="countdown_timer_display"
+        data-submit-button-id="submit_answers"
+        data-time-out-in-mins={@time_limit}
+        data-start-time-in-ms={@attempt_start_time}
+        data-effective-time-in-ms={@effective_end_time}
+        data-grace-period-in-mins={@grace_period}
+        data-auto-submit={if @auto_submit, do: "true", else: "false"}
+      >
+      </div>
+    <% else %>
+      <%= if !@review_mode and !is_nil(@effective_end_time) do %>
+        <div
+          id="countdown_timer_display"
+          class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
+          phx-hook="EndDateTimer"
+          data-timer-id="countdown_timer_display"
+          data-submit-button-id="submit_answers"
+          data-effective-time-in-ms={@effective_end_time}
+          data-auto-submit={if @auto_submit, do: "true", else: "false"}
+        >
+        </div>
+      <% end %>
+    <% end %>
+    """
+  end
+
 
   attr :show_sidebar, :boolean, default: false
   slot :header, required: true
@@ -1238,6 +1284,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         )
       )
     end)
+  end
+
+  _docp = """
+  In case the page is configured to show one question at a time,
+  we pre-process the html content to assign all the questions to the socket.
+  """
+
+  defp maybe_assign_questions(socket, :traditional), do: socket
+
+  defp maybe_assign_questions(socket, :one_at_a_time) do
+    questions =
+      socket.assigns.html
+      |> List.flatten()
+      |> Enum.reduce({1, %{}}, fn element, {index, map} ->
+        if String.contains?(element, "activity-container") do
+          {index + 1, Map.put(map, index, %{raw_content: element})}
+        else
+          {index, map}
+        end
+      end)
+      |> elem(1)
+
+    assign(socket, questions: questions)
   end
 
   defp to_epoch(nil), do: nil
