@@ -206,6 +206,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             );
             const { snapshot, currentAttemptType } = readyResults;
             const attempType = snapshot['session.attempType'];
+            // With new approach, we no longer save the part values to its owner, they are saved in the current activity attempt
+            // activityId contains the value of part owner so we get the current activity attempt data from sharedAttemptStateMap
+            // and then pass this to all the part component. If the "session.attempType" is Old then we don't do anything
+            // Currious about currentAttemptType && attempType, the value of currentAttemptType could be 'Mixed' if a lesson
+            // has half of its screen data scaved in old approach and some screen with new approach
             if (attempType === 'New' || currentAttemptType == 'New') {
               if (sharedAttemptStateMap?.size) {
                 currentActivityId =
@@ -352,6 +357,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       return;
     }
     let currentActivityId: any = activityId;
+    // With new approach, we no longer save the part values to its owner, they are saved in the current activity attempt
+    // activityId contains the value of part owner so we get the current activity id from sharedAttemptStateMap and save the part response in current activity
     if (sharedAttemptStateMap?.size) {
       if (reviewMode) {
         currentActivityId =

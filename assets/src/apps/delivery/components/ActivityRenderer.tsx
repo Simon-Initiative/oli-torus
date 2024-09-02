@@ -207,6 +207,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   ) => {
     /* console.log('onSavePart (ActivityRenderer)', { attemptGuid, partAttemptGuid, response }); */
     let currentActivityId: any = activity.id;
+    //With new approach, we no longer save the part values to its owner, they are saved in the current activity attempt
+    //activity.id contains the value of part owner so we get the current activity id from sharedAttemptStateMap and save the part response in current activity
     if (sharedAttemptStateMap?.size) {
       currentActivityId = Array.from(sharedAttemptStateMap.keys()).pop();
     }

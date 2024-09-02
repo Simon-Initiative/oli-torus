@@ -142,18 +142,12 @@ export const loadInitialPageState = createAsyncThunk(
         const appAttempType = sessionState['session.attempType'];
         //If the studemt is resuming an event which was already based on the 'New' saving approach then we don't need to do anything
         // However, if half of the activity is saved based on the 'Old' save approach and once student resumes the lesson, it's going
-        // to be saved based on 'New' approach. To identify that, setting the attempt type to 'Resume'
+        // to be saved based on 'New' approach. To identify that, setting the attempt type to 'Mixed' and stored the activity id in "session.old.attempt.resume"
         const attemptType = appAttempType == 'New' ? 'New' : 'Mixed';
         const OldApproachAttemptResumeActivityId =
           appAttempType == 'Mixed' && oldAttemptResumeActivityId?.length
             ? oldAttemptResumeActivityId
             : resumeId;
-        console.log('RESUMING!: ', {
-          attempts,
-          resumeId,
-          attemptType,
-          OldApproachAttemptResumeActivityId,
-        });
         // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
         // and session.currentQuestionScore should be 0
         const totalScore = attempts.reduce((acc: number, attempt: any) => {

@@ -199,7 +199,8 @@ export const updateActivityRules = createAsyncThunk(
                 childActivity?.resourceId || -1,
               );
               const findOwnerActivityInSequence = findInSequence(deck.children, partDef.owner);
-              // we no longer find the owner of the part because each part gets saved in the current screen attempt
+              //With new approach, we no longer save the part values to its owner, they are saved in the current activity attempt
+              // hence on need to find its owner. We can directly add the current activity.
               if (
                 findOwnerActivityInSequence?.custom.isLayer &&
                 findCurrentActivityInSequence?.custom.sequenceId

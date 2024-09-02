@@ -482,6 +482,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         return null;
       }
       if (reviewMode) {
+        // currentActivityTree always contains a parent at the top and then it's subscreens. Since the data of each attempt is saved at the current
+        // activity level instead of part owner, during the review mode, we need to reverse the currentActivityTree so that when activity renders
+        // it takes the attempt data from the current activity instead of the part owner. We had to do this because of the way React render / references
+        // variables
         currentActivityTree.reverse();
       }
       let currentActivity = currentActivityTree[currentActivityTree.length - 1];
