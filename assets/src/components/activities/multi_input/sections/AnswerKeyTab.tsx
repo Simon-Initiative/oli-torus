@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
+import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { usesCustomScoring } from 'components/activities/common/authoring/actions/scoringActions';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
@@ -17,12 +18,14 @@ import {
   MultiInputSchema,
 } from 'components/activities/multi_input/schema';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
-import { Response, RichText, makeResponse } from 'components/activities/types';
+import { GradingApproach, Response, RichText, makeResponse } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
+import { getPartById } from 'data/activities/model/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { MultiInputScoringMethod } from '../MultiInputScoringMethod';
 
@@ -96,8 +99,19 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
       </>
     );
   }
+
+  // else text/numeric input. Allow manual grading as for short answers
   return (
     <div className="d-flex flex-column mb-2">
+      <GradingApproachDropdown
+        editMode={editMode}
+        selected={
+          getPartById(model, props.input.partId)?.gradingApproach || GradingApproach.automatic
+        }
+        onChange={(gradingApproach) =>
+          dispatch(ShortAnswerActions.setGradingApproach(gradingApproach, props.input.partId))
+        }
+      />
       <InputEntry
         key={getCorrectResponse(model, props.input.partId).id}
         inputType={props.input.inputType}

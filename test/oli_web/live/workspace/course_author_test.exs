@@ -567,6 +567,23 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
     end
 
+    test "experiments menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments")
+
+      assert has_element?(view, "h3", "A/B Testing with UpGrade")
+
+      assert has_element?(
+               view,
+               "p",
+               "To support A/B testing, Torus integrates with the A/B testing platform"
+             )
+
+      assert has_element?(view, "label", "Enable A/B testing with UpGrade")
+    end
+
     test "review menu is shown correctly", %{
       conn: conn,
       project: project
