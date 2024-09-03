@@ -9,6 +9,7 @@ defmodule OliWeb.ActivityBankController do
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Activities.Realizer.Query.Result
   alias OliWeb.Common.PagingParams
+  alias Oli.Delivery.Page.PageContext
 
   @doc false
   def index(conn, %{
@@ -71,6 +72,17 @@ defmodule OliWeb.ActivityBankController do
             section_slug: section_slug
           }
 
+          section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+
+          datashop_session_id = conn.private.plug_session["datashop_session_id"]
+          numbered_revisions = Oli.Delivery.Sections.get_revision_indexes(section_slug)
+
+          page_context =
+            PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
+
+          {:ok, {previous, next, current}, _} =
+            Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+
           rendered_selection =
             Oli.Rendering.Content.Selection.render(render_context, selection, false)
             |> IO.iodata_to_binary()
@@ -81,6 +93,14 @@ defmodule OliWeb.ActivityBankController do
             |> put_layout(html: {OliWeb.Layouts, :page})
 
           render(conn, "preview.html",
+            preview_mode: true,
+            bib_app_params: %{bibReferences: page_context.bib_revisions},
+            previous_page: previous,
+            next_page: next,
+            current_page: current,
+            page_number: paging_params.current_page_index,
+            numbered_revisions: numbered_revisions,
+            resource_slug: revision.slug,
             title: "Activity Bank Selection Preview",
             rendered_selection: rendered_selection,
             paging: paging_params,

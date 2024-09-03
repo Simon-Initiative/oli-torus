@@ -23,13 +23,13 @@ defmodule OliWeb.Pow.UserRoutes do
   end
 
   defp workspace_path(conn, :instructor_workspace),
-    do: Routes.live_path(conn, OliWeb.Workspace.Instructor)
+    do: Routes.live_path(conn, OliWeb.Workspaces.Instructor.IndexLive)
 
   defp workspace_path(conn, :student_workspace),
-    do: Routes.live_path(conn, OliWeb.Workspace.Student)
+    do: Routes.live_path(conn, OliWeb.Workspaces.Student)
 
   defp workspace_path(conn, :course_author_workspace),
-    do: Routes.live_path(conn, OliWeb.Workspace.CourseAuthor)
+    do: Routes.live_path(conn, OliWeb.Workspaces.CourseAuthor)
 
   @impl true
   def after_registration_path(conn) do

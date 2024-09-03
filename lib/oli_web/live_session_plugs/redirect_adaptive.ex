@@ -53,8 +53,9 @@ defmodule OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless do
             "displayApplicationChrome" => false
           }
         },
-        progress_state: :in_progress
-      } ->
+        progress_state: progress_state
+      }
+      when progress_state in [:revised, :in_progress] ->
         {:halt,
          redirect(socket,
            to:

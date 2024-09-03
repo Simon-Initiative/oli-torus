@@ -451,7 +451,7 @@ defmodule OliWeb.Delivery.NewCourse do
        to:
          if(socket.assigns.lti_params,
            do: Routes.delivery_path(socket, :index),
-           else: Routes.live_path(socket, OliWeb.Workspace.Instructor)
+           else: Routes.live_path(socket, OliWeb.Workspaces.Instructor)
          )
      )}
   end

@@ -46,10 +46,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         nil
       )
 
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
-
-    emit_page_viewed_event(socket)
 
     {:ok,
      socket
@@ -63,13 +62,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def mount(
         _params,
         _session,
-        %{assigns: %{view: :graded_page, page_context: %{progress_state: :in_progress}}} = socket
-      ) do
+        %{assigns: %{view: :graded_page, page_context: %{progress_state: progress_state}}} =
+          socket
+      )
+      when progress_state in [:revised, :in_progress] do
     %{page_context: page_context} = socket.assigns
 
-    emit_page_viewed_event(socket)
-
     if connected?(socket) do
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
 
@@ -99,12 +99,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def mount(
         _params,
         _session,
-        %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}}} =
+        %{assigns: %{view: :adaptive_chromeless, page_context: %{progress_state: progress_state}}} =
           socket
-      ) do
-    emit_page_viewed_event(socket)
-
+      )
+      when progress_state in [:revised, :in_progress] do
     if connected?(socket) do
+      emit_page_viewed_event(socket)
       send(self(), :gc)
     end
 
@@ -732,7 +732,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  def render(%{view: :graded_page, page_context: %{progress_state: :in_progress}} = assigns) do
+  def render(%{view: :graded_page, page_context: %{progress_state: progress_state}} = assigns)
+      when progress_state in [:revised, :in_progress] do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
@@ -797,8 +798,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def render(
-        %{view: :adaptive_chromeless, page_context: %{progress_state: :in_progress}} = assigns
-      ) do
+        %{view: :adaptive_chromeless, page_context: %{progress_state: progress_state}} = assigns
+      )
+      when progress_state in [:revised, :in_progress] do
     ~H"""
     <!-- ACTIVITIES -->
     <%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
@@ -823,6 +825,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div id="delivery_container" phx-update="ignore">
       <%= react_component("Components.Delivery", @app_params) %>
     </div>
+
+    <%= OliWeb.LayoutView.additional_stylesheets(%{additional_stylesheets: @additional_stylesheets}) %>
 
     <script>
       window.userToken = "<%= @user_token %>";

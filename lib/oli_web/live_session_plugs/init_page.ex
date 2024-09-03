@@ -20,7 +20,11 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         section,
         revision_slug,
         current_user,
-        datashop_session_id
+        datashop_session_id,
+        # to avoid triggering the tracking of the page access twice, we will only track it
+        # in the initial stateless HTTP Request (when the socket is not yet mounted)
+        # see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#module-life-cycle
+        track_access: !Phoenix.LiveView.connected?(socket)
       )
 
     {:cont,

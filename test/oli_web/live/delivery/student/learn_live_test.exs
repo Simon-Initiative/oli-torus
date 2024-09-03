@@ -816,7 +816,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                "div[id=pay_early_message]",
-               "You have 18 more days remaining in your grace period access of this course"
+               "You have 18 days left of your grace period for accessing this course"
              )
 
       # Grace period is over
@@ -2874,6 +2874,32 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert view |> element(~s{#header span}) |> render() =~ "(Preview Mode)"
       assert view |> element(~s{h1}) |> render() =~ "Your Practice Pages"
+    end
+  end
+
+  describe "when view mode is invalid" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "shows default view if selected_view is not a valid option", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: "invalid"))
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h3", "Introduction")
+      assert has_element?(view, "h3", "Building a Phoenix app")
+      assert has_element?(view, "h3", "Implementing LiveView")
+    end
+
+    test "shows default view if selected_view is an empty string", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug, selected_view: ""))
+
+      assert has_element?(view, "span", "The best course ever!")
+      assert has_element?(view, "h3", "Introduction")
+      assert has_element?(view, "h3", "Building a Phoenix app")
+      assert has_element?(view, "h3", "Implementing LiveView")
     end
   end
 
