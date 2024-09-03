@@ -3,7 +3,7 @@
 
 export const EvaluateMathJaxExpressions = {
   mounted() {
-    const elements = document.querySelectorAll('.formula');
+    const elements = document.querySelectorAll('.formula, .formula-inline');
 
     const getGlobalLastPromise = () => {
       /* istanbul ignore next */
