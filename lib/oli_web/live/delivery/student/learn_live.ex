@@ -108,36 +108,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     send(self(), :gc)
 
-    case params do
-      %{"selected_view" => selected_view, "target_resource_id" => resource_id} ->
-        selected_view = String.to_existing_atom(selected_view)
-
-        {:noreply,
-         socket
-         |> assign(selected_view: selected_view)
-         |> stream(:units, full_hierarchy["children"], reset: true)
-         |> scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
-
-      %{"selected_view" => selected_view} ->
-        selected_view = String.to_existing_atom(selected_view)
-
-        {
-          :noreply,
-          socket
-          |> assign(selected_view: selected_view)
-          |> stream(:units, full_hierarchy["children"], reset: true)
-        }
-
-      %{"target_resource_id" => resource_id} ->
-        {:noreply,
-         socket
-         |> stream(:units, full_hierarchy["children"], reset: true)
-         |> scroll_to_target_resource(resource_id, full_hierarchy, :gallery)}
-
-      _ ->
-        {:noreply,
-         socket
-         |> stream(:units, full_hierarchy["children"], reset: true)}
+    with selected_view <- get_selected_view(params),
+         resource_id <- params["target_resource_id"] do
+      {:noreply,
+       socket
+       |> maybe_assign_selected_view(selected_view)
+       |> stream(:units, full_hierarchy["children"], reset: true)
+       |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
 
@@ -1402,7 +1379,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module, :map
   attr :student_raw_avg_score_per_page_id, :map
   attr :student_end_date_exceptions_per_resource_id, :map
-  attr :ctx, :map
+  attr :ctx, :map, required: true
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
   attr :student_progress_per_resource_id, :map
@@ -1423,7 +1400,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           get_contained_pages_due_dates(
             assigns.module,
             assigns.student_end_date_exceptions_per_resource_id,
-            show_completed_pages
+            show_completed_pages,
+            assigns.ctx
           )
       })
 
@@ -1504,7 +1482,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               @show_completed_pages,
               grouped_due_date,
               @student_end_date_exceptions_per_resource_id,
-              child
+              child,
+              @ctx
             )
           }
           title={child["title"]}
@@ -1555,7 +1534,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :module_resource_id, :integer
   attr :resource_id, :string
   attr :student_id, :integer
-  attr :ctx, :map
+  attr :ctx, :map, required: true
   attr :graded, :boolean
   attr :raw_avg_score, :map
   attr :student_raw_avg_score_per_page_id, :map
@@ -1581,7 +1560,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           @show_completed_pages,
           @parent_due_date,
           @student_end_date_exceptions_per_resource_id,
-          @section_attrs
+          @section_attrs,
+          @ctx
         )
       }
       role={"#{@type} #{@numbering_index} details"}
@@ -1621,7 +1601,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             @show_completed_pages,
             @parent_due_date,
             @student_end_date_exceptions_per_resource_id,
-            child
+            child,
+            @ctx
           )
         }
         title={child["title"]}
@@ -2404,7 +2385,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          _show_completed_pages,
          _grouped_due_date,
          _student_end_date_exceptions_per_resource_id,
-         %{"section_resource" => %{scheduling_type: :inclass_activity}} = _child
+         %{"section_resource" => %{scheduling_type: :inclass_activity}} = _child,
+         _ctx
        ),
        do: false
 
@@ -2412,7 +2394,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          show_completed_pages,
          grouped_due_date,
          student_end_date_exceptions_per_resource_id,
-         child
+         child,
+         ctx
        ) do
     if is_section?(child) do
       Enum.any?(
@@ -2421,7 +2404,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           show_completed_pages,
           grouped_due_date,
           student_end_date_exceptions_per_resource_id,
-          &1
+          &1,
+          ctx
         )
       )
     else
@@ -2432,7 +2416,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           child["resource_id"],
           child["section_resource"].end_date
         )
-        |> then(&if is_nil(&1), do: "Not yet scheduled", else: DateTime.to_date(&1))
+        |> then(&if is_nil(&1), do: "Not yet scheduled", else: to_localized_date(&1, ctx))
 
       if show_completed_pages do
         student_due_date == grouped_due_date
@@ -2447,12 +2431,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp get_contained_pages_due_dates(
          container,
          student_end_date_exceptions_per_resource_id,
-         show_completed_pages
+         show_completed_pages,
+         ctx
        ) do
     contained_pages_due_dates(
       container,
       student_end_date_exceptions_per_resource_id,
-      show_completed_pages
+      show_completed_pages,
+      ctx
     )
     |> Enum.uniq()
     |> then(fn dates ->
@@ -2470,7 +2456,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp contained_pages_due_dates(
          container,
          student_end_date_exceptions_per_resource_id,
-         show_completed_pages
+         show_completed_pages,
+         ctx
        ) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
@@ -2491,8 +2478,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         else
           [
             Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
-              DateTime.to_date(
-                Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
+              to_localized_date(
+                Map.get(
+                  student_end_date_exceptions_per_resource_id,
+                  resource_id,
+                  end_date
+                ),
+                ctx
               )
           ]
         end
@@ -2501,12 +2493,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         contained_pages_due_dates(
           section_or_subsection,
           student_end_date_exceptions_per_resource_id,
-          show_completed_pages
+          show_completed_pages,
+          ctx
         )
 
       _ ->
         []
     end)
+  end
+
+  defp to_localized_date(datetime, ctx) do
+    datetime
+    |> DateTime.shift_zone!(ctx.local_tz)
+    |> DateTime.to_date()
   end
 
   defp parse_student_progress_for_resource(student_progress_per_resource_id, resource_id) do
@@ -2793,4 +2792,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     Sections.get_container_label_and_numbering(numbering_level, numbering, customizations)
     |> String.upcase()
   end
+
+  defp get_selected_view(params) do
+    case params["selected_view"] do
+      nil -> nil
+      view when view not in ~w(gallery outline) -> @default_selected_view
+      view -> String.to_existing_atom(view)
+    end
+  end
+
+  defp maybe_assign_selected_view(socket, nil), do: socket
+  defp maybe_assign_selected_view(socket, view), do: assign(socket, selected_view: view)
+
+  defp maybe_scroll_to_target_resource(socket, nil, _full_hierarchy, _selected_view), do: socket
+
+  defp maybe_scroll_to_target_resource(socket, resource_id, full_hierarchy, nil),
+    do: scroll_to_target_resource(socket, resource_id, full_hierarchy, @default_selected_view)
+
+  defp maybe_scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view),
+    do: scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view)
 end

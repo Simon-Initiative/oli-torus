@@ -461,6 +461,113 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
     end
   end
 
+  describe "project sidebar" do
+    setup [:admin_conn, :set_timezone, :base_project_with_curriculum]
+
+    test "entering a project works well by navigating to the project overview", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      view
+      |> element("a", project.title)
+      |> render_click()
+
+      assert_redirected(view, "/authoring/project/#{project.slug}")
+    end
+
+    test "exit project button works well by navigating to course author index", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
+
+      view
+      |> element(~s(a[id=exit_course_button]))
+      |> render_click()
+
+      assert_redirected(view, "/workspaces/course_author?sidebar_expanded=true")
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+      assert has_element?(view, "h1", "Course Author")
+
+      assert has_element?(
+               view,
+               "h2",
+               "Create, deliver, and continuously improve course materials."
+             )
+
+      assert has_element?(view, "h3", "Projects")
+    end
+
+    test "project name is shown in the sidebar and in the top bar", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
+
+      assert has_element?(view, "div", project.title)
+    end
+
+    test "sidebar is expanded by default", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      assert has_element?(view, ~s(#desktop-workspace-nav-menu[aria-expanded=true]))
+    end
+
+    test "menus are shown correctly", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
+
+      assert has_element?(view, "div", "Overview")
+
+      assert has_element?(view, "div", "Create")
+      assert has_element?(view, "div", "Objectives")
+      assert has_element?(view, "div", "Activity Bank")
+      assert has_element?(view, "div", "Experiments")
+      assert has_element?(view, "div", "Bibliography")
+      assert has_element?(view, "div", "Curriculum")
+      assert has_element?(view, "div", "All Pages")
+      assert has_element?(view, "div", "All Activities")
+
+      assert has_element?(view, "div", "Publish")
+      assert has_element?(view, "div", "Review")
+      assert has_element?(view, "div", "Publish")
+      assert has_element?(view, "div", "Products")
+
+      assert has_element?(view, "div", "Improve")
+      assert has_element?(view, "div", "Insights")
+    end
+
+    test "objectives menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/objectives")
+
+      assert has_element?(view, "h3", "Learning Objectives")
+
+      assert has_element?(
+               view,
+               "p",
+               "Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies."
+             )
+
+      assert has_element?(view, "button", "Create new Objective")
+    end
+
+    test "activity bank menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
+
+      # Since the Activity Bank liveview renders a React component, we can only check for the presence of the div that contains the React component
+      assert has_element?(view, ~s(#activity-bank))
+      assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
+    end
+  end
+
   defp create_project_with_owner(owner, attrs \\ %{}) do
     project = insert(:project, attrs)
     insert(:author_project, project_id: project.id, author_id: owner.id)

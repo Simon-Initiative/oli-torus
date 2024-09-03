@@ -22,7 +22,8 @@ defmodule OliWeb.LiveSessionPlugs.RedirectToLesson do
         socket
       ) do
     case socket.assigns.page_context do
-      %PageContext{progress_state: :in_progress} ->
+      %PageContext{progress_state: progress_state}
+      when progress_state in [:revised, :in_progress] ->
         {:halt,
          redirect(socket,
            to:

@@ -170,6 +170,20 @@ defmodule Oli.Delivery.Sections.Scheduling do
     )
   end
 
+  @doc """
+  Check if a course section has any resources that have been scheduled.
+  """
+  @spec has_scheduled_resources?(section_id :: integer) :: boolean
+  def has_scheduled_resources?(section_id) do
+    from(
+      sr in SectionResource,
+      where:
+        sr.section_id == ^section_id and (not is_nil(sr.start_date) or not is_nil(sr.end_date)),
+      limit: 1
+    )
+    |> Repo.exists?()
+  end
+
   defp is_valid_update?(updates) do
     keys = ["id", "scheduling_type", "start_date", "end_date", "manually_scheduled"]
     atoms = Enum.map(keys, fn k -> String.to_existing_atom(k) end)

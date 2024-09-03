@@ -50,12 +50,14 @@ defmodule Oli.Utils.Seeder.Section do
   def create_section_from_product(
         seeds,
         product,
-        instructor,
-        institution,
+        instructor \\ nil,
+        institution \\ nil,
         attrs \\ %{},
         tags \\ []
       ) do
     [product, instructor, institution] = unpack(seeds, [product, instructor, institution])
+
+    section_tag = tags[:section_tag] || :section
 
     attrs =
       %{
@@ -82,7 +84,7 @@ defmodule Oli.Utils.Seeder.Section do
       end
 
     seeds
-    |> tag(tags[:section_tag], section)
+    |> tag(section_tag, section)
   end
 
   def create_and_enroll_learner(seeds, section, user_attrs \\ %{}, tags \\ []) do
