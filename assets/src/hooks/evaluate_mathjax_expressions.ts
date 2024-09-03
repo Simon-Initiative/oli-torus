@@ -25,7 +25,9 @@ export const EvaluateMathJaxExpressions = {
     };
 
     let lastPromise = getGlobalLastPromise();
-    lastPromise = lastPromise.then(() => window.MathJax.typesetPromise(Array.from(elements) as HTMLElement[]));
+    lastPromise = lastPromise.then(() =>
+      window.MathJax.typesetPromise(Array.from(elements) as HTMLElement[]),
+    );
     setGlobalLastPromise(lastPromise);
   },
 };
