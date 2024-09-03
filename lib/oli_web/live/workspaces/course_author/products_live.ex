@@ -6,15 +6,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   import OliWeb.DelegatedEvents
 
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Publishing
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
-  alias Oli.Publishing
   alias OliWeb.Common.Check
   alias OliWeb.Common.PagedTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Common.TextSearch
+  alias OliWeb.Products.ProductsTableModel
 
   @limit 20
 
@@ -35,7 +36,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
     total_count = determine_total(products)
     ctx = SessionContext.init(socket, session)
 
-    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
+    {:ok, table_model} = ProductsTableModel.new(products, ctx, project.slug)
 
     published? =
       case project do
@@ -68,10 +69,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     table_model =
-      SortableTableModel.update_from_params(
-        socket.assigns.table_model,
-        params
-      )
+      SortableTableModel.update_from_params(socket.assigns.table_model, params)
 
     offset = Params.get_int_param(params, "offset", 0)
     text_search = Params.get_param(params, "text_search", "")
