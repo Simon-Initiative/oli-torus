@@ -583,6 +583,22 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
 
       assert has_element?(view, "label", "Enable A/B testing with UpGrade")
     end
+
+    test "review menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/review")
+
+      assert has_element?(
+               view,
+               "p",
+               "Run an automated review before publishing to check for broken links and other common issues that may be present in your course."
+             )
+
+      assert has_element?(view, "button", "Run Review")
+      assert has_element?(view, "a", "Preview Course")
+    end
   end
 
   defp create_project_with_owner(owner, attrs \\ %{}) do
