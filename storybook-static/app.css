@@ -5088,6 +5088,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 201px;
 }
 
+.h-\[20px\] {
+  height: 20px;
+}
+
 .h-\[220px\] {
   height: 220px;
 }
