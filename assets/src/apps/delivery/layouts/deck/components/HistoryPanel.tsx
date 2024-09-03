@@ -1,6 +1,10 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectIsLegacyTheme, selectPreviewMode } from 'apps/delivery/store/features/page/slice';
+import {
+  selectIsLegacyTheme,
+  selectPreviewMode,
+  setAttemptType,
+} from 'apps/delivery/store/features/page/slice';
 import TimeAgo from '../../../../../components/common/TimeAgo';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
@@ -11,9 +15,17 @@ interface HistoryPanelProps {
   items: HistoryEntry[];
   onMinimize: any; // function?
   onRestart: any; // function
+  oldAttemptTypeActivityIdIndex?: number;
+  appAttemptType?: string;
 }
 
-const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestart }) => {
+const HistoryPanel: React.FC<HistoryPanelProps> = ({
+  items,
+  onMinimize,
+  onRestart,
+  oldAttemptTypeActivityIdIndex,
+  appAttemptType,
+}) => {
   const dispatch = useDispatch();
   const currentActivityId = useSelector(selectCurrentActivityId);
   // TODO: we need to track this as a separate ID
@@ -25,6 +37,22 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
     const nextHistoryActivityIndex = items.findIndex(
       (historyItem: any) => historyItem.id === item.id,
     );
+    // if there is an ongoing lesson then there is a possibility that some of the activity data will be saved based on old approach and
+    // some activity data will be stored based on new approach. To handle this, we added 2 session variables "session.old.attempt.resume" and  "session.attempType"
+    // "session.old.attempt.resume" contains the id of the activity from where the new save approach was triggered. Hence, during history mode, when a student
+    // visit an screen whose sequence index is less that the activity mentioned in the "session.old.attempt.resume" variable, we handle the
+    // displaying of data in older way.
+    if (
+      nextHistoryActivityIndex - 1 > 0 &&
+      appAttemptType == 'Mixed' &&
+      oldAttemptTypeActivityIdIndex
+    ) {
+      if (nextHistoryActivityIndex - 1 >= oldAttemptTypeActivityIdIndex) {
+        dispatch(setAttemptType({ attemptType: 'New' }));
+      } else {
+        dispatch(setAttemptType({ attemptType: appAttemptType }));
+      }
+    }
     dispatch(
       setHistoryNavigationTriggered({
         historyModeNavigation: nextHistoryActivityIndex !== 0,

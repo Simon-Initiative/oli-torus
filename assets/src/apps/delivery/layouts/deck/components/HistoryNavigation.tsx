@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import React, { Fragment } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { defaultGlobalEnv, getEnvState } from '../../../../../adaptivity/scripting';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
@@ -13,6 +13,7 @@ import { selectSequence } from '../../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
   selectShowHistory,
+  setAttemptType,
   setShowHistory,
 } from '../../../store/features/page/slice';
 import HistoryPanel from './HistoryPanel';
@@ -30,7 +31,8 @@ const HistoryNavigation: React.FC = () => {
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
   const isHistoryMode = useSelector(selectHistoryNavigationActivity);
-
+  let oldAttemptTypeActivityIdIndex = -1;
+  let attemptType = '';
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
 
@@ -81,6 +83,29 @@ const HistoryNavigation: React.FC = () => {
   );
   const isFirst = currentHistoryActivityIndex === historyItems.length - 1;
   const isLast = currentHistoryActivityIndex === 0;
+
+  useEffect(() => {
+    // if there is an ongoing lesson then there is a possibility that some of the activity data will be saved based on old approach and
+    // some activity data will be stored based on new approach. To handle this, we added 2 session variables "session.old.attempt.resume" and  "session.attempType"
+    // "session.old.attempt.resume" contains the id of the activity from where the new save approach was triggered. Hence, during history mode, when a student
+    // visit an screen whose sequence index is less that the activity mentioned in the "session.old.attempt.resume" variable, we handle the
+    // displaying of data in older way.
+    const oldAttemptResumeActivityId = snapshot['session.old.attempt.resume'];
+    const appAttemptType = snapshot['session.attempType'];
+    const oldAttemptActivityIdIndex = historyItems.findIndex(
+      (item: any) => item.id === oldAttemptResumeActivityId,
+    );
+    attemptType = appAttemptType;
+    oldAttemptTypeActivityIdIndex = oldAttemptActivityIdIndex;
+    if (currentHistoryActivityIndex > 0 && appAttemptType == 'Mixed') {
+      if (currentHistoryActivityIndex >= oldAttemptActivityIdIndex) {
+        dispatch(setAttemptType({ attemptType: 'New' }));
+        attemptType = 'New';
+      } else {
+        dispatch(setAttemptType({ attemptType: appAttemptType }));
+      }
+    }
+  }, [currentHistoryActivityIndex]);
 
   /*  console.log('HISTORY ITEMS', {
     historyItems,
@@ -162,6 +187,8 @@ const HistoryNavigation: React.FC = () => {
                 items={historyItems}
                 onMinimize={minimizeHandler}
                 onRestart={restartHandler}
+                oldAttemptTypeActivityIdIndex={oldAttemptTypeActivityIdIndex}
+                appAttemptType={attemptType}
               />
             </Fragment>
           ) : (
