@@ -858,7 +858,8 @@ defmodule Oli.SectionsTest do
 
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-
+      original_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
+      IO.inspect hierarchy
       assert hierarchy.children |> Enum.count() == 2
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
       assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == page2.id
@@ -928,7 +929,7 @@ defmodule Oli.SectionsTest do
           working_pub
         )
 
-      # remove page 2
+      # remove page
       _deleted_revision =
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
@@ -940,13 +941,19 @@ defmodule Oli.SectionsTest do
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      IO.inspect hierarchy
+
+      updated_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
+
+      IO.inspect Enum.count(original_flattened)
+      IO.inspect Enum.count(updated_flattened)
+
 
       # verify non-structural changes are applied as expected
       assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
                page1_changes["content"]
 
       # verify the updated curriculum structure matches the expected result
-
       assert hierarchy.children |> Enum.count() == 4
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
       assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == p1_new_page1.id
@@ -979,6 +986,8 @@ defmodule Oli.SectionsTest do
 
       # there is only seven since one of the pages is unreachable
       assert section_resources |> Enum.count() == 7
+
+
     end
 
     @tag capture_log: true
@@ -1513,8 +1522,8 @@ defmodule Oli.SectionsTest do
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       # verify non-structural changes are applied as expected
-      #assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
-      #        page1_changes["content"]
+      assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
+               page1_changes["content"]
 
       # verify the updated curriculum structure matches the expected result
 
@@ -1722,8 +1731,8 @@ defmodule Oli.SectionsTest do
         )
 
       # remove page 2
-      _deleted_revision =
-        Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
+      #_deleted_revision =
+       # Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
       # publish changes
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)

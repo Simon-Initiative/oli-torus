@@ -130,34 +130,62 @@ defmodule Oli.Delivery.Sections.Updates do
 
     mark = Oli.Timing.mark()
 
-    IO.inspect diff.changes
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+    page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     case diff
-      |> filter_for_revisions(:added)
+      |> filter_for_revisions(:added, fn r -> r.resource_type_id != container_type_id end)
       |> bulk_create_section_resources(section, project_id) do
 
       {:ok, _} ->
         diff
-        |> filter_for_revisions(:deleted)
+        |> filter_for_revisions(:deleted, fn r -> r.resource_type_id != container_type_id
+          and r.resource_type_id != page_type_id
+        end)
         |> bulk_delete_section_resources(section)
 
         Sections.update_section_project_publication(section, project_id, new_publication.id)
 
+        cull_unreachable_pages(section)
+
         Logger.info(
           "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
         )
+
         {:ok, :ok}
 
       {:error, _} ->
         {:error, :unexpected_count}
-    end
+      end
 
   end
 
-  defp filter_for_revisions(%PublicationDiff{} = diff, desired_type) do
+  defp add_remove_srs(%PublicationDiff{} = diff, section, project_id) do
+
+    mark = Oli.Timing.mark()
+
+    case diff
+      |> filter_for_revisions(:added, fn r -> true end)
+      |> bulk_create_section_resources(section, project_id) do
+
+      {:ok, _} ->
+        diff
+        |> filter_for_revisions(:deleted, fn r -> true end)
+        |> bulk_delete_section_resources(section)
+
+        {:ok, :ok}
+
+      {:error, _} ->
+        {:error, :unexpected_count}
+      end
+
+  end
+
+  defp filter_for_revisions(%PublicationDiff{} = diff, desired_type, filter_fn \\ fn _ -> true end) do
     Map.filter(diff.changes, fn {_k, {this_type, _}} -> this_type == desired_type end)
     |> Map.values()
     |> Enum.map(fn {_, %{revision: r}} -> r end)
+    |> Enum.filter(filter_fn)
   end
 
   defp bulk_create_section_resources(revisions, section, project_id) do
@@ -209,8 +237,11 @@ defmodule Oli.Delivery.Sections.Updates do
 
     mark = Oli.Timing.mark()
 
-    with {:ok, _} <- do_minor_update(diff, section, project_id, new_publication),
-      {:ok, _} <- update_container_children(section, prev_publication, new_publication),
+    add_remove_srs(diff, section, project_id)
+    Sections.update_section_project_publication(section, project_id, new_publication.id)
+
+    with {:ok, _} <- update_container_children(section, prev_publication, new_publication),
+      {:ok, _} <- cull_unreachable_pages(section),
       {:ok, _} <- Oli.Delivery.PreviousNextIndex.rebuild(section),
       {:ok, _} <- Sections.rebuild_contained_pages(section),
       {:ok, _} <- Sections.rebuild_contained_objectives(section) do
@@ -222,6 +253,32 @@ defmodule Oli.Delivery.Sections.Updates do
       e -> e
     end
 
+  end
+
+  defp cull_unreachable_pages(section) do
+
+    section_id = section.id
+
+    hierarchy_ids = Oli.Delivery.Sections.MinimalHierarchy.full_hierarchy(section.slug)
+    |> Oli.Delivery.Hierarchy.flatten()
+    |> Enum.map(fn node -> [node.section_resource.id | node.children] end)
+    |> List.flatten()
+
+    publication_ids = Oli.Repo.all(Oli.Delivery.Sections.SectionsProjectsPublications, section_id: section.id)
+    |> Enum.map(fn spp -> spp.publication_id end)
+
+    unreachable_page_resource_ids =
+      case section.required_survey_resource_id do
+        nil -> Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, hierarchy_ids)
+        id -> Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, [id | hierarchy_ids])
+      end
+
+    from(sr in SectionResource,
+      where: sr.section_id == ^section_id and sr.resource_id in ^unreachable_page_resource_ids
+    )
+    |> Repo.delete_all()
+
+    {:ok, true}
   end
 
   defp update_container_children(section, prev_publication, new_publication) do
@@ -317,6 +374,9 @@ defmodule Oli.Delivery.Sections.Updates do
           section_resource
         end
       end)
+
+    IO.inspect "after update container children"
+    IO.inspect merged_section_resources
 
     # Upsert all merged section resource records. Some of these records may have just been created
     # and some may not have been changed, but that's okay we will just update them again. There

@@ -3,6 +3,7 @@ defmodule Oli.Delivery.PreviousNextIndex do
   alias Oli.Delivery.Sections
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
+  alias Oli.Resources.Numbering
   alias Oli.Repo
 
   @doc """
@@ -127,8 +128,10 @@ defmodule Oli.Delivery.PreviousNextIndex do
   """
   def rebuild(%Section{slug: slug} = section) do
     case Repo.transaction(fn _ ->
-           DeliveryResolver.full_hierarchy(slug)
-           |> Hierarchy.build_navigation_link_map()
+           {new_hierarchy, _} = DeliveryResolver.full_hierarchy(slug)
+           |> Numbering.renumber_hierarchy()
+
+           Hierarchy.build_navigation_link_map(new_hierarchy)
            |> then(fn previous_next_index ->
              Sections.update_section(section, %{previous_next_index: previous_next_index})
            end)
