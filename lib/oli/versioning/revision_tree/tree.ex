@@ -78,32 +78,41 @@ defmodule Oli.Versioning.RevisionTree.Tree do
         nodes
 
       id ->
-        # There is a previous revision, so lets first check to see if the previous
-        # is a revision that we have encountered before (by tracing back from another head).
-        previous = Map.get(by_id, id)
-
-        case Map.get(nodes, previous.id) do
-          # We haven't encountered it yet, so we simply create a new tree node, store it and
-          # continue tracking backwards into the previous
+        # Identified in MER-3625, duplicated resources created in the system prior to the
+        # fix will have a first revision that points to the old resource revision. This
+        # is a special case where we simply ignore the previous revision that is not in the
+        # set of revisions we are tracking for the current resource.
+        case Map.get(by_id, id) do
           nil ->
-            previous_node = %Node{
-              revision: previous,
-              children: [child_node.revision.id],
-              project_id: project.id
-            }
+            nodes
 
-            nodes = Map.put(nodes, previous.id, previous_node)
-            track_back(previous_node, by_id, project, nodes)
+          previous ->
+            # There is a previous revision, so lets first check to see if the previous
+            # is a revision that we have encountered before (by tracing back from another head).
 
-          # We have encountered this previous revision already so this previous represents a
-          # "fork" point in our revision history - simply update the children node to wire in this
-          # new descendent path
-          node ->
-            Map.put(nodes, previous.id, %Node{
-              revision: node.revision,
-              children: node.children ++ [child_node.revision.id],
-              project_id: node.project_id
-            })
+            case Map.get(nodes, previous.id) do
+              # We haven't encountered it yet, so we simply create a new tree node, store it and
+              # continue tracking backwards into the previous
+              nil ->
+                previous_node = %Node{
+                  revision: previous,
+                  children: [child_node.revision.id],
+                  project_id: project.id
+                }
+
+                nodes = Map.put(nodes, previous.id, previous_node)
+                track_back(previous_node, by_id, project, nodes)
+
+              # We have encountered this previous revision already so this previous represents a
+              # "fork" point in our revision history - simply update the children node to wire in this
+              # new descendent path
+              node ->
+                Map.put(nodes, previous.id, %Node{
+                  revision: node.revision,
+                  children: node.children ++ [child_node.revision.id],
+                  project_id: node.project_id
+                })
+            end
         end
     end
   end

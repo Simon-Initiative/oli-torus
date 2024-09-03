@@ -11,6 +11,7 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.Course.Family
   alias Oli.Authoring.Clone
   alias Oli.Authoring.Editing.PageEditor
+  alias Oli.Delivery.Sections
 
   describe "need for new revision checks" do
     setup do
@@ -49,6 +50,80 @@ defmodule Oli.CloneTest do
         :duplicated,
         Repo.preload(duplicated_project, [:parent_project, :family])
       )
+    end
+
+    test "clone_project/2 with a product works well", %{
+      project: project,
+      author2: author2,
+      publication: publication
+    } do
+      # Create 2 products that are associated with the project
+      %{product_1: product_1, product_2: product_2} =
+        %{}
+        |> Oli.Utils.Seeder.Project.ensure_published(publication)
+        |> Oli.Utils.Seeder.Project.create_product("Product 1", project, product_tag: :product_1)
+        |> Oli.Utils.Seeder.Project.create_product("Product 2", project, product_tag: :product_2)
+
+      # Verify that the section_products_publications mapping is created and correct for the
+      # original products
+      assert Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: project.id,
+               section_id: product_1.id,
+               publication_id: publication.id
+             )
+
+      assert Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: project.id,
+               section_id: product_2.id,
+               publication_id: publication.id
+             )
+
+      # Clone the project
+      {:ok, duplicated_project} = Clone.clone_project(project.slug, author2)
+
+      duplicated_publication =
+        Publishing.project_working_publication(duplicated_project.slug)
+
+      %{}
+      |> Oli.Utils.Seeder.Project.ensure_published(duplicated_publication,
+        publication_tag: :publication
+      )
+
+      # Check if the products are cloned
+      duplicated_product_1 =
+        Sections.get_section_by(base_project_id: duplicated_project.id, title: "Product 1 Copy")
+
+      duplicated_product_2 =
+        Sections.get_section_by(base_project_id: duplicated_project.id, title: "Product 2 Copy")
+
+      assert duplicated_product_1
+      assert duplicated_product_2
+
+      # Verify that the section_products_publications mapping is created and correct for the
+      # duplicated products
+      assert Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: duplicated_project.id,
+               section_id: duplicated_product_1.id,
+               publication_id: duplicated_publication.id
+             )
+
+      assert Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: duplicated_project.id,
+               section_id: duplicated_product_2.id,
+               publication_id: duplicated_publication.id
+             )
+
+      # Create a new section from duplicated product 1
+      %{section: section} =
+        %{}
+        |> Oli.Utils.Seeder.Section.create_section_from_product(duplicated_product_1)
+
+      # Verify that the section_products_publications mapping is created and correct for the new section
+      assert Repo.get_by(Sections.SectionsProjectsPublications,
+               project_id: duplicated_project.id,
+               section_id: section.id,
+               publication_id: duplicated_publication.id
+             )
     end
 
     test "already_has_clone?/2 and existing_clones/2 works", %{

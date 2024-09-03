@@ -198,34 +198,14 @@ defmodule Oli.Seeder do
 
     create_published_resource(publication, container_resource, container_revision)
 
-    %{resource: _activity_resource, revision: activity_revision} =
-      create_activity(
-        %{
-          activity_type_id: Activities.get_registration_by_slug("oli_short_answer").id,
-          content: %{}
-        },
-        publication,
-        project,
-        author
-      )
-
     %{resource: page1, revision: revision1} =
       create_page("Page one", publication, project, author)
 
     %{resource: page2, revision: revision2} =
       create_page("Page two", publication, project, author, create_sample_content())
 
-    %{resource: page3, revision: revision3} =
-      create_page(
-        "Page three",
-        publication,
-        project,
-        author,
-        create_activity_content(activity_revision.resource_id)
-      )
-
     container_revision =
-      attach_pages_to([page1, page2, page3], container_resource, container_revision, publication)
+      attach_pages_to([page1, page2], container_resource, container_revision, publication)
 
     {:ok, pub1} = Publishing.publish_project(project, "some changes", author.id)
 
@@ -249,10 +229,8 @@ defmodule Oli.Seeder do
     |> Map.put(:container, %{resource: container_resource, revision: container_revision})
     |> Map.put(:page1, page1)
     |> Map.put(:page2, page2)
-    |> Map.put(:page3, page3)
     |> Map.put(:revision1, revision1)
     |> Map.put(:revision2, revision2)
-    |> Map.put(:revision3, revision3)
     |> Map.put(:section, section)
   end
 
@@ -1312,19 +1290,6 @@ defmodule Oli.Seeder do
           ]
         }
       ]
-    }
-  end
-
-  def create_activity_content(activity_resource_id) do
-    %{
-      "model" => [
-        %{
-          "type" => "activity-reference",
-          "activity_id" => activity_resource_id,
-          "custom" => %{}
-        }
-      ],
-      "advancedDelivery" => false
     }
   end
 

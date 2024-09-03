@@ -148,7 +148,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
 
         <div
-          :if={not is_nil(@grouped_agenda_resources)}
+          :if={@section.agenda && not is_nil(@grouped_agenda_resources)}
           class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex"
         >
           <.agenda

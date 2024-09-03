@@ -6,7 +6,7 @@
   <% end %>
 
   <% # Only show source if creating a new section (not editing) %>
-  <%= @action == Routes.independent_sections_path(@conn, :create) do %>
+  <%= if @action == Routes.independent_sections_path(@conn, :create) do %>
     <%= hidden_input f, :source_id, value: @source_id %>
 
     <div class="form-label-group">

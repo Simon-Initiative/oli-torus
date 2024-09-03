@@ -213,7 +213,7 @@ defmodule OliWeb.CognitoController do
         :infiniscope_invitation,
         %{
           brand_name: brand_name,
-          url: ~p"/authoring/invitations/#{token}/edit"
+          url: Routes.url(conn) <> ~p"/authoring/invitations/#{token}/edit"
         }
       )
       |> Oli.Mailer.deliver_now()
