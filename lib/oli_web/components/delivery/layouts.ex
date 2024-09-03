@@ -226,6 +226,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_view, :atom, default: nil)
   attr(:resource_slug, :string, default: nil)
   attr(:active_tab, :atom, default: nil)
+  attr(:url_params, :map, default: %{})
 
   def workspace_sidebar_toggler(assigns) do
     ~H"""
@@ -238,7 +239,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             @active_view,
             @sidebar_expanded,
             @resource_slug,
-            @active_tab
+            @active_tab,
+            @url_params
           )
         )
         |> JS.hide(to: "div[role='expandable_submenu']")
@@ -262,6 +264,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_title, :string)
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
+  attr(:url_params, :map, default: %{})
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -309,6 +312,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             sidebar_expanded={@sidebar_expanded}
             resource_slug={@resource_slug}
             active_tab={@active_tab}
+            url_params={@url_params}
           />
           <div class="h-[24px]">
             <h2
@@ -516,9 +520,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
          active_view,
          sidebar_expanded,
          resource_slug,
-         active_tab
+         active_tab,
+         url_params
        ) do
-    params = %{sidebar_expanded: !sidebar_expanded}
+    params = Map.merge(url_params, %{sidebar_expanded: !sidebar_expanded})
 
     base_module =
       case active_workspace do

@@ -5,6 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   import Phoenix.Component
   import OliWeb.DelegatedEvents
 
+  alias __MODULE__
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
   alias Oli.Repo.Paging
@@ -14,7 +15,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   alias OliWeb.Common.Params
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Common.TextSearch
   alias OliWeb.Products.ProductsTableModel
 
   @limit 20
@@ -28,7 +28,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
       Blueprint.browse(
         %Paging{offset: 0, limit: @limit},
         %Sorting{direction: :asc, field: :title},
-        text_search: Params.get_param(params, "text_search", ""),
         include_archived: include_archived,
         project_id: project.id
       )
@@ -56,7 +55,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
        is_admin_view: false,
        include_archived: include_archived,
        total_count: total_count,
-       text_search: "",
        limit: @limit,
        offset: 0,
        table_model: table_model,
@@ -68,34 +66,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
 
   @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
-    table_model =
-      SortableTableModel.update_from_params(socket.assigns.table_model, params)
+    sidebar_was_toggled = Map.keys(socket.assigns.__changed__) == [:sidebar_expanded]
 
-    offset = Params.get_int_param(params, "offset", 0)
-    text_search = Params.get_param(params, "text_search", "")
-    include_archived = Params.get_boolean_param(params, "include_archived", false)
+    if sidebar_was_toggled do
+      {:noreply, assign(socket, url_params: url_params(socket.assigns))}
+    else
+      table_model =
+        SortableTableModel.update_from_params(socket.assigns.table_model, params)
 
-    products =
-      Blueprint.browse(
-        %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        text_search: text_search,
-        include_archived: include_archived,
-        project_id: socket.assigns.project && socket.assigns.project.id
-      )
+      offset = Params.get_int_param(params, "offset", 0)
+      include_archived = Params.get_boolean_param(params, "include_archived", false)
 
-    table_model = Map.put(table_model, :rows, products)
+      products =
+        Blueprint.browse(
+          %Paging{offset: offset, limit: @limit},
+          %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+          include_archived: include_archived,
+          project_id: socket.assigns.project && socket.assigns.project.id
+        )
 
-    total_count = determine_total(products)
+      table_model = Map.put(table_model, :rows, products)
+      total_count = determine_total(products)
 
-    {:noreply,
-     assign(socket,
-       offset: offset,
-       table_model: table_model,
-       total_count: total_count,
-       text_search: text_search,
-       include_archived: include_archived
-     )}
+      {:noreply,
+       assign(socket,
+         offset: offset,
+         table_model: table_model,
+         total_count: total_count,
+         include_archived: include_archived
+       )}
+    end
   end
 
   @impl Phoenix.LiveView
@@ -133,7 +133,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
           page_change="paged_table_page_change"
           sort="paged_table_sort"
           total_count={@total_count}
-          filter={@text_search}
           limit={@limit}
           offset={@offset}
           table_model={@table_model}
@@ -176,14 +175,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
 
     include_archived = !socket.assigns.include_archived
 
-    %{offset: offset, limit: limit, table_model: table_model, text_search: text_search} =
-      socket.assigns
+    %{offset: offset, limit: limit, table_model: table_model} = socket.assigns
 
     products =
       Blueprint.browse(
         %Paging{offset: offset, limit: limit},
         %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        text_search: text_search,
         include_archived: include_archived,
         project_id: project_id
       )
@@ -207,8 +204,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   end
 
   def handle_event(event, params, socket) do
-    delegate_to({event, params, socket, &__MODULE__.patch_with/2}, [
-      &TextSearch.handle_delegated/4,
+    delegate_to({event, params, socket, &ProductsLive.patch_with/2}, [
       &PagedTable.handle_delegated/4
     ])
   end
@@ -218,24 +214,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   end
 
   def patch_with(socket, changes) do
-    {:noreply,
-     push_patch(socket,
-       to:
-         live_path(
-           socket,
-           Map.merge(
-             %{
-               sort_by: socket.assigns.table_model.sort_by_spec.name,
-               sort_order: socket.assigns.table_model.sort_order,
-               offset: socket.assigns.offset,
-               text_search: socket.assigns.text_search,
-               include_archived: socket.assigns.include_archived
-             },
-             changes
-           )
-         ),
-       replace: true
-     )}
+    path = live_path(socket, Map.merge(url_params(socket.assigns), changes))
+
+    {:noreply, push_patch(socket, to: path, replace: true)}
+  end
+
+  defp url_params(assigns) do
+    %{
+      sort_by: assigns.table_model.sort_by_spec.name,
+      sort_order: assigns.table_model.sort_order,
+      offset: assigns.offset,
+      include_archived: assigns.include_archived,
+      sidebar_expanded: assigns.sidebar_expanded
+    }
   end
 
   defp determine_total([]), do: 0
