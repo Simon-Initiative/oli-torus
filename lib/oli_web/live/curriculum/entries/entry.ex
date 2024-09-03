@@ -7,7 +7,6 @@ defmodule OliWeb.Curriculum.Entry do
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.{Actions, Details, LearningSummary}
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Links
 
   attr(:ctx, :map, required: true)
@@ -53,14 +52,7 @@ defmodule OliWeb.Curriculum.Entry do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
             <.link
               class="entry-title mx-3"
-              href={
-                Routes.resource_path(
-                  OliWeb.Endpoint,
-                  :edit,
-                  @project.slug,
-                  @child.slug
-                )
-              }
+              href={~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}"}
             >
               Edit Page
             </.link>

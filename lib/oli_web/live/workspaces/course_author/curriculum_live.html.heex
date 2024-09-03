@@ -1,0 +1,195 @@
+<%= render_modal(assigns) %>
+
+<Modal.modal
+  id="options_modal"
+  class="w-auto min-w-[50%]"
+  body_class="px-6"
+  on_cancel={JS.push("restart_options_modal")}
+>
+  <:title>
+    <%= @options_modal_assigns[:title] %>
+  </:title>
+
+  <%= if @options_modal_assigns do %>
+    <.live_component
+      module={OptionsModalContent}
+      ctx={@ctx}
+      id="modal_content"
+      redirect_url={@options_modal_assigns.redirect_url}
+      revision={@options_modal_assigns.revision}
+      project={@project}
+      project_hierarchy={@project_hierarchy}
+      validate={JS.push("validate-options")}
+      submit={JS.push("save-options")}
+      cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+      form={@options_modal_assigns.form}
+    />
+  <% end %>
+  <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
+  </div>
+</Modal.modal>
+
+<div id="curriculum-container" class="container flex flex-col gap-y-6 p-8 curriculum-editor">
+  <div class="flex justify-between items-center mb-3">
+    <p>
+      Create and arrange your learning materials below.
+    </p>
+    <div class="flex items-center gap-x-4">
+      <.link
+        :if={@has_show_links_uri_hash and Accounts.is_system_admin?(@author)}
+        navigate={~p[/project/#{@project.slug}/history/slug/#{@container.slug}]}
+      >
+        <i class="fas fa-history"></i> View revision history
+      </.link>
+    </div>
+  </div>
+  <div class="grid grid-cols-12">
+    <div class="col-span-12">
+      <div class="change-view-buttons">
+        <div class="btn-group btn-group-toggle" data-bs-toggle="buttons">
+          <label
+            phx-click="change-view"
+            phx-value-view="Basic"
+            class={"btn btn-xs #{if @view == "Basic", do: "active"}"}
+          >
+            <input type="radio" name="options" id="view-1" checked={@view == "Basic"} />
+            <span>Basic</span>
+          </label>
+
+          <label
+            phx-click="change-view"
+            phx-value-view="Detailed"
+            class={"btn btn-xs #{if @view == "Detailed", do: "active"}"}
+          >
+            <input type="radio" name="options" id="view-2" checked={@view == "Detailed"} />
+            <span>Detailed</span>
+          </label>
+
+          <label
+            phx-click="change-view"
+            phx-value-view="Learning Summary"
+            class={"btn btn-xs #{if @view === "Learning Summary", do: "active"}"}
+          >
+            <input type="radio" name="options" id="view-3" checked={@view == "Learning Summary"} />
+            <span>Learning</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-cols-12" phx-window-keydown="keydown">
+    <div class="col-span-12">
+      <div class="curriculum-entries">
+        <%= if Enum.count(@children) == 0 do %>
+          <div style="margin-top: 15px">
+            <p>There's nothing here.</p>
+          </div>
+        <% end %>
+        <%= for {child, index} <- Enum.with_index(@children) |> Enum.filter(fn {c, _i} -> c.slug != @dragging end) do %>
+          <DropTarget.render index={index} />
+          <Entry.render
+            ctx={@ctx}
+            editor={Map.get(@resources_being_edited, child.resource_id)}
+            author={@author}
+            selected={child == @selected}
+            container={@container}
+            child={child}
+            activity_ids={Map.get(@rollup.page_activity_map, child.resource_id)}
+            activity_map={@rollup.activity_map}
+            objective_map={@rollup.objective_map}
+            index={index}
+            project={@project}
+            view={@view}
+            numberings={@numberings}
+            revision_history_link={
+              @has_show_links_uri_hash and Accounts.is_system_admin?(@author)
+            }
+          />
+        <% end %>
+        <%!-- <DropTarget id="last" index={length(@children)} /> --%>
+      </div>
+      <div class="mt-5">
+        <div class="flex mb-3">
+          <div class="border rounded shadow-md p-2">
+            <div class="text-secondary mb-3">Create a page:</div>
+            <div class="flex mb-2">
+              <div class="grid grid-cols-3 gap-x-4">
+                <%= if @adaptivity_flag do %>
+                  <div class="flex flex-col">
+                    <div
+                      class="mb-2"
+                      title="Contains basic elements such as paragraphs, images, and activities"
+                    >
+                      Basic
+                    </div>
+                    <div title="Contains rich content, images, styles and layouts and can be used to create adaptive learning experiences based on rules defined for a lesson">
+                      Adaptive
+                    </div>
+                  </div>
+                <% end %>
+                <div class="flex flex-col">
+                  <button
+                    phx-click="add"
+                    phx-value-type="Basic"
+                    phx-value-scored="Unscored"
+                    title="Questions on the page will not be scored"
+                    class="btn btn-xs btn-outline-primary mb-2"
+                    type="button"
+                  >
+                    Practice
+                  </button>
+                  <%= if @adaptivity_flag do %>
+                    <button
+                      phx-click="add"
+                      phx-value-type="Adaptive"
+                      phx-value-scored="Unscored"
+                      title="Questions on the page will not be scored"
+                      class="btn btn-xs btn-outline-primary"
+                      type="button"
+                    >
+                      Practice
+                    </button>
+                  <% end %>
+                </div>
+                <div class="flex flex-col">
+                  <button
+                    phx-click="add"
+                    phx-value-type="Basic"
+                    phx-value-scored="Scored"
+                    title="Questions on the page will be scored"
+                    class="btn btn-xs btn-outline-primary mb-2"
+                    type="button"
+                  >
+                    Scored
+                  </button>
+                  <%= if @adaptivity_flag do %>
+                    <button
+                      phx-click="add"
+                      phx-value-type="Adaptive"
+                      phx-value-scored="Scored"
+                      title="Questions on the page will be scored"
+                      class="btn btn-xs btn-outline-primary"
+                      type="button"
+                    >
+                      Scored
+                    </button>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button
+          phx-click="add"
+          phx-value-type="Container"
+          phx-value-scored="Unscored"
+          title="A grouping of pages"
+          class="btn btn-xs btn-outline-primary mr-0.5"
+          type="button"
+        >
+          Create a <%= new_container_name(@numberings, @container) %>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
