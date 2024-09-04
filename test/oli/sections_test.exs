@@ -981,8 +981,6 @@ defmodule Oli.SectionsTest do
 
       # there is only seven since one of the pages is unreachable
       assert section_resources |> Enum.count() == 7
-
-
     end
 
     @tag capture_log: true

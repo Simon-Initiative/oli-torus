@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Sections.Updates do
-
   require Logger
   import Ecto.Query, warn: false
 
@@ -11,34 +10,34 @@ defmodule Oli.Delivery.Sections.Updates do
   alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.PostProcessing
+
   alias Oli.Delivery.Sections.{
     Section,
-    SectionResource,
+    SectionResource
   }
 
   @section_resources_on_conflict {:replace_all_except,
-    [
-      :inserted_at,
-      :scoring_strategy_id,
-      :scheduling_type,
-      :manually_scheduled,
-      :start_date,
-      :end_date,
-      :collab_space_config,
-      :explanation_strategy,
-      :max_attempts,
-      :retake_mode,
-      :assessment_mode,
-      :password,
-      :late_submit,
-      :late_start,
-      :time_limit,
-      :grace_period,
-      :review_submission,
-      :feedback_mode,
-      :feedback_scheduled_date
-    ]
-  }
+                                  [
+                                    :inserted_at,
+                                    :scoring_strategy_id,
+                                    :scheduling_type,
+                                    :manually_scheduled,
+                                    :start_date,
+                                    :end_date,
+                                    :collab_space_config,
+                                    :explanation_strategy,
+                                    :max_attempts,
+                                    :retake_mode,
+                                    :assessment_mode,
+                                    :password,
+                                    :late_submit,
+                                    :late_start,
+                                    :time_limit,
+                                    :grace_period,
+                                    :review_submission,
+                                    :feedback_mode,
+                                    :feedback_scheduled_date
+                                  ]}
 
   @doc """
   Gracefully applies the specified publication update to a given section by leaving the existing
@@ -55,25 +54,27 @@ defmodule Oli.Delivery.Sections.Updates do
         %Section{id: section_id} = section,
         publication_id
       ) do
-
     Broadcaster.broadcast_update_progress(section.id, publication_id, 0)
 
     new_publication = Publishing.get_publication!(publication_id)
     project = Oli.Repo.get(Oli.Authoring.Course.Project, new_publication.project_id)
     current_publication = Sections.get_current_publication(section_id, project.id)
 
-    result = Oli.Repo.transaction(fn ->
-      case do_update(section, project.id, current_publication, new_publication) do
-        {:ok, _} ->
-          do_post_processing_steps(section, project)
-        e ->
-          Oli.Repo.rollback(e)
-      end
-    end)
+    result =
+      Oli.Repo.transaction(fn ->
+        case do_update(section, project.id, current_publication, new_publication) do
+          {:ok, _} ->
+            do_post_processing_steps(section, project)
+
+          e ->
+            Oli.Repo.rollback(e)
+        end
+      end)
 
     case result do
       {:ok, _} ->
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
+
       _ ->
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, 0)
     end
@@ -85,7 +86,7 @@ defmodule Oli.Delivery.Sections.Updates do
     # For a section based on this project, update the has_experiments in the section to match that
     # setting in the project.
     if section.base_project_id == project.id and
-          project.has_experiments != section.has_experiments do
+         project.has_experiments != section.has_experiments do
       Oli.Delivery.Sections.update_section(section, %{has_experiments: project.has_experiments})
     end
 
@@ -99,7 +100,6 @@ defmodule Oli.Delivery.Sections.Updates do
   # taking into account the update type (minor / major) and the source of the section
   # (project / product)
   defp do_update(section, project_id, current_publication, new_publication) do
-
     case Publishing.get_publication_diff(current_publication, new_publication) do
       %PublicationDiff{classification: :minor} = diff ->
         do_minor_update(diff, section, project_id, new_publication)
@@ -107,7 +107,8 @@ defmodule Oli.Delivery.Sections.Updates do
       %PublicationDiff{classification: :major} = diff ->
         cond do
           # Case 1: The course section is based on this project, but is not a product and is not seeded from a product
-          section.base_project_id == project_id and section.type == :enrollable and is_nil(section.blueprint_id) ->
+          section.base_project_id == project_id and section.type == :enrollable and
+              is_nil(section.blueprint_id) ->
             do_major_update(diff, section, project_id, current_publication, new_publication)
 
           # Case 2: The course section is based on this project and was seeded from a product
@@ -138,20 +139,19 @@ defmodule Oli.Delivery.Sections.Updates do
   # 3. Move forard the SPP records to the new publication
   # 4. Cull unreachable pages.
   defp do_minor_update(%PublicationDiff{} = diff, section, project_id, new_publication) do
-
     mark = Oli.Timing.mark()
 
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     case diff
-      |> filter_for_revisions(:added, fn r -> r.resource_type_id != container_type_id end)
-      |> bulk_create_section_resources(section, project_id) do
-
+         |> filter_for_revisions(:added, fn r -> r.resource_type_id != container_type_id end)
+         |> bulk_create_section_resources(section, project_id) do
       {:ok, _} ->
         diff
-        |> filter_for_revisions(:deleted, fn r -> r.resource_type_id != container_type_id
-          and r.resource_type_id != page_type_id
+        |> filter_for_revisions(:deleted, fn r ->
+          r.resource_type_id != container_type_id and
+            r.resource_type_id != page_type_id
         end)
         |> bulk_delete_section_resources(section)
 
@@ -167,17 +167,14 @@ defmodule Oli.Delivery.Sections.Updates do
 
       {:error, _} ->
         {:error, :unexpected_count}
-      end
-
+    end
   end
 
   # Add all and delete all SR records that were added/deleted in the publication diff
   defp add_remove_srs(%PublicationDiff{} = diff, section, project_id) do
-
     case diff
-      |> filter_for_revisions(:added, fn _r -> true end)
-      |> bulk_create_section_resources(section, project_id) do
-
+         |> filter_for_revisions(:added, fn _r -> true end)
+         |> bulk_create_section_resources(section, project_id) do
       {:ok, _} ->
         diff
         |> filter_for_revisions(:deleted, fn _r -> true end)
@@ -187,8 +184,7 @@ defmodule Oli.Delivery.Sections.Updates do
 
       {:error, _} ->
         {:error, :unexpected_count}
-      end
-
+    end
   end
 
   # For a publication diff and a desired type (:added, :deleted) return
@@ -203,30 +199,30 @@ defmodule Oli.Delivery.Sections.Updates do
   # Bulk create a collection of Section Resource records (SRs) for a collection
   # of revisions
   defp bulk_create_section_resources(revisions, section, project_id) do
-
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     placeholders = %{timestamp: now}
 
-    section_resource_rows = Enum.map(revisions, fn r ->
-      %{
-        resource_id: r.resource_id,
-        project_id: project_id,
-        section_id: section.id,
-        children: nil,
-        scoring_strategy_id: r.scoring_strategy_id,
-        slug: Oli.Utils.Slug.generate("section_resources", r.title),
-        inserted_at: {:placeholder, :timestamp},
-        updated_at: {:placeholder, :timestamp}
-      }
-    end)
+    section_resource_rows =
+      Enum.map(revisions, fn r ->
+        %{
+          resource_id: r.resource_id,
+          project_id: project_id,
+          section_id: section.id,
+          children: nil,
+          scoring_strategy_id: r.scoring_strategy_id,
+          slug: Oli.Utils.Slug.generate("section_resources", r.title),
+          inserted_at: {:placeholder, :timestamp},
+          updated_at: {:placeholder, :timestamp}
+        }
+      end)
 
     expected_count = Enum.count(section_resource_rows)
 
     case Oli.Utils.Database.batch_insert_all(SectionResource, section_resource_rows,
-      placeholders: placeholders,
-      on_conflict: @section_resources_on_conflict,
-      conflict_target: [:section_id, :resource_id]) do
-
+           placeholders: placeholders,
+           on_conflict: @section_resources_on_conflict,
+           conflict_target: [:section_id, :resource_id]
+         ) do
       {^expected_count, _} -> {:ok, Enum.count(section_resource_rows)}
       _ -> {:error, :unexpected_count}
     end
@@ -249,54 +245,70 @@ defmodule Oli.Delivery.Sections.Updates do
   # 3. Update contain children - this is the key step that differentiates major from minor
   #       updates where we update the :children attr of the containers to change the hiearchy
   # 4. Rebuild previous next index, contained pages, contained objective
-  defp do_major_update(%PublicationDiff{} = diff, section, project_id, prev_publication, new_publication) do
-
+  defp do_major_update(
+         %PublicationDiff{} = diff,
+         section,
+         project_id,
+         prev_publication,
+         new_publication
+       ) do
     mark = Oli.Timing.mark()
 
     add_remove_srs(diff, section, project_id)
     Sections.update_section_project_publication(section, project_id, new_publication.id)
 
     with {:ok, _} <- update_container_children(section, prev_publication, new_publication),
-      {:ok, _} <- cull_unreachable_pages(section),
-      {:ok, _} <- Oli.Delivery.PreviousNextIndex.rebuild(section),
-      {:ok, _} <- Sections.rebuild_contained_pages(section),
-      {:ok, _} <- Sections.rebuild_contained_objectives(section) do
-        Logger.info(
-          "perform_update.MAJOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
-        )
+         {:ok, _} <- cull_unreachable_pages(section),
+         {:ok, _} <- Oli.Delivery.PreviousNextIndex.rebuild(section),
+         {:ok, _} <- Sections.rebuild_contained_pages(section),
+         {:ok, _} <- Sections.rebuild_contained_objectives(section) do
+      Logger.info(
+        "perform_update.MAJOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
+      )
+
       {:ok, :ok}
     else
       e -> e
     end
-
   end
 
   defp cull_unreachable_pages(section) do
-
     section_id = section.id
 
-    map = Oli.Delivery.Sections.MinimalHierarchy.full_hierarchy(section.slug)
-    |> Oli.Delivery.Hierarchy.flatten()
-    |> Enum.reduce(%{}, fn s, m -> Map.put(m, s.section_resource.id, s) end)
+    map =
+      Oli.Delivery.Sections.MinimalHierarchy.full_hierarchy(section.slug)
+      |> Oli.Delivery.Hierarchy.flatten()
+      |> Enum.reduce(%{}, fn s, m -> Map.put(m, s.section_resource.id, s) end)
 
-    hierarchy_ids = Map.values(map)
-    |> Enum.map(fn s ->
-      [s.section_resource.resource_id | Enum.map(s.children, fn c -> Map.get(map, c.section_resource.id).section_resource.resource_id end)]
-    end)
-    |> List.flatten()
+    hierarchy_ids =
+      Map.values(map)
+      |> Enum.map(fn s ->
+        [
+          s.section_resource.resource_id
+          | Enum.map(s.children, fn c ->
+              Map.get(map, c.section_resource.id).section_resource.resource_id
+            end)
+        ]
+      end)
+      |> List.flatten()
 
-    publication_ids = Oli.Repo.all(Oli.Delivery.Sections.SectionsProjectsPublications, section_id: section.id)
-    |> Enum.map(fn spp -> spp.publication_id end)
+    publication_ids =
+      Oli.Repo.all(Oli.Delivery.Sections.SectionsProjectsPublications, section_id: section.id)
+      |> Enum.map(fn spp -> spp.publication_id end)
 
     unreachable_page_resource_ids =
       case section.required_survey_resource_id do
-        nil -> Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, hierarchy_ids)
-        id -> Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, [id | hierarchy_ids])
+        nil ->
+          Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, hierarchy_ids)
+
+        id ->
+          Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, [id | hierarchy_ids])
       end
 
     case unreachable_page_resource_ids do
       [] ->
         {:ok, true}
+
       _ ->
         from(sr in SectionResource,
           where: sr.section_id == ^section_id and sr.resource_id in ^unreachable_page_resource_ids
@@ -325,7 +337,7 @@ defmodule Oli.Delivery.Sections.Updates do
       |> Enum.reduce({%{}, %{}}, fn %SectionResource{id: id, resource_id: resource_id},
                                     {sr_id_to_resource_id, resource_id_to_sr_id} ->
         {Map.put(sr_id_to_resource_id, id, resource_id),
-          Map.put(resource_id_to_sr_id, resource_id, id)}
+         Map.put(resource_id_to_sr_id, resource_id, id)}
       end)
 
     # For all container section resources in the course project whose children attribute differs
@@ -419,12 +431,12 @@ defmodule Oli.Delivery.Sections.Updates do
     expected_count = Enum.count(section_resource_rows)
 
     case Oli.Utils.Database.batch_insert_all(SectionResource, section_resource_rows,
-      placeholders: placeholders,
-      on_conflict: @section_resources_on_conflict,
-      conflict_target: [:section_id, :resource_id]) do
+           placeholders: placeholders,
+           on_conflict: @section_resources_on_conflict,
+           conflict_target: [:section_id, :resource_id]
+         ) do
       {^expected_count, _} -> {:ok, expected_count}
       _ -> {:error, :unexpected_count}
     end
   end
-
 end
