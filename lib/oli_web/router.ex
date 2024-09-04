@@ -789,15 +789,14 @@ defmodule OliWeb.Router do
   scope "/workspaces/", OliWeb.Workspaces do
     pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
 
-    live_session :workspaces,
+    live_session :course_author_workspace,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetProject,
-        OliWeb.LiveSessionPlugs.SetSection
+        OliWeb.LiveSessionPlugs.SetProject
       ] do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)
@@ -815,14 +814,35 @@ defmodule OliWeb.Router do
         live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
       end
+    end
 
+    live_session :instructor_workspace,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetSection
+      ] do
       scope "/instructor", Instructor do
         live("/", IndexLive)
         live("/:section_slug/:view", DashboardLive)
         live("/:section_slug/:view/:active_tab", DashboardLive)
       end
+    end
 
-      live("/student", Student)
+    live_session :student_workspace,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+      ] do
+      scope "/student" do
+        live("/", Student)
+      end
     end
   end
 
