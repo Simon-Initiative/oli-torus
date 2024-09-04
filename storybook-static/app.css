@@ -81,8 +81,7 @@ Add the correct text decoration in Chrome, Edge, and Safari.
 */
 
 abbr:where([title]) {
-  -webkit-text-decoration: underline dotted;
-          text-decoration: underline dotted;
+  text-decoration: underline dotted;
 }
 
 /*
@@ -420,9 +419,8 @@ video {
 }
 
 [type='text'],[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week'],[multiple],textarea,select {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+  -moz-appearance: none;
+       appearance: none;
   background-color: #fff;
   border-color: #737373;
   border-width: 1px;
@@ -491,17 +489,15 @@ select {
 }
 
 [type='checkbox'],[type='radio'] {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+  -moz-appearance: none;
+       appearance: none;
   padding: 0;
   print-color-adjust: exact;
   display: inline-block;
   vertical-align: middle;
   background-origin: border-box;
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+       user-select: none;
   flex-shrink: 0;
   height: 1rem;
   width: 1rem;
@@ -735,9 +731,8 @@ select {
 }
 
 .form-input,.form-textarea,.form-select,.form-multiselect {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+  -moz-appearance: none;
+       appearance: none;
   background-color: #fff;
   border-color: #737373;
   border-width: 1px;
@@ -2177,8 +2172,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
 }
 
 .dropdown .dropdown-menu a.dropdown-item:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dropdown .dropdown-menu button.dropdown-item {
@@ -2888,8 +2882,7 @@ html.dark .nav-tabs .nav-item.show .nav-link {
 .btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 .btn-link.text-danger:hover {
@@ -2902,15 +2895,13 @@ html.dark .nav-tabs .nav-item.show .nav-link {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .btn[disabled]:hover,
 .btn.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark .btn[disabled],.dark 
@@ -3135,8 +3126,7 @@ a.dropdown-item,
 .dropdown-item a {
   --tw-text-opacity: 1;
   color: rgb(64 64 64 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.dropdown-item,.dark 
@@ -3201,8 +3191,7 @@ a.dropdown-item,
 /* remove underline from links in dropdown menus and tabs */
 
 a.nav-link:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .form-group {
@@ -3377,8 +3366,7 @@ li.page-item {
   padding-right: 0.75rem;
   --tw-text-opacity: 1;
   color: rgb(55 58 68 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
   outline: 2px solid transparent;
   outline-offset: 2px;
   transition-property: all;
@@ -3724,8 +3712,7 @@ li.page-item {
 }
 
 .modal-dialog .modal-header .btn-close:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
   opacity: 0.75;
 }
 
@@ -6011,9 +5998,8 @@ table.table-striped tbody tr:nth-child(even) {
 }
 
 .select-none {
-  -webkit-user-select: none;
-     -moz-user-select: none;
-          user-select: none;
+  -moz-user-select: none;
+       user-select: none;
 }
 
 .resize-none {
@@ -6037,9 +6023,8 @@ table.table-striped tbody tr:nth-child(even) {
 }
 
 .appearance-none {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
+  -moz-appearance: none;
+       appearance: none;
 }
 
 .grid-cols-1 {
@@ -9167,23 +9152,19 @@ table.table-striped tbody tr:nth-child(even) {
 }
 
 .underline {
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 .line-through {
-  -webkit-text-decoration-line: line-through;
-          text-decoration-line: line-through;
+  text-decoration-line: line-through;
 }
 
 .\!no-underline {
-  -webkit-text-decoration-line: none !important;
-          text-decoration-line: none !important;
+  text-decoration-line: none !important;
 }
 
 .no-underline {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .underline-offset-4 {
@@ -9393,32 +9374,26 @@ table.table-striped tbody tr:nth-child(even) {
 
 .backdrop-blur {
   --tw-backdrop-blur: blur(8px);
-  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
-          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .backdrop-blur-\[30px\] {
   --tw-backdrop-blur: blur(30px);
-  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
-          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .backdrop-blur-md {
   --tw-backdrop-blur: blur(12px);
-  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
-          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .backdrop-blur-sm {
   --tw-backdrop-blur: blur(4px);
-  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
-          backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 
 .transition {
-  transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -9442,9 +9417,7 @@ table.table-striped tbody tr:nth-child(even) {
 }
 
 .transition-colors {
-  transition-property: color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -9729,16 +9702,14 @@ button.torus-button.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button[disabled]:hover,a.torus-button.disabled:hover,
 button.torus-button[disabled]:hover,
 button.torus-button.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.torus-button[disabled],.dark a.torus-button.disabled,.dark 
@@ -9754,16 +9725,14 @@ button.torus-button.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button[disabled]:hover,a.torus-button.disabled:hover,
 button.torus-button[disabled]:hover,
 button.torus-button.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.torus-button[disabled],.dark a.torus-button.disabled,.dark 
@@ -9810,8 +9779,7 @@ a
 button.torus-button.btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 aa.torus-button,a
@@ -9821,14 +9789,12 @@ button.torus-button {
 
 aa.torus-button:hover,a
 button.torus-button:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button:hover,
 button.torus-button:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.primary,
@@ -9851,16 +9817,14 @@ button.torus-button.primary.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.primary[disabled]:hover,a.torus-button.primary.disabled:hover,
 button.torus-button.primary[disabled]:hover,
 button.torus-button.primary.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.torus-button.primary[disabled],.dark a.torus-button.primary.disabled,.dark 
@@ -9876,16 +9840,14 @@ button.torus-button.primary.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.primary[disabled]:hover,a.torus-button.primary.disabled:hover,
 button.torus-button.primary[disabled]:hover,
 button.torus-button.primary.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.torus-button.primary[disabled],.dark a.torus-button.primary.disabled,.dark 
@@ -9932,8 +9894,7 @@ a
 button.torus-button.primary.btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 aa.torus-button.primary,a
@@ -9943,8 +9904,7 @@ button.torus-button.primary {
 
 aa.torus-button.primary:hover,a
 button.torus-button.primary:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.primary:hover,
@@ -9978,14 +9938,12 @@ button.torus-button.secondary[disabled],button.torus-button.secondary.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 button.torus-button.secondary[disabled]:hover,button.torus-button.secondary.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark button.torus-button.secondary[disabled],.dark button.torus-button.secondary.disabled {
@@ -9997,14 +9955,12 @@ button.torus-button.secondary[disabled],button.torus-button.secondary.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 button.torus-button.secondary[disabled]:hover,button.torus-button.secondary.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark button.torus-button.secondary[disabled],.dark button.torus-button.secondary.disabled {
@@ -10041,8 +9997,7 @@ abutton.torus-button.secondary.btn-link {
 abutton.torus-button.secondary.btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 abutton.torus-button.secondary {
@@ -10050,8 +10005,7 @@ abutton.torus-button.secondary {
 }
 
 abutton.torus-button.secondary:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 button.torus-button.secondary:hover {
@@ -10098,14 +10052,12 @@ button.torus-button.outline[disabled],button.torus-button.outline.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 button.torus-button.outline[disabled]:hover,button.torus-button.outline.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark button.torus-button.outline[disabled],.dark button.torus-button.outline.disabled {
@@ -10117,14 +10069,12 @@ button.torus-button.outline[disabled],button.torus-button.outline.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 button.torus-button.outline[disabled]:hover,button.torus-button.outline.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark button.torus-button.outline[disabled],.dark button.torus-button.outline.disabled {
@@ -10161,8 +10111,7 @@ abutton.torus-button.outline.btn-link {
 abutton.torus-button.outline.btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 abutton.torus-button.outline {
@@ -10170,8 +10119,7 @@ abutton.torus-button.outline {
 }
 
 abutton.torus-button.outline:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 button.torus-button.outline:hover {
@@ -10226,16 +10174,14 @@ button.torus-button.error.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.error[disabled]:hover,a.torus-button.error.disabled:hover,
 button.torus-button.error[disabled]:hover,
 button.torus-button.error.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.torus-button.error[disabled],.dark a.torus-button.error.disabled,.dark 
@@ -10251,16 +10197,14 @@ button.torus-button.error.disabled {
   cursor: default;
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.error[disabled]:hover,a.torus-button.error.disabled:hover,
 button.torus-button.error[disabled]:hover,
 button.torus-button.error.disabled:hover {
   background-color: inherit;
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .dark a.torus-button.error[disabled],.dark a.torus-button.error.disabled,.dark 
@@ -10307,8 +10251,7 @@ a
 button.torus-button.error.btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 aa.torus-button.error,a
@@ -10318,8 +10261,7 @@ button.torus-button.error {
 
 aa.torus-button.error:hover,a
 button.torus-button.error:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.torus-button.error:hover,
@@ -10907,7 +10849,6 @@ div:has(.remix_materials_publications_table) tbody tr:last-of-type {
   z-index: 3;
   height: 10px;
   border-radius: 0 0 3px 0;
-  -webkit-user-select: none;
   -moz-user-select: none;
        user-select: none;
 }
@@ -11107,7 +11048,6 @@ div:has(.remix_materials_publications_table) tbody tr:last-of-type {
   justify-content: space-between;
   align-items: center;
   border-radius: 3px 3px 0 0;
-  -webkit-user-select: none;
   -moz-user-select: none;
        user-select: none;
   flex-wrap: wrap;
@@ -11539,7 +11479,6 @@ body[data-color-mode*='light'] {
 
 .wmde-markdown abbr[title] {
   border-bottom: none;
-  -webkit-text-decoration: underline dotted;
   text-decoration: underline dotted;
 }
 
@@ -11875,7 +11814,6 @@ body[data-color-mode*='light'] {
 .wmde-markdown input::-webkit-outer-spin-button,
 .wmde-markdown input::-webkit-inner-spin-button {
   margin: 0;
-  -webkit-appearance: none;
   appearance: none;
 }
 
@@ -12525,8 +12463,7 @@ a:hover,
 a.btn.btn-link:hover {
   --tw-text-opacity: 1;
   color: rgb(39 92 175 / var(--tw-text-opacity));
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 a.btn {
@@ -12534,8 +12471,7 @@ a.btn {
 }
 
 a.btn:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 a.external::after,
@@ -13455,13 +13391,11 @@ https://tailwindcss.com/docs/utility-first
 }
 
 .hover\:underline:hover {
-  -webkit-text-decoration-line: underline;
-          text-decoration-line: underline;
+  text-decoration-line: underline;
 }
 
 .hover\:no-underline:hover {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .hover\:underline-offset-2:hover {
@@ -13568,8 +13502,7 @@ https://tailwindcss.com/docs/utility-first
 }
 
 .focus\:no-underline:focus {
-  -webkit-text-decoration-line: none;
-          text-decoration-line: none;
+  text-decoration-line: none;
 }
 
 .focus\:opacity-100:focus {
@@ -16088,8 +16021,7 @@ https://tailwindcss.com/docs/utility-first
 
   .lg\:backdrop-blur-xl {
     --tw-backdrop-blur: blur(24px);
-    -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
-            backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+    backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
   }
 
   .dark .dark\:lg\:bg-gray-900\/80 {
