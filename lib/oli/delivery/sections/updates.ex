@@ -95,6 +95,9 @@ defmodule Oli.Delivery.Sections.Updates do
     Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
   end
 
+  # Implements the logic to determine *how* to apply the update to the course section,
+  # taking into account the update type (minor / major) and the source of the section
+  # (project / product)
   defp do_update(section, project_id, current_publication, new_publication) do
 
     case Publishing.get_publication_diff(current_publication, new_publication) do
@@ -126,6 +129,14 @@ defmodule Oli.Delivery.Sections.Updates do
     end
   end
 
+  # Perform a MINOR update:
+  # 1. Add SR records for all resource types that were added in this pub, except for containers
+  # 2. Delete SR records for all resource types that were deleted EXCEPT for pages and containers.
+  #       We cannot delete page SR records because we may be applying a major update as a minor
+  #       update - and we need that page to stay present if we are not processing the removal from
+  #       the container
+  # 3. Move forard the SPP records to the new publication
+  # 4. Cull unreachable pages.
   defp do_minor_update(%PublicationDiff{} = diff, section, project_id, new_publication) do
 
     mark = Oli.Timing.mark()
@@ -160,17 +171,16 @@ defmodule Oli.Delivery.Sections.Updates do
 
   end
 
+  # Add all and delete all SR records that were added/deleted in the publication diff
   defp add_remove_srs(%PublicationDiff{} = diff, section, project_id) do
 
-    mark = Oli.Timing.mark()
-
     case diff
-      |> filter_for_revisions(:added, fn r -> true end)
+      |> filter_for_revisions(:added, fn _r -> true end)
       |> bulk_create_section_resources(section, project_id) do
 
       {:ok, _} ->
         diff
-        |> filter_for_revisions(:deleted, fn r -> true end)
+        |> filter_for_revisions(:deleted, fn _r -> true end)
         |> bulk_delete_section_resources(section)
 
         {:ok, :ok}
@@ -181,13 +191,17 @@ defmodule Oli.Delivery.Sections.Updates do
 
   end
 
-  defp filter_for_revisions(%PublicationDiff{} = diff, desired_type, filter_fn \\ fn _ -> true end) do
+  # For a publication diff and a desired type (:added, :deleted) return
+  # all of the revisions that pass the supplied filter func
+  defp filter_for_revisions(%PublicationDiff{} = diff, desired_type, filter_fn) do
     Map.filter(diff.changes, fn {_k, {this_type, _}} -> this_type == desired_type end)
     |> Map.values()
     |> Enum.map(fn {_, %{revision: r}} -> r end)
     |> Enum.filter(filter_fn)
   end
 
+  # Bulk create a collection of Section Resource records (SRs) for a collection
+  # of revisions
   defp bulk_create_section_resources(revisions, section, project_id) do
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
@@ -218,6 +232,7 @@ defmodule Oli.Delivery.Sections.Updates do
     end
   end
 
+  # Bulk delete a collection of SR records that match a collection of revisions
   defp bulk_delete_section_resources(revisions, %Section{id: section_id}) do
     resource_ids = Enum.map(revisions, & &1.resource_id)
 
@@ -227,6 +242,13 @@ defmodule Oli.Delivery.Sections.Updates do
     |> Repo.delete_all()
   end
 
+  # Do a MAJOR update
+  # 1. Add / Remove all SR records per the publication diff. This step is different than minor
+  #       updates because we add and remove containers as well
+  # 2. Move forward the SPP record to the new publication id
+  # 3. Update contain children - this is the key step that differentiates major from minor
+  #       updates where we update the :children attr of the containers to change the hiearchy
+  # 4. Rebuild previous next index, contained pages, contained objective
   defp do_major_update(%PublicationDiff{} = diff, section, project_id, prev_publication, new_publication) do
 
     mark = Oli.Timing.mark()
