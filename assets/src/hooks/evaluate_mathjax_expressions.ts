@@ -3,8 +3,31 @@
 
 export const EvaluateMathJaxExpressions = {
   mounted() {
-    const elements = document.querySelectorAll('.formula');
+    const elements = document.querySelectorAll('.formula, .formula-inline');
 
-    window.MathJax.typesetPromise(Array.from(elements) as HTMLElement[]);
+    const getGlobalLastPromise = () => {
+      /* istanbul ignore next */
+      let lastPromise = window?.MathJax?.startup?.promise;
+      /* istanbul ignore next */
+      if (!lastPromise) {
+        console.info('NO LAST PROMISE');
+        typeof jest === 'undefined' &&
+          console.warn(
+            'Load the MathJax script before this one or unpredictable rendering might occur.',
+          );
+        lastPromise = Promise.resolve();
+      }
+      return lastPromise;
+    };
+
+    const setGlobalLastPromise = (promise: Promise<any>) => {
+      window.MathJax.startup.promise = promise;
+    };
+
+    let lastPromise = getGlobalLastPromise();
+    lastPromise = lastPromise.then(() =>
+      window.MathJax.typesetPromise(Array.from(elements) as HTMLElement[]),
+    );
+    setGlobalLastPromise(lastPromise);
   },
 };
