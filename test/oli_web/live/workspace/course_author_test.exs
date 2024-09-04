@@ -566,6 +566,50 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       assert has_element?(view, ~s(#activity-bank))
       assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
     end
+
+    test "experiments menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/experiments")
+
+      assert has_element?(view, "h3", "A/B Testing with UpGrade")
+
+      assert has_element?(
+               view,
+               "p",
+               "To support A/B testing, Torus integrates with the A/B testing platform"
+             )
+
+      assert has_element?(view, "label", "Enable A/B testing with UpGrade")
+    end
+
+    test "review menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/review")
+
+      assert has_element?(
+               view,
+               "p",
+               "Run an automated review before publishing to check for broken links and other common issues that may be present in your course."
+             )
+
+      assert has_element?(view, "button", "Run Review")
+      assert has_element?(view, "a", "Preview Course")
+    end
+
+    test "all activities menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activities")
+
+      assert has_element?(view, "h3", "Browse All Activities")
+      assert has_element?(view, ~s(input[id='text-search-input']))
+      assert has_element?(view, "a", "Open Sync View")
+    end
   end
 
   defp create_project_with_owner(owner, attrs \\ %{}) do
