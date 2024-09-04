@@ -1,4 +1,4 @@
-defmodule OliWeb.Curriculum.Entry do
+defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
   @moduledoc """
   Curriculum item entry component.
   """
@@ -7,8 +7,7 @@ defmodule OliWeb.Curriculum.Entry do
   import OliWeb.Curriculum.Utils
 
   alias OliWeb.Curriculum.{Actions, Details, LearningSummary}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Links
+  alias Oli.Resources.Numbering
 
   attr(:ctx, :map, required: true)
   attr(:child, :map, required: true)
@@ -48,19 +47,12 @@ defmodule OliWeb.Curriculum.Entry do
         <div class="flex-1">
           <%= entry_icon(assigns) %>
           <%= if Oli.Resources.ResourceType.get_type_by_id(@child.resource_type_id) == "container" do %>
-            <%= Links.resource_link(@child, [], @project, @numberings, "ml-1 mr-1 entry-title") %>
+            <%= container_link(@child, @project, @numberings, "ml-1 mr-1 entry-title") %>
           <% else %>
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
             <.link
               class="entry-title mx-3"
-              href={
-                Routes.resource_path(
-                  OliWeb.Endpoint,
-                  :edit,
-                  @project.slug,
-                  @child.slug
-                )
-              }
+              href={~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}"}
             >
               Edit Page
             </.link>
@@ -113,5 +105,19 @@ defmodule OliWeb.Curriculum.Entry do
         """
       end
     end
+  end
+
+  defp container_link(revision, project, numberings, class) do
+    path = ~p"/workspaces/course_author/#{project.slug}/curriculum/#{revision.slug}"
+    numbering = Map.get(numberings, revision.id)
+
+    title =
+      if numbering do
+        Numbering.prefix(numbering) <> ": " <> revision.title
+      else
+        revision.title
+      end
+
+    link(title, to: path, class: class)
   end
 end
