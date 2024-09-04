@@ -22,7 +22,8 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :base_project_id,
           label: "Base Project",
-          render_fn: &__MODULE__.render_project_column/3
+          render_fn:
+            &__MODULE__.render_project_column(Map.put(&1, :project_slug, project_slug), &2, &3)
         },
         %ColumnSpec{
           name: :inserted_at,
@@ -59,7 +60,10 @@ defmodule OliWeb.Products.ProductsTableModel do
 
   def render_project_column(assigns, %{base_project: base_project}, _) do
     route_path =
-      Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
+      case Map.get(assigns, :project_slug) do
+        "" -> Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
+        _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
+      end
 
     SortableTableModel.render_link_column(assigns, base_project.title, route_path)
   end
