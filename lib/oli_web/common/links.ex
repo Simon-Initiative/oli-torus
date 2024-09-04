@@ -2,7 +2,6 @@ defmodule OliWeb.Common.Links do
   use Phoenix.HTML
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.Numbering
-  alias OliWeb.Workspaces.CourseAuthor.CurriculumLive
 
   @doc """
   Returns a path uri for a given revision. If the revision type is not
@@ -40,7 +39,12 @@ defmodule OliWeb.Common.Links do
         end
 
       "container" ->
-        Routes.live_path(OliWeb.Endpoint, CurriculumLive, project_slug, revision.slug)
+        Routes.container_path(
+          OliWeb.Endpoint,
+          :index,
+          project_slug,
+          revision.slug
+        )
 
       "tag" ->
         Routes.activity_bank_path(
