@@ -206,9 +206,6 @@ defmodule Oli.Delivery.Sections.Updates do
       }
     end)
 
-    IO.inspect "bulk create section resources"
-    IO.inspect section_resource_rows
-
     expected_count = Enum.count(section_resource_rows)
 
     case Oli.Utils.Database.batch_insert_all(SectionResource, section_resource_rows,
@@ -223,9 +220,6 @@ defmodule Oli.Delivery.Sections.Updates do
 
   defp bulk_delete_section_resources(revisions, %Section{id: section_id}) do
     resource_ids = Enum.map(revisions, & &1.resource_id)
-
-    IO.inspect "bulk delete section resources"
-    IO.inspect resource_ids
 
     from(sr in SectionResource,
       where: sr.section_id == ^section_id and sr.resource_id in ^resource_ids
@@ -259,9 +253,14 @@ defmodule Oli.Delivery.Sections.Updates do
 
     section_id = section.id
 
-    hierarchy_ids = Oli.Delivery.Sections.MinimalHierarchy.full_hierarchy(section.slug)
+    map = Oli.Delivery.Sections.MinimalHierarchy.full_hierarchy(section.slug)
     |> Oli.Delivery.Hierarchy.flatten()
-    |> Enum.map(fn node -> [node.section_resource.id | node.children] end)
+    |> Enum.reduce(%{}, fn s, m -> Map.put(m, s.section_resource.id, s) end)
+
+    hierarchy_ids = Map.values(map)
+    |> Enum.map(fn s ->
+      [s.section_resource.resource_id | Enum.map(s.children, fn c -> Map.get(map, c.section_resource.id).section_resource.resource_id end)]
+    end)
     |> List.flatten()
 
     publication_ids = Oli.Repo.all(Oli.Delivery.Sections.SectionsProjectsPublications, section_id: section.id)
@@ -273,12 +272,17 @@ defmodule Oli.Delivery.Sections.Updates do
         id -> Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, [id | hierarchy_ids])
       end
 
-    from(sr in SectionResource,
-      where: sr.section_id == ^section_id and sr.resource_id in ^unreachable_page_resource_ids
-    )
-    |> Repo.delete_all()
+    case unreachable_page_resource_ids do
+      [] ->
+        {:ok, true}
+      _ ->
+        from(sr in SectionResource,
+          where: sr.section_id == ^section_id and sr.resource_id in ^unreachable_page_resource_ids
+        )
+        |> Repo.delete_all()
 
-    {:ok, true}
+        {:ok, true}
+    end
   end
 
   defp update_container_children(section, prev_publication, new_publication) do
@@ -374,9 +378,6 @@ defmodule Oli.Delivery.Sections.Updates do
           section_resource
         end
       end)
-
-    IO.inspect "after update container children"
-    IO.inspect merged_section_resources
 
     # Upsert all merged section resource records. Some of these records may have just been created
     # and some may not have been changed, but that's okay we will just update them again. There
