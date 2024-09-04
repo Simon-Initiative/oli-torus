@@ -51,7 +51,7 @@
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >
-    <div class="absolute z-50 top-0 overview container">
+    <div class="absolute z-50 top-0 overview" style="width: inherit">
       <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">
           <div class="flex-1">
