@@ -38,7 +38,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           page_revision: page_revision
         } = context
       ) do
-    if is_nil(latest_resource_attempt) or latest_resource_attempt.revision_id != page_revision.id or
+    if is_nil(latest_resource_attempt) or
          latest_resource_attempt.lifecycle_state == :evaluated do
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
