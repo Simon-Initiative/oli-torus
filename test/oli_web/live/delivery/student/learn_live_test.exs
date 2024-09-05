@@ -1515,7 +1515,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               "#index_item_#{section_1.resource_id}_2023-11-03"
+               "#index_item_#{section_1.resource_id}_due_by_2023-11-03"
              )
     end
 
