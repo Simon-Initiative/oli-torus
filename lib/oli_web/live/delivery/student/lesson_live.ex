@@ -768,7 +768,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           />
           <div id="one_at_a_time_questions" class="relative h-[500px]">
             <%!--  render this as a component on MER-3640 --%>
-            <% question_number = Enum.find(@questions, fn {_, q} -> q.selected end) |> elem(0) %>
+            <% question_number =
+              Enum.find(@questions, {1, nil}, fn {_, q} -> q.selected end) |> elem(0) %>
             <% total_questions = Enum.count(@questions) %>
             <% question_points = Enum.random(5..10) %>
             <div class="absolute w-screen flex flex-col items-center -left-[50vw]">
