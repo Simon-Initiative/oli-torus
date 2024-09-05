@@ -796,7 +796,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetProject,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
         OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
@@ -817,32 +817,13 @@ defmodule OliWeb.Router do
         live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
       end
-    end
 
-    live_session :instructor_workspace,
-      root_layout: {OliWeb.LayoutView, :delivery},
-      layout: {OliWeb.Layouts, :workspace},
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
-        OliWeb.LiveSessionPlugs.SetSidebar,
-        OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetSection
-      ] do
       scope "/instructor", Instructor do
         live("/", IndexLive)
         live("/:section_slug/:view", DashboardLive)
         live("/:section_slug/:view/:active_tab", DashboardLive)
       end
-    end
 
-    live_session :student_workspace,
-      root_layout: {OliWeb.LayoutView, :delivery},
-      layout: {OliWeb.Layouts, :workspace},
-      on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
-        OliWeb.LiveSessionPlugs.SetSidebar,
-        OliWeb.LiveSessionPlugs.SetPreviewMode
-      ] do
       scope "/student" do
         live("/", Student)
       end
