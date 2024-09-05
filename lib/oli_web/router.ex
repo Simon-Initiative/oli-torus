@@ -796,7 +796,8 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetProject
+        OliWeb.LiveSessionPlugs.SetProject,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)

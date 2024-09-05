@@ -13,8 +13,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLive do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Workspaces.CourseAuthor.Activities.ActivitiesTableModel
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @limit 25
   @default_options %ActivityBrowseOptions{
     activity_type_id: nil,
