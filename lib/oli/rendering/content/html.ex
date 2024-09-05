@@ -812,7 +812,8 @@ defmodule Oli.Rendering.Content.Html do
           "inline" => true
         },
         html_element: "span",
-        container_tag: "span",
+        container_tag: :span,
+        receiver_tag: :span,
         id: "popup_#{UUID.uuid4()}"
       )
 
