@@ -473,6 +473,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     Sections.get_section_resource(section.id, page_12_revision.resource_id)
     |> Sections.update_section_resource(%{
+      scheduling_type: :due_by,
       start_date: ~U[2023-11-02 20:00:00Z],
       end_date: ~U[2023-11-03 20:00:00Z]
     })
@@ -1987,13 +1988,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section_1_element =
         element(
           view,
-          "#index_item_#{section_1.resource_id}_2023-11-03"
+          "#index_item_#{section_1.resource_id}_read_by_2023-11-03"
         )
 
       subsection_1_element =
         element(
           view,
-          "#index_item_#{subsection_1.resource_id}_2023-11-03"
+          "#index_item_#{subsection_1.resource_id}_read_by_2023-11-03"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
@@ -2003,7 +2004,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(subsection_1_element) =~ "ml-[20px]"
     end
 
-    test "groups pages within a module index by due date (even if some pages do not yet have a scheduled date)",
+    test "groups pages within a module index by due date or read by (even if some pages do not yet have a scheduled date)",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -2011,16 +2012,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="card_4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_2023-11-03"]})
+      group_by_read_by_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-03"]})
+
+      group_by_due_by_date_div = element(view, ~s{div[id="pages_grouped_by_due_by_2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled"]})
+        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled_Not yet scheduled"]})
 
-      assert render(group_by_due_date_div) =~ "Due: Fri Nov 3, 2023"
-      assert render(group_by_due_date_div) =~ "Page 11"
-      assert render(group_by_due_date_div) =~ "Page 12"
+      assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
+      assert render(group_by_read_by_date_div) =~ "Page 11"
 
-      assert render(group_by_not_yet_scheduled_div) =~ "Due: Not yet scheduled"
+      assert render(group_by_due_by_date_div) =~ "Due by: Fri Nov 3, 2023"
+      assert render(group_by_due_by_date_div) =~ "Page 12"
+
+      assert render(group_by_not_yet_scheduled_div) =~ "Not yet scheduled"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 13"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
     end
@@ -2048,10 +2053,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="card_4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_2023-11-10"]})
+      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-10"]})
 
       # page 13 is due on Nov 10, 2023 as defined in the student exception
-      assert render(group_by_due_date_div) =~ "Due: Fri Nov 10, 2023"
+      assert render(group_by_due_date_div) =~ "Read by: Fri Nov 10, 2023"
       assert render(group_by_due_date_div) =~ "Page 13"
     end
 
