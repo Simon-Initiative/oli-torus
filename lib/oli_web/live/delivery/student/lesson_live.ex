@@ -17,6 +17,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Icons
 
   require Logger
 
@@ -82,6 +83,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:ok,
      socket
      |> assign_html_and_scripts()
+     |> maybe_assign_questions(page_context.effective_settings.assessment_mode)
      |> assign_objectives()
      |> assign(
        revision_slug: page_context.page.slug,
@@ -93,7 +95,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
        attempt_start_time: resource_attempt.inserted_at |> to_epoch,
        review_mode: page_context.review_mode
      )
-     |> slim_assigns(), temporary_assigns: [scripts: [], html: [], page_context: %{}]}
+     |> slim_assigns()}
   end
 
   def mount(
@@ -108,8 +110,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       send(self(), :gc)
     end
 
-    {:ok, assign_scripts(socket) |> slim_assigns(),
-     layout: false, temporary_assigns: [scripts: [], page_context: %{}]}
+    {:ok, assign_scripts(socket) |> slim_assigns(), layout: false}
+  end
+
+  def handle_event("select_question", %{"id" => selected_id}, socket) do
+    questions =
+      socket.assigns.questions
+      |> Enum.into(%{}, fn {id, question} ->
+        {id, Map.put(question, :selected, id == selected_id)}
+      end)
+
+    {:noreply, assign(socket, questions: questions)}
   end
 
   def handle_event(
@@ -732,42 +743,204 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
+  def render(
+        %{
+          view: :graded_page,
+          page_context: %{
+            progress_state: progress_state,
+            effective_settings: %{assessment_mode: :one_at_a_time}
+          }
+        } = assigns
+      )
+      when progress_state in [:revised, :in_progress] do
+    ~H"""
+    <.countdown {assigns} />
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+      <div class="flex flex-col items-center w-full">
+        <.scored_page_banner />
+        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+          <.page_header
+            page_context={@page_context}
+            ctx={@ctx}
+            objectives={@objectives}
+            index={@current_page["index"]}
+            container_label={Utils.get_container_label(@current_page["id"], @section)}
+          />
+          <div id="one_at_a_time_questions" class="relative h-[500px]">
+            <%!--  render this as a component on MER-3640 --%>
+            <% question_number =
+              Enum.find(@questions, {1, nil}, fn {_, q} -> q.selected end) |> elem(0) %>
+            <% total_questions = Enum.count(@questions) %>
+            <% question_points = Enum.random(5..10) %>
+            <div class="absolute w-screen flex flex-col items-center -left-[50vw]">
+              <div role="questions header" class="w-[1170px] pl-[189px]">
+                <div class="flex w-full justify-between">
+                  <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
+                    Question <%= question_number %> / <%= total_questions %> • <%= question_points %> points
+                  </div>
+                  <button class="flex items-center gap-2">
+                    <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
+                      Finish Quiz
+                    </div>
+                    <Icons.finish_quiz_flag />
+                  </button>
+                </div>
+                <div
+                  role="progress bar"
+                  class="mb-3 w-[976px] h-[3.30px] bg-[#1c1c1c]/10 flex-col justify-start items-start inline-flex"
+                >
+                  <div class="w-[2.60px] h-1 bg-[#0062f2]"></div>
+                </div>
+              </div>
+              <div role="questions main content" class="mx-auto flex justify-center gap-8 w-full">
+                <.questions_menu questions={@questions} />
+                <div
+                  role="questions content"
+                  class="content h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
+                >
+                  <div
+                    id="eventIntercept"
+                    phx-update="ignore"
+                    class="flex h-[400px] border-b border-[#c8c8c8]"
+                  >
+                    <div
+                      :for={{index, question} <- @questions}
+                      id={"question_#{index}"}
+                      role="one at a time question"
+                      class={[
+                        "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
+                        if(!question.selected, do: "hidden")
+                      ]}
+                    >
+                      <%= raw(question.raw_content) %>
+                    </div>
+                    <div
+                      role="score summary"
+                      class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
+                    >
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 1:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                      </div>
+
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 2:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                      </div>
+
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 3:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                        <div>
+                          <span class="text-[#757682]">
+                            Part 4:
+                          </span>
+                          <span class="text-[#353740]">
+                            2 points
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex justify-center w-full h-[84px] items-center">
+                    <button
+                      disabled
+                      class="h-[30px] px-5 py-2.5 bg-[#9d9d9d] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-base font-semibold font-['Open Sans'] leading-normal whitespace-nowrap"
+                    >
+                      Submit Response
+                    </button>
+                  </div>
+
+                  <.references ctx={@ctx} bib_app_params={@bib_app_params} />
+                </div>
+              </div>
+
+              <div
+                role="questions footer"
+                class="w-[1170px] pl-[189px] mb-32 py-8 flex justify-between"
+              >
+                <button
+                  phx-click={JS.dispatch("click", to: "#question_#{question_number - 1}_button")}
+                  disabled={question_number == 1}
+                  class={[
+                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
+                    if(question_number == 1, do: "!text-[#757682]")
+                  ]}
+                >
+                  <svg
+                    width="13"
+                    height="10"
+                    viewBox="0 0 13 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1.5 5H11.5M1.5 5L5.5 9M1.5 5L5.5 1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+
+                  <span>Previous Question</span>
+                </button>
+                <button
+                  phx-click={JS.dispatch("click", to: "#question_#{question_number + 1}_button")}
+                  disabled={question_number == total_questions}
+                  class={[
+                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
+                    if(question_number == total_questions, do: "!text-[#757682]")
+                  ]}
+                >
+                  <span>Next Question</span>
+                  <svg
+                    width="13"
+                    height="10"
+                    viewBox="0 0 13 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M11.2544 5H1.25439M11.2544 5L7.25439 9M11.2544 5L7.25439 1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <.scripts scripts={@scripts} user_token={@user_token} />
+    """
+  end
+
   def render(%{view: :graded_page, page_context: %{progress_state: progress_state}} = assigns)
       when progress_state in [:revised, :in_progress] do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <.countdown {assigns} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <%= if !@review_mode and @time_limit > 0 do %>
-          <div
-            id="countdown_timer_display"
-            class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
-            phx-hook="CountdownTimer"
-            data-timer-id="countdown_timer_display"
-            data-submit-button-id="submit_answers"
-            data-time-out-in-mins={@time_limit}
-            data-start-time-in-ms={@attempt_start_time}
-            data-effective-time-in-ms={@effective_end_time}
-            data-grace-period-in-mins={@grace_period}
-            data-auto-submit={if @auto_submit, do: "true", else: "false"}
-          >
-          </div>
-        <% else %>
-          <%= if !@review_mode and !is_nil(@effective_end_time) do %>
-            <div
-              id="countdown_timer_display"
-              class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
-              phx-hook="EndDateTimer"
-              data-timer-id="countdown_timer_display"
-              data-submit-button-id="submit_answers"
-              data-effective-time-in-ms={@effective_end_time}
-              data-auto-submit={if @auto_submit, do: "true", else: "false"}
-            >
-            </div>
-          <% end %>
-        <% end %>
-
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -831,6 +1004,77 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <script>
       window.userToken = "<%= @user_token %>";
     </script>
+    """
+  end
+
+  def questions_menu(assigns) do
+    ~H"""
+    <div id="questions_menu" class="w-[157px] h-[468px] ml-0 my-2 overflow-y-scroll flex flex-col">
+      <button
+        :for={{id, question} <- @questions}
+        id={"question_#{id}_button"}
+        phx-click={select_question(id)}
+        phx-value-id={id}
+        class={[
+          "flex items-center gap-[18px] h-[33px] pl-[16.5px]",
+          if(question.selected, do: "!bg-[#0f6bf5]/5")
+        ]}
+      >
+        <div class={[
+          "w-2.5 h-2.5 bg-[#d9d9d9] rounded-full",
+          if(question.selected, do: "!border-2 !border-[#0062f2]")
+        ]}>
+        </div>
+        <span class={[
+          "text-[#353740] text-base font-normal font-['Open Sans'] leading-normal",
+          if(question.selected, do: "!text-[#0f6bf5] !font-bold")
+        ]}>
+          Question <%= id %>
+        </span>
+      </button>
+    </div>
+    """
+  end
+
+  defp select_question(js \\ %JS{}, id) do
+    js
+    |> JS.push("select_question", value: %{id: id})
+    |> JS.hide(to: "div[role='one at a time question']")
+    |> JS.show(to: "#question_#{id}")
+  end
+
+  def countdown(assigns) do
+    ~H"""
+    <%= if !@review_mode and @time_limit > 0 do %>
+      <div
+        id="countdown_timer_display"
+        phx-update="ignore"
+        class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700"
+        phx-hook="CountdownTimer"
+        data-timer-id="countdown_timer_display"
+        data-submit-button-id="submit_answers"
+        data-time-out-in-mins={@time_limit}
+        data-start-time-in-ms={@attempt_start_time}
+        data-effective-time-in-ms={@effective_end_time}
+        data-grace-period-in-mins={@grace_period}
+        data-auto-submit={if @auto_submit, do: "true", else: "false"}
+      >
+      </div>
+    <% else %>
+      <%= if !@review_mode and !is_nil(@effective_end_time) do %>
+        <div
+          id="countdown_timer_display"
+          phx-update="ignore"
+          class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700"
+          phx-hook="EndDateTimer"
+          data-timer-id="countdown_timer_display"
+          data-submit-button-id="submit_answers"
+          data-effective-time-in-ms={@effective_end_time}
+          data-auto-submit={if @auto_submit, do: "true", else: "false"}
+        >
+        </div>
+      <% end %>
+    <% end %>
     """
   end
 
@@ -1238,6 +1482,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         )
       )
     end)
+  end
+
+  _docp = """
+  In case the page is configured to show one question at a time,
+  we pre-process the html content to assign all the questions to the socket.
+  """
+
+  defp maybe_assign_questions(socket, :traditional), do: socket
+
+  defp maybe_assign_questions(socket, :one_at_a_time) do
+    questions =
+      socket.assigns.html
+      |> List.flatten()
+      |> Enum.reduce({1, %{}}, fn element, {index, map} ->
+        if String.contains?(element, "activity-container") do
+          {index + 1, Map.put(map, index, %{raw_content: element, selected: index == 1})}
+        else
+          {index, map}
+        end
+      end)
+      |> elem(1)
+
+    assign(socket, questions: questions)
   end
 
   defp to_epoch(nil), do: nil
