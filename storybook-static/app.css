@@ -4009,6 +4009,10 @@ table.table-striped tbody tr:nth-child(even) {
   left: -114px;
 }
 
+.-left-\[50vw\] {
+  left: -50vw;
+}
+
 .-right-1 {
   right: -0.25rem;
 }
@@ -4163,6 +4167,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .right-5 {
   right: 1.25rem;
+}
+
+.right-6 {
+  right: 1.5rem;
 }
 
 .right-\[-15px\] {
@@ -4567,6 +4575,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 0.75rem;
 }
 
+.mb-32 {
+  margin-bottom: 8rem;
+}
+
 .mb-4 {
   margin-bottom: 1rem;
 }
@@ -4959,6 +4971,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 0.5rem;
 }
 
+.h-2\.5 {
+  height: 0.625rem;
+}
+
 .h-24 {
   height: 6rem;
 }
@@ -5111,6 +5127,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 291px;
 }
 
+.h-\[3\.30px\] {
+  height: 3.30px;
+}
+
 .h-\[30px\] {
   height: 30px;
 }
@@ -5121,6 +5141,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[334px\] {
   height: 334px;
+}
+
+.h-\[33px\] {
+  height: 33px;
 }
 
 .h-\[35px\] {
@@ -5163,6 +5187,14 @@ table.table-striped tbody tr:nth-child(even) {
   height: 450px;
 }
 
+.h-\[468px\] {
+  height: 468px;
+}
+
+.h-\[484px\] {
+  height: 484px;
+}
+
 .h-\[48px\] {
   height: 48px;
 }
@@ -5193,6 +5225,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[74px\] {
   height: 74px;
+}
+
+.h-\[84px\] {
+  height: 84px;
 }
 
 .h-\[calc\(100\%-64px\)\] {
@@ -5360,6 +5396,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 0.5rem;
 }
 
+.w-2\.5 {
+  width: 0.625rem;
+}
+
 .w-2\/12 {
   width: 16.666667%;
 }
@@ -5476,12 +5516,24 @@ table.table-striped tbody tr:nth-child(even) {
   width: 114px;
 }
 
+.w-\[1170px\] {
+  width: 1170px;
+}
+
 .w-\[124px\] {
   width: 124px;
 }
 
+.w-\[157px\] {
+  width: 157px;
+}
+
 .w-\[171px\] {
   width: 171px;
+}
+
+.w-\[173px\] {
+  width: 173px;
 }
 
 .w-\[18px\] {
@@ -5490,6 +5542,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[190px\] {
   width: 190px;
+}
+
+.w-\[2\.60px\] {
+  width: 2.60px;
 }
 
 .w-\[200px\] {
@@ -5608,12 +5664,24 @@ table.table-striped tbody tr:nth-child(even) {
   width: 75px;
 }
 
+.w-\[808px\] {
+  width: 808px;
+}
+
 .w-\[80px\] {
   width: 80px;
 }
 
 .w-\[92px\] {
   width: 92px;
+}
+
+.w-\[976px\] {
+  width: 976px;
+}
+
+.w-\[981px\] {
+  width: 981px;
 }
 
 .w-auto {
@@ -5636,6 +5704,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-px {
   width: 1px;
+}
+
+.w-screen {
+  width: 100vw;
 }
 
 .min-w-\[2rem\] {
@@ -6203,6 +6275,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 15px;
 }
 
+.gap-\[18px\] {
+  gap: 18px;
+}
+
 .gap-\[19px\] {
   gap: 19px;
 }
@@ -6379,6 +6455,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .overflow-hidden {
   overflow: hidden;
+}
+
+.overflow-scroll {
+  overflow: scroll;
 }
 
 .overflow-x-auto {
@@ -6593,6 +6673,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-width: 1px !important;
 }
 
+.\!border-2 {
+  border-width: 2px !important;
+}
+
 .border {
   border-width: 1px;
 }
@@ -6706,6 +6790,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-style: none;
 }
 
+.\!border-\[\#0062f2\] {
+  --tw-border-opacity: 1 !important;
+  border-color: rgb(0 98 242 / var(--tw-border-opacity)) !important;
+}
+
 .\!border-black\/90 {
   border-color: rgb(0 0 0 / 0.9) !important;
 }
@@ -6736,6 +6825,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#B0B0B0\] {
   --tw-border-opacity: 1;
   border-color: rgb(176 176 176 / var(--tw-border-opacity));
+}
+
+.border-\[\#c8c8c8\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(200 200 200 / var(--tw-border-opacity));
 }
 
 .border-\[\#d9d9de\] {
@@ -6944,6 +7038,10 @@ table.table-striped tbody tr:nth-child(even) {
   --tw-border-opacity: 0.4;
 }
 
+.\!bg-\[\#0f6bf5\]\/5 {
+  background-color: rgb(15 107 245 / 0.05) !important;
+}
+
 .\!bg-delivery-primary-100 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(233 244 255 / var(--tw-bg-opacity)) !important;
@@ -6984,6 +7082,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(30 149 49 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#1c1c1c\]\/10 {
+  background-color: rgb(28 28 28 / 0.1);
+}
+
 .bg-\[\#2080F0\] {
   --tw-bg-opacity: 1;
   background-color: rgb(32 128 240 / var(--tw-bg-opacity));
@@ -7009,6 +7111,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-\[\#815499\]\/\[\.25\] {
   background-color: rgb(129 84 153 / .25);
+}
+
+.bg-\[\#9d9d9d\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(157 157 157 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#A8EED8\] {
@@ -7037,6 +7144,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#F4CFFF\] {
   --tw-bg-opacity: 1;
   background-color: rgb(244 207 255 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#d9d9d9\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(217 217 217 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#dcdef6\] {
@@ -8183,6 +8295,14 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 100px;
 }
 
+.pl-\[16\.5px\] {
+  padding-left: 16.5px;
+}
+
+.pl-\[189px\] {
+  padding-left: 189px;
+}
+
 .pl-\[18px\] {
   padding-left: 18px;
 }
@@ -8601,6 +8721,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 16px;
 }
 
+.leading-\[18px\] {
+  line-height: 18px;
+}
+
 .leading-\[19px\] {
   line-height: 19px;
 }
@@ -8713,6 +8837,11 @@ table.table-striped tbody tr:nth-child(even) {
   letter-spacing: 0.1em;
 }
 
+.\!text-\[\#0f6bf5\] {
+  --tw-text-opacity: 1 !important;
+  color: rgb(15 107 245 / var(--tw-text-opacity)) !important;
+}
+
 .\!text-\[\#353740\] {
   --tw-text-opacity: 1 !important;
   color: rgb(53 55 64 / var(--tw-text-opacity)) !important;
@@ -8721,6 +8850,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!text-\[\#4CA6FF\] {
   --tw-text-opacity: 1 !important;
   color: rgb(76 166 255 / var(--tw-text-opacity)) !important;
+}
+
+.\!text-\[\#757682\] {
+  --tw-text-opacity: 1 !important;
+  color: rgb(117 118 130 / var(--tw-text-opacity)) !important;
 }
 
 .\!text-blue-500 {
@@ -8736,6 +8870,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!text-zinc-300 {
   --tw-text-opacity: 1 !important;
   color: rgb(212 212 216 / var(--tw-text-opacity)) !important;
+}
+
+.text-\[\#0080ff\] {
+  --tw-text-opacity: 1;
+  color: rgb(0 128 255 / var(--tw-text-opacity));
 }
 
 .text-\[\#0CAF61\] {
