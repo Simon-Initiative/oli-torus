@@ -21,7 +21,6 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         %Sorting{} = sorting,
         %BrowseInsightsOptions{project_id: project_id, section_ids: section_ids} = options
       ) do
-
     where_by = build_where_by(options)
     total_count = get_total_count(project_id, section_ids, where_by)
 
@@ -40,10 +39,15 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     Repo.all(query)
   end
 
-  defp build_where_by(%BrowseInsightsOptions{project_id: project_id, resource_type_id: resource_type_id, section_ids: section_ids}) do
+  defp build_where_by(%BrowseInsightsOptions{
+         project_id: project_id,
+         resource_type_id: resource_type_id,
+         section_ids: section_ids
+       }) do
     case section_ids do
       [] ->
-        dynamic([s, pub, pr, _],
+        dynamic(
+          [s, pub, pr, _],
           s.project_id == ^project_id and
             s.resource_id == pr.resource_id and
             is_nil(pub.published) and
@@ -54,8 +58,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         )
 
       section_ids ->
-        dynamic([s, pub, pr, _],
-            s.resource_id == pr.resource_id and
+        dynamic(
+          [s, pub, pr, _],
+          s.resource_id == pr.resource_id and
             is_nil(pub.published) and
             s.resource_type_id == ^resource_type_id and
             s.section_id in ^section_ids and
@@ -66,7 +71,6 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   end
 
   defp add_select(query, total_count, %BrowseInsightsOptions{section_ids: section_ids}) do
-
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
     case section_ids do
@@ -86,7 +90,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           num_attempts: s.num_attempts,
           num_first_attempts: s.num_first_attempts,
           eventually_correct: fragment("?::float8 / ?::float8", s.num_correct, s.num_attempts),
-          first_attempt_correct: fragment("?::float8 / ?::float8", s.num_first_attempts_correct, s.num_first_attempts),
+          first_attempt_correct:
+            fragment("?::float8 / ?::float8", s.num_first_attempts_correct, s.num_first_attempts),
           relative_difficulty:
             fragment(
               "?::float8 * (1.0 - ?::float8) + ?::float8 * (1.0 - ?::float8) + ?::float8 * ?::float8",
@@ -101,7 +106,13 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
 
       _section_ids ->
         query
-        |> group_by([s, _, _, rev], [s.resource_id, s.part_id, rev.title, rev.slug, rev.activity_type_id])
+        |> group_by([s, _, _, rev], [
+          s.resource_id,
+          s.part_id,
+          rev.title,
+          rev.slug,
+          rev.activity_type_id
+        ])
         |> select([s, _, _, rev], %{
           # select id as a random GUID
           id: fragment("gen_random_uuid()::text"),
@@ -113,8 +124,14 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           activity_type_id: rev.activity_type_id,
           num_attempts: sum(s.num_attempts),
           num_first_attempts: sum(s.num_first_attempts),
-          eventually_correct: fragment("?::float8 / ?::float8", sum(s.num_correct), sum(s.num_attempts)),
-          first_attempt_correct: fragment("?::float8 / ?::float8", sum(s.num_first_attempts_correct), sum(s.num_first_attempts)),
+          eventually_correct:
+            fragment("?::float8 / ?::float8", sum(s.num_correct), sum(s.num_attempts)),
+          first_attempt_correct:
+            fragment(
+              "?::float8 / ?::float8",
+              sum(s.num_first_attempts_correct),
+              sum(s.num_first_attempts)
+            ),
           relative_difficulty:
             fragment(
               "?::float8 * (1.0 - (?::float8)) + ?::float8 * (1.0 - (?::float8)) + ?::float8 * (?::float8)",
@@ -127,12 +144,11 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
             )
         })
     end
-
   end
 
-  defp add_order_by(query, %Sorting{direction: direction, field: field},
-    %BrowseInsightsOptions{section_ids: []}) do
-
+  defp add_order_by(query, %Sorting{direction: direction, field: field}, %BrowseInsightsOptions{
+         section_ids: []
+       }) do
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
     query =
@@ -150,21 +166,35 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           order_by(query, [s], {^direction, s.num_first_attempts})
 
         :eventually_correct ->
-          order_by(query, [s], {^direction, fragment("?::float8 / ?::float8", s.num_correct, s.num_attempts)})
+          order_by(
+            query,
+            [s],
+            {^direction, fragment("?::float8 / ?::float8", s.num_correct, s.num_attempts)}
+          )
 
         :first_attempt_correct ->
-          order_by(query, [s], {^direction, fragment("?::float8 / ?::float8", s.num_first_attempts_correct, s.num_first_attempts)})
+          order_by(
+            query,
+            [s],
+            {^direction,
+             fragment("?::float8 / ?::float8", s.num_first_attempts_correct, s.num_first_attempts)}
+          )
 
         :relative_difficulty ->
-          order_by(query, [s], {^direction, fragment(
-            "?::float8 * (1.0 - ?::float8) + ?::float8 * (1.0 - ?::float8) + ?::float8 * ?::float8",
-            ^alpha,
-            s.num_first_attempts_correct / s.num_first_attempts,
-            ^beta,
-            s.num_correct / s.num_attempts,
-            ^gamma,
-            s.num_hints
-          )})
+          order_by(
+            query,
+            [s],
+            {^direction,
+             fragment(
+               "?::float8 * (1.0 - ?::float8) + ?::float8 * (1.0 - ?::float8) + ?::float8 * ?::float8",
+               ^alpha,
+               s.num_first_attempts_correct / s.num_first_attempts,
+               ^beta,
+               s.num_correct / s.num_attempts,
+               ^gamma,
+               s.num_hints
+             )}
+          )
 
         _ ->
           order_by(query, [_, _, _, rev], {^direction, field(rev, ^field)})
@@ -174,9 +204,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     order_by(query, [s], s.resource_id)
   end
 
-  defp add_order_by(query, %Sorting{direction: direction, field: field},
-    %BrowseInsightsOptions{section_ids: _}) do
-
+  defp add_order_by(query, %Sorting{direction: direction, field: field}, %BrowseInsightsOptions{
+         section_ids: _
+       }) do
     {alpha, beta, gamma} = get_relative_difficulty_parameters()
 
     query =
@@ -194,21 +224,40 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
           order_by(query, [s], {^direction, sum(s.num_first_attempts)})
 
         :eventually_correct ->
-          order_by(query, [s], {^direction, fragment("?::float8 / ?::float8", sum(s.num_correct), sum(s.num_attempts))})
+          order_by(
+            query,
+            [s],
+            {^direction,
+             fragment("?::float8 / ?::float8", sum(s.num_correct), sum(s.num_attempts))}
+          )
 
         :first_attempt_correct ->
-          order_by(query, [s], {^direction, fragment("?::float8 / ?::float8", sum(s.num_first_attempts_correct), sum(s.num_first_attempts))})
+          order_by(
+            query,
+            [s],
+            {^direction,
+             fragment(
+               "?::float8 / ?::float8",
+               sum(s.num_first_attempts_correct),
+               sum(s.num_first_attempts)
+             )}
+          )
 
         :relative_difficulty ->
-          order_by(query, [s], {^direction, fragment(
-            "?::float8 * (1.0 - (?::float8)) + ?::float8 * (1.0 - (?::float8)) + ?::float8 * (?::float8)",
-            ^alpha,
-            sum(s.num_first_attempts_correct) / sum(s.num_first_attempts),
-            ^beta,
-            sum(s.num_correct) / sum(s.num_attempts),
-            ^gamma,
-            sum(s.num_hints)
-          )})
+          order_by(
+            query,
+            [s],
+            {^direction,
+             fragment(
+               "?::float8 * (1.0 - (?::float8)) + ?::float8 * (1.0 - (?::float8)) + ?::float8 * (?::float8)",
+               ^alpha,
+               sum(s.num_first_attempts_correct) / sum(s.num_first_attempts),
+               ^beta,
+               sum(s.num_correct) / sum(s.num_attempts),
+               ^gamma,
+               sum(s.num_hints)
+             )}
+          )
 
         _ ->
           order_by(query, [_, _, _, rev], {^direction, field(rev, ^field)})
@@ -219,7 +268,6 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   end
 
   defp get_total_count(project_id, section_ids, where_by) do
-
     add_group_by = fn query, section_ids ->
       case section_ids do
         [] -> query
@@ -243,5 +291,4 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       count -> count
     end
   end
-
 end

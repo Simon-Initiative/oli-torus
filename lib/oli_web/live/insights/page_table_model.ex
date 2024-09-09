@@ -50,6 +50,7 @@ defmodule OliWeb.Insights.PageTableModel do
   def render_title(%{project_slug: project_slug}, row, assigns) do
     assigns = Map.put(assigns, :project_slug, project_slug)
     assigns = Map.put(assigns, :row, row)
+
     ~H"""
     <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @row.slug)}>
       <%= @row.title %>
@@ -59,6 +60,7 @@ defmodule OliWeb.Insights.PageTableModel do
 
   def render_type(%{graded: graded}, _row, assigns) do
     assigns = assign(assigns, :graded, graded)
+
     case assigns.graded do
       true -> "Graded"
       false -> "Practice"

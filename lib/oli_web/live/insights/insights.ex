@@ -1,5 +1,4 @@
 defmodule OliWeb.Insights do
-
   alias Oli.Analytics.Summary.BrowseInsights
   use OliWeb, :live_view
 
@@ -47,7 +46,12 @@ defmodule OliWeb.Insights do
     sections_by_product_id = get_sections_by_product_id(project.id)
 
     activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
-    options = %BrowseInsightsOptions{project_id: project.id, resource_type_id: activity_type_id, section_ids: []}
+
+    options = %BrowseInsightsOptions{
+      project_id: project.id,
+      resource_type_id: activity_type_id,
+      section_ids: []
+    }
 
     insights =
       BrowseInsights.browse_insights(
@@ -60,12 +64,14 @@ defmodule OliWeb.Insights do
 
     parent_pages = parent_pages(project.slug)
 
-    activity_types_map = Oli.Activities.list_activity_registrations()
-    |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+    activity_types_map =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
 
     total_count = determine_total(insights)
-    {:ok, table_model} = ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
+    {:ok, table_model} =
+      ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
     {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
       case Course.analytics_export_status(project) do
@@ -111,10 +117,12 @@ defmodule OliWeb.Insights do
   # Runs a query to find all sections for this project which have a
   # product associated with them. (blueprint_id)
   defp get_sections_by_product_id(project_id) do
-
-    query = from s in Oli.Delivery.Sections.Section,
-      where: s.base_project_id == ^project_id and not is_nil(s.blueprint_id) and s.type == :enrollable,
-      select: {s.id, s.blueprint_id}
+    query =
+      from s in Oli.Delivery.Sections.Section,
+        where:
+          s.base_project_id == ^project_id and not is_nil(s.blueprint_id) and
+            s.type == :enrollable,
+        select: {s.id, s.blueprint_id}
 
     Oli.Repo.all(query)
     |> Enum.reduce(%{}, fn {id, blueprint_id}, m ->
@@ -280,16 +288,16 @@ defmodule OliWeb.Insights do
   end
 
   def patch_with(socket, changes) do
-
     # convert param keys from atoms to strings
     changes = Enum.into(changes, %{}, fn {k, v} -> {Atom.to_string(k), v} end)
     # convert atom values to string values
-    changes = Enum.into(changes, %{}, fn {k, v} ->
-      case v do
-        atom when is_atom(atom) -> {k, Atom.to_string(v)}
-        _ -> {k, v}
-      end
-    end)
+    changes =
+      Enum.into(changes, %{}, fn {k, v} ->
+        case v do
+          atom when is_atom(atom) -> {k, Atom.to_string(v)}
+          _ -> {k, v}
+        end
+      end)
 
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
 
@@ -316,7 +324,6 @@ defmodule OliWeb.Insights do
   end
 
   defp filter_by(socket, resource_type_id, by_type, table_model) do
-
     options = %BrowseInsightsOptions{
       project_id: socket.assigns.options.project_id,
       resource_type_id: resource_type_id,
@@ -344,8 +351,7 @@ defmodule OliWeb.Insights do
   end
 
   defp change_section_ids(socket, section_ids) do
-
-    options = %BrowseInsightsOptions{ socket.assigns.options | section_ids: section_ids }
+    options = %BrowseInsightsOptions{socket.assigns.options | section_ids: section_ids}
     table_model = socket.assigns.table_model
 
     insights =
@@ -368,13 +374,25 @@ defmodule OliWeb.Insights do
   end
 
   def handle_event("filter_by_activity", _params, socket) do
+    activity_types_map =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
 
-    activity_types_map = Oli.Activities.list_activity_registrations()
-    |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+    {:ok, table_model} =
+      ActivityTableModel.new(
+        [],
+        activity_types_map,
+        socket.assigns.parent_pages,
+        socket.assigns.project.slug,
+        socket.assigns.ctx
+      )
 
-    {:ok, table_model} = ActivityTableModel.new([], activity_types_map, socket.assigns.parent_pages, socket.assigns.project.slug, socket.assigns.ctx)
-
-    filter_by(socket, Oli.Resources.ResourceType.get_id_by_type("activity"), :by_activity, table_model)
+    filter_by(
+      socket,
+      Oli.Resources.ResourceType.get_id_by_type("activity"),
+      :by_activity,
+      table_model
+    )
   end
 
   def handle_event("filter_by_page", _params, socket) do
@@ -384,7 +402,13 @@ defmodule OliWeb.Insights do
 
   def handle_event("filter_by_objective", _params, socket) do
     {:ok, table_model} = ObjectiveTableModel.new([], socket.assigns.ctx)
-    filter_by(socket, Oli.Resources.ResourceType.get_id_by_type("objective"), :by_objective, table_model)
+
+    filter_by(
+      socket,
+      Oli.Resources.ResourceType.get_id_by_type("objective"),
+      :by_objective,
+      table_model
+    )
   end
 
   def handle_event("generate_analytics_snapshot", _params, socket) do
@@ -413,7 +437,6 @@ defmodule OliWeb.Insights do
   end
 
   def handle_info({:option_selected, "section_selected", selected_ids}, socket) do
-
     socket =
       assign(socket,
         section_ids: selected_ids,
@@ -423,11 +446,9 @@ defmodule OliWeb.Insights do
       )
 
     change_section_ids(socket, selected_ids)
-
   end
 
   def handle_info({:option_selected, "product_selected", selected_ids}, socket) do
-
     socket =
       assign(socket,
         product_ids: selected_ids,
@@ -436,12 +457,13 @@ defmodule OliWeb.Insights do
         is_product: true
       )
 
-    section_ids = Enum.reduce(selected_ids, MapSet.new(), fn id, all ->
-      Map.get(socket.assigns.sections_by_product_id, id)
-      |> MapSet.new()
-      |> MapSet.union(all)
-    end)
-    |> Enum.to_list()
+    section_ids =
+      Enum.reduce(selected_ids, MapSet.new(), fn id, all ->
+        Map.get(socket.assigns.sections_by_product_id, id)
+        |> MapSet.new()
+        |> MapSet.union(all)
+      end)
+      |> Enum.to_list()
 
     change_section_ids(socket, section_ids)
   end
@@ -484,5 +506,4 @@ defmodule OliWeb.Insights do
       []
     end
   end
-
 end

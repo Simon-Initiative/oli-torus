@@ -70,6 +70,7 @@ defmodule OliWeb.Insights.ActivityTableModel do
     assigns = Map.put(assigns, :project_slug, project_slug)
     assigns = Map.put(assigns, :parent_page, parent_page)
     assigns = Map.put(assigns, :row, row)
+
     ~H"""
     <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @parent_page.slug)}>
       <%= @row.title %>

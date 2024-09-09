@@ -16,8 +16,8 @@ defmodule Oli.Analytics.Summary.BrowseInsightsOptions do
   ]
 
   @type t() :: %__MODULE__{
-    project_id: integer(),
-    section_ids: list(),
-    resource_type_id: integer()
-  }
+          project_id: integer(),
+          section_ids: list(),
+          resource_type_id: integer()
+        }
 end
