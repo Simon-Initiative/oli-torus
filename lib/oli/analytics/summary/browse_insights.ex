@@ -55,7 +55,6 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
 
       section_ids ->
         dynamic([s, pub, pr, _],
-          s.project_id == ^project_id and
             s.resource_id == pr.resource_id and
             is_nil(pub.published) and
             s.resource_type_id == ^resource_type_id and
@@ -74,8 +73,10 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       [] ->
         query
         |> select([s, pub, pr, rev], %{
+          id: s.id,
           total_count: fragment("?::int", ^total_count),
           title: rev.title,
+          resource_id: s.resource_id,
           slug: rev.slug,
           part_id: s.part_id,
           pub_id: pub.id,
@@ -102,6 +103,8 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         query
         |> group_by([s, _, _, rev], [s.resource_id, s.part_id, rev.title, rev.slug, rev.activity_type_id])
         |> select([s, _, _, rev], %{
+          # select id as a random GUID
+          id: fragment("gen_random_uuid()::text"),
           total_count: fragment("?::int", ^total_count),
           resource_id: s.resource_id,
           title: rev.title,
@@ -136,6 +139,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       case field do
         :title ->
           order_by(query, [_, _, _, rev], {^direction, rev.title})
+
+        :part_id ->
+          order_by(query, [s], {^direction, s.part_id})
 
         :num_attempts ->
           order_by(query, [s], {^direction, s.num_attempts})
@@ -178,6 +184,9 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
         :title ->
           order_by(query, [_, _, _, rev], {^direction, rev.title})
 
+        :part_id ->
+          order_by(query, [s], {^direction, s.part_id})
+
         :num_attempts ->
           order_by(query, [s], {^direction, sum(s.num_attempts)})
 
@@ -208,7 +217,6 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
     # Ensure there is always a stable sort order based on id
     order_by(query, [s], s.resource_id)
   end
-
 
   defp get_total_count(project_id, section_ids, where_by) do
 

@@ -1,7 +1,9 @@
 defmodule OliWeb.Insights do
-  alias ElixirLS.LanguageServer.Providers.Completion.Reducers.Struct
+
   alias Oli.Analytics.Summary.BrowseInsights
   use OliWeb, :live_view
+
+  import Ecto.Query
 
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
@@ -10,8 +12,7 @@ defmodule OliWeb.Insights do
   alias OliWeb.Common.MultiSelectInput
   alias OliWeb.Common.MultiSelect.Option
   alias Oli.{Accounts, Publishing}
-  alias OliWeb.Insights.{TableHeader, TableRow}
-  alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch, SessionContext}
   alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Course
@@ -22,8 +23,9 @@ defmodule OliWeb.Insights do
   alias OliWeb.Common.SessionContext
   alias Oli.Analytics.Summary.BrowseInsights
   alias Oli.Analytics.Summary.BrowseInsightsOptions
-  alias OliWeb.Insights.SectionsTableModel
   alias OliWeb.Insights.ActivityTableModel
+  alias OliWeb.Insights.PageTableModel
+  alias OliWeb.Insights.ObjectiveTableModel
 
   @limit 25
 
@@ -42,6 +44,8 @@ defmodule OliWeb.Insights do
         end
       end)
 
+    sections_by_product_id = get_sections_by_product_id(project.id)
+
     activity_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
     options = %BrowseInsightsOptions{project_id: project.id, resource_type_id: activity_type_id, section_ids: []}
 
@@ -52,17 +56,16 @@ defmodule OliWeb.Insights do
         options
       )
 
+    latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    parent_pages = parent_pages(project.slug)
+
     activity_types_map = Oli.Activities.list_activity_registrations()
     |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
 
     total_count = determine_total(insights)
-    {:ok, table_model} = ActivityTableModel.new(insights, activity_types_map,ctx)
+    {:ok, table_model} = ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
-   # parent_pages =
-   #   Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
-   #   |> parent_pages(project_slug)
-
-    latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
 
     {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
       case Course.analytics_export_status(project) do
@@ -78,10 +81,11 @@ defmodule OliWeb.Insights do
      assign(socket,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})],
        active: :insights,
+       sections_by_product_id: sections_by_product_id,
        ctx: ctx,
        is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
-       parent_pages: nil,
+       parent_pages: parent_pages,
        selected: :by_activity,
        latest_publication: latest_publication,
        analytics_export_status: analytics_export_status,
@@ -104,6 +108,23 @@ defmodule OliWeb.Insights do
      )}
   end
 
+  # Runs a query to find all sections for this project which have a
+  # product associated with them. (blueprint_id)
+  defp get_sections_by_product_id(project_id) do
+
+    query = from s in Oli.Delivery.Sections.Section,
+      where: s.base_project_id == ^project_id and not is_nil(s.blueprint_id) and s.type == :enrollable,
+      select: {s.id, s.blueprint_id}
+
+    Oli.Repo.all(query)
+    |> Enum.reduce(%{}, fn {id, blueprint_id}, m ->
+      case Map.get(m, blueprint_id) do
+        nil -> Map.put(m, blueprint_id, [id])
+        ids -> Map.put(m, blueprint_id, [id | ids])
+      end
+    end)
+  end
+
   defp determine_total(items) do
     case items do
       [] -> 0
@@ -111,9 +132,9 @@ defmodule OliWeb.Insights do
     end
   end
 
-
   def handle_params(params, _, socket) do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
+
     offset = get_int_param(params, "offset", 0)
 
     options = socket.assigns.options
@@ -137,35 +158,9 @@ defmodule OliWeb.Insights do
      )}
   end
 
-
-  defp parent_pages(resource_ids, project_slug) do
+  defp parent_pages(project_slug) do
     publication = Oli.Publishing.project_working_publication(project_slug)
-    Oli.Publishing.determine_parent_pages(resource_ids, publication.id)
-  end
-
-  defp arrange_rows_into_objective_hierarchy(rows) do
-    by_id = Enum.reduce(rows, %{}, fn r, m -> Map.put(m, r.slice.resource_id, r) end)
-
-    parents =
-      Enum.reduce(rows, %{}, fn r, m ->
-        Enum.reduce(r.slice.children, m, fn id, m -> Map.put(m, id, r.slice.resource_id) end)
-      end)
-
-    Enum.filter(rows, fn r -> !Map.has_key?(parents, r.slice.resource_id) end)
-    |> Enum.map(fn parent ->
-      child_rows =
-        Enum.map(parent.slice.children, fn c -> Map.get(by_id, c) |> Map.put(:is_child, true) end)
-
-      Map.put(parent, :child_rows, child_rows)
-    end)
-  end
-
-  defp get_active_original(assigns) do
-    case assigns.selected do
-      :by_page -> assigns.by_page_rows
-      :by_activity -> assigns.by_activity_rows
-      _ -> assigns.by_objective_rows
-    end
+    Oli.Publishing.determine_parent_pages(publication.id)
   end
 
   def render(assigns) do
@@ -284,6 +279,113 @@ defmodule OliWeb.Insights do
     is_nil(assigns.active_rows)
   end
 
+  def patch_with(socket, changes) do
+
+    # convert param keys from atoms to strings
+    changes = Enum.into(changes, %{}, fn {k, v} -> {Atom.to_string(k), v} end)
+    # convert atom values to string values
+    changes = Enum.into(changes, %{}, fn {k, v} ->
+      case v do
+        atom when is_atom(atom) -> {k, Atom.to_string(v)}
+        _ -> {k, v}
+      end
+    end)
+
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
+
+    options = socket.assigns.options
+    offset = get_int_param(changes, "offset", 0)
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
+
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
+
+    {:noreply,
+     assign(socket,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       options: options
+     )}
+  end
+
+  defp filter_by(socket, resource_type_id, by_type, table_model) do
+
+    options = %BrowseInsightsOptions{
+      project_id: socket.assigns.options.project_id,
+      resource_type_id: resource_type_id,
+      section_ids: socket.assigns.options.section_ids
+    }
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
+
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
+
+    {:noreply,
+     assign(socket,
+       offset: 0,
+       table_model: table_model,
+       total_count: total_count,
+       options: options,
+       selected: by_type
+     )}
+  end
+
+  defp change_section_ids(socket, section_ids) do
+
+    options = %BrowseInsightsOptions{ socket.assigns.options | section_ids: section_ids }
+    table_model = socket.assigns.table_model
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
+
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
+
+    {:noreply,
+     assign(socket,
+       offset: 0,
+       table_model: table_model,
+       total_count: total_count,
+       options: options
+     )}
+  end
+
+  def handle_event("filter_by_activity", _params, socket) do
+
+    activity_types_map = Oli.Activities.list_activity_registrations()
+    |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+
+    {:ok, table_model} = ActivityTableModel.new([], activity_types_map, socket.assigns.parent_pages, socket.assigns.project.slug, socket.assigns.ctx)
+
+    filter_by(socket, Oli.Resources.ResourceType.get_id_by_type("activity"), :by_activity, table_model)
+  end
+
+  def handle_event("filter_by_page", _params, socket) do
+    {:ok, table_model} = PageTableModel.new([], socket.assigns.project.slug, socket.assigns.ctx)
+    filter_by(socket, Oli.Resources.ResourceType.get_id_by_type("page"), :by_page, table_model)
+  end
+
+  def handle_event("filter_by_objective", _params, socket) do
+    {:ok, table_model} = ObjectiveTableModel.new([], socket.assigns.ctx)
+    filter_by(socket, Oli.Resources.ResourceType.get_id_by_type("objective"), :by_objective, table_model)
+  end
 
   def handle_event("generate_analytics_snapshot", _params, socket) do
     project = socket.assigns.project
@@ -303,32 +405,15 @@ defmodule OliWeb.Insights do
     end
   end
 
-
-  def handle_event(event, params, socket),
-  do:
+  def handle_event(event, params, socket) do
     delegate_to(
-      {event, params, socket, &__MODULE__.patch_with/2},
+      {event, params, socket, &OliWeb.Insights.patch_with/2},
       [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
     )
-
-  def patch_with(socket, changes) do
-    # Prepare the changes by converting to URL-friendly params
-    params =
-      socket.assigns
-      |> Map.take([:sort_by, :sort_order, :offset, :query])
-      |> Map.merge(changes)
-      |> Enum.reject(fn {_k, v} -> v == nil end) # Remove nil values
-      |> Enum.into(%{}, fn {k, v} -> {k, to_string(v)} end) # Convert values to strings
-
-    # Push the patch with the sanitized params
-    {:noreply,
-    push_patch(socket,
-      to: Routes.live_path(socket, __MODULE__, params),
-      replace: true
-    )}
   end
 
   def handle_info({:option_selected, "section_selected", selected_ids}, socket) do
+
     socket =
       assign(socket,
         section_ids: selected_ids,
@@ -337,11 +422,12 @@ defmodule OliWeb.Insights do
         is_product: false
       )
 
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
+    change_section_ids(socket, selected_ids)
+
   end
 
   def handle_info({:option_selected, "product_selected", selected_ids}, socket) do
+
     socket =
       assign(socket,
         product_ids: selected_ids,
@@ -350,8 +436,14 @@ defmodule OliWeb.Insights do
         is_product: true
       )
 
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
+    section_ids = Enum.reduce(selected_ids, MapSet.new(), fn id, all ->
+      Map.get(socket.assigns.sections_by_product_id, id)
+      |> MapSet.new()
+      |> MapSet.union(all)
+    end)
+    |> Enum.to_list()
+
+    change_section_ids(socket, section_ids)
   end
 
   def handle_info(
@@ -385,23 +477,6 @@ defmodule OliWeb.Insights do
     UUID.uuid4()
   end
 
-  defp filter_type(selected) do
-    case selected do
-      :by_page ->
-        send(self(), :init_by_page)
-
-      :by_activity ->
-        send(self(), :init_by_activity)
-
-      :by_objective ->
-        send(self(), :init_by_objective)
-    end
-  end
-
-  defp click_or_enter_key?(event) do
-    event["key"] == nil or event["key"] == "Enter"
-  end
-
   defp is_disabled(selected, title) do
     if selected == title do
       [disabled: true]
@@ -409,13 +484,5 @@ defmodule OliWeb.Insights do
       []
     end
   end
-
-  def truncate(float_or_nil) when is_nil(float_or_nil), do: nil
-  def truncate(float_or_nil) when is_float(float_or_nil), do: Float.round(float_or_nil, 2)
-
-  def format_percent(float_or_nil) when is_nil(float_or_nil), do: nil
-
-  def format_percent(float_or_nil) when is_float(float_or_nil),
-    do: "#{round(100 * float_or_nil)}%"
 
 end
