@@ -21,7 +21,9 @@ import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
 import ActivityBank from './bank/ActivityBank';
 import { References } from './bibliography/References';
+import Bibliography from './bibliography/Bibliography';
 
+registerApplication('Bibliography', Bibliography, globalStore);
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
 registerApplication('DarkModeSelector', DarkModeSelector);
 registerApplication('PaginationControls', PaginationControls, globalStore);
