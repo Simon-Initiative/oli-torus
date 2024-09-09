@@ -30,6 +30,7 @@
     resource_slug={assigns[:resource_slug]}
     active_tab={assigns[:active_tab]}
     url_params={assigns[:url_params] || %{}}
+    uri={assigns[:uri] || ""}
   />
   <Components.Delivery.Layouts.header
     :if={@disable_sidebar?}

@@ -23,10 +23,12 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
     if connected?(socket) do
       socket =
         attach_hook(socket, :sidebar_hook, :handle_params, fn
-          params, _uri, socket ->
+          params, uri, socket ->
             sidebar_expanded = Oli.Utils.string_to_boolean(params["sidebar_expanded"] || "true")
 
-            {:cont, assign(socket, sidebar_expanded: sidebar_expanded)}
+            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_expanded)
+
+            {:cont, socket}
         end)
 
       {:cont, socket}

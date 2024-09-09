@@ -3,6 +3,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   This module contains the layout components for the delivery UI.
   """
   use OliWeb, :html
+  use OliWeb, :verified_routes
 
   import OliWeb.Components.Utils
 
@@ -227,6 +228,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_slug, :string, default: nil)
   attr(:active_tab, :atom, default: nil)
   attr(:url_params, :map, default: %{})
+  attr(:uri, :string, default: "")
 
   def workspace_sidebar_toggler(assigns) do
     ~H"""
@@ -240,7 +242,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
             @sidebar_expanded,
             @resource_slug,
             @active_tab,
-            @url_params
+            @url_params,
+            @uri
           )
         )
         |> JS.hide(to: "div[role='expandable_submenu']")
@@ -265,6 +268,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
   attr(:url_params, :map, default: %{})
+  attr(:uri, :string, default: "")
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
@@ -313,6 +317,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             resource_slug={@resource_slug}
             active_tab={@active_tab}
             url_params={@url_params}
+            uri={@uri}
           />
           <div class="h-[24px]">
             <h2
@@ -521,29 +526,17 @@ defmodule OliWeb.Components.Delivery.Layouts do
          sidebar_expanded,
          resource_slug,
          active_tab,
-         url_params
+         url_params,
+         uri
        ) do
     params = Map.merge(url_params, %{sidebar_expanded: !sidebar_expanded})
-
-    base_module =
-      case active_workspace do
-        :course_author -> OliWeb.Workspaces.CourseAuthor
-        :instructor -> OliWeb.Workspaces.Instructor
-        :student -> OliWeb.Workspaces.Student
-        _ -> raise "Unknown workspace: #{active_workspace}"
-      end
-
-    item_view = active_view |> Atom.to_string() |> Macro.camelize()
-
-    view_module =
-      Module.concat([base_module, item_view <> "Live"])
 
     case {active_workspace, active_view} do
       {:course_author, nil} ->
         ~p"/workspaces/course_author?#{params}"
 
       {:course_author, _view_slug} ->
-        Routes.live_path(OliWeb.Endpoint, view_module, resource_slug, params)
+        decode_uri(uri, params)
 
       {:instructor, nil} ->
         ~p"/workspaces/instructor?#{params}"
@@ -553,6 +546,22 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
       {:student, nil} ->
         ~p"/workspaces/student?#{params}"
+    end
+  end
+
+  defp decode_uri(uri, params) do
+    url_path = uri |> URI.parse() |> Map.get(:path)
+    split_path = if url_path, do: String.split(url_path, "/"), else: uri
+
+    case split_path do
+      ["", "workspaces", "course_author", project_slug, "products", product_slug] ->
+        ~p"/workspaces/course_author/#{project_slug}/products/#{product_slug}?#{params}"
+
+      ["", "workspaces", "course_author", project_slug, "products"] ->
+        ~p"/workspaces/course_author/#{project_slug}/products?#{params}"
+
+      _ ->
+        ~p"/"
     end
   end
 

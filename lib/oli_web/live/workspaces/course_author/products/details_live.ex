@@ -147,6 +147,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
     """
   end
 
+  # Needed to handle sidebar_expaded event
+  def handle_params(_params, _uri, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("validate", %{"section" => params}, socket) do
     changeset = Sections.change_section(socket.assigns.product, params)
     {:noreply, assign(socket, changeset: changeset)}
