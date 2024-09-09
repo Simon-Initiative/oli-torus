@@ -93,7 +93,12 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div role="page schedule" class="justify-start items-start gap-1 flex">
-            <div class="opacity-50 dark:text-white text-xs font-normal">Due:</div>
+            <div
+              :if={@page_context.effective_settings.end_date}
+              class="opacity-50 dark:text-white text-xs font-normal"
+            >
+              <%= label_for_scheduling_type(@page_context.effective_settings.scheduling_type) %>
+            </div>
             <div class="dark:text-white text-xs font-normal">
               <%= FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
@@ -149,6 +154,11 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     """
   end
+
+  def label_for_scheduling_type(:due_by), do: "Due by: "
+  def label_for_scheduling_type(:read_by), do: "Read by: "
+  def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
+  def label_for_scheduling_type(_), do: ""
 
   def proficiency_explanation_modal(assigns) do
     assigns =
