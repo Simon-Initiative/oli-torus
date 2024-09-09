@@ -1127,6 +1127,7 @@ select {
   --color-feedback-partially-correct-bg: #FCDDA8;
   --color-feedback-partially-correct-color: #000;
   --color-feedback-partially-correct-graphic-color: #F7AE32;
+  --color-feedback-table-color: #000;
   --color-toolbar-bg: #f8f9fb;
   --color-toolbar-bg-dark: #3e3f44;
   --color-toolbar-border: #e5e6e8;
