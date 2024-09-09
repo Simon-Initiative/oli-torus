@@ -20,8 +20,8 @@ import { globalStore } from 'state/store';
 import { VideoPlayer } from '../components/video_player/VideoPlayer';
 import { OfflineDetector } from './OfflineDetector';
 import ActivityBank from './bank/ActivityBank';
-import { References } from './bibliography/References';
 import Bibliography from './bibliography/Bibliography';
+import { References } from './bibliography/References';
 
 registerApplication('Bibliography', Bibliography, globalStore);
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
