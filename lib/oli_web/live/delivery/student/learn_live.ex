@@ -1472,7 +1472,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <div class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold font-['Open Sans']">
-            <%= "#{label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+            <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
         </div>
         <.index_item
@@ -2659,11 +2659,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        ) do
     Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
   end
-
-  defp label_for_scheduling_type(:due_by), do: "Due by: "
-  defp label_for_scheduling_type(:read_by), do: "Read by: "
-  defp label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
-  defp label_for_scheduling_type(_), do: ""
 
   defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
 

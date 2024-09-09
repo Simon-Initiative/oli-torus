@@ -839,6 +839,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
+      assert has_element?(view, ~s{div[role="page schedule"]}, "Read by:")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
     end
 

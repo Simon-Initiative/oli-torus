@@ -282,7 +282,7 @@ defmodule OliWeb.Common.FormatDateTime do
 
   def to_formatted_datetime(datetime, ctx, format \\ "{WDshort} {Mshort} {D}, {YYYY}")
 
-  def to_formatted_datetime(nil, _ctx, _format), do: "not yet scheduled"
+  def to_formatted_datetime(nil, _ctx, _format), do: "Not yet scheduled"
 
   def to_formatted_datetime(datetime, ctx, format) do
     if is_binary(datetime) do
@@ -294,7 +294,7 @@ defmodule OliWeb.Common.FormatDateTime do
     end
   end
 
-  defp to_datetime(nil), do: "not yet scheduled"
+  defp to_datetime(nil), do: "Not yet scheduled"
 
   defp to_datetime(string_datetime) do
     {:ok, datetime, _} = DateTime.from_iso8601(string_datetime)
