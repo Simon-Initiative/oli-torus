@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Updates.Worker do
   """
   use Oban.Worker, queue: :updates, max_attempts: 3
 
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Updates
 
   @impl Oban.Worker
   def perform(%Oban.Job{
@@ -14,9 +14,9 @@ defmodule Oli.Delivery.Updates.Worker do
   end
 
   def perform_now(section_slug, publication_id) do
-    section = Sections.get_section_by_slug(section_slug)
+    section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
 
-    Sections.apply_publication_update(
+    Updates.apply_publication_update(
       section,
       publication_id
     )
