@@ -155,6 +155,7 @@ module.exports = {
     'feedback-partially-correct-bg': colors.yellow['200'],
     'feedback-partially-correct-color': colors.black,
     'feedback-partially-correct-graphic-color': colors.yellow['500'],
+    'feedback-table-color': colors.black,
     toolbar: {
       bg: {
         DEFAULT: '#f8f9fb',
