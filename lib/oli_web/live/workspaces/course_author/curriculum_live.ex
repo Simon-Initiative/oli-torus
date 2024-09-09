@@ -12,12 +12,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
     Rollup,
     ActivityDelta,
     DropTarget,
-    Entry,
     OptionsModalContent,
     DeleteModal,
     NotEmptyModal,
     HyperlinkDependencyModal
   }
+
+  alias OliWeb.Workspaces.CourseAuthor.Curriculum.Entry
 
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing.ChangeTracker

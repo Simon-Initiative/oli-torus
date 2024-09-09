@@ -610,6 +610,23 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
       assert has_element?(view, ~s(input[id='text-search-input']))
       assert has_element?(view, "a", "Open Sync View")
     end
+
+    test "publish menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/publish")
+      assert has_element?(view, "h5", "Publication Details")
+
+      assert has_element?(
+               view,
+               "div",
+               "Publish your project to give instructors access to the latest changes."
+             )
+
+      assert has_element?(view, "button", "Connect with LTI 1.3")
+      assert has_element?(view, "button", "Publish")
+    end
   end
 
   defp create_project_with_owner(owner, attrs \\ %{}) do
