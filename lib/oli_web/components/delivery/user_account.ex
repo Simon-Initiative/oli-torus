@@ -346,7 +346,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   attr :picture, :string
-  attr :initials, :string, required: true
+  attr :initials, :string
 
   def user_picture_icon(assigns) do
     ~H"""
@@ -398,7 +398,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         aria-expanded="false"
       >
         <div class="user-icon">
-          <.user_picture_icon ctx={@ctx} />
+          <.user_picture_icon />
         </div>
         <div class="block lg:inline-block lg:mt-0 text-grey-darkest mx-2">
           <div class="username">
