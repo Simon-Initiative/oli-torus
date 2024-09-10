@@ -135,7 +135,7 @@
                     phx-click="add"
                     phx-value-type="Basic"
                     phx-value-scored="Unscored"
-                    title="Questions on the page will not be graded"
+                    title="Questions on the page will not be scored"
                     class="btn btn-xs btn-outline-primary mb-2"
                     type="button"
                   >
@@ -146,7 +146,7 @@
                       phx-click="add"
                       phx-value-type="Adaptive"
                       phx-value-scored="Unscored"
-                      title="Questions on the page will not be graded"
+                      title="Questions on the page will not be scored"
                       class="btn btn-xs btn-outline-primary"
                       type="button"
                     >
@@ -159,22 +159,22 @@
                     phx-click="add"
                     phx-value-type="Basic"
                     phx-value-scored="Scored"
-                    title="Questions on the page will be graded"
+                    title="Questions on the page will be scored"
                     class="btn btn-xs btn-outline-primary mb-2"
                     type="button"
                   >
-                    Graded
+                    Scored
                   </button>
                   <%= if @adaptivity_flag do %>
                     <button
                       phx-click="add"
                       phx-value-type="Adaptive"
                       phx-value-scored="Scored"
-                      title="Questions on the page will be graded"
+                      title="Questions on the page will be scored"
                       class="btn btn-xs btn-outline-primary"
                       type="button"
                     >
-                      Graded
+                      Scored
                     </button>
                   <% end %>
                 </div>

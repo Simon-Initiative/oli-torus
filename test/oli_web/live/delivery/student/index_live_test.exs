@@ -31,7 +31,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     context
   end
 
-  defp create_elixir_project(_) do
+  defp create_not_scheduled_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -255,7 +255,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     section =
       insert(:section,
         base_project: project,
-        title: "The best course ever!",
+        title: "The best course ever! (unscheduled version)",
         start_date: ~U[2023-10-30 20:00:00Z],
         analytics_version: :v2
       )
@@ -263,6 +263,52 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
     {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      mcq_1: mcq_activity_1_revision,
+      mcq_2: mcq_activity_2_revision,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      page_6: page_6_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      module_3: module_3_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision,
+      container_revision: container_revision
+    }
+  end
+
+  defp create_elixir_project(_) do
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      mcq_1: mcq_activity_1_revision,
+      mcq_2: mcq_activity_2_revision,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      page_6: page_6_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      module_3: module_3_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision,
+      container_revision: container_revision
+    } = create_not_scheduled_elixir_project(%{})
+
+    {:ok, section} = Sections.update_section(section, %{title: "The best course ever!"})
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
@@ -645,7 +691,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         live(conn, ~p"/sections/#{section.slug}")
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}&section=#{section.slug}"
     end
 
     test "can not access when not enrolled to course", context do
@@ -1049,6 +1095,107 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       refute has_element?(view, "div", "This Week")
       refute has_element?(view, "div", page_1.title)
     end
+
+    test "do not show hidden pages in upcoming agenda", %{
+      conn: conn,
+      section: section,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+
+      # Set page 3 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      refute has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+    end
+  end
+
+  describe "student on a section not yet scheduled" do
+    setup [
+      :user_conn,
+      :set_timezone,
+      :create_not_scheduled_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
+
+    test "displays three upcoming assignments", %{
+      conn: conn,
+      section: section,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+      second_assignment = ~s{div[role=assignments] a:nth-child(2) }
+      third_assignment = ~s{div[role=assignments] a:nth-child(3) }
+
+      # First upcoming assignment
+      assert element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, first_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, first_assignment <> ~s{div[role=title]}, page_3.title)
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      # Second upcoming assignment
+      assert element(
+               view,
+               second_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_4.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Unit 1")
+      assert has_element?(view, second_assignment <> ~s{div[role=container_label]}, "Module 2")
+      assert has_element?(view, second_assignment <> ~s{div[role=title]}, page_4.title)
+
+      assert has_element?(
+               view,
+               second_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+             )
+
+      # Third upcoming assignment
+      assert element(
+               view,
+               third_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_5.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Unit 2")
+      assert has_element?(view, third_assignment <> ~s{div[role=container_label]}, "Module 3")
+      assert has_element?(view, third_assignment <> ~s{div[role=title]}, page_5.title)
+
+      assert has_element?(
+               view,
+               third_assignment <> ~s{div[role=resource_type][aria-label=checkpoint]}
+             )
+    end
   end
 
   describe "my assignments" do
@@ -1273,6 +1420,92 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
 
       assert has_element?(view, third_assignment <> ~s{div[role=details]}, "Completed")
+    end
+
+    test "do not show hidden pages in latest assignments", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2024-04-22 21:00:00Z])
+
+      set_progress(section.id, page_3.resource_id, user.id, 0.3, page_3,
+        attempt_state: :evaluated,
+        updated_at: ~U[2023-11-01 22:00:00Z]
+      )
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      view
+      |> element("#latest_tab")
+      |> render_click()
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+
+      # First latest assignment
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      assert has_element?(
+               view,
+               first_assignment <> ~s{div[role=details] div[role=count]},
+               "Attempt 1/∞"
+             )
+
+      # Set page 3 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      # First latest assignment
+      refute has_element?(
+               view,
+               first_assignment <> ~s{div[role=resource_type][aria-label=exploration]}
+             )
+
+      refute has_element?(
+               view,
+               first_assignment <> ~s{div[role=details] div[role=count]},
+               "Attempt 1/∞"
+             )
+    end
+
+    test "do not show hidden pages in upcoming assignments", %{
+      conn: conn,
+      section: section,
+      page_3: page_3
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      first_assignment = ~s{div[role=assignments] a:nth-child(1) }
+
+      # First upcoming assignment
+      assert element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+
+      # Set page 3 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_3.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      # First upcoming assignment
+      refute element(
+               view,
+               first_assignment
+             )
+             |> render() =~
+               ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
     end
   end
 end

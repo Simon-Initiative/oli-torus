@@ -1977,8 +1977,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
-  @tag :skip
   describe "preview redirects to student view when is enrolled" do
+    @describetag :skip
     setup [:setup_lti_session, :section_with_assessment, :enroll_as_student]
 
     test "index preview redirects ok", %{

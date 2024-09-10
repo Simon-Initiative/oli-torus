@@ -15,7 +15,6 @@ import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { Banner } from 'components/messages/Banner';
 import { Page, Paging } from 'components/misc/Paging';
 import { Modal } from 'components/modal/Modal';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { modalActions } from 'actions/modal';
@@ -588,8 +587,6 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       <React.StrictMode>
         <AppsignalContext.Provider value={this.state.appsignal}>
           <ErrorBoundary>
-            <ModalDisplay />
-
             <div className="resource-editor">
               <div>
                 <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />

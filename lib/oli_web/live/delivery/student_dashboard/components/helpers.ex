@@ -125,7 +125,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   defp is_hidden?(tab, hidden_tabs), do: Enum.member?(hidden_tabs, tab)
 
   defp logo_link(nil, _, _),
-    do: ~p"/sections"
+    do: ~p"/workspaces/student"
 
   defp logo_link(section, student_id, preview_mode) do
     if preview_mode do

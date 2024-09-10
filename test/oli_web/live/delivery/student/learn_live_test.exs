@@ -473,6 +473,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     Sections.get_section_resource(section.id, page_12_revision.resource_id)
     |> Sections.update_section_resource(%{
+      scheduling_type: :due_by,
       start_date: ~U[2023-11-02 20:00:00Z],
       end_date: ~U[2023-11-03 20:00:00Z]
     })
@@ -776,7 +777,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
     end
   end
 
@@ -1472,7 +1473,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert has_element?(
                view,
-               "#index_item_#{section_1.resource_id}_2023-11-03"
+               "#index_item_#{section_1.resource_id}_due_by_2023-11-03"
              )
     end
 
@@ -1537,7 +1538,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~ "Due:\n              </span>\n              not yet scheduled"
+             |> render() =~ "Due:\n              </span>\n              Not yet scheduled"
     end
 
     test "can see units, modules and page (at module level) progresses", %{
@@ -1708,7 +1709,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="schedule_details"]}
              )
-             |> render() =~ "Due:\n              </span>\n              not yet scheduled"
+             |> render() =~ "Not yet scheduled"
 
       assert view
              |> element(~s{div[id="page_#{top_level_page.resource_id}"][role="card_1"]})
@@ -1945,13 +1946,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section_1_element =
         element(
           view,
-          "#index_item_#{section_1.resource_id}_2023-11-03"
+          "#index_item_#{section_1.resource_id}_read_by_2023-11-03"
         )
 
       subsection_1_element =
         element(
           view,
-          "#index_item_#{subsection_1.resource_id}_2023-11-03"
+          "#index_item_#{subsection_1.resource_id}_read_by_2023-11-03"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
@@ -1961,7 +1962,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(subsection_1_element) =~ "ml-[20px]"
     end
 
-    test "groups pages within a module index by due date (even if some pages do not yet have a scheduled date)",
+    test "groups pages within a module index by due date or read by (even if some pages do not yet have a scheduled date)",
          %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
@@ -1969,16 +1970,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="card_4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_2023-11-03"]})
+      group_by_read_by_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-03"]})
+
+      group_by_due_by_date_div = element(view, ~s{div[id="pages_grouped_by_due_by_2023-11-03"]})
 
       group_by_not_yet_scheduled_div =
-        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled"]})
+        element(view, ~s{div[id="pages_grouped_by_Not yet scheduled_Not yet scheduled"]})
 
-      assert render(group_by_due_date_div) =~ "Due: Fri Nov 3, 2023"
-      assert render(group_by_due_date_div) =~ "Page 11"
-      assert render(group_by_due_date_div) =~ "Page 12"
+      assert render(group_by_read_by_date_div) =~ "Read by: Fri Nov 3, 2023"
+      assert render(group_by_read_by_date_div) =~ "Page 11"
 
-      assert render(group_by_not_yet_scheduled_div) =~ "Due: Not yet scheduled"
+      assert render(group_by_due_by_date_div) =~ "Due by: Fri Nov 3, 2023"
+      assert render(group_by_due_by_date_div) =~ "Page 12"
+
+      assert render(group_by_not_yet_scheduled_div) =~ "Not yet scheduled"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 13"
       assert render(group_by_not_yet_scheduled_div) =~ "Page 14"
     end
@@ -2006,10 +2011,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{div[role="unit_5"] div[role="card_4"]})
       |> render_click()
 
-      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_2023-11-10"]})
+      group_by_due_date_div = element(view, ~s{div[id="pages_grouped_by_read_by_2023-11-10"]})
 
       # page 13 is due on Nov 10, 2023 as defined in the student exception
-      assert render(group_by_due_date_div) =~ "Due: Fri Nov 10, 2023"
+      assert render(group_by_due_date_div) =~ "Read by: Fri Nov 10, 2023"
       assert render(group_by_due_date_div) =~ "Page 13"
     end
 
@@ -2026,6 +2031,20 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(view) =~ "Page 13"
       assert render(view) =~ "Page 14"
       refute render(view) =~ "Page 15"
+    end
+
+    test "do not show hidden pages", %{
+      conn: conn,
+      section: section,
+      page_7: page_7
+    } do
+      # Set page 7 as hidden
+      section_resource = Sections.get_section_resource(section.id, page_7.resource_id)
+      Sections.update_section_resource(section_resource, %{hidden: !section_resource.hidden})
+
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      refute render(view) =~ "Page 7"
     end
   end
 
@@ -2484,7 +2503,10 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
     test "can switch from Outline to Gallery view", %{conn: conn, section: section} do
       {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+        live(
+          conn,
+          Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        )
 
       # selector text matches current view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
@@ -2502,7 +2524,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :gallery, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :gallery)
       )
 
       # selector text matches target view
@@ -2529,7 +2551,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       assert_patch(
         view,
-        Utils.learn_live_path(section.slug, selected_view: :outline, sidebar_expanded: true)
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :outline)
       )
 
       # selector text matches target view
@@ -2686,7 +2708,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
     end
 
-    test "exit course button redirects to sections view", %{
+    test "exit course button redirects to the student workspace", %{
       conn: conn,
       section: section
     } do
@@ -2697,7 +2719,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a[id="exit_course_button"]}, "Exit Course")
       |> render_click()
 
-      assert_redirect(view, "/sections")
+      assert_redirect(view, "/workspaces/student?sidebar_expanded=true")
     end
 
     test "logo icon redirects to home page", %{

@@ -858,6 +858,7 @@ defmodule Oli.SectionsTest do
 
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      original_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
 
       assert hierarchy.children |> Enum.count() == 2
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
@@ -928,7 +929,7 @@ defmodule Oli.SectionsTest do
           working_pub
         )
 
-      # remove page 2
+      # remove page
       _deleted_revision =
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
@@ -936,17 +937,18 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      updated_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
 
       # verify non-structural changes are applied as expected
       assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
                page1_changes["content"]
 
       # verify the updated curriculum structure matches the expected result
-
       assert hierarchy.children |> Enum.count() == 4
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
       assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == p1_new_page1.id
@@ -1087,7 +1089,7 @@ defmodule Oli.SectionsTest do
       assert latest_publication.minor == 1
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1165,6 +1167,7 @@ defmodule Oli.SectionsTest do
           },
           max_attempts: 200,
           retake_mode: :targeted,
+          assessment_mode: :one_at_a_time,
           # "I've got the same combination on my luggage"
           password: "12345",
           late_submit: :disallow,
@@ -1256,7 +1259,7 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the product
-      Sections.apply_publication_update(product, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(product, latest_publication.id)
 
       # reload latest hierarchy
       product_hierarchy = DeliveryResolver.full_hierarchy(product.slug)
@@ -1283,7 +1286,7 @@ defmodule Oli.SectionsTest do
       assert product_section_resources |> Enum.count() == 3
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1332,6 +1335,7 @@ defmodule Oli.SectionsTest do
       assert page1_sr.explanation_strategy.set_num_attempts == 10
       assert page1_sr.max_attempts == 200
       assert page1_sr.retake_mode == :targeted
+      assert page1_sr.assessment_mode == :one_at_a_time
       assert page1_sr.password == "12345"
       assert page1_sr.late_submit == :disallow
       assert page1_sr.late_start == :disallow
@@ -1413,6 +1417,7 @@ defmodule Oli.SectionsTest do
           },
           max_attempts: 200,
           retake_mode: :targeted,
+          assessment_mode: :one_at_a_time,
           # "I've got the same combination on my luggage"
           password: "12345",
           late_submit: :disallow,
@@ -1504,7 +1509,7 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1553,6 +1558,7 @@ defmodule Oli.SectionsTest do
       assert page1_sr.explanation_strategy.set_num_attempts == 10
       assert page1_sr.max_attempts == 200
       assert page1_sr.retake_mode == :targeted
+      assert page1_sr.assessment_mode == :one_at_a_time
       assert page1_sr.password == "12345"
       assert page1_sr.late_submit == :disallow
       assert page1_sr.late_start == :disallow
@@ -1633,6 +1639,7 @@ defmodule Oli.SectionsTest do
           },
           max_attempts: 200,
           retake_mode: :targeted,
+          assesment_mode: :one_at_a_time,
           # "I've got the same combination on my luggage"
           password: "12345",
           late_submit: :disallow,
@@ -1724,7 +1731,7 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       section_hierarchy = DeliveryResolver.full_hierarchy(section.slug)

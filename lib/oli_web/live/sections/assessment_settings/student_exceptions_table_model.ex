@@ -90,6 +90,13 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
         tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
+        name: :assessment_mode,
+        label: "PRESENTATION",
+        render_fn: &__MODULE__.render_assessment_mode_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:assessment_mode)
+      },
+      %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
         render_fn: &__MODULE__.render_view_feedback_column/3,
@@ -157,18 +164,22 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-    <button
-      class="hover:underline whitespace-nowrap"
-      type="button"
-      phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
-      phx-value-user_id={@id}
-    >
-      <%= if is_nil(@available_date) do %>
-        Always available
-      <% else %>
-        <%= value_from_datetime(@available_date, @ctx) %>
-      <% end %>
-    </button>
+    <div class={data_class(@selected_assessment.start_date, @available_date)}>
+      <div class="relative">
+        <button
+          class="hover:underline whitespace-nowrap"
+          type="button"
+          phx-click={edit_date_and_show_modal(@on_edit_date, "available_date")}
+          phx-value-user_id={@id}
+        >
+          <%= if is_nil(@available_date) do %>
+            Always available
+          <% else %>
+            <%= value_from_datetime(@available_date, @ctx) %>
+          <% end %>
+        </button>
+      </div>
+    </div>
     """
   end
 
@@ -180,18 +191,22 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
       })
 
     ~H"""
-    <button
-      class="hover:underline whitespace-nowrap"
-      type="button"
-      phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
-      phx-value-user_id={@id}
-    >
-      <%= if @due_date do %>
-        <%= value_from_datetime(@due_date, @ctx) %>
-      <% else %>
-        No due date
-      <% end %>
-    </button>
+    <div class={data_class(@selected_assessment.end_date, @due_date)}>
+      <div class="relative">
+        <button
+          class="hover:underline whitespace-nowrap"
+          type="button"
+          phx-click={edit_date_and_show_modal(@on_edit_date, "due_date")}
+          phx-value-user_id={@id}
+        >
+          <%= if @due_date do %>
+            <%= value_from_datetime(@due_date, @ctx) %>
+          <% else %>
+            No due date
+          <% end %>
+        </button>
+      </div>
+    </div>
     """
   end
 
@@ -344,6 +359,26 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
     """
   end
 
+  def render_assessment_mode_column(assigns, student_exception, _) do
+    assigns =
+      Map.merge(assigns, %{
+        assessment_mode: student_exception.assessment_mode,
+        id: student_exception.user_id
+      })
+
+    ~H"""
+    <div class={data_class(@selected_assessment.assessment_mode, @assessment_mode)}>
+      <select class="torus-select pr-32" name={"assessment_mode-#{@id}"}>
+        <option disabled selected={@assessment_mode == nil} hidden value="">-</option>
+        <option selected={@assessment_mode == :traditional} value={:traditional}>Traditional</option>
+        <option selected={@assessment_mode == :one_at_a_time} value={:one_at_a_time}>
+          One at a time
+        </option>
+      </select>
+    </div>
+    """
+  end
+
   def render_view_feedback_column(assigns, student_exception, _) do
     assigns =
       Map.merge(assigns, %{
@@ -425,8 +460,9 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTableModel do
   end
 
   defp data_class(assessment_data, student_exception_data)
-       when assessment_data != student_exception_data and student_exception_data != nil,
-       do: "highlight-exception"
+       when assessment_data != student_exception_data and student_exception_data != nil do
+    "highlight-exception"
+  end
 
   defp data_class(_assessment_data, _student_exception_data), do: ""
 

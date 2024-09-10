@@ -203,33 +203,4 @@ defmodule OliWeb.ResourceControllerTest do
 
     {:ok, Map.merge(%{conn: conn}, seeds)}
   end
-
-  def create_hyperlink_content(revision_2_slug) do
-    %{
-      "model" => [
-        %{
-          "children" => [
-            %{
-              "children" => [
-                %{"text" => " "},
-                %{
-                  "children" => [%{"text" => "link"}],
-                  "href" => "/course/link/#{revision_2_slug}",
-                  "id" => "1914651063",
-                  "target" => "self",
-                  "type" => "a"
-                },
-                %{"text" => ""}
-              ],
-              "id" => "3636822762",
-              "type" => "p"
-            }
-          ],
-          "id" => "481882791",
-          "purpose" => "None",
-          "type" => "content"
-        }
-      ]
-    }
-  end
 end

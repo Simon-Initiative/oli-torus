@@ -461,26 +461,29 @@ defmodule OliWeb.DeliveryControllerTest do
                "You are being <a href=\"/sections/join/invalid\">redirected"
     end
 
-    test "redirects to login form with section slug and from_invitation_link? as true as query params",
+    test "shows enroll page with options for enrolling as guest, signing in, and signing up",
          %{conn: conn} do
       section = insert(:section)
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
 
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite.slug}&amp;section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected"
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "Enroll in Course Section"
+      assert html_response(conn, 200) =~ "Enroll as Guest"
+      assert html_response(conn, 200) =~ "Sign In"
+      assert html_response(conn, 200) =~ "Sign Up"
     end
 
-    test "redirects to enroll page when section is open and free and does not require enrollment",
+    test "shows enroll page when section is open and free and does not require enrollment",
          %{conn: conn} do
       section = insert(:section, requires_enrollment: false, open_and_free: true)
       section_invite = insert(:section_invite, %{section: section})
 
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
 
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/enroll?from_invitation_link%3F=true\">redirected</a>"
+      assert html_response(conn, 200) =~ section.title
+      assert html_response(conn, 200) =~ "Enroll in Course Section"
     end
   end
 
@@ -538,6 +541,18 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
 
       assert html_response(conn, 200) =~ "Enroll in Course Section"
+    end
+
+    test "does not display Sign Up link", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      refute html_response(conn, 200) =~ "Sign Up"
+
+      refute html_response(conn, 200) =~
+               ~s(<a href="/registration/new?section=#{section.slug}&amp;from_invitation_link%3F=true")
     end
   end
 
@@ -601,7 +616,7 @@ defmodule OliWeb.DeliveryControllerTest do
         )
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/session/new?section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected"
+               "You are being <a href=\"/?section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected"
     end
 
     test "shows enroll view and Sign In link", %{conn: conn} do
@@ -619,7 +634,25 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Enroll in Course Section"
 
       assert html_response(conn, 200) =~
-               ~s(<a href="/session/new?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+               ~s(<a href="/?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+    end
+
+    test "shows enroll view and Sign Up link", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn =
+        get(
+          conn,
+          Routes.delivery_path(conn, :enroll_independent, section_invite.slug,
+            from_invitation_link?: true
+          )
+        )
+
+      assert html_response(conn, 200) =~ "Sign Up"
+
+      assert html_response(conn, 200) =~
+               ~s(<a href="/registration/new?section=#{section.slug}&amp;from_invitation_link%3F=true")
     end
   end
 
@@ -661,7 +694,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 302) =~
-               "<html><body>You are being <a href=\"/session/new?section=#{section.slug}&amp;from_invitation_link%3F=false\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/?section=#{section.slug}&amp;from_invitation_link%3F=false\">redirected</a>.</body></html>"
 
       conn = mock_captcha(conn, section)
 

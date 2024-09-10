@@ -146,7 +146,7 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
       {:noreply,
        socket
        |> put_flash(:info, "Retrying grade sync. See processing in real time below.")
-       |> push_redirect(
+       |> push_navigate(
          to:
            Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, section_slug)
        )}
@@ -154,7 +154,7 @@ defmodule OliWeb.Grades.FailedGradeSyncLive do
       {:noreply,
        socket
        |> put_flash(:info, "Retrying grade sync. Please check the status again in a few minutes.")
-       |> push_redirect(
+       |> push_navigate(
          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug)
        )}
     end

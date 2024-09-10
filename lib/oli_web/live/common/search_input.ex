@@ -15,7 +15,7 @@ defmodule OliWeb.Common.SearchInput do
         id={"#{@id}-input"}
         phx-debounce="300"
         type="text"
-        class="h-9 w-full rounded border pl-9 focus:ring-1 focus:ring-delivery-primary animate-none focus:outline-2 dark:bg-neutral-800"
+        class="h-9 w-full rounded border pl-9 focus:ring-1 focus:ring-delivery-primary animate-none focus:outline-2 dark:bg-[#0F0D0F] dark:text-violet-100 text-base font-normal font-['Roboto']"
         placeholder={@placeholder}
         value={@text}
         name={@name}

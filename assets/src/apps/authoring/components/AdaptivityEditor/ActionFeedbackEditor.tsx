@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
 import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { FeedbackAction } from 'apps/authoring/types';
 import guid from 'utils/guid';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
@@ -19,7 +21,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
 }) => {
   const [fakeFeedback, setFakeFeedback] = useState<string>('');
   const uuid = guid();
-
+  const dispatch = useDispatch();
   const [feedback, setFeedback] = useState<any>(action.params?.feedback || {});
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
@@ -58,11 +60,13 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
     // TODO: this revert causes infinite loop
     // setFeedback(action.params?.feedback || {});
     setShowEditor(false);
+    dispatch(setCurrentPartPropertyFocus({ focus: true }));
   }, [feedback]);
 
   const handleSaveEdit = useCallback(() => {
     setShowEditor(false);
     onChange({ feedback });
+    dispatch(setCurrentPartPropertyFocus({ focus: true }));
   }, [feedback]);
 
   const handleScreenAuthorChange = (screen: any) => {
@@ -94,6 +98,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           disabled={false}
           readOnly={true}
           onClick={handleShowFeedbackClick}
+          onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
           defaultValue={fakeFeedback}
           // onChange={(e) => setFakeFeedback(e.target.value)}
           // onBlur={(e) => handleTargetChange(e)}

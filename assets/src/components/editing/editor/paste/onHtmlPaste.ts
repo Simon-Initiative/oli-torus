@@ -30,7 +30,7 @@ type PartialTagDeserializer = {
   action: DeserializerAction;
 };
 
-const isJest = typeof process !== 'undefined' && process.env.JEST_WORKER_ID !== undefined;
+const isJest = typeof process !== 'undefined' && process.env?.JEST_WORKER_ID !== undefined;
 const DEBUG_OUTPUT = !isJest;
 
 export const filterNullModelElements = (arr: DeserializeTypes): arr is DeserializeTypesNoNull =>

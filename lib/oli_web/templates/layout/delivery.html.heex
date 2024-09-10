@@ -5,7 +5,9 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <%= get_title(assigns) %>
+    <Phoenix.Component.live_title>
+      <%= assigns[:page_title] || assigns[:title] || brand_name() %>
+    </Phoenix.Component.live_title>
 
     <link
       rel="apple-touch-icon"

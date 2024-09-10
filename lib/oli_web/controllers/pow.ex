@@ -68,7 +68,7 @@ defmodule OliWeb.PowController do
     conn
   end
 
-  def resend_user_confirmation_link(conn, %{"id" => id}) do
+  def resend_user_confirmation_link(conn, %{"user_id" => id}) do
     user = Repo.get(User, id)
 
     conn
@@ -78,7 +78,7 @@ defmodule OliWeb.PowController do
     |> redirect(to: Routes.live_path(conn, OliWeb.Users.UsersDetailView, user.id))
   end
 
-  def resend_author_confirmation_link(conn, %{"id" => id}) do
+  def resend_author_confirmation_link(conn, %{"user_id" => id}) do
     author = Repo.get(Author, id)
 
     conn

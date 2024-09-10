@@ -25,7 +25,7 @@ defmodule OliWeb.PublisherLive.ShowView do
         nil ->
           socket
           |> put_flash(:info, "That publisher does not exist or it was deleted.")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
+          |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         publisher ->
           changeset = Inventories.change_publisher(publisher)
@@ -144,7 +144,7 @@ defmodule OliWeb.PublisherLive.ShowView do
         {:ok, _publisher} ->
           socket
           |> put_flash(:info, "Publisher successfully deleted.")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
+          |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         {:error, %Ecto.Changeset{} = changeset} ->
           put_flash(

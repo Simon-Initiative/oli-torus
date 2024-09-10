@@ -94,6 +94,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> assign_objectives()
+        |> maybe_assign_questions(page_context.effective_settings.assessment_mode)
         |> assign(
           revision_slug: page_context.page.slug,
           attempt_guid: hd(page_context.resource_attempts).attempt_guid,
@@ -119,6 +120,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     else
       {:ok, socket}
     end
+
   end
 
   def mount(
@@ -168,6 +170,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event("survey_scripts_loaded", _params, socket) do
     {:noreply, assign(socket, scripts_loaded: true)}
+  end
+
+  def handle_event("select_question", %{"id" => selected_id}, socket) do
+    questions =
+      socket.assigns.questions
+      |> Enum.into(%{}, fn {id, question} ->
+        {id, Map.put(question, :selected, id == selected_id)}
+      end)
+
+    {:noreply, assign(socket, questions: questions)}
   end
 
   def handle_event(
@@ -789,38 +801,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :graded_page} = assigns) do
     # For graded page with attempt in progress the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <.countdown {assigns} />
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
       <div class="flex flex-col items-center w-full">
         <.scored_page_banner />
-        <%= if !@review_mode and @time_limit > 0 do %>
-          <div
-            id="countdown_timer_display"
-            class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
-            phx-hook="CountdownTimer"
-            data-timer-id="countdown_timer_display"
-            data-submit-button-id="submit_answers"
-            data-time-out-in-mins={@time_limit}
-            data-start-time-in-ms={@attempt_start_time}
-            data-effective-time-in-ms={@effective_end_time}
-            data-grace-period-in-mins={@grace_period}
-            data-auto-submit={if @auto_submit, do: "true", else: "false"}
-          >
-          </div>
-        <% else %>
-          <%= if !@review_mode and !is_nil(@effective_end_time) do %>
-            <div
-              id="countdown_timer_display"
-              class="text-xl text-center sticky mt-4 top-2 font-['Open Sans'] tracking-tight text-zinc-700"
-              phx-hook="EndDateTimer"
-              data-timer-id="countdown_timer_display"
-              data-submit-button-id="submit_answers"
-              data-effective-time-in-ms={@effective_end_time}
-              data-auto-submit={if @auto_submit, do: "true", else: "false"}
-            >
-            </div>
-          <% end %>
-        <% end %>
-
         <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
           <.page_header
             page_context={@page_context}
@@ -871,6 +855,77 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(assigns) do
     ~H"""
     <div></div>
+    """
+  end
+
+  def questions_menu(assigns) do
+    ~H"""
+    <div id="questions_menu" class="w-[157px] h-[468px] ml-0 my-2 overflow-y-scroll flex flex-col">
+      <button
+        :for={{id, question} <- @questions}
+        id={"question_#{id}_button"}
+        phx-click={select_question(id)}
+        phx-value-id={id}
+        class={[
+          "flex items-center gap-[18px] h-[33px] pl-[16.5px]",
+          if(question.selected, do: "!bg-[#0f6bf5]/5")
+        ]}
+      >
+        <div class={[
+          "w-2.5 h-2.5 bg-[#d9d9d9] rounded-full",
+          if(question.selected, do: "!border-2 !border-[#0062f2]")
+        ]}>
+        </div>
+        <span class={[
+          "text-[#353740] text-base font-normal font-['Open Sans'] leading-normal",
+          if(question.selected, do: "!text-[#0f6bf5] !font-bold")
+        ]}>
+          Question <%= id %>
+        </span>
+      </button>
+    </div>
+    """
+  end
+
+  defp select_question(js \\ %JS{}, id) do
+    js
+    |> JS.push("select_question", value: %{id: id})
+    |> JS.hide(to: "div[role='one at a time question']")
+    |> JS.show(to: "#question_#{id}")
+  end
+
+  def countdown(assigns) do
+    ~H"""
+    <%= if !@review_mode and @time_limit > 0 do %>
+      <div
+        id="countdown_timer_display"
+        phx-update="ignore"
+        class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700"
+        phx-hook="CountdownTimer"
+        data-timer-id="countdown_timer_display"
+        data-submit-button-id="submit_answers"
+        data-time-out-in-mins={@time_limit}
+        data-start-time-in-ms={@attempt_start_time}
+        data-effective-time-in-ms={@effective_end_time}
+        data-grace-period-in-mins={@grace_period}
+        data-auto-submit={if @auto_submit, do: "true", else: "false"}
+      >
+      </div>
+    <% else %>
+      <%= if !@review_mode and !is_nil(@effective_end_time) do %>
+        <div
+          id="countdown_timer_display"
+          phx-update="ignore"
+          class="text-lg text-center absolute mt-4 top-2 right-6 font-['Open Sans'] tracking-tight text-zinc-700"
+          phx-hook="EndDateTimer"
+          data-timer-id="countdown_timer_display"
+          data-submit-button-id="submit_answers"
+          data-effective-time-in-ms={@effective_end_time}
+          data-auto-submit={if @auto_submit, do: "true", else: "false"}
+        >
+        </div>
+      <% end %>
+    <% end %>
     """
   end
 
@@ -1208,6 +1263,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         )
       )
     end)
+  end
+
+  _docp = """
+  In case the page is configured to show one question at a time,
+  we pre-process the html content to assign all the questions to the socket.
+  """
+
+  defp maybe_assign_questions(socket, :traditional), do: socket
+
+  defp maybe_assign_questions(socket, :one_at_a_time) do
+    questions =
+      socket.assigns.html
+      |> List.flatten()
+      |> Enum.reduce({1, %{}}, fn element, {index, map} ->
+        if String.contains?(element, "activity-container") do
+          {index + 1, Map.put(map, index, %{raw_content: element, selected: index == 1})}
+        else
+          {index, map}
+        end
+      end)
+      |> elem(1)
+
+    assign(socket, questions: questions)
   end
 
   defp to_epoch(nil), do: nil

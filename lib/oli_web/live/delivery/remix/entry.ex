@@ -65,7 +65,13 @@ defmodule OliWeb.Delivery.Remix.Entry do
       </div>
 
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <.live_component module={Actions} uuid={@node.uuid} id={"remix_actions_#{@node.uuid}"} />
+        <.live_component
+          module={Actions}
+          uuid={@node.uuid}
+          hidden={(@node.section_resource && @node.section_resource.hidden) || false}
+          resource_type={@node.revision.resource_type_id}
+          id={"remix_actions_#{@node.uuid}"}
+        />
       </div>
     </div>
     """

@@ -25,6 +25,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       end_date: @a_day_later,
       max_attempts: 200,
       retake_mode: :targeted,
+      assessment_mode: :traditional,
       late_submit: :disallow,
       late_start: :disallow,
       time_limit: 90,
@@ -78,6 +79,7 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert sr_page_blueprint.end_date == sr_page_duplicate.end_date
       assert sr_page_blueprint.max_attempts == sr_page_duplicate.max_attempts
       assert sr_page_blueprint.retake_mode == sr_page_duplicate.retake_mode
+      assert sr_page_blueprint.assessment_mode == sr_page_duplicate.assessment_mode
       assert sr_page_blueprint.late_submit == sr_page_duplicate.late_submit
       assert sr_page_blueprint.late_start == sr_page_duplicate.late_start
       assert sr_page_blueprint.time_limit == sr_page_duplicate.time_limit

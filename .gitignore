@@ -19,9 +19,6 @@ Mnesia.*
 # If you run "mix test --cover", coverage assets end up here.
 /cover/
 
-# `mix test.hound` will output failing test results here
-/test-results/
-
 # The directory Mix downloads your dependencies sources to.
 /deps/
 

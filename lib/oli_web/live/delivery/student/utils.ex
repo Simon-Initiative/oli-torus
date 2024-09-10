@@ -47,11 +47,11 @@ defmodule OliWeb.Delivery.Student.Utils do
               <div
                 :if={@page_context.page.graded}
                 class="justify-start items-center gap-1.5 flex"
-                role="graded page marker"
+                role="scored page marker"
               >
                 <Icons.flag />
                 <div class="opacity-50 dark:text-white text-sm font-bold uppercase tracking-wider">
-                  Graded Page
+                  Scored Page
                 </div>
               </div>
             </div>
@@ -94,7 +94,12 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
           <div role="page schedule" class="justify-start items-start gap-1 flex">
-            <div class="opacity-50 dark:text-white text-xs font-normal">Due:</div>
+            <div
+              :if={@page_context.effective_settings.end_date}
+              class="opacity-50 dark:text-white text-xs font-normal"
+            >
+              <%= label_for_scheduling_type(@page_context.effective_settings.scheduling_type) %>
+            </div>
             <div class="dark:text-white text-xs font-normal">
               <%= FormatDateTime.to_formatted_datetime(
                 @page_context.effective_settings.end_date,
@@ -150,6 +155,11 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     """
   end
+
+  def label_for_scheduling_type(:due_by), do: "Due by: "
+  def label_for_scheduling_type(:read_by), do: "Read by: "
+  def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
+  def label_for_scheduling_type(_), do: ""
 
   def proficiency_explanation_modal(assigns) do
     assigns =
@@ -524,12 +534,14 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   ## Returns:
   - A string indicating the number of days until or since the resource end date, such as "Due Today", "1 day left", or "Past Due by X days".
+  - "Not yet scheduled" if the provided end date is nil.
 
   ## Examples:
       iex> days_difference(~U[2024-05-12T00:00:00Z], %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
-  def days_difference(nil, _context), do: nil
+
+  def days_difference(nil, _context), do: "Not yet scheduled"
 
   def days_difference(resource_end_date, context) do
     {localized_end_date, today} =

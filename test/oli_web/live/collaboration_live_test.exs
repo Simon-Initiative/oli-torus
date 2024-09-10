@@ -209,7 +209,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert conn
              |> get(live_view_student_page(section.slug, page_revision.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fsections%2F#{section.slug}%2Fpage%2F#{page_revision.slug}&amp;section=#{section.slug}\">redirected"
+               "You are being <a href=\"/?request_path=%2Fsections%2F#{section.slug}%2Fpage%2F#{page_revision.slug}&amp;section=#{section.slug}\">redirected"
     end
   end
 

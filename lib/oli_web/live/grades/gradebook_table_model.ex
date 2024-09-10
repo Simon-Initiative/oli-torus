@@ -152,9 +152,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   defp has_score?(%Oli.Delivery.Attempts.Core.ResourceAccess{score: nil}), do: false
   defp has_score?(%Oli.Delivery.Attempts.Core.ResourceAccess{}), do: true
 
-  defp out_of_score(nil), do: 1
-  defp out_of_score(0), do: 1
-  defp out_of_score(0.0), do: 1
+  defp out_of_score(number) when number in [nil, 0, +0.0, -0.0], do: 1
   defp out_of_score(number), do: number
 
   defp score(nil), do: 0

@@ -4,8 +4,8 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.28.7",
-      elixir: "~> 1.15.5",
+      version: "0.29.0",
+      elixir: "~> 1.17.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
       compilers: Mix.compilers(),
@@ -14,7 +14,6 @@ defmodule Oli.MixProject do
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "test.hound": :hound,
         test: :test,
         "test.ecto.reset": :test,
         coveralls: :test,
@@ -116,7 +115,6 @@ defmodule Oli.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:hound), do: ["lib", "test/support"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -134,7 +132,7 @@ defmodule Oli.MixProject do
       {:bamboo, "~> 2.2"},
       {:bamboo_ses, "~> 0.3.0"},
       {:bamboo_phoenix, "~> 1.0"},
-      {:base32_crockford, "~> 1.0.0"},
+      {:crockford_base32, "~> 0.7"},
       {:bcrypt_elixir, "~> 2.2"},
       {:briefly, "~> 0.5.0"},
       {:broadway, "~> 1.0.7"},
@@ -143,7 +141,7 @@ defmodule Oli.MixProject do
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
       {:csv, "~> 3.0.5"},
       {:decimal, "~> 2.0"},
-      {:dialyxir, "~> 0.5.0", only: [:dev], runtime: true},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: true},
       {:earmark, "~> 1.4"},
       {:ecto_sql, "~> 3.10"},
       {:eflame, "~> 1.0"},
@@ -156,16 +154,16 @@ defmodule Oli.MixProject do
       {:ex_cldr_calendars, "~> 1.21"},
       {:ex_cldr_dates_times, "~> 2.0"},
       {:ex_json_schema, "~> 0.9.1"},
-      {:ex_machina, "~> 2.7.0", only: [:hound, :test]},
-      {:ex_money, "~> 5.12"},
+      {:ex_machina, "~> 2.7.0", only: [:test]},
+      {:ex_money, "~> 5.17"},
       {:ex_money_sql, "~> 1.7"},
-      {:excoveralls, "~> 0.14.4", only: [:hound, :test]},
+      {:excoveralls, "~> 0.14.4", only: [:test]},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
+      {:html_entities, "~> 0.5.2"},
       {:html_sanitize_ex, "~> 1.4"},
-      {:hound, "~> 1.0"},
       {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
@@ -177,7 +175,7 @@ defmodule Oli.MixProject do
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:monocle, "~> 0.0.1"},
-      {:mox, "~> 0.5", only: [:test, :hound]},
+      {:mox, "~> 0.5", only: [:test]},
       {:nimble_parsec, "~> 1.2"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.17.2"},
@@ -187,15 +185,14 @@ defmodule Oli.MixProject do
       {:phoenix, "~> 1.7"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
-      {:phoenix_live_dashboard, "~> 0.8.0"},
+      {:phoenix_live_dashboard, "~> 0.8.4"},
       {:phoenix_live_react, "~> 0.4"},
       {:phoenix_live_reload, "~> 1.3", only: :dev},
-      {:phoenix_live_view, "~> 0.19.5"},
+      {:phoenix_live_view, "~> 0.20.17"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:phoenix_storybook, "~> 0.5.6"},
       {:phoenix_view, "~> 2.0"},
       {:plug_cowboy, "~> 2.1"},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 5.0"},
       {:postgrex, ">= 0.0.0"},
       {:pow, "~> 1.0.31"},
       {:pow_assent, "~> 0.4.17"},
@@ -206,14 +203,14 @@ defmodule Oli.MixProject do
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
       {:sweet_xml, "~> 0.7.1"},
-      {:tailwind, "~> 0.1.9"},
+      {:tailwind, "~> 0.2"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},
-      {:xml_builder, "~> 2.1.1"},
+      {:xml_builder, "~> 2.3.0"},
       {:vega_lite, "~> 0.1.9"},
       {:odgn_json_pointer, "~> 3.0.1"}
     ]
@@ -239,7 +236,7 @@ defmodule Oli.MixProject do
       "test.watch": ["test.watch --seed 0 --max-failures 1 --include pending --trace"],
 
       # deploy tailwind assets
-      "assets.deploy": ["tailwind default --minify", "tailwind storybook --minify", "phx.digest"]
+      "assets.deploy": ["tailwind default --minify", "phx.digest"]
     ]
   end
 end

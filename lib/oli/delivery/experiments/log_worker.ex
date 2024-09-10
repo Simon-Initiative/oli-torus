@@ -49,13 +49,21 @@ defmodule Oli.Delivery.Experiments.LogWorker do
 
     correctness =
       case score do
-        0.0 ->
+        score when score in [+0.0, -0.0] ->
           0.0
 
         s ->
           case out_of do
-            0.0 -> 0.0
-            o -> s / o
+            out_of when out_of in [+0.0, -0.0] ->
+              0.0
+
+            o ->
+              try do
+                s / o
+              rescue
+                ArithmeticError ->
+                  0.0
+              end
           end
       end
 

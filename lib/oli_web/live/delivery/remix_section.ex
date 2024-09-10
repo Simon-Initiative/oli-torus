@@ -24,7 +24,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Common.Hierarchy.Publications.TableModel, as: PublicationsTableModel
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
+  alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal, HideResourceModal}
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
@@ -845,6 +845,50 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   def handle_event("RemoveModal.cancel", _, socket) do
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
+  end
+
+  def handle_event("show_hide_resource_modal", %{"uuid" => uuid}, socket) do
+    %{hierarchy: hierarchy} = socket.assigns
+
+    node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+
+    modal_assigns = %{
+      id: "hide_#{uuid}",
+      node: node
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <HideResourceModal.render {@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("HideResourceModal.toggle", %{"uuid" => uuid}, socket) do
+    %{hierarchy: hierarchy, active: active} = socket.assigns
+
+    hierarchy =
+      Hierarchy.find_and_toggle_hidden(hierarchy, uuid)
+      |> Hierarchy.finalize()
+
+    # refresh active node
+    active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
+
+    {:noreply,
+     socket
+     |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
+     |> hide_modal(modal_assigns: nil)}
+  end
+
+  def handle_event("HideResourceModal.cancel", _, socket) do
     {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 

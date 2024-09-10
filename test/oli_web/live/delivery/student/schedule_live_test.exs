@@ -20,7 +20,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
     AttemptGroup
   }
 
-  defp create_elixir_project(_) do
+  defp create_not_scheduled_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
 
@@ -195,7 +195,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
     section =
       insert(:section,
         base_project: project,
-        title: "The best course ever!",
+        title: "The best course ever! (unscheduled version)",
         start_date: ~U[2023-10-30 20:00:00Z],
         analytics_version: :v2
       )
@@ -203,6 +203,48 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, _} = Sections.rebuild_contained_pages(section)
     {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      mcq_1: mcq_activity_1_revision,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      page_6: page_6_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      module_3: module_3_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision
+    }
+  end
+
+  defp create_elixir_project(_) do
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      mcq_1: mcq_activity_1_revision,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_5_revision,
+      page_6: page_6_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      module_3: module_3_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision
+    } = create_not_scheduled_elixir_project(%{})
+
+    {:ok, section} = Sections.update_section(section, %{title: "The best course ever!"})
 
     # schedule start and end date for unit 1 section_resource
     Sections.get_section_resource(section.id, unit_1_revision.resource_id)
@@ -528,7 +570,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
         live(conn, ~p"/sections/#{section.slug}/assignments")
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fassignments&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Fassignments&section=#{section.slug}"
     end
   end
 
@@ -712,6 +754,41 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
                ~s{div[id="page-#{page_4_revision.slug}-attempts-dropdown"] div[id=attempts_summary] a[role='review_attempt_link']},
                "Review"
              )
+    end
+  end
+
+  describe "student on a section not yet scheduled" do
+    setup [
+      :user_conn,
+      :create_not_scheduled_elixir_project
+    ]
+
+    test "can see course data", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4,
+      page_5: page_5,
+      page_6: page_6,
+      module_1: module_1,
+      module_2: module_2,
+      module_3: module_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/assignments")
+
+      assert has_element?(view, "h1", "Course Schedule")
+
+      [page_1, page_2, page_3, page_4, page_5, page_6]
+      |> Enum.each(fn resource -> assert has_element?(view, "a", resource.title) end)
+
+      [module_1, module_2, module_3]
+      |> Enum.each(fn resource -> assert has_element?(view, "div", resource.title) end)
     end
   end
 end

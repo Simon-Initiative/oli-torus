@@ -1430,7 +1430,7 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{}, fn {container_id, {correct, total}} ->
       proficiency =
         case total do
-          0.0 -> nil
+          total when total in [+0.0, -0.0] -> nil
           _ -> correct / total
         end
 

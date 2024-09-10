@@ -38,7 +38,7 @@ defmodule OliWeb.CommunityLive.ShowView do
         nil ->
           socket
           |> put_flash(:info, "That community does not exist or it was deleted.")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
+          |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         community ->
           changeset = Groups.change_community(community)
@@ -193,7 +193,7 @@ defmodule OliWeb.CommunityLive.ShowView do
         {:ok, _community} ->
           socket
           |> put_flash(:info, "Community successfully deleted.")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
+          |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         {:error, %Ecto.Changeset{}} ->
           put_flash(

@@ -1,0 +1,43 @@
+name: Auto Deploy
+
+on:
+  # Run this workflow after the Package workflow completes
+  workflow_run:
+    workflows: [Package]
+    types: [completed]
+
+jobs:
+  auto-deploy:
+    name: Auto Deploy
+    if: vars.AUTO_DEPLOY_ENABLED == 'TRUE' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == vars.AUTO_DEPLOY_REF
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ vars.AUTO_DEPLOY_TARGET }}
+      url: https://${{ vars.AUTO_DEPLOY_TARGET }}
+
+    steps:
+      - run: echo "Auto deploy enabled for ref ${{ vars.AUTO_DEPLOY_REF }}. Deploying ${{ github.event.workflow_run.head_branch }} commit ${{ github.event.workflow_run.head_sha }} to ${{ vars.AUTO_DEPLOY_TARGET }}"
+
+      # checkout the commit from the Package workflow that triggered the Auto Deploy workflow
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+          echo "workspace=$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
+
+      - name: 🚢💰 Deploy to test using SSH
+        uses: fifsky/ssh-action@master
+        with:
+          command: |
+            cd /torus
+            sh deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
+          host: ${{ vars.AUTO_DEPLOY_TARGET }}
+          user: simon-bot
+          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+          port: 44067

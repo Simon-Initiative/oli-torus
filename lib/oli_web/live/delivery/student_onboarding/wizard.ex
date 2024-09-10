@@ -120,7 +120,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
           if !@is_lti,
             do:
               JS.add_class("opacity-0", to: "#content")
-              |> JS.navigate(~p"/sections"),
+              |> JS.navigate(~p"/workspaces/student"),
             else: nil
         }
         data={get_step_data(assigns)}

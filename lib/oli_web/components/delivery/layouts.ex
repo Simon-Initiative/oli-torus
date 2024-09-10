@@ -16,6 +16,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Workspace.Utils, as: WorkspaceUtils
 
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
@@ -56,12 +57,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <div class={
             if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
           }>
-            <UserAccount.menu
-              id="user-account-menu"
-              ctx={@ctx}
-              section={@section}
-              is_system_admin={@is_system_admin}
-            />
+            <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
           </div>
         </div>
         <div class="flex items-center p-2 ml-auto">
@@ -109,6 +105,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div>
       <nav id="desktop-nav-menu" class={["
+        transition-all
+        duration-100
         fixed
         z-50
         w-full
@@ -117,7 +115,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         md:flex
         flex-col
         justify-between
-        md:w-[190px]
+        md:w-[200px]
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
@@ -139,7 +137,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             </.link>
           </div>
           <.sidebar_toggler
-            active_tab={@active_tab}
+            active={@active_tab}
             section={@section}
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
@@ -156,7 +154,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
         <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
-          <.exit_course_button sidebar_expanded={@sidebar_expanded} />
+          <.exit_course_button
+            :if={is_independent_learner?(@ctx.user)}
+            sidebar_expanded={@sidebar_expanded}
+          />
         </div>
       </nav>
       <nav
@@ -190,7 +191,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
             id="mobile-user-account-menu-sidebar"
             ctx={@ctx}
             is_system_admin={@is_system_admin}
-            section={@section}
             dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
@@ -200,7 +200,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:section, Section, default: nil)
-  attr(:active_tab, :atom)
+  attr(:active, :atom, required: true, doc: "The current selected menu link")
   attr(:preview_mode, :boolean)
   attr(:notification_badges, :map, default: %{})
   attr(:sidebar_expanded, :boolean, default: true)
@@ -209,7 +209,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <button
       role="toggle sidebar"
-      phx-click={JS.patch(path_for(@active_tab, @section, @preview_mode, !@sidebar_expanded))}
+      phx-click={JS.patch(path_for(@active, @section, @preview_mode, !@sidebar_expanded))}
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
@@ -217,6 +217,219 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <Icons.left_chevron />
       </div>
     </button>
+    """
+  end
+
+  attr(:preview_mode, :boolean)
+  attr(:sidebar_expanded, :boolean)
+  attr(:active_workspace, :atom)
+  attr(:active_view, :atom, default: nil)
+  attr(:resource_slug, :string, default: nil)
+  attr(:active_tab, :atom, default: nil)
+
+  def workspace_sidebar_toggler(assigns) do
+    ~H"""
+    <button
+      role="toggle sidebar"
+      phx-click={
+        JS.patch(
+          toggled_workspace_path(
+            @active_workspace,
+            @active_view,
+            @sidebar_expanded,
+            @resource_slug,
+            @active_tab
+          )
+        )
+        |> JS.hide(to: "div[role='expandable_submenu']")
+      }
+      title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+    >
+      <div class={if !@sidebar_expanded, do: "rotate-180"}>
+        <Icons.left_chevron />
+      </div>
+    </button>
+    """
+  end
+
+  attr(:ctx, SessionContext)
+  attr(:is_system_admin, :boolean, required: true)
+  attr(:active_workspace, :atom)
+  attr(:active_view, :atom, default: nil)
+  attr(:sidebar_expanded, :boolean)
+  attr(:preview_mode, :boolean)
+  attr(:resource_title, :string)
+  attr(:resource_slug, :string)
+  attr(:active_tab, :atom)
+
+  def workspace_sidebar_nav(assigns) do
+    ~H"""
+    <div>
+      <nav
+        id="desktop-workspace-nav-menu"
+        class={["
+        transition-all
+        duration-100
+        fixed
+        z-50
+        top-0
+        w-full
+        hidden
+        h-[100vh]
+        md:flex
+        flex-col
+        justify-between
+        md:w-[200px]
+        shadow-sm
+        bg-delivery-navbar
+        dark:bg-delivery-navbar-dark
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
+        aria-expanded={"#{@sidebar_expanded}"}
+      >
+        <div class="w-full">
+          <div
+            class={[
+              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
+              if(!@sidebar_expanded, do: "w-14")
+            ]}
+            tab-index="0"
+          >
+            <.link
+              id="logo_button"
+              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded)}
+            >
+              <.logo_img />
+            </.link>
+          </div>
+          <.workspace_sidebar_toggler
+            active_workspace={@active_workspace}
+            active_view={@active_view}
+            preview_mode={@preview_mode}
+            sidebar_expanded={@sidebar_expanded}
+            resource_slug={@resource_slug}
+            active_tab={@active_tab}
+          />
+          <div class="h-[24px]">
+            <h2
+              :if={@sidebar_expanded}
+              class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
+            >
+              WORKSPACE
+            </h2>
+          </div>
+          <.workspace_sidebar_links
+            preview_mode={@preview_mode}
+            sidebar_expanded={@sidebar_expanded}
+            active_workspace={@active_workspace}
+          />
+          <WorkspaceUtils.sub_menu
+            :if={@resource_slug}
+            hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
+            resource_slug={@resource_slug}
+            resource_title={@resource_title}
+            sidebar_expanded={@sidebar_expanded}
+            active_view={@active_view}
+            active_workspace={@active_workspace}
+          />
+        </div>
+        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+          <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
+          <.exit_workspace_button
+            :if={@resource_slug}
+            sidebar_expanded={@sidebar_expanded}
+            title={if @active_workspace == :course_author, do: "Exit Project", else: "Exit Section"}
+            target_workspace={@active_workspace}
+          />
+        </div>
+      </nav>
+      <nav
+        id="mobile-workspace-nav-menu"
+        class="
+        fixed
+        z-50
+        w-full
+        mt-14
+        hidden
+        md:hidden
+        flex-col
+        shadow-sm
+        bg-delivery-navbar
+        dark:bg-delivery-navbar-dark
+      "
+        phx-click-away={JS.hide()}
+      >
+        <.workspace_sidebar_links
+          preview_mode={@preview_mode}
+          sidebar_expanded={@sidebar_expanded}
+          active_workspace={@active_workspace}
+        />
+        <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
+          <div class="flex items-center">
+            <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
+          </div>
+          <UserAccount.menu
+            id="mobile-user-account-menu-workspace-sidebar"
+            ctx={@ctx}
+            is_system_admin={@is_system_admin}
+            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
+          />
+        </div>
+      </nav>
+    </div>
+    """
+  end
+
+  attr(:preview_mode, :boolean)
+  attr(:sidebar_expanded, :boolean)
+  attr(:active_workspace, :atom)
+
+  def workspace_sidebar_links(assigns) do
+    ~H"""
+    <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
+      <.nav_link
+        id="course_author_workspace_nav_link"
+        href={path_for_workspace(:course_author, @sidebar_expanded)}
+        is_active={@active_workspace == :course_author}
+        sidebar_expanded={@sidebar_expanded}
+        on_active_bg="bg-[#F4CFFF] hover:!bg-[#F4CFFF] dark:bg-[#7E2899] dark:hover:!bg-[#7E2899]"
+        navigation_type="href"
+      >
+        <:icon>
+          <Icons.writing_pencil is_active={@active_workspace == :course_author} />
+        </:icon>
+        <:text>Course Author</:text>
+      </.nav_link>
+
+      <.nav_link
+        id="instructor_workspace_nav_link"
+        href={path_for_workspace(:instructor, @sidebar_expanded)}
+        is_active={@active_workspace == :instructor}
+        sidebar_expanded={@sidebar_expanded}
+        on_active_bg="bg-[#A8EED8] hover:!bg-[#A8EED8] dark:bg-[#086F4E] dark:hover:!bg-[#086F4E]"
+      >
+        <:icon>
+          <Icons.growing_bars is_active={@active_workspace == :instructor} />
+        </:icon>
+        <:text>Instructor</:text>
+      </.nav_link>
+
+      <.nav_link
+        id="student_workspace_nav_link"
+        href={path_for_workspace(:student, @sidebar_expanded)}
+        is_active={@active_workspace == :student}
+        sidebar_expanded={@sidebar_expanded}
+        on_active_bg="bg-[#AAC3F0]/75 hover:!bg-[#AAC3F0]/75 dark:bg-[#2957A9] dark:hover:!bg-[#2957A9]"
+      >
+        <:icon>
+          <Icons.graduation_cap
+            is_active={@active_workspace == :student}
+            stroke="stroke-[#757682] dark:stroke-[#BAB8BF]"
+          />
+        </:icon>
+        <:text>Student</:text>
+      </.nav_link>
+    </div>
     """
   end
 
@@ -296,6 +509,58 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
     </div>
     """
+  end
+
+  defp toggled_workspace_path(
+         active_workspace,
+         active_view,
+         sidebar_expanded,
+         resource_slug,
+         active_tab
+       ) do
+    params = %{sidebar_expanded: !sidebar_expanded}
+
+    base_module =
+      case active_workspace do
+        :course_author -> OliWeb.Workspaces.CourseAuthor
+        :instructor -> OliWeb.Workspaces.Instructor
+        :student -> OliWeb.Workspaces.Student
+        _ -> raise "Unknown workspace: #{active_workspace}"
+      end
+
+    item_view = active_view |> Atom.to_string() |> Macro.camelize()
+
+    view_module =
+      Module.concat([base_module, item_view <> "Live"])
+
+    case {active_workspace, active_view} do
+      {:course_author, nil} ->
+        ~p"/workspaces/course_author?#{params}"
+
+      {:course_author, _view_slug} ->
+        Routes.live_path(OliWeb.Endpoint, view_module, resource_slug, params)
+
+      {:instructor, nil} ->
+        ~p"/workspaces/instructor?#{params}"
+
+      {:instructor, active_view} ->
+        ~p"/workspaces/instructor/#{resource_slug}/#{active_view}/#{active_tab}?#{params}"
+
+      {:student, nil} ->
+        ~p"/workspaces/student?#{params}"
+    end
+  end
+
+  defp path_for_workspace(target_workspace, sidebar_expanded) do
+    url_params = %{
+      sidebar_expanded: sidebar_expanded
+    }
+
+    case target_workspace do
+      :course_author -> ~p"/workspaces/course_author?#{url_params}"
+      :instructor -> ~p"/workspaces/instructor?#{url_params}"
+      :student -> ~p"/workspaces/student?#{url_params}"
+    end
   end
 
   defp path_for(:index, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
@@ -379,46 +644,66 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr :sidebar_expanded, :boolean, default: true
   attr :id, :string
   attr :badge, :integer, default: nil
+  attr :on_active_bg, :string, default: "bg-zinc-400 bg-opacity-20"
+  attr :navigation_type, :string, default: "navigate"
 
-  def nav_link(assigns) do
+  def nav_link(%{navigation_type: "navigate"} = assigns) do
     ~H"""
     <.link
       id={@id}
       navigate={@href}
-      class={["w-full h-11 flex-col justify-center items-center flex hover:no-underline"]}
+      class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
     >
-      <div class={[
-        "w-full h-9 px-3 py-3 hover:bg-zinc-400 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex",
-        if(@is_active,
-          do: "bg-zinc-400 bg-opacity-20"
-        )
-      ]}>
-        <div class="w-5 h-5 flex items-center justify-center">
-          <%= render_slot(@icon) %>
-        </div>
-        <div
-          :if={@sidebar_expanded}
-          class={[
-            "text-black/70 dark:text-gray-400 text-sm font-medium tracking-tight flex-1 flex flex-row justify-between",
-            if(@is_active, do: "!font-semibold dark:!text-white !text-black/90")
-          ]}
-        >
-          <div>
-            <%= render_slot(@text) %>
-          </div>
-
-          <%= if @badge do %>
-            <div>
-              <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
-            </div>
-          <% end %>
-        </div>
-      </div>
+      <.nav_link_content {assigns} />
     </.link>
     """
   end
 
-  attr(:section, Section)
+  def nav_link(%{navigation_type: "href"} = assigns) do
+    ~H"""
+    <.link
+      id={@id}
+      href={@href}
+      class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
+    >
+      <.nav_link_content {assigns} />
+    </.link>
+    """
+  end
+
+  def nav_link_content(assigns) do
+    ~H"""
+    <div class={[
+      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#141416] hover:bg-zinc-400/10 rounded-lg justify-start items-center gap-3 inline-flex",
+      if(@is_active,
+        do: @on_active_bg
+      )
+    ]}>
+      <div class="w-5 h-5 flex items-center justify-center">
+        <%= render_slot(@icon) %>
+      </div>
+      <div
+        :if={@sidebar_expanded}
+        class={[
+          "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
+          if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
+        ]}
+      >
+        <div class="whitespace-nowrap">
+          <%= render_slot(@text) %>
+        </div>
+
+        <%= if @badge do %>
+          <div>
+            <.badge variant={:primary} class="ml-2"><%= @badge %></.badge>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  attr(:section, Section, default: nil)
 
   def logo_img(assigns) do
     assigns =
@@ -457,18 +742,50 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr :sidebar_expanded, :boolean, default: true
+  attr :target_workspace, :atom, default: :student_workspace
 
   def exit_course_button(assigns) do
     ~H"""
     <.link
       id="exit_course_button"
-      navigate={~p"/sections"}
+      navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
       class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
-        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
           Exit Course
+        </div>
+      </div>
+    </.link>
+    """
+  end
+
+  attr :sidebar_expanded, :boolean, default: true
+  attr :target_workspace, :atom, default: :student
+  attr :title, :string, default: "Exit Course"
+
+  def exit_workspace_button(assigns) do
+    base_module =
+      case assigns.target_workspace do
+        :course_author -> OliWeb.Workspaces.CourseAuthor.IndexLive
+        :instructor -> OliWeb.Workspaces.Instructor.IndexLive
+        :student -> OliWeb.Workspaces.Student
+        _ -> raise "Unknown workspace: #{assigns.active_workspace}"
+      end
+
+    assigns = assign(assigns, base_module: base_module)
+
+    ~H"""
+    <.link
+      id="exit_course_button"
+      navigate={Routes.live_path(OliWeb.Endpoint, @base_module, sidebar_expanded: @sidebar_expanded)}
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+    >
+      <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
+        <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight whitespace-nowrap">
+          <%= @title %>
         </div>
       </div>
     </.link>

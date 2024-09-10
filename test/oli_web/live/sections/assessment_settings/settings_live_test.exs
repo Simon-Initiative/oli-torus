@@ -418,6 +418,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :scoring_strategy_id,
             :grace_period,
             :retake_mode,
+            :assessment_mode,
             :feedback_mode,
             :review_submission,
             :password,
@@ -436,6 +437,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :scoring_strategy_id,
             :grace_period,
             :retake_mode,
+            :assessment_mode,
             :feedback_mode,
             :review_submission,
             :password,
@@ -1591,9 +1593,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       changes = Settings.fetch_all_settings_changes()
 
-      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 31 changes in our settings changes table.
-      ## That is, 10 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
-      assert length(changes) == 31
+      ## Since we did a bulk apply and previously changed a setting for page 3, we should have 34 changes in our settings changes table.
+      ## That is, 11 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
+      assert length(changes) == 34
     end
   end
 

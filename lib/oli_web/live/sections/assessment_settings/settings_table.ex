@@ -449,6 +449,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         [
           max_attempts: base_assessment.max_attempts,
           retake_mode: base_assessment.retake_mode,
+          assessment_mode: base_assessment.assessment_mode,
           late_submit: base_assessment.late_submit,
           late_start: base_assessment.late_start,
           time_limit: base_assessment.time_limit,
@@ -960,6 +961,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
                "late_submit",
                "late_start",
                "retake_mode",
+               "assessment_mode",
                "feedback_mode",
                "review_submission"
              ] ->
@@ -1006,6 +1008,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             :scoring,
             :grace_period,
             :retake_mode,
+            :assessment_mode,
             :feedback_mode,
             :review_submission,
             :exceptions_count,

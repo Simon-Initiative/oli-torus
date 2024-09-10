@@ -62,7 +62,7 @@ defmodule OliWeb.ManualGrading.TableModel do
 
   def render_purpose(_, row, _) do
     if row.graded do
-      "Graded"
+      "Scored"
     else
       "Practice"
     end

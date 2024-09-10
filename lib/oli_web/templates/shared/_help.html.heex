@@ -7,9 +7,13 @@
   tabindex="-1"
   aria-labelledby="exampleModalLabel"
   aria-hidden="true"
+  style="display: none;"
 >
   <div class="modal-dialog modal-lg relative w-auto pointer-events-none">
-    <div class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none">
+    <div
+      id="inside_modal"
+      class="modal-content border-none shadow-lg relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding rounded-md outline-none"
+    >
       <%= form_for :help, "#", [id: "form-request-help"], fn f -> %>
         <div class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
           <h5 class="modal-title text-xl font-medium leading-normal inline-flex">
@@ -20,6 +24,7 @@
             class="btn-close box-content w-4 h-4 p-1 border-none rounded-none opacity-50 focus:shadow-none focus:outline-none focus:opacity-100 hover:opacity-75 hover:no-underline"
             data-bs-dismiss="modal"
             aria-label="Close"
+            onclick="maybe_remove_undeline_classes()"
           >
             <i class="fa-solid fa-xmark fa-xl"></i>
           </button>
@@ -100,7 +105,12 @@
         </div>
         <div class="modal-footer flex flex-shrink-0 flex-wrap items-center justify-end p-4 border-t border-gray-200 rounded-b-md">
           <div id="help-form-buttons">
-            <button type="button" class="btn btn-link ml-2" data-bs-dismiss="modal">
+            <button
+              type="button"
+              class="btn btn-link ml-2"
+              data-bs-dismiss="modal"
+              onclick="maybe_remove_undeline_classes()"
+            >
               Cancel
             </button>
             <%= submit("Send Request",
@@ -187,6 +197,7 @@
                 const okButton = document.getElementById('help-form-ok-button');
                 okButton.classList.remove('hidden');
 
+                document.getElementById("support-button")?.classList.remove('underline', 'underline-offset-8');
                 return json
               })
               .catch((error) => {
@@ -195,6 +206,20 @@
                 errorElement.classList.remove('hidden');
                 return error
               });
-    });
-  }
+      });
+    }
+
+  window.addEventListener("maybe_add_underline_classes", e => {
+    document.getElementById("support-button").classList.add('underline', 'underline-offset-8');
+  });
+
+  function maybe_remove_undeline_classes() {
+    document.getElementById("support-button")?.classList.remove('underline', 'underline-offset-8');
+  };
+
+  document.addEventListener('click', (event) => {
+    const target = document.querySelector('#inside_modal');
+    const withinBoundaries = event.composedPath().includes(target);
+    if (!withinBoundaries) {maybe_remove_undeline_classes();}
+  });
 </script>

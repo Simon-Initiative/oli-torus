@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import useWindowSize from 'components/hooks/useWindowSize';
+import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
+import { isDarkMode } from 'utils/browser';
 import PreviewTools from './components/PreviewTools';
 import { DeadlineTimer } from './layouts/deck/DeadlineTimer';
 import DeckLayoutView from './layouts/deck/DeckLayoutView';
@@ -78,6 +80,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
   const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
 
+  const [currentTheme, setCurrentTheme] = useState('auto');
   // Gives us the deadline for this assessment to be completed by.
   // We subtract out the server time and add in our local time in case the client system clock is off.
   // Measured in milliseconds-epoch to match Date.now()
@@ -107,8 +110,26 @@ const Delivery: React.FC<DeliveryProps> = ({
     return () => clearTimeout(timer);
   }, [screenIdleExpirationTime]);
 
+  const handleUserThemePreferende = () => {
+    switch (getModeFromLocalStorage()) {
+      case 'dark':
+        setCurrentTheme('dark');
+        break;
+      case 'auto':
+        if (isDarkMode()) {
+          setCurrentTheme('dark');
+        } else {
+          setCurrentTheme('light');
+        }
+        break;
+      case 'light':
+        setCurrentTheme('light');
+        break;
+    }
+  };
   useEffect(() => {
     setInitialPageState();
+    handleUserThemePreferende();
   }, []);
 
   const setInitialPageState = () => {
@@ -154,11 +175,11 @@ const Delivery: React.FC<DeliveryProps> = ({
   const dialogMessage = content?.custom?.logoutMessage;
   const fullscreen = !content?.displayApplicationChrome;
 
-  // this is something SS does...
+  // this is something SS does.....
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
-    <div className={parentDivClasses.join(' ')}>
+    <div className={`${parentDivClasses.join(' ')} ${currentTheme}`}>
       {previewMode && <PreviewTools model={content?.model} />}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />

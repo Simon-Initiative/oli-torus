@@ -7,7 +7,6 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
-  import PhoenixStorybook.Router
 
   import Oli.Plugs.EnsureAdmin
 
@@ -152,6 +151,13 @@ defmodule OliWeb.Router do
     plug(:delivery_layout)
   end
 
+  pipeline :authoring_and_delivery do
+    plug(:delivery)
+    plug(OliWeb.EnsureUserNotLockedPlug)
+    plug(:authoring)
+    plug(OliWeb.EnsureUserNotLockedPlug)
+  end
+
   pipeline :authoring_protected do
     plug(:authoring)
 
@@ -205,6 +211,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
+  pipeline :set_sidebar do
+    plug(Oli.Plugs.SetSidebar)
+  end
+
   pipeline :delivery_preview do
     plug(Oli.Plugs.DeliveryPreview)
   end
@@ -216,15 +226,13 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.RedirectByAttemptState)
   end
 
+  pipeline :student, do: plug(Oli.Plugs.SetUserType, :student)
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
-
-  scope "/" do
-    storybook_assets()
-  end
 
   scope "/" do
     pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
@@ -301,6 +309,7 @@ defmodule OliWeb.Router do
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
+    post("/signin", SessionController, :signin)
   end
 
   scope "/", OliWeb do
@@ -776,19 +785,54 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
+  ### Workspaces
+  scope "/workspaces/", OliWeb.Workspaces do
+    pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
+
+    live_session :workspaces,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        OliWeb.LiveSessionPlugs.SetUser,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProject,
+        OliWeb.LiveSessionPlugs.SetSection
+      ] do
+      scope "/course_author", CourseAuthor do
+        live("/", IndexLive)
+        live("/:project_id/overview", OverviewLive)
+        live("/:project_id/activity_bank", ActivityBankLive)
+        live("/:project_id/objectives", ObjectivesLive)
+        live("/:project_id/experiments", ExperimentsLive)
+        live("/:project_id/bibliography", BibliographyLive)
+        live("/:project_id/curriculum", CurriculumLive)
+        live("/:project_id/curriculum/:container_slug", CurriculumLive)
+        live("/:project_id/pages", PagesLive)
+        live("/:project_id/activities", ActivitiesLive)
+        live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
+        live("/:project_id/review", ReviewLive)
+        live("/:project_id/publish", PublishLive)
+        live("/:project_id/products", ProductsLive)
+        live("/:project_id/insights", InsightsLive)
+      end
+
+      scope "/instructor", Instructor do
+        live("/", IndexLive)
+        live("/:section_slug/:view", DashboardLive)
+        live("/:section_slug/:view/:active_tab", DashboardLive)
+      end
+
+      live("/student", Student)
+    end
+  end
+
   ###
   # Section Routes
   ###
 
-  ### Sections - View Public Open and Free Courses
   scope "/sections", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :pow_email_layout
-    ])
-
-    live("/", Delivery.OpenAndFreeIndex)
+    pipe_through([:browser])
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -797,7 +841,8 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected,
+      :delivery,
+      :delivery_layout,
       :pow_email_layout
     ])
 
@@ -806,11 +851,7 @@ defmodule OliWeb.Router do
 
   # Sections - Independent Learner Section Creation
   scope "/sections", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :require_independent_instructor
-    ])
+    pipe_through([:browser, :delivery_protected, :require_independent_instructor])
 
     live("/independent/create", Delivery.NewCourse, :independent_learner, as: :select_source)
     resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
@@ -818,12 +859,7 @@ defmodule OliWeb.Router do
 
   ### Sections - Payments
   scope "/sections", OliWeb do
-    pipe_through([
-      :browser,
-      :require_section,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :require_section, :delivery_protected, :pow_email_layout])
 
     get("/:section_slug/payment", PaymentController, :guard)
     get("/:section_slug/payment/new", PaymentController, :make_payment)
@@ -834,11 +870,7 @@ defmodule OliWeb.Router do
   ### Sections - Student Dashboard
 
   scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     live_session :student_dashboard,
       on_mount: [
@@ -869,12 +901,7 @@ defmodule OliWeb.Router do
   ### Sections - Instructor Dashboard
   #### preview routes must come before the non-preview routes to properly match
   scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :delivery, :delivery_protected, :pow_email_layout])
 
     live_session :instructor_dashboard_preview,
       on_mount: [
@@ -889,48 +916,14 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
-    pipe_through([
-      :browser,
-      :delivery_protected,
-      :pow_email_layout
-    ])
+    pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
-    get(
-      "/downloads/progress/:container_id",
-      MetricsController,
-      :download_container_progress
-    )
-
-    get(
-      "/downloads/course_content",
-      DeliveryController,
-      :download_course_content_info
-    )
-
-    get(
-      "/downloads/students_progress",
-      DeliveryController,
-      :download_students_progress
-    )
-
-    get(
-      "/downloads/learning_objectives",
-      DeliveryController,
-      :download_learning_objectives
-    )
-
-    get(
-      "/downloads/quiz_scores",
-      DeliveryController,
-      :download_quiz_scores
-    )
-
-    get(
-      "/",
-      DeliveryController,
-      :instructor_dashboard
-    )
-
+    get("/downloads/progress/:container_id", MetricsController, :download_container_progress)
+    get("/downloads/course_content", DeliveryController, :download_course_content_info)
+    get("/downloads/students_progress", DeliveryController, :download_students_progress)
+    get("/downloads/learning_objectives", DeliveryController, :download_learning_objectives)
+    get("/downloads/quiz_scores", DeliveryController, :download_quiz_scores)
+    get("/", DeliveryController, :instructor_dashboard)
     post("/enrollments", InviteController, :create_bulk)
 
     live_session :instructor_dashboard,
@@ -956,8 +949,10 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :set_sidebar,
       :require_section,
       :delivery,
+      :student,
       :delivery_protected,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
@@ -1560,8 +1555,6 @@ defmodule OliWeb.Router do
   if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
-
-    live_storybook("/storybook", backend_module: OliWeb.Storybook)
 
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])

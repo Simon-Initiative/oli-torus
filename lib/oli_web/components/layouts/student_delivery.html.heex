@@ -21,8 +21,11 @@
       discussions_enabled={@discussions_enabled}
     />
     <div class={[
-      "md:w-[calc(100%-190px)] flex-1 flex flex-col md:ml-[190px] mt-14 relative",
-      if(!@sidebar_expanded, do: "md:w-[calc(100%-60px)] md:ml-[60px]")
+      "flex-1 flex flex-col mt-14 relative",
+      if(@sidebar_expanded,
+        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
+        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
+      )
     ]}>
       <div class="container mx-auto sticky top-[60px] z-50">
         <.flash_group flash={@flash} />

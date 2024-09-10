@@ -57,7 +57,7 @@ defmodule OliWeb.RevisionHistory.Graph do
         </marker>
       </defs>
       <g id="panner" transform="translate(0,60) scale(1.0)">
-        <g id="all_nodes" phx-update="append">
+        <g id="all_nodes">
           <%= for node <- @nodes do %>
             <rect
               id={rect_id(node.label)}

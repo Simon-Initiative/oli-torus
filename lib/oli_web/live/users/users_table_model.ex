@@ -97,7 +97,6 @@ defmodule OliWeb.Users.UsersTableModel do
         """
       else
         ~H"""
-
         """
       end
 

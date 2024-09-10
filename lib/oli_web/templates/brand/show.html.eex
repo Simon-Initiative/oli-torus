@@ -52,38 +52,38 @@
         <td><strong>Favicons:</strong></td>
         <td>
           <div><%= @brand.favicons %></div>
-          <div class="icons my-2">
-            <figure class="figure align-top text-center d-inline-block">
-              <img src="<%= @brand.favicons %>/favicon.ico" class="figure-img img-fluid text-center" alt="favicon.ico">
+          <div class="icons my-2 inline-flex gap-2">
+            <figure class="figure align-top text-center">
+              <img src="<%= @brand.favicons %>/favicon.ico" class="mx-auto" alt="favicon.ico">
               <figcaption class="figure-caption">favicon.ico</figcaption>
             </figure>
 
-            <figure class="figure align-top text-center d-inline-block">
-              <img src="<%= @brand.favicons %>/favicon-32x32.png" class="figure-img img-fluid text-center" alt="favicon-32x32.png">
+            <figure class="figure align-top text-center">
+              <img src="<%= @brand.favicons %>/favicon-32x32.png" class="mx-auto" alt="favicon-32x32.png">
               <figcaption class="figure-caption">favicon-32x32.png</figcaption>
             </figure>
 
 
-            <figure class="figure align-top text-center d-inline-block">
-              <img src="<%= @brand.favicons %>/favicon-16x16.png" class="figure-img img-fluid text-center" alt="favicon-16x16.png">
+            <figure class="figure align-top text-center">
+              <img src="<%= @brand.favicons %>/favicon-16x16.png" class="mx-auto" alt="favicon-16x16.png">
               <figcaption class="figure-caption">favicon-16x16.png</figcaption>
             </figure>
 
 
-            <figure class="figure align-top text-center d-inline-block">
-              <img src="<%= @brand.favicons %>/apple-touch-icon.png" class="figure-img img-fluid text-center" alt="apple-touch-icon.png">
+            <figure class="figure align-top text-center">
+              <img src="<%= @brand.favicons %>/apple-touch-icon.png" class="mx-auto" alt="apple-touch-icon.png">
               <figcaption class="figure-caption">apple-touch-icon.png</figcaption>
             </figure>
 
 
-            <figure class="figure align-top text-center d-inline-block">
-              <img src="<%= @brand.favicons %>/android-chrome-512x512.png" class="figure-img img-fluid text-center" alt="android-chrome-512x512.png">
+            <figure class="figure align-top text-center">
+              <img src="<%= @brand.favicons %>/android-chrome-512x512.png" class="mx-auto" alt="android-chrome-512x512.png">
               <figcaption class="figure-caption">android-chrome-512x512.png</figcaption>
             </figure>
 
 
-            <figure class="figure align-top text-center d-inline-block">
-              <img src="<%= @brand.favicons %>/android-chrome-192x192.png" class="figure-img img-fluid text-center" alt="android-chrome-192x192.png">
+            <figure class="figure align-top text-center">
+              <img src="<%= @brand.favicons %>/android-chrome-192x192.png" class="mx-auto" alt="android-chrome-192x192.png">
               <figcaption class="figure-caption">android-chrome-192x192.png</figcaption>
             </figure>
 

@@ -182,7 +182,8 @@ defmodule OliWeb.Products.ProductsView do
        offset: offset,
        table_model: table_model,
        total_count: total_count,
-       text_search: text_search
+       text_search: text_search,
+       include_archived: include_archived
      )}
   end
 
@@ -268,7 +269,8 @@ defmodule OliWeb.Products.ProductsView do
                sort_by: socket.assigns.table_model.sort_by_spec.name,
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
-               text_search: socket.assigns.text_search
+               text_search: socket.assigns.text_search,
+               include_archived: socket.assigns.include_archived
              },
              changes
            )

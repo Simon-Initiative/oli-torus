@@ -20,7 +20,7 @@ defmodule OliWeb.Resources.PagesTableModel do
       },
       %ColumnSpec{
         name: :graded,
-        label: "Graded",
+        label: "Scoring",
         render_fn: &__MODULE__.render_graded_column/3
       },
       %ColumnSpec{
@@ -93,7 +93,7 @@ defmodule OliWeb.Resources.PagesTableModel do
     """
   end
 
-  def render_graded_column(_, %Revision{graded: true}, _), do: "Graded"
+  def render_graded_column(_, %Revision{graded: true}, _), do: "Scored"
   def render_graded_column(_, %Revision{graded: false}, _), do: "Practice"
 
   def render_actions_column(_, %Revision{} = revision, _) do

@@ -140,7 +140,7 @@ defmodule OliWeb.Progress.StudentResourceView do
         <ReadOnly.render label="Resource" value={@revision.title} />
       </Group.render>
       <%= if @revision.graded do %>
-        <Group.render label="Current Grade" description="">
+        <Group.render label="Current Score" description="">
           <.form
             as={:resource_access}
             for={@changeset}

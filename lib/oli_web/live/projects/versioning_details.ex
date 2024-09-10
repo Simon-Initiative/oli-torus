@@ -5,7 +5,7 @@ defmodule OliWeb.Projects.VersioningDetails do
 
   attr(:active_publication, :any, required: true)
   attr(:active_publication_changes, :any, required: true)
-  attr(:auto_update_sections, :boolean, default: false)
+  attr(:auto_update_sections, :boolean, default: true)
   attr(:changeset, :any, required: true)
   attr(:has_changes, :boolean, required: true)
   attr(:latest_published_publication, :any, required: true)
@@ -14,6 +14,7 @@ defmodule OliWeb.Projects.VersioningDetails do
   attr(:push_affected, :map, required: true)
   attr(:version_change, :any, required: true)
   attr(:form_changed, :any, required: true)
+  attr(:description, :string, default: "")
 
   def render(assigns) do
     ~H"""
@@ -99,6 +100,7 @@ defmodule OliWeb.Projects.VersioningDetails do
           <.input
             type="textarea"
             field={@changeset[:description]}
+            value={@description}
             class="form-control"
             rows="3"
             placeholder="Enter a short description of these changes..."

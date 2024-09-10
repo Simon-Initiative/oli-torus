@@ -14,9 +14,9 @@ RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.15.5.tar.gz"
-RUN tar xfz v1.15.5.tar.gz
-WORKDIR /tmp/elixir-1.15.5/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.17.2.tar.gz"
+RUN tar xfz v1.17.2.tar.gz
+WORKDIR /tmp/elixir-1.17.2/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 

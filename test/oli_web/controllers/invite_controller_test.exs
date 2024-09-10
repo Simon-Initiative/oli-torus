@@ -1,5 +1,6 @@
 defmodule OliWeb.InviteControllerTest do
   use OliWeb.ConnCase
+  use Bamboo.Test
 
   import Oli.Factory
 
@@ -42,67 +43,94 @@ defmodule OliWeb.InviteControllerTest do
       assert new_author.invitation_accepted_at
     end
 
-    test "accept new section enrollment invitation", %{conn: conn} do
+    test "deliver new instructor invitation", %{conn: conn} do
       expect_recaptcha_http_post()
       section = insert(:section)
 
-      # Create the invitations
-      conn =
-        post(
-          conn,
-          Routes.invite_path(conn, :create_bulk, section.slug,
-            emails: ["invite@example.com", "invite2@example.com"],
-            role: "instructor",
-            "g-recaptcha-response": "any",
-            inviter: "author"
-          )
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "instructor",
+          "g-recaptcha-response": "any",
+          inviter: "author"
         )
-
-      # Accept the invitation for the first user
-      new_user = Accounts.get_user_by(email: "invite@example.com")
-      token = PowInvitation.Plug.sign_invitation_token(conn, new_user)
-
-      put(
-        conn,
-        Routes.delivery_pow_invitation_invitation_path(conn, :update, token),
-        %{
-          user: %{
-            email: "invite@example.com",
-            given_name: "First",
-            family_name: "User",
-            password: "passingby",
-            password_confirmation: "passingby"
-          }
-        }
       )
 
-      new_user = Accounts.get_user_by(email: "invite@example.com")
-      assert new_user.given_name == "First"
-      assert new_user.family_name == "User"
-      assert new_user.invitation_accepted_at
+      assert Accounts.get_user_by(email: @invite_email)
 
-      # Accept the invitation for the second user
-      new_user = Accounts.get_user_by(email: "invite2@example.com")
-      token = PowInvitation.Plug.sign_invitation_token(conn, new_user)
+      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
+      assert text_body =~ "You've been added by First Last as an instructor to the following"
+      assert text_body =~ "Join now"
+      assert text_body =~ "/registration/new?section=#{section.slug}&from_invitation_link%3F=true"
+    end
 
-      put(
+    test "deliver new student invitation", %{conn: conn} do
+      expect_recaptcha_http_post()
+      section = insert(:section)
+
+      post(
         conn,
-        Routes.delivery_pow_invitation_invitation_path(conn, :update, token),
-        %{
-          user: %{
-            email: "invite2@example.com",
-            given_name: "Second",
-            family_name: "User",
-            password: "passingby",
-            password_confirmation: "passingby"
-          }
-        }
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "student",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
       )
 
-      new_user = Accounts.get_user_by(email: "invite2@example.com")
-      assert new_user.given_name == "Second"
-      assert new_user.family_name == "User"
-      assert new_user.invitation_accepted_at
+      assert Accounts.get_user_by(email: @invite_email)
+
+      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
+      assert text_body =~ "You've been added by First Last as a student to the following"
+      assert text_body =~ "Join now"
+      assert text_body =~ "/registration/new?section=#{section.slug}&from_invitation_link%3F=true"
+    end
+
+    test "deliver existing instructor invitation", %{conn: conn} do
+      expect_recaptcha_http_post()
+      section = insert(:section)
+      insert(:user, email: @invite_email)
+
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "instructor",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      assert Accounts.get_user_by(email: @invite_email)
+
+      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
+      assert text_body =~ "You've been added by First Last as an instructor to the following"
+      assert text_body =~ "Go to the course"
+      assert text_body =~ "/sections/#{section.slug}?from_invitation_link%3F=true)"
+    end
+
+    test "deliver existing student invitation", %{conn: conn} do
+      expect_recaptcha_http_post()
+      section = insert(:section)
+      insert(:user, email: @invite_email)
+
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "student",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      assert Accounts.get_user_by(email: @invite_email)
+
+      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
+      assert text_body =~ "You've been added by First Last as a student to the following"
+      assert text_body =~ "Go to the course"
+      assert text_body =~ "/sections/#{section.slug}?from_invitation_link%3F=true)"
     end
   end
 

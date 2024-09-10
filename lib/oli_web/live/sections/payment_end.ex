@@ -31,6 +31,6 @@ defmodule OliWeb.Sections.PaymentEnd do
   def handle_info({:payment, _payload}, socket) do
     %{section: section} = socket.assigns
 
-    {:noreply, push_redirect(socket, to: ~p"/sections/#{section.slug}")}
+    {:noreply, push_navigate(socket, to: ~p"/sections/#{section.slug}")}
   end
 end

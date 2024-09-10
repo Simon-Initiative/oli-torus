@@ -6,9 +6,9 @@ services:
       context: ../
       dockerfile: .devcontainer/Dockerfile
       args:
-        - ELIXIR_VERSION=1.15.5
-        - OTP_VERSION=26.1
-        - DEBIAN_VERSION=bullseye-20230612-slim
+        - ELIXIR_VERSION=1.17.2
+        - OTP_VERSION=27.0.1
+        - DEBIAN_VERSION=bullseye-20240722-slim
     depends_on:
       - postgres
     env_file: ../oli.env

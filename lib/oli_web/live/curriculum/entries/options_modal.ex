@@ -354,15 +354,15 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               </div>
               <.intro_content_input form={@form} target={@myself} />
               <div class="form-group">
-                <label for="grading_type">Grading Type</label>
+                <label for="grading_type">Scoring Type</label>
                 <.input
                   type="select"
                   class="form-control custom-select"
                   field={@form[:graded]}
-                  options={[{"Graded Assessment", "true"}, {"Ungraded Practice Page", "false"}]}
+                  options={[{"Scored Assessment", "true"}, {"Unscored Practice Page", "false"}]}
                 />
                 <small id="grading_type_description" class="form-text text-muted">
-                  Graded assessments report a grade to the grade book, while practice pages do not.
+                  Scored assessments report a score to the grade book, while practice pages do not.
                 </small>
               </div>
 
@@ -433,7 +433,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               options={@attempt_options}
             />
             <small id="number_of_attempts_description" class="form-text text-muted">
-              Graded assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.
+              Scored assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.
             </small>
           </div>
           <div class="form-group">
@@ -498,6 +498,27 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
           </div>
 
           <div class="form-group">
+            <label for="assessment_mode">Presentation</label>
+            <.input
+              type="select"
+              id="assessment_mode"
+              name="revision[assessment_mode]"
+              aria-describedby="assessment_mode_description"
+              placeholder="Presentation"
+              disabled={is_disabled(@form, @revision)}
+              class="form-control custom-select"
+              field={@form[:assessment_mode]}
+              options={[
+                {"Traditional: Show all content and questions at once", :traditional},
+                {"One at a Time: Show one question at a time", :one_at_a_time}
+              ]}
+            />
+            <small id="assessment_mode_description" class="form-text text-muted">
+              The presentation determines how questions are displayed to students.
+            </small>
+          </div>
+
+          <div class="form-group">
             <label for="purpose">Purpose</label>
             <%= select(
               @form,
@@ -514,15 +535,17 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
 
           <div class="form-group">
             <label>Related Resource</label>
-            <%= live_component(HierarchySelector,
-              disabled:
+            <.live_component
+              module={HierarchySelector}
+              disabled={
                 !@revision.graded &&
-                  is_foundation(@form, @revision),
-              field_name: "revision[relates_to][]",
-              id: "related-resources-selector",
-              items: @project_hierarchy.children,
-              initial_values: get_selected_related_resources(@revision, @project_hierarchy)
-            ) %>
+                  is_foundation(@form, @revision)
+              }
+              field_name="revision[relates_to][]"
+              id="related-resources-selector"
+              items={@project_hierarchy.children}
+              initial_values={get_selected_related_resources(@revision, @project_hierarchy)}
+            />
           </div>
         <% else %>
           <div class="form-group">

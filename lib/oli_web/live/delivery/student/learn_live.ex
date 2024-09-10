@@ -61,7 +61,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     socket =
       assign(socket,
         active_tab: :learn,
-        units: get_or_compute_full_hierarchy(section)["children"],
         selected_module_per_unit_resource_id: %{},
         student_end_date_exceptions_per_resource_id: %{},
         student_visited_pages: %{},
@@ -78,9 +77,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         display_props_per_module_id: %{},
         selected_view: @default_selected_view
       )
+      |> stream_configure(:units, dom_id: &"units-#{&1["uuid"]}")
+      |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
+      |> stream(:unit_resource_ids, [])
       |> slim_assigns()
 
-    {:ok, socket, temporary_assigns: [units: [], unit_resource_ids: []]}
+    {:ok, socket}
   end
 
   defp slim_assigns(socket) do
@@ -111,7 +113,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       {:noreply,
        socket
        |> maybe_assign_selected_view(selected_view)
-       |> update(:units, fn _units -> full_hierarchy["children"] end)
+       |> stream(:units, full_hierarchy["children"], reset: true)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
@@ -321,7 +323,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply,
      socket
      |> assign(viewed_intro_video_resource_ids: updated_viewed_videos)
-     |> update(:units, fn units -> [selected_unit | units] end)
+     |> stream_insert(:units, selected_unit)
      |> push_event("play_video", %{
        "video_url" => video_url,
        "section_id" => section_id,
@@ -400,7 +402,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply,
      socket
      |> assign(display_props_per_module_id: display_props_per_module_id)
-     |> update(:units, fn units -> [selected_unit | units] end)}
+     |> stream_insert(:units, selected_unit)}
   end
 
   ## Tab navigation start ##
@@ -582,7 +584,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     socket
     |> assign(selected_module_per_unit_resource_id: selected_module_per_unit_resource_id)
-    |> update(:units, fn units -> [selected_unit | units] end)
+    |> stream_insert(:units, selected_unit)
     |> maybe_scroll_y_to_unit(unit_resource_id, auto_scroll?, scroll_behavior)
     |> maybe_scroll_x_to_card_in_slider(unit_resource_id, module_resource_id, auto_scroll?)
     |> maybe_pulse_target(pulse_target_id)
@@ -605,7 +607,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     selected_view = values["view"] || :gallery
 
     {:noreply,
-     push_redirect(socket,
+     push_navigate(socket,
        to:
          resource_url(
            values["slug"],
@@ -666,6 +668,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
     send(self(), :gc)
 
+    units =
+      get_or_compute_full_hierarchy(section)["children"]
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          student_visited_pages,
+          student_raw_avg_score_per_page_id,
+          student_progress_per_resource_id
+        )
+      end)
+
     {:noreply,
      assign(socket,
        student_end_date_exceptions_per_resource_id: student_end_date_exceptions_per_resource_id,
@@ -688,8 +701,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
            end
          )
      )
-     |> update(:units, fn _units -> get_or_compute_full_hierarchy(section)["children"] end)
-     |> maybe_assign_gallery_data(selected_view)}
+     |> stream(:units, units, reset: true)
+     |> maybe_assign_gallery_data(selected_view, units)}
   end
 
   def handle_info(
@@ -711,32 +724,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def handle_info(_, socket), do: {:noreply, socket}
 
   def render(%{selected_view: :outline} = assigns) do
-    %{
-      units: units,
-      student_visited_pages: student_visited_pages,
-      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
-      student_progress_per_resource_id: student_progress_per_resource_id,
-      section: %{id: _section_id}
-    } = assigns
-
-    units_with_metrics =
-      units
-      |> Enum.map(fn unit ->
-        unit
-        |> mark_visited_and_completed_pages(
-          student_visited_pages,
-          student_raw_avg_score_per_page_id,
-          student_progress_per_resource_id
-        )
-
-        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
-        # |> fetch_learning_objectives(section_id)
-      end)
-
-    assigns =
-      Map.merge(assigns, %{
-        units: units_with_metrics
-      })
+    %{section: %{id: _section_id}} = assigns
 
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
@@ -748,9 +736,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
-      <div id="outline_rows" phx-update="append">
+      <div id="outline_rows" phx-update="stream">
         <.outline_row
-          :for={row <- @units}
+          :for={{_, row} <- @streams.units}
           row={row}
           section={@section}
           type={child_type(row)}
@@ -774,9 +762,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
-      <div id="all_units_as_gallery" phx-update="append">
+      <div id="all_units_as_gallery" phx-update="stream">
         <.gallery_row
-          :for={unit <- @units}
+          :for={{_, unit} <- @streams.units}
           unit={unit}
           ctx={@ctx}
           section={@section}
@@ -1478,13 +1466,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         intro_video_viewed={@intro_video_viewed}
       />
       <div
-        :for={grouped_due_date <- @page_due_dates}
+        :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
         class="flex flex-col w-full"
-        id={"pages_grouped_by_#{grouped_due_date}"}
+        id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
       >
         <div class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold font-['Open Sans']">
-            <%= "Due: #{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+            <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
         </div>
         <.index_item
@@ -1493,6 +1481,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             display_module_item?(
               @show_completed_pages,
               grouped_due_date,
+              grouped_scheduling_type,
               @student_end_date_exceptions_per_resource_id,
               child,
               @ctx
@@ -1517,6 +1506,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ctx={@ctx}
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           parent_due_date={grouped_due_date}
+          parent_scheduling_type={grouped_scheduling_type}
           due_date={
             get_due_date_for_student(
               child["section_resource"].end_date,
@@ -1554,6 +1544,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_progress_per_resource_id, :map
   attr :due_date, Date
   attr :parent_due_date, Date
+  attr :parent_scheduling_type, :atom
   attr :progress, :float
   attr :show_completed_pages, :boolean
 
@@ -1571,6 +1562,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         display_module_item?(
           @show_completed_pages,
           @parent_due_date,
+          @parent_scheduling_type,
           @student_end_date_exceptions_per_resource_id,
           @section_attrs,
           @ctx
@@ -1578,7 +1570,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       }
       role={"#{@type} #{@numbering_index} details"}
       class="w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-5 flex rounded-lg"
-      id={"index_item_#{@resource_id}_#{@parent_due_date}"}
+      id={"index_item_#{@resource_id}_#{@parent_scheduling_type}_#{@parent_due_date}"}
       phx-value-resource_id={@resource_id}
       phx-value-parent_due_date={@parent_due_date}
       phx-value-module_resource_id={@module_resource_id}
@@ -1612,6 +1604,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           display_module_item?(
             @show_completed_pages,
             @parent_due_date,
+            @parent_scheduling_type,
             @student_end_date_exceptions_per_resource_id,
             child,
             @ctx
@@ -1636,6 +1629,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         ctx={@ctx}
         student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
         parent_due_date={@parent_due_date}
+        parent_scheduling_type={@parent_scheduling_type}
         due_date={
           get_due_date_for_student(
             child["section_resource"].end_date,
@@ -1779,7 +1773,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :progress, :float
 
   def index_item_icon(assigns) do
-    case {assigns.was_visited, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
+
+    case {assigns.was_visited || false, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
       {_, "page", false, _} ->
         # visited practice page (check icon shown when progress = 100%)
         ~H"""
@@ -2390,6 +2385,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp display_module_item?(
          _show_completed_pages,
          _grouped_due_date,
+         _grouped_scheduling_type,
          _student_end_date_exceptions_per_resource_id,
          %{"section_resource" => %{scheduling_type: :inclass_activity}} = _child,
          _ctx
@@ -2397,8 +2393,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        do: false
 
   defp display_module_item?(
+         _show_completed_pages,
+         _grouped_due_date,
+         "Not yet scheduled" = _grouped_scheduling_type,
+         _student_end_date_exceptions_per_resource_id,
+         %{"section_resource" => %{end_date: end_date}} = _child,
+         _ctx
+       )
+       when end_date in [nil, ""],
+       do: true
+
+  defp display_module_item?(
          show_completed_pages,
          grouped_due_date,
+         grouped_scheduling_type,
          student_end_date_exceptions_per_resource_id,
          child,
          ctx
@@ -2409,6 +2417,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         &display_module_item?(
           show_completed_pages,
           grouped_due_date,
+          grouped_scheduling_type,
           student_end_date_exceptions_per_resource_id,
           &1,
           ctx
@@ -2425,9 +2434,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         |> then(&if is_nil(&1), do: "Not yet scheduled", else: to_localized_date(&1, ctx))
 
       if show_completed_pages do
-        student_due_date == grouped_due_date
+        student_due_date == grouped_due_date and
+          grouped_scheduling_type == child["section_resource"].scheduling_type
       else
-        !child["completed"] and student_due_date == grouped_due_date
+        !child["completed"] and student_due_date == grouped_due_date and
+          grouped_scheduling_type == child["section_resource"].scheduling_type
       end
     end
   end
@@ -2447,14 +2458,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ctx
     )
     |> Enum.uniq()
-    |> then(fn dates ->
-      if nil in dates do
-        dates
-        |> Enum.reject(&is_nil/1)
-        |> Enum.sort_by(& &1, {:asc, Date})
-        |> Enum.concat(["Not yet scheduled"])
+    |> then(fn scheduling_type_date_keywords ->
+      has_a_not_scheduled_resource =
+        Enum.any?(scheduling_type_date_keywords, fn {_scheduling_type, date} ->
+          is_nil(date)
+        end)
+
+      if has_a_not_scheduled_resource do
+        # this guarantees not scheduled pages are grouped at the bootom of the list
+        scheduling_type_date_keywords
+        |> Enum.reject(fn {_st, date} -> is_nil(date) end)
+        |> Enum.sort_by(fn {_st, date} -> date end, {:asc, Date})
+        |> Enum.concat([{"Not yet scheduled", "Not yet scheduled"}])
       else
-        Enum.sort_by(dates, & &1, {:asc, Date})
+        Enum.sort_by(scheduling_type_date_keywords, fn {_st, date} -> date end, {:asc, Date})
       end
     end)
   end
@@ -2483,15 +2500,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           []
         else
           [
-            Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
-              to_localized_date(
-                Map.get(
-                  student_end_date_exceptions_per_resource_id,
-                  resource_id,
-                  end_date
-                ),
-                ctx
-              )
+            {scheduling_type,
+             Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
+               to_localized_date(
+                 Map.get(
+                   student_end_date_exceptions_per_resource_id,
+                   resource_id,
+                   end_date
+                 ),
+                 ctx
+               )}
           ]
         end
 
@@ -2601,46 +2619,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   When rendering learn page in gallery view, we need to calculate the unit and module metrics
   """
 
-  defp maybe_assign_gallery_data(socket, :gallery) do
-    %{
-      units: units,
-      student_visited_pages: student_visited_pages,
-      student_raw_avg_score_per_page_id: student_raw_avg_score_per_page_id,
-      student_progress_per_resource_id: student_progress_per_resource_id,
-      section: _section
-    } = socket.assigns
-
-    units_with_metrics =
-      units
-      |> Enum.map(fn unit ->
-        unit
-        |> mark_visited_and_completed_pages(
-          student_visited_pages,
-          student_raw_avg_score_per_page_id,
-          student_progress_per_resource_id
-        )
-
-        # The learning objectives tooltip was disabled in ticket NG-201 but will be reactivated with NG23-199
-        # |> fetch_learning_objectives(section.id)
-      end)
-
+  defp maybe_assign_gallery_data(socket, :gallery, units_with_metrics) do
     socket
-    |> update(:units, fn _units -> units_with_metrics end)
     |> assign(page_metrics_per_module_id: page_metrics_per_module_id(units_with_metrics))
-    |> enable_gallery_slider_buttons()
+    |> enable_gallery_slider_buttons(units_with_metrics)
   end
 
-  defp maybe_assign_gallery_data(socket, _another_view), do: socket
+  defp maybe_assign_gallery_data(socket, _another_view, _units_with_metrics), do: socket
 
   _docp = """
   When rendering learn page in gallery view, we need to execute the Scroller hook to enable the slider buttons
   """
 
-  defp enable_gallery_slider_buttons(socket) do
+  defp enable_gallery_slider_buttons(socket, units) do
     push_event(socket, "enable-slider-buttons", %{
       unit_resource_ids:
         Enum.map(
-          socket.assigns.units,
+          units,
           & &1["resource_id"]
         )
     })

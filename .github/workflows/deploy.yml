@@ -7,7 +7,6 @@ on:
       deploy_target:
         description: "Deploy Target"
         required: true
-        default: "tokamak.oli.cmu.edu"
         type: choice
         options:
           - tokamak.oli.cmu.edu
@@ -27,6 +26,7 @@ on:
 jobs:
   deployment:
     runs-on: ubuntu-latest
+    if: -n "${{github.event.inputs.deploy_target}}"
 
     environment:
       name: ${{ github.event.inputs.deploy_target }}

@@ -86,11 +86,23 @@ defmodule OliWeb.Components.Delivery.Schedule do
                         </.link>
 
                         <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
-                          <%= resource_scheduling_label(resource.scheduling_type) %> <%= date(
-                            resource.end_date,
-                            ctx: @ctx,
-                            precision: :date
-                          ) %>
+                          <%= resource_scheduling_label(resource.scheduling_type) %>
+                          <%= if is_nil(effective_settings),
+                            do:
+                              date(
+                                Utils.coalesce(resource.end_date, resource.start_date),
+                                ctx: @ctx,
+                                precision: :date
+                              ),
+                            else:
+                              date(
+                                Utils.coalesce(
+                                  effective_settings.end_date,
+                                  effective_settings.start_date
+                                ),
+                                ctx: @ctx,
+                                precision: :date
+                              ) %>
                         </div>
                       </div>
                       <div :if={graded} class="flex flex-col">
@@ -113,6 +125,100 @@ defmodule OliWeb.Components.Delivery.Schedule do
         <% end %>
       </div>
     </div>
+    """
+  end
+
+  attr(:ctx, SessionContext, required: true)
+  attr(:non_scheduled_container_groups, :any, required: true)
+  attr(:section_slug, :string, required: true)
+  attr(:historical_graded_attempt_summary, HistoricalGradedAttemptSummary)
+  attr(:request_path, :string, required: false)
+
+  def non_scheduled_container_groups(assigns) do
+    ~H"""
+    <div class="flex flex-row">
+      <div class="flex-1 flex flex-col md:p-[25px] md:pl-[125px] md:pr-[175px]">
+        <%= for %ScheduledContainerGroup{module_id: module_id, unit_id: unit_id, unit_label: unit_label, container_title: title, resources: scheduled_resources} <- @non_scheduled_container_groups do %>
+          <div class="flex flex-row">
+            <div class="flex-1 flex flex-col mr-4">
+              <.container_label
+                module_id={module_id}
+                unit_id={unit_id}
+                unit_label={unit_label}
+                title={title}
+              />
+
+              <div class="flex flex-col my-6 mx-10">
+                <%= for %ScheduledSectionResource{
+                      resource: resource,
+                      purpose: purpose,
+                      progress: progress,
+                      raw_avg_score: raw_avg_score,
+                      resource_attempt_count: resource_attempt_count,
+                      effective_settings: effective_settings,
+                      graded: graded
+                    } <- Enum.sort_by(scheduled_resources, fn sr -> sr.resource.numbering_index end) do %>
+                  <div class="flex flex-row items-center gap-4 p-2.5 rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5">
+                    <div class="flex items-center">
+                      <.non_scheduled_page_icon progress={progress} graded={graded} purpose={purpose} />
+                      <div class="w-[26px] justify-start items-center">
+                        <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+                          <%= resource.numbering_index %>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <.link
+                        href={
+                          Utils.lesson_live_path(@section_slug, resource.revision_slug,
+                            request_path: @request_path
+                          )
+                        }
+                        class="text-left dark:text-white opacity-90 text-base font-['Open Sans'] hover:no-underline"
+                      >
+                        <%= resource.title %>
+                      </.link>
+                    </div>
+                    <div :if={graded} class="flex flex-col">
+                      <Student.attempts_dropdown
+                        ctx={@ctx}
+                        section_slug={@section_slug}
+                        page_revision_slug={resource.revision_slug}
+                        attempt_summary={@historical_graded_attempt_summary}
+                        attempts_count={resource_attempt_count}
+                        effective_settings={effective_settings}
+                      />
+                      <Student.score_summary raw_avg_score={raw_avg_score} />
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def container_label(%{module_id: module_id} = assigns) when not is_nil(module_id) do
+    ~H"""
+    <h3 class="ml-12 dark:text-white text-base font-bold font-['Open Sans']">
+      <%= @title %>
+    </h3>
+    """
+  end
+
+  def container_label(%{unit_id: unit_id} = assigns) when not is_nil(unit_id) do
+    ~H"""
+    <h3 class="dark:text-white text-xl font-bold font-['Open Sans']">
+      <%= "#{@unit_label}: #{@title}" %>
+    </h3>
+    """
+  end
+
+  def container_label(assigns) do
+    ~H"""
     """
   end
 
@@ -141,6 +247,29 @@ defmodule OliWeb.Components.Delivery.Schedule do
       <div :if={is_nil(@progress) || @progress < 100}>
         <Icons.bullet />
       </div>
+    </div>
+    """
+  end
+
+  attr(:progress, :integer, required: true)
+  attr(:graded, :boolean, required: true)
+  attr(:purpose, :atom, required: true)
+
+  defp non_scheduled_page_icon(assigns) do
+    ~H"""
+    <div class="w-[36px] shrink-0">
+      <%= cond do %>
+        <% @purpose == :application -> %>
+          <Icons.exploration />
+        <% @graded && @progress == 100 -> %>
+          <Icons.square_checked />
+        <% @graded -> %>
+          <Icons.flag />
+        <% @progress == 100 -> %>
+          <Icons.check progress={1.0} />
+        <% true -> %>
+          <div role="no icon" class="flex justify-center items-center"></div>
+      <% end %>
     </div>
     """
   end

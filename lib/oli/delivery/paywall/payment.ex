@@ -60,10 +60,30 @@ defmodule Oli.Delivery.Paywall.Payment do
   end
 
   def to_human_readable(code) do
-    Base32Crockford.encode(code, partitions: 2)
+    CrockfordBase32.encode(code) |> partition(partitions: 2)
   end
 
   def from_human_readable(human_readable_code) do
-    Base32Crockford.decode(human_readable_code)
+    CrockfordBase32.decode_to_integer(human_readable_code)
+  end
+
+  defp partition(binary, opts) do
+    case Keyword.get(opts, :partitions, 0) do
+      count when count in [0, 1] ->
+        binary
+
+      count ->
+        split([], binary, count)
+        |> Enum.reverse()
+        |> Enum.join("-")
+    end
+  end
+
+  defp split(parts, binary, 1), do: [binary | parts]
+
+  defp split(parts, binary, count) do
+    len = div(String.length(binary), count)
+    {part, rest} = String.split_at(binary, len)
+    split([part | parts], rest, count - 1)
   end
 end

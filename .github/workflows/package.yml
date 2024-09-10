@@ -119,38 +119,3 @@ jobs:
             SHA_SHORT=${{ steps.info.outputs.sha_short }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-  check-auto-deploy:
-    name: Check AUTO_DEPLOY_ENABLED config
-    runs-on: ubuntu-latest
-    environment: tokamak.oli.cmu.edu
-    outputs:
-      enabled: ${{ steps.check_auto_deploy_enabled.outputs.enabled }}
-      auto_deploy_ref: ${{ steps.get_auto_deploy_ref.outputs.auto_deploy_ref }}
-    steps:
-      - name: Check whether AUTO_DEPLOY_ENABLED is set to TRUE
-        id: check_auto_deploy_enabled
-        run: echo "enabled=$(if [ "${{ vars.AUTO_DEPLOY_ENABLED }}" == "TRUE" ] ; then echo true ; else echo false ; fi)" >> $GITHUB_OUTPUT
-      - name: Get AUTO_DEPLOY_REF config
-        id: get_auto_deploy_ref
-        run: echo "auto_deploy_ref=$(if [ -n "${{ vars.AUTO_DEPLOY_REF }}" ] ; then echo ${{ vars.AUTO_DEPLOY_REF }} ; else echo refs/heads/master ; fi)" >> $GITHUB_OUTPUT
-
-  deployment:
-    runs-on: ubuntu-latest
-    environment: tokamak.oli.cmu.edu
-    needs: [amazon-linux, check-auto-deploy]
-    if: github.ref == needs.check-auto-deploy.outputs.auto_deploy_ref && needs.check-auto-deploy.outputs.enabled == 'true'
-
-    steps:
-      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to tokamak.oli.cmu.edu"
-
-      - name: 🚢💰 Deploy to test using SSH
-        uses: fifsky/ssh-action@master
-        with:
-          command: |
-            cd /torus
-            sh deploy.sh -r ${{ github.ref }} ${{ needs.amazon-linux.outputs.app_version }} ${{ needs.amazon-linux.outputs.sha_short }}
-          host: tokamak.oli.cmu.edu
-          user: simon-bot
-          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-          port: 44067

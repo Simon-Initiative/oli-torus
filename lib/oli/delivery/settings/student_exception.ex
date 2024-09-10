@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Settings.StudentException do
     field(:password, :string)
     field(:max_attempts, :integer)
     field(:retake_mode, Ecto.Enum, values: [:normal, :targeted])
+    field(:assessment_mode, Ecto.Enum, values: [:traditional, :one_at_a_time])
     field(:late_submit, Ecto.Enum, values: [:allow, :disallow])
     field(:late_start, Ecto.Enum, values: [:allow, :disallow])
     field(:time_limit, :integer)
@@ -42,6 +43,7 @@ defmodule Oli.Delivery.Settings.StudentException do
       :password,
       :max_attempts,
       :retake_mode,
+      :assessment_mode,
       :late_submit,
       :late_start,
       :time_limit,

@@ -46,12 +46,13 @@ defmodule OliWeb.Grades.GradebookView do
 
   def render(assigns) do
     ~H"""
-    <%= live_component(OliWeb.Components.Delivery.QuizScores,
-      id: "quiz_scores_table",
-      section: assigns.section,
-      params: assigns.params,
-      patch_url_type: :gradebook_view
-    ) %>
+    <.live_component
+      module={OliWeb.Components.Delivery.QuizScores}
+      id="quiz_scores_table"
+      section={@section}
+      params={@params}
+      patch_url_type={:gradebook_view}
+    />
     """
   end
 end

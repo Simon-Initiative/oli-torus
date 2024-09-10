@@ -149,11 +149,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
           label="Projects"
           description="Projects that the Author has either created or is a collaborator within"
         >
-          <%= live_component(OliWeb.Users.AuthorProjects,
-            id: "author_projects",
-            user: @user,
-            ctx: @ctx
-          ) %>
+          <.live_component
+            module={OliWeb.Users.AuthorProjects}
+            id="author_projects"
+            user={@user}
+            ctx={@ctx}
+          />
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
@@ -253,7 +254,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
          socket
          |> hide_modal(modal_assigns: nil)
          |> put_flash(:info, "Author successfully deleted.")
-         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
+         |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Author couldn't be deleted.")}

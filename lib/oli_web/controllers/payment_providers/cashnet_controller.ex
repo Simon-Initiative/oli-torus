@@ -150,7 +150,7 @@ defmodule OliWeb.PaymentProviders.CashnetController do
       )
 
       if user.independent_learner do
-        redirect(conn, to: ~p"/sections")
+        redirect(conn, to: ~p"/workspaces/student")
       else
         redirect(conn, to: Routes.delivery_path(conn, :index))
       end

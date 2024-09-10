@@ -90,7 +90,7 @@ defmodule OliWeb.Components.Delivery.StudentProgressTabelModel do
   end
 
   def custom_render(assigns, row, %ColumnSpec{name: :score}) do
-    if row.type == "Graded" and !is_nil(row.score) do
+    if row.type == "Scored" and !is_nil(row.score) do
       assigns = Map.merge(assigns, %{row: row})
 
       ~H"""

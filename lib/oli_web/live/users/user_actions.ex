@@ -68,11 +68,11 @@ defmodule OliWeb.Users.Actions do
         action={@resend_confirmation_link_path}
       >
         <input type="hidden" name="_csrf_token" value={@csrf_token} />
-        <input type="hidden" name="id" value={@user.id} />
+        <input type="hidden" name="user_id" value={@user.id} />
       </form>
       <form id={"reset-password-#{@user.id}"} method="post" action={@reset_password_link_path}>
         <input type="hidden" name="_csrf_token" value={@csrf_token} />
-        <input type="hidden" name="id" value={@user.id} />
+        <input type="hidden" name="user_id" value={@user.id} />
       </form>
 
       <%= if Accounts.user_confirmation_pending?(@user) do %>

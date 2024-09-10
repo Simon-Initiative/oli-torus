@@ -23,6 +23,9 @@ defmodule OliWeb.Sections.AssessmentSettings.Tooltips do
     do:
       "Targeted retakes allows the student to retake only the questions they missed on a previous attempt"
 
+  def for(:assessment_mode),
+    do: "How the system will present questions to students"
+
   def for(:feedback_mode),
     do: "Whether or not to allow the student to see question feedback and scores after an attempt"
 

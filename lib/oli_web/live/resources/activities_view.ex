@@ -86,7 +86,7 @@ defmodule OliWeb.Resources.ActivitiesView do
         _ ->
           socket
           |> put_flash(:info, "You do not have permission to access this course project")
-          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
+          |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))
       end
 
     {:ok, socket}

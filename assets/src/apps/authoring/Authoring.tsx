@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { isFirefox } from 'utils/browser';
 import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBoundary';
 import { initAppSignal } from '../../utils/appsignal';
@@ -242,8 +241,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     <AppsignalContext.Provider value={appsignal}>
       <ErrorBoundary>
         <ModalContainer>
-          {/* ModalContainer handles re-parenting anywhere we use react-bootstrap Modals, ModalDisplay handles the torus style redux modals. TODO: unite these*/}
-          <ModalDisplay />
           {isLoading && (
             <div id="aa-loading">
               <div className="loader spinner-border text-primary" role="status">

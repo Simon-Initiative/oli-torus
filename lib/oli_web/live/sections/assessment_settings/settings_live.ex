@@ -282,9 +282,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   defp flash_message(assigns) do
     ~H"""
-    <%= if live_flash(@flash, :info) do %>
+    <%= if Phoenix.Flash.get(@flash, :info) do %>
       <div class="alert alert-info flex flex-row justify-between" role="alert">
-        <%= live_flash(@flash, :info) %>
+        <%= Phoenix.Flash.get(@flash, :info) %>
         <button
           type="button"
           class="close ml-4"
@@ -297,9 +297,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
         </button>
       </div>
     <% end %>
-    <%= if live_flash(@flash, :error) do %>
+    <%= if Phoenix.Flash.get(@flash, :error) do %>
       <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        <%= live_flash(@flash, :error) %>
+        <%= Phoenix.Flash.get(@flash, :error) %>
         <button
           type="button"
           class="close ml-4"

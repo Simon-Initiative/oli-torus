@@ -288,7 +288,6 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
 
   def modal(%{modal_assigns: %{show: false}} = assigns),
     do: ~H"""
-
     """
 
   def modal(%{modal_assigns: %{show: "edit_institution_for_section"}} = assigns) do

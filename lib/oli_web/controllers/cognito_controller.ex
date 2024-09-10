@@ -19,11 +19,12 @@ defmodule OliWeb.CognitoController do
           "community_id" => community_id
         } = params
       ) do
-    case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
-      {:ok, user} ->
+    case Accounts.setup_sso_user(conn.assigns.claims, community_id, link_author: true) do
+      {:ok, user, author} ->
         conn
         |> create_pow_user(:user, user)
-        |> redirect(to: ~p"/sections")
+        |> maybe_send_invite_email(author)
+        |> redirect(to: ~p"/workspaces/instructor")
 
       {:error, %Ecto.Changeset{}} ->
         redirect_with_error(conn, get_error_url(params), "Invalid parameters")
@@ -43,7 +44,7 @@ defmodule OliWeb.CognitoController do
         } = params
       ) do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, user} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
+         {:ok, user, _} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       conn
       |> create_pow_user(:user, user)
       |> create_or_prompt(user, anchor)
@@ -197,5 +198,27 @@ defmodule OliWeb.CognitoController do
       {:error, error} ->
         redirect_with_error(conn, error_url, snake_case_to_friendly(error))
     end
+  end
+
+  defp maybe_send_invite_email(conn, nil), do: conn
+
+  defp maybe_send_invite_email(conn, author) do
+    brand_name = Application.get_env(:oli, :branding)[:name]
+
+    if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
+      token = PowInvitation.Plug.sign_invitation_token(conn, author)
+
+      Oli.Email.invitation_email(
+        author.email,
+        :infiniscope_invitation,
+        %{
+          brand_name: brand_name,
+          url: Routes.url(conn) <> ~p"/authoring/invitations/#{token}/edit"
+        }
+      )
+      |> Oli.Mailer.deliver_now()
+    end
+
+    conn
   end
 end

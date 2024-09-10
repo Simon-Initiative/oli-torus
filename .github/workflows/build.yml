@@ -52,8 +52,8 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.15.5 # Define the elixir version [required]
-          otp-version: 26.1 # Define the OTP version [required]
+          elixir-version: 1.17.2 # Define the elixir version [required]
+          otp-version: 27.0.1 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get
@@ -76,20 +76,6 @@ jobs:
 
       - name: 📦 Install node_module dependencies
         run: yarn --cwd assets --frozen-lockfile
-
-      # - name: ▶️ Run integration tests
-      #   run: |
-      #     /usr/local/share/chrome_driver/chromedriver &
-      #     timeout 90 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:9515)" != "404" ]]; do sleep 1; done' || false
-      #     set -a;source oli.env && MIX_ENV=hound mix test.hound
-
-      # - name: 📈 Save test results
-      #   uses: actions/upload-artifact@v3
-      #   if: failure()
-      #   with:
-      #     name: integration-test-results
-      #     path: test-results
-      #     if-no-files-found: ignore
 
   check-simon-token:
     name: Check simon-bot access token
@@ -123,8 +109,8 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.15.5 # Define the elixir version [required]
-          otp-version: 26.1 # Define the OTP version [required]
+          elixir-version: 1.17.2 # Define the elixir version [required]
+          otp-version: 27.0.1 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get
@@ -164,8 +150,8 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.15.5 # Define the elixir version [required]
-          otp-version: 26.1 # Define the OTP version [required]
+          elixir-version: 1.17.2 # Define the elixir version [required]
+          otp-version: 27.0.1 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get

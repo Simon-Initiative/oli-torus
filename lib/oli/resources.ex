@@ -339,6 +339,7 @@ defmodule Oli.Resources do
           time_limit: previous_revision.time_limit,
           scope: previous_revision.scope,
           retake_mode: previous_revision.retake_mode,
+          assessment_mode: previous_revision.assessment_mode,
           parameters: previous_revision.parameters,
           legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
@@ -349,6 +350,7 @@ defmodule Oli.Resources do
         },
         convert_strings_to_atoms(attrs)
       )
+      |> Map.merge(convert_strings_to_atoms(attrs))
 
     create_revision(attrs)
   end

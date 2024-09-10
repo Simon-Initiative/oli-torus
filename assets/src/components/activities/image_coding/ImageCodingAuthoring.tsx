@@ -14,7 +14,6 @@ import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import { ActivityScoring } from '../common/responses/ActivityScoring';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -193,7 +192,6 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
           <TabbedNavigation.Tabs>
             <TabbedNavigation.Tab label="Answer Key">
               {solutionParameters()}
-              <ActivityScoring partId={model.authoring.parts[0].id} />
               <Feedback
                 {...sharedProps}
                 projectSlug={props.projectSlug}

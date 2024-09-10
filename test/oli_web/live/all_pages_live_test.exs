@@ -437,6 +437,7 @@ defmodule OliWeb.AllPagesLiveTest do
 
       assert %Oli.Resources.Revision{
                retake_mode: :normal,
+               assessment_mode: :traditional,
                duration_minutes: nil,
                graded: false,
                max_attempts: 0,
@@ -467,6 +468,7 @@ defmodule OliWeb.AllPagesLiveTest do
           "poster_image" => "some_poster_image_url",
           "purpose" => "application",
           "retake_mode" => "targeted",
+          "assessment_mode" => "one_at_a_time",
           "scoring_strategy_id" => "2",
           "title" => "New Title!!"
         }
@@ -484,6 +486,7 @@ defmodule OliWeb.AllPagesLiveTest do
 
       assert %Oli.Resources.Revision{
                retake_mode: :targeted,
+               assessment_mode: :one_at_a_time,
                duration_minutes: 5,
                graded: true,
                max_attempts: 10,

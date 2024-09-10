@@ -1,9 +1,11 @@
 defmodule Oli.Delivery.Settings.Combined do
   defstruct resource_id: nil,
+            scheduling_type: :read_by,
             start_date: nil,
             end_date: nil,
             max_attempts: 0,
             retake_mode: :normal,
+            assessment_mode: :traditional,
             late_submit: :allow,
             late_start: :allow,
             time_limit: 0,
@@ -18,10 +20,12 @@ defmodule Oli.Delivery.Settings.Combined do
 
   @type t() :: %__MODULE__{
           resource_id: integer(),
+          scheduling_type: :due_by | :read_by | :inclass_activity,
           start_date: DateTime.t(),
           end_date: DateTime.t(),
           max_attempts: integer(),
           retake_mode: :normal | :targeted,
+          assessment_mode: :traditional | :one_at_a_time,
           late_submit: :allow | :disallow,
           late_start: :allow | :disallow,
           time_limit: integer(),

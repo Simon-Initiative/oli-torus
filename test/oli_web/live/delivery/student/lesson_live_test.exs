@@ -234,6 +234,18 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         }
       )
 
+    one_at_a_time_question_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "This is a page configured to show one question at a time",
+        duration_minutes: 5,
+        graded: true,
+        max_attempts: 5,
+        content: %{
+          model: []
+        }
+      )
+
     ## sections and subsections...
     subsection_1_revision =
       insert(:revision, %{
@@ -315,7 +327,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
         children: [
           unit_1_revision.resource_id,
-          unit_2_revision.resource_id
+          unit_2_revision.resource_id,
+          one_at_a_time_question_page_revision.resource_id
         ],
         title: "Root Container"
       })
@@ -334,6 +347,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         page_3_revision,
         page_4_revision,
         page_5_revision,
+        one_at_a_time_question_page_revision,
         subsection_1_revision,
         section_1_revision,
         module_1_revision,
@@ -391,6 +405,12 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       end_date: ~U[2023-11-14 20:00:00Z]
     })
 
+    # configure page as one at a time
+    Sections.get_section_resource(section.id, one_at_a_time_question_page_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      assessment_mode: :one_at_a_time
+    })
+
     # enable collaboration spaces for all pages in the section
     {_total_page_count, _section_resources} =
       Oli.Resources.Collaboration.enable_all_page_collab_spaces_for_section(
@@ -416,6 +436,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       page_1: page_1_revision,
       exploration_1: exploration_1_revision,
       graded_adaptive_page_revision: graded_adaptive_page_revision,
+      one_at_a_time_question_page: one_at_a_time_question_page_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
       page_4: page_4_revision,
@@ -445,7 +466,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}&section=#{section.slug}"
     end
   end
 
@@ -848,6 +869,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
       assert has_element?(view, ~s{div[role="page title"]}, "Page 2")
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
+      assert has_element?(view, ~s{div[role="page schedule"]}, "Read by:")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
     end
 
@@ -1488,6 +1510,30 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute render(view) =~ "This is a another one for the student"
       assert render(view) =~ "This is a class note"
       assert render(view) =~ "This is another one for all the class"
+    end
+
+    test "can see the page content when the page is configured as `one question at a time`", %{
+      conn: conn,
+      section: section,
+      user: user,
+      one_at_a_time_question_page: one_at_a_time_question_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, one_at_a_time_question_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} =
+        live(conn, Utils.lesson_live_path(section.slug, one_at_a_time_question_page.slug))
+
+      assert has_element?(
+               view,
+               "div[role='page title']",
+               "This is a page configured to show one question at a time"
+             )
+
+      assert has_element?(view, "div[id='one_at_a_time_questions']")
     end
   end
 

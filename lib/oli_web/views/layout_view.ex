@@ -47,12 +47,6 @@ defmodule OliWeb.LayoutView do
     AuthoringResolver.root_container(project_slug).slug
   end
 
-  def get_title(assigns) do
-    live_title_tag(assigns[:page_title] || assigns[:title] || brand_name(),
-      suffix: ""
-    )
-  end
-
   @doc """
   Allows a delivery content template to specify any number of additional stylesheets, via URLs,
   to be included in the head portion of the document.

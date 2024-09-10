@@ -42,7 +42,7 @@ defmodule OliWeb.CommunityLive.NewView do
         {:noreply,
          socket
          |> put_flash(:info, "Community successfully created.")
-         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))}
+         |> push_navigate(to: Routes.live_path(OliWeb.Endpoint, IndexView))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =

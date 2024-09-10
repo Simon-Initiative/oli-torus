@@ -266,12 +266,13 @@ defmodule OliWeb.Sections.OverviewView do
         description="Show a required to students who access the course for the first time"
       >
         <%= if @show_required_section_config do %>
-          <%= live_component(RequiredSurvey, %{
-            project: @section,
-            enabled: @section.required_survey_resource_id,
-            is_section: true,
-            id: "section-required-survey-section"
-          }) %>
+          <.live_component
+            module={RequiredSurvey}
+            project={@section}
+            enabled={@section.required_survey_resource_id}
+            is_section={true}
+            id="section-required-survey-section"
+          />
         <% else %>
           <div class="flex items-center h-full ml-8">
             <p class="m-0">
@@ -307,8 +308,8 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
 
       <Group.render
-        label="Grading"
-        description="View and manage student grades and progress"
+        label="Scoring"
+        description="View and manage student scores and progress"
         is_last={not @is_lms_or_system_admin or @section.open_and_free}
       >
         <ul class="link-list">
@@ -334,7 +335,7 @@ defmodule OliWeb.Sections.OverviewView do
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
               class="btn btn-link"
             >
-              View all Grades
+              View all Scores
             </a>
           </li>
           <li>
@@ -374,7 +375,7 @@ defmodule OliWeb.Sections.OverviewView do
                 }
                 class="btn btn-link"
               >
-                View Grades that failed to sync
+                View scores that failed to sync
               </a>
             </li>
             <%= if @is_lms_or_system_admin do %>
@@ -389,7 +390,7 @@ defmodule OliWeb.Sections.OverviewView do
                   }
                   class="btn btn-link"
                 >
-                  Observe grade updates in real-time
+                  Observe score updates in real-time
                 </a>
               </li>
             <% end %>
@@ -400,7 +401,7 @@ defmodule OliWeb.Sections.OverviewView do
                 }
                 class="btn btn-link"
               >
-                Browse LMS Grade Update Log
+                Browse LMS Score Update Log
               </a>
             </li>
           <% end %>
@@ -518,7 +519,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
 
-    {:noreply, push_redirect(socket, to: Routes.delivery_path(socket, :index))}
+    {:noreply, push_navigate(socket, to: Routes.delivery_path(socket, :index))}
   end
 
   def handle_event("show_delete_modal", _params, socket) do
@@ -580,7 +581,7 @@ defmodule OliWeb.Sections.OverviewView do
               if is_admin do
                 Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
               else
-                ~p"/sections"
+                ~p"/workspaces/instructor"
               end
 
             socket

@@ -177,11 +177,12 @@ defmodule OliWeb.Qa.QaLive do
             <%= if !Enum.empty?(@warnings_by_type) do %>
               <div class="d-flex">
                 <%= for type <- @warning_types do %>
-                  <%= live_component(WarningFilter,
-                    active: MapSet.member?(@filters, type),
-                    type: type,
-                    warnings: Map.get(@warnings_by_type, type)
-                  ) %>
+                  <.live_component
+                    module={WarningFilter}
+                    active={MapSet.member?(@filters, type)}
+                    type={type}
+                    warnings={Map.get(@warnings_by_type, type)}
+                  />
                 <% end %>
               </div>
 

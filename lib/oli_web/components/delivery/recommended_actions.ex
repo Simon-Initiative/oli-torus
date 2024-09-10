@@ -84,13 +84,7 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
       <% end %>
       <%= if @has_due_soon_activities do %>
         <.action_card to={
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-            @section_slug,
-            :overview,
-            :scored_activities
-          )
+          ~p"/sections/#{@section_slug}/instructor_dashboard/insights/scored_activities"
         }>
           <:icon><i class="fa-solid fa-hourglass-half" /></:icon>
           <:title>Remind Students of Deadlines</:title>
@@ -110,8 +104,8 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
 
   defp action_card(assigns) do
     ~H"""
-    <a
-      href={@to}
+    <.link
+      navigate={@to}
       class="group border border-gray-200 dark:border-gray-600 rounded p-3 pl-8 flex flex-col justify-center cursor-pointer hover:bg-delivery-primary-50 active:bg-delivery-primary active:text-white hover:no-underline"
     >
       <div class="flex items-center gap-2">
@@ -121,7 +115,7 @@ defmodule OliWeb.Components.Delivery.RecommendedActions do
       <span class="torus-span group-hover:text-gray-500 group-active:text-white">
         <%= render_slot(@description) %>
       </span>
-    </a>
+    </.link>
     """
   end
 end

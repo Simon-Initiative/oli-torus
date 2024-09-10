@@ -376,7 +376,10 @@ defmodule Oli.Delivery.Sections do
             enrollment_context_roles
         end)
 
-      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles, on_conflict: :nothing)
+      Repo.insert_all(EnrollmentContextRole, enrollment_context_roles,
+        on_conflict: :nothing,
+        conflict_target: [:enrollment_id, :context_role_id]
+      )
 
       {:ok, enrollments}
     end)
@@ -577,7 +580,6 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
-        preload: [:base_project],
         select: s
       )
 
@@ -1235,7 +1237,7 @@ defmodule Oli.Delivery.Sections do
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
   # relationship between pages.
-  defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
+  def determine_unreachable_pages(publication_ids, hierarchy_ids) do
     # Start with all pages
     unreachable =
       Oli.Publishing.all_page_resource_ids(publication_ids)
@@ -1806,6 +1808,7 @@ defmodule Oli.Delivery.Sections do
   def get_ordered_schedule(section, current_user_id, version \\ :v1)
 
   def get_ordered_schedule(section, current_user_id, :v1) do
+
     container_titles = container_titles(section.slug)
 
     containers_data_map =
@@ -1849,12 +1852,17 @@ defmodule Oli.Delivery.Sections do
     combined_settings_for_all_resources =
       Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
 
+#      {containers_data_map, page_to_containers_map, progress_per_resource_id,
+#     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+#     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
       # filter out unscheduled resources
       |> Enum.filter(fn section_resource ->
         case section_resource do
           %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
           _ -> true
         end
       end)
@@ -1891,6 +1899,124 @@ defmodule Oli.Delivery.Sections do
   end
 
   def get_ordered_schedule(section, current_user_id, :v2) do
+    {containers_data_map, page_to_containers_map, progress_per_resource_id,
+     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    scheduled_section_resources =
+      Scheduling.retrieve(section, :pages)
+      # filter out unscheduled resources
+      |> Enum.filter(fn section_resource ->
+        case section_resource do
+          %SectionResource{start_date: nil, end_date: nil} -> false
+          %SectionResource{hidden: true} -> false
+          _ -> true
+        end
+      end)
+      # group items by month and year, start date take precedence over end date
+      |> group_and_sort_by_month_and_year()
+      |> Enum.map(fn {{month, year}, section_resources} ->
+        {{month, year},
+         section_resources
+         # group by week number
+         |> group_and_sort_by_week_number(section)
+         |> Enum.map(fn {week_number, section_resources} ->
+           {week_number,
+            section_resources
+            |> attach_section_resource_metadata(
+              page_to_containers_map,
+              progress_per_resource_id,
+              raw_avg_score_per_page_id,
+              user_resource_attempt_counts,
+              combined_settings_for_all_resources,
+              last_attempt_per_page_id
+            )
+            # group by {end_date, module_id} and sort by end_date
+            |> group_by_container_and_end_date()
+            |> attach_container_metadata(containers_data_map, progress_per_resource_id, :v2)}
+         end)}
+      end)
+
+    scheduled_section_resources
+  end
+
+  @doc """
+  This function is the equivalent to get_ordered_schedule/3 but without the scheduling information,
+  and it is aimed to be used in sections that do not have a schedule yet.
+
+  Returns a map of all section resources for the given section, grouped by container and sorted by numbering index.
+
+  %{{nil, nil} => sorted_container_groups}
+
+  * {nil, nil} is used as a key instead of {month, year}, since the section is not yet scheduled
+  and we need to respect the same expected output format as get_ordered_schedule/3.
+  """
+
+  def get_not_scheduled_agenda(%Section{analytics_version: :v1} = section, current_user_id) do
+    {containers_data_map, page_to_containers_map, progress_per_resource_id,
+     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    sorted_container_groups =
+      Scheduling.retrieve(section, :pages)
+      |> Enum.reject(& &1.hidden)
+      |> attach_section_resource_metadata(
+        page_to_containers_map,
+        progress_per_resource_id,
+        raw_avg_score_per_page_id,
+        user_resource_attempt_counts,
+        combined_settings_for_all_resources,
+        last_attempt_per_page_id
+      )
+      |> group_by_container_and_graded()
+      |> attach_container_metadata(
+        containers_data_map,
+        progress_per_resource_id,
+        :v1,
+        include_min_contained_numbering_index: true
+      )
+      |> Enum.sort_by(fn scg ->
+        scg.min_contained_numbering_index
+      end)
+
+    # %{{month, year} => sorted_container_groups}
+    # month and year are nil since the section is not yet scheduled
+    %{{nil, nil} => sorted_container_groups}
+  end
+
+  def get_not_scheduled_agenda(%Section{analytics_version: :v2} = section, current_user_id) do
+    {containers_data_map, page_to_containers_map, progress_per_resource_id,
+     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    sorted_container_groups =
+      Scheduling.retrieve(section, :pages)
+      |> Enum.reject(& &1.hidden)
+      |> attach_section_resource_metadata(
+        page_to_containers_map,
+        progress_per_resource_id,
+        raw_avg_score_per_page_id,
+        user_resource_attempt_counts,
+        combined_settings_for_all_resources,
+        last_attempt_per_page_id
+      )
+      |> Enum.group_by(&{&1.end_date, {&1.module_id, &1.unit_id}})
+      |> attach_container_metadata(
+        containers_data_map,
+        progress_per_resource_id,
+        :v2,
+        include_min_contained_numbering_index: true
+      )
+      |> Enum.sort_by(fn scg ->
+        scg.min_contained_numbering_index
+      end)
+
+    # %{{month, year} => sorted_container_groups}
+    # month and year are nil since the section is not yet scheduled
+    %{{nil, nil} => sorted_container_groups}
+  end
+
+  defp build_user_data_for_section_schedule(section, current_user_id) do
     container_titles = container_titles(section.slug)
 
     containers_data_map =
@@ -1934,40 +2060,9 @@ defmodule Oli.Delivery.Sections do
     combined_settings_for_all_resources =
       Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
 
-    scheduled_section_resources =
-      Scheduling.retrieve(section, :pages)
-      # filter out unscheduled resources
-      |> Enum.filter(fn section_resource ->
-        case section_resource do
-          %SectionResource{start_date: nil, end_date: nil} -> false
-          _ -> true
-        end
-      end)
-      # group items by month and year, start date take precedence over end date
-      |> group_and_sort_by_month_and_year()
-      |> Enum.map(fn {{month, year}, section_resources} ->
-        {{month, year},
-         section_resources
-         # group by week number
-         |> group_and_sort_by_week_number(section)
-         |> Enum.map(fn {week_number, section_resources} ->
-           {week_number,
-            section_resources
-            |> attach_section_resource_metadata(
-              page_to_containers_map,
-              progress_per_resource_id,
-              raw_avg_score_per_page_id,
-              user_resource_attempt_counts,
-              combined_settings_for_all_resources,
-              last_attempt_per_page_id
-            )
-            # group by {end_date, module_id} and sort by end_date
-            |> group_by_container_and_end_date()
-            |> attach_container_metadata(containers_data_map, progress_per_resource_id, :v2)}
-         end)}
-      end)
-
-    scheduled_section_resources
+    {containers_data_map, page_to_containers_map, progress_per_resource_id,
+     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     last_attempt_per_page_id}
   end
 
   defp group_and_sort_by_month_and_year(section_resources) do
@@ -2135,7 +2230,8 @@ defmodule Oli.Delivery.Sections do
       :container_title,
       :progress,
       :resources,
-      :graded
+      :graded,
+      :min_contained_numbering_index
     ]
   end
 
@@ -2143,7 +2239,16 @@ defmodule Oli.Delivery.Sections do
          container_groups,
          containers_data_map,
          progress_per_resource_id,
-         :v2
+         analytics_version,
+         opts \\ []
+       )
+
+  defp attach_container_metadata(
+         container_groups,
+         containers_data_map,
+         progress_per_resource_id,
+         :v2,
+         opts
        ) do
     Enum.map(container_groups, fn {{_end_date, {module_id, unit_id}}, scheduled_resources} ->
       parent_id = module_id || unit_id
@@ -2156,7 +2261,16 @@ defmodule Oli.Delivery.Sections do
         unit_label: get_in(containers_data_map, [unit_id, :label]),
         container_title: get_in(containers_data_map, [parent_id, :title]),
         progress: progress_percentage(progress_per_resource_id[parent_id]),
-        resources: scheduled_resources
+        resources:
+          if(opts[:include_min_contained_numbering_index],
+            do: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
+            else: scheduled_resources
+          ),
+        min_contained_numbering_index:
+          if(opts[:include_min_contained_numbering_index],
+            do:
+              Enum.min_by(scheduled_resources, & &1.resource.numbering_index).resource.numbering_index
+          )
       }
     end)
   end
@@ -2165,7 +2279,8 @@ defmodule Oli.Delivery.Sections do
          container_groups,
          containers_data_map,
          progress_per_resource_id,
-         :v1
+         :v1,
+         opts
        ) do
     container_groups
     |> Enum.map(fn {{{module_id, unit_id}, graded}, scheduled_resources} ->
@@ -2180,7 +2295,16 @@ defmodule Oli.Delivery.Sections do
         container_title: get_in(containers_data_map, [parent_id, :title]),
         progress: progress_percentage(progress_per_resource_id[parent_id]),
         graded: graded,
-        resources: scheduled_resources
+        resources:
+          if(opts[:include_min_contained_numbering_index],
+            do: Enum.sort_by(scheduled_resources, & &1.resource.numbering_index),
+            else: scheduled_resources
+          ),
+        min_contained_numbering_index:
+          if(opts[:include_min_contained_numbering_index],
+            do:
+              Enum.min_by(scheduled_resources, & &1.resource.numbering_index).resource.numbering_index
+          )
       }
     end)
   end
@@ -2479,6 +2603,7 @@ defmodule Oli.Delivery.Sections do
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         scoring_strategy_id: revision.scoring_strategy_id,
+        assessment_mode: revision.assessment_mode,
         section_id: section.id
       }
       |> SectionResource.to_map()
@@ -2798,6 +2923,7 @@ defmodule Oli.Delivery.Sections do
              :explanation_strategy,
              :max_attempts,
              :retake_mode,
+             :assessment_mode,
              :password,
              :late_submit,
              :late_start,
@@ -3361,6 +3487,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3487,6 +3614,7 @@ defmodule Oli.Delivery.Sections do
                :explanation_strategy,
                :max_attempts,
                :retake_mode,
+               :assessment_mode,
                :password,
                :late_submit,
                :late_start,
@@ -3527,7 +3655,7 @@ defmodule Oli.Delivery.Sections do
   # For a given section resource, clean the children attribute to ensure that:
   # 1. Any nil records are removed
   # 2. All non-nil sr id references map to a non-deleted revision in the new pub
-  defp clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
+  def clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
     updated_children =
       section_resource.children
       |> Enum.filter(fn child_id -> !is_nil(child_id) end)
@@ -3630,7 +3758,8 @@ defmodule Oli.Delivery.Sections do
             collab_space_config: revision.collab_space_config,
             max_attempts: revision.max_attempts || 0,
             scoring_strategy_id: revision.scoring_strategy_id,
-            retake_mode: revision.retake_mode
+            retake_mode: revision.retake_mode,
+            assessment_mode: revision.assessment_mode
           })
           |> Oli.Repo.insert!(
             # if there is a conflict on the unique section_id resource_id constraint,
@@ -3649,6 +3778,7 @@ defmodule Oli.Delivery.Sections do
                  :explanation_strategy,
                  :max_attempts,
                  :retake_mode,
+                 :assessment_mode,
                  :password,
                  :late_submit,
                  :late_start,
@@ -3718,7 +3848,8 @@ defmodule Oli.Delivery.Sections do
               item.max_attempts
             end,
           scoring_strategy_id: item.scoring_strategy_id,
-          retake_mode: item.retake_mode
+          retake_mode: item.retake_mode,
+          assessment_mode: item.assessment_mode
         }
       end)
 
@@ -4273,7 +4404,8 @@ defmodule Oli.Delivery.Sections do
         left_join: ra in assoc(r_att, :resource_access),
         where:
           ra.section_id == ^section.id and ra.user_id == ^user_id and rev.graded and
-            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1,
+            rev.resource_type_id == ^page_resource_type_id and last_att.row_number == 1 and
+            not sr.hidden,
         group_by: [
           rev.id,
           sr.numbering_index,
@@ -4321,6 +4453,9 @@ defmodule Oli.Delivery.Sections do
   - `section`: The section struct containing details about the course section.
   - `user_id`: The ID of the user.
   - `lessons_count`: The number of upcoming lessons to retrieve.
+  - `opts`: Additional options to filter the lessons. The `:only_graded` option filters the lessons
+    to only include graded lessons. The `:ignore_schedule` option ignores the schedule and returns
+    all upcoming lessons, no matter if they do not have any scheduled date.
 
   ## Returns:
   - Returns a list of maps with details of the upcoming lessons.
@@ -4328,11 +4463,11 @@ defmodule Oli.Delivery.Sections do
   @spec get_nearest_upcoming_lessons(Section.t(), integer(), integer(), Keyword.t() | nil) ::
           list(map())
   def get_nearest_upcoming_lessons(section, user_id, lessons_count, opts \\ []) do
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     today =
       Oli.Date.utc_today()
       |> DateTime.new!(~T[00:00:00])
-
-    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     graded_filter =
       if opts[:only_graded] do
@@ -4341,16 +4476,37 @@ defmodule Oli.Delivery.Sections do
         true
       end
 
+    schedule_filter =
+      if opts[:ignore_schedule] do
+        true
+      else
+        dynamic(
+          [sr, _s, _spp, _pr, _rev, _ra, _r_att, se],
+          coalesce(se.start_date, se.end_date)
+          |> coalesce(sr.start_date)
+          |> coalesce(sr.end_date) >=
+            ^today
+        )
+      end
+
     from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
       left_join: ra in ResourceAccess,
       on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
       left_join: r_att in ResourceAttempt,
       on: r_att.resource_access_id == ra.id,
+      left_join: se in Oli.Delivery.Settings.StudentException,
+      on:
+        se.resource_id == ra.resource_id and se.user_id == ^user_id and
+          se.section_id == ^section.id,
       where:
         rev.resource_type_id == ^page_resource_type_id and
-          coalesce(sr.start_date, sr.end_date) >= ^today and coalesce(ra.progress, 0) == 0 and
-          is_nil(r_att.id),
-      order_by: [asc: coalesce(sr.start_date, sr.end_date), asc: sr.numbering_index],
+          is_nil(r_att.id) and not sr.hidden,
+      where: ^schedule_filter,
+      order_by: [
+        asc:
+          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
+        asc: sr.numbering_index
+      ],
       limit: ^lessons_count,
       select:
         map(rev, [
@@ -4365,8 +4521,8 @@ defmodule Oli.Delivery.Sections do
         ]),
       select_merge: %{
         numbering_index: sr.numbering_index,
-        start_date: sr.start_date,
-        end_date: sr.end_date
+        start_date: coalesce(se.start_date, sr.start_date),
+        end_date: coalesce(se.end_date, sr.end_date)
       }
     )
     |> where(^graded_filter)

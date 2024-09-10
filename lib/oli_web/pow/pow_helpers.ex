@@ -41,7 +41,7 @@ defmodule OliWeb.Pow.PowHelpers do
       web_module: OliWeb,
       routes_backend: OliWeb.Pow.AuthorRoutes,
       extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
-      controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+      controller_callbacks: OliWeb.Pow.AuthorControllerCallbacks,
       cache_store_backend: Pow.Store.Backend.MnesiaCache,
       users_context: OliWeb.Pow.AuthorContext,
       messages_backend: OliWeb.Pow.Messages,
@@ -95,11 +95,9 @@ defmodule OliWeb.Pow.PowHelpers do
   def provider_links(conn, link_opts \\ []) do
     providers = get_providers(conn)
 
-    providers_length = length(providers)
-
     providers
     |> Enum.with_index(1)
-    |> generate_provider_links(conn, providers_length, link_opts)
+    |> generate_provider_links(conn, link_opts)
   end
 
   defp get_providers(conn) do
@@ -110,14 +108,14 @@ defmodule OliWeb.Pow.PowHelpers do
     |> Enum.map(&{&1, &1 in providers_for_user})
   end
 
-  defp generate_provider_links(list_providers_with_index, conn, providers_length, link_opts) do
+  defp generate_provider_links(list_providers_with_index, conn, link_opts) do
     list_providers_with_index
     |> Enum.map(fn
-      {{provider, true}, index} ->
-        deauthorization_link(conn, provider, providers_length == index, link_opts)
+      {{provider, true}, _index} ->
+        deauthorization_link(conn, provider, link_opts)
 
-      {{provider, false}, index} ->
-        authorization_link(conn, provider, providers_length == index, link_opts)
+      {{provider, false}, _index} ->
+        authorization_link(conn, provider, link_opts)
     end)
   end
 
@@ -127,38 +125,34 @@ defmodule OliWeb.Pow.PowHelpers do
   `:invited_user` is assigned to the conn, the invitation token will be passed
   on through the URL query params.
   """
-  def authorization_link(conn, provider, is_last_provider, opts \\ []) do
+  def authorization_link(conn, provider, opts \\ []) do
     opts = build_otps(opts, conn, provider)
 
     button_box = build_button_box(conn, provider)
 
-    link = Link.link(button_box, opts)
-
-    if is_last_provider do
-      link
-    else
-      or_text =
-        Tag.content_tag(:div, "OR", [{:data, [test: [or: "test-data"]]}, class: "text-center"])
-
-      Tag.content_tag(:div, [link, Tag.tag(:br), or_text])
-    end
+    Link.link(button_box, opts)
   end
 
   defp build_button_box(conn, provider) do
     icon = provider_icon(provider)
     provider_name = provider_name(provider, downcase: true)
-    msg_box = build_msg_box(conn, provider, provider_name)
-    Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
+    msg_box = build_msg_box(conn, provider)
+
+    Tag.content_tag(:div, [icon, msg_box],
+      class: provider_name <> "-auth-container flex flex-row gap-x-2"
+    )
   end
 
-  defp build_msg_box(conn, provider, provider_name) do
+  defp build_msg_box(conn, provider) do
     msg =
       AuthorizationController.extension_messages(conn).login_with_provider(%{
         conn
         | params: %{"provider" => provider}
       })
 
-    Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
+    Tag.content_tag(:div, msg,
+      class: "flex items-center !text-base !font-normal !font-['Open Sans'] !leading-snug"
+    )
   end
 
   defp build_otps(opts, conn, provider) do
@@ -166,7 +160,10 @@ defmodule OliWeb.Pow.PowHelpers do
 
     opts = Keyword.merge(opts, to: path)
 
-    Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
+    Keyword.merge(opts,
+      class:
+        "btn btn-md flex items-center no-underline hover:no-underline hover:text-black w-80 m-auto mb-2 h-11 bg-white rounded-md text-center text-black text-base font-normal font-['Open Sans'] leading-snug"
+    )
   end
 
   defp build_authentication_path(conn, provider) do
@@ -195,8 +192,8 @@ defmodule OliWeb.Pow.PowHelpers do
   Generates a provider deauthorization link.
   The link is used to remove authorization with the provider.
   """
-  @spec deauthorization_link(Conn.t(), atom(), boolean(), keyword()) :: HTML.safe()
-  def deauthorization_link(conn, provider, is_last_provider, opts \\ []) do
+  @spec deauthorization_link(Conn.t(), atom(), keyword()) :: HTML.safe()
+  def deauthorization_link(conn, provider, opts \\ []) do
     msg =
       AuthorizationController.extension_messages(conn).remove_provider_authentication(%{
         conn
@@ -220,27 +217,19 @@ defmodule OliWeb.Pow.PowHelpers do
     msg_box = Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
 
     button_box = Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
-    link = Link.link(button_box, opts)
-
-    if is_last_provider do
-      link
-    else
-      or_text = Tag.content_tag(:div, "OR", class: "text-center")
-
-      Tag.content_tag(:div, [link, Tag.tag(:br), or_text])
-    end
+    Link.link(button_box, opts)
   end
 
   def provider_icon(provider) do
     case provider do
       :google ->
         HTML.raw(
-          "<div class=\"w-[64px] #{provider_name(provider, downcase: true)}-icon-container\"><img class=\"#{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
+          "<div class=\"w-auto !p-0 #{provider_name(provider, downcase: true)}-icon-container\"><img class=\"!text-5xl !p-0 !w-[2.7rem] #{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
         )
 
       :github ->
         HTML.raw(
-          "<div class=\"w-[64px] #{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github #{provider_name(provider, downcase: true)}-icon\"></i></div>"
+          "<div class=\"w-auto !px-1 !p-0 #{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github !text-4xl #{provider_name(provider, downcase: true)}-icon\"></i></div>"
         )
 
       _ ->

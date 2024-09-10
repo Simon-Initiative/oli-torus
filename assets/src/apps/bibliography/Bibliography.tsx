@@ -6,7 +6,6 @@ import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { Banner } from 'components/messages/Banner';
 import { Page, Paging } from 'components/misc/Paging';
 import { Modal } from 'components/modal/Modal';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 import { modalActions } from 'actions/modal';
 import { BibEntry } from 'data/content/bibentry';
 import { Message, Severity, createMessage } from 'data/messages/messages';
@@ -326,8 +325,6 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
   return (
     <React.StrictMode>
       <ErrorBoundary>
-        <ModalDisplay />
-
         <div className="resource-editor row">
           <div className="col-span-12">
             <Banner

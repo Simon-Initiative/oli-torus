@@ -413,7 +413,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprologue%2F#{page_1.slug}&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Fprologue%2F#{page_1.slug}&section=#{section.slug}"
     end
   end
 

@@ -38,7 +38,16 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.authoring_pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Authoring Sign In"
+      assert html_response(conn, 200) =~ "Course Author Sign In"
+
+      assert html_response(conn, 200) =~
+               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
+
+      assert html_response(conn, 200) =~
+               "Create, deliver, and continuously improve course materials."
+
+      assert html_response(conn, 200) =~
+               "Create an Account"
 
       # sign author in
       conn =
@@ -67,10 +76,7 @@ defmodule OliWeb.Common.PowTest do
       response = html_response(conn, 200)
 
       assert response =~ "Continue with Google"
-      assert response =~ "div class=\"google-auth-container\""
-
       assert response =~ "Continue with Github"
-      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
@@ -82,10 +88,19 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+      assert html_response(conn, 200) =~ "Instructor Sign In"
 
       assert html_response(conn, 200) =~
-               "This sign in page is for <b>Independent Learner and Educator</b> accounts."
+               "<div class=\"text-left\">\n            <span class=\"text-white text-4xl font-normal font-['Open Sans'] leading-10\">\n              Welcome to\n            </span>\n            <span class=\"text-white text-4xl font-bold font-['Open Sans'] leading-10\">\nOLI Torus\n            </span>\n          </div>"
+
+      assert html_response(conn, 200) =~
+               "Gain insights into student engagement, progress, and learning patterns."
+
+      assert html_response(conn, 200) =~
+               "Create an Account"
+
+      # assert that background is set to the default background
+      assert html_response(conn, 200) =~ "fill=\"#0CAF61\""
 
       # sign user in
       conn =
@@ -95,7 +110,7 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/workspaces/instructor"
 
       # user who is already signed in should be automatically redirected away from sign in page
       conn =
@@ -103,7 +118,7 @@ defmodule OliWeb.Common.PowTest do
         |> get(Routes.pow_session_path(conn, :new))
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/workspaces/instructor"
     end
 
     test "hides authoring sign in box when coming from an invitation link", %{
@@ -114,7 +129,7 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.pow_session_path(conn, :new, from_invitation_link?: true))
 
-      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+      assert html_response(conn, 200) =~ "Instructor Sign In"
 
       refute html_response(conn, 200) =~
                "Looking for Authoring or your LMS?"
@@ -127,7 +142,7 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/workspaces/instructor"
 
       # user who is already signed in should be automatically redirected away from sign in page
       conn =
@@ -135,7 +150,7 @@ defmodule OliWeb.Common.PowTest do
         |> get(Routes.pow_session_path(conn, :new))
 
       assert html_response(conn, 302) =~
-               ~p"/sections"
+               ~p"/workspaces/instructor"
     end
 
     test "handles new session failure for non LMS user", %{conn: conn, user: user} do
@@ -177,10 +192,7 @@ defmodule OliWeb.Common.PowTest do
       response = html_response(conn, 200)
 
       assert response =~ "Continue with Google"
-      assert response =~ "div class=\"google-auth-container\""
-
       assert response =~ "Continue with Github"
-      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
@@ -315,10 +327,7 @@ defmodule OliWeb.Common.PowTest do
       response = html_response(conn, 200)
 
       assert response =~ "Continue with Google"
-      assert response =~ "div class=\"google-auth-container\""
-
       assert response =~ "Continue with Github"
-      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
@@ -384,10 +393,7 @@ defmodule OliWeb.Common.PowTest do
       response = html_response(conn, 200)
 
       assert response =~ "Continue with Google"
-      assert response =~ "div class=\"google-auth-container\""
-      assert Monocle.we_see_exactly(response, 1, attribute: "or")
       assert response =~ "Continue with Github"
-      assert response =~ "div class=\"github-auth-container\""
     end
 
     test "a flash message is shown when the author is already registered",

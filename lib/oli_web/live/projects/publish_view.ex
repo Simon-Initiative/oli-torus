@@ -2,6 +2,7 @@ defmodule OliWeb.Projects.PublishView do
   alias Oli.Search.Embeddings
   use OliWeb, :live_view
   use OliWeb.Common.Modal
+  alias OliWeb.Common.Confirm
   use OliWeb.Common.SortableTable.TableHandlers
 
   import Oli.Utils, only: [trap_nil: 1, log_error: 2]
@@ -132,11 +133,11 @@ defmodule OliWeb.Projects.PublishView do
        push_affected: push_affected,
        table_model: table_model,
        version_change: version_change,
+       auto_update_sections: project.auto_update_sections,
        limit: 10
      )}
   end
 
-  attr(:auto_update_sections, :boolean, default: false)
   attr(:limit, :integer, default: 10)
   attr(:modal, :any, default: nil)
   attr(:offset, :integer, default: 0)
@@ -144,6 +145,7 @@ defmodule OliWeb.Projects.PublishView do
   attr(:query, :string, default: "")
   attr(:show_bottom_paging, :boolean, default: false)
   attr(:sort, :string, default: "sort")
+  attr(:description, :string, default: "")
 
   def render(assigns) do
     ~H"""
@@ -168,6 +170,7 @@ defmodule OliWeb.Projects.PublishView do
               active_publication={@active_publication}
               active_publication_changes={@active_publication_changes}
               auto_update_sections={@auto_update_sections}
+              description={@description}
               form_changed="form_changed"
               changeset={@changeset |> to_form()}
               has_changes={@has_changes}
@@ -206,17 +209,22 @@ defmodule OliWeb.Projects.PublishView do
   def handle_event(
         "form_changed",
         %{
-          "publication" => %{"auto_push_update" => auto_push_update}
+          "publication" => %{"auto_push_update" => auto_push_update, "description" => description}
         },
         socket
       ) do
+    project = socket.assigns.project
+    auto_update_sections = string_to_bool(auto_push_update)
+    Course.update_project(project, %{auto_update_sections: auto_update_sections})
+
     {:noreply,
      assign(socket,
-       auto_update_sections: string_to_bool(auto_push_update)
+       auto_update_sections: auto_update_sections,
+       description: description
      )}
   end
 
-  def handle_event("publish_active", %{"publication" => publication}, socket) do
+  def handle_event("update_sections", %{"publication" => publication}, socket) do
     project = socket.assigns.project
 
     user_id = socket.assigns.ctx.author.id
@@ -242,7 +250,7 @@ defmodule OliWeb.Projects.PublishView do
       {:noreply,
        socket
        |> put_flash(:info, "Publish Successful!")
-       |> push_redirect(
+       |> push_navigate(
          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project.slug)
        )}
     else
@@ -252,7 +260,7 @@ defmodule OliWeb.Projects.PublishView do
         {:noreply,
          socket
          |> put_flash(:error, msg)
-         |> push_redirect(
+         |> push_navigate(
            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.PublishView, project.slug)
          )}
     end
@@ -276,6 +284,45 @@ defmodule OliWeb.Projects.PublishView do
        modal,
        modal_assigns: modal_assigns
      )}
+  end
+
+  def handle_event("publish_active", %{"publication" => publication}, socket) do
+    modal_assigns = %{
+      title: "Update Sections",
+      id: "update_sections_modal",
+      ok:
+        JS.push("update_sections",
+          value: %{"publication" => publication}
+        ),
+      cancel: JS.push("cancel_update_sections")
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <Confirm.render
+        title={@modal_assigns.title}
+        ok={@modal_assigns.ok}
+        cancel={@modal_assigns.cancel}
+        id={@modal_assigns.id}
+      >
+        Please confirm that you <b><%= if @auto_update_sections, do: "want", else: "don't want" %></b>
+        to push this publication update to all sections
+      </Confirm.render>
+      """
+    end
+
+    {:noreply,
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
+  end
+
+  def handle_event("cancel_update_sections", _params, socket) do
+    send(self(), {:hide_modal})
+
+    {:noreply, socket}
   end
 
   defp check_active_publication_id(project_slug, active_publication_id) do

@@ -10,7 +10,7 @@ defmodule OliWeb.IngestControllerTest do
       {:ok, conn: conn, admin: _} = admin_conn(%{conn: conn})
       conn = get(conn, Routes.ingest_path(conn, :index))
 
-      assert response(conn, 200) =~ "<title data-suffix=\"\">Ingest</title>"
+      assert response(conn, 200) =~ "<title>\nIngest"
     end
 
     test "redirects when admin is not logged in", %{conn: conn} do

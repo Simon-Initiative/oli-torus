@@ -106,7 +106,7 @@ defmodule Oli.Delivery.Sections.Browse do
       from e in Enrollment,
         join: ecr in EnrollmentContextRole,
         on: ecr.enrollment_id == e.id,
-        where: ecr.context_role_id == ^student_role_id,
+        where: ecr.context_role_id == ^student_role_id and e.status == :enrolled,
         select: %{
           id: e.id,
           section_id: e.section_id
