@@ -5,10 +5,10 @@
       window.userToken = "<%= @user_token %>";
     </script>
     <div id="live_flash_container" class="fixed top-14 w-full mx-auto z-50">
-      <%= if live_flash(@flash, :info) do %>
+      <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">
           <div class="flex-1">
-            <%= live_flash(@flash, :info) %>
+            <%= Phoenix.Flash.get(@flash, :info) %>
           </div>
 
           <button
