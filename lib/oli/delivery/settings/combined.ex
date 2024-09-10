@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Settings.Combined do
   defstruct resource_id: nil,
+            scheduling_type: :read_by,
             start_date: nil,
             end_date: nil,
             max_attempts: 0,
@@ -19,6 +20,7 @@ defmodule Oli.Delivery.Settings.Combined do
 
   @type t() :: %__MODULE__{
           resource_id: integer(),
+          scheduling_type: :due_by | :read_by | :inclass_activity,
           start_date: DateTime.t(),
           end_date: DateTime.t(),
           max_attempts: integer(),

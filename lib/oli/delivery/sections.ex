@@ -1237,7 +1237,7 @@ defmodule Oli.Delivery.Sections do
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
   # relationship between pages.
-  defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
+  def determine_unreachable_pages(publication_ids, hierarchy_ids) do
     # Start with all pages
     unreachable =
       Oli.Publishing.all_page_resource_ids(publication_ids)
@@ -3593,7 +3593,7 @@ defmodule Oli.Delivery.Sections do
   # For a given section resource, clean the children attribute to ensure that:
   # 1. Any nil records are removed
   # 2. All non-nil sr id references map to a non-deleted revision in the new pub
-  defp clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
+  def clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
     updated_children =
       section_resource.children
       |> Enum.filter(fn child_id -> !is_nil(child_id) end)

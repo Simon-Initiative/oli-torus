@@ -1466,13 +1466,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         intro_video_viewed={@intro_video_viewed}
       />
       <div
-        :for={grouped_due_date <- @page_due_dates}
+        :for={{grouped_scheduling_type, grouped_due_date} <- @page_due_dates}
         class="flex flex-col w-full"
-        id={"pages_grouped_by_#{grouped_due_date}"}
+        id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
       >
         <div class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold font-['Open Sans']">
-            <%= "Due: #{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+            <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
         </div>
         <.index_item
@@ -1481,6 +1481,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             display_module_item?(
               @show_completed_pages,
               grouped_due_date,
+              grouped_scheduling_type,
               @student_end_date_exceptions_per_resource_id,
               child,
               @ctx
@@ -1505,6 +1506,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           ctx={@ctx}
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           parent_due_date={grouped_due_date}
+          parent_scheduling_type={grouped_scheduling_type}
           due_date={
             get_due_date_for_student(
               child["section_resource"].end_date,
@@ -1542,6 +1544,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_progress_per_resource_id, :map
   attr :due_date, Date
   attr :parent_due_date, Date
+  attr :parent_scheduling_type, :atom
   attr :progress, :float
   attr :show_completed_pages, :boolean
 
@@ -1559,6 +1562,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         display_module_item?(
           @show_completed_pages,
           @parent_due_date,
+          @parent_scheduling_type,
           @student_end_date_exceptions_per_resource_id,
           @section_attrs,
           @ctx
@@ -1566,7 +1570,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       }
       role={"#{@type} #{@numbering_index} details"}
       class="w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-5 flex rounded-lg"
-      id={"index_item_#{@resource_id}_#{@parent_due_date}"}
+      id={"index_item_#{@resource_id}_#{@parent_scheduling_type}_#{@parent_due_date}"}
       phx-value-resource_id={@resource_id}
       phx-value-parent_due_date={@parent_due_date}
       phx-value-module_resource_id={@module_resource_id}
@@ -1600,6 +1604,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           display_module_item?(
             @show_completed_pages,
             @parent_due_date,
+            @parent_scheduling_type,
             @student_end_date_exceptions_per_resource_id,
             child,
             @ctx
@@ -1624,6 +1629,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         ctx={@ctx}
         student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
         parent_due_date={@parent_due_date}
+        parent_scheduling_type={@parent_scheduling_type}
         due_date={
           get_due_date_for_student(
             child["section_resource"].end_date,
@@ -2384,6 +2390,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp display_module_item?(
          _show_completed_pages,
          _grouped_due_date,
+         _grouped_scheduling_type,
          _student_end_date_exceptions_per_resource_id,
          %{"section_resource" => %{scheduling_type: :inclass_activity}} = _child,
          _ctx
@@ -2391,8 +2398,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        do: false
 
   defp display_module_item?(
+         _show_completed_pages,
+         _grouped_due_date,
+         "Not yet scheduled" = _grouped_scheduling_type,
+         _student_end_date_exceptions_per_resource_id,
+         %{"section_resource" => %{end_date: end_date}} = _child,
+         _ctx
+       )
+       when end_date in [nil, ""],
+       do: true
+
+  defp display_module_item?(
          show_completed_pages,
          grouped_due_date,
+         grouped_scheduling_type,
          student_end_date_exceptions_per_resource_id,
          child,
          ctx
@@ -2403,6 +2422,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         &display_module_item?(
           show_completed_pages,
           grouped_due_date,
+          grouped_scheduling_type,
           student_end_date_exceptions_per_resource_id,
           &1,
           ctx
@@ -2419,9 +2439,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         |> then(&if is_nil(&1), do: "Not yet scheduled", else: to_localized_date(&1, ctx))
 
       if show_completed_pages do
-        student_due_date == grouped_due_date
+        student_due_date == grouped_due_date and
+          grouped_scheduling_type == child["section_resource"].scheduling_type
       else
-        !child["completed"] and student_due_date == grouped_due_date
+        !child["completed"] and student_due_date == grouped_due_date and
+          grouped_scheduling_type == child["section_resource"].scheduling_type
       end
     end
   end
@@ -2441,14 +2463,20 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ctx
     )
     |> Enum.uniq()
-    |> then(fn dates ->
-      if nil in dates do
-        dates
-        |> Enum.reject(&is_nil/1)
-        |> Enum.sort_by(& &1, {:asc, Date})
-        |> Enum.concat(["Not yet scheduled"])
+    |> then(fn scheduling_type_date_keywords ->
+      has_a_not_scheduled_resource =
+        Enum.any?(scheduling_type_date_keywords, fn {_scheduling_type, date} ->
+          is_nil(date)
+        end)
+
+      if has_a_not_scheduled_resource do
+        # this guarantees not scheduled pages are grouped at the bootom of the list
+        scheduling_type_date_keywords
+        |> Enum.reject(fn {_st, date} -> is_nil(date) end)
+        |> Enum.sort_by(fn {_st, date} -> date end, {:asc, Date})
+        |> Enum.concat([{"Not yet scheduled", "Not yet scheduled"}])
       else
-        Enum.sort_by(dates, & &1, {:asc, Date})
+        Enum.sort_by(scheduling_type_date_keywords, fn {_st, date} -> date end, {:asc, Date})
       end
     end)
   end
@@ -2477,15 +2505,16 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           []
         else
           [
-            Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
-              to_localized_date(
-                Map.get(
-                  student_end_date_exceptions_per_resource_id,
-                  resource_id,
-                  end_date
-                ),
-                ctx
-              )
+            {scheduling_type,
+             Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
+               to_localized_date(
+                 Map.get(
+                   student_end_date_exceptions_per_resource_id,
+                   resource_id,
+                   end_date
+                 ),
+                 ctx
+               )}
           ]
         end
 

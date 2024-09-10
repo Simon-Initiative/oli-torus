@@ -858,6 +858,7 @@ defmodule Oli.SectionsTest do
 
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+      original_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
 
       assert hierarchy.children |> Enum.count() == 2
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
@@ -928,7 +929,7 @@ defmodule Oli.SectionsTest do
           working_pub
         )
 
-      # remove page 2
+      # remove page
       _deleted_revision =
         Seeder.delete_page(page2, revision2, container_resource, container_revision, working_pub)
 
@@ -936,17 +937,18 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      updated_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
 
       # verify non-structural changes are applied as expected
       assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==
                page1_changes["content"]
 
       # verify the updated curriculum structure matches the expected result
-
       assert hierarchy.children |> Enum.count() == 4
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
       assert hierarchy.children |> Enum.at(1) |> Map.get(:resource_id) == p1_new_page1.id
@@ -1087,7 +1089,7 @@ defmodule Oli.SectionsTest do
       assert latest_publication.minor == 1
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1257,7 +1259,7 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the product
-      Sections.apply_publication_update(product, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(product, latest_publication.id)
 
       # reload latest hierarchy
       product_hierarchy = DeliveryResolver.full_hierarchy(product.slug)
@@ -1284,7 +1286,7 @@ defmodule Oli.SectionsTest do
       assert product_section_resources |> Enum.count() == 3
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1507,7 +1509,7 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
@@ -1729,7 +1731,7 @@ defmodule Oli.SectionsTest do
       {:ok, latest_publication} = Publishing.publish_project(project, "some changes", author.id)
 
       # apply the new publication update to the section
-      Sections.apply_publication_update(section, latest_publication.id)
+      Oli.Delivery.Sections.Updates.apply_publication_update(section, latest_publication.id)
 
       # reload latest hierarchy
       section_hierarchy = DeliveryResolver.full_hierarchy(section.slug)
