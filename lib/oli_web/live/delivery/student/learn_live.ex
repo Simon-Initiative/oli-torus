@@ -1774,16 +1774,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def index_item_icon(assigns) do
     case {assigns.was_visited || false, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
-      {true, "page", false, _} ->
+      {_, "page", false, _} ->
         # visited practice page (check icon shown when progress = 100%)
         ~H"""
         <Icons.check progress={@progress} />
-        """
-
-      {false, "page", false, _} ->
-        # not visited practice page
-        ~H"""
-        <.no_icon />
         """
 
       {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->

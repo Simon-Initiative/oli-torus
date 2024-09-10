@@ -18,7 +18,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
   require Logger
 
-  on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
   # this is an optimization to reduce the memory footprint of the liveview process
@@ -44,7 +43,9 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
        selected_view: params["selected_view"],
        password: page_context.effective_settings.password,
        page_revision: page_context.page,
-       effective_settings: page_context.effective_settings
+       effective_settings: page_context.effective_settings,
+       view: :prologue,
+       scripts_loaded: true
      )
      |> slim_assigns(), temporary_assigns: [page_context: %{}]}
   end
@@ -105,7 +106,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           allow_attempt?={@allow_attempt?}
           section_slug={@section.slug}
           request_path={@request_path}
-          adaptive_chromeless?={@view == :adaptive_chromeless}
         />
       </div>
     </div>
@@ -133,7 +133,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
   attr :allow_attempt?, :boolean
-  attr :adaptive_chromeless?, :boolean
   attr :section_slug, :string
   attr :request_path, :string
 
@@ -170,12 +169,10 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           ctx={@ctx}
           allow_review_submission?={@page_context.effective_settings.review_submission == :allow}
           request_path={@request_path}
-          adaptive_chromeless?={@adaptive_chromeless?}
         />
       </div>
     </div>
     <button
-      :if={@page_context.progress_state == :not_started}
       id="begin_attempt_button"
       disabled={!@allow_attempt?}
       phx-click={
@@ -200,7 +197,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :allow_review_submission?, :boolean
   attr :section_slug, :string
   attr :page_revision_slug, :string
-  attr :adaptive_chromeless?, :boolean
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
