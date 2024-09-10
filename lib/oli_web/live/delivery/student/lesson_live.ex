@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   import OliWeb.Delivery.Student.Utils,
     only: [
       page_header: 1,
+      scripts: 1,
       references: 1,
       reset_attempts_button: 1,
       emit_page_viewed_event: 1
@@ -21,6 +22,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Icons
 
   require Logger
 
@@ -794,6 +796,186 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
       </div>
     </div>
+    """
+  end
+
+  def render(
+        %{
+          view: :graded_page,
+          page_context: %{effective_settings: %{assessment_mode: :one_at_a_time}}
+        } = assigns
+      ) do
+    ~H"""
+    <.countdown {assigns} />
+    <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
+      <div class="flex flex-col items-center w-full">
+        <.scored_page_banner />
+        <div class="flex-1 w-full max-w-[1040px] px-[80px] pt-20 pb-10 flex-col justify-start items-center gap-10 inline-flex">
+          <.page_header
+            page_context={@page_context}
+            ctx={@ctx}
+            objectives={@objectives}
+            index={@current_page["index"]}
+            container_label={Utils.get_container_label(@current_page["id"], @section)}
+          />
+          <div id="one_at_a_time_questions" class="relative h-[500px]">
+            <%!--  render this as a component on MER-3640 --%>
+            <% question_number =
+              Enum.find(@questions, {1, nil}, fn {_, q} -> q.selected end) |> elem(0) %>
+            <% total_questions = Enum.count(@questions) %>
+            <% question_points = Enum.random(5..10) %>
+            <div class="absolute w-screen flex flex-col items-center -left-[50vw]">
+              <div role="questions header" class="w-[1170px] pl-[189px]">
+                <div class="flex w-full justify-between">
+                  <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
+                    Question <%= question_number %> / <%= total_questions %> • <%= question_points %> points
+                  </div>
+                  <button class="flex items-center gap-2">
+                    <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
+                      Finish Quiz
+                    </div>
+                    <Icons.finish_quiz_flag />
+                  </button>
+                </div>
+                <div
+                  role="progress bar"
+                  class="mb-3 w-[976px] h-[3.30px] bg-[#1c1c1c]/10 flex-col justify-start items-start inline-flex"
+                >
+                  <div class="w-[2.60px] h-1 bg-[#0062f2]"></div>
+                </div>
+              </div>
+              <div role="questions main content" class="mx-auto flex justify-center gap-8 w-full">
+                <.questions_menu questions={@questions} />
+                <div
+                  role="questions content"
+                  class="content h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
+                >
+                  <div
+                    id="eventIntercept"
+                    phx-update="ignore"
+                    class="flex h-[400px] border-b border-[#c8c8c8]"
+                  >
+                    <div
+                      :for={{index, question} <- @questions}
+                      id={"question_#{index}"}
+                      role="one at a time question"
+                      class={[
+                        "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
+                        if(!question.selected, do: "hidden")
+                      ]}
+                    >
+                      <%= raw(question.raw_content) %>
+                    </div>
+                    <div
+                      role="score summary"
+                      class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
+                    >
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 1:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 2:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 3:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                        <div>
+                          <span class="text-[#757682]">
+                            Part 4:
+                          </span>
+                          <span class="text-[#353740]">
+                            2 points
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex justify-center w-full h-[84px] items-center">
+                    <button
+                      disabled
+                      class="h-[30px] px-5 py-2.5 bg-[#9d9d9d] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-base font-semibold font-['Open Sans'] leading-normal whitespace-nowrap"
+                    >
+                      Submit Response
+                    </button>
+                  </div>
+                  <.references ctx={@ctx} bib_app_params={@bib_app_params} />
+                </div>
+              </div>
+              <div
+                role="questions footer"
+                class="w-[1170px] pl-[189px] mb-32 py-8 flex justify-between"
+              >
+                <button
+                  phx-click={JS.dispatch("click", to: "#question_#{question_number - 1}_button")}
+                  disabled={question_number == 1}
+                  class={[
+                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
+                    if(question_number == 1, do: "!text-[#757682]")
+                  ]}
+                >
+                  <svg
+                    width="13"
+                    height="10"
+                    viewBox="0 0 13 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1.5 5H11.5M1.5 5L5.5 9M1.5 5L5.5 1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                  <span>Previous Question</span>
+                </button>
+                <button
+                  phx-click={JS.dispatch("click", to: "#question_#{question_number + 1}_button")}
+                  disabled={question_number == total_questions}
+                  class={[
+                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
+                    if(question_number == total_questions, do: "!text-[#757682]")
+                  ]}
+                >
+                  <span>Next Question</span>
+                  <svg
+                    width="13"
+                    height="10"
+                    viewBox="0 0 13 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M11.2544 5H1.25439M11.2544 5L7.25439 9M11.2544 5L7.25439 1"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <.scripts scripts={@scripts} user_token={@user_token} />
     """
   end
 
