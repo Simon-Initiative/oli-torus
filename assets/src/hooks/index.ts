@@ -37,8 +37,10 @@ import { ToggleReadMore } from './toggle_read_more';
 import { TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
+import { DelayedSubmit } from './delayed_submit';
 
 export const Hooks = {
+  DelayedSubmit,
   GraphNavigation,
   DropTarget,
   DragSource,
