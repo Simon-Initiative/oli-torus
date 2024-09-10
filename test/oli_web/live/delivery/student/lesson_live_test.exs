@@ -1527,6 +1527,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.lesson_live_path(section.slug, one_at_a_time_question_page.slug))
 
+      ensure_content_is_visible(view)
+
       assert has_element?(
                view,
                "div[role='page title']",
