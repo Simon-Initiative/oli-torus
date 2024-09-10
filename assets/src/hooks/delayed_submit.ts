@@ -3,6 +3,14 @@ export const DelayedSubmit = {
     this.el.addEventListener("click", (event: any) => {
       event.preventDefault(); // Prevent immediate click action
 
+      const inputs = document.querySelectorAll('input[type="text"], input[type="number"], textarea, select');
+
+      // Loop through each element and disable it.  This prevents students from making any
+      // edits in activities while the submission is processing.
+      inputs.forEach((input: any) => {
+        input.disabled = true;
+      });
+
       // Disable the button to prevent additional clicks
       this.el.disabled = true;
 
