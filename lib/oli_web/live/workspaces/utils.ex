@@ -117,7 +117,7 @@ defmodule OliWeb.Workspace.Utils do
   attr :is_active, :boolean, default: false
   attr :sidebar_expanded, :boolean, default: true
   attr :badge, :integer, default: nil
-  attr :on_active_bg, :string, default: "bg-[#E6E9F2] dark:bg-[#222126]"
+  attr :on_active_bg, :string, default: "bg-[#E6E9F2] dark:bg-[#202022]"
   attr :sub_menu_item, :map
   attr :active_view, :atom, default: nil
 
@@ -127,7 +127,7 @@ defmodule OliWeb.Workspace.Utils do
 
     ~H"""
     <div class={[
-      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#222126] hover:bg-[#E6E9F2] rounded-lg justify-start items-center gap-3 inline-flex",
+      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#404044] hover:bg-[#D9D9DD] rounded-lg justify-start items-center gap-3 inline-flex",
       if(@is_active, do: @on_active_bg)
     ]}>
       <div :if={@sub_menu_item.icon} class="w-5 h-5 flex items-center justify-center">
