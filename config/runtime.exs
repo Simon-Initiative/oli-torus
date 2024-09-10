@@ -282,7 +282,8 @@ if config_env() == :prod do
     url: [
       scheme: System.get_env("SCHEME", "https"),
       host: host,
-      port: String.to_integer(System.get_env("PORT", "443"))
+      port: String.to_integer(System.get_env("PORT", "443")),
+      path: System.get_env("PHX_BASE_PATH", "/")
     ],
     secret_key_base: secret_key_base,
     live_view: [signing_salt: live_view_salt]
