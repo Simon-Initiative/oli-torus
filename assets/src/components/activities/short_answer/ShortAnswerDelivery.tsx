@@ -121,9 +121,10 @@ export const ShortAnswerComponent: React.FC = () => {
       }),
     );
 
-    const doSave = () => onSaveActivity(uiState.attemptState.attemptGuid, [
-      { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
-    ]);
+    const doSave = () =>
+      onSaveActivity(uiState.attemptState.attemptGuid, [
+        { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
+      ]);
 
     if ((uiState.model as ShortAnswerModelSchema).inputType == 'textarea') {
       deferredSave.current.save(doSave);
