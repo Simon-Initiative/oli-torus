@@ -120,7 +120,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     else
       {:ok, socket}
     end
-
   end
 
   def mount(
