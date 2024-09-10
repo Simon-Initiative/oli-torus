@@ -1773,7 +1773,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :progress, :float
 
   def index_item_icon(assigns) do
-
     case {assigns.was_visited || false, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
       {_, "page", false, _} ->
         # visited practice page (check icon shown when progress = 100%)
