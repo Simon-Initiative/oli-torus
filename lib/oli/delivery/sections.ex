@@ -2133,7 +2133,11 @@ defmodule Oli.Delivery.Sections do
     section_resources
     |> Enum.group_by(&{&1.end_date, {&1.module_id, &1.unit_id}})
     |> Enum.sort(fn {{end_date1, {_, _}}, _}, {{end_date2, {_, _}}, _} ->
-      DateTime.compare(end_date1, end_date2) == :lt
+      cond do
+        end_date1 == nil -> false
+        end_date2 == nil -> true
+        true -> DateTime.compare(end_date1, end_date2) == :lt
+      end
     end)
   end
 
