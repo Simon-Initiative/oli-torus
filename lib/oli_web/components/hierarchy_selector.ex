@@ -147,4 +147,8 @@ defmodule OliWeb.Components.HierarchySelector do
       {:noreply, socket}
     end
   end
+
+  def handle_event("validate-options", _params, socket) do
+    {:noreply, socket}
+  end
 end

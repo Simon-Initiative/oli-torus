@@ -1,10 +1,11 @@
 defmodule OliWeb.LiveSessionPlugs.SetUser do
   import Phoenix.Component, only: [assign: 2]
-
+  use Appsignal.Instrumentation.Decorators
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
   alias Oli.AccountLookupCache
 
+  @decorate transaction_event("SetUser")
   def on_mount(:with_preloads, _, session, socket) do
     {:cont,
      socket
@@ -14,6 +15,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
      |> update_ctx(session)}
   end
 
+  @decorate transaction_event("SetUser")
   def on_mount(_default, _, session, socket) do
     {:cont,
      socket

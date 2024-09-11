@@ -738,7 +738,7 @@ defmodule OliWeb.PageDeliveryController do
         pageTitle: context.page.title,
         pageSlug: context.page.slug,
         graded: context.page.graded,
-        content: context.page.content,
+        content: build_page_content(context.page.content, conn.params["request_path"]),
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
         currentServerTime: DateTime.utc_now() |> to_epoch,
@@ -796,6 +796,15 @@ defmodule OliWeb.PageDeliveryController do
       title: context.page.title
     })
   end
+
+  _docp = """
+  In case there is a request path we add that path in the page content as 'backUrl'.
+  This backUrl aims to return the student to the page they were on
+  before they accessed the page we are building (i.e. the "Learn", "Home" or "Schedule" page)
+  """
+
+  defp build_page_content(content, nil), do: content
+  defp build_page_content(content, request_path), do: Map.put(content, "backUrl", request_path)
 
   defp to_epoch(nil), do: nil
 

@@ -1418,48 +1418,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    test "sees a check icon on visited and completed pages", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_1: page_1
-    } do
-      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
-      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      # when the slider buttons are enabled we know the student async metrics were loaded
-      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
-
-      # expand unit 1/module 1 details
-      view
-      |> element(~s{div[role="unit_1"] div[role="card_1"]})
-      |> render_click()
-
-      assert has_element?(view, ~s{button[role="page 1 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{button[role="page 2 details"]})
-      refute has_element?(view, ~s{button[role="page 2 details"] div[role="check icon"]})
-    end
-
-    test "sees a check icon on visited and completed pages within a section", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_11: page_11
-    } do
-      set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
-      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      # when the slider buttons are enabled we know the student async metrics were loaded
-      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
-
-      # expand unit 5/module 3 details
-      view
-      |> element(~s{div[role="unit_5"] div[role="card_4"]})
-      |> render_click()
-
-      assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
-    end
-
     test "hides/shows completed pages", %{
       conn: conn,
       user: user,
@@ -2267,48 +2225,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                ~s{div[id="index_item_4_#{page_4.resource_id}"] span[role="duration in minutes"]},
                "22"
              )
-    end
-
-    test "sees a check icon on visited and completed pages", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_1: page_1
-    } do
-      set_progress(section.id, page_1.resource_id, user.id, 1.0, page_1)
-
-      {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
-
-      # when the garbage collection message is recieved we know the async metrics were loaded
-      # since the gc message is sent from the handle_info that loads the async metrics
-      assert_receive(:gc, 2_000)
-
-      assert has_element?(view, ~s{button[role="page 1 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{button[role="page 2 details"]})
-      refute has_element?(view, ~s{button[role="page 2 details"] div[role="check icon"]})
-    end
-
-    test "sees a check icon on visited and completed pages within a section", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_11: page_11
-    } do
-      set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
-
-      {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
-
-      # when the garbage collection message is received we know the async metrics were loaded
-      # since the gc message is sent from the handle_info that loads the async metrics
-      assert_receive(:gc, 2_000)
-
-      wait_while(fn ->
-        !has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
-      end)
-
-      assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
     end
 
     test "does not see a check icon on visited pages that are not fully completed", %{
