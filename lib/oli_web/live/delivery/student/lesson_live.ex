@@ -834,10 +834,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             <div class="flex w-full justify-center">
               <button
                 id="submit_answers"
-                phx-click="finalize_attempt"
+                phx-hook="DelayedSubmit"
                 class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
               >
-                Submit Answers
+                <span class="button-text">Submit Answers</span>
+                <span class="spinner hidden ml-2 animate-spin">
+                  <svg
+                    class="w-5 h-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    >
+                    </circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    >
+                    </path>
+                  </svg>
+                </span>
               </button>
             </div>
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
