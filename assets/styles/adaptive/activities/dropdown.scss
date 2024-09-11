@@ -68,3 +68,10 @@ janus-input-number .unitsLabel {
   margin-left: 10px;
   margin-top: 5px;
 }
+
+//As per the requirment, dropdown / select needs to be in light mode even if the current theme is Dark.
+// This can be customized from any external CSS file.
+.dark select {
+  background-color: #fff;
+  color: #333333;
+}
