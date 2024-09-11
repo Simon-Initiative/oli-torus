@@ -89,7 +89,7 @@
           </div>
           <.back_arrow
             to={
-              if assigns[:request_path] in [nil, ""],
+              if assigns[:request_path] in [nil, ""] and @current_page != nil,
                 do:
                   ~p"/sections/#{@section.slug}/learn?target_resource_id=#{@current_page["id"]}",
                 else: assigns[:request_path]
@@ -116,7 +116,7 @@
         <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
           session: %{
             "section_slug" => @section.slug,
-            "resource_id" => @current_page["id"],
+            "resource_id" => @page_context.page.resource_id,
             "revision_id" => @page_context.page.id,
             "is_page" => true
           },
