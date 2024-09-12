@@ -15,14 +15,16 @@ defmodule Oli.Delivery.SettingsTest do
     assert {:no_attempts_remaining} ==
              Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 5, [])
 
-    assert {:blocking_gates} == Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 1, [1])
+    assert {:blocking_gates} ==
+             Settings.new_attempt_allowed(%Combined{max_attempts: 5}, 1, [1])
 
     assert {:end_date_passed} ==
              Settings.new_attempt_allowed(
                %Combined{
                  max_attempts: 5,
                  late_start: :disallow,
-                 end_date: ~U[2020-01-01 00:00:00Z]
+                 end_date: ~U[2020-01-01 00:00:00Z],
+                 scheduling_type: :due_by
                },
                1,
                []
