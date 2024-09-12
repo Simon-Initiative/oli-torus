@@ -34,6 +34,9 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.RestImpl do
 
       {:ok, %HTTPoison.Response{}} ->
         {:error, "Error retrieving the payload"}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

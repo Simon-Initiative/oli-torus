@@ -828,7 +828,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    Due:
+                    <%= Utils.label_for_scheduling_type(@unit["section_resource"].scheduling_type) %>
                   </span>
                   <%= format_date(
                     @unit["section_resource"].end_date,
@@ -1472,7 +1472,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <div class="h-[19px] mb-5">
           <span class="dark:text-white text-sm font-bold font-['Open Sans']">
-            <%= "#{label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
+            <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
         </div>
         <.index_item
@@ -1699,7 +1699,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
           <div :if={@graded} role="due date and score" class="flex">
             <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
-              Due: <%= format_date(@due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}") %>
+              <%= Utils.label_for_scheduling_type(@parent_scheduling_type) %><%= format_date(
+                @due_date,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              ) %>
             </span>
             <Student.score_summary raw_avg_score={@raw_avg_score} />
           </div>
@@ -1774,16 +1778,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def index_item_icon(assigns) do
     case {assigns.was_visited || false, assigns.item_type, assigns.graded, assigns.raw_avg_score} do
-      {true, "page", false, _} ->
+      {_, "page", false, _} ->
         # visited practice page (check icon shown when progress = 100%)
         ~H"""
         <Icons.check progress={@progress} />
-        """
-
-      {false, "page", false, _} ->
-        # not visited practice page
-        ~H"""
-        <.no_icon />
         """
 
       {true, "page", true, raw_avg_score} when not is_nil(raw_avg_score) ->
@@ -2659,11 +2657,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        ) do
     Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date)
   end
-
-  defp label_for_scheduling_type(:due_by), do: "Due by: "
-  defp label_for_scheduling_type(:read_by), do: "Read by: "
-  defp label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "
-  defp label_for_scheduling_type(_), do: ""
 
   defp format_date("Not yet scheduled", _context, _format), do: "Not yet scheduled"
 

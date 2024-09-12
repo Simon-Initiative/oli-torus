@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
   @moduledoc """
   Defines the context required to render an activity in delivery mode.
   """
+  use Appsignal.Instrumentation.Decorators
 
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Rendering.Activity.ActivitySummary
@@ -23,6 +24,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
           Oli.Delivery.Attempts.Core.ResourceAttempt.t(),
           Oli.Resources.Revision.t()
         ) :: %{}
+  @decorate transaction_event()
   def create_context_map(graded, latest_attempts, resource_attempt, page_revision, opts \\ []) do
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()

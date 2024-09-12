@@ -4,8 +4,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
   on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
 
-  import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1, scripts: 1]
+  import OliWeb.Delivery.Student.Utils, only: [page_header: 1]
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -30,37 +29,48 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         _session,
         %{assigns: %{current_user: user, section: section}} = socket
       ) do
-    page_revision = Resolver.from_revision_slug(section.slug, revision_slug)
+    if connected?(socket) do
+      page_revision = Resolver.from_revision_slug(section.slug, revision_slug)
 
-    page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
+      page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
-    socket =
       if PageLifecycle.can_access_attempt?(attempt_guid, user, section) and
            review_allowed?(page_context) do
-        socket
-        |> assign(page_context: page_context)
-        |> assign(page_revision: page_revision)
-        |> assign_html_and_scripts()
-        |> assign_objectives()
-        |> slim_assigns()
+        socket =
+          socket
+          |> assign(page_context: page_context)
+          |> assign(page_revision: page_revision)
+          |> assign_html_and_scripts()
+          |> assign_objectives()
+          |> slim_assigns()
+
+        script_sources =
+          Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+
+        send(self(), :gc)
+
+        {:ok,
+         push_event(socket, "load_survey_scripts", %{
+           script_sources: script_sources
+         })}
+
+        # These temp assigns were disabled in MER-3672
+        #  temporary_assigns: [
+        #    scripts: [],
+        #    html: [],
+        #    page_context: %{},
+        #    page_revision: %{},
+        #    objectives: []
+        #  ]}
       else
-        socket
-        |> put_flash(:error, "You are not allowed to review this attempt.")
-        |> redirect(to: Utils.learn_live_path(section.slug))
+        {:ok,
+         socket
+         |> put_flash(:error, "You are not allowed to review this attempt.")
+         |> redirect(to: Utils.learn_live_path(section.slug))}
       end
-
-    if connected?(socket) do
-      send(self(), :gc)
+    else
+      {:ok, socket}
     end
-
-    {:ok, socket,
-     temporary_assigns: [
-       scripts: [],
-       html: [],
-       page_context: %{},
-       page_revision: %{},
-       objectives: []
-     ]}
   end
 
   def handle_info(:gc, socket) do
@@ -143,14 +153,20 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         </div>
       </div>
     </div>
-
-    <.scripts scripts={@scripts} user_token={@user_token} />
     """
+  end
+
+  def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
+    {:noreply, assign(socket, error: true)}
+  end
+
+  def handle_event("survey_scripts_loaded", _params, socket) do
+    {:noreply, assign(socket, scripts_loaded: true)}
   end
 
   defp assign_html_and_scripts(socket) do
     socket
-    |> assign(html: Utils.build_html(socket.assigns, :review))
+    |> assign(html: Utils.build_html(socket.assigns, :review, is_liveview: true))
     |> assign(
       scripts: Utils.get_required_activity_scripts(socket.assigns.page_context.activities || [])
     )

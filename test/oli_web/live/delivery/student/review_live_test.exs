@@ -30,7 +30,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         date_evaluated: DateTime.utc_now(),
         score: 5,
         out_of: 10,
-        content: %{model: []}
+        content: %{model: []},
+        lifecycle_state: :active
       })
 
     resource_attempt
@@ -75,7 +76,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
               ]
             }
           ]
-        }
+        },
+        graded: true
       )
 
     page_2_revision =
@@ -85,14 +87,16 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         duration_minutes: 15,
         objectives: %{
           "attached" => [objective_1_revision.resource_id, objective_2_revision.resource_id]
-        }
+        },
+        graded: true
       )
 
     page_3_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 3",
-        duration_minutes: 5
+        duration_minutes: 5,
+        graded: true
       )
 
     ## modules...
@@ -247,7 +251,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}%2Fattempt%2F#{attempt.attempt_guid}%2Freview&section=#{section.slug}"
+               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}%2Fattempt%2F#{attempt.attempt_guid}%2Freview&section=#{section.slug}"
     end
   end
 
@@ -287,10 +291,9 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       attempt = create_attempt(user, section, page_1)
 
-      {:error, {:redirect, %{to: redirect_path, flash: flash}}} =
+      {:error, {:redirect, %{to: redirect_path}}} =
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
-      assert flash["error"] == "You are not allowed to review this attempt."
       assert redirect_path == Utils.learn_live_path(section.slug)
     end
 
@@ -310,7 +313,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       create_attempt(user, section, page_1)
 
       # we visit the student attempt as a different user
-      {:error, {:redirect, %{to: redirect_path, flash: flash}}} =
+      {:error, {:redirect, %{to: redirect_path}}} =
         live(
           conn,
           Utils.review_live_path(
@@ -320,7 +323,6 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
           )
         )
 
-      assert flash["error"] == "You are not allowed to review this attempt."
       assert redirect_path == Utils.learn_live_path(section.slug)
     end
 
@@ -339,6 +341,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       {:ok, view, _html} =
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
+      ensure_content_is_visible(view)
       assert has_element?(view, "span", "The best course ever!")
 
       assert has_element?(
@@ -368,6 +371,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       {:ok, view, _html} =
         live(conn, Utils.review_live_path(section.slug, page_2.slug, attempt.attempt_guid))
+
+      ensure_content_is_visible(view)
 
       assert has_element?(view, ~s{div[role="container label"]}, "Module 1")
       assert has_element?(view, ~s{div[role="page numbering index"]}, "2.")
@@ -408,6 +413,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
           )
         )
 
+      ensure_content_is_visible(view)
+
       view
       |> element(~s{a[role="back_to_summary_link"]})
       |> render_click
@@ -431,6 +438,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       {:ok, view, _html} =
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
+
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -475,6 +484,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
           )
         )
 
+      ensure_content_is_visible(view)
+
       view
       |> element(~s{div[role="next_page"] a})
       |> render_click
@@ -500,6 +511,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
       attempt = create_attempt(user, section, page_2)
+      _attempt_2 = create_attempt(user, section, page_3)
 
       # next page is a container
       {:ok, view, _html} =
@@ -509,6 +521,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
             selected_view: @default_selected_view
           )
         )
+
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="next_page"] a})
@@ -528,6 +542,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
           conn,
           Utils.lesson_live_path(section.slug, page_3.slug, selected_view: @default_selected_view)
         )
+
+      ensure_content_is_visible(view)
 
       view
       |> element(~s{div[role="prev_page"] a})
@@ -562,6 +578,8 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
           )
         )
 
+      ensure_content_is_visible(view)
+
       view
       |> element(~s{div[role="back_link"] a})
       |> render_click
@@ -571,5 +589,13 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         request_path
       )
     end
+  end
+
+  defp ensure_content_is_visible(view) do
+    # the content of the page will not be rendered until the socket is connected
+    # and the client side confirms that the scripts are loaded
+    view
+    |> element("#eventIntercept")
+    |> render_hook("survey_scripts_loaded", %{"loaded" => true})
   end
 end

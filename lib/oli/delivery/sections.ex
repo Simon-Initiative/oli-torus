@@ -569,7 +569,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all open and free sections for a given user.
+  Returns a listing of all open and free sections for a given user,
+  ordered by the most recently enrolled.
   """
   def list_user_open_and_free_sections(%{id: user_id} = _user) do
     query =
@@ -580,6 +581,7 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
+        order_by: [desc: e.inserted_at],
         select: s
       )
 
@@ -1237,7 +1239,7 @@ defmodule Oli.Delivery.Sections do
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
   # relationship between pages.
-  defp determine_unreachable_pages(publication_ids, hierarchy_ids) do
+  def determine_unreachable_pages(publication_ids, hierarchy_ids) do
     # Start with all pages
     unreachable =
       Oli.Publishing.all_page_resource_ids(publication_ids)
@@ -1490,57 +1492,75 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Fetches containers per page, grouping them by page ID, and orders the containers by their numbering level within each page for a given section.
+  Assembles containers per page, grouping them by page ID, and orders the containers by their numbering level within each page for a given section.
 
   ## Parameters
-    - `section_slug`: The slug of the section for which container data is fetched.
+    - `section`: The section for which container data is fetched.
 
   ## Returns
     - A list of maps containing page IDs and their associated containers, with containers sorted by numbering level.
 
   ## Examples
-      iex> get_ordered_containers_per_page("chemistry")
+      iex> get_ordered_containers_per_page(section)
       [%{page_id: 1, containers: [%{id: 10, title: "Introduction", numbering_level: 1}]}]
   """
+  def get_ordered_containers_per_page(section, page_ids \\ []) do
+    section =
+      case section.previous_next_index do
+        nil ->
+          {:ok, section} = Oli.Delivery.PreviousNextIndex.rebuild(section)
+          section
 
-  @spec get_ordered_containers_per_page(String.t(), list(integer())) :: [
-          %{page_id: integer(), containers: list(map())}
-        ]
-  def get_ordered_containers_per_page(section_slug, page_ids \\ []) do
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+        _ ->
+          section
+      end
 
-    pages_filter =
-      if Enum.empty?(page_ids),
-        do: true,
-        else: dynamic([_sr, _s, _spp, _pr, _rev, cp], cp.page_id in ^page_ids)
+    child_to_parent =
+      Map.values(section.previous_next_index)
+      |> Enum.reduce(%{}, fn item, map ->
+        Map.get(item, "children")
+        |> Enum.reduce(map, fn child, map ->
+          Map.put(map, child, Map.get(item, "id"))
+        end)
+      end)
 
-    from(
-      [sr: sr, rev: rev, s: s] in DeliveryResolver.section_resource_revisions(section_slug),
-      join: cp in ContainedPage,
-      on: cp.container_id == rev.resource_id,
-      where:
-        rev.deleted == false and s.slug == ^section_slug and
-          rev.resource_type_id == ^container_type_id,
-      where: ^pages_filter,
-      group_by: [cp.page_id],
-      select: %{
-        page_id: cp.page_id,
-        containers:
-          fragment(
-            """
-            array_agg(
-              json_build_object('id', ?, 'title', ?, 'numbering_level', ?)
-              ORDER BY ? ASC
-            )
-            """,
-            rev.resource_id,
-            rev.title,
-            sr.numbering_level,
-            sr.numbering_level
-          )
-      }
-    )
-    |> Repo.all()
+    all_pages =
+      Map.values(section.previous_next_index)
+      |> Enum.filter(fn item -> Map.get(item, "type") == "page" end)
+      |> Enum.map(fn item ->
+        page_id = Map.get(item, "id")
+        ancestors = build_ancestors(page_id, [], child_to_parent)
+
+        %{
+          page_id: String.to_integer(page_id),
+          containers:
+            Enum.map(ancestors, fn ancestor_id ->
+              a = Map.get(section.previous_next_index, ancestor_id)
+
+              %{
+                "id" => String.to_integer(ancestor_id),
+                "title" => a["title"],
+                "numbering_level" => a["level"] |> String.to_integer()
+              }
+            end)
+        }
+      end)
+
+    case page_ids do
+      [] ->
+        all_pages
+
+      _ ->
+        page_ids_mapset = MapSet.new(page_ids)
+        Enum.filter(all_pages, fn page -> Enum.member?(page_ids_mapset, page.page_id) end)
+    end
+  end
+
+  def build_ancestors(resource_id, entries, child_to_parent) do
+    case Map.get(child_to_parent, resource_id) do
+      nil -> entries
+      parent_id -> build_ancestors(parent_id, [parent_id | entries], child_to_parent)
+    end
   end
 
   defp section_publication_ids(section_slug) do
@@ -1790,9 +1810,52 @@ defmodule Oli.Delivery.Sections do
   def get_ordered_schedule(section, current_user_id, version \\ :v1)
 
   def get_ordered_schedule(section, current_user_id, :v1) do
-    {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
-     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+    container_titles = container_titles(section.slug)
+
+    containers_data_map =
+      get_ordered_container_labels(section.slug, short_label: true)
+      |> Enum.reduce(%{}, fn {container_id, label}, acc ->
+        Map.put(acc, container_id, %{label: label, title: container_titles[container_id]})
+      end)
+
+    page_to_containers_map =
+      get_ordered_containers_per_page(section)
+      |> Enum.reduce(%{}, fn elem, acc ->
+        Map.put(acc, elem[:page_id], elem[:containers])
+      end)
+
+    %{"container" => container_ids, "page" => page_ids} =
+      Sections.get_resource_ids_group_by_resource_type(section.slug)
+
+    progress_per_container_id =
+      Metrics.progress_across(section.id, container_ids, current_user_id)
+      |> Enum.into(%{}, fn {container_id, progress} ->
+        {container_id, progress || 0.0}
+      end)
+
+    progress_per_page_id =
+      Metrics.progress_across_for_pages(section.id, page_ids, [current_user_id])
+
+    progress_per_resource_id =
+      Map.merge(progress_per_page_id, progress_per_container_id)
+      |> Map.filter(fn {_, progress} -> progress not in [nil, 0.0] end)
+
+    last_attempt_per_page_id =
+      get_last_attempt_per_page_id(section.slug, current_user_id)
+      |> Enum.into(%{})
+
+    raw_avg_score_per_page_id =
+      Metrics.raw_avg_score_across_for_pages(section, page_ids, [current_user_id])
+
+    user_resource_attempt_counts =
+      Metrics.get_all_user_resource_attempt_counts(section, current_user_id)
+
+    combined_settings_for_all_resources =
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+
+    #      {containers_data_map, page_to_containers_map, progress_per_resource_id,
+    #     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+    #     last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
 
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
@@ -1964,7 +2027,7 @@ defmodule Oli.Delivery.Sections do
       end)
 
     page_to_containers_map =
-      get_ordered_containers_per_page(section.slug)
+      get_ordered_containers_per_page(section)
       |> Enum.reduce(%{}, fn elem, acc ->
         Map.put(acc, elem[:page_id], elem[:containers])
       end)
@@ -2133,7 +2196,11 @@ defmodule Oli.Delivery.Sections do
     section_resources
     |> Enum.group_by(&{&1.end_date, {&1.module_id, &1.unit_id}})
     |> Enum.sort(fn {{end_date1, {_, _}}, _}, {{end_date2, {_, _}}, _} ->
-      DateTime.compare(end_date1, end_date2) == :lt
+      cond do
+        end_date1 == nil -> false
+        end_date2 == nil -> true
+        true -> DateTime.compare(end_date1, end_date2) == :lt
+      end
     end)
   end
 
@@ -3593,7 +3660,7 @@ defmodule Oli.Delivery.Sections do
   # For a given section resource, clean the children attribute to ensure that:
   # 1. Any nil records are removed
   # 2. All non-nil sr id references map to a non-deleted revision in the new pub
-  defp clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
+  def clean_children(section_resource, sr_id_to_resource_id, new_published_resources_map) do
     updated_children =
       section_resource.children
       |> Enum.filter(fn child_id -> !is_nil(child_id) end)

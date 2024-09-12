@@ -39,6 +39,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket}
+  end
+
+  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <div>

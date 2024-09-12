@@ -2083,7 +2083,7 @@ defmodule Oli.Delivery.SectionsTest do
     setup [:create_elixir_project]
 
     test "fetches and orders containers by numbering level", %{section: section} = context do
-      result = Sections.get_ordered_containers_per_page(section.slug)
+      result = Sections.get_ordered_containers_per_page(section)
       # There are exactly 4 pages
       assert length(result) == 4
 
@@ -2129,7 +2129,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "fetches only specified page ids",
          %{section: section, page_1: page_1} = context do
-      result = Sections.get_ordered_containers_per_page(section.slug, [page_1.resource_id])
+      result = Sections.get_ordered_containers_per_page(section, [page_1.resource_id])
       assert length(result) == 1
 
       # Only Page 1 is returned
@@ -2153,10 +2153,6 @@ defmodule Oli.Delivery.SectionsTest do
       for {_, page} <- Map.take(context, [:page_2, :page_3, :page_4]) do
         refute Enum.member?(result, fn pc -> pc[:page_id] == page.resource_id end)
       end
-    end
-
-    test "returns an empty list for non-existent sections", %{section: _section} do
-      assert Sections.get_ordered_containers_per_page("non-existent-section") == []
     end
   end
 
@@ -2343,6 +2339,46 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns an empty list when there are no sections containing resources of the given project" do
       assert Sections.get_sections_containing_resources_of_given_project(-1) == []
+    end
+  end
+
+  describe "list_user_open_and_free_sections/1" do
+    test "lists the courses the user is enrolled to, sorted by enrollment date descending" do
+      user = insert(:user)
+
+      # Create sections
+      section_1 = insert(:section, title: "Elixir", open_and_free: true)
+      section_2 = insert(:section, title: "Phoenix", open_and_free: true)
+      section_3 = insert(:section, title: "LiveView", open_and_free: true)
+
+      # Enroll user to sections in a different order as sections were created
+      insert(:enrollment, %{
+        section: section_2,
+        user: user,
+        inserted_at: ~U[2023-01-01 00:00:00Z],
+        updated_at: ~U[2023-01-01 00:00:00Z]
+      })
+
+      insert(:enrollment, %{
+        section: section_3,
+        user: user,
+        inserted_at: ~U[2023-01-02 00:00:00Z],
+        updated_at: ~U[2023-01-02 00:00:00Z]
+      })
+
+      insert(:enrollment, %{
+        section: section_1,
+        user: user,
+        inserted_at: ~U[2023-01-03 00:00:00Z],
+        updated_at: ~U[2023-01-03 00:00:00Z]
+      })
+
+      # function returns sections sorted by enrollment date descending
+      [s1, s3, s2] = Sections.list_user_open_and_free_sections(user)
+
+      assert s1.title == "Elixir"
+      assert s3.title == "LiveView"
+      assert s2.title == "Phoenix"
     end
   end
 end

@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.Student.IndexLiveTest do
   use ExUnit.Case, async: true
+
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
