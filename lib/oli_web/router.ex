@@ -796,8 +796,8 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetProject,
-        OliWeb.LiveSessionPlugs.SetSection
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)
@@ -814,6 +814,7 @@ defmodule OliWeb.Router do
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
         live("/:project_id/products", ProductsLive)
+        live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
       end
 
@@ -823,7 +824,9 @@ defmodule OliWeb.Router do
         live("/:section_slug/:view/:active_tab", DashboardLive)
       end
 
-      live("/student", Student)
+      scope "/student" do
+        live("/", Student)
+      end
     end
   end
 

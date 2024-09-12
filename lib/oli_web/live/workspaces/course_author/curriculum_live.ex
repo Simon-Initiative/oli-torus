@@ -39,8 +39,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
     project = socket.assigns.project

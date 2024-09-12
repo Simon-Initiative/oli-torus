@@ -25,8 +25,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     TableModel
   }
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
