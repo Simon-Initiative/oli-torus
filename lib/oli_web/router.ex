@@ -789,7 +789,7 @@ defmodule OliWeb.Router do
   scope "/workspaces/", OliWeb.Workspaces do
     pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
 
-    live_session :course_author_workspace,
+    live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
