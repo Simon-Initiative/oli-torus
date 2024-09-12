@@ -61,6 +61,8 @@ if config_env() == :prod do
     database: System.get_env("DB_NAME", "oli"),
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     timeout: db_timeout,
+    queue_target: String.to_integer(System.get_env("DB_QUEUE_TARGET") || "50"),
+    queue_interval: String.to_integer(System.get_env("DB_QUEUE_INTERVAL") || "1000"),
     ownership_timeout: 600_000,
     socket_options: maybe_ipv6
 
