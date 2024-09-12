@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.StudentTest do
+defmodule OliWeb.Workspaces.StudentTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 

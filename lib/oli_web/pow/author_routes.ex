@@ -83,7 +83,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
 
   @impl true
   def after_user_updated_path(conn) do
-    Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive)
+    Routes.live_path(conn, OliWeb.Workspaces.AccountDetailsLive)
   end
 
   @impl true

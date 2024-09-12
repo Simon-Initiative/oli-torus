@@ -4,7 +4,6 @@ defmodule OliWeb.Pow.UserRoutes do
   use OliWeb, :verified_routes
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
 

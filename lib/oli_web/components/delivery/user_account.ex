@@ -374,7 +374,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_edit_author_account(assigns) do
     ~H"""
-    <.menu_item_link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspace.AccountDetailsLive)}>
+    <.menu_item_link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.AccountDetailsLive)}>
       Edit Account
     </.menu_item_link>
 
