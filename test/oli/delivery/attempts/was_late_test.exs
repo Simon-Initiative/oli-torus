@@ -1,11 +1,12 @@
 defmodule Oli.Delivery.Attempts.WasLateTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Attempts.PageLifecycle
-  alias Oli.Delivery.Attempts.Core
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.AttemptState
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
+  alias Oli.Delivery.Sections.SectionResource
 
   @content_manual %{
     "stem" => "2",
@@ -188,11 +189,6 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      effective_settings = %Oli.Delivery.Settings.Combined{
-        end_date: yesterday,
-        late_start: :disallow
-      }
-
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
       Oli.Delivery.Sections.update_section_resource(sr, %{
@@ -204,15 +200,24 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
 
-      assert {:error, {:end_date_passed}} ==
-               PageLifecycle.start(
-                 page.revision.slug,
-                 section.slug,
-                 datashop_session_id_user1,
-                 user,
-                 effective_settings,
-                 activity_provider
-               )
+      scheduling_types =
+        Ecto.Enum.values(SectionResource, :scheduling_type) |> List.delete(:read_by)
+
+      for scheduling_type <- scheduling_types do
+        assert {:error, {:end_date_passed}} ==
+                 PageLifecycle.start(
+                   page.revision.slug,
+                   section.slug,
+                   datashop_session_id_user1,
+                   user,
+                   %Oli.Delivery.Settings.Combined{
+                     end_date: yesterday,
+                     late_start: :disallow,
+                     scheduling_type: scheduling_type
+                   },
+                   activity_provider
+                 )
+      end
     end
   end
 end
