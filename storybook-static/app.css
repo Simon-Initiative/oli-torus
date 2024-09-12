@@ -5621,6 +5621,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 39px;
 }
 
+.w-\[40\%\] {
+  width: 40%;
+}
+
 .w-\[48px\] {
   width: 48px;
 }
