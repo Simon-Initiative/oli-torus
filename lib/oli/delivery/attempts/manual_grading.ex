@@ -19,22 +19,21 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     ActivityAttempt
   }
 
-  def count_submitted_attempts(%Section{} = section) do
-    case browse_submitted_attempts(
-           section,
-           %Paging{limit: 1, offset: 0},
-           %Sorting{field: :date_submitted, direction: :asc},
-           %BrowseOptions{
-             user_id: nil,
-             activity_id: nil,
-             text_search: nil,
-             page_id: nil,
-             graded: nil
-           }
-         ) do
-      [] -> 0
-      [item] -> item.total_count
-    end
+  def has_submitted_attempts(%Section{id: section_id}) do
+    query =
+      ActivityAttempt
+      |> join(:left, [aa], resource_attempt in ResourceAttempt,
+        on: aa.resource_attempt_id == resource_attempt.id
+      )
+      |> join(:left, [_, resource_attempt], ra in ResourceAccess,
+        on: resource_attempt.resource_access_id == ra.id
+      )
+      |> where(
+        [aa, _resource_attempt, resource_access],
+        resource_access.section_id == ^section_id and aa.lifecycle_state == :submitted
+      )
+
+    Repo.exists?(query)
   end
 
   @doc """

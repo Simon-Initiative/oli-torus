@@ -858,7 +858,6 @@ defmodule Oli.SectionsTest do
 
       # verify the curriculum precondition
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-      original_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
 
       assert hierarchy.children |> Enum.count() == 2
       assert hierarchy.children |> Enum.at(0) |> Map.get(:resource_id) == page1.id
@@ -941,8 +940,6 @@ defmodule Oli.SectionsTest do
 
       # reload latest hierarchy
       hierarchy = DeliveryResolver.full_hierarchy(section.slug)
-
-      updated_flattened = Oli.Delivery.Hierarchy.flatten(hierarchy)
 
       # verify non-structural changes are applied as expected
       assert hierarchy.children |> Enum.at(0) |> then(& &1.revision.content) ==

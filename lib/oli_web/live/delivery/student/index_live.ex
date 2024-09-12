@@ -1,6 +1,6 @@
 defmodule OliWeb.Delivery.Student.IndexLive do
   use OliWeb, :live_view
-
+  use Appsignal.Instrumentation.Decorators
   import OliWeb.Components.Delivery.Layouts
 
   alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
@@ -13,6 +13,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
 
+  @decorate transaction_event("IndexLive")
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
@@ -24,50 +25,60 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         else: Sections.get_not_scheduled_agenda(section, current_user_id)
 
     nearest_upcoming_lesson =
-      section
-      |> Sections.get_nearest_upcoming_lessons(current_user_id, 1,
-        ignore_schedule: !has_scheduled_resources?
-      )
-      |> List.first()
+      Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
+        section
+        |> Sections.get_nearest_upcoming_lessons(current_user_id, 1,
+          ignore_schedule: !has_scheduled_resources?
+        )
+        |> List.first()
+      end)
 
     latest_assignments =
-      Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+      Appsignal.instrument("IndexLive: latest_assignments", fn ->
+        Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+      end)
 
     upcoming_assignments =
-      Sections.get_nearest_upcoming_lessons(section, current_user_id, 3,
-        only_graded: true,
-        ignore_schedule: !has_scheduled_resources?
-      )
+      Appsignal.instrument("IndexLive: upcoming_assignments", fn ->
+        Sections.get_nearest_upcoming_lessons(section, current_user_id, 3,
+          only_graded: true,
+          ignore_schedule: !has_scheduled_resources?
+        )
+      end)
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
-    containers_per_page = build_containers_per_page(section.slug, page_ids)
+    containers_per_page = build_containers_per_page(section, page_ids)
 
     combined_settings =
-      Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
+      Appsignal.instrument("IndexLive: combined_settings", fn ->
+        Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
+      end)
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
-      Enum.map(
-        [
-          Sections.get_last_open_and_unfinished_page(section, current_user_id),
-          nearest_upcoming_lesson
-        ],
-        fn
-          nil ->
-            nil
+      Appsignal.instrument("IndexLive: last_open_and_unfinished_page", fn ->
+        Enum.map(
+          [
+            Sections.get_last_open_and_unfinished_page(section, current_user_id),
+            nearest_upcoming_lesson
+          ],
+          fn
+            nil ->
+              nil
 
-          page ->
-            page_module_index =
-              section
-              |> get_or_compute_full_hierarchy()
-              |> Hierarchy.find_module_ancestor(
-                page[:resource_id],
-                Oli.Resources.ResourceType.get_id_by_type("container")
-              )
-              |> get_in(["numbering", "index"])
+            page ->
+              page_module_index =
+                section
+                |> get_or_compute_full_hierarchy()
+                |> Hierarchy.find_module_ancestor(
+                  page[:resource_id],
+                  Oli.Resources.ResourceType.get_id_by_type("container")
+                )
+                |> get_in(["numbering", "index"])
 
-            Map.put(page, :module_index, page_module_index)
-        end
-      )
+              Map.put(page, :module_index, page_module_index)
+          end
+        )
+      end)
 
     {:ok,
      assign(socket,
@@ -753,9 +764,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts
 
-  defp build_containers_per_page(section_slug, page_ids) do
+  defp build_containers_per_page(section, page_ids) do
     containers_label_map =
-      Sections.get_ordered_container_labels(section_slug, short_label: true)
+      Sections.get_ordered_container_labels(section.slug, short_label: true)
       |> Enum.reduce(%{}, fn {container_id, label}, acc ->
         Map.put(acc, container_id, label)
       end)
@@ -765,7 +776,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         Map.put(container, "label", containers_label_map[container["id"]])
       end)
 
-    Sections.get_ordered_containers_per_page(section_slug, page_ids)
+    Sections.get_ordered_containers_per_page(section, page_ids)
     |> Enum.reduce(%{}, fn elem, acc ->
       Map.put(acc, elem[:page_id], add_label_to_containers.(elem[:containers]))
     end)

@@ -1,8 +1,9 @@
 defmodule OliWeb.LiveSessionPlugs.SetPaywallSummary do
   import Phoenix.Component, only: [assign: 2]
-
+  use Appsignal.Instrumentation.Decorators
   alias Oli.Delivery.Paywall
 
+  @decorate transaction_event("SetPaywallSummary")
   def on_mount(
         :default,
         _params,

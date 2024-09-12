@@ -16,46 +16,52 @@ defmodule OliWeb.PaymentController do
     user = conn.assigns.current_user
     section = conn.assigns.section
 
-    if user.guest do
-      render(conn, "require_account.html", section_slug: section_slug)
+    if Sections.is_enrolled?(user.id, section_slug) do
+      if user.guest do
+        render(conn, "require_account.html", section_slug: section_slug)
+      else
+        context = SessionContext.init(conn)
+
+        section =
+          section
+          |> Sections.localize_section_start_end_datetimes(context)
+
+        summary = Paywall.summarize_access(user, section)
+
+        grace_period_seconds =
+          if summary.grace_period_remaining == nil, do: 0, else: summary.grace_period_remaining
+
+        now_date = FormatDateTime.convert_datetime(DateTime.utc_now(), context)
+        payment_due_date = DateTime.add(now_date, grace_period_seconds, :second)
+
+        {:ok, amount} = Money.to_string(section.amount)
+
+        instructors =
+          Sections.fetch_instructors(section.slug)
+          |> Enum.reduce([], fn a, m ->
+            m ++ [a.name]
+          end)
+
+        render(conn, "guard.html",
+          context: context,
+          pay_by_card?:
+            direct_payments_enabled?() and
+              (section.payment_options == :direct or
+                 section.payment_options == :direct_and_deferred),
+          pay_by_code?:
+            section.payment_options == :deferred or
+              section.payment_options == :direct_and_deferred,
+          section_slug: section_slug,
+          section_title: section.title,
+          section: section,
+          instructors: Enum.join(instructors, ", "),
+          amount: amount,
+          payment_due_date: %{payment_due_date: payment_due_date},
+          grace_period_days: not is_nil(summary.grace_period_remaining)
+        )
+      end
     else
-      context = SessionContext.init(conn)
-
-      section =
-        section
-        |> Sections.localize_section_start_end_datetimes(context)
-
-      summary = Paywall.summarize_access(user, section)
-
-      grace_period_seconds =
-        if summary.grace_period_remaining == nil, do: 0, else: summary.grace_period_remaining
-
-      now_date = FormatDateTime.convert_datetime(DateTime.utc_now(), context)
-      payment_due_date = DateTime.add(now_date, grace_period_seconds, :second)
-
-      {:ok, amount} = Money.to_string(section.amount)
-
-      instructors =
-        Sections.fetch_instructors(section.slug)
-        |> Enum.reduce([], fn a, m ->
-          m ++ [a.name]
-        end)
-
-      render(conn, "guard.html",
-        context: context,
-        pay_by_card?:
-          direct_payments_enabled?() and
-            (section.payment_options == :direct or section.payment_options == :direct_and_deferred),
-        pay_by_code?:
-          section.payment_options == :deferred or section.payment_options == :direct_and_deferred,
-        section_slug: section_slug,
-        section_title: section.title,
-        section: section,
-        instructors: Enum.join(instructors, ", "),
-        amount: amount,
-        payment_due_date: %{payment_due_date: payment_due_date},
-        grace_period_days: not is_nil(summary.grace_period_remaining)
-      )
+      render(conn, "not_enrolled.html", section_slug: section_slug)
     end
   end
 

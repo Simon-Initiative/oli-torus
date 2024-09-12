@@ -120,10 +120,6 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
-  pipeline :require_exploration_pages do
-    plug(Oli.Plugs.RequireExplorationPages)
-  end
-
   pipeline :force_required_survey do
     plug(Oli.Plugs.ForceRequiredSurvey)
   end
@@ -225,6 +221,10 @@ defmodule OliWeb.Router do
 
   pipeline :put_license, do: plug(:set_license)
   def set_license(conn, _), do: Plug.Conn.assign(conn, :has_license, true)
+
+  pipeline :redirect_by_attempt_state do
+    plug(OliWeb.Plugs.RedirectByAttemptState)
+  end
 
   pipeline :student, do: plug(Oli.Plugs.SetUserType, :student)
 
@@ -954,8 +954,6 @@ defmodule OliWeb.Router do
       :delivery,
       :student,
       :delivery_protected,
-      :require_exploration_pages,
-      :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
       :force_required_survey,
@@ -983,64 +981,6 @@ defmodule OliWeb.Router do
         live("/assignments", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
-      end
-
-      scope "/prologue/:revision_slug" do
-        live_session :delivery_lesson,
-          root_layout: {OliWeb.LayoutView, :delivery},
-          layout: {OliWeb.Layouts, :student_delivery_lesson},
-          on_mount: [
-            OliWeb.LiveSessionPlugs.SetUser,
-            OliWeb.LiveSessionPlugs.SetSection,
-            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
-            OliWeb.LiveSessionPlugs.RedirectToLesson,
-            OliWeb.LiveSessionPlugs.SetBrand,
-            OliWeb.LiveSessionPlugs.SetPreviewMode,
-            OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath,
-            OliWeb.LiveSessionPlugs.SetPaywallSummary
-          ] do
-          live("/", Delivery.Student.PrologueLive)
-        end
-      end
-
-      scope "/lesson/:revision_slug" do
-        live_session :delivery_prologue,
-          root_layout: {OliWeb.LayoutView, :delivery},
-          layout: {OliWeb.Layouts, :student_delivery_lesson},
-          on_mount: [
-            OliWeb.LiveSessionPlugs.SetUser,
-            OliWeb.LiveSessionPlugs.SetSection,
-            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
-            OliWeb.LiveSessionPlugs.RedirectToPrologue,
-            OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless,
-            OliWeb.LiveSessionPlugs.SetBrand,
-            OliWeb.LiveSessionPlugs.SetPreviewMode,
-            OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath,
-            OliWeb.LiveSessionPlugs.SetPaywallSummary
-          ] do
-          live("/", Delivery.Student.LessonLive)
-          live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
-        end
-      end
-
-      scope "/adaptive_lesson/:revision_slug" do
-        live_session :delivery_adaptive_lesson,
-          root_layout: {OliWeb.LayoutView, :chromeless},
-          layout: {OliWeb.Layouts, :student_delivery_lesson},
-          on_mount: [
-            OliWeb.LiveSessionPlugs.SetUser,
-            OliWeb.LiveSessionPlugs.SetSection,
-            {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
-            OliWeb.LiveSessionPlugs.SetBrand,
-            OliWeb.LiveSessionPlugs.SetPreviewMode,
-            OliWeb.LiveSessionPlugs.RequireEnrollment,
-            OliWeb.LiveSessionPlugs.SetRequestPath,
-            OliWeb.LiveSessionPlugs.SetPaywallSummary
-          ] do
-          live("/", Delivery.Student.LessonLive, metadata: %{route_name: :adaptive_lesson})
-        end
       end
     end
 
@@ -1092,12 +1032,74 @@ defmodule OliWeb.Router do
     post("/page", PageDeliveryController, :navigate_by_index)
   end
 
+  # page paths (prologue - lesson - adaptive_lesson)
+  scope "/sections/:section_slug", OliWeb do
+    pipe_through([
+      :browser,
+      :require_section,
+      :delivery,
+      :redirect_by_attempt_state,
+      :delivery_protected,
+      :maybe_gated_resource,
+      :enforce_enroll_and_paywall,
+      :ensure_user_section_visit,
+      :force_required_survey,
+      :pow_email_layout
+    ])
+
+    scope "/prologue/:revision_slug" do
+      live_session :delivery_prologue,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetSection,
+          {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetRequestPath,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
+        ] do
+        live("/", Delivery.Student.PrologueLive)
+      end
+    end
+
+    scope "/lesson/:revision_slug" do
+      live_session :delivery_lesson,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetSection,
+          {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetRequestPath,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
+        ] do
+        live("/", Delivery.Student.LessonLive)
+        live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
+      end
+    end
+
+    scope "/adaptive_lesson/:revision_slug" do
+      get("/", PageDeliveryController, :page_fullscreen)
+
+      get(
+        "/attempt/:attempt_guid/review",
+        PageDeliveryController,
+        :review_attempt
+      )
+    end
+  end
+
   ### Sections - Preview
   scope "/sections/:section_slug/preview", OliWeb do
     pipe_through([
       :browser,
       :require_section,
-      :require_exploration_pages,
       :authorize_section_preview,
       :delivery_protected,
       :delivery_layout,
