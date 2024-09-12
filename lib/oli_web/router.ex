@@ -364,7 +364,7 @@ defmodule OliWeb.Router do
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
-    live("/account", Workspace.AccountDetailsLive)
+    live("/account", Workspaces.AccountDetailsLive)
 
     put("/account", WorkspaceController, :update_author)
 
