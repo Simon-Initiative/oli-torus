@@ -569,7 +569,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all open and free sections for a given user.
+  Returns a listing of all open and free sections for a given user,
+  ordered by the most recently enrolled.
   """
   def list_user_open_and_free_sections(%{id: user_id} = _user) do
     query =
@@ -580,6 +581,7 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
+        order_by: [desc: e.inserted_at],
         select: s
       )
 
