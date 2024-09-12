@@ -365,11 +365,16 @@ export class HtmlParser implements WriterImpl {
 
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
     if (!attrs.src) return <></>;
+    let guid = '';
+    if (context.resourceAttemptGuid !== undefined) {
+      guid = context.resourceAttemptGuid;
+    }
     return (
       <YoutubePlayer
         video={attrs}
         authorMode={false}
         context={context}
+        pageAttemptGuid={guid}
         pointMarkerContext={pointMarkerContextFrom(context, attrs)}
       />
     );
