@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
+defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
