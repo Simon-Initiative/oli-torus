@@ -131,7 +131,6 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def youtube(%Context{} = context, _, %{"src" => _} = attrs) do
-
     attempt_guid =
       case context.resource_attempt do
         nil -> ""

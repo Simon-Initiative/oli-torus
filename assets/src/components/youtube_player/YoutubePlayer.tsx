@@ -104,8 +104,6 @@ export const YoutubePlayer: React.FC<{
   const onStateChange = (e: any) => {
     if (!videoTarget || pageAttemptGuid == '') return;
 
-
-
     switch (e.data) {
       case 0:
         XAPI.emit_delivery(

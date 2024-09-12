@@ -84,7 +84,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
           <Settings model={props.model} onEdit={onEdit} commandContext={props.commandContext} />
         }
       >
-        <YoutubePlayer video={model} authorMode={true} pageAttemptGuid=''/>
+        <YoutubePlayer video={model} authorMode={true} pageAttemptGuid="" />
       </HoverContainer>
 
       <CaptionEditor
