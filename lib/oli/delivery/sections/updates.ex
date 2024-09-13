@@ -266,6 +266,8 @@ defmodule Oli.Delivery.Sections.Updates do
         "perform_update.MAJOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
       )
 
+      Oli.Delivery.Sections.SectionCache.clear(section.slug)
+
       {:ok, :ok}
     else
       e -> e
