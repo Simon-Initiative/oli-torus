@@ -73,6 +73,8 @@ defmodule Oli.Delivery.Sections.Updates do
 
     case result do
       {:ok, _} ->
+        Oli.Delivery.Sections.SectionCache.clear(section.slug)
+
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 
       _ ->
@@ -265,8 +267,6 @@ defmodule Oli.Delivery.Sections.Updates do
       Logger.info(
         "perform_update.MAJOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
       )
-
-      Oli.Delivery.Sections.SectionCache.clear(section.slug)
 
       {:ok, :ok}
     else
