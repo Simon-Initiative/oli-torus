@@ -145,17 +145,25 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_icon ctx={@ctx} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <%= case assigns.ctx do %>
-          <% %SessionContext{author: %Author{}} -> %>
+        <%= case {assigns.ctx, @is_system_admin} do %>
+          <% {%SessionContext{author: %Author{}}, true} -> %>
             <.author_menu_items
               id={"#{@id}-menu-items-admin"}
               ctx={@ctx}
               is_system_admin={@is_system_admin}
             />
-          <% %SessionContext{user: %User{guest: true}} -> %>
+          <% {%SessionContext{user: %User{guest: true}}, _} -> %>
             <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% %SessionContext{user: %User{}} -> %>
+
+          <% {%SessionContext{user: %User{}}, _} -> %>
             <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+
+          <% {%SessionContext{author: %Author{}}, _} -> %>
+            <.author_menu_items
+              id={"#{@id}-menu-items-admin"}
+              ctx={@ctx}
+              is_system_admin={@is_system_admin}
+            />
           <% _ -> %>
         <% end %>
       </.dropdown_menu>
