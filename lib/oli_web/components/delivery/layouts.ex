@@ -560,6 +560,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
       ["", "workspaces", "course_author", project_slug, "products"] ->
         ~p"/workspaces/course_author/#{project_slug}/products?#{params}"
 
+      ["", "workspaces", "course_author", project_slug, "insights"] ->
+        ~p"/workspaces/course_author/#{project_slug}/insights?#{params}"
+
       _ ->
         ~p"/"
     end
