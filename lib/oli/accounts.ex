@@ -427,6 +427,10 @@ defmodule Oli.Accounts do
     update_user(user, %{author_id: author.id})
   end
 
+  def unlink_user_author_account(user) do
+    update_user(user, %{author_id: nil})
+  end
+
   @doc """
   Returns true if a user belongs to an LMS.
   """

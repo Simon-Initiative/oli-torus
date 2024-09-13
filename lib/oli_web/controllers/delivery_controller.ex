@@ -16,6 +16,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
+  alias OliWeb.Components.Delivery.UserAccount
 
   require Logger
 
@@ -41,47 +42,62 @@ defmodule OliWeb.DeliveryController do
     )
   end
 
+  @doc """
+  This is the default entry point for delivery users. It will redirect to the appropriate page based
+  on whether the user is an independent learner or an LTI user.
+
+  If the user is an independent learner, they will be redirected to the student workspace.
+
+  If the user is an LTI user, the user's roles will be checked to determine if they are allowed to
+  configure the section. If they are allowed to configure the section, they will be redirected to
+  the instructor dashboard. If they are not allowed to configure the section, the student will be
+  redirected to the page delivery.
+  """
   def index(conn, _params) do
     user = conn.assigns.current_user
-    lti_params = conn.assigns.lti_params
 
-    lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-    platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
-    roles = MapSet.new(context_roles ++ platform_roles)
-    allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
+    if user.independent_learner do
+      redirect(conn, to: ~p"/workspaces/student")
+    else
+      lti_params = conn.assigns.lti_params
 
-    # allow section configuration if user has any of the allowed roles
-    allow_configure_section =
-      MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
+      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+      platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
+      roles = MapSet.new(context_roles ++ platform_roles)
+      allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
 
-    section = Sections.get_section_from_lti_params(lti_params)
+      # allow section configuration if user has any of the allowed roles
+      allow_configure_section =
+        MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
 
-    case section do
-      # author account has not been linked
-      nil when allow_configure_section ->
-        render_getting_started(conn)
+      section = Sections.get_section_from_lti_params(lti_params)
 
-      nil ->
-        render_course_not_configured(conn)
+      case section do
+        nil when allow_configure_section ->
+          render_getting_started(conn)
 
-      section when allow_configure_section ->
-        redirect_to_instructor_dashboard(conn, section)
+        nil ->
+          render_course_not_configured(conn)
 
-      # section has been configured
-      section ->
-        {institution, _registration, _deployment} =
-          Institutions.get_institution_registration_deployment(
-            lti_params["iss"],
-            LtiParams.peek_client_id(lti_params),
-            lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-          )
+        section when allow_configure_section ->
+          redirect_to_instructor_dashboard(conn, section)
 
-        if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
-          render_research_consent(conn, ~p"/sections/#{section.slug}")
-        else
-          redirect_to_page_delivery(conn, section)
-        end
+        # section has been configured
+        section ->
+          {institution, _registration, _deployment} =
+            Institutions.get_institution_registration_deployment(
+              lti_params["iss"],
+              LtiParams.peek_client_id(lti_params),
+              lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+            )
+
+          if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
+            render_research_consent(conn, ~p"/sections/#{section.slug}")
+          else
+            redirect_to_page_delivery(conn, section)
+          end
+      end
     end
   end
 
@@ -204,28 +220,22 @@ defmodule OliWeb.DeliveryController do
   end
 
   def render_link_account_form(conn, opts \\ []) do
-    title = Keyword.get(opts, :title, "Link Existing Account")
     changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
-    action = Keyword.get(opts, :action, Routes.delivery_path(conn, :process_link_account_user))
-
-    create_account_path =
-      Keyword.get(
-        opts,
-        :create_account_path,
-        Routes.delivery_path(conn, :create_and_link_account)
-      )
+    action = Keyword.get(opts, :action, Routes.delivery_path(conn, :process_link_account))
 
     cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
 
+    linked_account_email = UserAccount.linked_author_account(conn.assigns.current_user)
+
     conn
-    |> assign(:title, title)
     |> assign(:changeset, changeset)
     |> assign(:action, action)
-    |> assign(:create_account_path, create_account_path)
-    |> assign(:cancel_path, cancel_path)
-    |> assign(:link_account, true)
+    |> assign(:linked_account, linked_account_email)
+    # link_account_provider_path assign required for proper provider link generation
+    |> assign(:link_account_provider_path, &Routes.authoring_delivery_path(conn, :process_link_account_provider, &1))
+    |> assign(:cancel_path, Routes.delivery_path(conn, :index))
     |> put_view(OliWeb.Pow.SessionHTML)
-    |> Phoenix.Controller.render("new.html")
+    |> Phoenix.Controller.render("link_authoring_account.html")
   end
 
   def process_link_account_provider(conn, %{"provider" => provider}) do
@@ -240,33 +250,6 @@ defmodule OliWeb.DeliveryController do
       {:ok, url, conn} ->
         conn
         |> redirect(external: url)
-    end
-  end
-
-  def process_link_account_user(conn, %{"user" => author_params}) do
-    conn
-    |> use_pow_config(:author)
-    |> Pow.Plug.authenticate_user(author_params)
-    |> case do
-      {:ok, conn} ->
-        conn
-        |> put_flash(
-          :info,
-          Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).signed_in(conn)
-        )
-        |> redirect(
-          to: Pow.Phoenix.Controller.routes(conn, Pow.Phoenix.Routes).after_sign_in_path(conn)
-        )
-
-      {:error, conn} ->
-        conn
-        |> put_flash(
-          :error,
-          Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).invalid_credentials(conn)
-        )
-        |> render_link_account_form(
-          changeset: PowAssent.Plug.change_user(conn, %{}, author_params)
-        )
     end
   end
 
@@ -300,40 +283,57 @@ defmodule OliWeb.DeliveryController do
     |> PowAssent.Phoenix.AuthorizationController.respond_callback()
   end
 
-  def create_and_link_account(conn, _params) do
-    # sign out current author account
-    conn
-    |> delete_pow_user(:author)
-    |> render_create_and_link_form()
+  def process_link_account(conn, %{"action" => "unlink"}) do
+    case Accounts.unlink_user_author_account(conn.assigns.current_user) do
+      {:ok, _user} ->
+        conn
+        |> put_flash(:info, "Account is now unlinked")
+        |> redirect(to: Routes.delivery_path(conn, :index))
+
+      _ ->
+        conn
+        |> put_flash(:error, "Failed to unlink account")
+        |> redirect(to: Routes.delivery_path(OliWeb.Endpoint, :link_account))
+    end
   end
 
-  @spec process_create_and_link_account_user(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def process_create_and_link_account_user(conn, %{"user" => user_params}) do
-    %{current_user: current_user} = conn.assigns
-
+  def process_link_account(conn, %{"link_account" => author_params}) do
     conn
     |> use_pow_config(:author)
-    |> Pow.Plug.create_user(user_params)
+    |> Pow.Plug.authenticate_user(author_params)
     |> case do
-      {:ok, _user, conn} ->
-        conn
-        |> put_flash(
-          :info,
-          Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).user_has_been_created(conn)
-        )
+      {:ok, conn} ->
+        %{current_user: current_user} = conn.assigns
+        current_author = Accounts.get_author_by_email(author_params["email"])
 
-        Pow.Phoenix.Controller.routes(conn, Pow.Phoenix.Routes).after_registration_path(conn)
-        conn = Pow.Plug.Session.do_delete(conn, get_pow_config(:author))
+        case Accounts.link_user_author_account(current_user, current_author) do
+          {:ok, _user} ->
+            conn
+            |> put_flash(:info, "Account is now linked to authoring account #{current_author.email}")
+            |> redirect(
+              to: Routes.delivery_path(conn, :index)
+            )
 
-        if current_user.independent_learner do
-          redirect(conn, to: ~p"/workspaces/student")
-        else
-          redirect(conn, to: Routes.delivery_path(conn, :index))
+          _ ->
+            conn
+            |> put_flash(
+              :error,
+              "Failed to link authoring account #{current_author.email}"
+            )
+            |> redirect(
+              to: Routes.delivery_path(conn, :index)
+            )
         end
 
-      {:error, changeset, conn} ->
+      {:error, conn} ->
         conn
-        |> render_create_and_link_form(changeset: changeset)
+        |> put_flash(
+          :error,
+          Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).invalid_credentials(conn)
+        )
+        |> render_link_account_form(
+          changeset: PowAssent.Plug.change_user(conn, %{}, author_params)
+        )
     end
   end
 
@@ -357,31 +357,6 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, action)
     |> assign(:sign_in_path, sign_in_path)
     |> assign(:cancel_path, cancel_path)
-    |> put_view(OliWeb.Pow.RegistrationHTML)
-    |> Phoenix.Controller.render("new.html")
-  end
-
-  def render_create_and_link_form(conn, opts \\ []) do
-    title = Keyword.get(opts, :title, "Create and Link Account")
-    changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
-
-    action =
-      Keyword.get(
-        opts,
-        :action,
-        Routes.delivery_path(conn, :process_create_and_link_account_user)
-      )
-
-    sign_in_path = Keyword.get(opts, :sign_in_path, Routes.delivery_path(conn, :link_account))
-    cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
-
-    conn
-    |> assign(:title, title)
-    |> assign(:changeset, changeset)
-    |> assign(:action, action)
-    |> assign(:sign_in_path, sign_in_path)
-    |> assign(:cancel_path, cancel_path)
-    |> assign(:link_account, true)
     |> put_view(OliWeb.Pow.RegistrationHTML)
     |> Phoenix.Controller.render("new.html")
   end
