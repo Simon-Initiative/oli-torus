@@ -258,7 +258,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div
       id={@id}
       phx-click-away={JS.hide()}
-      class={"hidden absolute top-[55px] right-[0px] z-50 py-2 px-4 whitespace-nowrap bg-white w-[280px] dark:bg-[#0F0D0F] rounded-xl #{@class}"}
+      class={"hidden absolute top-[55px] right-[0px] z-50 py-2 px-4 whitespace-nowrap bg-white w-[280px] dark:bg-[#0F0D0F] rounded-xl shadow-xl #{@class}"}
     >
       <ul>
         <%= render_slot(@inner_block) %>
