@@ -583,7 +583,8 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all open and free sections for a given user.
+  Returns a listing of all open and free sections for a given user,
+  ordered by the most recently enrolled.
   """
   def list_user_open_and_free_sections(%{id: user_id} = _user) do
     query =
@@ -594,6 +595,7 @@ defmodule Oli.Delivery.Sections do
         where:
           e.user_id == ^user_id and s.open_and_free == true and s.status == :active and
             e.status == :enrolled,
+        order_by: [desc: e.inserted_at],
         select: s
       )
 
@@ -2208,7 +2210,11 @@ defmodule Oli.Delivery.Sections do
     section_resources
     |> Enum.group_by(&{&1.end_date, {&1.module_id, &1.unit_id}})
     |> Enum.sort(fn {{end_date1, {_, _}}, _}, {{end_date2, {_, _}}, _} ->
-      DateTime.compare(end_date1, end_date2) == :lt
+      cond do
+        end_date1 == nil -> false
+        end_date2 == nil -> true
+        true -> DateTime.compare(end_date1, end_date2) == :lt
+      end
     end)
   end
 

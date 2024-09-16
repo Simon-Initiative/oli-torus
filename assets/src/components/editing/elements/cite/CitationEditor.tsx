@@ -63,6 +63,8 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
             format: 'html',
             template: 'apa',
             lang: 'en-US',
+            // include any note, used for URL in legacy bib entries
+            append: (entry: any) => ` ${entry.note}`,
           });
         };
 

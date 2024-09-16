@@ -1,23 +1,24 @@
-defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
+defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLiveTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Sections.Blueprint
 
-  defp live_view_route(project_slug, params \\ %{}),
-    do: ~p"/workspaces/course_author/#{project_slug}/bibliography?#{params}"
+  # Testing for the edit form is located in OliWeb.Sections.EditLiveTest
+
+  defp live_view_route(project_slug, product_slug, params),
+    do: ~p"/workspaces/course_author/#{project_slug}/products/#{product_slug}/?#{params}"
 
   describe "user cannot access when is not logged in" do
-    setup [:create_project]
+    setup [:create_project, :publish_project, :create_product]
 
-    test "redirects to new session when accessing the bibliography view", %{
-      conn: conn,
-      project: project
-    } do
+    test "redirects to new session when accessing product details view", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
       {:error, {:redirect, %{to: redirect_path, flash: %{"error" => error_msg}}}} =
-        live(conn, live_view_route(project.slug))
+        live(conn, live_view_route(project.slug, product.slug, %{}))
 
       assert redirect_path == "/workspaces/course_author"
       assert error_msg == "You must be logged in to access that project"
@@ -30,37 +31,38 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
   end
 
   describe "user cannot access when is logged in as an author but is not an author of the project" do
-    setup [:author_conn, :create_project]
+    setup [:author_conn, :create_project, :publish_project, :create_product]
 
-    test "redirects to projects view when accessing the bibliography view", %{
-      conn: conn,
-      project: project
-    } do
+    test "redirects to projects view when accessing the bibliography view", ctx do
+      %{conn: conn, project: project, product: product} = ctx
+
       {:error, {:redirect, %{to: redirect_path, flash: %{"error" => error_msg}}}} =
-        live(conn, live_view_route(project.slug))
+        live(conn, live_view_route(project.slug, product.slug, %{}))
 
       assert redirect_path == "/workspaces/course_author"
       assert error_msg == "You don't have access to that project"
 
       {:ok, view, _html} = live(conn, redirect_path)
 
-      assert view
-             |> element("#button-new-project")
-             |> render() =~ "New Project"
-    end
-  end
-
-  describe "bibliography" do
-    setup [:admin_conn, :create_project]
-
-    test "renders React component", %{conn: conn, project: project} do
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      assert has_element?(view, ~s(div[data-live-react-class='Components.Bibliography']))
+      assert render(element(view, "#button-new-project")) =~ "New Project"
     end
   end
 
   ##### HELPER FUNCTIONS #####
+  alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Publishing
+  alias Oli.Resources.ResourceType
+
+  defp create_product(ctx) do
+    {:ok, product} = Blueprint.create_blueprint(ctx.project.slug, "Some Product", nil)
+
+    {:ok, %{product: product}}
+  end
+
+  defp publish_project(ctx) do
+    Publishing.publish_project(ctx.project, "Datashop test", ctx.author.id)
+    {:ok, %{}}
+  end
 
   defp create_project(_conn) do
     author = insert(:author)
@@ -95,6 +97,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
       author: author
     })
 
-    [project: project, publication: publication]
+    [project: project, publication: publication, author: author]
   end
 end

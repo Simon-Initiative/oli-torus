@@ -150,3 +150,10 @@ janus-popup:has(input) {
     }
   }
 }
+
+.dark janus-popup:has(input) {
+  input[src*='data']:focus,
+  input[src*='data']:active {
+    background-color: rgba(0, 0, 0, 0);
+  }
+}

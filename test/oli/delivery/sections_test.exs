@@ -2341,4 +2341,44 @@ defmodule Oli.Delivery.SectionsTest do
       assert Sections.get_sections_containing_resources_of_given_project(-1) == []
     end
   end
+
+  describe "list_user_open_and_free_sections/1" do
+    test "lists the courses the user is enrolled to, sorted by enrollment date descending" do
+      user = insert(:user)
+
+      # Create sections
+      section_1 = insert(:section, title: "Elixir", open_and_free: true)
+      section_2 = insert(:section, title: "Phoenix", open_and_free: true)
+      section_3 = insert(:section, title: "LiveView", open_and_free: true)
+
+      # Enroll user to sections in a different order as sections were created
+      insert(:enrollment, %{
+        section: section_2,
+        user: user,
+        inserted_at: ~U[2023-01-01 00:00:00Z],
+        updated_at: ~U[2023-01-01 00:00:00Z]
+      })
+
+      insert(:enrollment, %{
+        section: section_3,
+        user: user,
+        inserted_at: ~U[2023-01-02 00:00:00Z],
+        updated_at: ~U[2023-01-02 00:00:00Z]
+      })
+
+      insert(:enrollment, %{
+        section: section_1,
+        user: user,
+        inserted_at: ~U[2023-01-03 00:00:00Z],
+        updated_at: ~U[2023-01-03 00:00:00Z]
+      })
+
+      # function returns sections sorted by enrollment date descending
+      [s1, s3, s2] = Sections.list_user_open_and_free_sections(user)
+
+      assert s1.title == "Elixir"
+      assert s3.title == "LiveView"
+      assert s2.title == "Phoenix"
+    end
+  end
 end

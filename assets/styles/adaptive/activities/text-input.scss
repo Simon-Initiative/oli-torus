@@ -73,3 +73,12 @@ janus-input-number .unitsLabel {
   margin-left: 10px;
   margin-top: 10px;
 }
+
+//As per the requirment, text & number input needs to be in light mode even if the current theme is Dark.
+// This can be customized from any external CSS file.
+.dark input[type='datetime-local'],
+.dark input[type='number'],
+.dark input[type='text'] {
+  background-color: #fff;
+  color: #333333;
+}
