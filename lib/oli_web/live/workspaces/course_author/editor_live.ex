@@ -25,6 +25,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
   end
 
   @impl true
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
   def render(assigns) do
     if assigns[:app_params], do: render_advanced(assigns), else: render_basic(assigns)
   end
