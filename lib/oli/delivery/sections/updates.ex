@@ -73,6 +73,8 @@ defmodule Oli.Delivery.Sections.Updates do
 
     case result do
       {:ok, _} ->
+        Oli.Delivery.Sections.SectionCache.clear(section.slug)
+
         Broadcaster.broadcast_update_progress(section.id, new_publication.id, :complete)
 
       _ ->
