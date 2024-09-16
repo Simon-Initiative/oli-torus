@@ -562,8 +562,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         {:noreply,
-         push_navigate(socket,
-           to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+         redirect(socket,
+           to: ~p"/workspaces/course_author"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
