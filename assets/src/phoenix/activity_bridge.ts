@@ -39,11 +39,27 @@ export const initActivityBridge = (elementId: string) => {
       e.preventDefault();
       e.stopPropagation();
       console.info('SAVE ACTIVITY');
+
+      const originalContinuation = e.detail.continuation;
+
+      const newContinuation = (result: any, error: any) => {
+        if (!error && window.ReactToLiveView) {
+          window.ReactToLiveView.pushEvent('activity_saved', {
+            partInputs: e.detail.payload,
+            activityAttemptGuid: e.detail.attemptGuid,
+          });
+        }
+
+        if (originalContinuation) {
+          originalContinuation(result, error);
+        }
+      };
+
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
         'PATCH',
         { partInputs: e.detail.payload },
-        e.detail.continuation,
+        newContinuation,
       );
     },
     false,
