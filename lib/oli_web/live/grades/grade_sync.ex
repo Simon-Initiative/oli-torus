@@ -70,7 +70,7 @@ defmodule OliWeb.Grades.GradeSync do
       </div>
 
       <div class="card-footer mt-4">
-        <a class="btn btn-primary" phx-click="send_grades" {@disabled}>
+        <a class="btn btn-primary" phx-click="send_grades" phx-throttle={3000} {@disabled}>
           <%= dgettext("grades", "Synchronize Grades") %>
         </a>
       </div>
