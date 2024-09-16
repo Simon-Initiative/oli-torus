@@ -18,6 +18,11 @@ export const simpleSchema: JSONSchema7Object = {
     title: 'Allow Scrolling',
     type: 'boolean',
   },
+  description: {
+    title: 'description',
+    description: 'provides aria-describedby, title and aria-label content',
+    type: 'string',
+  },
 };
 
 export const schema: JSONSchema7Object = {
@@ -27,6 +32,11 @@ export const schema: JSONSchema7Object = {
   },
   src: {
     title: 'Source',
+    type: 'string',
+  },
+  description: {
+    title: 'description',
+    description: 'provides aria-describedby, title and aria-label content',
     type: 'string',
   },
   allowScrolling: {

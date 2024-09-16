@@ -44,7 +44,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [lessonId, setLessonId] = useState('');
 
   // these rely on being set every render and the "model" useState value being set
-  const { title, allowScrolling, configData } = model;
+  const { allowScrolling, configData, description } = model;
   const getInterestedVariable = (StateSnapshot: Record<string, any>, domain: string) => {
     return Object.keys(StateSnapshot).reduce((collect: Record<string, any>, key) => {
       if (key.indexOf(`${domain}.${id}.`) === 0) {
@@ -1135,9 +1135,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       data-janus-type={tagName}
       ref={frameRef}
       style={externalActivityStyles}
-      title={title}
+      title={description}
       src={frameSrc}
       scrolling={scrolling}
+      aria-label={description}
+      aria-describedby={description}
       allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
     />
   ) : null;
