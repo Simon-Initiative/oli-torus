@@ -66,7 +66,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
     socket
     |> assign(
       current_user: current_user,
-      datashop_session_id: session[:datashop_session_id] || UUID.uuid4()
+      datashop_session_id: session["datashop_session_id"] || UUID.uuid4()
     )
   end
 
