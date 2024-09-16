@@ -1,24 +1,36 @@
 defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   use OliWeb, :live_view
 
-  alias Oli.{Accounts, Publishing}
-  alias Oli.Analytics.{ByActivity, ByObjective, ByPage}
+  import Ecto.Query
+  import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
+
+  alias Oli.{Accounts, Activities, Publishing}
+  alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions}
   alias Oli.Authoring.{Broadcaster, Course}
   alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Delivery.Sections
-  alias Oli.Publishing.DeliveryResolver
-  alias OliWeb.Common.MultiSelectInput
-  alias OliWeb.Common.MultiSelect.Option
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Resources.ResourceType
   alias OliWeb.Components.Project.AsyncExporter
-  alias OliWeb.Workspaces.CourseAuthor.{TableHeader, TableRow}
+  alias OliWeb.Common.MultiSelect.Option
+  alias OliWeb.Common.MultiSelectInput
+  alias OliWeb.Common.{PagedTable, TextSearch}
+  alias OliWeb.Common.Table.SortableTableModel
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
+  alias OliWeb.Workspaces.CourseAuthor.Insights.{
+    ActivityTableModel,
+    PageTableModel,
+    ObjectiveTableModel
+  }
+
+  @limit 25
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, ctx: ctx} = socket.assigns
-
-    by_activity_rows = ByActivity.query_against_project_slug(project.slug, [])
 
     {sections, products} =
       Sections.get_sections_containing_resources_of_given_project(project.id)
@@ -28,11 +40,35 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
           else: {[%Option{id: section.id, name: section.title} | sections], products}
       end)
 
-    parent_pages =
-      Enum.map(by_activity_rows, fn r -> r.slice.resource_id end)
-      |> parent_pages(project.slug)
+    sections_by_product_id = get_sections_by_product_id(project.id)
+
+    activity_type_id = ResourceType.get_id_by_type("activity")
+
+    options = %BrowseInsightsOptions{
+      project_id: project.id,
+      resource_type_id: activity_type_id,
+      section_ids: []
+    }
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: :desc, field: :first_attempt_correct},
+        options
+      )
 
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
+
+    parent_pages = parent_pages(project.slug)
+
+    activity_types_map =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+
+    total_count = determine_total(insights)
+
+    {:ok, table_model} =
+      ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
     {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
       case Course.analytics_export_status(project) do
@@ -46,40 +82,63 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
 
     {:ok,
      assign(socket,
-       active: :insights,
-       active_rows: apply_filter_sort(:by_activity, by_activity_rows, "", "title", :asc),
        active_view: :insights,
        active_workspace: :course_author,
-       analytics_export_status: analytics_export_status,
-       analytics_export_timestamp: analytics_export_timestamp,
-       analytics_export_url: analytics_export_url,
-       by_activity_rows: by_activity_rows,
-       by_page_rows: nil,
-       by_objective_rows: nil,
-       ctx: ctx,
-       form_uuid_for_product: "",
-       form_uuid_for_section: "",
-       is_admin?: Accounts.is_system_admin?(ctx.author),
-       is_product: false,
-       latest_publication: latest_publication,
-       parent_pages: parent_pages,
-       product_ids: [],
-       products: products,
-       project: project,
-       query: "",
        resource_slug: project.slug,
        resource_title: project.title,
-       section_ids: [],
-       sections: sections,
+       active: :insights,
+       sections_by_product_id: sections_by_product_id,
+       ctx: ctx,
+       is_admin?: Accounts.is_system_admin?(ctx.author),
+       project: project,
+       parent_pages: parent_pages,
        selected: :by_activity,
-       sort_by: "title",
-       sort_order: :asc
+       latest_publication: latest_publication,
+       analytics_export_status: analytics_export_status,
+       analytics_export_url: analytics_export_url,
+       analytics_export_timestamp: analytics_export_timestamp,
+       products: products,
+       sections: sections,
+       is_product: false,
+       section_ids: [],
+       product_ids: [],
+       form_uuid_for_product: "",
+       form_uuid_for_section: "",
+       table_model: table_model,
+       options: options,
+       offset: 0,
+       total_count: total_count,
+       active_rows: insights,
+       query: "",
+       limit: @limit
      )}
   end
 
   @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
+  def handle_params(params, _, socket) do
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
+
+    offset = get_int_param(params, "offset", 0)
+
+    options = socket.assigns.options
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
+
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
+
+    {:noreply,
+     assign(socket,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       options: options
+     )}
   end
 
   @impl Phoenix.LiveView
@@ -92,7 +151,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
           the skills covered by each question to find areas where students are struggling.
         </p>
         <%= if @is_admin? do %>
-          <div class="flex items-center my-3">
+          <div class="d-flex align-items-center my-3">
             <AsyncExporter.raw_analytics
               ctx={@ctx}
               latest_publication={@latest_publication}
@@ -168,11 +227,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
 
       <div class="card">
         <div class="card-header mb-2">
-          <form phx-change="search">
+          <form phx-change="text_search_change">
             <input
               type="text"
               class="form-control"
-              name="query"
+              name="value"
               value={@query}
               placeholder="Search by title..."
             />
@@ -188,30 +247,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
             end %>
           </h5>
 
-          <%= if !is_loading?(assigns) do %>
-            <table class="table table-sm">
-              <TableHeader.render selected={@selected} sort_by={@sort_by} sort_order={@sort_order} />
-              <tbody>
-                <%= for row <- @active_rows do %>
-                  <TableRow.render
-                    row={row}
-                    parent_pages={@parent_pages}
-                    project={@project}
-                    selected={@selected}
-                  />
-                <% end %>
-              </tbody>
-            </table>
-          <% else %>
-            <div class="w-full h-40 flex items-center justify-center">
-              <span
-                class="spinner-border spinner-border-sm w-16 h-16"
-                role="status"
-                aria-hidden="true"
-              >
-              </span>
-            </div>
-          <% end %>
+          <PagedTable.render
+            filter={@query}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+          />
         </div>
       </div>
     </div>
@@ -219,95 +261,42 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("filter_" <> filter_criteria, _event, socket) do
-    selected = String.to_existing_atom(filter_criteria)
+  def handle_event("filter_by_activity", _params, socket) do
+    activity_types_map =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
 
-    # do the query and assign the results in an async way
-    filter_type(selected)
-
-    {:noreply, assign(socket, selected: selected, active_rows: nil)}
-  end
-
-  # search
-  def handle_event("search", %{"query" => query}, socket) do
-    active_rows =
-      apply_filter_sort(
-        socket.assigns.selected,
-        get_active_original(socket.assigns),
-        query,
-        socket.assigns.sort_by,
-        socket.assigns.sort_order
+    {:ok, table_model} =
+      ActivityTableModel.new(
+        [],
+        activity_types_map,
+        socket.assigns.parent_pages,
+        socket.assigns.project.slug,
+        socket.assigns.ctx
       )
 
-    {:noreply, assign(socket, query: query, active_rows: active_rows)}
+    filter_by(
+      socket,
+      ResourceType.get_id_by_type("activity"),
+      :by_activity,
+      table_model
+    )
   end
 
-  # sorting
-
-  # CLick same column -> reverse sort order
-  def handle_event(
-        "sort",
-        %{"sort-by" => column} = event,
-        %{assigns: %{sort_by: sort_by, sort_order: :asc}} = socket
-      )
-      when column == sort_by do
-    {:noreply,
-     if click_or_enter_key?(event) do
-       active_rows =
-         apply_filter_sort(
-           socket.assigns.selected,
-           get_active_original(socket.assigns),
-           socket.assigns.query,
-           socket.assigns.sort_by,
-           :desc
-         )
-
-       assign(socket, sort_by: sort_by, sort_order: :desc, active_rows: active_rows)
-     else
-       socket
-     end}
+  def handle_event("filter_by_page", _params, socket) do
+    {:ok, table_model} = PageTableModel.new([], socket.assigns.project.slug, socket.assigns.ctx)
+    filter_by(socket, ResourceType.get_id_by_type("page"), :by_page, table_model)
   end
 
-  def handle_event(
-        "sort",
-        %{"sort-by" => column} = event,
-        %{assigns: %{sort_by: sort_by, sort_order: :desc}} = socket
-      )
-      when column == sort_by do
-    {:noreply,
-     if click_or_enter_key?(event) do
-       active_rows =
-         apply_filter_sort(
-           socket.assigns.selected,
-           get_active_original(socket.assigns),
-           socket.assigns.query,
-           socket.assigns.sort_by,
-           :asc
-         )
+  def handle_event("filter_by_objective", _params, socket) do
+    {:ok, table_model} = ObjectiveTableModel.new([], socket.assigns.ctx)
 
-       assign(socket, sort_by: sort_by, sort_order: :asc, active_rows: active_rows)
-     else
-       socket
-     end}
-  end
-
-  # Click new column
-  def handle_event("sort", %{"sort-by" => column} = event, socket) do
-    {:noreply,
-     if click_or_enter_key?(event) do
-       active_rows =
-         apply_filter_sort(
-           socket.assigns.selected,
-           get_active_original(socket.assigns),
-           socket.assigns.query,
-           column,
-           socket.assigns.sort_order
-         )
-
-       assign(socket, sort_by: column, active_rows: active_rows)
-     else
-       socket
-     end}
+    filter_by(
+      socket,
+      ResourceType.get_id_by_type("objective"),
+      :by_objective,
+      table_model
+    )
   end
 
   def handle_event("generate_analytics_snapshot", _params, socket) do
@@ -328,6 +317,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
     end
   end
 
+  def handle_event(event, params, socket) do
+    delegate_to(
+      {event, params, socket, &patch_with/2},
+      [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
+    )
+  end
+
   @impl Phoenix.LiveView
   def handle_info({:option_selected, "section_selected", selected_ids}, socket) do
     socket =
@@ -338,8 +334,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
         is_product: false
       )
 
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
+    change_section_ids(socket, selected_ids)
   end
 
   def handle_info({:option_selected, "product_selected", selected_ids}, socket) do
@@ -351,8 +346,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
         is_product: true
       )
 
-    filter_type(socket.assigns.selected)
-    {:noreply, socket}
+    section_ids =
+      Enum.reduce(selected_ids, MapSet.new(), fn id, all ->
+        Map.get(socket.assigns.sections_by_product_id, id)
+        |> MapSet.new()
+        |> MapSet.union(all)
+      end)
+      |> Enum.to_list()
+
+    change_section_ids(socket, section_ids)
   end
 
   def handle_info(
@@ -382,190 +384,129 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
     {:noreply, assign(socket, analytics_export_status: status)}
   end
 
-  def handle_info(:init_by_page, socket) do
-    by_page_rows =
-      get_rows_by(socket, :by_page)
+  # Runs a query to find all sections for this project which have a
+  # product associated with them. (blueprint_id)
+  defp get_sections_by_product_id(project_id) do
+    query =
+      from s in Section,
+        where:
+          s.base_project_id == ^project_id and not is_nil(s.blueprint_id) and
+            s.type == :enrollable,
+        select: {s.id, s.blueprint_id}
 
-    active_rows =
-      apply_filter_sort(
-        :by_page,
-        by_page_rows,
-        socket.assigns.query,
-        socket.assigns.sort_by,
-        socket.assigns.sort_order
-      )
-
-    {:noreply, assign(socket, by_page_rows: by_page_rows, active_rows: active_rows)}
-  end
-
-  def handle_info(:init_by_objective, socket) do
-    by_objective_rows =
-      get_rows_by(socket, :by_objective)
-      |> arrange_rows_into_objective_hierarchy()
-
-    active_rows =
-      apply_filter_sort(
-        :by_objective,
-        by_objective_rows,
-        socket.assigns.query,
-        socket.assigns.sort_by,
-        socket.assigns.sort_order
-      )
-
-    {:noreply, assign(socket, by_objective_rows: by_objective_rows, active_rows: active_rows)}
-  end
-
-  def handle_info(:init_by_activity, socket) do
-    by_activity_rows =
-      get_rows_by(socket, :by_activity)
-
-    active_rows =
-      apply_filter_sort(
-        :by_activity,
-        by_activity_rows,
-        socket.assigns.query,
-        socket.assigns.sort_by,
-        socket.assigns.sort_order
-      )
-
-    {:noreply, assign(socket, by_activity_rows: by_activity_rows, active_rows: active_rows)}
-  end
-
-  defp parent_pages(resource_ids, project_slug) do
-    publication = Publishing.project_working_publication(project_slug)
-    Publishing.determine_parent_pages(resource_ids, publication.id)
-  end
-
-  defp arrange_rows_into_objective_hierarchy(rows) do
-    by_id = Enum.reduce(rows, %{}, fn r, m -> Map.put(m, r.slice.resource_id, r) end)
-
-    parents =
-      Enum.reduce(rows, %{}, fn r, m ->
-        Enum.reduce(r.slice.children, m, fn id, m -> Map.put(m, id, r.slice.resource_id) end)
-      end)
-
-    Enum.filter(rows, fn r -> !Map.has_key?(parents, r.slice.resource_id) end)
-    |> Enum.map(fn parent ->
-      child_rows =
-        Enum.map(parent.slice.children, fn c -> Map.get(by_id, c) |> Map.put(:is_child, true) end)
-
-      Map.put(parent, :child_rows, child_rows)
+    Repo.all(query)
+    |> Enum.reduce(%{}, fn {id, blueprint_id}, m ->
+      case Map.get(m, blueprint_id) do
+        nil -> Map.put(m, blueprint_id, [id])
+        ids -> Map.put(m, blueprint_id, [id | ids])
+      end
     end)
   end
 
-  defp get_active_original(assigns) do
-    case assigns.selected do
-      :by_page -> assigns.by_page_rows
-      :by_activity -> assigns.by_activity_rows
-      _ -> assigns.by_objective_rows
+  defp determine_total(items) do
+    case items do
+      [] -> 0
+      [hd | _] -> hd.total_count
     end
+  end
+
+  defp parent_pages(project_slug) do
+    publication = Publishing.project_working_publication(project_slug)
+    Publishing.determine_parent_pages(publication.id)
   end
 
   defp is_loading?(assigns) do
     is_nil(assigns.active_rows)
   end
 
-  defp apply_filter_sort(:by_objective, rows, query, sort_by, sort_order) do
-    filter(rows, query)
-    |> sort(sort_by, sort_order)
-    |> Enum.reduce([], fn p, all ->
-      p.child_rows ++ [p] ++ all
-    end)
-    |> Enum.reverse()
+  def patch_with(socket, changes) do
+    # convert param keys from atoms to strings
+    changes = Enum.into(changes, %{}, fn {k, v} -> {Atom.to_string(k), v} end)
+    # convert atom values to string values
+    changes =
+      Enum.into(changes, %{}, fn {k, v} ->
+        case v do
+          atom when is_atom(atom) -> {k, Atom.to_string(v)}
+          _ -> {k, v}
+        end
+      end)
+
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
+
+    options = Map.put(socket.assigns.options, :text_search, Map.get(changes, "text_search", ""))
+    offset = get_param(changes, "offset", 0)
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
+
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
+
+    {:noreply,
+     assign(socket,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count,
+       options: options
+     )}
   end
 
-  defp apply_filter_sort(_, rows, query, sort_by, sort_order) do
-    filter(rows, query)
-    |> sort(sort_by, sort_order)
+  defp filter_by(socket, resource_type_id, by_type, table_model) do
+    options = %BrowseInsightsOptions{
+      project_id: socket.assigns.options.project_id,
+      resource_type_id: resource_type_id,
+      section_ids: socket.assigns.options.section_ids
+    }
+
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
+
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
+
+    {:noreply,
+     assign(socket,
+       offset: 0,
+       table_model: table_model,
+       total_count: total_count,
+       options: options,
+       selected: by_type
+     )}
   end
 
-  defp filter(rows, query) do
-    rows |> Enum.filter(&String.match?(&1.slice.title, ~r/#{String.trim(query)}/i))
-  end
+  defp change_section_ids(socket, section_ids) do
+    options = %BrowseInsightsOptions{socket.assigns.options | section_ids: section_ids}
+    table_model = socket.assigns.table_model
 
-  defp get_rows_by(socket, :by_activity) do
-    if socket.assigns.is_product do
-      section_by_product_ids =
-        DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
+    insights =
+      BrowseInsights.browse_insights(
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        options
+      )
 
-      ByActivity.query_against_project_slug(
-        socket.assigns.project.slug,
-        section_by_product_ids
-      )
-    else
-      ByActivity.query_against_project_slug(
-        socket.assigns.project.slug,
-        socket.assigns.section_ids
-      )
-    end
-  end
+    table_model = Map.put(table_model, :rows, insights)
+    total_count = determine_total(insights)
 
-  defp get_rows_by(socket, :by_objective) do
-    if socket.assigns.is_product do
-      section_by_product_ids =
-        DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
-
-      ByObjective.query_against_project_slug(
-        socket.assigns.project.slug,
-        section_by_product_ids
-      )
-    else
-      ByObjective.query_against_project_slug(
-        socket.assigns.project.slug,
-        socket.assigns.section_ids
-      )
-    end
-  end
-
-  defp get_rows_by(socket, :by_page) do
-    if socket.assigns.is_product do
-      section_by_product_ids =
-        DeliveryResolver.get_sections_for_products(socket.assigns.product_ids)
-
-      ByPage.query_against_project_slug(
-        socket.assigns.project.slug,
-        section_by_product_ids
-      )
-    else
-      ByPage.query_against_project_slug(
-        socket.assigns.project.slug,
-        socket.assigns.section_ids
-      )
-    end
+    {:noreply,
+     assign(socket,
+       offset: 0,
+       table_model: table_model,
+       total_count: total_count,
+       options: options
+     )}
   end
 
   defp generate_uuid do
     UUID.uuid4()
-  end
-
-  defp filter_type(selected) do
-    case selected do
-      :by_page ->
-        send(self(), :init_by_page)
-
-      :by_activity ->
-        send(self(), :init_by_activity)
-
-      :by_objective ->
-        send(self(), :init_by_objective)
-    end
-  end
-
-  defp click_or_enter_key?(event) do
-    event["key"] == nil or event["key"] == "Enter"
-  end
-
-  defp sort(rows, "title", :asc), do: rows |> Enum.sort(&(&1.slice.title > &2.slice.title))
-  defp sort(rows, "title", :desc), do: rows |> Enum.sort(&(&1.slice.title <= &2.slice.title))
-
-  defp sort(rows, sort_by, :asc) do
-    sort_by_as_atom = String.to_existing_atom(sort_by)
-    Enum.sort(rows, &(&1[sort_by_as_atom] > &2[sort_by_as_atom]))
-  end
-
-  defp sort(rows, sort_by, :desc) do
-    sort_by_as_atom = String.to_existing_atom(sort_by)
-    Enum.sort(rows, &(&1[sort_by_as_atom] <= &2[sort_by_as_atom]))
   end
 
   defp is_disabled(selected, title) do
@@ -573,12 +514,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
       do: [disabled: true],
       else: []
   end
-
-  def truncate(float_or_nil) when is_nil(float_or_nil), do: nil
-  def truncate(float_or_nil) when is_float(float_or_nil), do: Float.round(float_or_nil, 2)
-
-  def format_percent(float_or_nil) when is_nil(float_or_nil), do: nil
-
-  def format_percent(float_or_nil) when is_float(float_or_nil),
-    do: "#{round(100 * float_or_nil)}%"
 end
