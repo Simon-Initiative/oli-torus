@@ -1,7 +1,6 @@
 defmodule OliWeb.Grades.GradeSync do
   use OliWeb, :html
 
-  attr(:task_queue, :list)
   attr(:total_jobs, :list)
   attr(:failed_jobs, :list)
   attr(:succeeded_jobs, :list)
@@ -9,11 +8,16 @@ defmodule OliWeb.Grades.GradeSync do
   attr(:selected_page, :map)
 
   def render(assigns) do
+    %{total_jobs: total_jobs, failed_jobs: failed_jobs, succeeded_jobs: succeeded_jobs} = assigns
+
+    started_sync? = Enum.all?([total_jobs, failed_jobs, succeeded_jobs], &(!is_nil(&1)))
+    completed_sync? = started_sync? and total_jobs == failed_jobs + succeeded_jobs
+
     assigns =
       assign(
         assigns,
         :disabled,
-        if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
+        if (started_sync? and not completed_sync?) or assigns.selected_page == nil do
           [disabled: true]
         else
           []

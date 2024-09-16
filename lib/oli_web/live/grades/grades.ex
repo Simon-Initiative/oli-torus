@@ -112,7 +112,6 @@ defmodule OliWeb.Grades.GradesLive do
       </div>
       <div class="my-2">
         <GradeSync.render
-          task_queue={@task_queue}
           total_jobs={@total_jobs}
           failed_jobs={@failed_jobs}
           succeeded_jobs={@succeeded_jobs}
@@ -297,7 +296,14 @@ defmodule OliWeb.Grades.GradesLive do
 
   def handle_event("select_page", %{"resource_id" => resource_id}, socket) do
     {resource_id, _} = Integer.parse(resource_id)
-    {:noreply, assign(socket, selected_page: resource_id)}
+
+    {:noreply,
+     assign(socket,
+       selected_page: resource_id,
+       total_jobs: nil,
+       failed_jobs: nil,
+       succeeded_jobs: nil
+     )}
   end
 
   def handle_event("test_connection", _, socket) do
