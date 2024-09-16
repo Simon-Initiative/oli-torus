@@ -330,7 +330,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           </.menu_item>
 
           <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
-            <div class="overflow-hidden text-ellipsis" role="linked authoring account email"><%= linked_author_account_email %></div>
+            <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
+              <%= linked_author_account_email %>
+            </div>
           </.menu_item_link>
       <% end %>
 
