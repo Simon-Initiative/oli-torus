@@ -281,13 +281,13 @@ defmodule Oli.Delivery.Sections.Updates do
   # Rebuild the numberin the hierarchy, and issue a bulk update to set those
   # new values in the section resource records
   defp renumber_hierarchy(section) do
-
     {hierarchy, _} =
       MinimalHierarchy.full_hierarchy(section.slug)
       |> Numbering.renumber_hierarchy()
 
-    section_resource_rows = collapse_section_hierarchy(hierarchy, section.id, [])
-    |> Enum.filter(fn sr -> sr.numbering_level != 0 end)
+    section_resource_rows =
+      collapse_section_hierarchy(hierarchy, section.id, [])
+      |> Enum.filter(fn sr -> sr.numbering_level != 0 end)
 
     {values, params, _} =
       Enum.reduce(section_resource_rows, {[], [], 0}, fn sr, {values, params, i} ->
@@ -313,7 +313,6 @@ defmodule Oli.Delivery.Sections.Updates do
     """
 
     Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
-
   end
 
   defp collapse_section_hierarchy(
@@ -339,7 +338,6 @@ defmodule Oli.Delivery.Sections.Updates do
 
     [section_resource | section_resources]
   end
-
 
   defp cull_unreachable_pages(section) do
     section_id = section.id
