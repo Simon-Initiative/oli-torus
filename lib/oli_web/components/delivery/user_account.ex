@@ -154,10 +154,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
             />
           <% {%SessionContext{user: %User{guest: true}}, _} -> %>
             <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-
           <% {%SessionContext{user: %User{}}, _} -> %>
             <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-
           <% {%SessionContext{author: %Author{}}, _} -> %>
             <.author_menu_items
               id={"#{@id}-menu-items-admin"}
@@ -323,16 +321,16 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <%= if can_manage_linked_account?(@user) do %>
       <%= case linked_author_account(@user) do %>
         <% nil -> %>
-            <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
-              Link authoring account
-            </.menu_item_link>
+          <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
+            Link authoring account
+          </.menu_item_link>
         <% linked_author_account_email -> %>
           <.menu_item>
             <.menu_item_label>Linked Authoring Account</.menu_item_label>
           </.menu_item>
 
-          <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} class="mt-2">
-            <div class="overflow-hidden text-ellipsis"><%= linked_author_account_email %></div>
+          <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
+            <div class="overflow-hidden text-ellipsis" role="linked authoring account email"><%= linked_author_account_email %></div>
           </.menu_item_link>
       <% end %>
 
@@ -342,7 +340,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   defp can_manage_linked_account?(user) do
-    Sections.is_independent_instructor?(user) || Sections.is_institution_instructor?(user) || Sections.is_institution_admin?(user)
+    Sections.is_independent_instructor?(user) || Sections.is_institution_instructor?(user) ||
+      Sections.is_institution_admin?(user)
   end
 
   attr(:user, User, required: true)
@@ -425,7 +424,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   defp menu_item_label(assigns) do
     ~H"""
-    <div class="text-gray-500 dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px] uppercase"><%= render_slot(@inner_block) %></div>
+    <div class="text-gray-500 dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px] uppercase">
+      <%= render_slot(@inner_block) %>
+    </div>
     """
   end
 

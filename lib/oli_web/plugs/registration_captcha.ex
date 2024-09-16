@@ -70,19 +70,4 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     |> OliWeb.DeliveryController.render_user_register_form(changeset)
     |> halt()
   end
-
-  defp render_captcha_error(conn, :create_and_link_account) do
-    conn =
-      conn
-      |> OliWeb.Pow.PowHelpers.use_pow_config(:author)
-
-    changeset = Pow.Plug.change_user(conn, conn.params["user"])
-    changeset = Ecto.Changeset.add_error(changeset, :captcha, "failed, please try again")
-
-    conn
-    |> OliWeb.DeliveryController.render_create_and_link_form(
-      changeset: %{changeset | action: :insert}
-    )
-    |> halt()
-  end
 end

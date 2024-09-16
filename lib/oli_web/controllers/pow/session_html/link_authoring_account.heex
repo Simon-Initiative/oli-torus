@@ -36,12 +36,27 @@
       </div>
     </div>
 
-    <.button type="submit" variant={:primary} class="w-full inline-block text-center">Link Account</.button>
+    <.button type="submit" variant={:primary} class="w-full inline-block text-center">
+      Link Account
+    </.button>
     <%= if @linked_account do %>
-      <.button variant={:tertiary} type="submit" name="action" value="unlink" class="w-full inline-block text-center mt-2">Unlink <%= @linked_account%></.button>
+      <.button
+        variant={:tertiary}
+        type="submit"
+        name="action"
+        value="unlink"
+        class="w-full inline-block text-center mt-2"
+      >
+        Unlink <%= @linked_account %>
+      </.button>
     <% end %>
 
-    <.button variant={:secondary} href={value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index))}  class="w-full inline-block text-center mt-2">Cancel</.button>
-
+    <.button
+      variant={:secondary}
+      href={value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index))}
+      class="w-full inline-block text-center mt-2"
+    >
+      Cancel
+    </.button>
   <% end %>
 <% end %>

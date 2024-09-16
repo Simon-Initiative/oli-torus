@@ -93,7 +93,7 @@ defmodule OliWeb.DeliveryController do
             )
 
           if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
-            render_research_consent(conn, ~p"/sections/#{section.slug}")
+            render_research_consent(conn, institution, ~p"/sections/#{section.slug}")
           else
             redirect_to_page_delivery(conn, section)
           end
@@ -109,7 +109,7 @@ defmodule OliWeb.DeliveryController do
     render(conn, "getting_started.html")
   end
 
-  defp render_research_consent(conn, redirect_url) do
+  defp render_research_consent(conn, institution, redirect_url) do
     case conn.assigns.current_user do
       nil ->
         conn
@@ -133,9 +133,6 @@ defmodule OliWeb.DeliveryController do
 
       # LTI users
       user ->
-        # check institution research consent setting
-        institution = Institutions.get_institution_by_lti_user(user)
-
         case institution do
           %Institution{research_consent: :oli_form} ->
             conn
@@ -181,9 +178,11 @@ defmodule OliWeb.DeliveryController do
           ~p"/course"
       end
 
+    institution = Institutions.get_institution_by_lti_user(user)
+
     conn
     |> assign(:research_opt_out, user.research_opt_out)
-    |> render_research_consent(redirect_url)
+    |> render_research_consent(institution, redirect_url)
   end
 
   def research_consent(conn, %{"consent" => consent, "redirect_url" => redirect_url}) do
@@ -232,8 +231,11 @@ defmodule OliWeb.DeliveryController do
     |> assign(:action, action)
     |> assign(:linked_account, linked_account_email)
     # link_account_provider_path assign required for proper provider link generation
-    |> assign(:link_account_provider_path, &Routes.authoring_delivery_path(conn, :process_link_account_provider, &1))
-    |> assign(:cancel_path, Routes.delivery_path(conn, :index))
+    |> assign(
+      :link_account_provider_path,
+      &Routes.authoring_delivery_path(conn, :process_link_account_provider, &1)
+    )
+    |> assign(:cancel_path, cancel_path)
     |> put_view(OliWeb.Pow.SessionHTML)
     |> Phoenix.Controller.render("link_authoring_account.html")
   end
@@ -309,10 +311,11 @@ defmodule OliWeb.DeliveryController do
         case Accounts.link_user_author_account(current_user, current_author) do
           {:ok, _user} ->
             conn
-            |> put_flash(:info, "Account is now linked to authoring account #{current_author.email}")
-            |> redirect(
-              to: Routes.delivery_path(conn, :index)
+            |> put_flash(
+              :info,
+              "Account is now linked to authoring account #{current_author.email}"
             )
+            |> redirect(to: Routes.delivery_path(conn, :index))
 
           _ ->
             conn
@@ -320,9 +323,7 @@ defmodule OliWeb.DeliveryController do
               :error,
               "Failed to link authoring account #{current_author.email}"
             )
-            |> redirect(
-              to: Routes.delivery_path(conn, :index)
-            )
+            |> redirect(to: Routes.delivery_path(conn, :index))
         end
 
       {:error, conn} ->

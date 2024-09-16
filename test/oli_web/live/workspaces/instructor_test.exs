@@ -84,19 +84,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
       refute has_element?(view, "div[role='account label']")
     end
 
-    test "sees linked account email on user menu", %{conn: conn, user: user} do
-      author = insert(:author)
-      Accounts.link_user_author_account(user, author)
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-
-      assert has_element?(
-               view,
-               "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
-               author.email
-             )
-    end
-
     test "can see product title, image and description in sections index with a link to manage it on instructor workspace",
          %{
            conn: conn,
@@ -450,6 +437,19 @@ defmodule OliWeb.Workspaces.InstructorTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, "div[role='account label']", "Instructor")
+    end
+
+    test "sees linked account email on user menu", %{conn: conn, instructor: instructor} do
+      author = insert(:author)
+      Accounts.link_user_author_account(instructor, author)
+
+      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
+
+      assert has_element?(
+               view,
+               "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
+               author.email
+             )
     end
 
     test "can signout from instructor account and return to instructor workspace (and author account stays signed in)",

@@ -1,6 +1,5 @@
 defmodule Oli.Plugs.MaybeLoadLtiParams do
   import Plug.Conn
-  import Phoenix.Controller
 
   alias OliWeb.Common.LtiSession
   alias Oli.Lti.LtiParams

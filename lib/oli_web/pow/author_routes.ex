@@ -88,7 +88,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
 
   @impl true
   def path_for(
-        %Plug.Conn{assigns: %{link_account_provider_path: link_account_provider_path}} = conn,
+        %Plug.Conn{assigns: %{link_account_provider_path: link_account_provider_path}},
         PowAssent.Phoenix.AuthorizationController,
         :new,
         [provider],
@@ -98,7 +98,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
   end
 
   def path_for(
-        %Plug.Conn{assigns: %{link_account_provider_path: link_account_provider_path}} = conn,
+        %Plug.Conn{assigns: %{link_account_provider_path: link_account_provider_path}},
         PowAssent.Phoenix.AuthorizationController,
         :create,
         [provider],
