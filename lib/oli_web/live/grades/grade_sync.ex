@@ -40,11 +40,13 @@ defmodule OliWeb.Grades.GradeSync do
           were manually adjusted or overridden by the instructor.") %>
         </div>
 
+        <form id="grade_sync_form" />
         <select
           phx-change="select_page"
           id="assignment_grade_sync_select"
           name="resource_id"
           class="custom-select custom-select-lg mb-2"
+          form="grade_sync_form"
         >
           <%= for page <- @graded_pages do %>
             <option value={page.resource_id} selected={@selected_page == page.resource_id}>
