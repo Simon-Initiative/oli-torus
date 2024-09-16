@@ -19,7 +19,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   .`{:ok, [%Revision{}]}` when the resources are retrieved
   .`{:error, {:not_found}}` if the project is not found
   """
-  @spec list(String.t(), any(), Integer.t()) ::
+  @spec list(String.t(), any(), integer()) ::
           {:ok, [%Revision{}]} | {:error, {:not_found}}
   def list(project_slug, author, resource_type_id) do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),

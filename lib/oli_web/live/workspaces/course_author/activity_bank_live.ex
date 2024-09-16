@@ -6,8 +6,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
   alias OliWeb.Common.React
   alias OliWeb.Router.Helpers, as: Routes
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns

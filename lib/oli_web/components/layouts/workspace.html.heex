@@ -29,6 +29,8 @@
     resource_title={assigns[:resource_title]}
     resource_slug={assigns[:resource_slug]}
     active_tab={assigns[:active_tab]}
+    url_params={assigns[:url_params] || %{}}
+    uri={assigns[:uri] || ""}
   />
   <Components.Delivery.Layouts.header
     :if={@disable_sidebar?}
@@ -50,19 +52,41 @@
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >
-    <div class="absolute z-50 top-0 p-2">
+    <div class="absolute z-50 top-0 overview" style="width: inherit">
       <%= if Phoenix.Flash.get(@flash, :info) do %>
-        <div>
-          <p class="alert alert-info" role="alert">
+        <div class="alert alert-info flex flex-row" role="alert">
+          <div class="flex-1">
             <%= Phoenix.Flash.get(@flash, :info) %>
-          </p>
+          </div>
+
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+            phx-click="lv:clear-flash"
+            phx-value-key="info"
+          >
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
         </div>
       <% end %>
       <%= if Phoenix.Flash.get(@flash, :error) do %>
-        <div>
-          <p class="alert alert-danger" role="alert">
+        <div class="alert alert-danger flex flex-row" role="alert">
+          <div class="flex-1">
             <%= Phoenix.Flash.get(@flash, :error) %>
-          </p>
+          </div>
+
+          <button
+            type="button"
+            class="close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+            phx-click="lv:clear-flash"
+            phx-value-key="danger"
+          >
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
         </div>
       <% end %>
     </div>

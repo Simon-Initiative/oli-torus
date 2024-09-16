@@ -1175,7 +1175,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                ~s{button[role="page 4 details"] div[role="due date and score"]},
-               "Due: Fri Nov 3, 2023"
+               "Read by: Fri Nov 3, 2023"
              )
     end
 
@@ -1231,7 +1231,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                ~s{button[role="page 4 details"] div[role="due date and score"]},
-               "Due: Fri Nov 3, 2023"
+               "Read by: Fri Nov 3, 2023"
              )
 
       # and correct score summary
