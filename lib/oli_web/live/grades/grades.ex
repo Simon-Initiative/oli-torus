@@ -191,7 +191,7 @@ defmodule OliWeb.Grades.GradesLive do
     provider.fetch_access_token(registration, Grading.ags_scopes(), host())
   end
 
-  defp fetch_students(_access_token, section) do
+  defp fetch_students(section, _access_token \\ nil) do
     # Query the db to find all enrolled students
     students = Sections.fetch_students(section.slug)
 
@@ -344,53 +344,46 @@ defmodule OliWeb.Grades.GradesLive do
 
   def handle_event("send_grades", _, socket) do
     section = socket.assigns.section
-    registration = socket.assigns.registration
 
     page =
       Enum.find(socket.assigns.graded_pages, fn p ->
         p.resource_id == socket.assigns.selected_page
       end)
 
-    case access_token_provider(registration) do
-      {:ok, access_token} ->
-        # Obtain a MapSet of enrolled student ids in this course section
-        user_ids =
-          fetch_students(access_token, section)
-          |> Enum.map(fn u -> u.id end)
-          |> MapSet.new()
+    # Obtain a MapSet of enrolled student ids in this course section
+    user_ids =
+      fetch_students(section)
+      |> Enum.map(fn u -> u.id end)
+      |> MapSet.new()
 
-        # Spawn grade update workers for every student that has a finalized
-        # resource access in this section
-        total_jobs =
-          Attempts.get_resource_access_for_page(section.slug, page.resource_id)
-          |> Enum.filter(fn ra -> MapSet.member?(user_ids, ra.user_id) end)
-          |> Enum.filter(fn ra -> !is_nil(ra.score) end)
-          |> Enum.filter(fn ra ->
-            case Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
-                   section.id,
-                   ra.id,
-                   :manual_batch
-                 ) do
-              {:ok, job} ->
-                Broadcaster.subscribe_to_lms_grade_update(
-                  socket.assigns.section.id,
-                  ra.id,
-                  job.id
-                )
+    # Spawn grade update workers for every student that has a finalized
+    # resource access in this section
+    total_jobs =
+      Attempts.get_resource_access_for_page(section.slug, page.resource_id)
+      |> Enum.filter(fn ra -> MapSet.member?(user_ids, ra.user_id) end)
+      |> Enum.filter(fn ra -> !is_nil(ra.score) end)
+      |> Enum.filter(fn ra ->
+        case Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
+               section.id,
+               ra.id,
+               :manual_batch
+             ) do
+          {:ok, job} ->
+            Broadcaster.subscribe_to_lms_grade_update(
+              socket.assigns.section.id,
+              ra.id,
+              job.id
+            )
 
-                true
+            true
 
-              _ ->
-                false
-            end
-          end)
-          |> Enum.count()
+          _ ->
+            false
+        end
+      end)
+      |> Enum.count()
 
-        {:noreply, assign(socket, total_jobs: total_jobs, failed_jobs: 0, succeeded_jobs: 0)}
-
-      {:error, e} ->
-        {:noreply, put_flash(socket, :error, e)}
-    end
+    {:noreply, assign(socket, total_jobs: total_jobs, failed_jobs: 0, succeeded_jobs: 0)}
   end
 
   defp fetch_line_items(registration, line_items_url) do
