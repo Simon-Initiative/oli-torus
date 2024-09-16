@@ -150,8 +150,8 @@ export const transformSchemaToModel = (schema: any) => {
       useHtmlProps: true,
       backgroundColor: palette.backgroundColor || 'transparent',
       borderColor: palette.borderColor || 'transparent',
-      borderRadius: parseNumString(palette.borderRadius) || 0,
-      borderWidth: parseNumString(palette.borderWidth) || 0,
+      borderRadius: parseNumString(palette?.borderRadius) || 0,
+      borderWidth: parseNumString(palette?.borderWidth) || 0,
       borderStyle: palette.borderStyle || 'none',
     };
   }
