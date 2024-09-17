@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
     schedule =
       if has_scheduled_resources?,
-        do: Sections.get_ordered_schedule(section, combined_settings, current_user_id),
+        do: Sections.get_ordered_schedule(section, current_user_id, combined_settings),
         else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id) |> Map.values() |> hd()
 
     current_datetime = DateTime.utc_now()

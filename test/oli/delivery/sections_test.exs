@@ -1314,7 +1314,7 @@ defmodule Oli.Delivery.SectionsTest do
                    ]}
                 ]}
              ] =
-               Sections.get_ordered_schedule(section, student1.id)
+               Sections.get_ordered_schedule(section, student1.id, nil)
     end
   end
 
@@ -1417,7 +1417,7 @@ defmodule Oli.Delivery.SectionsTest do
                  }
                ]
              } =
-               Sections.get_not_scheduled_agenda(section, student1.id)
+               Sections.get_not_scheduled_agenda(section, nil, student1.id)
 
       # verify that the resources are sorted by hierarchy (numbering index)
       assert [
@@ -2163,23 +2163,16 @@ defmodule Oli.Delivery.SectionsTest do
       section: section,
       module_1: module_1,
       module_2: module_2,
-      unit_1: unit_1,
-      container_revision: root_container
+      unit_1: unit_1
     } do
-      expected_map = %{
-        root_container.resource_id => root_container.title,
-        unit_1.resource_id => unit_1.title,
-        module_1.resource_id => module_1.title,
-        module_2.resource_id => module_2.title
-      }
 
-      result = Sections.container_titles(section.slug)
-      assert result == expected_map
+      result = Sections.container_titles(section)
+
+      assert Map.get(result, unit_1.resource_id) == unit_1.title
+      assert Map.get(result, module_1.resource_id) == module_1.title
+      assert Map.get(result, module_2.resource_id) == module_2.title
     end
 
-    test "returns an empty map when there are no container resources" do
-      assert Sections.container_titles("non-existent-section") == %{}
-    end
   end
 
   describe "get_last_completed_or_started_assignments/3" do

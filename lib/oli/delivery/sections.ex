@@ -1809,7 +1809,12 @@ defmodule Oli.Delivery.Sections do
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, version \\ :v1)
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v1) do
-    container_titles = container_titles(section.slug)
+    container_titles = container_titles(section)
+
+    combined_settings_for_all_resources = case combined_settings_for_all_resources do
+      nil -> Oli.Delivery.Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+      _ -> combined_settings_for_all_resources
+    end
 
     containers_data_map =
       get_ordered_container_labels(section.slug, short_label: true)
@@ -1900,6 +1905,11 @@ defmodule Oli.Delivery.Sections do
      raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
 
+     combined_settings_for_all_resources = case combined_settings_for_all_resources do
+      nil -> Oli.Delivery.Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+      _ -> combined_settings_for_all_resources
+    end
+
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
       # filter out unscheduled resources
@@ -1953,6 +1963,11 @@ defmodule Oli.Delivery.Sections do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    combined_settings_for_all_resources = case combined_settings_for_all_resources do
+      nil -> Oli.Delivery.Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+      _ -> combined_settings_for_all_resources
+    end
 
     sorted_container_groups =
       Scheduling.retrieve(section, :pages)
@@ -4537,9 +4552,13 @@ defmodule Oli.Delivery.Sections do
   """
 
   def get_resource_ids_group_by_resource_type(section) do
-    PreviousNextIndex.get(section)
+    result = PreviousNextIndex.get(section)
     |> Map.values()
-    |> Enum.group_by(fn item -> item["type"] end, fn item -> item["id"] end)
+    |> Enum.group_by(fn item -> item["type"] end, fn item -> item["id"] |> String.to_integer() end)
+
+    # Ensure each key is present in the result
+    Map.put(result, "container", result["container"] || [])
+    |> Map.put("page", result["page"] || [])
   end
 
   @doc """
@@ -5203,7 +5222,7 @@ defmodule Oli.Delivery.Sections do
     PreviousNextIndex.get(section)
     |> Map.values()
     |> Enum.filter(fn item -> item["type"] == "container" end)
-    |> Enum.map(fn item -> {item["id"], item["title"]} end)
+    |> Enum.map(fn item -> {item["id"] |> String.to_integer(), item["title"]} end)
     |> Enum.into(%{})
   end
 
