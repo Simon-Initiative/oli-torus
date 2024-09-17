@@ -207,7 +207,8 @@ defmodule Oli.Accounts do
       iex> get_independent_user_by(email: "student2@example.com")
       nil
   """
-  def get_independent_user_by(clauses), do: Repo.get_by(User, Enum.into([independent_learner: true], clauses))
+  def get_independent_user_by(clauses),
+    do: Repo.get_by(User, Enum.into([independent_learner: true], clauses))
 
   @doc """
   Gets a single user with platform roles and author preloaded
