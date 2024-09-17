@@ -6,12 +6,17 @@ import { isDefined } from 'utils/common';
 
 interface Props {
   shouldShow?: boolean;
+  showExplanation?: boolean;
   attemptState: ActivityState;
   context: WriterContext;
   partOrder?: string[];
 }
 
-export function renderPartFeedback(partState: PartState, context: WriterContext) {
+export function renderPartFeedback(
+  partState: PartState,
+  context: WriterContext,
+  showExplanation: boolean,
+) {
   if (!partState.score && !partState.outOf) {
     return null;
   }
@@ -38,7 +43,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
           direction={feedbackDirection}
         />
       </Component>
-      {explanation && resultCl !== 'correct' && (
+      {showExplanation && explanation && resultCl !== 'correct' && (
         <Component
           key={`${partState.partId}-explanation`}
           resultClass="explanation"
@@ -64,6 +69,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
 
 export const Evaluation: React.FC<Props> = ({
   shouldShow = true,
+  showExplanation = true,
   attemptState,
   context,
   partOrder,
@@ -74,7 +80,7 @@ export const Evaluation: React.FC<Props> = ({
   }
 
   if (parts.length === 1) {
-    return renderPartFeedback(parts[0], context);
+    return renderPartFeedback(parts[0], context, showExplanation);
   }
 
   // part order for migrated multi-inputs may be random, so allow caller to specify appropriate one
@@ -84,7 +90,9 @@ export const Evaluation: React.FC<Props> = ({
     if (newOrder.length === parts.length) orderedParts = newOrder;
   }
 
-  return <>{orderedParts.map((partState) => renderPartFeedback(partState, context))}</>;
+  return (
+    <>{orderedParts.map((partState) => renderPartFeedback(partState, context, showExplanation))}</>
+  );
 };
 
 interface ComponentProps {
