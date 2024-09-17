@@ -27,7 +27,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     grouped_agenda_resources =
       if has_scheduled_resources?,
-        do: Sections.get_schedule_for_current_and_next_week(section, combined_settings, current_user_id),
+        do:
+          Sections.get_schedule_for_current_and_next_week(
+            section,
+            combined_settings,
+            current_user_id
+          ),
         else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
 
     nearest_upcoming_lesson =
@@ -54,7 +59,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section, page_ids)
-
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Appsignal.instrument("IndexLive: last_open_and_unfinished_page", fn ->

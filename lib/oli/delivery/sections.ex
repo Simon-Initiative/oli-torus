@@ -1806,7 +1806,12 @@ defmodule Oli.Delivery.Sections do
   This function is being used for the v1 and v2 versions of the schedule.
   In the short term when all views use the v2 version, the version param will be removed and v2 will prevale.
   """
-  def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, version \\ :v1)
+  def get_ordered_schedule(
+        section,
+        current_user_id,
+        combined_settings_for_all_resources,
+        version \\ :v1
+      )
 
   def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v1) do
     container_titles = container_titles(section.slug)
@@ -1949,7 +1954,11 @@ defmodule Oli.Delivery.Sections do
   and we need to respect the same expected output format as get_ordered_schedule/3.
   """
 
-  def get_not_scheduled_agenda(%Section{analytics_version: :v1} = section, combined_settings_for_all_resources, current_user_id) do
+  def get_not_scheduled_agenda(
+        %Section{analytics_version: :v1} = section,
+        combined_settings_for_all_resources,
+        current_user_id
+      ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
@@ -1981,7 +1990,11 @@ defmodule Oli.Delivery.Sections do
     %{{nil, nil} => sorted_container_groups}
   end
 
-  def get_not_scheduled_agenda(%Section{analytics_version: :v2} = section, combined_settings_for_all_resources, current_user_id) do
+  def get_not_scheduled_agenda(
+        %Section{analytics_version: :v2} = section,
+        combined_settings_for_all_resources,
+        current_user_id
+      ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
      raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
@@ -2014,7 +2027,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
-
     container_titles = container_titles(section)
 
     containers_data_map =
@@ -2056,8 +2068,7 @@ defmodule Oli.Delivery.Sections do
       Metrics.get_all_user_resource_attempt_counts(section, current_user_id)
 
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts,
-     last_attempt_per_page_id}
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id}
   end
 
   defp group_and_sort_by_month_and_year(section_resources) do

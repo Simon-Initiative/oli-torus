@@ -127,7 +127,9 @@ defmodule Oli.Delivery.PreviousNextIndex do
       nil ->
         {:ok, section} = rebuild(section)
         section.previous_next_index
-      index -> index
+
+      index ->
+        index
     end
   end
 

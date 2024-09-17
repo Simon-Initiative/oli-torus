@@ -22,7 +22,10 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
     schedule =
       if has_scheduled_resources?,
         do: Sections.get_ordered_schedule(section, combined_settings, current_user_id),
-        else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id) |> Map.values() |> hd()
+        else:
+          Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
+          |> Map.values()
+          |> hd()
 
     current_datetime = DateTime.utc_now()
     current_week = Utils.week_number(section.start_date, current_datetime)
