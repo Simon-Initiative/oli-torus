@@ -173,14 +173,37 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign(socket, scripts_loaded: true)}
   end
 
-  def handle_event("select_question", %{"id" => selected_id}, socket) do
+  def handle_event("select_question", %{"question_number" => question_number}, socket) do
     questions =
       socket.assigns.questions
-      |> Enum.into(%{}, fn {id, question} ->
-        {id, Map.put(question, :selected, id == selected_id)}
+      |> Enum.map(fn question ->
+        Map.put(question, :selected, question.number == question_number)
       end)
 
     {:noreply, assign(socket, questions: questions)}
+  end
+
+  def handle_event("activity_saved", params, socket) do
+    {:noreply, update_activity(socket, params)}
+  end
+
+  def handle_event("submit_selected_question", _params, socket) do
+    current_selected_question = Enum.find(socket.assigns.questions, & &1.selected)
+
+    activity_attempt =
+      Oli.Repo.get_by(Oli.Delivery.Attempts.Core.ActivityAttempt,
+        attempt_guid: current_selected_question.state["attemptGuid"]
+      )
+      |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
+
+    Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
+      activity_attempt,
+      socket.assigns.datashop_session_id
+    )
+
+    ## TODO update UI to show question feedback
+
+    {:noreply, socket}
   end
 
   def handle_event(
@@ -820,15 +843,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           />
           <div id="one_at_a_time_questions" class="relative h-[500px]">
             <%!--  render this as a component on MER-3640 --%>
-            <% question_number =
-              Enum.find(@questions, {1, nil}, fn {_, q} -> q.selected end) |> elem(0) %>
+
+            <% selected_question = Enum.find(@questions, & &1.selected) %>
             <% total_questions = Enum.count(@questions) %>
             <% question_points = Enum.random(5..10) %>
             <div class="absolute w-screen flex flex-col items-center -left-[50vw]">
               <div role="questions header" class="w-[1170px] pl-[189px]">
                 <div class="flex w-full justify-between">
                   <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
-                    Question <%= question_number %> / <%= total_questions %> • <%= question_points %> points
+                    Question <%= selected_question.number %> / <%= total_questions %> • <%= question_points %> points
                   </div>
                   <button class="flex items-center gap-2">
                     <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
@@ -855,59 +878,69 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     phx-update="ignore"
                     class="flex h-[400px] border-b border-[#c8c8c8]"
                   >
-                    <div
-                      :for={{index, question} <- @questions}
-                      id={"question_#{index}"}
-                      role="one at a time question"
-                      class={[
-                        "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
-                        if(!question.selected, do: "hidden")
-                      ]}
-                    >
-                      <%= raw(question.raw_content) %>
-                    </div>
-                    <div
-                      role="score summary"
-                      class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
-                    >
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 1:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
+                    <div id="react_to_liveview" phx-hook="ReactToLiveView">
+                      <div
+                        :for={question <- @questions}
+                        id={"question_#{question.number}"}
+                        role="one at a time question"
+                        class={[
+                          "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
+                          if(!question.selected, do: "hidden")
+                        ]}
+                      >
+                        <%= raw(question.raw_content) %>
                       </div>
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 2:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
-                      </div>
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 3:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
+                      <div
+                        role="score summary"
+                        class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
+                      >
                         <div>
                           <span class="text-[#757682]">
-                            Part 4:
+                            Part 1:
                           </span>
                           <span class="text-[#353740]">
                             2 points
                           </span>
+                        </div>
+                        <div>
+                          <span class="text-[#757682]">
+                            Part 2:
+                          </span>
+                          <span class="text-[#353740]">
+                            2 points
+                          </span>
+                        </div>
+                        <div>
+                          <span class="text-[#757682]">
+                            Part 3:
+                          </span>
+                          <span class="text-[#353740]">
+                            2 points
+                          </span>
+                          <div>
+                            <span class="text-[#757682]">
+                              Part 4:
+                            </span>
+                            <span class="text-[#353740]">
+                              2 points
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div class="flex justify-center w-full h-[84px] items-center">
                     <button
-                      disabled
-                      class="h-[30px] px-5 py-2.5 bg-[#9d9d9d] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-base font-semibold font-['Open Sans'] leading-normal whitespace-nowrap"
+                      :if={!selected_question.submitted}
+                      phx-click="submit_selected_question"
+                      disabled={!selected_question.answered}
+                      class={[
+                        "h-[30px] px-5 py-2.5 rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-base text-white font-['Open Sans'] leading-normal whitespace-nowrap",
+                        if(selected_question.answered,
+                          do: "bg-[#0062f2] font-semibold",
+                          else: "bg-[#9d9d9d] font-semibold "
+                        )
+                      ]}
                     >
                       Submit Response
                     </button>
@@ -920,11 +953,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 class="w-[1170px] pl-[189px] mb-32 py-8 flex justify-between"
               >
                 <button
-                  phx-click={JS.dispatch("click", to: "#question_#{question_number - 1}_button")}
-                  disabled={question_number == 1}
+                  phx-click={
+                    JS.dispatch("click", to: "#question_#{selected_question.number - 1}_button")
+                  }
+                  disabled={selected_question.number == 1}
                   class={[
                     "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
-                    if(question_number == 1, do: "!text-[#757682]")
+                    if(selected_question.number == 1, do: "!text-[#757682]")
                   ]}
                 >
                   <svg
@@ -945,11 +980,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                   <span>Previous Question</span>
                 </button>
                 <button
-                  phx-click={JS.dispatch("click", to: "#question_#{question_number + 1}_button")}
-                  disabled={question_number == total_questions}
+                  phx-click={
+                    JS.dispatch("click", to: "#question_#{selected_question.number + 1}_button")
+                  }
+                  disabled={selected_question.number == total_questions}
                   class={[
                     "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
-                    if(question_number == total_questions, do: "!text-[#757682]")
+                    if(selected_question.number == total_questions, do: "!text-[#757682]")
                   ]}
                 >
                   <span>Next Question</span>
@@ -1043,10 +1080,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <div id="questions_menu" class="w-[157px] h-[468px] ml-0 my-2 overflow-y-scroll flex flex-col">
       <button
-        :for={{id, question} <- @questions}
-        id={"question_#{id}_button"}
-        phx-click={select_question(id)}
-        phx-value-id={id}
+        :for={question <- @questions}
+        id={"question_#{question.number}_button"}
+        phx-click={select_question(question.number)}
+        disabled={question.selected}
+        phx-value-id={question.number}
         class={[
           "flex items-center gap-[18px] h-[33px] pl-[16.5px]",
           if(question.selected, do: "!bg-[#0f6bf5]/5")
@@ -1061,18 +1099,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           "text-[#353740] text-base font-normal font-['Open Sans'] leading-normal",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
-          Question <%= id %>
+          Question <%= question.number %>
         </span>
       </button>
     </div>
     """
   end
 
-  defp select_question(js \\ %JS{}, id) do
+  defp select_question(js \\ %JS{}, question_number) do
     js
-    |> JS.push("select_question", value: %{id: id})
+    |> JS.push("select_question", value: %{question_number: question_number})
     |> JS.hide(to: "div[role='one at a time question']")
-    |> JS.show(to: "#question_#{id}")
+    |> JS.show(to: "#question_#{question_number}")
   end
 
   def countdown(assigns) do
@@ -1457,16 +1495,86 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     questions =
       socket.assigns.html
       |> List.flatten()
-      |> Enum.reduce({1, %{}}, fn element, {index, map} ->
+      |> Enum.reduce({1, []}, fn element, {index, activities} ->
         if String.contains?(element, "activity-container") do
-          {index + 1, Map.put(map, index, %{raw_content: element, selected: index == 1})}
+          state =
+            element
+            |> Floki.parse_fragment!()
+            |> Floki.attribute("state")
+            |> hd()
+            |> Jason.decode!()
+
+          context =
+            element
+            |> Floki.parse_fragment!()
+            |> Floki.attribute("context")
+            |> hd()
+            |> Jason.decode!()
+
+          {index + 1,
+           [
+             %{
+               number: index,
+               raw_content: element,
+               selected: index == 1,
+               state: state,
+               context: context,
+               answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
+               submitted:
+                 !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end)
+             }
+             | activities
+           ]}
         else
-          {index, map}
+          {index, activities}
         end
       end)
       |> elem(1)
+      |> Enum.reverse()
 
     assign(socket, questions: questions)
+  end
+
+  defp update_activity(socket, params) do
+    %{
+      "activityAttemptGuid" => activity_attempt_guid,
+      "partInputs" => [
+        %{
+          "attemptGuid" => part_attempt_guid
+        } = activity_part
+      ]
+    } = params
+
+    updated_questions =
+      Enum.map(socket.assigns.questions, fn
+        %{state: %{"attemptGuid" => attempt_guid}} = question
+        when attempt_guid == activity_attempt_guid ->
+          updated_parts =
+            Enum.map(question.state["parts"], fn
+              %{"attemptGuid" => attempt_guid} = part
+              when attempt_guid == part_attempt_guid ->
+                Map.merge(part, activity_part)
+
+              part ->
+                part
+            end)
+
+          update_in(question, [:state, "parts"], fn _ -> updated_parts end)
+          |> update_answered_status()
+
+        question ->
+          question
+      end)
+
+    assign(socket, questions: updated_questions)
+  end
+
+  defp update_answered_status(question) do
+    %{
+      question
+      | answered:
+          !Enum.any?(question.state["parts"], fn part -> part["response"] in ["", nil] end)
+    }
   end
 
   defp to_epoch(nil), do: nil
