@@ -200,6 +200,16 @@ defmodule Oli.Accounts do
   def get_user_by(clauses), do: Repo.get_by(User, clauses)
 
   @doc """
+  Gets a single independent user by query parameter
+  ## Examples
+      iex> get_independent_user_by(email: "student1@example.com")
+      %User{independent_learner: true, ...}
+      iex> get_independent_user_by(email: "student2@example.com")
+      nil
+  """
+  def get_independent_user_by(clauses), do: Repo.get_by(User, Enum.into([independent_learner: true], clauses))
+
+  @doc """
   Gets a single user with platform roles and author preloaded
   Returns `nil` if the User does not exist.
   ## Examples

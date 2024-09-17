@@ -61,7 +61,7 @@ defmodule OliWeb.Pow.UserContext do
   """
   @impl true
   def create(params) do
-    case Accounts.get_user_by(%{email: params["email"]}) do
+    case Accounts.get_independent_user_by(%{email: params["email"]}) do
       %User{email: email} = user ->
         if user.email_confirmed_at,
           do:
@@ -70,8 +70,8 @@ defmodule OliWeb.Pow.UserContext do
               "Account already exists",
               "account_already_exists.html",
               %{
-                url: Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
-                forgot_password:
+                login_url: Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
+                forgot_password_url:
                   Utils.ensure_absolute_url(
                     Routes.pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
                   )
