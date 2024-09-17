@@ -944,6 +944,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     >
                       Submit Response
                     </button>
+                    <div :if={selected_question.submitted} class="activity w-full p-2">
+                      <div class="activity-content">
+                        <%= OliWeb.Common.React.component(
+                          @ctx,
+                          "Components.Evaluation",
+                          %{
+                            attemptState: selected_question.state,
+                            context: selected_question.context
+                          },
+                          id: "activity_evaluation",
+                          container: [class: "flex flex-col w-full"]
+                        ) %>
+                      </div>
+                    </div>
                   </div>
                   <.references ctx={@ctx} bib_app_params={@bib_app_params} />
                 </div>
