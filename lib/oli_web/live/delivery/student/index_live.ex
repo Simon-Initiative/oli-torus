@@ -15,92 +15,99 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   @decorate transaction_event("IndexLive")
   def mount(_params, _session, socket) do
-    section = socket.assigns[:section]
-    current_user_id = socket.assigns[:current_user].id
 
-    combined_settings =
-      Appsignal.instrument("IndexLive: combined_settings", fn ->
-        Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
-      end)
+    if connected?(socket) do
 
-    has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
+      section = socket.assigns[:section]
+      current_user_id = socket.assigns[:current_user].id
 
-    grouped_agenda_resources =
-      if has_scheduled_resources?,
-        do: Sections.get_schedule_for_current_and_next_week(section, combined_settings, current_user_id),
-        else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
+      combined_settings =
+        Appsignal.instrument("IndexLive: combined_settings", fn ->
+          Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+        end)
 
-    nearest_upcoming_lesson =
-      Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
-        section
-        |> Sections.get_nearest_upcoming_lessons(current_user_id, 1,
-          ignore_schedule: !has_scheduled_resources?
-        )
-        |> List.first()
-      end)
+      has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
-    latest_assignments =
-      Appsignal.instrument("IndexLive: latest_assignments", fn ->
-        Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
-      end)
+      grouped_agenda_resources =
+        if has_scheduled_resources?,
+          do: Sections.get_schedule_for_current_and_next_week(section, combined_settings, current_user_id),
+          else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
 
-    upcoming_assignments =
-      Appsignal.instrument("IndexLive: upcoming_assignments", fn ->
-        Sections.get_nearest_upcoming_lessons(section, current_user_id, 3,
-          only_graded: true,
-          ignore_schedule: !has_scheduled_resources?
-        )
-      end)
+      nearest_upcoming_lesson =
+        Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
+          section
+          |> Sections.get_nearest_upcoming_lessons(current_user_id, 1,
+            ignore_schedule: !has_scheduled_resources?
+          )
+          |> List.first()
+        end)
 
-    page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
-    containers_per_page = build_containers_per_page(section, page_ids)
+      latest_assignments =
+        Appsignal.instrument("IndexLive: latest_assignments", fn ->
+          Sections.get_last_completed_or_started_assignments(section, current_user_id, 3)
+        end)
+
+      upcoming_assignments =
+        Appsignal.instrument("IndexLive: upcoming_assignments", fn ->
+          Sections.get_nearest_upcoming_lessons(section, current_user_id, 3,
+            only_graded: true,
+            ignore_schedule: !has_scheduled_resources?
+          )
+        end)
+
+      page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
+      containers_per_page = build_containers_per_page(section, page_ids)
 
 
-    [last_open_and_unfinished_page, nearest_upcoming_lesson] =
-      Appsignal.instrument("IndexLive: last_open_and_unfinished_page", fn ->
-        Enum.map(
-          [
-            Sections.get_last_open_and_unfinished_page(section, current_user_id),
-            nearest_upcoming_lesson
-          ],
-          fn
-            nil ->
-              nil
+      [last_open_and_unfinished_page, nearest_upcoming_lesson] =
+        Appsignal.instrument("IndexLive: last_open_and_unfinished_page", fn ->
+          Enum.map(
+            [
+              Sections.get_last_open_and_unfinished_page(section, current_user_id),
+              nearest_upcoming_lesson
+            ],
+            fn
+              nil ->
+                nil
 
-            page ->
-              page_module_index =
-                section
-                |> get_or_compute_full_hierarchy()
-                |> Hierarchy.find_module_ancestor(
-                  page[:resource_id],
-                  Oli.Resources.ResourceType.get_id_by_type("container")
-                )
-                |> get_in(["numbering", "index"])
+              page ->
+                page_module_index =
+                  section
+                  |> get_or_compute_full_hierarchy()
+                  |> Hierarchy.find_module_ancestor(
+                    page[:resource_id],
+                    Oli.Resources.ResourceType.get_id_by_type("container")
+                  )
+                  |> get_in(["numbering", "index"])
 
-              Map.put(page, :module_index, page_module_index)
-          end
-        )
-      end)
+                Map.put(page, :module_index, page_module_index)
+            end
+          )
+        end)
 
-    {:ok,
-     assign(socket,
-       active_tab: :index,
-       grouped_agenda_resources: grouped_agenda_resources,
-       section_slug: section.slug,
-       section_start_date: section.start_date,
-       historical_graded_attempt_summary: nil,
-       has_visited_section:
-         Sections.has_visited_section(section, socket.assigns[:current_user],
-           enrollment_state: false
-         ),
-       last_open_and_unfinished_page: last_open_and_unfinished_page,
-       nearest_upcoming_lesson: nearest_upcoming_lesson,
-       upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
-       latest_assignments: combine_settings(latest_assignments, combined_settings),
-       containers_per_page: containers_per_page,
-       section_progress: section_progress(section.id, current_user_id),
-       assignments_tab: :upcoming
-     )}
+      {:ok,
+      assign(socket,
+        active_tab: :index,
+        loaded: true,
+        grouped_agenda_resources: grouped_agenda_resources,
+        section_slug: section.slug,
+        section_start_date: section.start_date,
+        historical_graded_attempt_summary: nil,
+        has_visited_section:
+          Sections.has_visited_section(section, socket.assigns[:current_user],
+            enrollment_state: false
+          ),
+        last_open_and_unfinished_page: last_open_and_unfinished_page,
+        nearest_upcoming_lesson: nearest_upcoming_lesson,
+        upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
+        latest_assignments: combine_settings(latest_assignments, combined_settings),
+        containers_per_page: containers_per_page,
+        section_progress: section_progress(section.id, current_user_id),
+        assignments_tab: :upcoming
+      )}
+    else
+      {:ok, assign(socket, active_tab: :index, loaded: false)}
+    end
   end
 
   def handle_params(_params, _uri, socket) do
@@ -130,6 +137,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       :upcoming -> {:noreply, assign(socket, assignments_tab: :latest)}
       :latest -> {:noreply, assign(socket, assignments_tab: :upcoming)}
     end
+  end
+
+  def render(%{loaded: false} = assigns) do
+    ~H"""
+    <div></div>
+    """
   end
 
   def render(assigns) do
