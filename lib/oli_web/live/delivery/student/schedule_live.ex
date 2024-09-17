@@ -9,9 +9,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
 
   def mount(_params, _session, socket) do
-
     if connected?(socket) do
-
       section = socket.assigns[:section]
       current_user_id = socket.assigns[:current_user].id
 
@@ -25,7 +23,10 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       schedule =
         if has_scheduled_resources?,
           do: Sections.get_ordered_schedule(section, current_user_id, combined_settings),
-          else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id) |> Map.values() |> hd()
+          else:
+            Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
+            |> Map.values()
+            |> hd()
 
       current_datetime = DateTime.utc_now()
       current_week = Utils.week_number(section.start_date, current_datetime)
@@ -34,16 +35,16 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       async_scroll_to_current_week(self())
 
       {:ok,
-      assign(socket,
-        active_tab: :schedule,
-        loaded: true,
-        schedule: schedule,
-        section_slug: section.slug,
-        current_week: current_week,
-        current_month: current_month,
-        historical_graded_attempt_summary: nil,
-        has_scheduled_resources?: has_scheduled_resources?
-      )}
+       assign(socket,
+         active_tab: :schedule,
+         loaded: true,
+         schedule: schedule,
+         section_slug: section.slug,
+         current_week: current_week,
+         current_month: current_month,
+         historical_graded_attempt_summary: nil,
+         has_scheduled_resources?: has_scheduled_resources?
+       )}
     else
       {:ok, assign(socket, active_tab: :schedule, loaded: false)}
     end

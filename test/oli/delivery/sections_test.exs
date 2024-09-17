@@ -2165,14 +2165,12 @@ defmodule Oli.Delivery.SectionsTest do
       module_2: module_2,
       unit_1: unit_1
     } do
-
       result = Sections.container_titles(section)
 
       assert Map.get(result, unit_1.resource_id) == unit_1.title
       assert Map.get(result, module_1.resource_id) == module_1.title
       assert Map.get(result, module_2.resource_id) == module_2.title
     end
-
   end
 
   describe "get_last_completed_or_started_assignments/3" do

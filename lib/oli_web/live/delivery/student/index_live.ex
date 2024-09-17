@@ -15,9 +15,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   @decorate transaction_event("IndexLive")
   def mount(_params, _session, socket) do
-
     if connected?(socket) do
-
       section = socket.assigns[:section]
       current_user_id = socket.assigns[:current_user].id
 
@@ -30,7 +28,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       grouped_agenda_resources =
         if has_scheduled_resources?,
-          do: Sections.get_schedule_for_current_and_next_week(section, combined_settings, current_user_id),
+          do:
+            Sections.get_schedule_for_current_and_next_week(
+              section,
+              combined_settings,
+              current_user_id
+            ),
           else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
 
       nearest_upcoming_lesson =
@@ -85,25 +88,25 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         end)
 
       {:ok,
-      assign(socket,
-        active_tab: :index,
-        loaded: true,
-        grouped_agenda_resources: grouped_agenda_resources,
-        section_slug: section.slug,
-        section_start_date: section.start_date,
-        historical_graded_attempt_summary: nil,
-        has_visited_section:
-          Sections.has_visited_section(section, socket.assigns[:current_user],
-            enrollment_state: false
-          ),
-        last_open_and_unfinished_page: last_open_and_unfinished_page,
-        nearest_upcoming_lesson: nearest_upcoming_lesson,
-        upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
-        latest_assignments: combine_settings(latest_assignments, combined_settings),
-        containers_per_page: containers_per_page,
-        section_progress: section_progress(section.id, current_user_id),
-        assignments_tab: :upcoming
-      )}
+       assign(socket,
+         active_tab: :index,
+         loaded: true,
+         grouped_agenda_resources: grouped_agenda_resources,
+         section_slug: section.slug,
+         section_start_date: section.start_date,
+         historical_graded_attempt_summary: nil,
+         has_visited_section:
+           Sections.has_visited_section(section, socket.assigns[:current_user],
+             enrollment_state: false
+           ),
+         last_open_and_unfinished_page: last_open_and_unfinished_page,
+         nearest_upcoming_lesson: nearest_upcoming_lesson,
+         upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
+         latest_assignments: combine_settings(latest_assignments, combined_settings),
+         containers_per_page: containers_per_page,
+         section_progress: section_progress(section.id, current_user_id),
+         assignments_tab: :upcoming
+       )}
     else
       {:ok, assign(socket, active_tab: :index, loaded: false)}
     end
