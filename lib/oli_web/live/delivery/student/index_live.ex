@@ -17,12 +17,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
+
+    combined_settings =
+      Appsignal.instrument("IndexLive: combined_settings", fn ->
+        Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+      end)
+
     has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
     grouped_agenda_resources =
       if has_scheduled_resources?,
-        do: Sections.get_schedule_for_current_and_next_week(section, current_user_id),
-        else: Sections.get_not_scheduled_agenda(section, current_user_id)
+        do: Sections.get_schedule_for_current_and_next_week(section, combined_settings, current_user_id),
+        else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
 
     nearest_upcoming_lesson =
       Appsignal.instrument("IndexLive: nearest_upcoming_lesson", fn ->
@@ -49,10 +55,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     page_ids = Enum.map(upcoming_assignments ++ latest_assignments, & &1.resource_id)
     containers_per_page = build_containers_per_page(section, page_ids)
 
-    combined_settings =
-      Appsignal.instrument("IndexLive: combined_settings", fn ->
-        Settings.get_combined_settings_for_all_resources(section.id, current_user_id, page_ids)
-      end)
 
     [last_open_and_unfinished_page, nearest_upcoming_lesson] =
       Appsignal.instrument("IndexLive: last_open_and_unfinished_page", fn ->

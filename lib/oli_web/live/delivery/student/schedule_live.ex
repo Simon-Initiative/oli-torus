@@ -5,19 +5,24 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
   alias OliWeb.Components.Delivery.{Schedule, Utils}
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.{Attempts, Settings}
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
 
   def mount(_params, _session, socket) do
     section = socket.assigns[:section]
     current_user_id = socket.assigns[:current_user].id
 
+    combined_settings =
+      Appsignal.instrument("ScheduleLive: combined_settings", fn ->
+        Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+      end)
+
     has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
     schedule =
       if has_scheduled_resources?,
-        do: Sections.get_ordered_schedule(section, current_user_id),
-        else: Sections.get_not_scheduled_agenda(section, current_user_id) |> Map.values() |> hd()
+        do: Sections.get_ordered_schedule(section, combined_settings, current_user_id),
+        else: Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id) |> Map.values() |> hd()
 
     current_datetime = DateTime.utc_now()
     current_week = Utils.week_number(section.start_date, current_datetime)

@@ -2236,7 +2236,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     visited_pages_map = Sections.get_visited_pages(section.id, current_user_id)
 
     %{"container" => container_ids, "page" => page_ids} =
-      Sections.get_resource_ids_group_by_resource_type(section.slug)
+      Sections.get_resource_ids_group_by_resource_type(section)
 
     progress_per_container_id =
       Metrics.progress_across(section.id, container_ids, current_user_id)
