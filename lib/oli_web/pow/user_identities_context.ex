@@ -12,7 +12,7 @@ defmodule OliWeb.Pow.UserIdentities do
         %{"email" => email, "email_verified" => true} = user_params,
         user_id_params
       ) do
-    case Accounts.get_independent_user_by(email: email, independent_learner: true) do
+    case Accounts.get_independent_user_by(email: email) do
       nil ->
         # user account with the given email doesnt exist, so create it
         pow_assent_create_user(user_identity_params, user_params, user_id_params)
