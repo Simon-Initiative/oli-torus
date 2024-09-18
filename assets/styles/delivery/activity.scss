@@ -2,6 +2,10 @@
   margin-top: 1em;
   margin-bottom: 4em;
 
+  .input-error {
+    border-color: red !important; /* Override any other border color */
+  }
+
   .activity-content {
     display: flex;
     flex-direction: column;
