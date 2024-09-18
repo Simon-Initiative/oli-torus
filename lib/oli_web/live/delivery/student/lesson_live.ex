@@ -850,13 +850,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="one_at_a_time_questions" class="relative h-[500px]">
+          <div id="one_at_a_time_questions" class="relative min-h-[500px]">
             <%!--  render this as a component on MER-3640 --%>
 
             <% selected_question = Enum.find(@questions, & &1.selected) %>
             <% total_questions = Enum.count(@questions) %>
             <% question_points = Enum.random(5..10) %>
-            <div class="absolute w-screen flex flex-col items-center -left-[50vw]">
+            <div class="w-screen flex flex-col items-center">
               <div role="questions header" class="w-[1170px] pl-[189px]">
                 <div class="flex w-full justify-between">
                   <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
@@ -880,14 +880,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 <.questions_menu questions={@questions} />
                 <div
                   role="questions content"
-                  class="content h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
+                  class="content min-h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
                 >
                   <div
-                    id="eventIntercept"
-                    phx-update="ignore"
+                    id="react_to_liveview"
+                    phx-hook="ReactToLiveView"
                     class="flex h-[400px] border-b border-[#c8c8c8]"
                   >
-                    <div id="react_to_liveview" phx-hook="ReactToLiveView">
+                    <div id="eventIntercept" phx-update="ignore">
                       <div
                         :for={question <- @questions}
                         id={"question_#{question.number}"}
@@ -899,46 +899,46 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                       >
                         <%= raw(question.raw_content) %>
                       </div>
-                      <div
-                        role="score summary"
-                        class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
-                      >
+                    </div>
+                    <div
+                      role="score summary"
+                      class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
+                    >
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 1:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 2:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
+                      </div>
+                      <div>
+                        <span class="text-[#757682]">
+                          Part 3:
+                        </span>
+                        <span class="text-[#353740]">
+                          2 points
+                        </span>
                         <div>
                           <span class="text-[#757682]">
-                            Part 1:
+                            Part 4:
                           </span>
                           <span class="text-[#353740]">
                             2 points
                           </span>
-                        </div>
-                        <div>
-                          <span class="text-[#757682]">
-                            Part 2:
-                          </span>
-                          <span class="text-[#353740]">
-                            2 points
-                          </span>
-                        </div>
-                        <div>
-                          <span class="text-[#757682]">
-                            Part 3:
-                          </span>
-                          <span class="text-[#353740]">
-                            2 points
-                          </span>
-                          <div>
-                            <span class="text-[#757682]">
-                              Part 4:
-                            </span>
-                            <span class="text-[#353740]">
-                              2 points
-                            </span>
-                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="flex justify-center w-full h-[84px] items-center">
+                  <div class="flex justify-center w-full min-h-[84px] items-center">
                     <button
                       :if={!selected_question.submitted}
                       phx-click="submit_selected_question"
