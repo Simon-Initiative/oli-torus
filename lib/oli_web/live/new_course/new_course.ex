@@ -588,6 +588,6 @@ defmodule OliWeb.Delivery.NewCourse do
   defp validate_course_dates(changeset) do
     {_, start_date} = Ecto.Changeset.fetch_field(changeset, :start_date)
     {_, end_date} = Ecto.Changeset.fetch_field(changeset, :end_date)
-    Date.diff(start_date, end_date) < 0
+    DateTime.compare(start_date, end_date) == :lt
   end
 end
