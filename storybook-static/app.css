@@ -4026,10 +4026,6 @@ table.table-striped tbody tr:nth-child(even) {
   right: -13px;
 }
 
-.-right-\[9px\] {
-  right: -9px;
-}
-
 .-top-1 {
   top: -0.25rem;
 }
@@ -4178,6 +4174,10 @@ table.table-striped tbody tr:nth-child(even) {
   right: -15px;
 }
 
+.right-\[0px\] {
+  right: 0px;
+}
+
 .right-\[1px\] {
   right: 1px;
 }
@@ -4258,8 +4258,8 @@ table.table-striped tbody tr:nth-child(even) {
   top: 50px;
 }
 
-.top-\[51px\] {
-  top: 51px;
+.top-\[55px\] {
+  top: 55px;
 }
 
 .top-\[60px\] {
@@ -4774,6 +4774,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mt-1 {
   margin-top: 0.25rem;
+}
+
+.mt-10 {
+  margin-top: 2.5rem;
 }
 
 .mt-11 {
@@ -5537,10 +5541,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 18px;
 }
 
-.w-\[190px\] {
-  width: 190px;
-}
-
 .w-\[2\.60px\] {
   width: 2.60px;
 }
@@ -5551,10 +5551,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[20px\] {
   width: 20px;
-}
-
-.w-\[220px\] {
-  width: 220px;
 }
 
 .w-\[22px\] {
@@ -5575,6 +5571,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[27px\] {
   width: 27px;
+}
+
+.w-\[280px\] {
+  width: 280px;
 }
 
 .w-\[288px\] {
@@ -7869,10 +7869,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .p-8 {
   padding: 2rem;
-}
-
-.p-\[10px\] {
-  padding: 10px;
 }
 
 .p-\[25px\] {
@@ -13374,6 +13370,10 @@ https://tailwindcss.com/docs/utility-first
   --tw-bg-opacity: 0.4;
 }
 
+.hover\:stroke-black:hover {
+  stroke: #000;
+}
+
 .hover\:stroke-black\/90:hover {
   stroke: rgb(0 0 0 / 0.9);
 }
@@ -13495,6 +13495,11 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-high-24:hover {
   --tw-text-opacity: 1;
   color: rgb(238 235 245 / var(--tw-text-opacity));
+}
+
+.hover\:text-primary-700:hover {
+  --tw-text-opacity: 1;
+  color: rgb(29 68 129 / var(--tw-text-opacity));
 }
 
 .hover\:text-primary\/70:hover {
