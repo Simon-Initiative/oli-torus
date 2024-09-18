@@ -187,23 +187,32 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, update_activity(socket, params)}
   end
 
-  def handle_event("submit_selected_question", _params, socket) do
-    current_selected_question = Enum.find(socket.assigns.questions, & &1.selected)
+  def handle_event("submit_selected_question", %{"attempt_guid" => attempt_guid}, socket) do
+    ## evaluate the activity attempt
 
-    activity_attempt =
-      Oli.Repo.get_by(Oli.Delivery.Attempts.Core.ActivityAttempt,
-        attempt_guid: current_selected_question.state["attemptGuid"]
-      )
-      |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
-
-    Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
-      activity_attempt,
+    Oli.Repo.get_by(Oli.Delivery.Attempts.Core.ActivityAttempt,
+      attempt_guid: attempt_guid
+    )
+    |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
+    |> Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
       socket.assigns.datashop_session_id
     )
 
-    ## TODO update UI to show question feedback
+    ## and update it's state in the assigns (to render the feedback in the UI)
 
-    {:noreply, socket}
+    questions =
+      Enum.map(socket.assigns.questions, fn
+        %{selected: true} = selected_question ->
+          Map.merge(selected_question, %{
+            state: get_updated_state(attempt_guid),
+            submitted: true
+          })
+
+        not_selected_question ->
+          not_selected_question
+      end)
+
+    {:noreply, assign(socket, questions: questions)}
   end
 
   def handle_event(
@@ -933,6 +942,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     <button
                       :if={!selected_question.submitted}
                       phx-click="submit_selected_question"
+                      phx-value-attempt_guid={selected_question.state["attemptGuid"]}
                       disabled={!selected_question.answered}
                       class={[
                         "h-[30px] px-5 py-2.5 rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-base text-white font-['Open Sans'] leading-normal whitespace-nowrap",
@@ -951,9 +961,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                           "Components.Evaluation",
                           %{
                             attemptState: selected_question.state,
-                            context: selected_question.context
+                            context: selected_question.context,
+                            showExplanation: false
                           },
-                          id: "activity_evaluation",
+                          id: "activity_evaluation_for_question_#{selected_question.number}",
                           container: [class: "flex flex-col w-full"]
                         ) %>
                       </div>
@@ -1589,6 +1600,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       | answered:
           !Enum.any?(question.state["parts"], fn part -> part["response"] in ["", nil] end)
     }
+  end
+
+  defp get_updated_state(attempt_guid) do
+    {:ok, [attempt]} = Oli.Delivery.Attempts.Core.get_activity_attempts([attempt_guid])
+    model = Oli.Delivery.Attempts.Core.select_model(attempt)
+
+    {:ok, parsed_model} = Oli.Activities.Model.parse(model)
+
+    Oli.Activities.State.ActivityState.from_attempt(
+      attempt,
+      Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt.attempt_guid),
+      parsed_model,
+      nil,
+      nil
+    )
+    # string keys are expected...
+    |> Jason.encode!()
+    |> Jason.decode!()
   end
 
   defp to_epoch(nil), do: nil
