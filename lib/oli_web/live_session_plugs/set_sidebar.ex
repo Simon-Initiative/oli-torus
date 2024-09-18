@@ -6,6 +6,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1]
+  import Oli.Utils, only: [string_to_boolean: 1]
 
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration
@@ -24,11 +25,16 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
       socket =
         attach_hook(socket, :sidebar_hook, :handle_params, fn
           params, uri, socket ->
-            sidebar_expanded = Oli.Utils.string_to_boolean(params["sidebar_expanded"] || "true")
+            sidebar_expanded_from_assigns = socket.assigns.sidebar_expanded
+            sidebar_expanded_from_params = string_to_boolean(params["sidebar_expanded"] || "true")
 
-            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_expanded)
+            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_expanded_from_params)
 
-            {:cont, socket}
+            if sidebar_expanded_from_assigns != sidebar_expanded_from_params do
+              {:halt, socket}
+            else
+              {:cont, socket}
+            end
         end)
 
       {:cont, socket}

@@ -50,30 +50,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(params, _, socket) do
-    # If the sidebar was toggled, we don't need to update the table model
-    sidebar_was_toggled = Map.keys(socket.assigns.__changed__) == [:sidebar_expanded]
-
-    if sidebar_was_toggled do
-      {:noreply, socket}
-    else
-      table_model =
-        SortableTableModel.update_from_params(socket.assigns.table_model, params)
-
-      offset = Params.get_int_param(params, "offset", @initial_offset)
-      include_archived = Params.get_boolean_param(params, "include_archived", false)
-
-      products = get_products(socket.assigns)
-
-      table_model = Map.put(table_model, :rows, products)
-
-      {:noreply,
-       assign(socket,
-         offset: offset,
-         table_model: table_model,
-         include_archived: include_archived
-       )}
-    end
+  def handle_params(params, _uri, socket) do
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
+    table_model = Map.put(table_model, :rows, table_model.rows)
+    socket = assign(socket, table_model: table_model)
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
