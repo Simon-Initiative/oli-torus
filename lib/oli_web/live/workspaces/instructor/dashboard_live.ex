@@ -10,75 +10,68 @@ defmodule OliWeb.Workspaces.Instructor.DashboardLive do
        resource_slug: section.slug,
        resource_title: section.title,
        active_workspace: :instructor,
-       active_view: :students,
        active_tab: :course_content
      )}
   end
 
   @impl Phoenix.LiveView
-  def handle_params(
-        %{"view" => "overview", "active_tab" => "students"} = _params,
-        _uri,
-        socket
-      ) do
-    socket = assign(socket, active_view: :students, active_tab: :students)
+
+  def handle_params(%{"view" => "overview", "active_tab" => "course_content"}, _, socket) do
+    socket = assign(socket, active_view: :course_content)
     {:noreply, socket}
   end
 
-  def handle_params(%{"view" => "overview", "section_slug" => _section_slug} = _params, _, socket) do
-    socket = assign(socket, active_view: :course_content, active_tab: :course_content)
+  def handle_params(%{"view" => "overview", "active_tab" => "students"}, _, socket) do
+    socket = assign(socket, active_view: :students)
     {:noreply, socket}
   end
 
-  def handle_params(%{"view" => "insights", "active_tab" => "content"} = _params, _uri, socket) do
-    socket = assign(socket, active_view: :content, active_tab: :content)
+  def handle_params(%{"view" => "overview", "active_tab" => "quiz_scores"}, _, socket) do
+    socket = assign(socket, active_view: :quiz_scores)
     {:noreply, socket}
   end
 
-  def handle_params(
-        %{"view" => "insights", "active_tab" => "learning_objectives"} = _params,
-        _uri,
-        socket
-      ) do
-    socket = assign(socket, active_view: :learning_objectives, active_tab: :learning_objectives)
+  def handle_params(%{"view" => "overview", "active_tab" => "recommended_actions"}, _, socket) do
+    socket = assign(socket, active_view: :recommended_actions)
     {:noreply, socket}
   end
 
-  def handle_params(
-        %{"view" => "insights", "active_tab" => "scored_activities"} = _params,
-        _uri,
-        socket
-      ) do
-    socket = assign(socket, active_view: :scored_activities, active_tab: :scored_activities)
+  def handle_params(%{"view" => "insights", "active_tab" => "content"}, _, socket) do
+    socket = assign(socket, active_view: :content)
     {:noreply, socket}
   end
 
-  def handle_params(
-        %{"view" => "insights", "active_tab" => "practice_activities"} = _params,
-        _uri,
-        socket
-      ) do
-    socket = assign(socket, active_view: :practice_activities, active_tab: :practice_activities)
+  def handle_params(%{"view" => "insights", "active_tab" => "learning_objectives"}, _, socket) do
+    socket = assign(socket, active_view: :learning_objectives)
     {:noreply, socket}
   end
 
-  def handle_params(%{"view" => "insights", "active_tab" => "surveys"} = _params, _uri, socket) do
-    socket = assign(socket, active_view: :surveys, active_tab: :surveys)
+  def handle_params(%{"view" => "insights", "active_tab" => "scored_activities"}, _, socket) do
+    socket = assign(socket, active_view: :scored_activities)
+    {:noreply, socket}
+  end
+
+  def handle_params(%{"view" => "insights", "active_tab" => "practice_activities"}, _, socket) do
+    socket = assign(socket, active_view: :practice_activities)
+    {:noreply, socket}
+  end
+
+  def handle_params(%{"view" => "insights", "active_tab" => "surveys"}, _, socket) do
+    socket = assign(socket, active_view: :surveys)
     {:noreply, socket}
   end
 
   def handle_params(%{"view" => "manage"} = _params, _uri, socket) do
-    socket = assign(socket, active_view: :manage, active_tab: :manage)
+    socket = assign(socket, active_view: :manage)
     {:noreply, socket}
   end
 
   def handle_params(%{"view" => "activity"} = _params, _uri, socket) do
-    socket = assign(socket, active_view: :activity, active_tab: :activity)
+    socket = assign(socket, active_view: :activity)
     {:noreply, socket}
   end
 
-  def handle_params(_params, _url, socket) do
-    # socket = assign(socket, active_view: :students)
+  def handle_params(_params, _uri, socket) do
     {:noreply, socket}
   end
 
