@@ -492,7 +492,6 @@ defmodule OliWeb.Delivery.NewCourse do
           section
       end
       |> convert_dates(socket.assigns.ctx)
-      |> IO.inspect(label: "section after converting:")
 
     changeset =
       socket.assigns.changeset
