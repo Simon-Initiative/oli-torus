@@ -15,11 +15,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <h1 class="flex flex-col w-full h-screen items-center justify-center">

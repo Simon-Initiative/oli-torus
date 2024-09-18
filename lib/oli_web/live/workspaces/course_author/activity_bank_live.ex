@@ -33,11 +33,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
     <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/activitybank.js")}>
