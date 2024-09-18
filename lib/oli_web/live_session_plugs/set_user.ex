@@ -2,7 +2,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   import Phoenix.Component, only: [assign: 2]
   use Appsignal.Instrumentation.Decorators
   alias Oli.Accounts
-  alias Oli.Accounts.{User}
+  alias Oli.Accounts.{User, Author}
   alias Oli.AccountLookupCache
 
   @decorate transaction_event("SetUser")

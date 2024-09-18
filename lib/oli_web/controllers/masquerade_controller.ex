@@ -19,7 +19,7 @@ defmodule OliWeb.MasqueradeController do
     conn
     |> put_session(:masquerading_as, user.id)
     |> put_session(:current_user_id, user.id)
-    |> redirect(to: ~p"/sections")
+    |> redirect(to: ~p"/workspaces/student")
   end
 
   def unmasquerade(conn, _) do

@@ -220,7 +220,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                   type="submit"
                   class="rounded bg-transparent border border-white hover:bg-fuchsia-200 active:text-white active:bg-fuchsia-700 focus:ring-2 focus:ring-fuchsia-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-fuchsia-400 focus:outline-none dark:focus:ring-fuchsia-700 hover:no-underline"
                 >
-                  Exit
+                  Stop Acting as User
                 </.button>
               <% end %>
             </div>
