@@ -105,9 +105,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{
         "section" => %{
           class_days: [:monday, :friday],
-          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
-          preferred_scheduling_time: ~T[23:59:59]
+          start_date: "2024-09-10T18:19",
+          end_date: "2024-09-18T18:19",
+          preferred_scheduling_time: "23:59:59"
         },
         "current_step" => 3
       })
@@ -131,9 +131,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{
         "section" => %{
           class_days: [:monday, :friday],
-          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
-          preferred_scheduling_time: ~T[23:59:59]
+          start_date: "2024-09-10T18:19",
+          end_date: "2024-09-18T18:19",
+          preferred_scheduling_time: "23:59:59"
         },
         "current_step" => 3
       })
@@ -197,9 +197,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{
         "section" => %{
           class_days: [:monday, :friday],
-          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
-          preferred_scheduling_time: ~T[23:59:59]
+          start_date: "2024-09-10T18:19",
+          end_date: "2024-09-18T18:19",
+          preferred_scheduling_time: "23:59:59"
         },
         "current_step" => 3
       })
@@ -223,9 +223,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{
         "section" => %{
           class_days: [:monday, :friday],
-          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
-          preferred_scheduling_time: ~T[23:59:59]
+          start_date: "2024-09-10T18:19",
+          end_date: "2024-09-18T18:19",
+          preferred_scheduling_time: "23:59:59"
         },
         "current_step" => 3
       })
@@ -315,9 +315,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{
         "section" => %{
           class_days: [:monday, :friday],
-          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
-          preferred_scheduling_time: ~T[23:59:59]
+          start_date: "2024-09-10T18:19",
+          end_date: "2024-09-18T18:19",
+          preferred_scheduling_time: "23:59:59"
         },
         "current_step" => 3
       })
@@ -351,9 +351,9 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       |> render_hook("js_form_data_response", %{
         "section" => %{
           class_days: [:monday, :friday],
-          start_date: DateTime.add(DateTime.utc_now(), 2, :day),
-          end_date: DateTime.add(DateTime.utc_now(), 62, :day),
-          preferred_scheduling_time: ~T[23:59:59]
+          start_date: "2024-09-10T18:19",
+          end_date: "2024-09-18T18:19",
+          preferred_scheduling_time: "23:59:59"
         },
         "current_step" => 3
       })
