@@ -1,4 +1,4 @@
-// isValidNumber.test.js
+
 import { isValidNumber } from '../../src/utils/number';
 
 describe('isValidNumber', () => {

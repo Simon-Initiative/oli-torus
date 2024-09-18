@@ -16,7 +16,6 @@ interface Props {
 
 export const NumericInput: React.FC<Props> = (props) => {
   const numericInputRef = createRef<HTMLInputElement>();
-  const [uniqueId] = useState(Math.random().toString(36).substring(7));
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -29,8 +28,6 @@ export const NumericInput: React.FC<Props> = (props) => {
 
   return (
     <input
-      id={uniqueId}
-      key={uniqueId}
       ref={numericInputRef}
       placeholder={props.placeholder}
       type="text"
