@@ -207,14 +207,15 @@ defmodule OliWeb.Users.UsersDetailView do
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.independent_learner do %>
-            <Actions.render
+            <Actions.user_actions
               user={@user}
               csrf_token={@csrf_token}
               password_reset_link={@password_reset_link}
             />
           <% else %>
-            <div>No actions available</div>
-            <div class="text-secondary">LTI users are managed by their LMS</div>
+            <Actions.lti_user_actions
+              user={@user}
+            />
           <% end %>
         </Group.render>
       </Groups.render>
@@ -378,6 +379,10 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("start_edit", _, socket) do
     {:noreply, socket |> assign(disabled_edit: false)}
+  end
+
+  def handle_event("act_as_user", %{"id" => id}, socket) do
+    {:noreply, socket |> redirect(to: ~p"/admin/masquerade/#{id}")}
   end
 
   defp user_with_platform_roles(id) do

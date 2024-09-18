@@ -106,22 +106,22 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div>
       <nav id="desktop-nav-menu" class={["
-        transition-all
-        duration-100
-        fixed
-        z-50
-        w-full
-        hidden
-        h-[100vh]
-        md:flex
-        flex-col
-        justify-between
-        md:w-[200px]
-        shadow-sm
-        bg-delivery-navbar
-        dark:bg-delivery-navbar-dark
-        overflow-hidden
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
+          transition-all
+          duration-100
+          fixed
+          z-50
+          w-full
+          hidden
+          h-[100vh]
+          md:flex
+          flex-col
+          justify-between
+          md:w-[200px]
+          shadow-sm
+          bg-delivery-navbar
+          dark:bg-delivery-navbar-dark
+          overflow-hidden
+        ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
         <div class="w-full">
           <div
             class={[
@@ -164,17 +164,17 @@ defmodule OliWeb.Components.Delivery.Layouts do
       <nav
         id="mobile-nav-menu"
         class="
-        fixed
-        z-50
-        w-full
-        mt-14
-        hidden
-        md:hidden
-        flex-col
-        shadow-sm
-        bg-delivery-navbar
-        dark:bg-delivery-navbar-dark
-      "
+          fixed
+          z-50
+          w-full
+          mt-14
+          hidden
+          md:hidden
+          flex-col
+          shadow-sm
+          bg-delivery-navbar
+          dark:bg-delivery-navbar-dark
+        "
         phx-click-away={JS.hide()}
       >
         <.sidebar_links
@@ -198,6 +198,43 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </nav>
     </div>
     """
+  end
+
+  attr :ctx, SessionContext, required: true
+  slot :inner_block, required: true
+
+  def maybe_masquerading_as(assigns) do
+    if assigns[:ctx] && assigns[:ctx].masquerading_as do
+      ~H"""
+      <div class="fixed top-0 bottom-0 left-0 right-0 overflow-auto border-4 border-solid border-fuchsia-500">
+        <div class="bg-fuchsia-500 text-white px-6 py-2">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="text-white text-lg font-bold">
+                Acting as <%= OliWeb.Components.Delivery.Utils.user_name(@ctx.user) %>
+              </p>
+            </div>
+            <div>
+              <%= form_for %{}, ~p"/admin/unmasquerade", fn _f -> %>
+                <.button
+                  type="submit"
+                  class="rounded bg-transparent border border-white hover:bg-fuchsia-200 active:text-white active:bg-fuchsia-700 focus:ring-2 focus:ring-fuchsia-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-fuchsia-400 focus:outline-none dark:focus:ring-fuchsia-700 hover:no-underline"
+                >
+                  Exit
+                </.button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%= render_slot(@inner_block) %>
+      </div>
+      """
+    else
+      ~H"""
+      <%= render_slot(@inner_block) %>
+      """
+    end
   end
 
   attr(:section, Section, default: nil)
