@@ -6,6 +6,7 @@ describe('isValidNumber', () => {
     expect(isValidNumber('0')).toBe(true);
     expect(isValidNumber('3')).toBe(true);
     expect(isValidNumber('-3')).toBe(true);
+    expect(isValidNumber('+3')).toBe(true);
     expect(isValidNumber('123456')).toBe(true);
   });
 
@@ -14,6 +15,9 @@ describe('isValidNumber', () => {
     expect(isValidNumber('3.14')).toBe(true);
     expect(isValidNumber('-3.14')).toBe(true);
     expect(isValidNumber('123.456')).toBe(true);
+    expect(isValidNumber('.456')).toBe(true);
+    // not allowed in HTML standard but desired in significant figure contexts:
+    expect(isValidNumber('320.')).toBe(true);
   });
 
   test('should return true for valid scientific notation', () => {
@@ -33,6 +37,7 @@ describe('isValidNumber', () => {
     expect(isValidNumber('3e+')).toBe(false);
     expect(isValidNumber('e3')).toBe(false);
     expect(isValidNumber('3e3e4')).toBe(false);
+    expect(isValidNumber('.')).toBe(false);
   });
 
   // Edge cases
