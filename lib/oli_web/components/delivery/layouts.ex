@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Icons
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Workspace.Utils, as: WorkspaceUtils
+  alias OliWeb.Workspaces.Utils, as: WorkspaceUtils
 
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)

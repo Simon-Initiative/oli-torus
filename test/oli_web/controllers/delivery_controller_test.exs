@@ -107,7 +107,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> get(Routes.delivery_path(conn, :link_account))
 
-      assert html_response(conn, 200) =~ "Link Existing Account"
+      assert html_response(conn, 200) =~ "Link Authoring Account"
     end
   end
 
@@ -158,8 +158,8 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> post(Routes.delivery_path(conn, :process_link_account_user),
-          user: author_params
+        |> post(Routes.delivery_path(conn, :process_link_account),
+          link_account: author_params
         )
 
       assert html_response(conn, 200) =~
@@ -180,7 +180,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         conn
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> post(Routes.delivery_path(conn, :process_link_account_user), user: author_params)
+        |> post(Routes.delivery_path(conn, :process_link_account), link_account: author_params)
 
       assert html_response(conn, 302) =~ "redirect"
     end
@@ -189,8 +189,8 @@ defmodule OliWeb.DeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      enrolled_user = user_fixture()
-      other_user = user_fixture()
+      enrolled_user = user_fixture(%{independent_learner: false})
+      other_user = user_fixture(%{independent_learner: false})
 
       {:ok, _enrollment} =
         Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -213,8 +213,8 @@ defmodule OliWeb.DeliveryControllerTest do
       conn: conn,
       section: section
     } do
-      enrolled_user = user_fixture()
-      other_user = user_fixture()
+      enrolled_user = user_fixture(%{independent_learner: false})
+      other_user = user_fixture(%{independent_learner: false})
 
       {:ok, _enrollment} =
         Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -431,8 +431,8 @@ defmodule OliWeb.DeliveryControllerTest do
       conn: conn,
       oaf_section_1: section
     } do
-      enrolled_user = user_fixture()
-      other_user = user_fixture()
+      enrolled_user = user_fixture(%{independent_learner: false})
+      other_user = user_fixture(%{independent_learner: false})
 
       {:ok, _enrollment} =
         Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -772,12 +772,12 @@ defmodule OliWeb.DeliveryControllerTest do
     section_no_rc =
       insert(:section, institution: institution_no_rc, lti_1p3_deployment: deployment_no_rc)
 
-    user = user_fixture()
-    student = user_fixture()
-    student_no_section = user_fixture()
-    instructor = user_fixture()
-    instructor_no_section = user_fixture()
-    student_instructor_no_section = user_fixture()
+    user = user_fixture(%{independent_learner: false})
+    student = user_fixture(%{independent_learner: false})
+    student_no_section = user_fixture(%{independent_learner: false})
+    instructor = user_fixture(%{independent_learner: false})
+    instructor_no_section = user_fixture(%{independent_learner: false})
+    student_instructor_no_section = user_fixture(%{independent_learner: false})
 
     %{project: project, publication: publication} = project_fixture(author)
 

@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.AccountDetailsLive do
+defmodule OliWeb.Workspaces.AccountDetailsLive do
   use OliWeb, :live_view
 
   alias OliWeb.Router.Helpers, as: Routes

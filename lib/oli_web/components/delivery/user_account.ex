@@ -145,17 +145,23 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_icon ctx={@ctx} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <%= case assigns.ctx do %>
-          <% %SessionContext{author: %Author{}} -> %>
+        <%= case {assigns.ctx, @is_system_admin} do %>
+          <% {%SessionContext{author: %Author{}}, true} -> %>
             <.author_menu_items
               id={"#{@id}-menu-items-admin"}
               ctx={@ctx}
               is_system_admin={@is_system_admin}
             />
-          <% %SessionContext{user: %User{guest: true}} -> %>
+          <% {%SessionContext{user: %User{guest: true}}, _} -> %>
             <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% %SessionContext{user: %User{}} -> %>
+          <% {%SessionContext{user: %User{}}, _} -> %>
             <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+          <% {%SessionContext{author: %Author{}}, _} -> %>
+            <.author_menu_items
+              id={"#{@id}-menu-items-admin"}
+              ctx={@ctx}
+              is_system_admin={@is_system_admin}
+            />
           <% _ -> %>
         <% end %>
       </.dropdown_menu>
@@ -205,7 +211,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def user_menu_items(assigns) do
     ~H"""
-    <.menu_item_maybe_linked_account user={@ctx.user} />
     <.maybe_menu_item_edit_user_account user={@ctx.user} />
     <.maybe_my_courses_menu_item_link user={@ctx.user} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
@@ -213,6 +218,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
+    <.menu_item_maybe_linked_account user={@ctx.user} />
     <.menu_item_link
       href={
         Routes.session_path(OliWeb.Endpoint, :signout,
@@ -258,7 +264,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div
       id={@id}
       phx-click-away={JS.hide()}
-      class={"hidden absolute top-[51px] -right-[9px] z-50 p-[10px] whitespace-nowrap bg-gray-100 border-gray-300 w-[220px] dark:bg-[#0F0D0F] rounded-xl border dark:border-zinc-800 #{@class}"}
+      class={"hidden absolute top-[55px] right-[0px] z-50 py-2 px-4 whitespace-nowrap bg-white w-[280px] dark:bg-[#0F0D0F] rounded-xl shadow-xl #{@class}"}
     >
       <ul>
         <%= render_slot(@inner_block) %>
@@ -271,7 +277,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item(assigns) do
     ~H"""
-    <li class="block p-1">
+    <li class="block p-1 whitespace-normal">
       <%= render_slot(@inner_block) %>
     </li>
     """
@@ -279,8 +285,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_divider(assigns) do
     ~H"""
-    <li class="py-[4px]">
-      <div class="h-0 border border-t border-gray-200 dark:border-zinc-800"></div>
+    <li class="py-2">
+      <div class="h-0 border-t border-gray-200 dark:border-zinc-800"></div>
     </li>
     """
   end
@@ -294,14 +300,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     case assigns[:method] do
       nil ->
         ~H"""
-        <%= link to: @href, class: "w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-200 cursor-pointer", target: @target do %>
+        <%= link to: @href, class: "w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
 
       _method ->
         ~H"""
-        <%= link to: @href, method: @method, class: "w-[190px] text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
+        <%= link to: @href, method: @method, class: "w-full text-gray-800 hover:text-white dark:text-white text-sm font-normal font-['Roboto'] h-8 px-1.5 py-2 mt-[10px] m-[5px] rounded-md border border-rose-400 justify-center items-center gap-2.5 inline-flex cursor-pointer hover:no-underline hover:bg-red-300 hover:border-red-500 dark:hover:bg-[#33181A]", target: @target do %>
           <%= render_slot(@inner_block) %>
         <% end %>
         """
@@ -312,33 +318,32 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_maybe_linked_account(assigns) do
     ~H"""
-    <%= case linked_author_account(@user) do %>
-      <% nil -> %>
-        <%= if Sections.is_independent_instructor?(@user) do %>
+    <%= if can_manage_linked_account?(@user) do %>
+      <%= case linked_author_account(@user) do %>
+        <% nil -> %>
           <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
             Link authoring account
           </.menu_item_link>
+        <% linked_author_account_email -> %>
+          <.menu_item>
+            <.menu_item_label>Linked Authoring Account</.menu_item_label>
+          </.menu_item>
 
-          <.menu_divider />
-        <% end %>
-      <% linked_author_account_email -> %>
-        <.menu_item>
-          <div class="text-xs font-semibold mb-1">Linked Authoring Account:</div>
-          <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)} target="_blank">
-            <div class="flex flex-row justify-between items-center">
-              <div role="linked authoring account email"><%= linked_author_account_email %></div>
-              <div><i class="fas fa-external-link-alt ml-2"></i></div>
+          <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
+            <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
+              <%= linked_author_account_email %>
             </div>
-          </a>
-        </.menu_item>
+          </.menu_item_link>
+      <% end %>
 
-        <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
-          Link a different account
-        </.menu_item_link>
-
-        <.menu_divider />
+      <.menu_divider />
     <% end %>
     """
+  end
+
+  defp can_manage_linked_account?(user) do
+    Sections.is_independent_instructor?(user) || Sections.is_institution_instructor?(user) ||
+      Sections.is_institution_admin?(user)
   end
 
   attr(:user, User, required: true)
@@ -374,7 +379,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_edit_author_account(assigns) do
     ~H"""
-    <.menu_item_link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspace.AccountDetailsLive)}>
+    <.menu_item_link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.AccountDetailsLive)}>
       Edit Account
     </.menu_item_link>
 
@@ -388,7 +393,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def menu_item_dark_mode_selector(assigns) do
     ~H"""
     <.menu_item>
-      <div class="dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px]">THEME</div>
+      <.menu_item_label>Theme</.menu_item_label>
       <div>
         <%= React.component(
           @ctx,
@@ -409,11 +414,21 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def menu_item_timezone_selector(assigns) do
     ~H"""
     <.menu_item>
-      <div class="dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px]">TIMEZONE</div>
-      <div class="w-[190px]">
+      <.menu_item_label>Timezone</.menu_item_label>
+      <div class="w-full">
         <Timezone.select id={@id} ctx={@ctx} />
       </div>
     </.menu_item>
+    """
+  end
+
+  slot :inner_block, required: true
+
+  defp menu_item_label(assigns) do
+    ~H"""
+    <div class="text-gray-500 dark:text-gray-400 text-xs font-medium font-['Roboto'] mb-[10px] uppercase">
+      <%= render_slot(@inner_block) %>
+    </div>
     """
   end
 

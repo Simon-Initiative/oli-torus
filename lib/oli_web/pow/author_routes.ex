@@ -83,28 +83,28 @@ defmodule OliWeb.Pow.AuthorRoutes do
 
   @impl true
   def after_user_updated_path(conn) do
-    Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive)
+    Routes.live_path(conn, OliWeb.Workspaces.AccountDetailsLive)
   end
 
   @impl true
   def path_for(
-        %Plug.Conn{assigns: %{link_account: true}} = conn,
+        %Plug.Conn{assigns: %{link_account_provider_path: link_account_provider_path}},
         PowAssent.Phoenix.AuthorizationController,
         :new,
         [provider],
         _query_params
       ) do
-    Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
+    link_account_provider_path.(provider)
   end
 
   def path_for(
-        %Plug.Conn{assigns: %{link_account: true}} = conn,
+        %Plug.Conn{assigns: %{link_account_provider_path: link_account_provider_path}},
         PowAssent.Phoenix.AuthorizationController,
         :create,
         [provider],
         _query_params
       ) do
-    Routes.authoring_delivery_path(conn, :process_link_account_provider, provider)
+    link_account_provider_path.(provider)
   end
 
   def path_for(conn, PowInvitation.Phoenix.InvitationController, :update, [token], query_params) do

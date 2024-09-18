@@ -334,6 +334,20 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a user is a platform (institution) administrator.
+  """
+  def is_institution_admin?(%User{} = user) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:system_administrator),
+        PlatformRoles.get_role(:institution_administrator)
+      ],
+      :any
+    )
+  end
+
+  @doc """
   Enrolls a user or users in a course section
   ## Examples
       iex> enroll(user_id, section_id, [%ContextRole{}])
