@@ -1,0 +1,62 @@
+<%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: value_or(assigns[:title], "Link Authoring Account"), bs_col_class: "mx-auto mt-10"}) do %>
+  <p class="my-4">
+    Sign in with your authoring account credentials below to link your account.
+  </p>
+
+  <%= for link <- OliWeb.Pow.PowHelpers.provider_links(@conn), do: raw(link) %>
+
+  <hr class="my-4" />
+
+  <%= form_for @changeset, @action, [as: :link_account], fn f -> %>
+    <div class="form-label-group">
+      <%= email_input(f, Pow.Ecto.Schema.user_id_field(@changeset),
+        class: "form-control",
+        placeholder: "Email",
+        required: true,
+        autofocus: true
+      ) %>
+      <%= label(f, Pow.Ecto.Schema.user_id_field(@changeset), class: "control-label") %>
+      <%= error_tag(f, Pow.Ecto.Schema.user_id_field(@changeset)) %>
+    </div>
+    <div class="form-label-group">
+      <%= password_input(f, :password,
+        class: "form-control",
+        placeholder: "Password",
+        required: true
+      ) %>
+      <%= label(f, :password, class: "control-label") %>
+      <%= error_tag(f, :password) %>
+    </div>
+    <div class="mb-4 d-flex flex-row justify-between">
+      <div class="custom-control">
+        <%= link("Forgot password?",
+          to: Routes.authoring_pow_reset_password_reset_password_path(@conn, :new),
+          tabindex: "1"
+        ) %>
+      </div>
+    </div>
+
+    <.button type="submit" variant={:primary} class="w-full inline-block text-center">
+      Link Account
+    </.button>
+    <%= if @linked_account do %>
+      <.button
+        variant={:tertiary}
+        type="submit"
+        name="action"
+        value="unlink"
+        class="w-full inline-block text-center mt-2"
+      >
+        Unlink <%= @linked_account %>
+      </.button>
+    <% end %>
+
+    <.button
+      variant={:secondary}
+      href={value_or(assigns[:cancel_path], Routes.static_page_path(@conn, :index))}
+      class="w-full inline-block text-center mt-2"
+    >
+      Cancel
+    </.button>
+  <% end %>
+<% end %>

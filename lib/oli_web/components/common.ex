@@ -106,31 +106,31 @@ defmodule OliWeb.Components.Common do
         "rounded text-white hover:text-white bg-primary-500 hover:bg-primary-600 active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:bg-primary-600 dark:hover:bg-primary dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700 hover:no-underline"
 
       :secondary ->
-        "rounded text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700 hover:no-underline"
+        "rounded text-body-color hover:text-body-color bg-transparent hover:bg-gray-200 active:text-white active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 focus:outline-none dark:focus:ring-primary-700 hover:no-underline"
 
       :tertiary ->
-        "rounded text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline"
+        "rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline"
 
       :light ->
-        "rounded text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800 hover:no-underline"
+        "rounded text-body-color hover:text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800 hover:no-underline"
 
       :dark ->
-        "rounded text-white bg-gray-700 hover:bg-gray-800 active:bg-gray-600 focus:ring-2 focus:ring-gray-600 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500 focus:outline-none dark:focus:ring-gray-500 hover:no-underline"
+        "rounded text-white hover:text-white bg-gray-700 hover:bg-gray-800 active:bg-gray-600 focus:ring-2 focus:ring-gray-600 dark:text-white dark:bg-gray-700 dark:hover:bg-gray-600 dark:active:bg-gray-500 focus:outline-none dark:focus:ring-gray-500 hover:no-underline"
 
       :info ->
-        "rounded text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:no-underline"
+        "rounded text-white hover:text-white bg-gray-500 hover:bg-gray-600 active:bg-gray-700 focus:ring-2 focus:ring-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 dark:active:bg-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:no-underline"
 
       :success ->
-        "rounded text-white bg-green-600 hover:bg-green-700 active:bg-green-800 focus:ring-2 focus:ring-green-700 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700 hover:no-underline"
+        "rounded text-white hover:text-white bg-green-600 hover:bg-green-700 active:bg-green-800 focus:ring-2 focus:ring-green-700 dark:bg-green-600 dark:hover:bg-green-500 dark:active:bg-green-400 focus:outline-none dark:focus:ring-green-700 hover:no-underline"
 
       :warning ->
-        "rounded text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700 hover:no-underline"
+        "rounded text-white hover:text-white bg-yellow-500 hover:bg-yellow-600 active:bg-yellow-700 focus:ring-2 focus:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:active:bg-yellow-400 focus:outline-none dark:focus:ring-yellow-700 hover:no-underline"
 
       :danger ->
-        "rounded text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700 hover:no-underline"
+        "rounded text-white hover:text-white bg-red-500 hover:bg-red-600 active:bg-red-700 focus:ring-2 focus:ring-red-400 dark:bg-red-600 dark:hover:bg-red-500 dark:active:bg-red-400 focus:outline-none dark:focus:ring-red-700 hover:no-underline"
 
       :link ->
-        "rounded text-blue-500 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700 hover:underline cursor-pointer"
+        "rounded text-blue-500 hover:text-blue-600 hover:text-blue-600 active:text-blue-700 focus:ring-2 focus:ring-blue-400 dark:text-blue-600 dark:hover:text-blue-500 dark:active:text-blue-400 focus:outline-none dark:focus:ring-blue-700 hover:underline cursor-pointer"
 
       :link_info ->
         "rounded text-gray-500 hover:text-gray-600 active:text-gray-700 focus:ring-2 focus:ring-gray-400 dark:text-gray-600 dark:hover:text-gray-500 dark:active:text-gray-400 focus:outline-none dark:focus:ring-gray-700 hover:underline cursor-pointer"
@@ -205,7 +205,7 @@ defmodule OliWeb.Components.Common do
         <button
           type={@type}
           class={[
-            "whitespace-nowrap",
+            "whitespace-nowrap overflow-hidden text-ellipsis",
             button_variant_classes(@variant, disabled: @rest[:disabled]),
             button_size_classes(@size),
             @class
@@ -218,7 +218,7 @@ defmodule OliWeb.Components.Common do
         <a
           href={@href}
           class={[
-            "whitespace-nowrap",
+            "whitespace-nowrap overflow-hidden text-ellipsis",
             button_variant_classes(@variant, disabled: @rest[:disabled]),
             button_size_classes(@size),
             @class

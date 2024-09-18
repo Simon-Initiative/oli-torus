@@ -1,7 +1,6 @@
 defmodule OliWeb.Grades.GradeSync do
   use OliWeb, :html
 
-  attr(:task_queue, :list)
   attr(:total_jobs, :list)
   attr(:failed_jobs, :list)
   attr(:succeeded_jobs, :list)
@@ -9,11 +8,16 @@ defmodule OliWeb.Grades.GradeSync do
   attr(:selected_page, :map)
 
   def render(assigns) do
+    %{total_jobs: total_jobs, failed_jobs: failed_jobs, succeeded_jobs: succeeded_jobs} = assigns
+
+    started_sync? = Enum.all?([total_jobs, failed_jobs, succeeded_jobs], &(!is_nil(&1)))
+    completed_sync? = started_sync? and total_jobs == failed_jobs + succeeded_jobs
+
     assigns =
       assign(
         assigns,
         :disabled,
-        if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
+        if (started_sync? and not completed_sync?) or assigns.selected_page == nil do
           [disabled: true]
         else
           []
@@ -40,11 +44,13 @@ defmodule OliWeb.Grades.GradeSync do
           were manually adjusted or overridden by the instructor.") %>
         </div>
 
+        <form id="grade_sync_form" />
         <select
           phx-change="select_page"
           id="assignment_grade_sync_select"
           name="resource_id"
           class="custom-select custom-select-lg mb-2"
+          form="grade_sync_form"
         >
           <%= for page <- @graded_pages do %>
             <option value={page.resource_id} selected={@selected_page == page.resource_id}>
@@ -64,7 +70,7 @@ defmodule OliWeb.Grades.GradeSync do
       </div>
 
       <div class="card-footer mt-4">
-        <a class="btn btn-primary" phx-click="send_grades" {@disabled}>
+        <a class="btn btn-primary" phx-click="send_grades" phx-throttle={3000} {@disabled}>
           <%= dgettext("grades", "Synchronize Grades") %>
         </a>
       </div>

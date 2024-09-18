@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.Instructor.DashboardLiveTest do
+defmodule OliWeb.Workspaces.Instructor.DashboardLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
