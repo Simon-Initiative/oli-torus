@@ -20,18 +20,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
         active_view: :bibliography,
         is_admin?: is_admin?,
         active: :bibliography,
-        ctx: ctx
+        ctx: ctx,
+        context: %{},
+        error: false
       )
 
     case Oli.Authoring.Editing.BibliographyEditor.create_context(project.slug, author) do
       {:ok, context} ->
-        socket = assign(socket, context: context, scripts: Oli.Activities.get_activity_scripts())
-        {:ok, socket}
+        {:ok, assign(socket, context: context)}
 
       _ ->
         socket =
           socket
-          |> assign(context: %{}, scripts: [])
+          |> assign(error: true)
           |> put_flash(:error, "Publication not found. Please check the URL and try again.")
 
         {:ok, socket}
@@ -39,28 +40,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div>
-      <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/bibliography.js")}>
-      </script>
-      <script
-        :for={script <- @scripts}
-        type="text/javascript"
-        src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}
-      >
-      </script>
-
+    <div :if={!@error}>
       <div id="editor" phx-update="ignore">
         <%= React.component(@ctx, "Components.Bibliography", @context, id: "bibliography") %>
       </div>
 
-      <%= React.component(@context, "Components.ModalDisplay", %{}, id: "modal-display") %>
+      <%= React.component(@ctx, "Components.ModalDisplay", @context, id: "modal-display") %>
     </div>
     """
   end
