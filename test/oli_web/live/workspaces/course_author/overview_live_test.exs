@@ -220,7 +220,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "h4", "Course Discussions")
       assert has_element?(view, "h4", "Actions")
 
-      assert has_element?(view, "button", "Bulk Resource Attribute Edit")
+      assert has_element?(view, "a", "Bulk Resource Attribute Edit")
       assert has_element?(view, "label", "Calculate embeddings on publish")
     end
 
@@ -240,7 +240,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"/project/#{project.slug}/datashop\"]",
+               "a[href=\"/workspaces/course_author/#{project.slug}/datashop\"]",
                "Datashop Analytics"
              )
     end

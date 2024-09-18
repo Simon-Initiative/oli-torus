@@ -545,7 +545,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
-      assert has_element?(view, ~s(div[class="overview container mx-auto"]))
+      assert has_element?(view, ~s(div[class="overview container mx-auto p-8"]))
       assert has_element?(view, "h4", "Details")
       assert has_element?(view, "h4", "Project Attributes")
       assert has_element?(view, "h4", "Content Types")
