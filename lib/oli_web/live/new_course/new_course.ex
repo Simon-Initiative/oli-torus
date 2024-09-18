@@ -12,8 +12,9 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
   alias Oli.Repo
-  alias OliWeb.Common.{Breadcrumb, Stepper}
+  alias OliWeb.Common.{Breadcrumb, Stepper, SessionContext, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
+  alias OliWeb.Components.Common
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
   alias Lti_1p3.Tool.ContextRoles
 
@@ -490,6 +491,8 @@ defmodule OliWeb.Delivery.NewCourse do
         _ ->
           section
       end
+      |> convert_dates(socket.assigns.ctx)
+      |> IO.inspect(label: "section after converting:")
 
     changeset =
       socket.assigns.changeset
@@ -525,7 +528,7 @@ defmodule OliWeb.Delivery.NewCourse do
             create_section(socket.assigns.live_action, assign(socket, changeset: changeset))
           else
             {:noreply,
-             assign(socket, changeset: changeset)
+             assign(socket, changeset: localize_dates(changeset, socket.assigns.ctx))
              |> put_flash(
                :form_error,
                "The course's start date must be earlier than its end date"
@@ -533,7 +536,7 @@ defmodule OliWeb.Delivery.NewCourse do
           end
         else
           {:noreply,
-           assign(socket, changeset: changeset)
+           assign(socket, changeset: localize_dates(changeset, socket.assigns.ctx))
            |> put_flash(:form_error, "Some fields require your attention")}
         end
     end
@@ -558,6 +561,29 @@ defmodule OliWeb.Delivery.NewCourse do
         _ -> true
       end
     end)
+  end
+
+  defp convert_dates(%{"start_date" => start_date, "end_date" => end_date} = params, ctx) do
+    utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, ctx)
+    utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, ctx)
+
+    params
+    |> Map.put("start_date", utc_start_date)
+    |> Map.put("end_date", utc_end_date)
+  end
+
+  defp convert_dates(params, _ctx), do: params
+
+  defp localize_dates(changeset, ctx) do
+    utc_start_date = Common.fetch_field(changeset, :start_date)
+    utc_end_date = Common.fetch_field(changeset, :end_date)
+
+    local_start_date = FormatDateTime.convert_datetime(utc_start_date, ctx)
+    local_end_date = FormatDateTime.convert_datetime(utc_end_date, ctx)
+
+    changeset
+    |> Ecto.Changeset.put_change(:start_date, local_start_date)
+    |> Ecto.Changeset.put_change(:end_date, local_end_date)
   end
 
   defp validate_course_dates(changeset) do
