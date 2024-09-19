@@ -637,8 +637,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(
                view,
                "p",
-               "Insights can help you improve your course by providing a statistical analysis of
-      the skills covered by each question to find areas where students are struggling."
+               "Insights can help you improve your course by providing a statistical analysis of\n    the skills covered by each question to find areas where students are struggling."
              )
 
       assert has_element?(view, "button", "Raw Analytics")
