@@ -65,7 +65,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
 
   defp render_title_column(assigns, %Revision{slug: slug, title: title}, _) do
     assigns = Map.merge(assigns, %{slug: slug, title: title})
-    IO.inspect(assigns, label: "ASSIGNS")
 
     ~H"""
     <a href={Routes.live_path(OliWeb.Endpoint, EditorLive, @project_slug, @slug)}>
