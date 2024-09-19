@@ -53,7 +53,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
         </div>
 
         <div>
-          <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug,@revision_slug) do %>
+          <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug, @revision_slug) do %>
             <span style="margin-right: 5px"><i class="fas fa-history"></i></span><span>View History</span>
           <% end %>
         </div>
@@ -78,13 +78,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
         }
       ) %>
     </div>
-    """
 
-    # TODO: Adding this component crashes the liveview.
-    # <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html", %{
-    #   context: @raw_context,
-    #   action: :edit
-    # }) %>
+    <%= render_prev_next_nav(assigns) %>
+    """
   end
 
   defp render_advanced(assigns) do
@@ -107,13 +103,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
     <div id="editor" class="container">
       <%= React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor") %>
     </div>
-    """
 
-    # TODO: Adding this component crashes the liveview.
-    # <%= render(OliWeb.ResourceView, "_preview_previous_next_nav.html", %{
-    #   context: @raw_context,
-    #   action: :edit
-    # }) %>
+    <%= render_prev_next_nav(assigns) %>
+    """
   end
 
   defp live_edit(socket, project, context, project_slug, revision_slug, is_admin?) do
@@ -137,6 +129,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
       part_component_types: part_component_types,
       part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
       project_slug: project_slug,
+      context: context,
       raw_context: context,
       revision_slug: revision_slug,
       scripts: Activities.get_activity_scripts(:authoring_script),
@@ -165,5 +158,58 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
       end
 
     {:ok, assign(socket, content)}
+  end
+
+  defp render_prev_next_nav(assigns) do
+    ~H"""
+    <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
+      <%= if @context.previous_page do %>
+        <%= link to: Routes.live_path(OliWeb.Endpoint, __MODULE__, @project_slug, @context.previous_page["slug"]), class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+          <div class="flex items-center justify-between">
+            <div class="mr-4">
+              <i class="fas fa-arrow-left nav-icon"></i>
+            </div>
+            <div class="flex flex-col text-right overflow-hidden">
+              <div class="nav-label"><%= "Previous" %></div>
+              <div class="nav-title"><%= @context.previous_page["title"] %></div>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="page-nav-link-placeholder"></div>
+      <% end %>
+
+      <div class="flex-grow-1"></div>
+
+      <%= cond do %>
+        <% @context.next_page != nil -> %>
+          <%= link to: Routes.live_path(OliWeb.Endpoint, __MODULE__, @project_slug, @context.next_page["slug"]), class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+            <div class="flex items-center justify-between">
+              <div class="flex flex-col text-left overflow-hidden">
+                <div class="nav-label"><%= "Next" %></div>
+                <div class="nav-title"><%= @context.next_page["title"] %></div>
+              </div>
+              <div class="ml-4">
+                <i class="fas fa-arrow-right nav-icon"></i>
+              </div>
+            </div>
+          <% end %>
+        <% @action != :edit -> %>
+          <%= link to: "#", class: "page-nav-link btn", onclick: "window.close();" do %>
+            <div class="d-flex flex-row">
+              <div class="d-flex flex-column flex-fill text-left overflow-hidden">
+                <div class="nav-label">Complete</div>
+                <div class="nav-title"><%= @context.project.title %></div>
+              </div>
+              <div>
+                <i class="fas fa-check nav-icon"></i>
+              </div>
+            </div>
+          <% end %>
+        <% true -> %>
+          <div class="page-nav-link-placeholder"></div>
+      <% end %>
+    </nav>
+    """
   end
 end
