@@ -4,6 +4,7 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Metrics
   alias OliWeb.Backgrounds
   alias Oli.Delivery.Sections
+  alias Oli.Accounts.{User}
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Components.Delivery.Utils
 
@@ -16,7 +17,8 @@ defmodule OliWeb.Workspaces.Student do
     sidebar_expanded: true
   }
 
-  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+  @impl Phoenix.LiveView
+  def mount(_params, _session, %{assigns: %{current_user: nil, has_admin_role: true}} = socket) do
     # admin case...
     {:ok,
      assign(socket,
@@ -24,11 +26,10 @@ defmodule OliWeb.Workspaces.Student do
      )}
   end
 
-  @impl Phoenix.LiveView
-  def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
+  def mount(params, _session, %{assigns: %{current_user: current_user} = assigns} = socket)
       when not is_nil(current_user) do
     all_sections =
-      Sections.list_user_open_and_free_sections(current_user)
+      Sections.list_user_enrolled_sections(current_user)
       |> add_user_role(current_user)
 
     sections =
@@ -41,7 +42,7 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(all_sections),
+       disable_sidebar?: !assigns.has_admin_role && user_is_only_a_student?(all_sections),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -86,7 +87,7 @@ defmodule OliWeb.Workspaces.Student do
 
   @impl Phoenix.LiveView
 
-  def render(%{has_admin_role: true} = assigns) do
+  def render(%{current_user: nil, has_admin_role: true} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div

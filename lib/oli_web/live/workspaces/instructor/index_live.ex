@@ -16,7 +16,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
       when not is_nil(current_user) do
     sections =
-      Sections.list_user_open_and_free_sections(current_user)
+      Sections.list_user_enrolled_sections(current_user)
       |> add_user_role(current_user)
       |> add_instructors()
       |> filter_by_role(:instructor)

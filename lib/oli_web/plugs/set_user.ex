@@ -26,9 +26,9 @@ defmodule Oli.Plugs.SetCurrentUser do
       conn
       |> put_session(:current_author_id, current_author.id)
       |> put_session(:is_community_admin, current_author.community_admin_count > 0)
-      |> put_session(:is_system_admin, Accounts.has_admin_role?(current_author))
+      |> put_session(:is_system_admin, Accounts.is_system_admin?(current_author))
       |> assign(:current_author, current_author)
-      |> assign(:is_system_admin, Accounts.has_admin_role?(current_author))
+      |> assign(:is_system_admin, Accounts.is_system_admin?(current_author))
     else
       _ ->
         conn
@@ -66,7 +66,7 @@ defmodule Oli.Plugs.SetCurrentUser do
         with pow_config <- OliWeb.Pow.PowHelpers.get_pow_config(:author),
              %{id: author_id} <- Pow.Plug.current_user(conn, pow_config),
              {:ok, current_author} <- AccountLookupCache.get_author(author_id),
-             true <- Accounts.has_admin_role?(current_author),
+             true <- Accounts.can_masquerade?(current_author),
              user <- Accounts.get_user(user_id, preload: [:platform_roles, :author]) do
           conn
           |> assign(:current_user, user)
