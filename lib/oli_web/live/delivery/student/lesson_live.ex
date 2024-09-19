@@ -187,7 +187,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, update_activity(socket, params)}
   end
 
-  def handle_event("submit_selected_question", %{"attempt_guid" => attempt_guid}, socket) do
+  def handle_event(
+        "submit_selected_question",
+        %{"attempt_guid" => attempt_guid, "question_id" => question_id},
+        socket
+      ) do
     ## evaluate the activity attempt
 
     Oli.Repo.get_by(Oli.Delivery.Attempts.Core.ActivityAttempt,
@@ -212,7 +216,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           not_selected_question
       end)
 
+    # Send a message to self to push the event after render
+    send(self(), {:disable_question_inputs, question_id})
+
     {:noreply, assign(socket, questions: questions)}
+  end
+
+  def handle_info({:disable_question_inputs, question_id}, socket) do
+    {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
   end
 
   def handle_event(
@@ -896,6 +907,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                           "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
                           if(!question.selected, do: "hidden")
                         ]}
+                        phx-hook="DisableSubmitted"
+                        data-submitted={"#{question.submitted}"}
                       >
                         <%= raw(question.raw_content) %>
                       </div>
@@ -943,6 +956,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                       :if={!selected_question.submitted}
                       phx-click="submit_selected_question"
                       phx-value-attempt_guid={selected_question.state["attemptGuid"]}
+                      phx-value-question_id={"question_#{selected_question.number}"}
                       disabled={!selected_question.answered}
                       class={[
                         "h-[30px] px-5 py-2.5 rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-base text-white font-['Open Sans'] leading-normal whitespace-nowrap",
@@ -1116,8 +1130,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         ]}
       >
         <div class={[
-          "w-2.5 h-2.5 bg-[#d9d9d9] rounded-full",
-          if(question.selected, do: "!border-2 !border-[#0062f2]")
+          "w-2.5 h-2.5 rounded-full",
+          if(question.selected, do: "!border-2 !border-[#0062f2]"),
+          if(question.submitted, do: "bg-[#0062f2]", else: "bg-[#d9d9d9]")
         ]}>
         </div>
         <span class={[

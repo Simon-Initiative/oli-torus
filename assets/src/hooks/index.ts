@@ -8,6 +8,7 @@ import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
+import { DisableSubmitted } from './disable_submitted';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
@@ -83,4 +84,5 @@ export const Hooks = {
   EndDateTimer,
   EvaluateMathJaxExpressions,
   ReactToLiveView,
+  DisableSubmitted,
 };
