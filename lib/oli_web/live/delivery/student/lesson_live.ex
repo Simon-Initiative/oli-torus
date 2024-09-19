@@ -222,10 +222,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign(socket, questions: questions)}
   end
 
-  def handle_info({:disable_question_inputs, question_id}, socket) do
-    {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
-  end
-
   def handle_event(
         "finalize_attempt",
         _params,
@@ -710,6 +706,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to delete note")}
     end
+  end
+
+  def handle_info({:disable_question_inputs, question_id}, socket) do
+    {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
   end
 
   # handle assigns directly from async tasks
