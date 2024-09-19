@@ -89,7 +89,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   def render(assigns) do
     ~H"""
     <%= render_modal(assigns) %>
-    <div class="publish container p-8">
+    <div class="publish">
       <div class="flex flex-row">
         <div class="flex-1">
           <.live_component

@@ -142,7 +142,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div id="activity_review" class="container mx-auto p-8" phx-hook="ReviewActivity">
+    <div id="activity_review" phx-hook="ReviewActivity">
       <FilterBox.render
         card_header_text="Browse All Activities"
         card_body_text=""

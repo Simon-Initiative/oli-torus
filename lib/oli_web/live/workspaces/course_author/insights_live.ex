@@ -142,117 +142,111 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="container mx-auto p-8">
-      <div class="mb-3">
-        <p>
-          Insights can help you improve your course by providing a statistical analysis of
-          the skills covered by each question to find areas where students are struggling.
-        </p>
-        <%= if @is_admin? do %>
-          <div class="d-flex align-items-center my-3">
-            <AsyncExporter.raw_analytics
-              ctx={@ctx}
-              latest_publication={@latest_publication}
-              analytics_export_status={@analytics_export_status}
-              analytics_export_url={@analytics_export_url}
-              analytics_export_timestamp={@analytics_export_timestamp}
-            />
-          </div>
-        <% end %>
-      </div>
-      <ul class="nav nav-pills mb-4">
-        <li class="nav-item my-2 mr-2">
-          <button
-            {is_disabled(@selected, :by_activity)}
-            class="btn btn-primary"
-            phx-click="filter_by_activity"
-          >
-            <%= if is_loading?(assigns) and @selected == :by_activity do %>
-              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            <% end %>
-            By Activity
-          </button>
-        </li>
-        <li class="nav-item my-2 mr-2">
-          <button
-            {is_disabled(@selected, :by_page)}
-            class="btn btn-primary"
-            phx-click="filter_by_page"
-          >
-            <%= if is_loading?(assigns) and @selected == :by_page do %>
-              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            <% end %>
-            By Page
-          </button>
-        </li>
-
-        <li class="nav-item my-2 mr-2">
-          <button
-            {is_disabled(@selected, :by_objective)}
-            class="btn btn-primary"
-            phx-click="filter_by_objective"
-          >
-            <%= if is_loading?(assigns) and @selected == :by_objective do %>
-              <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            <% end %>
-            By Objective
-          </button>
-        </li>
-
-        <li class="nav-item my-2 mr-2 ">
-          <div class="flex gap-10">
-            <.live_component
-              id="sections"
-              module={MultiSelectInput}
-              options={@sections}
-              disabled={@sections == []}
-              on_select_message="section_selected"
-              placeholder="Select a section"
-              uuid={@form_uuid_for_section}
-            />
-            <.live_component
-              id="products"
-              module={MultiSelectInput}
-              options={@products}
-              disabled={@products == []}
-              on_select_message="product_selected"
-              placeholder="Select a product"
-              uuid={@form_uuid_for_product}
-            />
-          </div>
-        </li>
-      </ul>
-
-      <div class="card">
-        <div class="card-header mb-2">
-          <form phx-change="text_search_change">
-            <input
-              type="text"
-              class="form-control"
-              name="value"
-              value={@query}
-              placeholder="Search by title..."
-            />
-          </form>
-        </div>
-        <div class="card-body">
-          <h5 class="card-title my-4">
-            Viewing analytics by <%= case @selected do
-              :by_page -> "page"
-              :by_activity -> "activity"
-              :by_objective -> "objective"
-              _ -> "activity"
-            end %>
-          </h5>
-
-          <PagedTable.render
-            filter={@query}
-            table_model={@table_model}
-            total_count={@total_count}
-            offset={@offset}
-            limit={@limit}
+    <div class="mb-3">
+      <p>
+        Insights can help you improve your course by providing a statistical analysis of
+        the skills covered by each question to find areas where students are struggling.
+      </p>
+      <%= if @is_admin? do %>
+        <div class="d-flex align-items-center my-3">
+          <AsyncExporter.raw_analytics
+            ctx={@ctx}
+            latest_publication={@latest_publication}
+            analytics_export_status={@analytics_export_status}
+            analytics_export_url={@analytics_export_url}
+            analytics_export_timestamp={@analytics_export_timestamp}
           />
         </div>
+      <% end %>
+    </div>
+    <ul class="nav nav-pills mb-4">
+      <li class="nav-item my-2 mr-2">
+        <button
+          {is_disabled(@selected, :by_activity)}
+          class="btn btn-primary"
+          phx-click="filter_by_activity"
+        >
+          <%= if is_loading?(assigns) and @selected == :by_activity do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
+          By Activity
+        </button>
+      </li>
+      <li class="nav-item my-2 mr-2">
+        <button {is_disabled(@selected, :by_page)} class="btn btn-primary" phx-click="filter_by_page">
+          <%= if is_loading?(assigns) and @selected == :by_page do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
+          By Page
+        </button>
+      </li>
+
+      <li class="nav-item my-2 mr-2">
+        <button
+          {is_disabled(@selected, :by_objective)}
+          class="btn btn-primary"
+          phx-click="filter_by_objective"
+        >
+          <%= if is_loading?(assigns) and @selected == :by_objective do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
+          By Objective
+        </button>
+      </li>
+
+      <li class="nav-item my-2 mr-2 ">
+        <div class="flex gap-10">
+          <.live_component
+            id="sections"
+            module={MultiSelectInput}
+            options={@sections}
+            disabled={@sections == []}
+            on_select_message="section_selected"
+            placeholder="Select a section"
+            uuid={@form_uuid_for_section}
+          />
+          <.live_component
+            id="products"
+            module={MultiSelectInput}
+            options={@products}
+            disabled={@products == []}
+            on_select_message="product_selected"
+            placeholder="Select a product"
+            uuid={@form_uuid_for_product}
+          />
+        </div>
+      </li>
+    </ul>
+
+    <div class="card">
+      <div class="card-header mb-2">
+        <form phx-change="text_search_change">
+          <input
+            type="text"
+            class="form-control"
+            name="value"
+            value={@query}
+            placeholder="Search by title..."
+          />
+        </form>
+      </div>
+      <div class="card-body">
+        <h5 class="card-title my-4">
+          Viewing analytics by <%= case @selected do
+            :by_page -> "page"
+            :by_activity -> "activity"
+            :by_objective -> "objective"
+            _ -> "activity"
+          end %>
+        </h5>
+
+        <PagedTable.render
+          filter={@query}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+        />
       </div>
     </div>
     """

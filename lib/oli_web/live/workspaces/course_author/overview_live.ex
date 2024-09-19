@@ -83,7 +83,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="overview container mx-auto">
+    <div class="overview">
       <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"

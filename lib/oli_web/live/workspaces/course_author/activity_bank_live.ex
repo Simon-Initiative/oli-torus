@@ -41,7 +41,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
       </script>
     <% end %>
 
-    <div id="editor" class="container mx-auto p-8">
+    <div id="editor">
       <%= React.component(
         @ctx,
         "Components.ActivityBank",

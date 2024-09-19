@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <h1 class="flex flex-col w-full h-screen items-center justify-center">
+    <h1>
       Placeholder for All Pages
     </h1>
     """
