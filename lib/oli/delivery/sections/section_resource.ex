@@ -75,12 +75,19 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # resource delivery policy
     belongs_to :delivery_policy, DeliveryPolicy
 
-    field(:title, :string, virtual: true)
-    field(:graded, :boolean, virtual: true)
-    field(:resource_type_id, :integer, virtual: true)
-    field(:revision_slug, :string, virtual: true)
-    field(:purpose, :string, virtual: true)
-    field(:duration_minutes, :integer, virtual: true)
+    # Fields replicated from the resource revision
+    field :title, :string
+    field :graded, :boolean
+    field :resource_type_id, :integer
+    field :revision_slug, :string
+    field :purpose, :string
+    field :duration_minutes, :integer
+    field :intro_content, :map, default: %{}
+    field :intro_video, :string, default: nil
+    field :poster_image, :string, default: nil
+    field :objectives, :map, default: %{}
+    field :relates_to, {:array, :id}, default: []
+    belongs_to :activity_type, Oli.Activities.ActivityRegistration
 
     timestamps(type: :utc_datetime)
   end
