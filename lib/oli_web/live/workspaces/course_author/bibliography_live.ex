@@ -4,8 +4,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
   alias Oli.Accounts
   alias OliWeb.Common.React
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     project = socket.assigns.project
@@ -38,6 +36,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
 
         {:ok, socket}
     end
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(_params, _url, socket) do
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView

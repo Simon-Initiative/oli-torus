@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.CourseAuthorTest do
+defmodule OliWeb.Workspaces.CourseAuthorTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -626,6 +626,32 @@ defmodule OliWeb.Workspace.CourseAuthorTest do
 
       assert has_element?(view, "button", "Connect with LTI 1.3")
       assert has_element?(view, "button", "Publish")
+    end
+
+    test "insights menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/insights")
+
+      assert has_element?(
+               view,
+               "p",
+               "Insights can help you improve your course by providing a statistical analysis of
+      the skills covered by each question to find areas where students are struggling."
+             )
+
+      assert has_element?(view, "button", "Raw Analytics")
+
+      assert has_element?(
+               view,
+               "div",
+               "Project must be published to generate an analytics snapshot."
+             )
+
+      assert has_element?(view, "button", "By Activity")
+      assert has_element?(view, "button", "By Page")
+      assert has_element?(view, "button", "By Objective")
     end
   end
 

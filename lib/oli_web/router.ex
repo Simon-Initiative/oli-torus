@@ -112,6 +112,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.MaybeGatedResource)
   end
 
+  pipeline :maybe_load_lti_params do
+    plug(Oli.Plugs.MaybeLoadLtiParams)
+  end
+
   pipeline :require_lti_params do
     plug(Oli.Plugs.RequireLtiParams)
   end
@@ -253,6 +257,7 @@ defmodule OliWeb.Router do
     )
 
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
+
     pow_assent_authorization_post_callback_routes()
   end
 
@@ -364,7 +369,7 @@ defmodule OliWeb.Router do
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
-    live("/account", Workspace.AccountDetailsLive)
+    live("/account", Workspaces.AccountDetailsLive)
 
     put("/account", WorkspaceController, :update_author)
 
@@ -796,8 +801,8 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        OliWeb.LiveSessionPlugs.SetProject,
-        OliWeb.LiveSessionPlugs.SetSection
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)
@@ -814,6 +819,7 @@ defmodule OliWeb.Router do
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
         live("/:project_id/products", ProductsLive)
+        live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
       end
 
@@ -823,7 +829,9 @@ defmodule OliWeb.Router do
         live("/:section_slug/:view/:active_tab", DashboardLive)
       end
 
-      live("/student", Student)
+      scope "/student" do
+        live("/", Student)
+      end
     end
   end
 
@@ -1276,18 +1284,17 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :pow_email_layout])
+    pipe_through([:browser, :delivery_protected, :maybe_load_lti_params, :pow_email_layout])
+
+    get("/", DeliveryController, :index)
 
     get("/link_account", DeliveryController, :link_account)
-    post("/link_account", DeliveryController, :process_link_account_user)
-    get("/create_and_link_account", DeliveryController, :create_and_link_account)
-    post("/create_and_link_account", DeliveryController, :process_create_and_link_account_user)
+    post("/link_account", DeliveryController, :process_link_account)
   end
 
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
 
-    get("/", DeliveryController, :index)
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end
 

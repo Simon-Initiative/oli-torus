@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.StudentTest do
+defmodule OliWeb.Workspaces.StudentTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -81,25 +81,6 @@ defmodule OliWeb.Workspace.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       refute has_element?(view, "div[role='account label']")
-    end
-
-    test "sees linked account email on user menu", %{conn: conn, user: user} do
-      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
-      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
-
-      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
-
-      author = insert(:author)
-      Accounts.link_user_author_account(user, author)
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
-
-      assert has_element?(
-               view,
-               "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
-               author.email
-             )
     end
 
     test "can access student workspace when not enrolled to any section", %{conn: conn} do

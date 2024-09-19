@@ -8,8 +8,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ReviewLive do
   alias OliWeb.Common.Utils
   alias OliWeb.Workspaces.CourseAuthor.Qa.{State, WarningFilter, WarningSummary, WarningDetails}
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, ctx: ctx} = socket.assigns

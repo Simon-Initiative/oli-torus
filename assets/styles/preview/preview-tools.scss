@@ -180,6 +180,9 @@
       .list-group {
         margin-left: 1rem !important;
       }
+      .list-group {
+        margin: 0px !important;
+      }
       button {
         font-size: 0.9rem;
       }
@@ -213,4 +216,7 @@
     white-space: nowrap;
     width: 1px;
   }
+}
+.dark .inspector .stateKey {
+  color: white !important;
 }

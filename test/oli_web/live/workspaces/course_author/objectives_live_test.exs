@@ -299,7 +299,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_submit(%{"revision" => %{"title" => title, "parent_slug" => ""}})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully created"
 
@@ -330,7 +330,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_submit(%{"revision" => %{"title" => title, "slug" => obj.slug}})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully updated"
 
@@ -366,7 +366,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => obj_a.slug})
 
       assert view
-             |> element("p.alert.alert-danger")
+             |> element(~s(div[role="alert"].alert-danger))
              |> render() =~
                "Could not remove objective if it has sub-objectives associated"
 
@@ -412,7 +412,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => obj_c.slug, "parent_slug" => ""})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully removed"
 
@@ -499,7 +499,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       assert has_element?(view, ".collapse", "#{sub_obj_b.title}")
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Sub-objective successfully added"
 
@@ -527,7 +527,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_submit(%{"revision" => %{"title" => title, "parent_slug" => obj.slug}})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully created"
 
@@ -563,7 +563,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_submit(%{"revision" => %{"title" => title, "slug" => sub_obj.slug}})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully updated"
 
@@ -599,7 +599,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj.slug})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully removed"
 
@@ -641,7 +641,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       |> render_click(%{"slug" => sub_obj.slug, "parent_slug" => obj_a.slug})
 
       assert view
-             |> element("p.alert.alert-info")
+             |> element(~s{div[role="alert"].alert-info})
              |> render() =~
                "Objective successfully removed"
 

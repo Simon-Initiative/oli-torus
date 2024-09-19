@@ -15,8 +15,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   alias OliWeb.Common.Modal.{DeleteModal, FormModal}
   alias OliWeb.Router.Helpers, as: Routes
 
-  on_mount {OliWeb.LiveSessionPlugs.AuthorizeProject, :default}
-
   @alternatives_type_id ResourceType.id_for_alternatives()
   @default_error_message "Something went wrong. Please refresh the page and try again."
 
