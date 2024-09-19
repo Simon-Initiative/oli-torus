@@ -214,7 +214,16 @@ defmodule Oli.Delivery.Sections.Updates do
           scoring_strategy_id: r.scoring_strategy_id,
           slug: Oli.Utils.Slug.generate("section_resources", r.title),
           inserted_at: {:placeholder, :timestamp},
-          updated_at: {:placeholder, :timestamp}
+          updated_at: {:placeholder, :timestamp},
+          collab_space_config: r.collab_space_config,
+          max_attempts:
+            if is_nil(r.max_attempts) do
+              0
+            else
+              r.max_attempts
+            end,
+          retake_mode: r.retake_mode,
+          assessment_mode: r.assessment_mode
         }
       end)
 
