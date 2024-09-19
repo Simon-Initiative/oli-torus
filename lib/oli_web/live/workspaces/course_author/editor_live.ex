@@ -64,7 +64,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
       </div>
     <% end %>
 
-    <div id="editor" class="container mx-auto">
+    <div id="editor" style="width: 95%;" class="container mx-auto">
       <%= React.component(@ctx, "Components.PageEditor", @raw_context, id: "page_editor") %>
     </div>
 
