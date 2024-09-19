@@ -213,9 +213,7 @@ defmodule OliWeb.Users.UsersDetailView do
               password_reset_link={@password_reset_link}
             />
           <% else %>
-            <Actions.lti_user_actions
-              user={@user}
-            />
+            <Actions.lti_user_actions user={@user} />
           <% end %>
         </Group.render>
       </Groups.render>
