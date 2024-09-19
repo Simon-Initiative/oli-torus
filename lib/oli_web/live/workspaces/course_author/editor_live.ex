@@ -181,33 +181,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
 
       <div class="flex-grow-1"></div>
 
-      <%= cond do %>
-        <% @context.next_page != nil -> %>
-          <%= link to: Routes.live_path(OliWeb.Endpoint, __MODULE__, @project_slug, @context.next_page["slug"]), class: "page-nav-link btn", onclick: assigns[:onclick] do %>
-            <div class="flex items-center justify-between">
-              <div class="flex flex-col text-left overflow-hidden">
-                <div class="nav-label"><%= "Next" %></div>
-                <div class="nav-title"><%= @context.next_page["title"] %></div>
-              </div>
-              <div class="ml-4">
-                <i class="fas fa-arrow-right nav-icon"></i>
-              </div>
+      <%= if @context.next_page do %>
+        <%= link to: Routes.live_path(OliWeb.Endpoint, __MODULE__, @project_slug, @context.next_page["slug"]), class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col text-left overflow-hidden">
+              <div class="nav-label"><%= "Next" %></div>
+              <div class="nav-title"><%= @context.next_page["title"] %></div>
             </div>
-          <% end %>
-        <% @action != :edit -> %>
-          <%= link to: "#", class: "page-nav-link btn", onclick: "window.close();" do %>
-            <div class="d-flex flex-row">
-              <div class="d-flex flex-column flex-fill text-left overflow-hidden">
-                <div class="nav-label">Complete</div>
-                <div class="nav-title"><%= @context.project.title %></div>
-              </div>
-              <div>
-                <i class="fas fa-check nav-icon"></i>
-              </div>
+            <div class="ml-4">
+              <i class="fas fa-arrow-right nav-icon"></i>
             </div>
-          <% end %>
-        <% true -> %>
-          <div class="page-nav-link-placeholder"></div>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="page-nav-link-placeholder"></div>
       <% end %>
     </nav>
     """
