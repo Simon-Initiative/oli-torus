@@ -866,12 +866,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
             <% selected_question = Enum.find(@questions, & &1.selected) %>
             <% total_questions = Enum.count(@questions) %>
-            <% question_points = Enum.random(5..10) %>
+            <% selected_question_points =
+              Enum.reduce(selected_question.part_points, 0, fn {_id, points}, acum ->
+                points + acum
+              end) %>
+            <% selected_question_parts_count = map_size(selected_question.part_points) %>
+
             <div class="w-screen flex flex-col items-center">
               <div role="questions header" class="w-[1170px] pl-[189px]">
                 <div class="flex w-full justify-between">
                   <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
-                    Question <%= selected_question.number %> / <%= total_questions %> • <%= question_points %> points
+                    Question <%= selected_question.number %> / <%= total_questions %> • <%= parse_points(
+                      selected_question_points
+                    ) %>
                   </div>
                   <button class="flex items-center gap-2">
                     <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
@@ -904,7 +911,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                         id={"question_#{question.number}"}
                         role="one at a time question"
                         class={[
-                          "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
+                          "overflow-scroll p-10 h-[400px] oveflow-hidden",
+                          if(map_size(question.part_points) == 1, do: "w-[981px]", else: "w-[808px]"),
                           if(!question.selected, do: "hidden")
                         ]}
                         phx-hook="DisableSubmitted"
@@ -914,40 +922,27 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                       </div>
                     </div>
                     <div
+                      :if={selected_question_parts_count > 1}
                       role="score summary"
-                      class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
+                      class="w-[173px] px-3 py-6 gap-2 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap border-l border-[#c8c8c8]"
                     >
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 1:
+                      <div
+                        :for={
+                          {{id, points}, index} <- Enum.with_index(selected_question.part_points, 1)
+                        }
+                        class="flex items-center h-6"
+                      >
+                        <span class="w-4">
+                          <.part_result_icon part={
+                            Enum.find(selected_question.state["parts"], &(&1["partId"] == id))
+                          } />
                         </span>
-                        <span class="text-[#353740]">
-                          2 points
+                        <span class="text-[#757682] ml-4">
+                          Part <%= index %>:
                         </span>
-                      </div>
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 2:
+                        <span class="text-[#353740] ml-1">
+                          <%= parse_points(points) %>
                         </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
-                      </div>
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 3:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
-                        <div>
-                          <span class="text-[#757682]">
-                            Part 4:
-                          </span>
-                          <span class="text-[#353740]">
-                            2 points
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1537,6 +1532,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp maybe_assign_questions(socket, :traditional), do: socket
 
   defp maybe_assign_questions(socket, :one_at_a_time) do
+    activity_part_points_mapper =
+      build_activity_part_points_mapper(socket.assigns.page_context.activities)
+
     questions =
       socket.assigns.html
       |> List.flatten()
@@ -1566,7 +1564,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                context: context,
                answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
                submitted:
-                 !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end)
+                 !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end),
+               part_points: activity_part_points_mapper[state["activityId"]]
              }
              | activities
            ]}
@@ -1578,6 +1577,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       |> Enum.reverse()
 
     assign(socket, questions: questions)
+  end
+
+  defp build_activity_part_points_mapper(activities) do
+    # activity_id => %{"part_id" => total_part_points}
+    # %{
+    #   12742 => %{"1" => 1},
+    #   12745 => %{"1" => 1},
+    #   12746 => %{"1" => 1, "3660145108" => 1}
+    # }
+
+    Enum.reduce(activities, %{}, fn {activity_id, activity_summary}, act_acum ->
+      part_scores =
+        activity_summary.unencoded_model["authoring"]["parts"]
+        |> Enum.reduce(%{}, fn part, part_acum ->
+          Map.merge(part_acum, %{
+            part["id"] =>
+              Enum.reduce(part["responses"], 0, fn response, acum_score ->
+                acum_score + response["score"]
+              end)
+          })
+        end)
+
+      Map.merge(act_acum, %{activity_id => part_scores})
+    end)
   end
 
   defp update_activity(socket, params) do
@@ -1639,6 +1662,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     |> Jason.encode!()
     |> Jason.decode!()
   end
+
+  attr :part, :map, required: true
+
+  def part_result_icon(%{part: %{"dateEvaluated" => nil}} = assigns) do
+    ~H"""
+    """
+  end
+
+  def part_result_icon(%{part: %{"score" => score, "outOf" => out_of}} = assigns)
+      when score == out_of and score != 0 do
+    ~H"""
+    <Icons.check />
+    """
+  end
+
+  def part_result_icon(assigns) do
+    ~H"""
+    <Icons.close class="stroke-red-500 dark:stroke-white" />
+    """
+  end
+
+  defp parse_points(1), do: "1 point"
+  defp parse_points(points), do: "#{points} points"
 
   defp to_epoch(nil), do: nil
 
