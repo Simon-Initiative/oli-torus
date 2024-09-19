@@ -861,7 +861,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="one_at_a_time_questions" class="relative min-h-[500px]">
+          <div :if={@questions != []} id="one_at_a_time_questions" class="relative min-h-[500px]">
             <%!--  render this as a component on MER-3640 --%>
 
             <% selected_question = Enum.find(@questions, & &1.selected) %>
@@ -1047,6 +1047,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 </button>
               </div>
             </div>
+          </div>
+          <div :if={@questions == []} class="flex w-full justify-center">
+            <p>
+              There are no questions available for this page.
+            </p>
           </div>
         </div>
       </div>
