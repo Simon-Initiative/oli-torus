@@ -51,8 +51,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLive do
 
     {:ok,
      assign(socket,
-       active_view: :activities,
-       active_workspace: :course_author,
        author: author,
        ctx: ctx,
        options: @default_options,

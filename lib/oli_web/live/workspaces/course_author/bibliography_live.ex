@@ -16,8 +16,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
         resource_slug: project.slug,
         resource_title: project.title,
         project_slug: project.slug,
-        active_workspace: :course_author,
-        active_view: :bibliography,
         is_admin?: is_admin?,
         active: :bibliography,
         ctx: ctx,

@@ -53,9 +53,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        offset: 0,
        limit: 20,
        resource_slug: project.slug,
-       resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :objectives
+       resource_title: project.title
      )
      |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
        {:cont,

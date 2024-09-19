@@ -22,8 +22,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
            scripts: Oli.Activities.get_activity_scripts(),
            resource_slug: project.slug,
            resource_title: project.title,
-           active_workspace: :course_author,
-           active_view: :activity_bank,
            ctx: ctx
          )}
 

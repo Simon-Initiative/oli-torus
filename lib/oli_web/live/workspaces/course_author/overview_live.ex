@@ -74,9 +74,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         notes_config: %{},
         project_export_status: project_export_status,
         project_export_url: project_export_url,
-        project_export_timestamp: project_export_timestamp,
-        active_workspace: :course_author,
-        active_view: :overview
+        project_export_timestamp: project_export_timestamp
       )
 
     {:ok, socket}

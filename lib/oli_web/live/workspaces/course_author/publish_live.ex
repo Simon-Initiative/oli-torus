@@ -57,8 +57,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
      assign(socket,
        active_publication: active_publication,
        active_publication_changes: active_publication_changes,
-       active_view: :publish,
-       active_workspace: :course_author,
        active_sections: active_sections,
        auto_update_sections: project.auto_update_sections,
        changeset: Publishing.change_publication(active_publication),

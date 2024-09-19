@@ -36,8 +36,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
      assign(socket,
        resource_slug: project.slug,
        resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :products,
        published?: published?,
        is_admin_view: false,
        include_archived: include_archived,

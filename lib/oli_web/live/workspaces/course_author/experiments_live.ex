@@ -28,9 +28,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        is_upgrade_enabled: project.has_experiments,
        experiment: experiment,
        resource_slug: project.slug,
-       resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :experiments
+       resource_title: project.title
      )}
   end
 

@@ -82,8 +82,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
 
     {:ok,
      assign(socket,
-       active_view: :insights,
-       active_workspace: :course_author,
        resource_slug: project.slug,
        resource_title: project.title,
        active: :insights,
