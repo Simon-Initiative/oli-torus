@@ -1690,8 +1690,12 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert render(view) =~ "This is a class note"
       assert render(view) =~ "This is another one for all the class"
     end
+  end
 
-    test "can see the page content when the page is configured as `one question at a time`", %{
+  describe "pages configured with :one_at_a_time assessment mode" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "are rendered correctly", %{
       conn: conn,
       section: section,
       mcq_activity_1: mcq_activity_1,
@@ -1751,7 +1755,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "div[id='one_at_a_time_questions']")
     end
 
-    test "can see the page content when the page is configured as `one question at a time` but it has no questions in it's content",
+    test "are rendered correctly even if the page has no questions in it's content",
          %{
            conn: conn,
            section: section,
