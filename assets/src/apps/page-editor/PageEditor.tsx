@@ -93,7 +93,9 @@ function prepareSaveFn(
         if (window.location.pathname.startsWith('/authoring/project')) {
           window.location.replace(`/authoring/project/${project}/resource/${result.revision_slug}`);
         } else if (window.location.pathname.startsWith('/workspaces/course_author')) {
-          window.location.replace(`/workspaces/course_author/${project}/curriculum/${result.revision_slug}/edit`);
+          window.location.replace(
+            `/workspaces/course_author/${project}/curriculum/${result.revision_slug}/edit`,
+          );
         }
         return result;
       }
