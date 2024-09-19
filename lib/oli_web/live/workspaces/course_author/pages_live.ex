@@ -23,6 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   alias OliWeb.Curriculum.{OptionsModalContent, HyperlinkDependencyModal}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Workspaces.CourseAuthor.Pages.TableModel, as: PagesTableModel
+  alias OliWeb.Workspaces.CourseAuthor.EditorLive
 
   @default_limit 25
 
@@ -410,9 +411,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
       {:ok, %Revision{slug: slug}} ->
         # redirect to new page
         {:noreply,
-         redirect(socket,
-           to: Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, slug)
-         )}
+         redirect(socket, to: Routes.live_path(OliWeb.Endpoint, EditorLive, project.slug, slug))}
 
       {:error, %Ecto.Changeset{} = _changeset} ->
         {:noreply, put_flash(socket, :error, "Could not create new page")}
