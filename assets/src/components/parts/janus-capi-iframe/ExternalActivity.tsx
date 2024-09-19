@@ -1139,7 +1139,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       src={frameSrc}
       scrolling={scrolling}
       aria-label={description}
-      aria-describedby={description}
+      aria-describedby={id}
       allow="accelerometer *; magnetometer; gyroscope; fullscreen; autoplay; clipboard-write; encrypted-media; xr-spatial-tracking; gamepad *;"
     />
   ) : null;

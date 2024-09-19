@@ -20,7 +20,7 @@ export const simpleSchema: JSONSchema7Object = {
   },
   description: {
     title: 'description',
-    description: 'provides aria-describedby, title and aria-label content',
+    description: 'provides title and aria-label content',
     type: 'string',
   },
 };
@@ -36,7 +36,7 @@ export const schema: JSONSchema7Object = {
   },
   description: {
     title: 'description',
-    description: 'provides aria-describedby, title and aria-label content',
+    description: 'provides title and aria-label content',
     type: 'string',
   },
   allowScrolling: {
