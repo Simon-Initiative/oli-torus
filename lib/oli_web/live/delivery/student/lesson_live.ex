@@ -21,6 +21,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Components.Common
+  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
   alias OliWeb.Icons
@@ -872,7 +873,48 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 points + acum
               end) %>
             <% selected_question_parts_count = map_size(selected_question.part_points) %>
+            <% submitted_questions = Enum.count(@questions, & &1.submitted) %>
+            <% unattempted_questions = total_questions - submitted_questions %>
+            <Modal.modal
+              id="finish_quiz_confirmation"
+              class="w-auto min-w-[50%]"
+              body_class="px-6"
+              on_confirm={JS.push("finalize_attempt")}
+            >
+              <:title>
+                Finish Quiz Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
+              </:title>
 
+              <div class="text-[#373a44] text-sm font-normal font-['Open Sans'] leading-snug">
+                You are about to submit your quiz<span :if={unattempted_questions > 0}> with <strong><%= unattempted_questions %></strong> unattempted question<%= if unattempted_questions == 1, do: "", else: "s" %></span>.
+                <br :if={unattempted_questions > 0} /> Are you sure you want to proceed?
+              </div>
+
+              <:custom_footer>
+                <div class="flex gap-3.5 w-full h-16 p-4 mt-6 border-t border-[#e7e7e7]">
+                  <button
+                    phx-click={Modal.hide_modal("finish_quiz_confirmation")}
+                    class="ml-auto w-[84px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border border-[#0f6bf5] justify-center items-center gap-2.5 inline-flex"
+                  >
+                    <div class="pr-2 justify-end items-center gap-2 flex">
+                      <div class="opacity-90 text-right text-[#0062f2] text-sm font-semibold font-['Open Sans'] leading-[14px]">
+                        Cancel
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    phx-click={JS.push("finalize_attempt")}
+                    class="w-[187.52px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex"
+                  >
+                    <div class="justify-end items-center gap-2 flex">
+                      <div class="opacity-90 text-right text-white text-sm font-semibold font-['Open Sans'] leading-[14px]">
+                        Yes, Finish The Quiz
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </:custom_footer>
+            </Modal.modal>
             <div class="w-screen flex flex-col items-center">
               <div role="questions header" class="w-[1170px] pl-[189px]">
                 <div class="flex w-full justify-between items-center mb-1">
@@ -881,9 +923,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                       selected_question_points
                     ) %>
                   </div>
-                  <%!-- This button will be changed in MER-3640 to show a modal --%>
                   <button
-                    phx-click="finalize_attempt"
+                    phx-click={Modal.show_modal("finish_quiz_confirmation")}
                     disabled={selected_question.number != total_questions}
                     class="flex items-center gap-2"
                   >
@@ -1070,7 +1111,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
                 <button
                   :if={selected_question.number == total_questions}
-                  phx-click="finalize_attempt"
+                  phx-click={Modal.show_modal("finish_quiz_confirmation")}
                   class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap"
                 >
                   Finish Quiz
@@ -1611,8 +1652,21 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       |> elem(1)
       |> Enum.reverse()
 
-    assign(socket, questions: questions)
+    assign(socket,
+      questions: questions,
+      attempt_number: attempt_number(socket.assigns.page_context),
+      max_attempt_number: max_attempt_number(socket.assigns.page_context)
+    )
   end
+
+  defp max_attempt_number(%{effective_settings: %{max_attempts: 0}} = _page_context),
+    do: "unlimited"
+
+  defp max_attempt_number(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
+    do: max_attempts
+
+  defp attempt_number(%{resource_attempts: resource_attempts} = _page_context),
+    do: hd(resource_attempts).attempt_number
 
   defp build_activity_part_points_mapper(activities) do
     # activity_id => %{"part_id" => total_part_points}
