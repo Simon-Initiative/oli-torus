@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Components.Common
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
   alias OliWeb.Icons
@@ -874,7 +875,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
             <div class="w-screen flex flex-col items-center">
               <div role="questions header" class="w-[1170px] pl-[189px]">
-                <div class="flex w-full justify-between">
+                <div class="flex w-full justify-between items-center mb-1">
                   <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
                     Question <%= selected_question.number %> / <%= total_questions %> • <%= parse_points(
                       selected_question_points
@@ -887,11 +888,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     <Icons.finish_quiz_flag />
                   </button>
                 </div>
-                <div
-                  role="progress bar"
-                  class="mb-3 w-[976px] h-[3.30px] bg-[#1c1c1c]/10 flex-col justify-start items-start inline-flex"
-                >
-                  <div class="w-[2.60px] h-1 bg-[#0062f2]"></div>
+                <div class="mb-3">
+                  <Common.progress_bar
+                    percent={get_progress(@questions)}
+                    height="h-1"
+                    rounded="rounded-none"
+                    on_going_colour="bg-[#0062f2]"
+                    completed_colour="bg-[#0062f2]"
+                    show_percent={false}
+                  />
                 </div>
               </div>
               <div role="questions main content" class="mx-auto flex justify-center gap-8 w-full">
@@ -1681,6 +1686,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <Icons.close class="stroke-red-500 dark:stroke-white" />
     """
+  end
+
+  defp get_progress([] = _questions), do: 0.5
+
+  defp get_progress(questions) do
+    total_questions = Enum.count(questions)
+    submitted_questions = Enum.count(questions, fn question -> question.submitted end)
+
+    if submitted_questions == 0, do: 0.5, else: submitted_questions / total_questions * 100
   end
 
   defp parse_points(1), do: "1 point"
