@@ -79,6 +79,11 @@ const lessonSchema: JSONSchema7 = {
           title: 'Enable History',
           type: 'boolean',
         },
+        displayRefreshWarningPopup: {
+          type: 'boolean',
+          title: 'Refresh warning popup',
+          default: 'true',
+        },
         customCSS: {
           title: 'Custom CSS',
           type: 'string',
@@ -155,6 +160,11 @@ export const simpleLessonSchema: JSONSchema7 = {
         enableHistory: {
           title: 'Enable History',
           type: 'boolean',
+        },
+        displayRefreshWarningPopup: {
+          type: 'boolean',
+          title: 'Refresh warning popup',
+          default: 'true',
         },
       },
     },
@@ -240,6 +250,7 @@ export const transformModelToSchema = (model: any) => {
       title: model.title,
       customCSS: model.customCss,
       enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
+      displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup || true,
     },
     CustomLogic: {
       variables: model.custom.variables,
@@ -269,6 +280,7 @@ export const transformSchemaToModel = (schema: any) => {
       defaultScreenWidth: schema.Properties.Size.width,
       defaultScreenHeight: schema.Properties.Size.height,
       enableHistory: schema.Properties.enableHistory,
+      displayRefreshWarningPopup: schema.Properties.displayRefreshWarningPopup,
       variables,
       logoutMessage: schema.Properties.FinishPanel.logoutMessage,
       logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,

@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.Utils do
+defmodule OliWeb.Workspaces.Utils do
   @moduledoc """
     Utility functions for workspace components.
   """
@@ -7,7 +7,7 @@ defmodule OliWeb.Workspace.Utils do
   import OliWeb.Components.Utils
 
   alias Phoenix.LiveView.JS
-  alias OliWeb.Workspace.SubMenuItem
+  alias OliWeb.Workspaces.SubMenuItem
   alias OliWeb.Icons
 
   attr :hierarchy, :list

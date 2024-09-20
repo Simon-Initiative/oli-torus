@@ -126,7 +126,7 @@ defmodule OliWeb.Pow.PowHelpers do
   on through the URL query params.
   """
   def authorization_link(conn, provider, opts \\ []) do
-    opts = build_otps(opts, conn, provider)
+    opts = build_opts(opts, conn, provider)
 
     button_box = build_button_box(conn, provider)
 
@@ -155,14 +155,14 @@ defmodule OliWeb.Pow.PowHelpers do
     )
   end
 
-  defp build_otps(opts, conn, provider) do
+  defp build_opts(opts, conn, provider) do
     path = build_authentication_path(conn, provider)
 
     opts = Keyword.merge(opts, to: path)
 
     Keyword.merge(opts,
       class:
-        "btn btn-md flex items-center no-underline hover:no-underline hover:text-black w-80 m-auto mb-2 h-11 bg-white rounded-md text-center text-black text-base font-normal font-['Open Sans'] leading-snug"
+        "btn btn-md flex items-center no-underline hover:no-underline hover:text-black w-80 m-auto mb-2 h-11 bg-white border border-gray-300 rounded-md text-center text-black text-base font-normal font-['Open Sans'] leading-snug"
     )
   end
 

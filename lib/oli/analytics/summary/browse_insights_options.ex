@@ -12,12 +12,14 @@ defmodule Oli.Analytics.Summary.BrowseInsightsOptions do
   defstruct [
     :project_id,
     :section_ids,
-    :resource_type_id
+    :resource_type_id,
+    :text_search
   ]
 
   @type t() :: %__MODULE__{
           project_id: integer(),
           section_ids: list(),
-          resource_type_id: integer()
+          resource_type_id: integer(),
+          text_search: String.t()
         }
 end

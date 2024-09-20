@@ -10,7 +10,11 @@ export const SelectTimezone: React.FC<SelectTimezoneProps> = ({
   submitAction,
 }) => {
   const ref = useRef<HTMLFormElement>(null);
-  const onSelect = ({ target: { value } }: any) => {
+  const onSelect = ({ target: { value }, isTrusted, nativeEvent }: any) => {
+    // Only submit the form if the change event was triggered by a user action to
+    // prevent this from being triggered by the browser's autofill feature or
+    // any react re-renders.
+    if (!isTrusted || !nativeEvent) return;
     ref.current?.submit();
   };
 
