@@ -112,7 +112,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   def render(%{current_user: nil} = assigns) do
     ~H"""
-    <div class="flex justify-center items-center min-h-screen">
+    <div class="flex-1 flex justify-center items-center">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.instructor_workspace_sign_in />
       </div>

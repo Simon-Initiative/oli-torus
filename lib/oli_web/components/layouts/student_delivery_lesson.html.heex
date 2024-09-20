@@ -1,4 +1,4 @@
-<div id="eventIntercept" phx-hook="LoadSurveyScripts">
+<div id="eventIntercept" phx-hook="LoadSurveyScripts" >
   <div :if={Phoenix.LiveView.connected?(@socket) and assigns[:scripts_loaded]}>
     <script>
       window.userToken = "<%= @user_token %>";
@@ -42,7 +42,7 @@
       <% end %>
     </div>
 
-    <div class="h-screen flex flex-col overscroll-none overflow-hidden">
+    <div class="absolute top-0 bottom-0 left-0 right-0 flex flex-col">
       <Components.Delivery.Layouts.header
         :if={@section}
         ctx={@ctx}
@@ -53,7 +53,7 @@
         include_logo={true}
       />
 
-      <div class="flex-1 flex flex-col mt-14 overflow-hidden">
+      <div class="flex-1 flex flex-col min-h-0">
         <div
           :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
           id="pay_early_message"
@@ -78,7 +78,7 @@
           :if={@section}
           id="page-content"
           phx-hook="EvaluateMathJaxExpressions"
-          class="flex-1 flex flex-col relative justify-center items-start overflow-hidden"
+          class="flex-1 flex flex-col relative justify-center items-start overflow-auto"
         >
           <div
             :if={@view in [:graded_page, :practice_page] and @page_progress_state == :in_progress}

@@ -176,7 +176,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
 
   def render(%{current_author: nil} = assigns) do
     ~H"""
-    <div class="flex justify-center items-center min-h-screen">
+    <div class="flex-1 flex justify-center items-center">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.course_author_workspace_sign_in />
       </div>
@@ -286,7 +286,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   def render(assigns) do
     ~H"""
     <%= render_modal(assigns) %>
-    <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
+    <div class="flex-1 flex flex-col">
       <div class="relative flex items-center h-[247px]">
         <div class="absolute top-0 h-full w-full">
           <Backgrounds.course_author_header />
@@ -406,6 +406,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   def create_authoring_account_link(%{ctx: %{user: %{author_id: author_id}}} = assigns)
       when not is_nil(author_id) do
     ~H"""
+
     """
   end
 

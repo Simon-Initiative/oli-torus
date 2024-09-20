@@ -1,111 +1,88 @@
-<main role="main" class="relative flex flex-col">
-  <div
-    :if={assigns[:header_enabled?] && !@disable_sidebar? && assigns[:active_workspace]}
-    class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
-  >
-    <div class={"mr-3 my-auto #{if assigns[:resource_title], do: "flex items-center justify-between w-full", else: "ml-auto"}"}>
-      <div
-        :if={assigns[:resource_title]}
-        class={"text-[#757682] dark:text-[#FFF] font-medium #{if @sidebar_expanded, do: "ml-60", else: "ml-20"}"}
-      >
-        <%= @resource_title %>
+<.header_with_sidebar_nav
+  ctx={@ctx}
+  flash={@flash}
+  active_workspace={assigns[:active_workspace]}
+  hide_footer={!assigns[:footer_enabled?]}
+  license={Map.get(assigns, :has_license) && assigns[:license]}
+  is_system_admin={assigns[:is_system_admin] || false}
+  sidebar_expanded={@sidebar_expanded}
+  preview_mode={@preview_mode}
+>
+  <:header>
+    <.header
+      ctx={@ctx}
+      include_logo
+      is_system_admin={@is_system_admin}
+      preview_mode={@preview_mode}
+      sidebar_expanded={@sidebar_expanded}
+    />
+  </:header>
+
+  <:nav>
+    <div class="w-full">
+      <.workspace_sidebar_toggler
+        active_workspace={assigns[:active_workspace]}
+        active_view={assigns[:active_view]}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+        resource_slug={assigns[:resource_slug]}
+        active_tab={assigns[:active_tab]}
+        url_params={assigns[:url_params] || %{}}
+        uri={assigns[:uri] || ""}
+      />
+      <div class="h-[24px]">
+        <h2
+          :if={@sidebar_expanded}
+          class="text-[14px] font-bold uppercase ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
+        >
+          workspace
+        </h2>
       </div>
-      <Components.Delivery.UserAccount.workspace_menu
-        id="workspace-user-menu"
-        ctx={@ctx}
-        has_admin_role={@has_admin_role}
-        active_workspace={@active_workspace}
+      <.workspace_sidebar_links
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+        active_workspace={assigns[:active_workspace]}
+      />
+      <OliWeb.Workspaces.Utils.sub_menu
+        :if={assigns[:resource_slug]}
+        hierarchy={WorkspaceUtils.hierarchy(assigns[:active_workspace])}
+        resource_slug={assigns[:resource_slug]}
+        resource_title={@resource_title}
+        sidebar_expanded={@sidebar_expanded}
+        active_view={assigns[:active_view]}
+        active_workspace={assigns[:active_workspace]}
       />
     </div>
-  </div>
-  <Components.Delivery.Layouts.workspace_sidebar_nav
-    :if={!@disable_sidebar?}
-    ctx={@ctx}
-    is_system_admin={assigns[:is_system_admin] || false}
-    active_workspace={assigns[:active_workspace] || :student}
-    active_view={assigns[:active_view]}
-    preview_mode={@preview_mode}
-    sidebar_expanded={@sidebar_expanded}
-    resource_title={assigns[:resource_title]}
-    resource_slug={assigns[:resource_slug]}
-    active_tab={assigns[:active_tab]}
-    url_params={assigns[:url_params] || %{}}
-    uri={assigns[:uri] || ""}
-  />
-  <Components.Delivery.Layouts.header
-    :if={@disable_sidebar?}
-    ctx={@ctx}
-    include_logo
-    is_system_admin={assigns[:is_system_admin] || false}
-    preview_mode={@preview_mode}
-    sidebar_expanded={@sidebar_expanded}
-  />
-  <div
-    id="content"
-    class={[
-      "transition-all duration-100  min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
-      if(@sidebar_expanded,
-        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
-        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
-      ),
-      if(assigns[:header_enabled?] && true, do: "mt-14"),
-      if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
-    ]}
-  >
-    <div class="absolute z-50 top-0 overview" style="width: inherit">
-      <%= if Phoenix.Flash.get(@flash, :info) do %>
-        <div class="alert alert-info flex flex-row" role="alert">
-          <div class="flex-1">
-            <%= Phoenix.Flash.get(@flash, :info) %>
-          </div>
-
-          <button
-            type="button"
-            class="close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-            phx-click="lv:clear-flash"
-            phx-value-key="info"
-          >
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-        </div>
-      <% end %>
-      <%= if Phoenix.Flash.get(@flash, :error) do %>
-        <div class="alert alert-danger flex flex-row" role="alert">
-          <div class="flex-1">
-            <%= Phoenix.Flash.get(@flash, :error) %>
-          </div>
-
-          <button
-            type="button"
-            class="close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-            phx-click="lv:clear-flash"
-            phx-value-key="danger"
-          >
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-        </div>
-      <% end %>
+    <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+      <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
+      <.exit_workspace_button
+        :if={assigns[:resource_slug]}
+        sidebar_expanded={@sidebar_expanded}
+        title={if assigns[:active_workspace] == :course_author, do: "Exit Project", else: "Exit Section"}
+        target_workspace={assigns[:active_workspace]}
+      />
     </div>
-    <%= @inner_content %>
-  </div>
-  <div
-    :if={assigns[:footer_enabled?] && true}
-    id="footer_contaner"
-    class={[
-      "relative transition-all duration-100 mt-14",
-      if(@sidebar_expanded,
-        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
-        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
-      ),
-      if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
-    ]}
-  >
-    <OliWeb.Components.Footer.delivery_footer license={
-      Map.get(assigns, :has_license) && assigns[:license]
-    } />
-  </div>
-</main>
+  </:nav>
+
+  <:mobile_nav>
+    <.workspace_sidebar_links
+      preview_mode={@preview_mode}
+      sidebar_expanded={@sidebar_expanded}
+      active_workspace={assigns[:active_workspace]}
+    />
+    <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
+      <div class="flex items-center">
+        <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
+      </div>
+      <OliWeb.Components.Delivery.UserAccount.menu
+        id="mobile-user-account-menu-workspace-sidebar"
+        ctx={@ctx}
+        is_system_admin={assigns[:is_system_admin] || false}
+        dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
+      />
+    </div>
+  </:mobile_nav>
+
+  <%= @inner_content %>
+
+</.header_with_sidebar_nav>

@@ -31,16 +31,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
   )
 
   attr(:sidebar_expanded, :boolean, default: true)
-  attr(:include_logo, :boolean, default: false)
 
   def header(assigns) do
     ~H"""
     <div
       id="header"
-      class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class="w-full z-50 py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
       <.link
-        :if={@include_logo}
         id="header_logo_button"
         class="w-48"
         navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
@@ -93,110 +91,115 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:ctx, SessionContext)
+  attr :section, Section, default: nil
+  attr :flash, :map
+  attr :active_workspace, :atom
+  attr :hide_footer, :boolean, default: false
+  attr :license, :string
   attr(:is_system_admin, :boolean, required: true)
-  attr(:section, Section, default: nil)
-  attr(:active_tab, :atom)
   attr(:sidebar_expanded, :boolean, default: true)
-  attr(:notes_enabled, :boolean, default: false)
-  attr(:discussions_enabled, :boolean, default: false)
   attr(:preview_mode, :boolean)
-  attr :notification_badges, :map, default: %{}
 
-  def sidebar_nav(assigns) do
+  slot :nav, required: true
+  slot :mobile_nav, default: nil
+
+  def header_with_sidebar_nav(assigns) do
     ~H"""
-    <div>
-      <nav id="desktop-nav-menu" class={["
-          transition-all
-          duration-100
-          fixed
-          z-50
-          w-full
-          hidden
-          h-[100vh]
-          md:flex
-          flex-col
-          justify-between
-          md:w-[200px]
-          shadow-sm
-          bg-delivery-navbar
-          dark:bg-delivery-navbar-dark
-          overflow-hidden
-        ", if(!@sidebar_expanded, do: "md:!w-[60px]")]} aria-expanded={"#{@sidebar_expanded}"}>
-        <div class="w-full">
-          <div
-            class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-              if(!@sidebar_expanded, do: "w-14")
-            ]}
-            tab-index="0"
-          >
-            <.link
-              id="logo_button"
-              navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
-            >
-              <.logo_img section={@section} />
-            </.link>
-          </div>
-          <.sidebar_toggler
-            active={@active_tab}
-            section={@section}
-            preview_mode={@preview_mode}
-            sidebar_expanded={@sidebar_expanded}
-          />
-          <.sidebar_links
-            active_tab={@active_tab}
-            section={@section}
-            preview_mode={@preview_mode}
-            sidebar_expanded={@sidebar_expanded}
-            notes_enabled={@notes_enabled}
-            discussions_enabled={@discussions_enabled}
-            notification_badges={@notification_badges}
-          />
-        </div>
-        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
-          <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
-          <.exit_course_button
-            :if={is_independent_learner?(@ctx.user)}
-            sidebar_expanded={@sidebar_expanded}
-          />
-        </div>
-      </nav>
-      <nav
-        id="mobile-nav-menu"
-        class="
-          fixed
-          z-50
-          w-full
-          mt-14
-          hidden
-          md:hidden
-          flex-col
-          shadow-sm
-          bg-delivery-navbar
-          dark:bg-delivery-navbar-dark
-        "
-        phx-click-away={JS.hide()}
-      >
-        <.sidebar_links
-          active_tab={@active_tab}
+      <div class="absolute top-0 bottom-0 left-0 right-0 flex flex-col min-h-0 overflow-hidden">
+        <.header
+          ctx={@ctx}
+          include_logo
           section={@section}
+          is_system_admin={@is_system_admin}
           preview_mode={@preview_mode}
-          notes_enabled={@notes_enabled}
-          discussions_enabled={@discussions_enabled}
+          sidebar_expanded={@sidebar_expanded}
         />
-        <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
-          <div class="flex items-center">
-            <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
+
+        <div class="flex-1 flex flex-row min-h-0">
+          <nav
+            :if={@active_workspace}
+            id="desktop-workspace-nav-menu"
+            class={["
+            transition-all
+            duration-100
+            z-50
+            hidden
+            md:flex
+            flex-col
+            justify-between
+            md:w-[200px]
+            shadow-sm
+            bg-delivery-navbar
+            dark:bg-delivery-navbar-dark
+          ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
+            aria-expanded={"#{@sidebar_expanded}"}
+          >
+            <%= render_slot(@nav) %>
+          </nav>
+          <nav
+            :if={@mobile_nav}
+            id="mobile-workspace-nav-menu"
+            class="
+            mt-14
+            hidden
+            md:hidden
+            flex-col
+            shadow-sm
+            bg-delivery-navbar
+            dark:bg-delivery-navbar-dark
+          "
+            phx-click-away={JS.hide()}
+          >
+            <%= render_slot(@mobile_nav) %>
+          </nav>
+          <div class={["flex-1 flex flex-col relative overflow-auto"]}>
+            <%= if Phoenix.Flash.get(@flash, :info) do %>
+              <div class="alert alert-info flex flex-row" role="alert">
+                <div class="flex-1">
+                  <%= Phoenix.Flash.get(@flash, :info) %>
+                </div>
+
+                <button
+                  type="button"
+                  class="close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                  phx-click="lv:clear-flash"
+                  phx-value-key="info"
+                >
+                  <i class="fa-solid fa-xmark fa-lg"></i>
+                </button>
+              </div>
+            <% end %>
+            <%= if Phoenix.Flash.get(@flash, :error) do %>
+              <div class="alert alert-danger flex flex-row" role="alert">
+                <div class="flex-1">
+                  <%= Phoenix.Flash.get(@flash, :error) %>
+                </div>
+
+                <button
+                  type="button"
+                  class="close"
+                  data-bs-dismiss="alert"
+                  aria-label="Close"
+                  phx-click="lv:clear-flash"
+                  phx-value-key="danger"
+                >
+                  <i class="fa-solid fa-xmark fa-lg"></i>
+                </button>
+              </div>
+            <% end %>
+
+            <main class="flex-1 flex flex-col">
+              <%= render_slot(@inner_block) %>
+            </main>
+
+            <OliWeb.Components.Footer.delivery_footer
+              :if={!@hide_footer}
+              license={@license} />
           </div>
-          <UserAccount.menu
-            id="mobile-user-account-menu-sidebar"
-            ctx={@ctx}
-            is_system_admin={@is_system_admin}
-            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
-          />
         </div>
-      </nav>
-    </div>
+      </div>
     """
   end
 
@@ -206,7 +209,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def maybe_masquerading_as(assigns) do
     if assigns[:ctx] && assigns[:ctx].masquerading_as do
       ~H"""
-      <div class="fixed top-0 bottom-0 left-0 right-0 overflow-auto border-4 border-solid border-fuchsia-500">
+      <div class="flex flex-col fixed top-0 bottom-0 left-0 right-0 border-4 border-solid border-fuchsia-500">
         <div class="bg-fuchsia-500 text-white px-6 py-2">
           <div class="flex justify-between items-center">
             <div>
@@ -227,12 +230,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
           </div>
         </div>
 
-        <%= render_slot(@inner_block) %>
+        <div class="flex flex-1 relative overflow-auto">
+          <%= render_slot(@inner_block) %>
+        </div>
       </div>
       """
     else
       ~H"""
-      <%= render_slot(@inner_block) %>
+      <div class="flex flex-col fixed top-0 bottom-0 left-0 right-0">
+        <%= render_slot(@inner_block) %>
+      </div>
       """
     end
   end
@@ -295,137 +302,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
-  attr(:active_workspace, :atom)
-  attr(:active_view, :atom, default: nil)
-  attr(:sidebar_expanded, :boolean)
-  attr(:preview_mode, :boolean)
-  attr(:resource_title, :string)
-  attr(:resource_slug, :string)
-  attr(:active_tab, :atom)
-  attr(:url_params, :map, default: %{})
-  attr(:uri, :string, default: "")
-
-  def workspace_sidebar_nav(assigns) do
-    ~H"""
-    <div>
-      <nav
-        id="desktop-workspace-nav-menu"
-        class={["
-        transition-all
-        duration-100
-        fixed
-        z-50
-        top-0
-        w-full
-        hidden
-        h-[100vh]
-        md:flex
-        flex-col
-        justify-between
-        md:w-[200px]
-        shadow-sm
-        bg-delivery-navbar
-        dark:bg-delivery-navbar-dark
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
-        aria-expanded={"#{@sidebar_expanded}"}
-      >
-        <div class="w-full">
-          <div
-            class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
-              if(!@sidebar_expanded, do: "w-14")
-            ]}
-            tab-index="0"
-          >
-            <.link
-              id="logo_button"
-              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded)}
-            >
-              <.logo_img />
-            </.link>
-          </div>
-          <.workspace_sidebar_toggler
-            active_workspace={@active_workspace}
-            active_view={@active_view}
-            preview_mode={@preview_mode}
-            sidebar_expanded={@sidebar_expanded}
-            resource_slug={@resource_slug}
-            active_tab={@active_tab}
-            url_params={@url_params}
-            uri={@uri}
-          />
-          <div class="h-[24px]">
-            <h2
-              :if={@sidebar_expanded}
-              class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
-            >
-              WORKSPACE
-            </h2>
-          </div>
-          <.workspace_sidebar_links
-            preview_mode={@preview_mode}
-            sidebar_expanded={@sidebar_expanded}
-            active_workspace={@active_workspace}
-          />
-          <WorkspaceUtils.sub_menu
-            :if={@resource_slug}
-            hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
-            resource_slug={@resource_slug}
-            resource_title={@resource_title}
-            sidebar_expanded={@sidebar_expanded}
-            active_view={@active_view}
-            active_workspace={@active_workspace}
-          />
-        </div>
-        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
-          <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
-          <.exit_workspace_button
-            :if={@resource_slug}
-            sidebar_expanded={@sidebar_expanded}
-            title={if @active_workspace == :course_author, do: "Exit Project", else: "Exit Section"}
-            target_workspace={@active_workspace}
-          />
-        </div>
-      </nav>
-      <nav
-        id="mobile-workspace-nav-menu"
-        class="
-        fixed
-        z-50
-        w-full
-        mt-14
-        hidden
-        md:hidden
-        flex-col
-        shadow-sm
-        bg-delivery-navbar
-        dark:bg-delivery-navbar-dark
-      "
-        phx-click-away={JS.hide()}
-      >
-        <.workspace_sidebar_links
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-          active_workspace={@active_workspace}
-        />
-        <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
-          <div class="flex items-center">
-            <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
-          </div>
-          <UserAccount.menu
-            id="mobile-user-account-menu-workspace-sidebar"
-            ctx={@ctx}
-            is_system_admin={@is_system_admin}
-            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
-          />
-        </div>
-      </nav>
-    </div>
-    """
-  end
-
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean)
   attr(:active_workspace, :atom)
@@ -479,7 +355,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  attr(:section, Section, default: nil)
+  attr(:section, Section, required: true)
   attr(:active_tab, :atom)
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean, default: true)
