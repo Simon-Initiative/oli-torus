@@ -895,6 +895,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     rounded="rounded-none"
                     on_going_colour="bg-[#0062f2]"
                     completed_colour="bg-[#0062f2]"
+                    not_completed_colour="bg-[#1c1c1c]/10"
                     show_percent={false}
                   />
                 </div>

@@ -596,18 +596,20 @@ defmodule OliWeb.Components.Common do
   )
 
   attr(:completed_colour, :string,
-    default: "bg-[#1E9531]",
+    default: "bg-gray-600/20 dark:bg-white/20",
     doc: "the colour of the progress bar when progress = 100%"
+  )
+
+  attr(:not_completed_colour, :string,
+    default: "bg-[#1E9531]",
+    doc: "the colour of the not completed section of the progress bar"
   )
 
   def progress_bar(assigns) do
     ~H"""
     <div class="flex flex-row items-center gap-3 mx-auto" role={@role}>
       <div class="flex justify-center w-full">
-        <div
-          class={"#{@rounded} bg-gray-600/20 #{@height} dark:bg-white/20"}
-          style={"width: #{@width}"}
-        >
+        <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
             class={[
               "#{@rounded} #{@height}",
