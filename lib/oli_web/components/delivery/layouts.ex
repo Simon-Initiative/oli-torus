@@ -105,21 +105,21 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def header_with_sidebar_nav(assigns) do
     ~H"""
-      <div class="absolute top-0 bottom-0 left-0 right-0 flex flex-col min-h-0 overflow-hidden">
-        <.header
-          ctx={@ctx}
-          include_logo
-          section={@section}
-          is_system_admin={@is_system_admin}
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-        />
+    <div class="absolute top-0 bottom-0 left-0 right-0 flex flex-col min-h-0 overflow-hidden">
+      <.header
+        ctx={@ctx}
+        include_logo
+        section={@section}
+        is_system_admin={@is_system_admin}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+      />
 
-        <div class="flex-1 flex flex-row min-h-0">
-          <nav
-            :if={@active_workspace}
-            id="desktop-workspace-nav-menu"
-            class={["
+      <div class="flex-1 flex flex-row min-h-0">
+        <nav
+          :if={@active_workspace}
+          id="desktop-workspace-nav-menu"
+          class={["
             transition-all
             duration-100
             z-50
@@ -132,14 +132,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
             bg-delivery-navbar
             dark:bg-delivery-navbar-dark
           ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
-            aria-expanded={"#{@sidebar_expanded}"}
-          >
-            <%= render_slot(@nav) %>
-          </nav>
-          <nav
-            :if={@mobile_nav}
-            id="mobile-workspace-nav-menu"
-            class="
+          aria-expanded={"#{@sidebar_expanded}"}
+        >
+          <%= render_slot(@nav) %>
+        </nav>
+        <nav
+          :if={@mobile_nav}
+          id="mobile-workspace-nav-menu"
+          class="
             mt-14
             hidden
             md:hidden
@@ -148,58 +148,56 @@ defmodule OliWeb.Components.Delivery.Layouts do
             bg-delivery-navbar
             dark:bg-delivery-navbar-dark
           "
-            phx-click-away={JS.hide()}
-          >
-            <%= render_slot(@mobile_nav) %>
-          </nav>
-          <div class={["flex-1 flex flex-col relative overflow-auto"]}>
-            <%= if Phoenix.Flash.get(@flash, :info) do %>
-              <div class="alert alert-info flex flex-row" role="alert">
-                <div class="flex-1">
-                  <%= Phoenix.Flash.get(@flash, :info) %>
-                </div>
-
-                <button
-                  type="button"
-                  class="close"
-                  data-bs-dismiss="alert"
-                  aria-label="Close"
-                  phx-click="lv:clear-flash"
-                  phx-value-key="info"
-                >
-                  <i class="fa-solid fa-xmark fa-lg"></i>
-                </button>
+          phx-click-away={JS.hide()}
+        >
+          <%= render_slot(@mobile_nav) %>
+        </nav>
+        <div class={["flex-1 flex flex-col relative overflow-auto"]}>
+          <%= if Phoenix.Flash.get(@flash, :info) do %>
+            <div class="alert alert-info flex flex-row" role="alert">
+              <div class="flex-1">
+                <%= Phoenix.Flash.get(@flash, :info) %>
               </div>
-            <% end %>
-            <%= if Phoenix.Flash.get(@flash, :error) do %>
-              <div class="alert alert-danger flex flex-row" role="alert">
-                <div class="flex-1">
-                  <%= Phoenix.Flash.get(@flash, :error) %>
-                </div>
 
-                <button
-                  type="button"
-                  class="close"
-                  data-bs-dismiss="alert"
-                  aria-label="Close"
-                  phx-click="lv:clear-flash"
-                  phx-value-key="danger"
-                >
-                  <i class="fa-solid fa-xmark fa-lg"></i>
-                </button>
+              <button
+                type="button"
+                class="close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+                phx-click="lv:clear-flash"
+                phx-value-key="info"
+              >
+                <i class="fa-solid fa-xmark fa-lg"></i>
+              </button>
+            </div>
+          <% end %>
+          <%= if Phoenix.Flash.get(@flash, :error) do %>
+            <div class="alert alert-danger flex flex-row" role="alert">
+              <div class="flex-1">
+                <%= Phoenix.Flash.get(@flash, :error) %>
               </div>
-            <% end %>
 
-            <main class="flex-1 flex flex-col">
-              <%= render_slot(@inner_block) %>
-            </main>
+              <button
+                type="button"
+                class="close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+                phx-click="lv:clear-flash"
+                phx-value-key="danger"
+              >
+                <i class="fa-solid fa-xmark fa-lg"></i>
+              </button>
+            </div>
+          <% end %>
 
-            <OliWeb.Components.Footer.delivery_footer
-              :if={!@hide_footer}
-              license={@license} />
-          </div>
+          <main class="flex-1 flex flex-col">
+            <%= render_slot(@inner_block) %>
+          </main>
+
+          <OliWeb.Components.Footer.delivery_footer :if={!@hide_footer} license={@license} />
         </div>
       </div>
+    </div>
     """
   end
 

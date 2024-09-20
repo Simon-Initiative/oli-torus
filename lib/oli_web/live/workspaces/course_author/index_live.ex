@@ -406,7 +406,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   def create_authoring_account_link(%{ctx: %{user: %{author_id: author_id}}} = assigns)
       when not is_nil(author_id) do
     ~H"""
-
     """
   end
 

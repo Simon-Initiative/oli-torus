@@ -58,7 +58,11 @@
       <.exit_workspace_button
         :if={assigns[:resource_slug]}
         sidebar_expanded={@sidebar_expanded}
-        title={if assigns[:active_workspace] == :course_author, do: "Exit Project", else: "Exit Section"}
+        title={
+          if assigns[:active_workspace] == :course_author,
+            do: "Exit Project",
+            else: "Exit Section"
+        }
         target_workspace={assigns[:active_workspace]}
       />
     </div>
@@ -84,5 +88,4 @@
   </:mobile_nav>
 
   <%= @inner_content %>
-
 </.header_with_sidebar_nav>

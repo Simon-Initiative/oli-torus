@@ -1,4 +1,4 @@
-<div id="eventIntercept" phx-hook="LoadSurveyScripts" >
+<div id="eventIntercept" phx-hook="LoadSurveyScripts">
   <div :if={Phoenix.LiveView.connected?(@socket) and assigns[:scripts_loaded]}>
     <script>
       window.userToken = "<%= @user_token %>";
