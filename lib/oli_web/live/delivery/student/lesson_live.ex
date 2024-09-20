@@ -882,7 +882,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     ) %>
                   </div>
                   <%!-- This button will be changed in MER-3640 to show a modal --%>
-                  <button phx-click="finalize_attempt" class="flex items-center gap-2">
+                  <button
+                    phx-click="finalize_attempt"
+                    disabled={selected_question.number != total_questions}
+                    class="flex items-center gap-2"
+                  >
                     <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
                       Finish Quiz
                     </div>
@@ -1008,54 +1012,68 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     JS.dispatch("click", to: "#question_#{selected_question.number - 1}_button")
                   }
                   disabled={selected_question.number == 1}
-                  class={[
-                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
-                    if(selected_question.number == 1, do: "!text-[#757682]")
-                  ]}
+                  class="w-[117.45px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
                 >
-                  <svg
-                    width="13"
-                    height="10"
-                    viewBox="0 0 13 10"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M1.5 5H11.5M1.5 5L5.5 9M1.5 5L5.5 1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>Previous Question</span>
+                  <div class="justify-end items-center gap-2 flex">
+                    <svg
+                      width="13"
+                      height="10"
+                      viewBox="0 0 13 10"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M1.95898 5H11.959M1.95898 5L5.95898 9M1.95898 5L5.95898 1"
+                        stroke={if(selected_question.number == 1, do: "#9b9b9b", else: "#0062F2")}
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                    <span class={[
+                      "opacity-90 text-right text-[#0062f2] text-sm font-semibold font-['Open Sans'] leading-[14px]",
+                      if(selected_question.number == 1, do: "!text-[#9b9b9b]")
+                    ]}>
+                      Previous
+                    </span>
+                  </div>
                 </button>
+
                 <button
+                  :if={selected_question.number < total_questions}
                   phx-click={
                     JS.dispatch("click", to: "#question_#{selected_question.number + 1}_button")
                   }
-                  disabled={selected_question.number == total_questions}
-                  class={[
-                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
-                    if(selected_question.number == total_questions, do: "!text-[#757682]")
-                  ]}
+                  class="w-[93.51px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
                 >
-                  <span>Next Question</span>
-                  <svg
-                    width="13"
-                    height="10"
-                    viewBox="0 0 13 10"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M11.2544 5H1.25439M11.2544 5L7.25439 9M11.2544 5L7.25439 1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
+                  <div class="justify-end items-center gap-2 flex">
+                    <span class="opacity-90 text-right text-[#0062f2] text-sm font-semibold font-['Open Sans'] leading-[14px]">
+                      Next
+                    </span>
+                    <svg
+                      width="13"
+                      height="11"
+                      viewBox="0 0 13 11"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M11.2002 5.21094H1.2002M11.2002 5.21094L7.2002 9.21094M11.2002 5.21094L7.2002 1.21094"
+                        stroke="#0062F2"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </button>
+
+                <button
+                  :if={selected_question.number == total_questions}
+                  phx-click="finalize_attempt"
+                  class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap"
+                >
+                  Finish Quiz
                 </button>
               </div>
             </div>
