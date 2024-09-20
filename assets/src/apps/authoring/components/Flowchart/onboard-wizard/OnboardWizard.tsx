@@ -97,7 +97,7 @@ const Step3Advanced: React.FC<{
         <h2>Note</h2>
 
         <p>
-          Projects created in Advanced Authoring do not open in Basic Authoring. This requires
+          Projects created in Advanced Authoring do not open in Simple Authoring. This requires
           creating a new lesson project.
         </p>
       </div>
@@ -185,7 +185,7 @@ const Step2: React.FC<{
             <div className="big-icon">
               <D6 />
             </div>
-            <label>Basic authoring</label>
+            <label>Simple authoring</label>
             <p>Easily build lessons using templates, simplified interactions, and conditioning.</p>
           </div>
           <div
