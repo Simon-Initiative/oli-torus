@@ -881,7 +881,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                       selected_question_points
                     ) %>
                   </div>
-                  <button class="flex items-center gap-2">
+                  <%!-- This button will be changed in MER-3640 to show a modal --%>
+                  <button phx-click="finalize_attempt" class="flex items-center gap-2">
                     <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
                       Finish Quiz
                     </div>
@@ -969,7 +970,17 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                     >
                       Submit Response
                     </button>
-                    <div :if={selected_question.submitted} class="activity w-full p-2">
+                    <div :if={selected_question.submitted} class="activity w-full p-2 px-10">
+                      <div class="flex justify-end mb-2.5">
+                        <span class="text-[#8e8e8e] text-xs font-normal font-['Open Sans'] leading-[18px]">
+                          Points:
+                        </span>
+                        <span class="ml-1 text-[#5e5e5e] text-xs font-semibold font-['Open Sans'] leading-[18px]">
+                          <%= question_points(selected_question) %> / <%= total_question_points(
+                            selected_question
+                          ) %>
+                        </span>
+                      </div>
                       <div class="activity-content">
                         <%= OliWeb.Common.React.component(
                           @ctx,
@@ -1687,6 +1698,22 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <Icons.close class="stroke-red-500 dark:stroke-white" />
     """
+  end
+
+  defp question_points(selected_question) do
+    Enum.reduce(selected_question.state["parts"], 0.0, fn part, acum ->
+      part["score"] + acum
+    end)
+  end
+
+  defp total_question_points(selected_question) do
+    Enum.reduce(
+      selected_question.part_points,
+      0.0,
+      fn {_id, points}, acum ->
+        points + acum
+      end
+    )
   end
 
   defp get_progress([] = _questions), do: 0.5
