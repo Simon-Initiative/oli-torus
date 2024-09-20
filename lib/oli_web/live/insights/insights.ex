@@ -251,11 +251,11 @@ defmodule OliWeb.Insights do
 
     <div class="card">
       <div class="card-header">
-        <form phx-change="search">
+        <form phx-change="text_search_change">
           <input
             type="text"
             class="form-control"
-            name="query"
+            name="value"
             value={@query}
             placeholder="Search by title..."
           />
@@ -301,8 +301,8 @@ defmodule OliWeb.Insights do
 
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
 
-    options = socket.assigns.options
-    offset = get_int_param(changes, "offset", 0)
+    options = Map.put(socket.assigns.options, :text_search, Map.get(changes, "text_search", ""))
+    offset = get_param(changes, "offset", 0)
 
     insights =
       BrowseInsights.browse_insights(
