@@ -80,6 +80,7 @@ defmodule OliWeb.Sections.Details.ImageUpload do
                         </div>
                         <div class="col-span-4 self-center h-100">
                           <button
+                            type="button"
                             class="btn btn-secondary btn-sm"
                             phx-click="cancel_upload"
                             phx-value-ref={entry.ref}
