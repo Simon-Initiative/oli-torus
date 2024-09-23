@@ -17,7 +17,7 @@
  * https://elixirforum.com/t/get-user-id-with-pow-from-session-for-live-view/24206/4
  */
 
-// Wait time to renew session set to 10 min. Default Pow session rewnew is at 15 min (session_ttl_renewal)
+// Wait time to renew session set to 10 min. Default Pow session renew is at 15 min
 const waitTime = 600000; // 10 min in ms
 
 if (!window.keepAlive) {
@@ -26,14 +26,15 @@ if (!window.keepAlive) {
     const isAuthoring = $('#layout-id').data('layout-id') === 'authoring';
     const keepAliveUrl = `${isAuthoring ? '/authoring' : ''}/keep-alive`;
 
-    const wait = (ms: number) => {
-      return () =>
-        new Promise((resolve) => {
-          setTimeout(resolve, ms);
-        });
-    };
-
-    fetch(keepAliveUrl).then(wait(waitTime)).then(window.keepAlive);
+    fetch(keepAliveUrl).then((res: any) => {
+      if (res.status === 401 || res.status === 302) {
+        window.location.href = `${
+          isAuthoring ? '/authoring' : ''
+        }/session/new?request_path=${encodeURIComponent(window.location.pathname)}`;
+      } else {
+        setTimeout(window.keepAlive, waitTime);
+      }
+    });
   };
 
   window.keepAlive();

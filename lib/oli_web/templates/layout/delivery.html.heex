@@ -150,6 +150,13 @@
     <% end %>
     <script type="text/javascript" src={Routes.static_path(@conn, "/js/dark.js")}>
     </script>
+
+    <script
+      id="keep-alive"
+      type="text/javascript"
+      src={Routes.static_path(OliWeb.Endpoint, "/js/keepalive.js")}
+    >
+    </script>
   </head>
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <input type="hidden" id="layout-id" data-layout-id="delivery" />
