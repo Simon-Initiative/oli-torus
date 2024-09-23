@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import register from '../customElementWrapper';
+import { QuillImageUploader } from './QuillImageUploader';
 import { convertJanusToQuill, convertQuillToJanus } from './quill-utils';
 
 interface QuillEditorProps {
@@ -75,32 +76,6 @@ const fontStyles = `${getCssForFonts(supportedFonts)}
   font-size: 18px !important;
 }
 `;
-
-const customHandlers = {
-  adaptivity: function (value: string) {
-    const range = this.quill.getSelection();
-    let selectionValue = '';
-    if (range && range.length > 0) {
-      selectionValue = this.quill.getText(range.index, range.length);
-      if (selectionValue.charAt(0) === '{') {
-        selectionValue = selectionValue.substring(1, selectionValue.length - 1);
-      }
-    }
-    const expression = prompt('Enter the Expression', selectionValue);
-    if (expression) {
-      this.quill.insertText(range.index, `{${expression}}`);
-      this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
-    }
-  },
-  image: function (value: string) {
-    const range = this.quill.getSelection();
-    const expression = prompt('Enter the image URL', '');
-    if (expression) {
-      this.quill.insertEmbed(range.index, 'image', expression);
-    }
-  },
-};
-
 export const QuillEditor: React.FC<QuillEditorProps> = ({
   tree,
   html,
@@ -110,9 +85,55 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
   onCancel,
   showimagecontrol = false,
 }) => {
+  const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
+  const [myQuill, setMyQuill] = React.useState<any>(null);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
+  const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
+  const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
+  const customHandlers = {
+    adaptivity: function (value: string) {
+      const range = this.quill.getSelection();
+      let selectionValue = '';
+      if (range && range.length > 0) {
+        selectionValue = this.quill.getText(range.index, range.length);
+        if (selectionValue.charAt(0) === '{') {
+          selectionValue = selectionValue.substring(1, selectionValue.length - 1);
+        }
+      }
+      const expression = prompt('Enter the Expression', selectionValue);
+      if (expression) {
+        this.quill.insertText(range.index, `{${expression}}`);
+        this.quill.deleteText(range.index + expression.length + 2, expression.length + 2);
+      }
+    },
+    image: function (value: string) {
+      setShowImageSelectorDailog(true);
+      setCurrentQuillRange(this.quill.getSelection());
+      setMyQuill(this.quill);
+      console.log({ getSelection: this.quill.getSelection() });
+    },
+  };
+  const handleImageDetailsSave = useCallback(
+    (imageURL: string, imageAltText: string) => {
+      setShowImageSelectorDailog(false);
+      if (quill?.current) {
+        const range = quill.current.editor.getSelection();
 
+        console.log({ myQuill, quill });
+        console.log({ range, currentQuillRange });
+        if (imageURL) {
+          const img = document.createElement('img');
+          img.src = imageURL;
+          img.alt = imageAltText;
+          // quill.insertEmbed does not allow inserting any additional attributes hence using dangerouslyPasteHTML function to set the Alt text
+          // This code only gets executed when user tries to add a Image in MCQ Options.
+          quill.current.editor.clipboard.dangerouslyPasteHTML(currentQuillRange, img.outerHTML);
+        }
+      }
+    },
+    [currentQuillRange, myQuill],
+  );
   /*  console.log('[QuillEditor]', { tree, html }); */
 
   useEffect(() => {
@@ -138,6 +159,72 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     },
     [onChange],
   );
+  const modules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          ['bold', 'italic', 'underline', 'strike'], // toggled buttons
+          ['blockquote' /* , 'code-block' */],
+
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
+          [{ indent: '-1' }, { indent: '+1' }], // outdent/indent
+
+          [{ header: [1, 2, 3, 4, 5, 6, false] }],
+
+          [
+            {
+              color: [
+                '#000000',
+                '#e60000',
+                '#ff9900',
+                '#ffff00',
+                '#008a00',
+                '#0066cc',
+                '#9933ff',
+                '#ffffff',
+                '#facccc',
+                '#ffebcc',
+                '#ffffcc',
+                '#cce8cc',
+                '#cce0f5',
+                '#ebd6ff',
+                '#bbbbbb',
+                '#f06666',
+                '#ffc266',
+                '#ffff66',
+                '#66b966',
+                '#66a3e0',
+                '#c285ff',
+                '#888888',
+                '#a10000',
+                '#b26b00',
+                '#b2b200',
+                '#006100',
+                '#0047b2',
+                '#6b24b2',
+                '#444444',
+                '#5c0000',
+                '#663d00',
+                '#666600',
+                '#003700',
+                '#002966',
+                '#3d1466',
+              ],
+            },
+            { background: [] },
+          ], // dropdown with defaults from theme
+          [{ font: FontAttributor.whitelist }, { size: ['10px', '12px', '14px', '16px', '18px'] }],
+          [{ align: [] }],
+          ['link', 'adaptivity'],
+          ['clean'], // remove formatting button
+          showimagecontrol ? ['image'] : [],
+        ],
+        handlers: customHandlers,
+      },
+    }),
+    [],
+  );
 
   return (
     <React.Fragment>
@@ -154,73 +241,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         }}
       >
         <ReactQuill
+          ref={quill}
           style={{ maxHeight: '100%' }}
-          modules={{
-            toolbar: {
-              container: [
-                ['bold', 'italic', 'underline', 'strike'], // toggled buttons
-                ['blockquote' /* , 'code-block' */],
-
-                [{ list: 'ordered' }, { list: 'bullet' }],
-                [{ script: 'sub' }, { script: 'super' }], // superscript/subscript
-                [{ indent: '-1' }, { indent: '+1' }], // outdent/indent
-
-                [{ header: [1, 2, 3, 4, 5, 6, false] }],
-
-                [
-                  {
-                    color: [
-                      '#000000',
-                      '#e60000',
-                      '#ff9900',
-                      '#ffff00',
-                      '#008a00',
-                      '#0066cc',
-                      '#9933ff',
-                      '#ffffff',
-                      '#facccc',
-                      '#ffebcc',
-                      '#ffffcc',
-                      '#cce8cc',
-                      '#cce0f5',
-                      '#ebd6ff',
-                      '#bbbbbb',
-                      '#f06666',
-                      '#ffc266',
-                      '#ffff66',
-                      '#66b966',
-                      '#66a3e0',
-                      '#c285ff',
-                      '#888888',
-                      '#a10000',
-                      '#b26b00',
-                      '#b2b200',
-                      '#006100',
-                      '#0047b2',
-                      '#6b24b2',
-                      '#444444',
-                      '#5c0000',
-                      '#663d00',
-                      '#666600',
-                      '#003700',
-                      '#002966',
-                      '#3d1466',
-                    ],
-                  },
-                  { background: [] },
-                ], // dropdown with defaults from theme
-                [
-                  { font: FontAttributor.whitelist },
-                  { size: ['10px', '12px', '14px', '16px', '18px'] },
-                ],
-                [{ align: [] }],
-                ['link', 'adaptivity'],
-                ['clean'], // remove formatting button
-                showimagecontrol ? ['image'] : [],
-              ],
-              handlers: customHandlers,
-            },
-          }}
+          modules={modules}
           defaultValue={delta}
           onChange={handleQuillChange}
         />
@@ -231,6 +254,12 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
           </>
         )}
       </div>
+      {
+        <QuillImageUploader
+          showImageSelectorDailog={showImageSelectorDailog}
+          handleImageDetailsSave={handleImageDetailsSave}
+        ></QuillImageUploader>
+      }
     </React.Fragment>
   );
 };
