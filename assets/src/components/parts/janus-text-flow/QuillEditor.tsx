@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import ReactQuill, { Quill } from 'react-quill';
 import Delta from 'quill-delta';
 import register from '../customElementWrapper';
@@ -87,7 +87,6 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
 }) => {
   const quill: any = useRef();
   const [contents, setContents] = React.useState<any>(tree);
-  const [myQuill, setMyQuill] = React.useState<any>(null);
   const [delta, setDelta] = React.useState<any>(convertJanusToQuill(tree));
   const [currentQuillRange, setCurrentQuillRange] = React.useState<number>(0);
   const [showImageSelectorDailog, setShowImageSelectorDailog] = React.useState<boolean>(false);
@@ -109,31 +108,24 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     },
     image: function (value: string) {
       setShowImageSelectorDailog(true);
-      setCurrentQuillRange(this.quill.getSelection());
-      setMyQuill(this.quill);
+      setCurrentQuillRange(this.quill.getSelection()?.index || 0);
       console.log({ getSelection: this.quill.getSelection() });
     },
   };
-  const handleImageDetailsSave = useCallback(
-    (imageURL: string, imageAltText: string) => {
-      setShowImageSelectorDailog(false);
-      if (quill?.current) {
-        const range = quill.current.editor.getSelection();
-
-        console.log({ myQuill, quill });
-        console.log({ range, currentQuillRange });
-        if (imageURL) {
-          const img = document.createElement('img');
-          img.src = imageURL;
-          img.alt = imageAltText;
-          // quill.insertEmbed does not allow inserting any additional attributes hence using dangerouslyPasteHTML function to set the Alt text
-          // This code only gets executed when user tries to add a Image in MCQ Options.
-          quill.current.editor.clipboard.dangerouslyPasteHTML(currentQuillRange, img.outerHTML);
-        }
+  const handleImageDetailsSave = (imageURL: string, imageAltText: string) => {
+    setShowImageSelectorDailog(false);
+    if (quill?.current) {
+      if (imageURL) {
+        const img = document.createElement('img');
+        img.src = imageURL;
+        img.alt = imageAltText;
+        // quill.insertEmbed does not allow inserting any additional attributes hence using dangerouslyPasteHTML function to set the Alt text
+        // This code only gets executed when user tries to add a Image in MCQ Options.
+        quill.current.editor.clipboard.dangerouslyPasteHTML(currentQuillRange, img.outerHTML);
       }
-    },
-    [currentQuillRange, myQuill],
-  );
+    }
+  };
+
   /*  console.log('[QuillEditor]', { tree, html }); */
 
   useEffect(() => {
