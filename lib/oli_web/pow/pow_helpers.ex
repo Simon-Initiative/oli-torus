@@ -11,7 +11,7 @@ defmodule OliWeb.Pow.PowHelpers do
       current_user_assigns_key: :current_user,
       session_key: "user_auth",
       # session_ttl_renewal: :timer.minutes(15),    # default is 15 minutes
-      # credentials_cache_store: {Pow.Store.CredentialsCache, ttl: :timer.minutes(30)}, # default is 30 minutes
+      credentials_cache_store: {Pow.Store.CredentialsCache, ttl: :timer.hours(24)}, # default is 30 minutes
       plug: Pow.Plug.Session,
       web_module: OliWeb,
       routes_backend: OliWeb.Pow.UserRoutes,
@@ -36,7 +36,7 @@ defmodule OliWeb.Pow.PowHelpers do
       current_user_assigns_key: :current_author,
       session_key: "author_auth",
       # session_ttl_renewal: :timer.minutes(15),    # default is 15 minutes
-      # credentials_cache_store: {Pow.Store.CredentialsCache, ttl: :timer.minutes(30)}, # default is 30 minutes
+      credentials_cache_store: {Pow.Store.CredentialsCache, ttl: :timer.hours(24)}, # default is 30 minutes
       plug: Pow.Plug.Session,
       web_module: OliWeb,
       routes_backend: OliWeb.Pow.AuthorRoutes,
