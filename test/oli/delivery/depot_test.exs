@@ -2,6 +2,10 @@ defmodule Oli.Delivery.DepotTest do
 
   use ExUnit.Case, async: true
 
+  alias Oli.Delivery.Depot.Serializer
+  alias Oli.Delivery.Depot.Match
+  alias Oli.Delivery.Sections.SectionResource
+
   test "testing ets" do
 
     # create a 'bag' ets table
@@ -21,18 +25,40 @@ defmodule Oli.Delivery.DepotTest do
     match_spec = [{{section_id, :_, :_, :_, "page", :_, :_, :_, :_}, [], [:"$_"]}]
     result = :ets.select(table, match_spec)
 
-    IO.inspect result
+    #IO.inspect result
 
     match_spec = [{{section_id, :_, :_, true, "page", :_, :_, :_, :_}, [], [:"$_"]}]
     result = :ets.select(table, match_spec)
 
-    IO.inspect result
+    #IO.inspect result
 
     match_spec = [{{section_id, :_, :_, :_, "container", :_, :_, :_, :_}, [], [:"$_"]}]
     result = :ets.select(table, match_spec)
 
-    IO.inspect(result, charlists: :as_lists)
+    #IO.inspect(result, charlists: :as_lists)
 
+  end
+
+  test "testing serializer" do
+
+    sr = %SectionResource{section_id: 1, id: 1}
+    t = Serializer.serialize(sr)
+
+    table = :ets.new(:section_resources, [:bag, :protected])
+    :ets.insert(table, [t])
+
+    r = :ets.lookup(table, 1)
+
+    Serializer.unserialize(r)
+
+    #match_spec = Match.build(1, scheduling_type: :read_by, late_submit: :allow)
+
+    #:ets.select(table, [match_spec])
+    #|> Serializer.unserialize()
+    #|> IO.inspect()
+
+    SectionResource.__schema__(:fields)
+    |> Enum.map(fn f -> SectionResource.__schema__(:type, f) |> IO.inspect() end)
   end
 
 end
