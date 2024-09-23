@@ -97,11 +97,11 @@ defmodule OliWeb.Sections.OverviewView do
            base_project: base_project
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
-         accept: ~w(.jpg .jpeg .png),
-         max_entries: 1,
-         auto_upload: true,
-         max_file_size: 5_000_000
-       )}
+           accept: ~w(.jpg .jpeg .png),
+           max_entries: 1,
+           auto_upload: true,
+           max_file_size: 5_000_000
+         )}
     end
   end
 
@@ -429,9 +429,12 @@ defmodule OliWeb.Sections.OverviewView do
         </Group.render>
       <% end %>
 
-      <Group.render label="Cover Image" description="Manage the cover image for this section. Max file size is 5 MB.">
+      <Group.render
+        label="Cover Image"
+        description="Manage the cover image for this section. Max file size is 5 MB."
+      >
         <section>
-        <ImageUpload.render
+          <ImageUpload.render
             section={@section}
             uploads={@uploads}
             changeset={to_form(@changeset)}
@@ -439,7 +442,7 @@ defmodule OliWeb.Sections.OverviewView do
             change="change"
             cancel_upload="cancel_upload"
           />
-          </section>
+        </section>
       </Group.render>
 
       <div :if={@is_system_admin} class="border-t dark:border-gray-700">
