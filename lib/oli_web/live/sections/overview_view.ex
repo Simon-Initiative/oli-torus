@@ -8,12 +8,16 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Common.MonacoEditor
+  alias Oli.Utils.S3Storage
   alias Oli.Repo
+
+  require Logger
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
@@ -83,6 +87,7 @@ defmodule OliWeb.Sections.OverviewView do
            instructors: fetch_instructors(section),
            user: user,
            section: section,
+           changeset: Section.changeset(section, %{}),
            updates_count: updates_count,
            has_submitted_attempts:
              Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
@@ -90,7 +95,13 @@ defmodule OliWeb.Sections.OverviewView do
            resource_slug: revision_slug,
            show_required_section_config: show_required_section_config,
            base_project: base_project
-         )}
+         )
+         |> Phoenix.LiveView.allow_upload(:cover_image,
+         accept: ~w(.jpg .jpeg .png),
+         max_entries: 1,
+         auto_upload: true,
+         max_file_size: 5_000_000
+       )}
     end
   end
 
@@ -418,6 +429,19 @@ defmodule OliWeb.Sections.OverviewView do
         </Group.render>
       <% end %>
 
+      <Group.render label="Cover Image" description="Manage the cover image for this section. Max file size is 5 MB.">
+        <section>
+        <ImageUpload.render
+            section={@section}
+            uploads={@uploads}
+            changeset={to_form(@changeset)}
+            upload_event="update_image"
+            change="change"
+            cancel_upload="cancel_upload"
+          />
+          </section>
+      </Group.render>
+
       <div :if={@is_system_admin} class="border-t dark:border-gray-700">
         <Group.render
           label="AI Assistant"
@@ -628,6 +652,45 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, assign(socket, section: section)}
   end
 
+  def handle_event("update_image", _, socket) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
+    uploaded_files =
+      consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
+        temp_file_path = meta.path
+        section_path = "sections/#{socket.assigns.section.slug}"
+        image_file_name = "#{entry.uuid}.#{ext(entry)}"
+        upload_path = "#{section_path}/#{image_file_name}"
+
+        {:ok, uploaded_file} = S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+        {:ok, uploaded_file}
+      end)
+
+    with uploaded_path <- Enum.at(uploaded_files, 0),
+         {:ok, section} <-
+           Sections.update_section(socket.assigns.section, %{cover_image: uploaded_path}) do
+      socket = put_flash(socket, :info, "Section changes saved")
+      {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        socket = put_flash(socket, :info, "Couldn't update section image")
+        {:noreply, assign(socket, changeset: changeset)}
+
+      {:error, payload} ->
+        Logger.error("Error uploading section image to S3: #{inspect(payload)}")
+        socket = put_flash(socket, :info, "Couldn't update section image")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :cover_image, ref)}
+  end
+
+  def handle_event("validate_image", _, socket) do
+    {:noreply, socket}
+  end
+
   attr :section, Section
 
   def assistant_toggle_button(assigns) do
@@ -642,5 +705,10 @@ defmodule OliWeb.Sections.OverviewView do
       </.button>
     <% end %>
     """
+  end
+
+  defp ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    ext
   end
 end
