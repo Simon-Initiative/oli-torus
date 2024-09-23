@@ -1,4 +1,4 @@
-defmodule OliWeb.Sections.details.ImageUpload do
+defmodule OliWeb.Sections.Details.ImageUpload do
   use OliWeb, :html
 
   attr(:section, :any, required: true)
