@@ -5,41 +5,59 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Scheduling
   alias OliWeb.Components.Delivery.{Schedule, Utils}
-  alias Oli.Delivery.Attempts
+  alias Oli.Delivery.{Attempts, Settings}
   alias Oli.Delivery.Attempts.{HistoricalGradedAttemptSummary}
 
   def mount(_params, _session, socket) do
-    section = socket.assigns[:section]
-    current_user_id = socket.assigns[:current_user].id
+    if connected?(socket) do
+      section = socket.assigns[:section]
+      current_user_id = socket.assigns[:current_user].id
 
-    has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
+      combined_settings =
+        Appsignal.instrument("ScheduleLive: combined_settings", fn ->
+          Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
+        end)
 
-    schedule =
-      if has_scheduled_resources?,
-        do: Sections.get_ordered_schedule(section, current_user_id),
-        else: Sections.get_not_scheduled_agenda(section, current_user_id) |> Map.values() |> hd()
+      has_scheduled_resources? = Scheduling.has_scheduled_resources?(section.id)
 
-    current_datetime = DateTime.utc_now()
-    current_week = Utils.week_number(section.start_date, current_datetime)
-    current_month = current_datetime.month
+      schedule =
+        if has_scheduled_resources?,
+          do: Sections.get_ordered_schedule(section, current_user_id, combined_settings),
+          else:
+            Sections.get_not_scheduled_agenda(section, combined_settings, current_user_id)
+            |> Map.values()
+            |> hd()
 
-    if connected?(socket),
-      do: async_scroll_to_current_week(self())
+      current_datetime = DateTime.utc_now()
+      current_week = Utils.week_number(section.start_date, current_datetime)
+      current_month = current_datetime.month
 
-    {:ok,
-     assign(socket,
-       active_tab: :schedule,
-       schedule: schedule,
-       section_slug: section.slug,
-       current_week: current_week,
-       current_month: current_month,
-       historical_graded_attempt_summary: nil,
-       has_scheduled_resources?: has_scheduled_resources?
-     )}
+      async_scroll_to_current_week(self())
+
+      {:ok,
+       assign(socket,
+         active_tab: :schedule,
+         loaded: true,
+         schedule: schedule,
+         section_slug: section.slug,
+         current_week: current_week,
+         current_month: current_month,
+         historical_graded_attempt_summary: nil,
+         has_scheduled_resources?: has_scheduled_resources?
+       )}
+    else
+      {:ok, assign(socket, active_tab: :schedule, loaded: false)}
+    end
   end
 
   def handle_params(_params, _uri, socket) do
     {:noreply, socket}
+  end
+
+  def render(%{loaded: false} = assigns) do
+    ~H"""
+    <div></div>
+    """
   end
 
   def render(%{has_scheduled_resources?: true} = assigns) do
