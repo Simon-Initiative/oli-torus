@@ -109,7 +109,6 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     image: function (value: string) {
       setShowImageSelectorDailog(true);
       setCurrentQuillRange(this.quill.getSelection()?.index || 0);
-      console.log({ getSelection: this.quill.getSelection() });
     },
   };
   const handleImageDetailsSave = (imageURL: string, imageAltText: string) => {
@@ -126,6 +125,9 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
     }
   };
 
+  const handleImageUploaderDailogClose = () => {
+    setShowImageSelectorDailog(false);
+  };
   /*  console.log('[QuillEditor]', { tree, html }); */
 
   useEffect(() => {
@@ -250,6 +252,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
         <QuillImageUploader
           showImageSelectorDailog={showImageSelectorDailog}
           handleImageDetailsSave={handleImageDetailsSave}
+          handleImageDailogClose={handleImageUploaderDailogClose}
         ></QuillImageUploader>
       }
     </React.Fragment>

@@ -1,7 +1,16 @@
 import React, { ReactEventHandler } from 'react';
 import { Modal } from 'react-bootstrap';
 
-export const QuillImageUploader = (props: any) => {
+interface QuillImageUploaderProps {
+  handleImageDetailsSave: (imageSrc: string, imageAltText: string) => void;
+  handleImageDailogClose: () => void;
+  showImageSelectorDailog?: boolean;
+}
+export const QuillImageUploader: React.FC<QuillImageUploaderProps> = ({
+  handleImageDetailsSave,
+  showImageSelectorDailog,
+  handleImageDailogClose,
+}) => {
   const [imageURL, setImageURL] = React.useState<string>('');
   const [imageAltText, setImageAltText] = React.useState<string>('');
   const handleOnImageURLChange: ReactEventHandler<HTMLInputElement> = (event) => {
@@ -18,7 +27,7 @@ export const QuillImageUploader = (props: any) => {
     <React.Fragment>
       {
         <>
-          <Modal show={props.showImageSelectorDailog}>
+          <Modal show={showImageSelectorDailog} onHide={handleImageDailogClose}>
             <Modal.Header closeButton={true} className="px-8 pb-0">
               <h3 className="modal-title font-bold">MCQ - Insert Image</h3>
             </Modal.Header>
@@ -52,12 +61,16 @@ export const QuillImageUploader = (props: any) => {
                 id="btnDelete"
                 className="btn btn-primary flex-grow basis-1"
                 onClick={() => {
-                  props.handleImageDetailsSave(imageURL, imageAltText);
+                  handleImageDetailsSave(imageURL, imageAltText);
                 }}
               >
                 {`Save`}
               </button>
-              <button id="btnCancel" className="btn btn-default flex-grow basis-1">
+              <button
+                id="btnCancel"
+                onClick={handleImageDailogClose}
+                className="btn btn-default flex-grow basis-1"
+              >
                 Cancel
               </button>
             </Modal.Footer>
