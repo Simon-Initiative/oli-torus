@@ -9,8 +9,8 @@
                             We noticed there was an attempt to create a new account with this email but an account already exists.
                         </p>
                         <p style="margin: 20px 0;">
-                            If this was you, <%= link "sign in to your existing account", to: @login_url, target: "_blank", style: "color: #2C67C4;" %>.
-                            If you forgot your password, you can reset it <%= link "here", to: @forgot_password_url, target: "_blank", style: "color: #2C67C4;" %>.
+                            If this was you, <%= link "sign in to your existing account", to: @url, target: "_blank", style: "color: #2C67C4;" %>.
+                            If you forgot your password, you can reset it <%= link "here", to: @forgot_password, target: "_blank", style: "color: #2C67C4;" %>.
                         </p>
                         <p style="margin: 20px 0;">
                             If this was not you, you can ignore this email.
