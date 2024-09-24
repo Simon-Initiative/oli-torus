@@ -1,0 +1,49 @@
+<div class="relative h-[calc(100vh-112px)] flex justify-center items-center">
+  <div class="absolute h-[calc(100vh-112px)] w-full top-0 left-0">
+    <%= OliWeb.Backgrounds.student_sign_in(%{}) %>
+  </div>
+  <div class="flex flex-col gap-y-10 self-start pt-32 w-full relative z-50">
+    <div class="w-full flex justify-center">
+      <div class="flex flex-col gap-y-8 items-center">
+        <div class="text-center px-4">
+          <span class="text-white text-4xl font-normal font-['Open Sans'] leading-10">
+            Welcome back to
+          </span>
+          <span class="text-white text-4xl font-bold font-['Open Sans'] leading-10">
+            <%= Oli.VendorProperties.product_short_name() %>
+          </span>
+        </div>
+        <div class="">
+          <div class="justify-center items-end gap-px flex">
+            <div class="self-start px-1 py-2 justify-center items-center flex">
+              <%= OliWeb.Icons.graduation_cap(%{}) %>
+            </div>
+            <div class="w-40 h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
+              Student
+            </div>
+          </div>
+        </div>
+        <%= unless Oli.Accounts.is_lms_user?(@conn.assigns.current_user.email) do %>
+          <div class="flex justify-center max-w-max items-center mt-12 gap-x-1 border-white border-b">
+            <.link class="flex items-center gap-x-1" navigate={~p"/workspaces/student"}>
+              <div class="text-white text-xl font-normal font-['Inter'] leading-normal">
+                Access my courses
+              </div>
+              <div>
+                <%= OliWeb.Icons.right_arrow_login(%{}) %>
+              </div>
+            </.link>
+          </div>
+        <% else %>
+          <div class="flex justify-center max-w-max items-center mt-12 px-8">
+            <div class="justify-start items-center gap-[5px] inline-flex">
+              <div class="w-[328px] text-center text-white text-xl font-normal font-['Inter'] leading-normal">
+                Navigate to your institution’s LMS to access your online course.
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
