@@ -44,7 +44,10 @@ export const initActivityBridge = (elementId: string) => {
 
       const newContinuation = (result: any, error: any) => {
         if (!error && window.ReactToLiveView) {
-          window.ReactToLiveView.pushEvent('activity_saved', {
+          // send a message to the liveview that holds the activity element
+          // (the one that has the "ReactToLiveView" phx-hook attached)
+          const targetId = '#' + window.ReactToLiveView.el.id;
+          window.ReactToLiveView.pushEventTo(targetId, 'activity_saved', {
             partInputs: e.detail.payload,
             activityAttemptGuid: e.detail.attemptGuid,
           });

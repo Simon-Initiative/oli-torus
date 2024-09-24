@@ -67,5 +67,7 @@ declare global {
 }
 
 interface LiveViewHook {
+  el: HTMLElement;
   pushEvent: (event: string, payload: any) => void;
+  pushEventTo: (selectorOrTarget: string | HTMLElement, event: string, payload: any) => void;
 }
