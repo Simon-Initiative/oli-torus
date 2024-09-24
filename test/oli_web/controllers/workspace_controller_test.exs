@@ -61,14 +61,14 @@ defmodule OliWeb.WorkspaceControllerTest do
     setup [:author_conn]
 
     test "displays the page", %{conn: conn} do
-      conn = get(conn, Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive))
+      conn = get(conn, Routes.live_path(conn, OliWeb.Workspaces.AccountDetailsLive))
       assert html_response(conn, 200) =~ "Account"
     end
 
     test "shows a sign out link", %{conn: conn} do
       conn =
         conn
-        |> get(Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive))
+        |> get(Routes.live_path(conn, OliWeb.Workspaces.AccountDetailsLive))
 
       assert html_response(conn, 200) =~ "Sign out"
     end

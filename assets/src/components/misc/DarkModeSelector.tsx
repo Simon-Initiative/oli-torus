@@ -50,7 +50,7 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
         <svg
           className={classNames(
             isChecked(mode, 'auto') && 'hidden',
-            'dark:stroke-[#B8B4BF] stroke-black/70 hover:dark:stroke-white hover:stroke-black/90',
+            'dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white',
           )}
           width="20"
           height="20"
@@ -109,7 +109,7 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
           xmlns="http://www.w3.org/2000/svg"
           className={classNames(
             isChecked(mode, 'light') && 'stroke-black/90',
-            'dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black/90 hover:dark:stroke-white',
+            'dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white',
           )}
         >
           <path
@@ -130,7 +130,7 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
         {maybeLabel('Light', showLabels)}
       </ToggleOption>
       <ToggleOption id="dark" checked={isChecked(mode, 'dark')} onChange={onSelect('dark')}>
-        <div className="dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black/90 hover:dark:stroke-white">
+        <div className="dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white">
           <svg
             width="20"
             height="20"

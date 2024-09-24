@@ -19,10 +19,19 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
   def browse_insights(
         %Paging{limit: limit, offset: offset},
         %Sorting{} = sorting,
-        %BrowseInsightsOptions{project_id: project_id, section_ids: section_ids} = options
+        %BrowseInsightsOptions{
+          project_id: project_id,
+          section_ids: section_ids,
+          text_search: text_search
+        } = options
       ) do
     where_by = build_where_by(options)
     total_count = get_total_count(project_id, section_ids, where_by)
+
+    text_search_condition =
+      if text_search && text_search != "",
+        do: dynamic([_s, _pub, _pr, rev], ilike(rev.title, ^"%#{text_search}%")),
+        else: true
 
     # Now build the main query with limit, offset, and aggregations
     query =
@@ -31,6 +40,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
       |> join(:left, [s, pub], pr in PublishedResource, on: pr.publication_id == pub.id)
       |> join(:left, [s, pub, pr], rev in Revision, on: rev.id == pr.revision_id)
       |> where(^where_by)
+      |> where(^text_search_condition)
       |> add_select(total_count, options)
       |> add_order_by(sorting, options)
       |> limit(^limit)

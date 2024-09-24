@@ -4,7 +4,6 @@ defmodule OliWeb.Pow.UserRoutes do
   use OliWeb, :verified_routes
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Accounts.User
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
 
@@ -54,15 +53,7 @@ defmodule OliWeb.Pow.UserRoutes do
   @impl true
   def after_user_updated_path(conn) do
     conn
-    |> request_path_or(
-      case conn.assigns[:current_user] do
-        %User{independent_learner: true} ->
-          Routes.live_path(conn, OliWeb.Workspace.Student)
-
-        _ ->
-          Routes.delivery_path(conn, :index)
-      end
-    )
+    |> request_path_or(Routes.pow_registration_path(OliWeb.Endpoint, :edit))
   end
 
   # Pow stores the request redirect path in the assigns. If that value is

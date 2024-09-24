@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspace.SubMenuItem do
+defmodule OliWeb.Workspaces.SubMenuItem do
   @moduledoc """
     Struct for a sub-menu item.
   """

@@ -142,9 +142,9 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
     if (palette.useHtmlProps) {
       paletteStyles.backgroundColor = palette.backgroundColor;
       paletteStyles.borderColor = palette.borderColor;
-      paletteStyles.borderWidth = parseNumString(palette.borderWidth.toString());
+      paletteStyles.borderWidth = parseNumString(palette?.borderWidth?.toString()) || 0;
       paletteStyles.borderStyle = palette.borderStyle;
-      paletteStyles.borderRadius = parseNumString(palette.borderRadius.toString());
+      paletteStyles.borderRadius = parseNumString(palette?.borderRadius?.toString()) || 0;
     } else {
       paletteStyles.borderWidth = `${palette.lineThickness ? palette.lineThickness + 'px' : 0}`;
       paletteStyles.borderRadius = 0;
@@ -189,8 +189,8 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
       useHtmlProps: true,
       backgroundColor: palette.backgroundColor || 'transparent',
       borderColor: palette.borderColor || 'transparent',
-      borderRadius: parseNumString(palette.borderRadius.toString()) || 0,
-      borderWidth: parseNumString(palette.borderWidth.toString()) || 0,
+      borderRadius: parseNumString(palette?.borderRadius?.toString()) || 0,
+      borderWidth: parseNumString(palette?.borderWidth?.toString()) || 0,
       borderStyle: palette.borderStyle || 'none',
     };
   }

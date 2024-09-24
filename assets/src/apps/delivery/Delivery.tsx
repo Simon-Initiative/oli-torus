@@ -132,6 +132,22 @@ const Delivery: React.FC<DeliveryProps> = ({
     handleUserThemePreferende();
   }, []);
 
+  useEffect(() => {
+    const displayRefreshWarningPopup = content?.custom?.displayRefreshWarningPopup || true;
+
+    // Only show the prompt if it's not in preview mode and not in review mode
+    if (displayRefreshWarningPopup && isInstructor && !previewMode && !reviewMode) {
+      const unloadCallback = (event: any) => {
+        event.preventDefault();
+        event.returnValue = '';
+        return '';
+      };
+
+      window.addEventListener('beforeunload', unloadCallback);
+      return () => window.removeEventListener('beforeunload', unloadCallback);
+    }
+  }, [content?.custom?.displayRefreshWarningPopup]);
+
   const setInitialPageState = () => {
     // the standard lib relies on first the userId and userName session variables being set
     const userScript = `let session.userId = ${userId};let session.userName = "${
