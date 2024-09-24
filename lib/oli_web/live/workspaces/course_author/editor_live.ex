@@ -20,7 +20,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
         live_edit(socket, project, context, project_slug, revision_slug, is_admin?)
 
       {:error, :not_found} ->
-        OliWeb.ResourceController.render_not_found(OliWeb.Endpoint, project_slug)
+        {:ok,
+         socket
+         |> put_flash(:error, "Revision not found")
+         |> push_navigate(to: ~p"/workspaces/course_author")}
     end
   end
 
