@@ -43,7 +43,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@include_logo}
         id="header_logo_button"
         class="w-48"
-        navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+        navigate={
+          logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_system_admin)
+        }
       >
         <.logo_img section={@section} />
       </.link>
@@ -132,7 +134,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
           >
             <.link
               id="logo_button"
-              navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+              navigate={
+                logo_link_path(
+                  @preview_mode,
+                  @section,
+                  @ctx.user,
+                  @sidebar_expanded,
+                  @is_system_admin
+                )
+              }
             >
               <.logo_img section={@section} />
             </.link>
@@ -291,7 +301,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
           >
             <.link
               id="logo_button"
-              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded)}
+              navigate={
+                logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_system_admin)
+              }
             >
               <.logo_img />
             </.link>
@@ -1039,10 +1051,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp logo_link_path(preview_mode, section, user, sidebar_expanded) do
+  defp logo_link_path(preview_mode, section, user, sidebar_expanded, is_system_admin) do
     cond do
       preview_mode ->
         "#"
+
+      is_system_admin ->
+        ~p"/workspaces/course_author"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->
         path_for(:index, section, preview_mode, sidebar_expanded)
