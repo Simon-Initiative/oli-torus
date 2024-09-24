@@ -97,7 +97,7 @@ defmodule OliWeb.Workspaces.Utils do
       <div
         role="expandable_submenu"
         id={"#{@item_id}_children"}
-        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
+        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
       >
         <.sub_menu_item
@@ -137,7 +137,10 @@ defmodule OliWeb.Workspaces.Utils do
         "text-[#757682] dark:text-[#BAB8BF] text-sm font-medium tracking-tight flex flex-row justify-between",
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
-        <div :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)} class="">
+        <div
+          :if={@sidebar_expanded || @sub_menu_item.parent_view}
+          class={if(!@sidebar_expanded, do: "whitespace-nowrap")}
+        >
           <%= @sub_menu_item.text %>
         </div>
 
