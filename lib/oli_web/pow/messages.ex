@@ -58,17 +58,5 @@ defmodule OliWeb.Pow.Messages do
   end
 
   def pow_assent_login_with_provider(conn),
-    do:
-      interpolate("Continue with %{provider}", provider: Naming.humanize(conn.params["provider"]))
-
-  defp interpolate(msg, opts) do
-    Enum.reduce(opts, msg, fn {key, value}, msg ->
-      token = "%{#{key}}"
-
-      case String.contains?(msg, token) do
-        true -> String.replace(msg, token, to_string(value), global: false)
-        false -> msg
-      end
-    end)
-  end
+    do: "Continue with #{Naming.humanize(conn.params["provider"])}"
 end
