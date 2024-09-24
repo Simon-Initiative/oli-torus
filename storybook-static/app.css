@@ -9366,6 +9366,10 @@ table.table-striped tbody tr:nth-child(even) {
   opacity: 0.6;
 }
 
+.opacity-75 {
+  opacity: 0.75;
+}
+
 .opacity-80 {
   opacity: 0.8;
 }
