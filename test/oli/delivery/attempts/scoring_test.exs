@@ -27,8 +27,9 @@ defmodule Oli.Delivery.Attempts.ScoringTest do
       %{score: 2, out_of: 10, date_evaluated: ~U[2019-01-01 00:00:00Z]},
       %{score: 5, out_of: 10, date_evaluated: ~U[2023-01-01 00:00:00Z]},
       %{score: 1, out_of: 20, date_evaluated: ~U[2021-01-01 00:00:00Z]},
-      %{score: 9, out_of: 20, date_evaluated: nil},
+      %{score: 9, out_of: 20, date_evaluated: nil}
     ]
+
     assert %Result{score: 5, out_of: 10} = Scoring.calculate_score("most_recent", items)
   end
 

@@ -63,7 +63,6 @@ defmodule Oli.Delivery.Attempts.Scoring do
 
   # The most recent is assumed to be the last item in the list
   def calculate_score("most_recent", items) do
-
     # Sort the resource_attemmpts by the date_evaluated field, so that
     # the most recent evaluated attempt is the first item in the list.
     #
