@@ -9,6 +9,7 @@ import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { DelayedSubmit } from './delayed_submit';
+import { DisableSubmitted } from './disable_submitted';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
@@ -24,6 +25,7 @@ import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
+import { ReactToLiveView } from './react_to_liveview';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { Scroller } from './scroller';
@@ -83,4 +85,6 @@ export const Hooks = {
   CountdownTimer,
   EndDateTimer,
   EvaluateMathJaxExpressions,
+  ReactToLiveView,
+  DisableSubmitted,
 };
