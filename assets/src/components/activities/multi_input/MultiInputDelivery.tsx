@@ -224,7 +224,7 @@ export const MultiInputComponent: React.FC = () => {
           }),
         );
 
-        const fn = () =>
+        const doSave = () =>
           onSaveActivity(uiState.attemptState.attemptGuid, [
             {
               attemptGuid: part.attemptGuid,
@@ -236,10 +236,10 @@ export const MultiInputComponent: React.FC = () => {
           if ((uiState.model as MultiInputSchema).submitPerPart && !context.graded) {
             handlePerPartSubmission(input.partId, value);
           } else {
-            fn();
+            doSave();
           }
         } else {
-          deferredSaves.current[id].save(fn);
+          doSave();
         }
       }
 

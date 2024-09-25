@@ -424,6 +424,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         ),
       user: current_user,
       section_slug: section.slug,
+      project_slug: Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
       mode: mode,
       activity_map: page_context.activities,
       resource_summary_fn: &Oli.Resources.resource_summary(&1, section.slug, Resolver),

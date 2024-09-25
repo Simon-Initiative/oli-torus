@@ -43,7 +43,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@include_logo}
         id="header_logo_button"
         class="w-48"
-        navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+        navigate={
+          logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_system_admin)
+        }
       >
         <.logo_img section={@section} />
       </.link>
@@ -132,7 +134,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
           >
             <.link
               id="logo_button"
-              navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded)}
+              navigate={
+                logo_link_path(
+                  @preview_mode,
+                  @section,
+                  @ctx.user,
+                  @sidebar_expanded,
+                  @is_system_admin
+                )
+              }
             >
               <.logo_img section={@section} />
             </.link>
@@ -226,8 +236,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:active_workspace, :atom)
   attr(:active_view, :atom, default: nil)
   attr(:resource_slug, :string, default: nil)
-  attr(:active_tab, :atom, default: nil)
-  attr(:url_params, :map, default: %{})
   attr(:uri, :string, default: "")
 
   def workspace_sidebar_toggler(assigns) do
@@ -235,17 +243,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <button
       role="toggle sidebar"
       phx-click={
-        JS.patch(
-          toggled_workspace_path(
-            @active_workspace,
-            @active_view,
-            @sidebar_expanded,
-            @resource_slug,
-            @active_tab,
-            @url_params,
-            @uri
-          )
-        )
+        JS.patch(toggled_workspace_path(@sidebar_expanded, @uri))
         |> JS.hide(to: "div[role='expandable_submenu']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
@@ -267,7 +265,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:resource_title, :string)
   attr(:resource_slug, :string)
   attr(:active_tab, :atom)
-  attr(:url_params, :map, default: %{})
   attr(:uri, :string, default: "")
 
   def workspace_sidebar_nav(assigns) do
@@ -304,7 +301,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
           >
             <.link
               id="logo_button"
-              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded)}
+              navigate={
+                logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_system_admin)
+              }
             >
               <.logo_img />
             </.link>
@@ -315,8 +314,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
             preview_mode={@preview_mode}
             sidebar_expanded={@sidebar_expanded}
             resource_slug={@resource_slug}
-            active_tab={@active_tab}
-            url_params={@url_params}
             uri={@uri}
           />
           <div class="h-[24px]">
@@ -520,52 +517,22 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  defp toggled_workspace_path(
-         active_workspace,
-         active_view,
-         sidebar_expanded,
-         resource_slug,
-         active_tab,
-         url_params,
-         uri
-       ) do
-    params = Map.merge(url_params, %{sidebar_expanded: !sidebar_expanded})
-
-    case {active_workspace, active_view} do
-      {:course_author, nil} ->
-        ~p"/workspaces/course_author?#{params}"
-
-      {:course_author, _view_slug} ->
-        decode_uri(uri, params)
-
-      {:instructor, nil} ->
-        ~p"/workspaces/instructor?#{params}"
-
-      {:instructor, active_view} ->
-        ~p"/workspaces/instructor/#{resource_slug}/#{active_view}/#{active_tab}?#{params}"
-
-      {:student, nil} ->
-        ~p"/workspaces/student?#{params}"
-    end
+  defp toggled_workspace_path(sidebar_expanded, uri) do
+    url_params_updated = toggle_sidebar_in_params(uri, sidebar_expanded)
+    url_path = uri |> URI.parse() |> Map.get(:path)
+    "#{url_path}?#{url_params_updated}"
   end
 
-  defp decode_uri(uri, params) do
-    url_path = uri |> URI.parse() |> Map.get(:path)
-    split_path = if url_path, do: String.split(url_path, "/"), else: uri
-
-    case split_path do
-      ["", "workspaces", "course_author", project_slug, "products", product_slug] ->
-        ~p"/workspaces/course_author/#{project_slug}/products/#{product_slug}?#{params}"
-
-      ["", "workspaces", "course_author", project_slug, "products"] ->
-        ~p"/workspaces/course_author/#{project_slug}/products?#{params}"
-
-      ["", "workspaces", "course_author", project_slug, "insights"] ->
-        ~p"/workspaces/course_author/#{project_slug}/insights?#{params}"
-
-      _ ->
-        ~p"/"
+  defp toggle_sidebar_in_params(uri, sidebar_expanded) do
+    uri
+    |> URI.parse()
+    |> Map.get(:query, "")
+    |> case do
+      nil -> %{}
+      query -> URI.decode_query(query)
     end
+    |> Map.merge(%{"sidebar_expanded" => "#{!sidebar_expanded}"})
+    |> Phoenix.VerifiedRoutes.__encode_query__()
   end
 
   defp path_for_workspace(target_workspace, sidebar_expanded) do
@@ -1084,10 +1051,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp logo_link_path(preview_mode, section, user, sidebar_expanded) do
+  defp logo_link_path(preview_mode, section, user, sidebar_expanded, is_system_admin) do
     cond do
       preview_mode ->
         "#"
+
+      is_system_admin ->
+        ~p"/workspaces/course_author"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->
         path_for(:index, section, preview_mode, sidebar_expanded)

@@ -9,6 +9,7 @@ interface JanusMarkupNode {
   text?: string;
   customCssClass?: string;
   src?: string;
+  alt?: string;
 }
 
 const appendToStringProperty = (append: string, str?: string) => {
@@ -86,6 +87,7 @@ export const convertQuillToJanus = (delta: Delta) => {
             height: '100%',
             width: '100%',
           },
+          alt: `${op?.attributes?.alt || ''}`,
           src: `${imageDetails.image}`,
           children: [],
         };

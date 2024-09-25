@@ -22,19 +22,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
            scripts: Oli.Activities.get_activity_scripts(),
            resource_slug: project.slug,
            resource_title: project.title,
-           active_workspace: :course_author,
-           active_view: :activity_bank,
            ctx: ctx
          )}
 
       _ ->
         OliWeb.ResourceController.render_not_found(OliWeb.Endpoint, project.slug)
     end
-  end
-
-  @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -48,7 +41,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
       </script>
     <% end %>
 
-    <div id="editor" class="container mx-auto p-8">
+    <div id="editor">
       <%= React.component(
         @ctx,
         "Components.ActivityBank",

@@ -334,7 +334,16 @@ const Markup: React.FC<any> = ({
       if (renderStyles?.height === 'auto') {
         renderStyles.height = '';
       }
-      return <img src={src} ref={el} key={key} className={customCssClass} style={renderStyles} />;
+      return (
+        <img
+          src={src}
+          alt={`${text || ''}`}
+          ref={el}
+          key={key}
+          className={customCssClass}
+          style={renderStyles}
+        />
+      );
     case 'text':
       // this is a special case similar to xml text nodes
       // not expected to have children

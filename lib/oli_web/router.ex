@@ -232,6 +232,10 @@ defmodule OliWeb.Router do
 
   pipeline :student, do: plug(Oli.Plugs.SetUserType, :student)
 
+  pipeline :restrict_admin_access do
+    plug(Oli.Plugs.RestrictAdminAccess)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -239,7 +243,13 @@ defmodule OliWeb.Router do
   ### ROUTES ###
 
   scope "/" do
-    pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
+    pipe_through([
+      :browser,
+      :delivery,
+      :registration_captcha,
+      :pow_email_layout,
+      :restrict_admin_access
+    ])
 
     pow_routes()
     pow_assent_routes()
@@ -798,6 +808,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,

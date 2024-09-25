@@ -22,9 +22,10 @@ export const YoutubePlayer: React.FC<{
   video: ContentModel.YouTube;
   children?: React.ReactNode;
   context?: WriterContext;
+  pageAttemptGuid: string;
   authorMode: boolean;
   pointMarkerContext?: PointMarkerContext;
-}> = ({ video, children, authorMode, context, pointMarkerContext }) => {
+}> = ({ video, children, authorMode, context, pointMarkerContext, pageAttemptGuid }) => {
   const stopInterval = useRef<number | undefined>();
   const [videoTarget, setVideoTarget] = useState<Player | null>(null);
   const segments = useRef<XAPI.PlayedSegment[]>([]);
@@ -101,15 +102,14 @@ export const YoutubePlayer: React.FC<{
   }, [authorMode, video.endTime, video.startTime, videoTarget]);
 
   const onStateChange = (e: any) => {
-    if (!videoTarget) return;
+    if (!videoTarget || pageAttemptGuid == '') return;
 
     switch (e.data) {
       case 0:
         XAPI.emit_delivery(
           {
             type: 'page_video_key',
-            page_attempt_guid:
-              context?.resourceAttemptGuid !== undefined ? context?.resourceAttemptGuid : '',
+            page_attempt_guid: pageAttemptGuid,
           },
           {
             type: 'video_completed',
@@ -132,8 +132,7 @@ export const YoutubePlayer: React.FC<{
         XAPI.emit_delivery(
           {
             type: 'page_video_key',
-            page_attempt_guid:
-              context?.resourceAttemptGuid !== undefined ? context?.resourceAttemptGuid : '',
+            page_attempt_guid: pageAttemptGuid,
           },
           {
             type: 'video_played',
@@ -155,8 +154,7 @@ export const YoutubePlayer: React.FC<{
         XAPI.emit_delivery(
           {
             type: 'page_video_key',
-            page_attempt_guid:
-              context?.resourceAttemptGuid !== undefined ? context?.resourceAttemptGuid : '',
+            page_attempt_guid: pageAttemptGuid,
           },
           {
             type: 'video_paused',
