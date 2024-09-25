@@ -63,7 +63,15 @@ defmodule Oli.Delivery.Attempts.Scoring do
 
   # The most recent is assumed to be the last item in the list
   def calculate_score("most_recent", items) do
-    most_recent = Enum.reverse(items) |> hd
+
+    # Sort the resource_attemmpts by the date_evaluated field, so that
+    # the most recent evaluated attempt is the first item in the list.
+    #
+    # This makes this scoring strategy a little more robust in the face of
+    # attempts where somehow the most recent attempt does not match
+    # the natural database order - or somehow the query doesn't return
+    # in database order.
+    [most_recent | _] = Enum.sort_by(items, & &1.date_evaluated, &>=/2)
 
     %Result{
       score: Map.get(most_recent, :score),
