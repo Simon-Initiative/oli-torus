@@ -319,10 +319,7 @@ defmodule OliWeb.Sections.OverviewView do
         </section>
       </Group.render>
 
-      <Group.render
-        label="Scoring"
-        description="View and manage student scores and progress"
-      >
+      <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
           <li>
             <a
@@ -420,10 +417,7 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
 
       <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render
-          label="LMS Admin"
-          description="Administrator LMS Connection"
-        >
+        <Group.render label="LMS Admin" description="Administrator LMS Connection">
           <UnlinkSection.render unlink="unlink" section={@section} />
         </Group.render>
       <% end %>
