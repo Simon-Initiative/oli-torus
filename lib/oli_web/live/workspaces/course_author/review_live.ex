@@ -17,9 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ReviewLive do
     initial_state =
       Map.merge(State.initialize_state(ctx, project, read_current_review(project)), %{
         resource_slug: project.slug,
-        resource_title: project.title,
-        active_workspace: :course_author,
-        active_view: :review
+        resource_title: project.title
       })
 
     {:ok,
@@ -37,7 +35,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ReviewLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="container review p-8">
+    <div class="review">
       <div class="grid grid-cols-12">
         <div class="col-span-12">
           <p>

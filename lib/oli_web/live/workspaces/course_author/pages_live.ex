@@ -8,21 +8,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
     {:ok,
      assign(socket,
        resource_slug: project.slug,
-       resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :pages
+       resource_title: project.title
      )}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <h1 class="flex flex-col w-full h-screen items-center justify-center">
+    <h1>
       Placeholder for All Pages
     </h1>
     """

@@ -57,7 +57,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
-  alias Oli.Delivery.Settings
 
   require Logger
 
@@ -1821,10 +1820,27 @@ defmodule Oli.Delivery.Sections do
   This function is being used for the v1 and v2 versions of the schedule.
   In the short term when all views use the v2 version, the version param will be removed and v2 will prevale.
   """
-  def get_ordered_schedule(section, current_user_id, version \\ :v1)
+  def get_ordered_schedule(
+        section,
+        current_user_id,
+        combined_settings_for_all_resources,
+        version \\ :v1
+      )
 
-  def get_ordered_schedule(section, current_user_id, :v1) do
-    container_titles = container_titles(section.slug)
+  def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v1) do
+    container_titles = container_titles(section)
+
+    combined_settings_for_all_resources =
+      case combined_settings_for_all_resources do
+        nil ->
+          Oli.Delivery.Settings.get_combined_settings_for_all_resources(
+            section.id,
+            current_user_id
+          )
+
+        _ ->
+          combined_settings_for_all_resources
+      end
 
     containers_data_map =
       get_ordered_container_labels(section.slug, short_label: true)
@@ -1839,7 +1855,7 @@ defmodule Oli.Delivery.Sections do
       end)
 
     %{"container" => container_ids, "page" => page_ids} =
-      Sections.get_resource_ids_group_by_resource_type(section.slug)
+      Sections.get_resource_ids_group_by_resource_type(section)
 
     progress_per_container_id =
       Metrics.progress_across(section.id, container_ids, current_user_id)
@@ -1863,9 +1879,6 @@ defmodule Oli.Delivery.Sections do
 
     user_resource_attempt_counts =
       Metrics.get_all_user_resource_attempt_counts(section, current_user_id)
-
-    combined_settings_for_all_resources =
-      Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
 
     #      {containers_data_map, page_to_containers_map, progress_per_resource_id,
     #     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
@@ -1913,10 +1926,22 @@ defmodule Oli.Delivery.Sections do
     scheduled_section_resources
   end
 
-  def get_ordered_schedule(section, current_user_id, :v2) do
+  def get_ordered_schedule(section, current_user_id, combined_settings_for_all_resources, :v2) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    combined_settings_for_all_resources =
+      case combined_settings_for_all_resources do
+        nil ->
+          Oli.Delivery.Settings.get_combined_settings_for_all_resources(
+            section.id,
+            current_user_id
+          )
+
+        _ ->
+          combined_settings_for_all_resources
+      end
 
     scheduled_section_resources =
       Scheduling.retrieve(section, :pages)
@@ -1967,10 +1992,26 @@ defmodule Oli.Delivery.Sections do
   and we need to respect the same expected output format as get_ordered_schedule/3.
   """
 
-  def get_not_scheduled_agenda(%Section{analytics_version: :v1} = section, current_user_id) do
+  def get_not_scheduled_agenda(
+        %Section{analytics_version: :v1} = section,
+        combined_settings_for_all_resources,
+        current_user_id
+      ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
+
+    combined_settings_for_all_resources =
+      case combined_settings_for_all_resources do
+        nil ->
+          Oli.Delivery.Settings.get_combined_settings_for_all_resources(
+            section.id,
+            current_user_id
+          )
+
+        _ ->
+          combined_settings_for_all_resources
+      end
 
     sorted_container_groups =
       Scheduling.retrieve(section, :pages)
@@ -1999,9 +2040,13 @@ defmodule Oli.Delivery.Sections do
     %{{nil, nil} => sorted_container_groups}
   end
 
-  def get_not_scheduled_agenda(%Section{analytics_version: :v2} = section, current_user_id) do
+  def get_not_scheduled_agenda(
+        %Section{analytics_version: :v2} = section,
+        combined_settings_for_all_resources,
+        current_user_id
+      ) do
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
+     raw_avg_score_per_page_id, user_resource_attempt_counts,
      last_attempt_per_page_id} = build_user_data_for_section_schedule(section, current_user_id)
 
     sorted_container_groups =
@@ -2032,7 +2077,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp build_user_data_for_section_schedule(section, current_user_id) do
-    container_titles = container_titles(section.slug)
+    container_titles = container_titles(section)
 
     containers_data_map =
       get_ordered_container_labels(section.slug, short_label: true)
@@ -2047,7 +2092,7 @@ defmodule Oli.Delivery.Sections do
       end)
 
     %{"container" => container_ids, "page" => page_ids} =
-      Sections.get_resource_ids_group_by_resource_type(section.slug)
+      Sections.get_resource_ids_group_by_resource_type(section)
 
     progress_per_container_id =
       Metrics.progress_across(section.id, container_ids, current_user_id)
@@ -2072,12 +2117,8 @@ defmodule Oli.Delivery.Sections do
     user_resource_attempt_counts =
       Metrics.get_all_user_resource_attempt_counts(section, current_user_id)
 
-    combined_settings_for_all_resources =
-      Settings.get_combined_settings_for_all_resources(section.id, current_user_id)
-
     {containers_data_map, page_to_containers_map, progress_per_resource_id,
-     raw_avg_score_per_page_id, user_resource_attempt_counts, combined_settings_for_all_resources,
-     last_attempt_per_page_id}
+     raw_avg_score_per_page_id, user_resource_attempt_counts, last_attempt_per_page_id}
   end
 
   defp group_and_sort_by_month_and_year(section_resources) do
@@ -2335,8 +2376,8 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
-  defp get_schedule_for_week_slice(section, current_user_id, week_fn) do
-    schedule = get_ordered_schedule(section, current_user_id, :v2)
+  defp get_schedule_for_week_slice(section, settings, current_user_id, week_fn) do
+    schedule = get_ordered_schedule(section, current_user_id, settings, :v2)
 
     schedule
     |> Enum.reduce(%{}, fn {{_month, _year}, weeks}, acc ->
@@ -2350,16 +2391,14 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns the schedule for the current week and the next week for the given section and user.
   """
-  @spec get_schedule_for_current_and_next_week(Section.t(), integer()) ::
-          any()
-  def get_schedule_for_current_and_next_week(section, current_user_id) do
+  def get_schedule_for_current_and_next_week(section, settings, current_user_id) do
     current_week_number =
       OliWeb.Components.Delivery.Utils.week_number(
         section.start_date,
         Oli.DateTime.utc_now()
       )
 
-    get_schedule_for_week_slice(section, current_user_id, fn week_number ->
+    get_schedule_for_week_slice(section, settings, current_user_id, fn week_number ->
       week_number in [current_week_number, current_week_number + 1]
     end)
   end
@@ -4549,29 +4588,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns all the resource_ids of a section grouped by resource type.
+  Returns all the resource_ids of a section grouped by resource type
+  for pages and containers in the hierarchy.
 
   %{
-    "activity" => [4630, 6927, 593],
     "container" => [7742, 7743, 7744, 7745],
-    "objective" => [4260, 4249, 4308, 4309, 4277, 4254, 4316],
-    "page" => [7400, 7568, 7436, 7714, 7165, 7433, 7181, 7451, 7592, 7449, 7587,
-    7638, 7286, 7564, 7244, 7172, 7404, 7424],
-    "tag" => [3986, 4035, 4102, 3959, 4205, 3975, 4235, 4134, 4087, 4075, 4165,
-    4036, 4052, 3973, 4023, 4030]
+    "page" => [7400, 7568, 7436, 7714, 7165, 7433, 7181, 7451, 7592, 7449, 7587]
   }
   """
 
-  def get_resource_ids_group_by_resource_type(section_slug) do
-    from([_sr, _s, _spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      join: rt in ResourceType,
-      on: rt.id == rev.resource_type_id,
-      select: {rt.type, rev.resource_id}
-    )
-    |> Repo.all()
-    |> Enum.group_by(fn {resource_type, _resource_id} -> resource_type end, fn {_, resource_id} ->
-      resource_id
-    end)
+  def get_resource_ids_group_by_resource_type(section) do
+    result =
+      PreviousNextIndex.get(section)
+      |> Map.values()
+      |> Enum.group_by(fn item -> item["type"] end, fn item ->
+        item["id"] |> String.to_integer()
+      end)
+
+    # Ensure each key is present in the result
+    Map.put(result, "container", result["container"] || [])
+    |> Map.put("page", result["page"] || [])
   end
 
   @doc """
@@ -5231,15 +5267,11 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns a map from resource_id to the current revision title for all container resources.
   """
-  @spec container_titles(String.t()) :: map()
-  def container_titles(section_slug) do
-    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
-
-    from([s: s, sr: sr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
-      where: rev.resource_type_id == ^container_type_id and rev.deleted == false,
-      select: {rev.resource_id, rev.title}
-    )
-    |> Repo.all()
+  def container_titles(section) do
+    PreviousNextIndex.get(section)
+    |> Map.values()
+    |> Enum.filter(fn item -> item["type"] == "container" end)
+    |> Enum.map(fn item -> {item["id"] |> String.to_integer(), item["title"]} end)
     |> Enum.into(%{})
   end
 

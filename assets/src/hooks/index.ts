@@ -8,6 +8,7 @@ import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
 import { CustomFocusWrap } from './custom_focus_wrap';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
+import { DelayedSubmit } from './delayed_submit';
 import { DisableSubmitted } from './disable_submitted';
 import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
@@ -41,6 +42,7 @@ import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 
 export const Hooks = {
+  DelayedSubmit,
   GraphNavigation,
   DropTarget,
   DragSource,

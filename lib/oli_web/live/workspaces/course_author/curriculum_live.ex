@@ -84,8 +84,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
          assign(socket,
            resource_slug: project_slug,
            resource_title: project.title,
-           active_workspace: :course_author,
-           active_view: :curriculum,
            ctx: ctx,
            children: children,
            active: :curriculum,

@@ -61,7 +61,7 @@ defmodule OliWeb.Pow.UserContext do
   """
   @impl true
   def create(params) do
-    case Accounts.get_user_by(%{email: params["email"]}) do
+    case Accounts.get_independent_user_by(%{email: params["email"]}) do
       %User{email: email} = user ->
         if user.email_confirmed_at,
           do:

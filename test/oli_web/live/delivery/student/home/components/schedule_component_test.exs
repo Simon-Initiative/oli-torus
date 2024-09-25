@@ -280,7 +280,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       stub_current_time(~U[2024-05-07 20:00:00Z])
 
       grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, user.id)
+        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
@@ -356,7 +356,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       set_progress(section.id, practice_1.resource_id, user.id, 1.0, practice_1)
 
       grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, user.id)
+        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
@@ -390,7 +390,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       set_progress(section.id, exploration_1.resource_id, user.id, 1.0, exploration_1, :active)
 
       grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, user.id)
+        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
@@ -423,7 +423,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       set_progress(section.id, practice_1.resource_id, user.id, 1.0, practice_1)
 
       grouped_agenda_resources =
-        Sections.get_schedule_for_current_and_next_week(section, user.id)
+        Sections.get_schedule_for_current_and_next_week(section, nil, user.id)
 
       {:ok, lcd, _html} =
         live_component_isolated(conn, ScheduleComponent, %{
