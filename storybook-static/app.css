@@ -13235,6 +13235,11 @@ https://tailwindcss.com/docs/utility-first
   border-color: rgb(255 255 255 / 0.5);
 }
 
+.hover\:border-zinc-300:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(212 212 216 / var(--tw-border-opacity));
+}
+
 .hover\:border-b-delivery-primary\/25:hover {
   border-bottom-color: rgb(1 101 217 / 0.25);
 }
