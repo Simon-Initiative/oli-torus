@@ -25,12 +25,18 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
       socket =
         attach_hook(socket, :sidebar_hook, :handle_params, fn
           params, uri, socket ->
-            sidebar_expanded_from_assigns = socket.assigns.sidebar_expanded
-            sidebar_expanded_from_params = string_to_boolean(params["sidebar_expanded"] || "true")
+            sidebar_from_assigns = socket.assigns.sidebar_expanded
+            sidebar_from_params = string_to_boolean(params["sidebar_expanded"] || "true")
 
-            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_expanded_from_params)
+            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_from_params)
 
-            if sidebar_expanded_from_assigns != sidebar_expanded_from_params do
+            previous_lv_url = socket.private[:connect_params]["_live_referer"]
+            current_lv_url = uri
+
+            has_sidebar_changed = sidebar_from_assigns != sidebar_from_params
+            is_same_workspace = is_same_workspace(previous_lv_url, current_lv_url)
+
+            if is_same_workspace and has_sidebar_changed do
               {:halt, socket}
             else
               {:cont, socket}
@@ -40,6 +46,30 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
       {:cont, socket}
     else
       {:cont, socket}
+    end
+  end
+
+  defp is_same_workspace(nil, _current_url) do
+    true
+  end
+
+  defp is_same_workspace(previous_url, current_url) do
+    previous_workspace = process_url(previous_url)
+    current_workspace = process_url(current_url)
+
+    previous_workspace == current_workspace
+  end
+
+  defp process_url(url) do
+    URI.parse(url)
+    |> Map.get(:path)
+    |> String.split("/", trim: true)
+    |> case do
+      ["workspaces", workspace | _rest] ->
+        workspace
+
+      _ ->
+        nil
     end
   end
 
