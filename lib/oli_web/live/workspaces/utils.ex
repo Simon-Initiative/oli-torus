@@ -58,7 +58,7 @@ defmodule OliWeb.Workspaces.Utils do
     ~H"""
     <.link
       navigate={@route}
-      class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
+      class={["w-full flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content
         is_active={@active_view == @item.view}
@@ -97,7 +97,7 @@ defmodule OliWeb.Workspaces.Utils do
       <div
         role="expandable_submenu"
         id={"#{@item_id}_children"}
-        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
+        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
       >
         <.sub_menu_item
@@ -127,10 +127,10 @@ defmodule OliWeb.Workspaces.Utils do
 
     ~H"""
     <div class={[
-      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#404044] hover:bg-[#D9D9DD] rounded-lg justify-start items-center gap-3 inline-flex",
+      "w-full px-3 py-2 dark:hover:bg-[#404044] hover:bg-[#D9D9DD] rounded-lg justify-start items-center gap-3 inline-flex",
       if(@is_active, do: @on_active_bg)
     ]}>
-      <div :if={@sub_menu_item.icon} class="w-5 h-5 flex items-center justify-center">
+      <div :if={@sub_menu_item.icon} class="w-5 flex items-center justify-center">
         <%= apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns]) %>
       </div>
       <div class={[
@@ -138,8 +138,8 @@ defmodule OliWeb.Workspaces.Utils do
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
         <div
-          :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)}
-          class="whitespace-nowrap"
+          :if={@sidebar_expanded || @sub_menu_item.parent_view}
+          class={if(!@sidebar_expanded, do: "whitespace-nowrap")}
         >
           <%= @sub_menu_item.text %>
         </div>
