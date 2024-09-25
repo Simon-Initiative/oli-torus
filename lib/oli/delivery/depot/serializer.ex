@@ -1,40 +1,44 @@
 defmodule Oli.Delivery.Depot.Serializer do
-  alias Oli.Delivery.Sections.SectionResource
+
+  alias Oli.Delivery.Depot.DepotDesc
 
   @doc """
   Serializes a struct into a tuple. It handles both fields and embedded schemas.
   """
-  def serialize(%SectionResource{} = sr) do
-    list = SectionResource.__schema__(:fields)
+  def serialize(instance, %DepotDesc{} = depot_desc) do
+
+    list = fields(depot_desc)
     |> Enum.map(fn field ->
 
-      data_type = SectionResource.__schema__(:type, field)
+      data_type = type(depot_desc, field)
 
-      Map.get(sr, field)
+      Map.get(instance, field)
       |> encode_by_type(data_type)
     end)
 
-    List.to_tuple([sr.section_id | list])
+    List.to_tuple([instance[depot_desc.key_field] | list])
   end
 
-  def serialize(section_id, key_values) do
+  def serialize(section_id, key_values, %DepotDesc{} = depot_desc) do
     # take the keyword list key_values and turn it into a map
     map = Enum.into(key_values, %{})
 
-    list = SectionResource.__schema__(:fields)
+    list = fields(depot_desc)
     |> Enum.map(fn field -> Map.get(map, field, :_) end)
 
     List.to_tuple([section_id | list])
   end
 
-  def unserialize(list) when is_list(list), do: Enum.map(list, &unserialize/1)
+  def unserialize(list, %DepotDesc{} = depot_desc) when is_list(list) do
+    Enum.map(list, fn item -> unserialize(item, depot_desc) end)
+  end
 
   @doc """
   Unserializes a tuple back into a struct. Assumes the tuple has values in the same order
   as the schema fields.
   """
-  def unserialize(tuple) when is_tuple(tuple) do
-    fields = SectionResource.__schema__(:fields)
+  def unserialize(tuple, %DepotDesc{} = depot_desc) when is_tuple(tuple) do
+    fields = fields(depot_desc)
 
     # Convert tuple to list for easy manipulation, but drop the section_id
     # as it is duplicated within the other portion of the list, anyways.
@@ -43,9 +47,9 @@ defmodule Oli.Delivery.Depot.Serializer do
     # Build the struct by matching the values to the schema fields
     fields
     |> Enum.zip(values)
-    |> Enum.reduce(%SectionResource{}, fn {field, value}, acc ->
+    |> Enum.reduce(build(depot_desc), fn {field, value}, acc ->
 
-      value = decode_by_type(value, SectionResource.__schema__(:type, field))
+      value = decode_by_type(value, type(depot_desc, field))
       Map.put(acc, field, value)
     end)
   end
@@ -61,5 +65,11 @@ defmodule Oli.Delivery.Depot.Serializer do
   end
 
   defp decode_by_type(value, _), do: value
+
+  defp fields(%DepotDesc{schema: schema}), do: apply(schema, :__schema__, [:fields])
+
+  defp type(%DepotDesc{schema: schema}, field), do: apply(schema, :__schema__, [:type, field])
+
+  defp build(%DepotDesc{schema: schema}), do: struct(schema)
 
 end

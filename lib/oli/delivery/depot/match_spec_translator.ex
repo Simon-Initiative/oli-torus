@@ -1,6 +1,8 @@
 defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   @moduledoc """
   Translates the depot's outward facing conditional query syntax into match specs for ETS.
+
+  This is agnostic to any specific schema.
   """
 
   @doc """
@@ -112,23 +114,27 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
     case Enum.count(value) do
       0 -> {m, c, v}
       1 -> {m, [{:==, field(v), encode(Enum.at(value, 0), type)} | c], v}
-      2 -> {m, [{:orelse, {:==, field(v), encode(Enum.at(value, 0), type)}, {:==, field(v), encode(Enum.at(value, 0), type)}} | c], v}
+      _ ->
 
-        _ = Enum.at(value, 0)
+        # Build a recursive tuple of :orelse clauses like:
+        # {:orelse, {:==, :"$1", 3}, {:orelse, {:==, :"$1", 1}, {:==, :"$1", 2}}}
+        first_two = Enum.take(value, 2)
+        initial = {:orelse, {:==, field(v), encode(Enum.at(first_two, 0), type)}, {:==, field(v), encode(Enum.at(first_two, 1), type)}}
 
+        or_else = Enum.drop(value, 2)
+        |> Enum.reduce(initial, fn value, acc ->
+          Tuple.append({:orelse, {:==, field(v), encode(value, type)}}, acc)
+        end)
 
-        {m, [{:orelse | Enum.map(value, fn v -> {:==, field(v), encode(v, type)} end) | c], v}
+        {m, [or_else | c], v}
     end
-
-    Enum.foldl(value, {m, c, v}, fn v, {m, c, v} ->
-      {m, [{:orelse, {:==, field(v), encode(v, type)}, c} | c], v}
-    end)
   end
 
   # Handles the cases where we have {operator, value} tuples, and the
   # operators are from a set that we can translate directly to ETS match spec operators
   # (which are :==, :!=, :<, :>, :<=, :>=)
   defp handle_cond(type, {_f, {op, value}}, _, {m, c, v}) do
+    IO.inspect({op, field(v), encode(value, type)})
     {m, [{op, field(v), encode(value, type)} | c], v}
   end
 
