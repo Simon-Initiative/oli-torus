@@ -25,7 +25,10 @@
         </div>
         <%= unless Oli.Accounts.is_lms_user?(@conn.assigns.current_user.email) do %>
           <div class="flex justify-center max-w-max items-center mt-12 gap-x-1 border-white border-b hover:border-zinc-300">
-            <.link class="flex items-center gap-x-1 no-underline hover:no-underline text-white hover:text-zinc-300" navigate={~p"/workspaces/student"}>
+            <.link
+              class="flex items-center gap-x-1 no-underline hover:no-underline text-white hover:text-zinc-300"
+              navigate={~p"/workspaces/student"}
+            >
               <div class="text-xl font-normal font-['Inter'] leading-normal">
                 Access my courses
               </div>
