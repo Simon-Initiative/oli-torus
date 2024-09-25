@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Depot do
 
   alias Oli.Delivery.Depot.DepotDesc
   alias Oli.Delivery.Depot.Serializer
-  alias Oli.Delivery.Depot.Retrieval
+  alias Oli.Delivery.Depot.MatchSpecTranslator
 
   alias Oli.Delivery.Sections.SectionResource
 
@@ -10,17 +10,31 @@ defmodule Oli.Delivery.Depot do
     SectionResource: %DepotDesc{
       name: "SectionResource",
       schema: SectionResource,
-      table: :section_resources,
-      key_field: :section_id
+      table_name_prefix: :section_resources,
+      key_field: :resource_id,
+      table_id_field: :section_id
     }
   }
+
+  def table_exists?(schema, table_id) do
+    depot_desc = get_registered_depot_spec(schema)
+
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.info() != :undefined
+  end
+
+  def create_table(schema, table_id) do
+    depot_desc = get_registered_depot_spec(schema)
+    :ets.new(DepotDesc.table_name(depot_desc, table_id), [:set, :named_table])
+  end
 
   def update(schema, entry) do
 
     depot_desc = get_registered_depot_spec(schema)
+    table_id = entry[depot_desc.table_id_field]
 
     item = Serializer.serialize(entry, depot_desc)
-    :ets.insert(depot_desc.table, item)
+    :ets.insert(DepotDesc.table_name(depot_desc, table_id), item)
 
   end
 
@@ -28,8 +42,11 @@ defmodule Oli.Delivery.Depot do
 
     depot_desc = get_registered_depot_spec(schema)
 
+    [first | _rest] = entries
+    table_id = first[depot_desc.table_id_field]
+
     items = Enum.map(entries, fn entry -> Serializer.serialize(entry, depot_desc) end)
-    :ets.insert(depot_desc.table, items)
+    :ets.insert(DepotDesc.table_name(depot_desc, table_id), items)
 
   end
 
@@ -38,28 +55,48 @@ defmodule Oli.Delivery.Depot do
     depot_desc = get_registered_depot_spec(schema)
 
     [first | _rest] = entries
+    table_id = first[depot_desc.table_id_field]
 
-    :ets.delete(depot_desc.table, first[depot_desc.key_field])
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.delete(first[depot_desc.key_field])
 
     Enum.map(entries, fn entry -> Serializer.serialize(entry, depot_desc) end)
-    |> :ets.insert(depot_desc.table)
+    |> :ets.insert(DepotDesc.table_name(depot_desc, table_id))
 
   end
 
-  def all(schema, key_value) do
+  def all(schema, table_id) do
 
     depot_desc = get_registered_depot_spec(schema)
 
-    Retrieval.all(depot_desc, key_value)
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.tab2list()
     |> Serializer.unserialize(depot_desc)
 
   end
 
-  def query(schema, key_value, conditions, fields) do
+  def get(schema, table_id, key) do
 
     depot_desc = get_registered_depot_spec(schema)
 
-    Retrieval.query(depot_desc, key_value, conditions, fields)
+    item = DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.lookup(key)
+    |> Serializer.unserialize(depot_desc)
+
+    case item do
+      [] -> nil
+      [item] -> item
+    end
+
+  end
+
+  def query(schema, table_id, conditions, fields \\ []) do
+
+    depot_desc = get_registered_depot_spec(schema)
+    match_spec = MatchSpecTranslator.translate(depot_desc, conditions, fields)
+
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.select([match_spec])
     |> Serializer.unserialize(depot_desc)
 
   end
@@ -70,5 +107,6 @@ defmodule Oli.Delivery.Depot do
       depot_desc -> depot_desc
     end
   end
+
 
 end

@@ -1,4 +1,7 @@
 defmodule Oli.Delivery.Depot.MatchSpecTranslator do
+
+  alias Oli.Delivery.Depot.DepotDesc
+
   @moduledoc """
   Translates the depot's outward facing conditional query syntax into match specs for ETS.
 
@@ -44,13 +47,15 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
 
   return_fields: list of fields to return, or nil if all fields should be returned
   """
-  def translate(field_types, key, conditions, fields_to_return \\ [])
+  def translate(depot_desc, conditions, fields_to_return \\ [])
 
-  def translate(field_types, key, conditions, fields_to_return) when is_tuple(conditions) do
-    translate(field_types, key, [conditions], fields_to_return)
+  def translate(%DepotDesc{} = depot_desc, conditions, fields_to_return) when is_tuple(conditions) do
+    translate(depot_desc, [conditions], fields_to_return)
   end
 
-  def translate(field_types, key, conditions, fields_to_return) do
+  def translate(%DepotDesc{} = depot_desc, conditions, fields_to_return) do
+
+    field_types = build_field_pairs(depot_desc.schema)
 
     condition_fields = Enum.reduce(conditions, MapSet.new(), fn {key, _}, acc ->
       MapSet.put(acc, key)
@@ -92,8 +97,8 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
     end
 
     # Reverse the fields (since we chose to prepend them as an optimization)
-    # tacking on the required key and convert to the necessary tuple format
-    m = [key | Enum.reverse(m)] |> List.to_tuple()
+    # tacking on the required slot for the key and convert to the necessary tuple format
+    m = [:_ | Enum.reverse(m)] |> List.to_tuple()
 
     # The order of the conditions does not matter, so we don't bother to reorder them
     {m, c, f}
@@ -134,7 +139,6 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   # operators are from a set that we can translate directly to ETS match spec operators
   # (which are :==, :!=, :<, :>, :<=, :>=)
   defp handle_cond(type, {_f, {op, value}}, _, {m, c, v}) do
-    IO.inspect({op, field(v), encode(value, type)})
     {m, [{op, field(v), encode(value, type)} | c], v}
   end
 
@@ -158,5 +162,10 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   end
 
   defp encode(value, _), do: value
+
+  defp build_field_pairs(schema) do
+    apply(schema, :__schema__, [:fields])
+    |> Enum.map(fn field -> {field, apply(schema, :__schema__, [:type, field])} end)
+  end
 
 end
