@@ -18,10 +18,7 @@ defmodule OliWeb.Workspaces.Student do
 
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
-    {:ok,
-     assign(socket,
-       active_workspace: :student
-     )}
+    {:ok, assign(socket, active_workspace: :student)}
   end
 
   @impl Phoenix.LiveView
@@ -81,8 +78,9 @@ defmodule OliWeb.Workspaces.Student do
      )}
   end
 
-  def handle_params(params, _uri, socket),
-    do: {:noreply, assign(socket, params: decode_params(params))}
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, params: decode_params(params))}
+  end
 
   @impl Phoenix.LiveView
 
