@@ -7,6 +7,7 @@ import { ActivityDeliveryState, isSubmitted, submit } from 'data/activities/Deli
 export interface SubmitButtonConnectedProps {
   disabled?: boolean;
   hideOnSubmitted?: boolean;
+  label?: string;
 }
 export const SubmitButtonConnected: React.FC<SubmitButtonConnectedProps> = (props) => {
   const { context, onSubmitActivity } = useDeliveryElementContext();
@@ -35,6 +36,7 @@ export const SubmitButtonConnected: React.FC<SubmitButtonConnectedProps> = (prop
       shouldShow={shouldShow}
       disabled={shouldDisable}
       onClick={() => dispatch(submit(onSubmitActivity))}
+      label={props.label}
     />
   );
 };
