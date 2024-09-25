@@ -4010,10 +4010,6 @@ table.table-striped tbody tr:nth-child(even) {
   left: -114px;
 }
 
-.-left-\[50vw\] {
-  left: -50vw;
-}
-
 .-right-1 {
   right: -0.25rem;
 }
@@ -4566,6 +4562,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mb-2 {
   margin-bottom: 0.5rem;
+}
+
+.mb-2\.5 {
+  margin-bottom: 0.625rem;
 }
 
 .mb-24 {
@@ -5128,10 +5128,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 291px;
 }
 
-.h-\[3\.30px\] {
-  height: 3.30px;
-}
-
 .h-\[30px\] {
   height: 30px;
 }
@@ -5192,10 +5188,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 468px;
 }
 
-.h-\[484px\] {
-  height: 484px;
-}
-
 .h-\[48px\] {
   height: 48px;
 }
@@ -5226,10 +5218,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[74px\] {
   height: 74px;
-}
-
-.h-\[84px\] {
-  height: 84px;
 }
 
 .h-\[calc\(100\%-64px\)\] {
@@ -5313,6 +5301,14 @@ table.table-striped tbody tr:nth-child(even) {
   min-height: 40px;
 }
 
+.min-h-\[484px\] {
+  min-height: 484px;
+}
+
+.min-h-\[500px\] {
+  min-height: 500px;
+}
+
 .min-h-\[50px\] {
   min-height: 50px;
 }
@@ -5323,6 +5319,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-\[5rem\] {
   min-height: 5rem;
+}
+
+.min-h-\[84px\] {
+  min-height: 84px;
 }
 
 .min-h-full {
@@ -5541,10 +5541,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 18px;
 }
 
-.w-\[2\.60px\] {
-  width: 2.60px;
-}
-
 .w-\[200px\] {
   width: 200px;
 }
@@ -5679,10 +5675,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[92px\] {
   width: 92px;
-}
-
-.w-\[976px\] {
-  width: 976px;
 }
 
 .w-\[981px\] {
@@ -7819,6 +7811,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #3B76D3;
 }
 
+.stroke-red-500 {
+  stroke: #ef4444;
+}
+
 .stroke-white {
   stroke: #fff;
 }
@@ -8926,9 +8922,19 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(76 166 255 / var(--tw-text-opacity));
 }
 
+.text-\[\#5e5e5e\] {
+  --tw-text-opacity: 1;
+  color: rgb(94 94 94 / var(--tw-text-opacity));
+}
+
 .text-\[\#757682\] {
   --tw-text-opacity: 1;
   color: rgb(117 118 130 / var(--tw-text-opacity));
+}
+
+.text-\[\#8e8e8e\] {
+  --tw-text-opacity: 1;
+  color: rgb(142 142 142 / var(--tw-text-opacity));
 }
 
 .text-\[\#EC8CFF\] {
