@@ -798,6 +798,7 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
         OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -813,6 +814,7 @@ defmodule OliWeb.Router do
         live("/:project_id/bibliography", BibliographyLive)
         live("/:project_id/curriculum", CurriculumLive)
         live("/:project_id/curriculum/:container_slug", CurriculumLive)
+        live("/:project_id/curriculum/:revision_slug/edit", EditorLive)
         live("/:project_id/pages", PagesLive)
         live("/:project_id/activities", ActivitiesLive)
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)

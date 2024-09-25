@@ -122,6 +122,17 @@ defmodule Oli.Delivery.PreviousNextIndex do
     end
   end
 
+  def get(section) do
+    case section.previous_next_index do
+      nil ->
+        {:ok, section} = rebuild(section)
+        section.previous_next_index
+
+      index ->
+        index
+    end
+  end
+
   @doc """
   Rebuilds the previous_next_index for the given %Section{}, updating the section
   with the newly rebuilt index.

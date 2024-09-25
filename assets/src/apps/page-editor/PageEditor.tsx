@@ -90,7 +90,13 @@ function prepareSaveFn(
     Persistence.edit(project, resource, update, releaseLock).then((result) => {
       // check if the slug has changed as a result of the edit and reload the page if it has
       if (result.type === 'success' && result.revision_slug !== resource) {
-        window.location.replace(`/authoring/project/${project}/resource/${result.revision_slug}`);
+        if (window.location.pathname.startsWith('/authoring/project')) {
+          window.location.replace(`/authoring/project/${project}/resource/${result.revision_slug}`);
+        } else if (window.location.pathname.startsWith('/workspaces/course_author')) {
+          window.location.replace(
+            `/workspaces/course_author/${project}/curriculum/${result.revision_slug}/edit`,
+          );
+        }
         return result;
       }
       return result;

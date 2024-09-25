@@ -1,6 +1,8 @@
 defmodule OliWeb.StaticPageControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Accounts
 
   test "GET /", %{conn: conn} do
@@ -143,6 +145,27 @@ defmodule OliWeb.StaticPageControllerTest do
 
       assert response(conn, 200) =~ "Easily access and participate in your enrolled courses"
       assert response(conn, 200) =~ "Need an account?"
+    end
+
+    test "shows 'access my courses' link if user is logged in and is an independent learner",
+         conn do
+      {:ok, conn: conn, user: _user} = user_conn(conn)
+
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "Access my courses"
+    end
+
+    test "shows informative text if user is logged in and is an LMS user", %{conn: conn} do
+      {:ok, conn: conn, user: user} =
+        user_conn(%{conn: conn}, %{name: "Kevin Durant", independent_learner: false})
+
+      insert(:lti_params, user_id: user.id)
+
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~
+               "Navigate to your institution’s LMS to access your online course."
     end
   end
 
