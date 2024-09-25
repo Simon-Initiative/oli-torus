@@ -133,6 +133,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     ~H"""
     <%= render_modal(assigns) %>
+    <div class="ml-auto"><.flash_message flash={@flash} /></div>
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
@@ -321,7 +322,6 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render
         label="Scoring"
         description="View and manage student scores and progress"
-        is_last={not @is_lms_or_system_admin or @section.open_and_free}
       >
         <ul class="link-list">
           <li>
@@ -423,7 +423,6 @@ defmodule OliWeb.Sections.OverviewView do
         <Group.render
           label="LMS Admin"
           description="Administrator LMS Connection"
-          is_last={!@is_system_admin}
         >
           <UnlinkSection.render unlink="unlink" section={@section} />
         </Group.render>
@@ -432,6 +431,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render
         label="Cover Image"
         description="Manage the cover image for this section. Max file size is 5 MB."
+        is_last={!@is_system_admin}
       >
         <section>
           <ImageUpload.render
@@ -658,19 +658,17 @@ defmodule OliWeb.Sections.OverviewView do
   def handle_event("update_image", _, socket) do
     bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
-    uploaded_files =
+    [uploaded_path] =
       consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
         temp_file_path = meta.path
         section_path = "sections/#{socket.assigns.section.slug}"
         image_file_name = "#{entry.uuid}.#{ext(entry)}"
         upload_path = "#{section_path}/#{image_file_name}"
 
-        {:ok, uploaded_file} = S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
-        {:ok, uploaded_file}
+        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
       end)
 
-    with uploaded_path <- Enum.at(uploaded_files, 0),
-         {:ok, section} <-
+    with {:ok, section} <-
            Sections.update_section(socket.assigns.section, %{cover_image: uploaded_path}) do
       socket = put_flash(socket, :info, "Section changes saved")
       {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}
@@ -706,6 +704,41 @@ defmodule OliWeb.Sections.OverviewView do
       <.button variant={:primary} phx-click="toggle_assistant">
         Enable Assistant
       </.button>
+    <% end %>
+    """
+  end
+
+  defp flash_message(assigns) do
+    ~H"""
+    <%= if Phoenix.Flash.get(@flash, :info) do %>
+      <div class="alert alert-info flex flex-row justify-between" role="alert">
+        <%= Phoenix.Flash.get(@flash, :info) %>
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="info"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    <% end %>
+    <%= if Phoenix.Flash.get(@flash, :error) do %>
+      <div class="alert alert-danger flex flex-row justify-between" role="alert">
+        <%= Phoenix.Flash.get(@flash, :error) %>
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="error"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
     <% end %>
     """
   end
