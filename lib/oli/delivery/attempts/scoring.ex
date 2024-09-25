@@ -70,7 +70,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
     # attempts where somehow the most recent attempt does not match
     # the natural database order - or somehow the query doesn't return
     # in database order.
-    [most_recent | _] = Enum.sort_by(items, & &1.date_evaluated, &>=/2)
+    [most_recent | _] = Enum.sort_by(items, & &1.date_evaluated, &(DateTime.compare(&1, &2) != :lt))
 
     %Result{
       score: Map.get(most_recent, :score),
