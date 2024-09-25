@@ -167,7 +167,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     const newPartData = {
       id: `${copiedPart.type}-${guid()}`,
       type: copiedPart.type,
-      custom: copiedPart.custom,
+      custom: { ...copiedPart.custom, x: copiedPart.custom.x + 20, y: copiedPart.custom.y + 20 },
     };
     addPartToCurrentScreen(newPartData);
     dispatch(setCurrentSelection({ selection: newPartData.id }));
