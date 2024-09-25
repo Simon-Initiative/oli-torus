@@ -52,18 +52,23 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
     notes_enabled = collab_space_pages_count > 0
 
-    %{slug: revision_slug} = DeliveryResolver.root_container(section_slug)
+    revision_slug =
+      case DeliveryResolver.root_container(section_slug) do
+        %{slug: slug} -> slug
+        _ -> nil
+      end
 
     discussions_enabled =
-      case Collaboration.get_collab_space_config_for_page_in_section(
-             revision_slug,
-             section_slug
-           ) do
-        {:ok, %CollabSpaceConfig{status: :enabled}} ->
-          true
-
-        _ ->
-          false
+      if revision_slug do
+        case Collaboration.get_collab_space_config_for_page_in_section(
+               revision_slug,
+               section_slug
+             ) do
+          {:ok, %CollabSpaceConfig{status: :enabled}} -> true
+          _ -> false
+        end
+      else
+        false
       end
 
     assign(socket, notes_enabled: notes_enabled, discussions_enabled: discussions_enabled)
