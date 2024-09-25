@@ -4094,10 +4094,6 @@ table.table-striped tbody tr:nth-child(even) {
   left: 50%;
 }
 
-.left-12 {
-  left: 3rem;
-}
-
 .left-2 {
   left: 0.5rem;
 }
@@ -4132,6 +4128,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-\[1250px\] {
   left: 1250px;
+}
+
+.left-\[52px\] {
+  left: 52px;
 }
 
 .left-\[8px\] {
