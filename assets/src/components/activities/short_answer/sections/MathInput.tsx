@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MathLive } from 'components/common/MathLive';
 import { InputText } from 'data/activities/model/rules';
