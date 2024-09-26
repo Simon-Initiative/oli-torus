@@ -22,6 +22,8 @@ defmodule OliWeb.Api.XAPIController do
 
       {:error, e} ->
         Logger.error("Error constructing xapi bundle: #{inspect(e)}")
+        Oli.Utils.Appsignal.capture_error("Error constructing xapi bundle: #{inspect(e)}")
+
         json(conn, %{"result" => "failure", "reason" => e})
     end
   end

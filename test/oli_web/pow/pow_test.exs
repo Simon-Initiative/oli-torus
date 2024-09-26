@@ -78,6 +78,29 @@ defmodule OliWeb.Common.PowTest do
       assert response =~ "Continue with Google"
       assert response =~ "Continue with Github"
     end
+
+    test "signs out user when signs in as admin", %{conn: conn, user: user} do
+      admin =
+        author_fixture(%{
+          system_role_id: Accounts.SystemRole.role_id().system_admin
+        })
+
+      # sign user in
+      conn =
+        post(conn, Routes.pow_session_path(conn, :create),
+          user: %{email: user.email, password: "password123"}
+        )
+
+      # sign admin in
+      conn =
+        post(conn, Routes.authoring_pow_session_path(conn, :create),
+          user: %{email: admin.email, password: "password123"}
+        )
+
+      # User is signed out
+      refute conn.assigns.current_user
+      refute get_session(conn, :current_user_id)
+    end
   end
 
   describe "pow user" do

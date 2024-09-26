@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
+  alias OliWeb.Components.Common
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
 
@@ -832,6 +833,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               There are no questions available for this page.
             </p>
           </div>
+          <div :if={@questions == []} class="flex w-full justify-center">
+            <p>
+              There are no questions available for this page.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -859,10 +865,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             <div class="flex w-full justify-center">
               <button
                 id="submit_answers"
-                phx-click="finalize_attempt"
+                phx-hook="DelayedSubmit"
                 class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
               >
-                Submit Answers
+                <span class="button-text">Submit Answers</span>
+                <span class="spinner hidden ml-2 animate-spin">
+                  <svg
+                    class="w-5 h-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    >
+                    </circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    >
+                    </path>
+                  </svg>
+                </span>
               </button>
             </div>
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
@@ -1361,6 +1392,138 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       Map.merge(act_acum, %{activity_id => part_scores})
     end)
   end
+
+  defp build_activity_part_points_mapper(activities) do
+    # activity_id => %{"part_id" => total_part_points}
+    # %{
+    #   12742 => %{"1" => 1},
+    #   12745 => %{"1" => 1},
+    #   12746 => %{"1" => 1, "3660145108" => 1}
+    # }
+
+    Enum.reduce(activities, %{}, fn {activity_id, activity_summary}, act_acum ->
+      part_scores =
+        activity_summary.unencoded_model["authoring"]["parts"]
+        |> Enum.reduce(%{}, fn part, part_acum ->
+          Map.merge(part_acum, %{
+            part["id"] =>
+              Enum.reduce(part["responses"], 0, fn response, acum_score ->
+                acum_score + response["score"]
+              end)
+          })
+        end)
+
+      Map.merge(act_acum, %{activity_id => part_scores})
+    end)
+  end
+
+  defp update_activity(socket, params) do
+    %{
+      "activityAttemptGuid" => activity_attempt_guid,
+      "partInputs" => [
+        %{
+          "attemptGuid" => part_attempt_guid
+        } = activity_part
+      ]
+    } = params
+
+    updated_questions =
+      Enum.map(socket.assigns.questions, fn
+        %{state: %{"attemptGuid" => attempt_guid}} = question
+        when attempt_guid == activity_attempt_guid ->
+          updated_parts =
+            Enum.map(question.state["parts"], fn
+              %{"attemptGuid" => attempt_guid} = part
+              when attempt_guid == part_attempt_guid ->
+                Map.merge(part, activity_part)
+
+              part ->
+                part
+            end)
+
+          update_in(question, [:state, "parts"], fn _ -> updated_parts end)
+          |> update_answered_status()
+
+        question ->
+          question
+      end)
+
+    assign(socket, questions: updated_questions)
+  end
+
+  defp update_answered_status(question) do
+    %{
+      question
+      | answered:
+          !Enum.any?(question.state["parts"], fn part -> part["response"] in ["", nil] end)
+    }
+  end
+
+  defp get_updated_state(attempt_guid) do
+    {:ok, [attempt]} = Oli.Delivery.Attempts.Core.get_activity_attempts([attempt_guid])
+    model = Oli.Delivery.Attempts.Core.select_model(attempt)
+
+    {:ok, parsed_model} = Oli.Activities.Model.parse(model)
+
+    Oli.Activities.State.ActivityState.from_attempt(
+      attempt,
+      Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt.attempt_guid),
+      parsed_model,
+      nil,
+      nil
+    )
+    # string keys are expected...
+    |> Jason.encode!()
+    |> Jason.decode!()
+  end
+
+  attr :part, :map, required: true
+
+  def part_result_icon(%{part: %{"dateEvaluated" => nil}} = assigns) do
+    ~H"""
+    """
+  end
+
+  def part_result_icon(%{part: %{"score" => score, "outOf" => out_of}} = assigns)
+      when score == out_of and score != 0 do
+    ~H"""
+    <Icons.check />
+    """
+  end
+
+  def part_result_icon(assigns) do
+    ~H"""
+    <Icons.close class="stroke-red-500 dark:stroke-white" />
+    """
+  end
+
+  defp question_points(selected_question) do
+    Enum.reduce(selected_question.state["parts"], 0.0, fn part, acum ->
+      part["score"] + acum
+    end)
+  end
+
+  defp total_question_points(selected_question) do
+    Enum.reduce(
+      selected_question.part_points,
+      0.0,
+      fn {_id, points}, acum ->
+        points + acum
+      end
+    )
+  end
+
+  defp get_progress([] = _questions), do: 0.5
+
+  defp get_progress(questions) do
+    total_questions = Enum.count(questions)
+    submitted_questions = Enum.count(questions, fn question -> question.submitted end)
+
+    if submitted_questions == 0, do: 0.5, else: submitted_questions / total_questions * 100
+  end
+
+  defp parse_points(1), do: "1 point"
+  defp parse_points(points), do: "#{points} points"
 
   defp to_epoch(nil), do: nil
 

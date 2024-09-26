@@ -131,9 +131,16 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def youtube(%Context{} = context, _, %{"src" => _} = attrs) do
+    attempt_guid =
+      case context.resource_attempt do
+        nil -> ""
+        attempt -> attempt.attempt_guid
+      end
+
     {:safe, video_player} =
       OliWeb.Common.React.component(context, "Components.YoutubePlayer", %{
         "video" => attrs,
+        "pageAttemptGuid" => attempt_guid,
         "pointMarkerContext" => %{
           renderPointMarkers: context.render_opts.render_point_markers,
           isAnnotationLevel: context.is_annotation_level

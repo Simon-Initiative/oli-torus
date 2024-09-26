@@ -12,6 +12,7 @@ import {
 } from 'data/activities/model/rules';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
+import { isValidNumber } from 'utils/number';
 import { disableScrollWheelChange } from '../utils';
 
 // here we defined a "editable number" variant data type that contains information
@@ -38,10 +39,6 @@ export type EditableNumber = InvalidNumber | ValidNumber;
 
 const isVariable = (s: numberOrVar): boolean =>
   typeof s === 'string' && s.match(/^@@\w+@@$/) !== null;
-
-const isValidNumber = (s: string): boolean =>
-  // allowing .333 but not 33. Need disjunction to allow both
-  typeof s === 'string' && s.match(/^[+-]?\d*\.?\d+(?:[Ee][+-]?\d+)?$/) != null;
 
 const parsedNumberOrEmptyString = (num: number | undefined) =>
   num != undefined && !isNaN(num) ? num : '';
