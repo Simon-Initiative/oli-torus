@@ -101,7 +101,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
 
   defp translate_nils(items) do
     Enum.map(items, fn p ->
-      %{
+      Map.merge(p, %{
         score:
           if is_nil(p.score) do
             0
@@ -114,7 +114,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
           else
             p.out_of
           end
-      }
+      })
     end)
   end
 
