@@ -8,6 +8,7 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
   use OliWeb, :verified_routes
 
   alias Oli.Utils
+  alias OliWeb.Pow.SessionUtils
   alias OliWeb.Router.Helpers, as: Routes
 
   def before_respond(
@@ -34,11 +35,21 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
       link_to_user_account(conn.assigns.current_user, conn.assigns.current_author.id)
 
     conn
+    |> maybe_logout_user()
     |> Phoenix.Controller.put_flash(
       :info,
       "Account '#{conn.assigns.current_author.email}' is now linked to '#{conn.assigns.current_user.email}'"
     )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
+  end
+
+  def before_respond(
+        Pow.Phoenix.SessionController,
+        :create,
+        {:ok, conn},
+        _config
+      ) do
+    {:ok, maybe_logout_user(conn)}
   end
 
   def before_respond(
@@ -86,8 +97,7 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
   end
 
   def before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, author, conn}, _config) do
-    conn =
-      maybe_assign_request_path(conn)
+    conn = maybe_assign_request_path(conn)
 
     case conn do
       %{query_params: %{"link_to_user_account?" => "true"}, assigns: %{ctx: %{user: user}}}
@@ -118,4 +128,13 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
 
   defp link_to_user_account(user_account, author_id),
     do: OliWeb.Pow.UserContext.update(user_account, %{author_id: author_id})
+
+  defp maybe_logout_user(conn) do
+    if conn.assigns.current_user != nil and
+         Oli.Accounts.is_system_admin?(conn.assigns.current_author) do
+      SessionUtils.perform_signout(conn, "user")
+    else
+      conn
+    end
+  end
 end

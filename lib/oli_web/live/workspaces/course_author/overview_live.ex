@@ -74,23 +74,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         notes_config: %{},
         project_export_status: project_export_status,
         project_export_url: project_export_url,
-        project_export_timestamp: project_export_timestamp,
-        active_workspace: :course_author,
-        active_view: :overview
+        project_export_timestamp: project_export_timestamp
       )
 
     {:ok, socket}
   end
 
   @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
-  end
-
-  @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="overview container mx-auto">
+    <div class="overview">
       <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"

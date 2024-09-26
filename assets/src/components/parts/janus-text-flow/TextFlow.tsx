@@ -18,6 +18,7 @@ export interface MarkupTree {
   style?: any;
   text?: string;
   children?: MarkupTree[];
+  alt?: string;
 }
 
 export const getStylesToOverwrite = (node: MarkupTree, child: MarkupTree, fontSize?: any) => {
@@ -74,7 +75,7 @@ export const renderFlow = (
       src={treeNode.src}
       target={treeNode.target}
       style={styles}
-      text={treeNode.text}
+      text={treeNode.tag == 'img' ? treeNode.alt : treeNode.text}
       state={state}
       env={env}
     >
