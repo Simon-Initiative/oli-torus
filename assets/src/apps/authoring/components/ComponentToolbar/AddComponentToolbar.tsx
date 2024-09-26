@@ -81,7 +81,7 @@ const AddComponentToolbar: React.FC<{
       }
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
-        // only ever add to the current activity, not a layer
+        // only ever add to the current  activity, not a layer
         setNewPartAddCounter(newPartAddCounter + 1);
         const part = new PartClass() as any;
         const newPartData = {
