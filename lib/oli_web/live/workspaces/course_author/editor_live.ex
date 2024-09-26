@@ -8,6 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
   alias Oli.PartComponents
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.React
+  alias OliWeb.Workspaces.CourseAuthor.HistoryLive
 
   @impl true
   def mount(%{"project_id" => project_slug, "revision_slug" => revision_slug}, _session, socket) do
@@ -56,7 +57,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
         </div>
 
         <div>
-          <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, OliWeb.RevisionHistory, @project_slug, @revision_slug) do %>
+          <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, HistoryLive, @project_slug, @revision_slug) do %>
             <span style="margin-right: 5px"><i class="fas fa-history"></i></span><span>View History</span>
           <% end %>
         </div>
