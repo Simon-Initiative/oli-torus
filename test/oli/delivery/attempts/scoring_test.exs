@@ -30,6 +30,9 @@ defmodule Oli.Delivery.Attempts.ScoringTest do
       %{score: 9, out_of: 20, date_evaluated: nil}
     ]
 
+    most_recent_id = Oli.Resources.ScoringStrategy.get_id_by_type("most_recent")
+    assert %Result{score: 5, out_of: 10} = Scoring.calculate_score(most_recent_id, items)
+
     assert %Result{score: 5, out_of: 10} = Scoring.calculate_score("most_recent", items)
   end
 
