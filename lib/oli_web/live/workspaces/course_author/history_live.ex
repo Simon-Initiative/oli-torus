@@ -307,57 +307,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div
-      :if={@flash not in [nil, %{}]}
-      id="live_flash_container"
-      class="flash container mx-auto px-0 top-[80px]"
-    >
-      <%= if Phoenix.Flash.get(@flash, :info) do %>
-        <div class="alert alert-info flex flex-row" role="alert">
-          <div class="flex-1">
-            <%= Phoenix.Flash.get(@flash, :info) %>
-          </div>
-
-          <button
-            type="button"
-            class="close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-            phx-click="lv:clear-flash"
-            phx-value-key="info"
-          >
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-        </div>
-      <% end %>
-
-      <%= if Phoenix.Flash.get(@flash, :error) do %>
-        <div class="alert alert-danger flex flex-row" role="alert">
-          <div class="flex-1">
-            <%= Phoenix.Flash.get(@flash, :error) %>
-          </div>
-
-          <button
-            type="button"
-            class="close"
-            data-bs-dismiss="alert"
-            aria-label="Close"
-            phx-click="lv:clear-flash"
-            phx-value-key="error"
-          >
-            <i class="fa-solid fa-xmark fa-lg"></i>
-          </button>
-        </div>
-      <% end %>
-    </div>
-
-    <script
-      id="keep-alive"
-      type="text/javascript"
-      src={Routes.static_path(OliWeb.Endpoint, "/js/keepalive.js")}
-    >
-    </script>
-
     <div class="container flex flex-col gap-y-6 p-8">
       <%= render_modal(assigns) %>
 

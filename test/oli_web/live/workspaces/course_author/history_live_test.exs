@@ -360,7 +360,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       )
 
       # a flash message confirms the edit
-      assert has_element?(view, "#live_flash_container", "Revision 'children' updated")
+      assert render(view) =~ "Revision &#39;children&#39; updated"
 
       # and we see the value updated in the table
       assert element(view, "#revision-table-children-attr td:nth-of-type(2)")
@@ -415,7 +415,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       )
 
       # a flash message confirms the edit
-      assert has_element?(view, "#live_flash_container", "Revision 'objectives' updated")
+      assert render(view) =~ "Revision &#39;objectives&#39; updated"
 
       # and we see the value updated in the table
       assert element(view, "#revision-table-objectives-attr td:nth-of-type(2)")
@@ -454,11 +454,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       )
 
       # a flash message confirms the edit
-      assert has_element?(
-               view,
-               "#live_flash_container",
-               "Could not update revision: Invalid JSON format"
-             )
+      assert render(view) =~ "Could not update revision: Invalid JSON format"
     end
   end
 end
