@@ -71,7 +71,7 @@ defmodule Oli.Delivery.Attempts.Scoring do
     # the natural database order - or somehow the query doesn't return
     # in database order.
     [most_recent | _] =
-      Enum.filter(items, & &1.date_evaluated != nil)
+      Enum.filter(items, &(&1.date_evaluated != nil))
       |> Enum.sort_by(& &1.date_evaluated, &(DateTime.compare(&1, &2) != :lt))
 
     %Result{
