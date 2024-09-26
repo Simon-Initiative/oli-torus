@@ -1,8 +1,7 @@
-defmodule OliWeb.Products.Details.ImageUpload do
+defmodule OliWeb.Sections.Details.ImageUpload do
   use OliWeb, :html
 
-  attr(:product, :any, required: true)
-  attr(:updates, :any, required: true)
+  attr(:section, :any, required: true)
   attr(:changeset, :any, default: nil)
   attr(:uploads, :map, required: true)
   attr(:upload_event, :any, required: true)
@@ -100,7 +99,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
                 <% end %>
               <% else %>
                 <article class="col-span-12">
-                  <img id="current-product-img" src={@product.cover_image} class="img-fluid w-75" />
+                  <img id="current-section-img" src={@section.cover_image} class="img-fluid w-75" />
                 </article>
               <% end %>
             </section>

@@ -15,6 +15,20 @@ defmodule OliWeb.LiveSessionPlugs.AssignActiveMenu do
   where the active_workspace will be :course_author and the active_view will be :activities."
   """
 
+  @valid_views_for_instructor [
+    "course_content",
+    "students",
+    "quiz_scores",
+    "recommended_actions",
+    "content",
+    "learning_objectives",
+    "scored_activities",
+    "practice_activities",
+    "surveys",
+    "manage",
+    "activity"
+  ]
+
   def on_mount(:default, params, _session, socket) do
     socket =
       case Module.split(socket.view) do
@@ -31,12 +45,12 @@ defmodule OliWeb.LiveSessionPlugs.AssignActiveMenu do
 
         ["OliWeb", "Workspaces", "Instructor" | _rest] ->
           case params["active_tab"] || params["view"] do
-            nil ->
-              socket
-
-            active_view_string ->
-              active_view = String.to_existing_atom(active_view_string)
+            active_view_string when active_view_string in @valid_views_for_instructor ->
+              active_view = String.to_atom(active_view_string)
               assign(socket, active_workspace: :instructor, active_view: active_view)
+
+            _ ->
+              socket
           end
 
         _ ->
