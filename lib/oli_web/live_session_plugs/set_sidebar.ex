@@ -12,10 +12,16 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.{DeliveryResolver}
 
-  def on_mount(:default, _params, session, socket) do
+  def on_mount(:default, params, session, socket) do
+    section_slug =
+      case params do
+        %{"section_slug" => section_slug} -> section_slug
+        _ -> nil
+      end
+
     socket =
       socket
-      |> assign_notes_and_discussions_enabled(session["section_slug"])
+      |> assign_notes_and_discussions_enabled(section_slug)
       |> assign(sidebar_expanded: session["sidebar_expanded"])
       |> assign(disable_sidebar?: false)
       |> assign(header_enabled?: true)
@@ -52,23 +58,16 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
     notes_enabled = collab_space_pages_count > 0
 
-    revision_slug =
-      case DeliveryResolver.root_container(section_slug) do
-        %{slug: slug} -> slug
-        _ -> nil
-      end
-
     discussions_enabled =
-      if revision_slug do
-        case Collaboration.get_collab_space_config_for_page_in_section(
+      with %{slug: revision_slug} <- DeliveryResolver.root_container(section_slug),
+           {:ok, %CollabSpaceConfig{status: :enabled}} <-
+             Collaboration.get_collab_space_config_for_page_in_section(
                revision_slug,
                section_slug
              ) do
-          {:ok, %CollabSpaceConfig{status: :enabled}} -> true
-          _ -> false
-        end
+        true
       else
-        false
+        _ -> false
       end
 
     assign(socket, notes_enabled: notes_enabled, discussions_enabled: discussions_enabled)
