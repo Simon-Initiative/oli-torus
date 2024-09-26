@@ -1,4 +1,4 @@
-defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
+defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   use OliWeb, :live_component
 
   import OliWeb.Delivery.Student.Utils,
@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
       <% selected_question_parts_count = map_size(selected_question.part_points) %>
       <% submitted_questions = Enum.count(@questions, & &1.submitted) %>
       <% unattempted_questions = total_questions - submitted_questions %>
-      <Modal.modal id="finish_quiz_confirmation" class="w-auto min-w-[50%]" body_class="px-6">
+      <Modal.modal id="finish_quiz_confirmation_modal" class="w-auto min-w-[50%]" body_class="px-6">
         <:title>
           Finish Quiz Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
         </:title>
@@ -85,6 +85,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
           <div class="mb-3">
             <Common.progress_bar
               percent={get_progress(@questions)}
+              role="progress bar"
               height="h-1"
               rounded="rounded-none"
               on_going_colour="bg-[#0062f2]"
@@ -124,7 +125,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
               </div>
               <div
                 :if={selected_question_parts_count > 1}
-                role="score summary"
+                role="parts score summary"
                 class="w-[173px] px-3 py-6 gap-2 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap border-l border-[#c8c8c8]"
               >
                 <div
@@ -164,7 +165,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
                 Submit Response
               </button>
               <div :if={selected_question.submitted} class="activity w-full p-2 px-10">
-                <div class="flex justify-end mb-2.5">
+                <div role="question points feedback" class="flex justify-end mb-2.5">
                   <span class="text-[#8e8e8e] text-xs font-normal font-['Open Sans'] leading-[18px]">
                     Points:
                   </span>
@@ -174,7 +175,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
                     ) %>
                   </span>
                 </div>
-                <div class="activity-content">
+                <div role="question feedback" class="activity-content">
                   <%= OliWeb.Common.React.component(
                     @ctx,
                     "Components.Evaluation",
@@ -196,6 +197,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
           <button
             phx-click={JS.dispatch("click", to: "#question_#{selected_question.number - 1}_button")}
             disabled={selected_question.number == 1}
+            id="previous_question_button"
             class="w-[117.45px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
           >
             <div class="justify-end items-center gap-2 flex">
@@ -225,6 +227,7 @@ defmodule OliWeb.Delivery.Student.Lesson.OneAtATimeQuestion do
 
           <button
             :if={selected_question.number < total_questions}
+            id="next_question_button"
             phx-click={JS.dispatch("click", to: "#question_#{selected_question.number + 1}_button")}
             class="w-[93.51px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
           >
