@@ -611,6 +611,7 @@ defmodule OliWeb.Components.Common do
       <div class="flex justify-center w-full">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
+            role="progress"
             class={[
               "#{@rounded} #{@height}",
               if(@percent == 100, do: @completed_colour, else: @on_going_colour)
