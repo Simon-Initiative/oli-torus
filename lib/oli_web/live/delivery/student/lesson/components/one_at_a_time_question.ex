@@ -40,7 +40,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         <:custom_footer>
           <div class="flex gap-3.5 w-full h-16 p-4 mt-6 border-t border-[#e7e7e7]">
             <button
-              phx-click={Modal.hide_modal("finish_quiz_confirmation")}
+              phx-click={Modal.hide_modal("finish_quiz_confirmation_modal")}
               class="ml-auto w-[84px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border border-[#0f6bf5] justify-center items-center gap-2.5 inline-flex"
             >
               <div class="pr-2 justify-end items-center gap-2 flex">
@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               ) %>
             </div>
             <button
-              phx-click={Modal.show_modal("finish_quiz_confirmation")}
+              phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
               disabled={selected_question.number != total_questions}
               class="flex items-center gap-2"
             >
@@ -255,7 +255,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
 
           <button
             :if={selected_question.number == total_questions}
-            phx-click={Modal.show_modal("finish_quiz_confirmation")}
+            phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
             class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap"
           >
             Finish Quiz
