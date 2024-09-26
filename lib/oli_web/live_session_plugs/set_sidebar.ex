@@ -54,13 +54,13 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   end
 
   defp is_same_workspace(previous_url, current_url) do
-    previous_workspace = process_url(previous_url)
-    current_workspace = process_url(current_url)
+    previous_workspace = extract_workspace(previous_url)
+    current_workspace = extract_workspace(current_url)
 
     previous_workspace == current_workspace
   end
 
-  defp process_url(url) do
+  defp extract_workspace(url) do
     URI.parse(url)
     |> Map.get(:path)
     |> String.split("/", trim: true)

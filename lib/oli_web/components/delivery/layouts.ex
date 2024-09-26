@@ -317,7 +317,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
             sidebar_expanded={@sidebar_expanded}
             active_workspace={@active_workspace}
           />
-          <div :if={!@sidebar_expanded} class="flex justify-center"><OliWeb.Icons.line_32 /></div>
+          <div :if={!@sidebar_expanded && @resource_slug} class="flex justify-center">
+            <OliWeb.Icons.line_32 />
+          </div>
           <WorkspaceUtils.sub_menu
             :if={@resource_slug}
             hierarchy={WorkspaceUtils.hierarchy(@active_workspace)}
