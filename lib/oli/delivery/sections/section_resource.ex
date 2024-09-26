@@ -75,10 +75,10 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # resource delivery policy
     belongs_to :delivery_policy, DeliveryPolicy
 
-    # Fields replicated from the resource revision
+    # Fields replicated from the resource revision and project
+    field :project_slug, :string
     field :title, :string
     field :graded, :boolean
-    field :resource_type_id, :integer
     field :revision_slug, :string
     field :purpose, :string
     field :duration_minutes, :integer
@@ -87,7 +87,9 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :poster_image, :string, default: nil
     field :objectives, :map, default: %{}
     field :relates_to, {:array, :id}, default: []
-    belongs_to :activity_type, Oli.Activities.ActivityRegistration
+    belongs_to :resource_type, Oli.Resources.ResourceType
+    belongs_to :revision, Oli.Activities.ActivityRegistration
+    belongs_to :activity_type, Oli.Resources.Revision
 
     timestamps(type: :utc_datetime)
   end
@@ -121,7 +123,21 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :resource_id,
       :project_id,
       :section_id,
-      :delivery_policy_id
+      :delivery_policy_id,
+      :project_slug,
+      :title,
+      :graded,
+      :revision_slug,
+      :purpose,
+      :duration_minutes,
+      :intro_content,
+      :intro_video,
+      :poster_image,
+      :objectives,
+      :relates_to,
+      :resource_type_id,
+      :revision_id,
+      :activity_type_id
     ])
     |> cast_embed(:explanation_strategy)
     |> cast_embed(:collab_space_config)

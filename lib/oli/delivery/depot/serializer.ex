@@ -16,7 +16,7 @@ defmodule Oli.Delivery.Depot.Serializer do
       |> encode_by_type(data_type)
     end)
 
-    List.to_tuple([instance[depot_desc.key_field] | list])
+    List.to_tuple([Map.get(instance, depot_desc.key_field) | list])
   end
 
   def serialize(section_id, key_values, %DepotDesc{} = depot_desc) do
@@ -54,6 +54,8 @@ defmodule Oli.Delivery.Depot.Serializer do
     end)
   end
 
+  # We special case encode date times to unix time in milliseconds
+  # so that we can easily to equality and range queries on them.
   defp encode_by_type(value, :utc_datetime) do
     DateTime.to_unix(value, :millisecond)
   end
