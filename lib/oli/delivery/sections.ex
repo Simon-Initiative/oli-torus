@@ -1453,59 +1453,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns the resource_to_container map for the given section,
-  that maps all resources ids to their parent container id.
-  If the section does not have a precomputed page_to_container_map, one will be generated.
-
-  ## Examples
-      iex> get_page_to_container_map(section_slug)
-      %{
-        "21" => 39,
-        "22" => 40,
-        "23" => 42,
-        "24" => 42,
-        "25" => 42,
-        "26" => 42,
-        "27" => 42,
-        "28" => 43,
-      }
-  """
-  def get_page_to_container_map(section_slug) do
-    SectionCache.get_or_compute(section_slug, :page_to_container_map, fn ->
-      build_page_to_container_map(section_slug)
-    end)
-  end
-
-  defp build_page_to_container_map(section_slug) do
-    publication_ids = section_publication_ids(section_slug)
-    resource_link_map = build_resource_link_map(publication_ids)
-
-    all_pages = fetch_all_pages(section_slug)
-
-    all_containers =
-      DeliveryResolver.revisions_of_type(
-        section_slug,
-        Oli.Resources.ResourceType.get_id_by_type("container")
-      )
-
-    container_ids = Enum.map(all_containers, fn c -> c.resource_id end)
-
-    # build a map of all pages to their first hierarchical container resource id
-    all_pages
-    |> Enum.reduce(%{}, fn page, acc ->
-      {container_id, _seen} =
-        find_parent_container(
-          page.resource_id,
-          resource_link_map,
-          MapSet.new(container_ids),
-          MapSet.new()
-        )
-
-      Map.put(acc, Integer.to_string(page.resource_id), container_id)
-    end)
-  end
-
-  @doc """
   Assembles containers per page, grouping them by page ID, and orders the containers by their numbering level within each page for a given section.
 
   ## Parameters
@@ -1782,21 +1729,17 @@ defmodule Oli.Delivery.Sections do
     end)
   end
 
-  def fetch_ordered_container_labels(section_slug, opts \\ []) do
+  def fetch_ordered_container_labels(%Section{customizations: customizations}, full_hierarchy, opts \\ []) do
     short_label = opts[:short_label] || false
-
-    # TODO: OPTIMIZATION replace this with a minimal hierarchy query after v26.2 is merged
-    %Section{customizations: customizations} = get_section_by_slug(section_slug)
-    full_hierarchy = DeliveryResolver.full_hierarchy(section_slug)
 
     full_hierarchy
     |> Hierarchy.flatten()
     |> Enum.filter(fn node ->
-      node.revision.resource_type_id == ResourceType.get_id_by_type("container")
+      node.section_resource.resource_type_id == ResourceType.get_id_by_type("container")
     end)
-    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, section_resource: sr, revision: rev} ->
+    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, section_resource: sr} ->
       {resource_id,
-       label_for(sr.numbering_level, sr.numbering_index, rev.title, short_label, customizations)}
+       label_for(sr.numbering_level, sr.numbering_index, sr.title, short_label, customizations)}
     end)
   end
 
@@ -2871,7 +2814,8 @@ defmodule Oli.Delivery.Sections do
       |> Repo.transaction()
 
       # reset any section cached data
-      SectionCache.clear(section.slug)
+      Oli.Delivery.DepotCoordinator.clear(Oli.Delivery.Sections.SectionResourceDepot.depot_desc(), section_id)
+
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."

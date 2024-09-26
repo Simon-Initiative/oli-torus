@@ -3,6 +3,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   import Ecto.Query
   alias Oli.Delivery.Depot
   alias Oli.Delivery.Depot.DepotDesc
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceMigration
   alias Oli.Repo
@@ -15,13 +16,33 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
       table_id_field: :section_id
   }
 
-  def get_full_hierarchy(section_id) do
-    init_if_necessary(section_id)
+  def depot_desc(), do: @depot_desc
+
+  def get_full_hierarchy(%Section{} = section) do
+    init_if_necessary(section.id)
 
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
 
-    Depot.query(@depot_desc, section_id, [{:resource_type_id, :in, [page, container]}])
+    srs = Depot.query(@depot_desc, section.id, [{:resource_type_id, :in, [page, container]}])
+    Oli.Delivery.Hierarchy.full_hierarchy(section, srs)
+  end
+
+  def get_delivery_resolver_full_hierarchy(%Section{} = section) do
+    init_if_necessary(section.id)
+
+    page = Oli.Resources.ResourceType.id_for_page()
+    container = Oli.Resources.ResourceType.id_for_container()
+
+    srs = Depot.query(@depot_desc, section.id, [{:resource_type_id, :in, [page, container]}])
+    Oli.Publishing.DeliveryResolver.full_hierarchy(section, srs)
+  end
+
+  def get_ordered_container_labels(%Section{} = section) do
+    init_if_necessary(section.id)
+
+    full_hierarchy = get_delivery_resolver_full_hierarchy(section)
+    Oli.Delivery.Sections.fetch_ordered_container_labels(section, full_hierarchy)
   end
 
   def graded_pages(section_id) do
@@ -62,8 +83,5 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
     Depot.clear_and_set(@depot_desc, results)
   end
-
-
-
 
 end

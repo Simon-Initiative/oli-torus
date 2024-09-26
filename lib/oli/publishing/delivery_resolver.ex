@@ -329,6 +329,12 @@ defmodule Oli.Publishing.DeliveryResolver do
     hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
   end
 
+  def full_hierarchy(section, section_resources) do
+    {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section, section_resources)
+
+    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+  end
+
   defp hierarchy_node_with_children(
          %HierarchyNode{children: children_ids} = node,
          nodes_by_sr_id
@@ -341,6 +347,40 @@ defmodule Oli.Publishing.DeliveryResolver do
         |> hierarchy_node_with_children(nodes_by_sr_id)
       end)
     )
+  end
+
+  defp hierarchy_nodes_by_sr_id(section, section_resources) do
+
+    labels =
+      case section.customizations do
+        nil -> CustomLabels.default_map()
+        l -> Map.from_struct(l)
+      end
+
+    Enum.reduce(section_resources, {%{}, nil}, fn sr, {nodes, root} ->
+
+      node = %HierarchyNode{
+        uuid: uuid(),
+        numbering: %Numbering{
+          index: sr.numbering_index,
+          level: sr.numbering_level,
+          labels: labels
+        },
+        children: sr.children,
+        resource_id: sr.resource_id,
+        project_id: sr.project_id,
+        project_slug: sr.proj_slug,
+        section_resource: sr
+      }
+
+      {
+        Map.put(nodes, sr.id, node),
+        if(section.root_section_resource_id == sr.id, do: node, else: root)
+      }
+
+    end)
+    |> run()
+    |> emit([:oli, :resolvers, :delivery], :duration)
   end
 
   # Returns a map of resource ids to hierarchy nodes and the root hierarchy node
@@ -380,10 +420,9 @@ defmodule Oli.Publishing.DeliveryResolver do
             labels: labels
           },
           children: sr.children,
-          resource_id: rev.resource_id,
+          resource_id: sr.resource_id,
           project_id: sr.project_id,
           project_slug: proj_slug,
-          revision: rev,
           section_resource: sr
         }
 

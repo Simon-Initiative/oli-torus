@@ -46,6 +46,12 @@ defmodule Oli.Delivery.Depot do
 
   end
 
+  def clear(%DepotDesc{} = depot_desc, table_id) do
+
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.delete_all_objects()
+  end
+
   def all(%DepotDesc{} = depot_desc, table_id) do
 
     DepotDesc.table_name(depot_desc, table_id)
