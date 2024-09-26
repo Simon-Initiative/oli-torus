@@ -8,9 +8,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexCsvLive do
     {:ok,
      assign(socket,
        resource_slug: project.slug,
-       resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :overview
+       resource_title: project.title
      )
      |> allow_upload(:csv, accept: ~w(.csv))}
   end

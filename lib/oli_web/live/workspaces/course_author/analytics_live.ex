@@ -75,8 +75,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AnalyticsLive do
         datashop_export_current_batch: nil,
         datashop_export_batch_count: nil,
         selected_sections: selected_sections,
-        active_workspace: :course_author,
-        active_view: :overview,
         resource_title: project.title,
         resource_slug: project.slug
       )

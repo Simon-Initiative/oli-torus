@@ -42,9 +42,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AlternativesLive do
        alternatives: Enum.reverse(alternatives),
        subscriptions: subscriptions,
        resource_slug: project.slug,
-       resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :overview
+       resource_title: project.title
      )}
   end
 
