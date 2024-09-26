@@ -531,6 +531,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   ## Parameters:
   - `resource_end_date`: The `DateTime` representing the end date of the resource.
+  - `scheduling_type`: The type of scheduling for the resource, such as `:read_by`, `:due_by`, or `:inclass_activity`.
   - `context`: The `SessionContext` struct containing the user's timezone information.
 
   ## Returns:
@@ -538,13 +539,13 @@ defmodule OliWeb.Delivery.Student.Utils do
   - "Not yet scheduled" if the provided end date is nil.
 
   ## Examples:
-      iex> days_difference(~U[2024-05-12T00:00:00Z], %SessionContext{local_tz: "America/Montevideo"})
+      iex> days_difference(~U[2024-05-12T00:00:00Z], :read_by, %SessionContext{local_tz: "America/Montevideo"})
       "1 day left"
   """
 
-  def days_difference(nil, _context), do: "Not yet scheduled"
+  def days_difference(nil, _scheduling_type, _context), do: "Not yet scheduled"
 
-  def days_difference(resource_end_date, context) do
+  def days_difference(resource_end_date, scheduling_type, context) do
     {localized_end_date, today} =
       case FormatDateTime.maybe_localized_datetime(resource_end_date, context) do
         {:not_localized, datetime} ->
@@ -555,20 +556,29 @@ defmodule OliWeb.Delivery.Student.Utils do
            context.local_tz |> Oli.DateTime.now!() |> DateTime.to_date()}
       end
 
-    case Timex.diff(localized_end_date, today, :days) do
-      0 ->
+    case {Timex.diff(localized_end_date, today, :days), scheduling_type} do
+      {0, :read_by} ->
+        "Suggested for Today"
+
+      {0, _scheduling_type} ->
         "Due Today"
 
-      1 ->
+      {1, _scheduling_type} ->
         "1 day left"
 
-      -1 ->
+      {-1, :read_by} ->
+        "Past suggested date by a day"
+
+      {-1, _scheduling_type} ->
         "Past Due by a day"
 
-      days when days < 0 ->
+      {days, :read_by} when days < 0 ->
+        "Past suggested date by #{abs(days)} days"
+
+      {days, _scheduling_type} when days < 0 ->
         "Past Due by #{abs(days)} days"
 
-      days ->
+      {days, _scheduling_type} ->
         "#{days} days left"
     end
   end
