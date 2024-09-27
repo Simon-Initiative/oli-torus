@@ -156,6 +156,14 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  @doc """
+  Returns the scheduling type label for the container.
+  When all the contained resources are of :read_by type, then
+  the label will be "Read by: "
+  """
+  def container_label_for_scheduling_type([:read_by]), do: "Read by: "
+  def container_label_for_scheduling_type(_), do: "Due by: "
+
   def label_for_scheduling_type(:due_by), do: "Due by: "
   def label_for_scheduling_type(:read_by), do: "Read by: "
   def label_for_scheduling_type(:inclass_activity), do: "In-class activity by: "

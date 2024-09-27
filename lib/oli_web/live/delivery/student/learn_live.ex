@@ -62,6 +62,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       assign(socket,
         active_tab: :learn,
         selected_module_per_unit_resource_id: %{},
+        contained_scheduling_types: %{},
         student_end_date_exceptions_per_resource_id: %{},
         student_visited_pages: %{},
         student_progress_per_resource_id: %{},
@@ -112,11 +113,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          resource_id <- params["target_resource_id"] do
       {:noreply,
        socket
+       |> maybe_assign_contained_scheduling_types(selected_view, full_hierarchy)
        |> maybe_assign_selected_view(selected_view)
        |> stream(:units, full_hierarchy["children"], reset: true)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
+
+  defp maybe_assign_contained_scheduling_types(socket, :gallery, full_hierarchy) do
+    assign(socket,
+      contained_scheduling_types: Hierarchy.contained_scheduling_types(full_hierarchy)
+    )
+  end
+
+  defp maybe_assign_contained_scheduling_types(socket, _selected_view, _full_hierarchy),
+    do: socket
 
   _docp = """
   This assign helper function is responsible for scrolling to the target resource.
@@ -772,6 +783,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
           student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+          contained_scheduling_types={@contained_scheduling_types}
           page_metrics_per_module_id={@page_metrics_per_module_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
           progress={
@@ -803,6 +815,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_raw_avg_score_per_page_id, :map
   attr :student_end_date_exceptions_per_resource_id, :map
   attr :selected_module_per_unit_resource_id, :map
+  attr :contained_scheduling_types, :map
   attr :progress, :integer
   attr :student_id, :integer
   attr :viewed_intro_video_resource_ids, :list
@@ -893,7 +906,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    Due:
+                    <%= Utils.container_label_for_scheduling_type(
+                      Map.get(@contained_scheduling_types, @unit["resource_id"])
+                    ) %>
                   </span>
                   <%= format_date(
                     @unit["section_resource"].end_date,
@@ -2820,7 +2835,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp get_selected_view(params) do
     case params["selected_view"] do
-      nil -> nil
+      nil -> @default_selected_view
       view when view not in ~w(gallery outline) -> @default_selected_view
       view -> String.to_existing_atom(view)
     end
