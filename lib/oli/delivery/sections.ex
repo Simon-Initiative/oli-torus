@@ -1793,11 +1793,11 @@ defmodule Oli.Delivery.Sections do
     full_hierarchy
     |> Hierarchy.flatten()
     |> Enum.filter(fn node ->
-      node.section_resource.resource_type_id == ResourceType.get_id_by_type("container")
+      node.revision.resource_type_id == ResourceType.get_id_by_type("container")
     end)
-    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, section_resource: sr} ->
+    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev, section_resource: sr} ->
       {resource_id,
-       label_for(sr.numbering_level, sr.numbering_index, sr.title, short_label, customizations)}
+       label_for(sr.numbering_level, sr.numbering_index, rev.title, short_label, customizations)}
     end)
   end
 
