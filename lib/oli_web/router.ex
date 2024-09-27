@@ -818,6 +818,9 @@ defmodule OliWeb.Router do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)
         live("/:project_id/overview", OverviewLive)
+        live("/:project_id/alternatives", AlternativesLive)
+        live("/:project_id/index_csv", IndexCsvLive)
+        live("/:project_id/datashop", AnalyticsLive)
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)
