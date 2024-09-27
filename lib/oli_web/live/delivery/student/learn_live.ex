@@ -1035,7 +1035,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               ] %>
             </h2>
             <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
-              Due: <%= format_date(
+              <%= Utils.container_label_for_scheduling_type(
+                Map.get(@contained_scheduling_types, selected_module["resource_id"])
+              ) %><%= format_date(
                 selected_module[
                   "section_resource"
                 ].end_date,
