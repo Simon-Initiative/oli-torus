@@ -15,7 +15,7 @@ defmodule Oli.Repo.Migrations.ReplicateRevisionFields do
       add :objectives, :map, default: %{}
       add :relates_to, {:array, :id}, default: []
       add :resource_type_id, references(:resource_types, on_delete: :delete_all)
-      add :activity_type_id, references(:activity_types, on_delete: :delete_all)
+      add :activity_type_id, references(:activity_registrations, on_delete: :delete_all)
       add :revision_id, references(:revisions, on_delete: :delete_all)
     end
   end

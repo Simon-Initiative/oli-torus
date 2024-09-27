@@ -57,13 +57,19 @@ defmodule Oli.Delivery.Depot.Serializer do
   # We special case encode date times to unix time in milliseconds
   # so that we can easily to equality and range queries on them.
   defp encode_by_type(value, :utc_datetime) do
-    DateTime.to_unix(value, :millisecond)
+    case value do
+      nil -> nil
+      _ -> DateTime.to_unix(value, :millisecond)
+    end
   end
 
   defp encode_by_type(value, _), do: value
 
   defp decode_by_type(value, :utc_datetime) do
-    DateTime.from_unix(value, :millisecond)
+    case value do
+      nil -> nil
+      _ -> DateTime.from_unix(value, :millisecond)
+    end
   end
 
   defp decode_by_type(value, _), do: value

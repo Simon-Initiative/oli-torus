@@ -368,6 +368,18 @@ defmodule Oli.Publishing.DeliveryResolver do
         },
         children: sr.children,
         resource_id: sr.resource_id,
+        revision: %{
+          id: sr.revision_id,
+          resource_id: sr.resource_id,
+          title: sr.title,
+          slug: sr.revision_slug,
+          resource_type_id: sr.resource_type_id,
+          objectives: sr.objectives,
+          graded: sr.graded,
+          relates_to: sr.relates_to,
+          purpose: sr.purpose,
+          deleted: false
+        },
         project_id: sr.project_id,
         project_slug: sr.proj_slug,
         section_resource: sr
@@ -421,6 +433,7 @@ defmodule Oli.Publishing.DeliveryResolver do
           },
           children: sr.children,
           resource_id: sr.resource_id,
+          revision: rev,
           project_id: sr.project_id,
           project_slug: proj_slug,
           section_resource: sr
