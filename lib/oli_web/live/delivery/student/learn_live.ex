@@ -996,6 +996,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           }
           phx-key="Escape"
         >
+          <% selected_module = Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
           <div
             role="expanded module header"
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
@@ -1003,10 +1004,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="justify-start items-start gap-1 inline-flex">
               <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
                 <%= container_label_and_numbering(
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["numbering"][
+                  selected_module["numbering"][
                     "level"
                   ],
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["numbering"][
+                  selected_module["numbering"][
                     "index"
                   ],
                   @section.customizations
@@ -1014,13 +1015,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
-              <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+              <%= selected_module[
                 "title"
               ] %>
             </h2>
             <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
               Due: <%= format_date(
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                selected_module[
                   "section_resource"
                 ].end_date,
                 @ctx,
@@ -1030,7 +1031,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
           <div
             :if={
-              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+              selected_module[
                 "intro_content"
               ][
                 "children"
@@ -1042,24 +1043,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <div class="flex flex-col opacity-80">
               <span
-                data-toggle_read_more_button_id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
+                data-toggle_read_more_button_id={"toggle_read_more_#{selected_module["resource_id"]}"}
                 phx-hook="ToggleReadMore"
                 id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
                 class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
                 style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
               >
                 <%= render_intro_content(
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                  selected_module[
                     "intro_content"
                   ][
                     "children"
                   ]
                 ) %>
               </span>
-              <div
-                id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
-                class="ml-auto"
-              >
+              <div id={"toggle_read_more_#{selected_module["resource_id"]}"} class="ml-auto">
                 <button
                   id={"read_more_module_intro_in_unit_#{@unit["resource_id"]}"}
                   phx-click={
@@ -1105,7 +1103,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <div class="w-full">
               <% module =
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
+                selected_module %>
               <.module_content_header
                 module={module}
                 page_metrics={
@@ -1130,7 +1128,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 ctx={@ctx}
                 student_id={@student_id}
                 intro_video_viewed={
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
+                  selected_module["resource_id"] in @viewed_intro_video_resource_ids
                 }
                 display_props_per_module_id={@display_props_per_module_id}
               />
