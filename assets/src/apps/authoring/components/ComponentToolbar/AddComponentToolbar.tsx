@@ -54,7 +54,7 @@ const AddComponentToolbar: React.FC<{
   const currentSequence = useSelector(selectSequence);
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const copiedPart = useSelector(selectCopiedPart);
-  const [newPartAddCounter, setNewPartAddCounter] = useState<number>(0);
+  const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
       const [currentActivity] = currentActivityTree.slice(-1);
@@ -63,7 +63,7 @@ const AddComponentToolbar: React.FC<{
   };
 
   useEffect(() => {
-    setNewPartAddCounter(0);
+    setNewPartAddOffset(0);
   }, [currentSequenceId]);
 
   const handleAddComponent = useCallback(
@@ -82,14 +82,14 @@ const AddComponentToolbar: React.FC<{
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
         // only ever add to the current  activity, not a layer
-        setNewPartAddCounter(newPartAddCounter + 1);
+        setNewPartAddOffset(newPartAddOffset + 1);
         const part = new PartClass() as any;
         const newPartData = {
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,
           custom: {
-            x: 10 * newPartAddCounter,
-            y: 10 * newPartAddCounter,
+            x: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
+            y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             z: 0,
             width: 100,
             height: 100,
@@ -102,7 +102,7 @@ const AddComponentToolbar: React.FC<{
         addPartToCurrentScreen(newPartData);
       }
     },
-    [availablePartComponents, currentActivityTree, currentSequence, newPartAddCounter],
+    [availablePartComponents, currentActivityTree, currentSequence, newPartAddOffset],
   );
 
   const handlePartMenuButtonClick = (event: any) => {
@@ -110,6 +110,8 @@ const AddComponentToolbar: React.FC<{
     setPartsMenuTarget(event.target);
   };
   const handlePartPasteClick = () => {
+    //When a part is pasted, offset the new part component by 20px from the original part
+    const pasteOffset = 20;
     let newPartData = {
       id: `${copiedPart.type}-${guid()}`,
       type: copiedPart.type,
@@ -124,8 +126,8 @@ const AddComponentToolbar: React.FC<{
           type: copiedPart.type,
           custom: {
             ...copiedPart.custom,
-            x: copiedPart.custom.x + 20,
-            y: copiedPart.custom.y + 20,
+            x: copiedPart.custom.x + pasteOffset,
+            y: copiedPart.custom.y + pasteOffset,
           },
         };
       }
