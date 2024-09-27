@@ -932,28 +932,24 @@ defmodule Oli.Accounts do
 
   ## Examples
 
-      iex> setup_sso_user(fields, community_id, [])
+      iex> setup_sso_user(fields, community_id)
       {:ok, %User{}, nil}          # Inserted or updated successfully, no author linked
 
-      iex> setup_sso_user(fields, community_id, [link_author: true])
-      {:ok, %User{}, %Author{}}    # Inserted or updated successfully, author linked
-
-      iex> setup_sso_user(fields, community_id, [])
+      iex> setup_sso_user(fields, community_id)
       {:error, changeset}          # Something went wrong
 
   """
-  def setup_sso_user(fields, community_id, opts \\ []) do
+  def setup_sso_user(fields, community_id) do
     res =
       Multi.new()
       |> Multi.run(:user, &create_sso_user(&1, &2, fields))
       |> Multi.run(:community_account, &create_community_account(&1, &2, community_id))
-      |> Multi.run(:author, &maybe_invite_author(&1, &2, fields, opts))
-      |> Multi.run(:linked_user, &link_user_with_author(&1, &2))
+      |> Multi.run(:author, &get_or_create_author(&1, &2, fields))
       |> Repo.transaction()
 
     case res do
       {:ok, %{user: user, author: author}} ->
-        {:ok, user, author}
+        {:ok, Repo.reload(user), author}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -968,6 +964,31 @@ defmodule Oli.Accounts do
       name: Map.get(fields, "name"),
       can_create_sections: true
     })
+  end
+
+  defp get_or_create_author(_repo, %{user: %{author_id: nil} = user}, fields) do
+    email = Map.get(fields, "email")
+    username = Map.get(fields, "cognito:username")
+
+    %Author{}
+    |> Author.noauth_changeset(%{
+      name: username,
+      email: email,
+      email_confirmed_at: DateTime.truncate(DateTime.utc_now(), :second)
+    })
+    |> Repo.insert()
+    |> case do
+      {:ok, author} = result ->
+        link_user_author_account(user, author)
+        result
+
+      error ->
+        error
+    end
+  end
+
+  defp get_or_create_author(_repo, %{user: %{author_id: author_id} = _user}, _fields) do
+    {:ok, get_author(author_id)}
   end
 
   defp create_sso_author(_repo, _changes, fields) do
@@ -992,28 +1013,5 @@ defmodule Oli.Accounts do
 
   defp create_community_account(_repo, %{user: %User{id: user_id}}, community_id) do
     Groups.find_or_create_community_user_account(user_id, community_id)
-  end
-
-  defp maybe_invite_author(_repo, %{user: user}, fields, opts) do
-    if Keyword.get(opts, :link_author, false) do
-      get_or_invite_author(user.email, fields)
-    else
-      {:ok, nil}
-    end
-  end
-
-  defp get_or_invite_author(email, fields) do
-    case get_author_by_email(email) do
-      nil ->
-        email = Map.get(fields, "email")
-        username = Map.get(fields, "cognito:username")
-
-        %Author{}
-        |> Author.invite_changeset(nil, %{name: username, email: email})
-        |> Repo.insert()
-
-      author ->
-        {:ok, author}
-    end
   end
 end
