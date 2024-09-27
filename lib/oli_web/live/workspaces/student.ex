@@ -2,10 +2,11 @@ defmodule OliWeb.Workspaces.Student do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Metrics
-  alias OliWeb.Backgrounds
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole, Section}
+  alias Oli.Repo
+  alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
-  alias OliWeb.Components.Delivery.Utils
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
@@ -16,6 +17,15 @@ defmodule OliWeb.Workspaces.Student do
     sidebar_expanded: true
   }
 
+  @platform_student_roles_ids [
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student).id,
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner).id
+  ]
+
+  @context_student_roles_ids [
+    Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
+  ]
+
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
     {:ok, assign(socket, active_workspace: :student)}
@@ -24,13 +34,9 @@ defmodule OliWeb.Workspaces.Student do
   @impl Phoenix.LiveView
   def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
       when not is_nil(current_user) do
-    all_sections =
-      Sections.list_user_open_and_free_sections(current_user)
-      |> add_user_role(current_user)
-
     sections =
-      all_sections
-      |> filter_by_role(:student)
+      current_user.id
+      |> sections_where_user_is_student()
       |> add_instructors()
       |> add_sections_progress(current_user.id)
 
@@ -38,7 +44,7 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(all_sections),
+       disable_sidebar?: user_is_only_a_student?(current_user.id),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -274,11 +280,7 @@ defmodule OliWeb.Workspaces.Student do
                   <h5 class="text-[36px] leading-[49px] font-semibold drop-shadow-md">
                     <%= section.title %>
                   </h5>
-                  <div
-                    :if={section.user_role == "student"}
-                    class="flex drop-shadow-md"
-                    role={"progress_for_section_#{section.id}"}
-                  >
+                  <div class="flex drop-shadow-md" role={"progress_for_section_#{section.id}"}>
                     <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
                       Course Progress
                     </h4>
@@ -358,15 +360,6 @@ defmodule OliWeb.Workspaces.Student do
      )}
   end
 
-  defp add_user_role([], _user), do: []
-
-  defp add_user_role(sections, user) do
-    sections
-    |> Enum.map(fn s ->
-      Map.merge(s, %{user_role: Utils.user_role(s, user) |> Atom.to_string()})
-    end)
-  end
-
   defp add_instructors([]), do: []
 
   defp add_instructors(sections) do
@@ -391,9 +384,6 @@ defmodule OliWeb.Workspaces.Student do
       Map.merge(section, %{progress: progress})
     end)
   end
-
-  defp filter_by_role(sections, :student),
-    do: Enum.filter(sections, fn s -> s.user_role == "student" end)
 
   defp maybe_filter_by_text(sections, nil), do: sections
   defp maybe_filter_by_text(sections, ""), do: sections
@@ -429,5 +419,36 @@ defmodule OliWeb.Workspaces.Student do
     }
   end
 
-  defp user_is_only_a_student?(sections), do: Enum.all?(sections, &(&1.user_role == "student"))
+  defp user_is_only_a_student?(user_id) do
+    Repo.exists?(
+      from e in Enrollment,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        join: upr in "users_platform_roles",
+        on: e.user_id == upr.user_id,
+        where: e.user_id == ^user_id,
+        where:
+          ecr.context_role_id not in ^@context_student_roles_ids or
+            upr.platform_role_id not in ^@platform_student_roles_ids
+    )
+  end
+
+  defp sections_where_user_is_student(user_id) do
+    Repo.all(
+      from s in Section,
+        join: e in Enrollment,
+        on: s.id == e.section_id,
+        join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        join: upr in "users_platform_roles",
+        on: e.user_id == upr.user_id,
+        where: e.user_id == ^user_id,
+        where: s.open_and_free == true,
+        where: s.status == :active,
+        where:
+          ecr.context_role_id in ^@context_student_roles_ids or
+            upr.platform_role_id in ^@platform_student_roles_ids,
+        select: s
+    )
+  end
 end
