@@ -122,7 +122,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp maybe_assign_contained_scheduling_types(socket, :gallery, full_hierarchy) do
     assign(socket,
-      contained_scheduling_types: Hierarchy.contained_scheduling_types(full_hierarchy)
+      contained_scheduling_types:
+        get_or_compute_contained_scheduling_types(socket.assigns.section.slug, full_hierarchy)
     )
   end
 
@@ -2759,6 +2760,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def get_or_compute_full_hierarchy(section) do
     SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
       Hierarchy.full_hierarchy(section)
+    end)
+  end
+
+  def get_or_compute_contained_scheduling_types(section_slug, full_hierarchy) do
+    SectionCache.get_or_compute(section_slug, :contained_scheduling_types, fn ->
+      Hierarchy.contained_scheduling_types(full_hierarchy)
     end)
   end
 
