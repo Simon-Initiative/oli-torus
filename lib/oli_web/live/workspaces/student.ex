@@ -420,7 +420,7 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   defp user_is_only_a_student?(user_id) do
-    Repo.exists?(
+    !Repo.exists?(
       from e in Enrollment,
         join: ecr in EnrollmentContextRole,
         on: e.id == ecr.enrollment_id,
