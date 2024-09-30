@@ -10,7 +10,7 @@ defmodule OliWeb.ProjectControllerTest do
   import Oli.Factory
 
   setup [:author_project_conn]
-  @valid_attrs %{title: "default title"}
+  @valid_attrs %{title: "default title", slug: "default_title"}
   @invalid_attrs %{title: ""}
 
   describe "projects" do
@@ -51,12 +51,14 @@ defmodule OliWeb.ProjectControllerTest do
   describe "create project" do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @valid_attrs)
-      assert html_response(conn, 302) =~ "/project/"
+
+      assert html_response(conn, 302) =~
+               "/workspaces/course_author/#{@valid_attrs.slug}/overview"
     end
 
     test "redirects back to workspace when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @invalid_attrs)
-      assert html_response(conn, 302) =~ "/projects"
+      assert html_response(conn, 302) =~ "/workspaces/course_author"
     end
   end
 
