@@ -90,7 +90,7 @@ defmodule Oli.Delivery.DepotTest do
     ] = Depot.all(@desc, 1) |> Enum.sort_by(&(&1.id))
 
     # Now issue a clear_and_set to replace the records
-    Depot.clear_and_set(@desc, [
+    Depot.clear_and_set(@desc, 1, [
       r({3, 1, "3", false, DateTime.utc_now()}),
       r({4, 1, "4", false, DateTime.utc_now()})
     ])

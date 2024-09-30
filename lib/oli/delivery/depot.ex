@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Depot do
   end
 
   def create_table(%DepotDesc{} = depot_desc, table_id) do
-    :ets.new(DepotDesc.table_name(depot_desc, table_id), [:set, :named_table])
+    :ets.new(DepotDesc.table_name(depot_desc, table_id), [:set, :named_table, :public])
   end
 
   def update(%DepotDesc{} = depot_desc, entry) do
@@ -32,10 +32,7 @@ defmodule Oli.Delivery.Depot do
 
   end
 
-  def clear_and_set(%DepotDesc{} = depot_desc, entries) do
-
-    [first | _rest] = entries
-    table_id = Map.get(first, depot_desc.table_id_field)
+  def clear_and_set(%DepotDesc{} = depot_desc, table_id, entries) do
 
     items = Enum.map(entries, fn entry -> Serializer.serialize(entry, depot_desc) end)
 
@@ -49,7 +46,7 @@ defmodule Oli.Delivery.Depot do
   def clear(%DepotDesc{} = depot_desc, table_id) do
 
     DepotDesc.table_name(depot_desc, table_id)
-    |> :ets.delete_all_objects()
+    |> :ets.delete()
   end
 
   def all(%DepotDesc{} = depot_desc, table_id) do

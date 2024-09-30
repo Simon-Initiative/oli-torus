@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
     FROM (
         SELECT
           r.resource_id,
-          proj.project_slug,
+          proj.slug as project_slug,
           r.title,
           r.graded,
           r.resource_type_id,
@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
           r.duration_minutes,
           r.intro_content,
           r.intro_video,
-          r.oster_image,
+          r.poster_image,
           r.objectives,
           r.relates_to,
           r.activity_type_id
@@ -69,7 +69,11 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
       AND section_resources.section_id = $2
     """
 
-    Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id])
+    case Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id]) do
+
+      {:ok, %Postgrex.Result{num_rows: num_rows}} -> {:ok, num_rows}
+      e -> e
+    end
   end
 
 end

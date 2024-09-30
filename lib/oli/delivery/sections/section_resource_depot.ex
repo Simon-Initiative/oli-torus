@@ -38,19 +38,47 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Oli.Publishing.DeliveryResolver.full_hierarchy(section, srs)
   end
 
-  def get_ordered_container_labels(%Section{} = section) do
-    init_if_necessary(section.id)
-
-    full_hierarchy = get_delivery_resolver_full_hierarchy(section)
-    Oli.Delivery.Sections.fetch_ordered_container_labels(section, full_hierarchy)
-  end
-
   def graded_pages(section_id) do
     init_if_necessary(section_id)
 
     page = Oli.Resources.ResourceType.id_for_page()
     Depot.query(@depot_desc, section_id, graded: true, resource_type_id: page)
     |> Enum.sort_by(&(&1.numbering_index))
+  end
+
+  def retrieve_schedule(section_id, filter_resource_type \\ false) do
+    init_if_necessary(section_id)
+
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+    container_type_id = Oli.Resources.ResourceType.id_for_container()
+
+    filter_by_resource_type =
+      case filter_resource_type do
+        :pages ->
+          [{:resource_type_id, {:==, page_type_id}}]
+
+        :containers ->
+          [{:resource_type_id, {:==, container_type_id}}]
+
+        _ ->
+          [{:resource_type_id, {:in, [container_type_id, page_type_id]}}]
+      end
+
+    Depot.query(@depot_desc, section_id, filter_by_resource_type)
+  end
+
+  def get_lessons(section, graded_only) do
+    init_if_necessary(section.id)
+
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    conditions = case graded_only do
+      true  -> [resource_type_id: page_type_id, graded: true]
+      false  -> [resource_type_id: page_type_id]
+    end
+
+    Depot.query(@depot_desc, section.id, conditions)
+
   end
 
   defp init_if_necessary(section_id) do
@@ -81,7 +109,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
     results = Repo.all(query)
 
-    Depot.clear_and_set(@depot_desc, results)
+    Depot.clear_and_set(@depot_desc, section_id, results)
   end
 
 end
