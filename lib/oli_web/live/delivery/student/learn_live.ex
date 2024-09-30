@@ -907,9 +907,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    <%= Utils.container_label_for_scheduling_type(
-                      Map.get(@contained_scheduling_types, @unit["resource_id"])
-                    ) %>
+                    <%= if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
+                      do: "Due by:",
+                      else:
+                        Utils.container_label_for_scheduling_type(
+                          Map.get(@contained_scheduling_types, @unit["resource_id"])
+                        ) %>
                   </span>
                   <%= format_date(
                     @unit["section_resource"].end_date,
