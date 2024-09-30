@@ -15,6 +15,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
+  attr :questions, :list
+  attr :attempt_number, :integer
+  attr :max_attempt_number, :integer
+  attr :datashop_session_id, :string
+  attr :ctx, :map
+  attr :bib_app_params, :map
+  attr :request_path, :string
+  attr :revision_slug, :string
+  attr :attempt_guid, :string
+  attr :section_slug, :string
+
   def render(assigns) do
     ~H"""
     <div id={@id}>
@@ -32,7 +43,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           Finish Quiz Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
         </:title>
 
-        <div class="text-[#373a44] text-sm font-normal font-['Open Sans'] leading-snug">
+        <div class="text-[#373a44] text-sm font-normal leading-snug">
           You are about to submit your quiz<span :if={unattempted_questions > 0}> with <strong><%= unattempted_questions %></strong> unattempted question<%= if unattempted_questions == 1, do: "", else: "s" %></span>.
           <br :if={unattempted_questions > 0} /> Are you sure you want to proceed?
         </div>
@@ -44,18 +55,18 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               class="ml-auto w-[84px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border border-[#0f6bf5] justify-center items-center gap-2.5 inline-flex"
             >
               <div class="pr-2 justify-end items-center gap-2 flex">
-                <div class="opacity-90 text-right text-[#0062f2] text-sm font-semibold font-['Open Sans'] leading-[14px]">
+                <div class="opacity-90 text-right text-[#0062f2] text-sm font-semibold leading-[14px]">
                   Cancel
                 </div>
               </div>
             </button>
             <button
-              phx-click={JS.push("finalize_attempt")}
+              phx-click="finalize_attempt"
               phx-target={@myself}
               class="w-[187.52px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex"
             >
               <div class="justify-end items-center gap-2 flex">
-                <div class="opacity-90 text-right text-white text-sm font-semibold font-['Open Sans'] leading-[14px]">
+                <div class="opacity-90 text-right text-white text-sm font-semibold leading-[14px]">
                   Yes, Finish The Quiz
                 </div>
               </div>
@@ -66,7 +77,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       <div class="w-screen flex flex-col items-center">
         <div role="questions header" class="w-[1170px] pl-[189px]">
           <div class="flex w-full justify-between items-center mb-1">
-            <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
+            <div class="text-[#757682] text-xs font-normal leading-[18px]">
               Question <%= selected_question.number %> / <%= total_questions %> • <%= parse_points(
                 selected_question_points
               ) %>
@@ -76,7 +87,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               disabled={selected_question.number != total_questions}
               class="flex items-center gap-2"
             >
-              <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
+              <div class="opacity-90 text-right text-[#0080ff] text-base font-bold leading-normal">
                 Finish Quiz
               </div>
               <Icons.finish_quiz_flag />
@@ -104,7 +115,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             <div
               id="react_to_liveview"
               phx-hook="ReactToLiveView"
-              data-test="hola"
               class="flex h-[400px] border-b border-[#c8c8c8]"
             >
               <div id="eventIntercept" phx-update="ignore">
@@ -126,7 +136,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               <div
                 :if={selected_question_parts_count > 1}
                 role="parts score summary"
-                class="w-[173px] px-3 py-6 gap-2 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap border-l border-[#c8c8c8]"
+                class="w-[173px] px-3 py-6 gap-2 text-sm font-normal leading-none whitespace-nowrap border-l border-[#c8c8c8]"
               >
                 <div
                   :for={{{id, points}, index} <- Enum.with_index(selected_question.part_points, 1)}
@@ -155,7 +165,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                 phx-value-question_id={"question_#{selected_question.number}"}
                 disabled={!selected_question.answered}
                 class={[
-                  "h-[30px] px-5 py-2.5 rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-base text-white font-['Open Sans'] leading-normal whitespace-nowrap",
+                  "h-[30px] px-5 py-2.5 rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-base text-white leading-normal whitespace-nowrap",
                   if(selected_question.answered,
                     do: "bg-[#0062f2] font-semibold",
                     else: "bg-[#9d9d9d] font-semibold "
@@ -166,10 +176,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               </button>
               <div :if={selected_question.submitted} class="activity w-full p-2 px-10">
                 <div role="question points feedback" class="flex justify-end mb-2.5">
-                  <span class="text-[#8e8e8e] text-xs font-normal font-['Open Sans'] leading-[18px]">
+                  <span class="text-[#8e8e8e] text-xs font-normal leading-[18px]">
                     Points:
                   </span>
-                  <span class="ml-1 text-[#5e5e5e] text-xs font-semibold font-['Open Sans'] leading-[18px]">
+                  <span class="ml-1 text-[#5e5e5e] text-xs font-semibold leading-[18px]">
                     <%= question_points(selected_question) %> / <%= total_question_points(
                       selected_question
                     ) %>
@@ -201,23 +211,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             class="w-[117.45px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
           >
             <div class="justify-end items-center gap-2 flex">
-              <svg
-                width="13"
-                height="10"
-                viewBox="0 0 13 10"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M1.95898 5H11.959M1.95898 5L5.95898 9M1.95898 5L5.95898 1"
-                  stroke={if(selected_question.number == 1, do: "#9b9b9b", else: "#0062F2")}
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
+              <Icons.previous_question_arrow selected_question_number={selected_question.number} />
               <span class={[
-                "opacity-90 text-right text-[#0062f2] text-sm font-semibold font-['Open Sans'] leading-[14px]",
+                "opacity-90 text-right text-[#0062f2] text-sm font-semibold leading-[14px]",
                 if(selected_question.number == 1, do: "!text-[#9b9b9b]")
               ]}>
                 Previous
@@ -232,31 +228,17 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             class="w-[93.51px] h-[30px] px-5 py-2.5 bg-white rounded-md shadow border justify-center items-center gap-2.5 inline-flex"
           >
             <div class="justify-end items-center gap-2 flex">
-              <span class="opacity-90 text-right text-[#0062f2] text-sm font-semibold font-['Open Sans'] leading-[14px]">
+              <span class="opacity-90 text-right text-[#0062f2] text-sm font-semibold leading-[14px]">
                 Next
               </span>
-              <svg
-                width="13"
-                height="11"
-                viewBox="0 0 13 11"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M11.2002 5.21094H1.2002M11.2002 5.21094L7.2002 9.21094M11.2002 5.21094L7.2002 1.21094"
-                  stroke="#0062F2"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
+              <Icons.next_question_arrow />
             </div>
           </button>
 
           <button
             :if={selected_question.number == total_questions}
             phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
-            class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap"
+            class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap"
           >
             Finish Quiz
           </button>
@@ -288,7 +270,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         ]}>
         </div>
         <span class={[
-          "text-[#353740] text-base font-normal font-['Open Sans'] leading-normal",
+          "text-[#353740] text-base font-normal leading-normal",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
           Question <%= question.number %>
