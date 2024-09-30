@@ -397,7 +397,7 @@ defmodule OliWeb.DeliveryController do
       # guest user cannot access courses that require enrollment
       {:redirect, nil} ->
         redirect(conn,
-          to: ~p"/?#{[section: section.slug, from_invitation_link?: from_invitation_link?]}"
+          to: ~p"/?#{[section: section.slug, from_invitation_link?: true]}"
         )
     end
   end

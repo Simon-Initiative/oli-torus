@@ -211,4 +211,13 @@ defmodule OliWeb.StaticPageControllerTest do
                "You are being <a href=\"/workspaces/course_author\">redirected"
     end
   end
+
+  describe "enrollment link" do
+    test "displays 'Create an Account' link if from_invitation_link?", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index, from_invitation_link?: true))
+
+      assert html_response(conn, 200) =~
+               "href=\"/registration/new?from_invitation_link%3F=true\">Create an Account"
+    end
+  end
 end
