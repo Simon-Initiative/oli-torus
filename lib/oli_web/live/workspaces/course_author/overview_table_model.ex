@@ -46,7 +46,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
     case name do
       :title ->
         ~H"""
-        <.link navigate={~p"/workspaces/course_author/#{@project.slug}/overview"}>
+        <.link
+          navigate={~p"/workspaces/course_author/#{@project.slug}/overview"}
+          class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+        >
           <%= @project.title %>
         </.link>
         """
