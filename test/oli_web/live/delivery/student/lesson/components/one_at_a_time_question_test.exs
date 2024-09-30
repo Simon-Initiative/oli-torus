@@ -521,7 +521,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       assert lcd
              |> element("#finish_quiz_confirmation_modal")
              |> render() =~
-               ~s{You are about to submit your quiz<span> with <strong>3</strong> unattempted questions</span>}
+               ~s{You are about to submit your attempt<span> with <strong>3</strong> unattempted questions</span>}
 
       {:ok, lcd, _html} =
         live_component_isolated(
@@ -533,7 +533,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
       assert lcd
              |> element("#finish_quiz_confirmation_modal")
              |> render() =~
-               ~s{You are about to submit your quiz<span> with <strong>2</strong> unattempted questions</span>}
+               ~s{You are about to submit your attempt<span> with <strong>2</strong> unattempted questions</span>}
     end
 
     test "finish quiz modal renders the correct attempts count", %{
@@ -549,7 +549,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestionTest do
 
       assert lcd
              |> element("#finish_quiz_confirmation_modal")
-             |> render() =~ "Finish Quiz Attempt 1 of 3?"
+             |> render() =~ "Finish Attempt 1 of 3?"
     end
   end
 end
