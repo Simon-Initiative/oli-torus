@@ -694,7 +694,7 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 302) =~
-               "<html><body>You are being <a href=\"/?section=#{section.slug}&amp;from_invitation_link%3F=false\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/?section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected</a>.</body></html>"
 
       conn = mock_captcha(conn, section)
 

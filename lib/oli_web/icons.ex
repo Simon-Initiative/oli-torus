@@ -1474,7 +1474,7 @@ defmodule OliWeb.Icons do
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M5 12H19M19 12L15 16M19 12L15 8"
-        stroke="white"
+        stroke="currentColor"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -1484,4 +1484,22 @@ defmodule OliWeb.Icons do
   end
 
   ########## Instructor Navigation Bar Icons (end) ##########
+
+  ########## Start of Sidebar Icons  ##########
+  def line_32(assigns) do
+    ~H"""
+    <svg
+      width="36"
+      height="1"
+      viewBox="0 0 36 1"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class="stroke-[#757682] dark:stroke-[#BAB8BF]"
+    >
+      <line x1="4.37114e-08" y1="0.5" x2="36" y2="0.500003" />
+    </svg>
+    """
+  end
+
+  ########## End of Sidebar Icons  ##########
 end

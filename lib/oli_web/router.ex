@@ -232,6 +232,10 @@ defmodule OliWeb.Router do
 
   pipeline :student, do: plug(Oli.Plugs.SetUserType, :student)
 
+  pipeline :restrict_admin_access do
+    plug(Oli.Plugs.RestrictAdminAccess)
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
@@ -239,7 +243,13 @@ defmodule OliWeb.Router do
   ### ROUTES ###
 
   scope "/" do
-    pipe_through([:browser, :delivery, :registration_captcha, :pow_email_layout])
+    pipe_through([
+      :browser,
+      :delivery,
+      :registration_captcha,
+      :pow_email_layout,
+      :restrict_admin_access
+    ])
 
     pow_routes()
     pow_assent_routes()
@@ -808,6 +818,9 @@ defmodule OliWeb.Router do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)
         live("/:project_id/overview", OverviewLive)
+        live("/:project_id/alternatives", AlternativesLive)
+        live("/:project_id/index_csv", IndexCsvLive)
+        live("/:project_id/datashop", AnalyticsLive)
         live("/:project_id/activity_bank", ActivityBankLive)
         live("/:project_id/objectives", ObjectivesLive)
         live("/:project_id/experiments", ExperimentsLive)
@@ -815,6 +828,7 @@ defmodule OliWeb.Router do
         live("/:project_id/curriculum", CurriculumLive)
         live("/:project_id/curriculum/:container_slug", CurriculumLive)
         live("/:project_id/curriculum/:revision_slug/edit", EditorLive)
+        live("/:project_id/curriculum/:revision_slug/history", HistoryLive)
         live("/:project_id/pages", PagesLive)
         live("/:project_id/activities", ActivitiesLive)
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)

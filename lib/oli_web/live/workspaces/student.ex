@@ -18,10 +18,7 @@ defmodule OliWeb.Workspaces.Student do
 
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
-    {:ok,
-     assign(socket,
-       active_workspace: :student
-     )}
+    {:ok, assign(socket, active_workspace: :student)}
   end
 
   @impl Phoenix.LiveView
@@ -41,7 +38,7 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(all_sections),
+       disable_sidebar?: user_is_only_a_student?(current_user, all_sections),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -81,8 +78,9 @@ defmodule OliWeb.Workspaces.Student do
      )}
   end
 
-  def handle_params(params, _uri, socket),
-    do: {:noreply, assign(socket, params: decode_params(params))}
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, params: decode_params(params))}
+  end
 
   @impl Phoenix.LiveView
 
@@ -431,5 +429,8 @@ defmodule OliWeb.Workspaces.Student do
     }
   end
 
-  defp user_is_only_a_student?(sections), do: Enum.all?(sections, &(&1.user_role == "student"))
+  defp user_is_only_a_student?(%{can_create_sections: true}, _sections), do: false
+
+  defp user_is_only_a_student?(_user, sections),
+    do: Enum.all?(sections, &(&1.user_role == "student"))
 end
