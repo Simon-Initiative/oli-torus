@@ -40,11 +40,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       <% unattempted_questions = total_questions - submitted_questions %>
       <Modal.modal id="finish_quiz_confirmation_modal" class="w-auto min-w-[50%]" body_class="px-6">
         <:title>
-          Finish Quiz Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
+          Finish Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
         </:title>
 
         <div class="text-[#373a44] text-sm font-normal leading-snug">
-          You are about to submit your quiz<span :if={unattempted_questions > 0}> with <strong><%= unattempted_questions %></strong> unattempted question<%= if unattempted_questions == 1, do: "", else: "s" %></span>.
+          You are about to submit your attempt<span :if={unattempted_questions > 0}> with <strong><%= unattempted_questions %></strong> unattempted question<%= if unattempted_questions == 1, do: "", else: "s" %></span>.
           <br :if={unattempted_questions > 0} /> Are you sure you want to proceed?
         </div>
 
@@ -67,7 +67,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             >
               <div class="justify-end items-center gap-2 flex">
                 <div class="opacity-90 text-right text-white text-sm font-semibold leading-[14px]">
-                  Yes, Finish The Quiz
+                  Yes, Finish The Attempt
                 </div>
               </div>
             </button>
@@ -88,7 +88,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               class="flex items-center gap-2"
             >
               <div class="opacity-90 text-right text-[#0080ff] text-base font-bold leading-normal">
-                Finish Quiz
+                Finish Attempt
               </div>
               <Icons.finish_quiz_flag />
             </button>
@@ -240,7 +240,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
             class="w-[130px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap"
           >
-            Finish Quiz
+            Finish Attempt
           </button>
         </div>
       </div>
