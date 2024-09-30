@@ -474,7 +474,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       |> element("a", project.title)
       |> render_click()
 
-      assert_redirected(view, "/authoring/project/#{project.slug}")
+      assert_redirected(view, "/workspaces/course_author/#{project.slug}/overview")
     end
 
     test "exit project button works well by navigating to course author index", %{
@@ -537,6 +537,27 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
       assert has_element?(view, "div", "Improve")
       assert has_element?(view, "div", "Insights")
+    end
+
+    test "overview menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
+
+      assert has_element?(view, ~s(div[class="overview container mx-auto p-8"]))
+      assert has_element?(view, "h4", "Details")
+      assert has_element?(view, "h4", "Project Attributes")
+      assert has_element?(view, "h4", "Content Types")
+      assert has_element?(view, "h4", "Project Labels")
+      assert has_element?(view, "h4", "Collaborators")
+      assert has_element?(view, "h4", "Advanced Activities")
+      assert has_element?(view, "h4", "Allow Duplication")
+      assert has_element?(view, "h4", "Notes")
+      assert has_element?(view, "h4", "Course Discussions")
+      assert has_element?(view, "h4", "Required Survey")
+      assert has_element?(view, "h4", "Transfer Payment Codes")
+      assert has_element?(view, "h4", "Actions")
     end
 
     test "objectives menu is shown correctly", %{

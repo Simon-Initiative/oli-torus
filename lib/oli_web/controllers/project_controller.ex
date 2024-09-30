@@ -23,13 +23,13 @@ defmodule OliWeb.ProjectController do
     case Course.create_project(title, conn.assigns.current_author) do
       {:ok, %{project: project}} ->
         redirect(conn,
-          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+          to: ~p"/workspaces/course_author/#{project.slug}/overview"
         )
 
       {:error, _changeset} ->
         conn
         |> put_flash(:error, "Could not create project. Please try again")
-        |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+        |> redirect(to: ~p"/workspaces/course_author")
     end
   end
 
@@ -38,18 +38,14 @@ defmodule OliWeb.ProjectController do
       {:ok, project} ->
         conn
         |> put_flash(:info, "Project duplicated. You've been redirected to your new project.")
-        |> redirect(
-          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
-        )
+        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
 
       {:error, message} ->
         project = conn.assigns.project
 
         conn
         |> put_flash(:error, "Project could not be copied: " <> message)
-        |> redirect(
-          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
-        )
+        |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
     end
   end
 end
