@@ -737,7 +737,7 @@ defmodule Oli.Delivery.Hierarchy do
       1 => [:inclass_activity, :due_by, :read_by],
       3 => [:due_by, :read_by],
       6 => [:read_by, :due_by],
-      7 => [:read_by],
+      7 => [:read_by, :due_by],
       10 => [:due_by]
     }
   """
