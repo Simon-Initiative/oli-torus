@@ -405,11 +405,8 @@ defmodule OliWeb.Workspaces.Student do
     end)
   end
 
-  defp get_course_url(%{user_role: "student", slug: slug}, sidebar_expanded),
-    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
-
   defp get_course_url(%{slug: slug}, sidebar_expanded),
-    do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
+    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
 
   defp decode_params(params) do
     %{
@@ -422,9 +419,9 @@ defmodule OliWeb.Workspaces.Student do
   defp user_is_only_a_student?(user_id) do
     !Repo.exists?(
       from e in Enrollment,
-        join: ecr in EnrollmentContextRole,
+        left_join: ecr in EnrollmentContextRole,
         on: e.id == ecr.enrollment_id,
-        join: upr in "users_platform_roles",
+        left_join: upr in "users_platform_roles",
         on: e.user_id == upr.user_id,
         where: e.user_id == ^user_id,
         where:
@@ -438,9 +435,9 @@ defmodule OliWeb.Workspaces.Student do
       from s in Section,
         join: e in Enrollment,
         on: s.id == e.section_id,
-        join: ecr in EnrollmentContextRole,
+        left_join: ecr in EnrollmentContextRole,
         on: e.id == ecr.enrollment_id,
-        join: upr in "users_platform_roles",
+        left_join: upr in "users_platform_roles",
         on: e.user_id == upr.user_id,
         where: e.user_id == ^user_id,
         where: s.open_and_free == true,
