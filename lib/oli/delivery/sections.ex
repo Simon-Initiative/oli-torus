@@ -5327,4 +5327,25 @@ defmodule Oli.Delivery.Sections do
       )
     )
   end
+
+  @doc """
+  Returns a composable query for all the sections that a given user is enrolled with the given context or platform roles
+  """
+  def get_sections_by_role_ids(user_id, context_roles, platform_roles) do
+    context_role_ids = Enum.map(context_roles, & &1.id)
+    platform_role_ids = Enum.map(platform_roles, & &1.id)
+
+    from s in Section,
+      join: e in Enrollment,
+      on: s.id == e.section_id,
+      left_join: ecr in EnrollmentContextRole,
+      on: e.id == ecr.enrollment_id,
+      left_join: upr in "users_platform_roles",
+      on: e.user_id == upr.user_id,
+      where: e.user_id == ^user_id,
+      where:
+        ecr.context_role_id in ^context_role_ids or
+          upr.platform_role_id in ^platform_role_ids,
+      select: s
+  end
 end

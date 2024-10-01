@@ -3,7 +3,6 @@ defmodule OliWeb.Workspaces.Student do
 
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole, Section}
   alias Oli.Repo
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
@@ -17,13 +16,13 @@ defmodule OliWeb.Workspaces.Student do
     sidebar_expanded: true
   }
 
-  @platform_student_roles_ids [
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student).id,
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner).id
+  @platform_student_roles [
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student),
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner)
   ]
 
-  @context_student_roles_ids [
-    Lti_1p3.Tool.ContextRoles.get_role(:context_learner).id
+  @context_student_roles [
+    Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
   ]
 
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
@@ -32,7 +31,7 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   @impl Phoenix.LiveView
-  def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
+  def mount(params, _session, %{assigns: %{current_user: current_user, ctx: ctx}} = socket)
       when not is_nil(current_user) do
     sections =
       current_user.id
@@ -44,7 +43,7 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(current_user),
+       disable_sidebar?: user_is_only_a_student?(ctx),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -416,38 +415,27 @@ defmodule OliWeb.Workspaces.Student do
     }
   end
 
-  defp user_is_only_a_student?(%{can_create_sections: true}), do: false
+  defp user_is_only_a_student?(%{author: author}) when not is_nil(author), do: false
+  defp user_is_only_a_student?(%{user: %{can_create_sections: true}}), do: false
 
-  defp user_is_only_a_student?(%{id: user_id}) do
-    !Repo.exists?(
-      from e in Enrollment,
-        left_join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        left_join: upr in "users_platform_roles",
-        on: e.user_id == upr.user_id,
-        where: e.user_id == ^user_id,
-        where:
-          ecr.context_role_id not in ^@context_student_roles_ids or
-            upr.platform_role_id not in ^@platform_student_roles_ids
-    )
+  defp user_is_only_a_student?(%{user: %{id: user_id}}) do
+    user_roles = user_id |> Oli.Accounts.user_roles() |> MapSet.new()
+    student_roles = MapSet.new(@context_student_roles ++ @platform_student_roles)
+    !MapSet.disjoint?(user_roles, student_roles)
   end
 
   defp sections_where_user_is_student(user_id) do
+    sections =
+      Oli.Delivery.Sections.get_sections_by_role_ids(
+        user_id,
+        @context_student_roles,
+        @platform_student_roles
+      )
+
     Repo.all(
-      from s in Section,
-        join: e in Enrollment,
-        on: s.id == e.section_id,
-        left_join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        left_join: upr in "users_platform_roles",
-        on: e.user_id == upr.user_id,
-        where: e.user_id == ^user_id,
+      from s in sections,
         where: s.open_and_free == true,
-        where: s.status == :active,
-        where:
-          ecr.context_role_id in ^@context_student_roles_ids or
-            upr.platform_role_id in ^@platform_student_roles_ids,
-        select: s
+        where: s.status == :active
     )
   end
 end

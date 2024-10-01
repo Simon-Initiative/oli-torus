@@ -734,6 +734,22 @@ defmodule Oli.Accounts do
     |> get_user_preference(key, default)
   end
 
+  @doc """
+  Returns both platform roles and context roles for a specific user id
+  """
+  def user_roles(user_id) do
+    from(user in Oli.Accounts.User,
+      where: user.id == ^user_id,
+      left_join: enrollments in assoc(user, :enrollments),
+      left_join: platform_roles in assoc(user, :platform_roles),
+      left_join: context_roles in assoc(enrollments, :context_roles),
+      select: [platform_roles, context_roles]
+    )
+    |> Repo.all()
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
   defp get_preference(preferences, key, default) do
     preferences
     |> Map.get(key, default)
