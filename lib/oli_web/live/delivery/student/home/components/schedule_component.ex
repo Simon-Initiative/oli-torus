@@ -292,11 +292,16 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
               Completed
             <% else %>
               <%= if is_nil(hd(@resources).effective_settings),
-                do: Utils.days_difference(hd(@resources).end_date, @ctx),
+                do:
+                  Utils.days_difference(
+                    hd(@resources).end_date,
+                    grouped_scheduling_type(@resources),
+                    @ctx
+                  ),
                 else:
                   Utils.coalesce(hd(@resources).effective_settings.end_date, hd(@resources).end_date)
                   |> Utils.coalesce(hd(@resources).effective_settings.start_date)
-                  |> Utils.days_difference(@ctx) %>
+                  |> Utils.days_difference(grouped_scheduling_type(@resources), @ctx) %>
             <% end %>
           </div>
           <Icons.check :if={@completed} progress={1.0} />
@@ -304,6 +309,22 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
       </div>
     </div>
     """
+  end
+
+  _docp = """
+  If all the resources have a :read_by scheduling type, the group is considered to be :read_by,
+  so the label will end up being "Suggested by"
+  """
+
+  defp grouped_scheduling_type(scheduled_section_resources) do
+    scheduling_types =
+      Enum.map(scheduled_section_resources, fn scheduled_section_resource ->
+        if !is_nil(scheduled_section_resource.effective_settings),
+          do: scheduled_section_resource.effective_settings.scheduling_type,
+          else: scheduled_section_resource.resource.scheduling_type
+      end)
+
+    if Enum.all?(scheduling_types, &(&1 == :read_by)), do: :read_by, else: :due_by
   end
 
   attr :item_id, :string, required: true

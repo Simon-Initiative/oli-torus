@@ -62,6 +62,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       assign(socket,
         active_tab: :learn,
         selected_module_per_unit_resource_id: %{},
+        contained_scheduling_types: %{},
         student_end_date_exceptions_per_resource_id: %{},
         student_visited_pages: %{},
         student_progress_per_resource_id: %{},
@@ -112,11 +113,22 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          resource_id <- params["target_resource_id"] do
       {:noreply,
        socket
+       |> maybe_assign_contained_scheduling_types(selected_view, full_hierarchy)
        |> maybe_assign_selected_view(selected_view)
        |> stream(:units, full_hierarchy["children"], reset: true)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
+
+  defp maybe_assign_contained_scheduling_types(socket, :gallery, full_hierarchy) do
+    assign(socket,
+      contained_scheduling_types:
+        get_or_compute_contained_scheduling_types(socket.assigns.section.slug, full_hierarchy)
+    )
+  end
+
+  defp maybe_assign_contained_scheduling_types(socket, _selected_view, _full_hierarchy),
+    do: socket
 
   _docp = """
   This assign helper function is responsible for scrolling to the target resource.
@@ -772,6 +784,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           student_end_date_exceptions_per_resource_id={@student_end_date_exceptions_per_resource_id}
           selected_module_per_unit_resource_id={@selected_module_per_unit_resource_id}
           student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
+          contained_scheduling_types={@contained_scheduling_types}
           page_metrics_per_module_id={@page_metrics_per_module_id}
           viewed_intro_video_resource_ids={@viewed_intro_video_resource_ids}
           progress={
@@ -803,6 +816,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_raw_avg_score_per_page_id, :map
   attr :student_end_date_exceptions_per_resource_id, :map
   attr :selected_module_per_unit_resource_id, :map
+  attr :contained_scheduling_types, :map
   attr :progress, :integer
   attr :student_id, :integer
   attr :viewed_intro_video_resource_ids, :list
@@ -893,7 +907,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <div class="ml-auto flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
-                    Due:
+                    <%= if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
+                      do: "Due by:",
+                      else:
+                        Utils.container_label_for_scheduling_type(
+                          Map.get(@contained_scheduling_types, @unit["resource_id"])
+                        ) %>
                   </span>
                   <%= format_date(
                     @unit["section_resource"].end_date,
@@ -996,6 +1015,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           }
           phx-key="Escape"
         >
+          <% selected_module = Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
           <div
             role="expanded module header"
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
@@ -1003,10 +1023,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <div class="justify-start items-start gap-1 inline-flex">
               <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
                 <%= container_label_and_numbering(
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["numbering"][
+                  selected_module["numbering"][
                     "level"
                   ],
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["numbering"][
+                  selected_module["numbering"][
                     "index"
                   ],
                   @section.customizations
@@ -1014,13 +1034,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               </div>
             </div>
             <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
-              <%= Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+              <%= selected_module[
                 "title"
               ] %>
             </h2>
             <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
-              Due: <%= format_date(
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+              <%= Utils.container_label_for_scheduling_type(
+                Map.get(@contained_scheduling_types, selected_module["resource_id"])
+              ) %><%= format_date(
+                selected_module[
                   "section_resource"
                 ].end_date,
                 @ctx,
@@ -1030,7 +1052,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
           <div
             :if={
-              Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+              selected_module[
                 "intro_content"
               ][
                 "children"
@@ -1042,24 +1064,21 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <div class="flex flex-col opacity-80">
               <span
-                data-toggle_read_more_button_id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
+                data-toggle_read_more_button_id={"toggle_read_more_#{selected_module["resource_id"]}"}
                 phx-hook="ToggleReadMore"
                 id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
                 class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
                 style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
               >
                 <%= render_intro_content(
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])[
+                  selected_module[
                     "intro_content"
                   ][
                     "children"
                   ]
                 ) %>
               </span>
-              <div
-                id={"toggle_read_more_#{Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"]}"}
-                class="ml-auto"
-              >
+              <div id={"toggle_read_more_#{selected_module["resource_id"]}"} class="ml-auto">
                 <button
                   id={"read_more_module_intro_in_unit_#{@unit["resource_id"]}"}
                   phx-click={
@@ -1105,7 +1124,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           >
             <div class="w-full">
               <% module =
-                Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
+                selected_module %>
               <.module_content_header
                 module={module}
                 page_metrics={
@@ -1130,7 +1149,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 ctx={@ctx}
                 student_id={@student_id}
                 intro_video_viewed={
-                  Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"])["resource_id"] in @viewed_intro_video_resource_ids
+                  selected_module["resource_id"] in @viewed_intro_video_resource_ids
                 }
                 display_props_per_module_id={@display_props_per_module_id}
               />
@@ -2747,6 +2766,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     end)
   end
 
+  def get_or_compute_contained_scheduling_types(section_slug, full_hierarchy) do
+    SectionCache.get_or_compute(section_slug, :contained_scheduling_types, fn ->
+      Hierarchy.contained_scheduling_types(full_hierarchy)
+    end)
+  end
+
   defp is_section?(child),
     do:
       Oli.Resources.ResourceType.get_type_by_id(child["resource_type_id"]) == "container" and
@@ -2822,7 +2847,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp get_selected_view(params) do
     case params["selected_view"] do
-      nil -> nil
+      nil -> @default_selected_view
       view when view not in ~w(gallery outline) -> @default_selected_view
       view -> String.to_existing_atom(view)
     end
