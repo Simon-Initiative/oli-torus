@@ -14954,6 +14954,10 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-white\/80 {
+  color: rgb(255 255 255 / 0.8);
+}
+
 .dark .dark\:text-yellow-600 {
   --tw-text-opacity: 1;
   color: rgb(232 149 9 / var(--tw-text-opacity));
