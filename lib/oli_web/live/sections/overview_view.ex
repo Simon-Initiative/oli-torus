@@ -154,18 +154,26 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
         <div class="flex flex-col form-group">
           <label>Base Project</label>
-          <a href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @base_project.slug)
-          }>
+          <a
+            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @base_project.slug)}
+            class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+          >
             <%= @base_project.title %>
           </a>
         </div>
         <%= unless is_nil(@section.blueprint_id) do %>
           <div class="flex flex-col form-group">
             <label>Product</label>
-            <a href={
-              Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, @section.blueprint.slug)
-            }>
+            <a
+              href={
+                Routes.live_path(
+                  OliWeb.Endpoint,
+                  OliWeb.Products.DetailsView,
+                  @section.blueprint.slug
+                )
+              }
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
               <%= @section.blueprint.title %>
             </a>
           </div>
@@ -177,7 +185,11 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
           <li>
-            <a target="_blank" href={~p"/sections/#{@section.slug}/preview"} class="btn btn-link">
+            <a
+              target="_blank"
+              href={~p"/sections/#{@section.slug}/preview"}
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
               <span>Preview Course as Student</span>
               <i class="fas fa-external-link-alt self-center ml-1" />
             </a>
@@ -185,7 +197,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Customize Content
             </a>
@@ -193,7 +205,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Scheduling
             </a>
@@ -208,7 +220,7 @@ defmodule OliWeb.Sections.OverviewView do
                   @section.slug
                 )
               }
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Manage Source Materials
               <%= if @updates_count > 0 do %>
@@ -224,7 +236,7 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Invite Students
               </a>
@@ -233,7 +245,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Edit Section Details
             </a>
@@ -241,7 +253,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Browse Collaborative Spaces
             </a>
@@ -257,7 +269,7 @@ defmodule OliWeb.Sections.OverviewView do
                   :all
                 )
               }
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Assessment Settings
             </a>
@@ -265,7 +277,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <button
               type="button"
-              class="btn btn-link text-danger action-button"
+              class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
               phx-click="show_delete_modal"
             >
               Delete Section
@@ -330,7 +342,7 @@ defmodule OliWeb.Sections.OverviewView do
                   @section.slug
                 )
               }
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Score Manually Graded Activities
               <%= if @has_submitted_attempts do %>
@@ -341,7 +353,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               View all Scores
             </a>
@@ -349,7 +361,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Download Gradebook as <code>.csv</code> file
             </a>
@@ -361,7 +373,7 @@ defmodule OliWeb.Sections.OverviewView do
                 href={
                   Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)
                 }
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Manage Snapshot Records
               </a>
@@ -371,7 +383,7 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Manage LMS Gradebook
               </a>
@@ -381,7 +393,7 @@ defmodule OliWeb.Sections.OverviewView do
                 href={
                   Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)
                 }
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 View scores that failed to sync
               </a>
@@ -396,7 +408,7 @@ defmodule OliWeb.Sections.OverviewView do
                       @section.slug
                     )
                   }
-                  class="btn btn-link"
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
                 >
                   Observe score updates in real-time
                 </a>
@@ -407,7 +419,7 @@ defmodule OliWeb.Sections.OverviewView do
                 href={
                   Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)
                 }
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Browse LMS Score Update Log
               </a>
