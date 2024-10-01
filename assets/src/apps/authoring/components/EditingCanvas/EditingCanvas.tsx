@@ -5,7 +5,12 @@ import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import { useKeyDown } from 'hooks/useKeyDown';
 import { selectCurrentActivityTree } from '../../../delivery/store/features/groups/selectors/deck';
-import { selectBottomPanel, setCopiedPart, setRightPanelActiveTab } from '../../store/app/slice';
+import {
+  selectBottomPanel,
+  setCopiedPart,
+  setCopiedPartActivityId,
+  setRightPanelActiveTab,
+} from '../../store/app/slice';
 import {
   selectCurrentPartPropertyFocus,
   selectCurrentSelection,
@@ -92,6 +97,7 @@ const EditingCanvas: React.FC = () => {
 
   const handlePartCopy = async (part: any) => {
     dispatch(setCopiedPart({ copiedPart: part }));
+    dispatch(setCopiedPartActivityId({ copiedPartActivityId: currentActivityId }));
     return true;
   };
 
@@ -158,6 +164,7 @@ const EditingCanvas: React.FC = () => {
       } else if (!_currentPartPropertyFocus) {
         //if user first copies a part and then before pasting it, if they click on the properties and do a cntrl+c, we need to clear the existing cntrl+c for part
         dispatch(setCopiedPart({ copiedPart: null }));
+        dispatch(setCopiedPartActivityId({ copiedPartActivityId: null }));
       }
     },
     ['KeyC'],

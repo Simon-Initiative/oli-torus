@@ -164,10 +164,16 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     }
   };
   const handlePartPasteClick = () => {
+    //When a part is pasted, offset the new part component by 20px from the original part
+    const pasteOffset = 20;
     const newPartData = {
       id: `${copiedPart.type}-${guid()}`,
       type: copiedPart.type,
-      custom: copiedPart.custom,
+      custom: {
+        ...copiedPart.custom,
+        x: copiedPart.custom.x + pasteOffset,
+        y: copiedPart.custom.y + pasteOffset,
+      },
     };
     addPartToCurrentScreen(newPartData);
     dispatch(setCurrentSelection({ selection: newPartData.id }));
