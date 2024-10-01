@@ -84,7 +84,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
             </div>
             <button
               phx-click={Modal.show_modal("finish_quiz_confirmation_modal")}
-              disabled={selected_question.number != total_questions}
               class="flex items-center gap-2"
             >
               <div class="opacity-90 text-right text-[#0080ff] text-base font-bold leading-normal">
