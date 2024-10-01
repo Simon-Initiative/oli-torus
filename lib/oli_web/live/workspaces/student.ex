@@ -419,9 +419,19 @@ defmodule OliWeb.Workspaces.Student do
   defp user_is_only_a_student?(%{user: %{can_create_sections: true}}), do: false
 
   defp user_is_only_a_student?(%{user: %{id: user_id}}) do
-    user_roles = user_id |> Oli.Accounts.user_roles() |> MapSet.new()
-    student_roles = MapSet.new(@context_student_roles ++ @platform_student_roles)
-    !MapSet.disjoint?(user_roles, student_roles)
+    user_roles =
+      user_id
+      |> Oli.Accounts.user_roles()
+      |> Enum.map(& &1.uri)
+      |> MapSet.new()
+
+    student_roles =
+      (@context_student_roles ++ @platform_student_roles)
+      |> Enum.map(& &1.uri)
+      |> MapSet.new()
+
+    roles_other_than_student = MapSet.difference(user_roles, student_roles)
+    MapSet.size(roles_other_than_student) == 0
   end
 
   defp sections_where_user_is_student(user_id) do

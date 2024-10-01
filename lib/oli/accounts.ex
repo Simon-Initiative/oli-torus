@@ -748,6 +748,7 @@ defmodule Oli.Accounts do
     |> Repo.all()
     |> List.flatten()
     |> Enum.uniq()
+    |> Enum.filter(& &1)
   end
 
   defp get_preference(preferences, key, default) do
