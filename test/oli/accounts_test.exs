@@ -633,6 +633,7 @@ defmodule Oli.AccountsTest do
       assert Lti_1p3.Tool.ContextRoles.get_role(:context_learner).uri in user_roles
       assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor).uri in user_roles
       assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_student).uri in user_roles
+    end
   end
 
   describe "setup_sso_user/2" do
