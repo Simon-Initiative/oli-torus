@@ -149,6 +149,7 @@ export const generateMultipleChoiceRules = (
     setCorrect,
     blankCondition,
     disableAction,
+    { maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
   );
 };
 

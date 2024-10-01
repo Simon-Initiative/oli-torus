@@ -45,6 +45,7 @@ export const generateThreeTryWorkflow = (
   disableAction: IAction,
   extraOptions: Partial<{
     threeTimesFeedback: string;
+    maxAttempt: string;
   }> = {},
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
@@ -115,7 +116,7 @@ export const generateThreeTryWorkflow = (
     rules.push(
       generateRule(
         'incorrect-3-times',
-        [thirdOrLaterTry(), ...incorrect.conditions.map(newId)],
+        [thirdOrLaterTry(extraOptions.maxAttempt || '2'), ...incorrect.conditions.map(newId)],
         incorrect.destinationId,
         false,
         40,
@@ -165,10 +166,10 @@ export const generateThreeTryWorkflow = (
 //   id: guid(),
 // });
 
-const thirdOrLaterTry = (): ICondition => ({
+const thirdOrLaterTry = (value: string): ICondition => ({
   fact: 'session.attemptNumber',
   operator: 'greaterThan',
-  value: '2',
+  value: value,
   type: 1,
   id: guid(),
 });

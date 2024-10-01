@@ -133,6 +133,7 @@ export const generateSliderRules = (
     setCorrect,
     blankCondition,
     disableAction,
+    { maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
   );
 };
 

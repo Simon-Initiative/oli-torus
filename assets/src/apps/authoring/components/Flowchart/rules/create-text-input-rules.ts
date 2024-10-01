@@ -100,7 +100,7 @@ export const generateTextInputRules = (
     setCorrect,
     blankCondition,
     disableAction,
-    { threeTimesFeedback },
+    { threeTimesFeedback, maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
   );
 };
 
