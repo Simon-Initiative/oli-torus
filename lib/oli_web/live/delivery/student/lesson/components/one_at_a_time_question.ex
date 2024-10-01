@@ -43,7 +43,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           Finish Attempt <%= @attempt_number %> of <%= @max_attempt_number %>?
         </:title>
 
-        <div class="text-[#373a44] text-sm font-normal leading-snug">
+        <div class="text-[#373a44] dark:text-white text-sm font-normal leading-snug">
           You are about to submit your attempt<span :if={unattempted_questions > 0}> with <strong><%= unattempted_questions %></strong> unattempted question<%= if unattempted_questions == 1, do: "", else: "s" %></span>.
           <br :if={unattempted_questions > 0} /> Are you sure you want to proceed?
         </div>
@@ -77,7 +77,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       <div class="w-screen flex flex-col items-center">
         <div role="questions header" class="w-[1170px] pl-[189px]">
           <div class="flex w-full justify-between items-center mb-1">
-            <div class="text-[#757682] text-xs font-normal leading-[18px]">
+            <div class="text-[#757682] text-xs font-normal leading-[18px] dark:text-white/80">
               Question <%= selected_question.number %> / <%= total_questions %> • <%= parse_points(
                 selected_question_points
               ) %>
@@ -146,10 +146,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                       Enum.find(selected_question.state["parts"], &(&1["partId"] == id))
                     } />
                   </span>
-                  <span class="text-[#757682] ml-4">
+                  <span class="text-[#757682] ml-4 dark:text-white/80">
                     Part <%= index %>:
                   </span>
-                  <span class="text-[#353740] ml-1">
+                  <span class="text-[#353740] ml-1 dark:text-white">
                     <%= parse_points(points) %>
                   </span>
                 </div>
@@ -175,10 +175,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               </button>
               <div :if={selected_question.submitted} class="activity w-full p-2 px-10">
                 <div role="question points feedback" class="flex justify-end mb-2.5">
-                  <span class="text-[#8e8e8e] text-xs font-normal leading-[18px]">
+                  <span class="text-[#8e8e8e] text-xs font-normal leading-[18px] dark:text-white/80">
                     Points:
                   </span>
-                  <span class="ml-1 text-[#5e5e5e] text-xs font-semibold leading-[18px]">
+                  <span class="ml-1 text-[#5e5e5e] text-xs font-semibold leading-[18px] dark:text-white">
                     <%= question_points(selected_question) %> / <%= total_question_points(
                       selected_question
                     ) %>
@@ -269,7 +269,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
         ]}>
         </div>
         <span class={[
-          "text-[#353740] text-base font-normal leading-normal",
+          "text-[#353740] text-base font-normal leading-normal dark:text-white",
           if(question.selected, do: "!text-[#0f6bf5] !font-bold")
         ]}>
           Question <%= question.number %>
