@@ -5,7 +5,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Icons
-  alias Oli.Repo
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
@@ -427,17 +426,10 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   defp sections_where_user_is_instructor(user_id) do
-    sections =
-      Oli.Delivery.Sections.get_sections_by_role_ids(
-        user_id,
-        @context_instructor_roles,
-        @platform_instructor_roles
-      )
-
-    Repo.all(
-      from s in sections,
-        where: s.open_and_free == true,
-        where: s.status == :active
+    Oli.Delivery.Sections.get_open_and_free_active_sections_by_roles(
+      user_id,
+      @context_instructor_roles,
+      @platform_instructor_roles
     )
   end
 end

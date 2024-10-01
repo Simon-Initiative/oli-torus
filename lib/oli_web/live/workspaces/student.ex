@@ -3,7 +3,6 @@ defmodule OliWeb.Workspaces.Student do
 
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
-  alias Oli.Repo
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
 
@@ -435,17 +434,10 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   defp sections_where_user_is_student(user_id) do
-    sections =
-      Oli.Delivery.Sections.get_sections_by_role_ids(
-        user_id,
-        @context_student_roles,
-        @platform_student_roles
-      )
-
-    Repo.all(
-      from s in sections,
-        where: s.open_and_free == true,
-        where: s.status == :active
+    Oli.Delivery.Sections.get_open_and_free_active_sections_by_roles(
+      user_id,
+      @context_student_roles,
+      @platform_student_roles
     )
   end
 end
