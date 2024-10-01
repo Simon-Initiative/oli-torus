@@ -4,22 +4,30 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
-  alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Icons
+  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole, Section}
+  alias Oli.Repo
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
 
   @default_params %{text_search: "", sidebar_expanded: true}
 
+  @platform_instructor_roles_ids [
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor).id
+  ]
+
+  @context_instructor_roles_ids [
+    Lti_1p3.Tool.ContextRoles.get_role(:context_instructor).id
+  ]
+
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
       when not is_nil(current_user) do
     sections =
-      Sections.list_user_open_and_free_sections(current_user)
-      |> add_user_role(current_user)
+      current_user.id
+      |> sections_where_user_is_instructor()
       |> add_instructors()
-      |> filter_by_role(:instructor)
 
     {:ok,
      assign(socket,
@@ -377,15 +385,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      )}
   end
 
-  defp add_user_role([], _user), do: []
-
-  defp add_user_role(sections, user) do
-    sections
-    |> Enum.map(fn s ->
-      Map.merge(s, %{user_role: Utils.user_role(s, user) |> Atom.to_string()})
-    end)
-  end
-
   defp add_instructors([]), do: []
 
   defp add_instructors(sections) do
@@ -396,9 +395,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       Map.merge(section, %{instructors: Map.get(instructors_per_section, section.id, [])})
     end)
   end
-
-  defp filter_by_role(sections, :instructor),
-    do: Enum.filter(sections, fn s -> s.user_role == "instructor" end)
 
   defp maybe_filter_by_text(sections, nil), do: sections
   defp maybe_filter_by_text(sections, ""), do: sections
@@ -420,9 +416,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
     end)
   end
 
-  defp get_course_url(%{user_role: "student", slug: slug}, sidebar_expanded),
-    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
-
   defp get_course_url(%{slug: slug}, sidebar_expanded),
     do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
 
@@ -432,5 +425,24 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       sidebar_expanded:
         Params.get_boolean_param(params, "sidebar_expanded", @default_params.sidebar_expanded)
     }
+  end
+
+  defp sections_where_user_is_instructor(user_id) do
+    Repo.all(
+      from s in Section,
+        join: e in Enrollment,
+        on: s.id == e.section_id,
+        left_join: ecr in EnrollmentContextRole,
+        on: e.id == ecr.enrollment_id,
+        left_join: upr in "users_platform_roles",
+        on: e.user_id == upr.user_id,
+        where: e.user_id == ^user_id,
+        where: s.open_and_free == true,
+        where: s.status == :active,
+        where:
+          ecr.context_role_id in ^@context_instructor_roles_ids or
+            upr.platform_role_id in ^@platform_instructor_roles_ids,
+        select: s
+    )
   end
 end
