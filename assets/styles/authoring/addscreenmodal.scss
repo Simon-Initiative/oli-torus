@@ -23,6 +23,7 @@
   .modal-footer {
     padding-top: 8px;
     padding-bottom: 8px;
+    padding-right: 25px;
   }
   .continue-button {
     background-color: whitesmoke;
@@ -65,7 +66,7 @@
       justify-content: flex-start;
       align-items: flex-start;
       padding: 8px;
-      &.second-column {
+      &.screen-with-component {
         border-left: 1px solid rgb(229, 229, 229);
       }
       label {

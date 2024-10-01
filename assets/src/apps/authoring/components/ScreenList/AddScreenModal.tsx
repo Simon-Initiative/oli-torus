@@ -75,7 +75,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
             </div>
           </div>
 
-          <div className="column second-column">
+          <div className="column screen-with-component">
             <label>Screen with choices component</label>
             <div className="grid">
               {questionPages.map((screenType) => (
