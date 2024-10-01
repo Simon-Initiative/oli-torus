@@ -11,10 +11,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   @default_params %{text_search: "", sidebar_expanded: true}
 
-  @platform_instructor_roles [
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
-  ]
-
   @context_instructor_roles [
     Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
   ]
@@ -426,10 +422,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   defp sections_where_user_is_instructor(user_id) do
-    Oli.Delivery.Sections.get_open_and_free_active_sections_by_roles(
-      user_id,
-      @context_instructor_roles,
-      @platform_instructor_roles
-    )
+    Sections.get_open_and_free_active_sections_by_roles(user_id, @context_instructor_roles)
   end
 end

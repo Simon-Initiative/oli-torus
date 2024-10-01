@@ -434,10 +434,6 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   defp sections_where_user_is_student(user_id) do
-    Oli.Delivery.Sections.get_open_and_free_active_sections_by_roles(
-      user_id,
-      @context_student_roles,
-      @platform_student_roles
-    )
+    Sections.get_open_and_free_active_sections_by_roles(user_id, @context_student_roles)
   end
 end

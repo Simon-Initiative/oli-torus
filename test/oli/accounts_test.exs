@@ -655,4 +655,25 @@ defmodule Oli.AccountsTest do
       assert 2 = length(communties)
     end
   end
+
+  describe "user roles" do
+    test "list all context/platform roles for a given user" do
+      user = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(user.id, section.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+      Accounts.update_user_platform_roles(user, [
+        Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor),
+        Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+      ])
+
+      user_roles = Accounts.user_roles(user.id) |> Enum.map(& &1.uri)
+      assert Lti_1p3.Tool.ContextRoles.get_role(:context_learner).uri in user_roles
+      assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor).uri in user_roles
+      assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_student).uri in user_roles
+    end
+  end
 end

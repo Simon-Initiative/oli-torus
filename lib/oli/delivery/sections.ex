@@ -5329,27 +5329,21 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns all active open and free sections that a given user is enrolled with the given context or platform roles
+  Returns all active open and free sections that a given user is enrolled with the given context roles
   """
-  def get_open_and_free_active_sections_by_roles(user_id, context_roles, platform_roles) do
+  def get_open_and_free_active_sections_by_roles(user_id, context_roles) do
     context_role_ids = Enum.map(context_roles, & &1.id)
-    platform_role_ids = Enum.map(platform_roles, & &1.id)
 
     Repo.all(
-      from s in Section,
-        join: e in Enrollment,
-        on: s.id == e.section_id,
-        left_join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        left_join: upr in "users_platform_roles",
-        on: e.user_id == upr.user_id,
-        where: e.user_id == ^user_id,
-        where: s.open_and_free == true,
-        where: s.status == :active,
-        where:
-          ecr.context_role_id in ^context_role_ids or
-            upr.platform_role_id in ^platform_role_ids,
-        select: s
+      from sections in Section,
+        join: enrollments in assoc(sections, :enrollments),
+        join: context_roles in EnrollmentContextRole,
+        on: enrollments.id == context_roles.enrollment_id,
+        where: enrollments.user_id == ^user_id,
+        where: sections.open_and_free == true,
+        where: sections.status == :active,
+        where: context_roles.context_role_id in ^context_role_ids,
+        select: sections
     )
   end
 end
