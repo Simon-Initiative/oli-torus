@@ -319,18 +319,12 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
   defp grouped_scheduling_type(scheduled_section_resources) do
     scheduling_types =
       Enum.map(scheduled_section_resources, fn scheduled_section_resource ->
-        if !is_nil(scheduled_section_resource.effective_settings) do
-          scheduled_section_resource.effective_settings.scheduling_type
-        else
-          scheduled_section_resource.resource.scheduling_type
-        end
+        if !is_nil(scheduled_section_resource.effective_settings),
+          do: scheduled_section_resource.effective_settings.scheduling_type,
+          else: scheduled_section_resource.resource.scheduling_type
       end)
 
-    if Enum.all?(scheduling_types, &(&1 == :read_by)) do
-      :read_by
-    else
-      :due_by
-    end
+    if Enum.all?(scheduling_types, &(&1 == :read_by)), do: :read_by, else: :due_by
   end
 
   attr :item_id, :string, required: true
