@@ -92,6 +92,18 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc """
+  Creates a changeset that is used in the SSO context
+  """
+
+  def sso_changeset(author, attrs \\ %{}) do
+    author
+    |> cast(attrs, [:name, :email])
+    |> default_system_role()
+    |> lowercase_email()
+    |> put_email_confirmed_at()
+  end
+
+  @doc """
   Creates a changeset that is used to update an author's profile
   """
 

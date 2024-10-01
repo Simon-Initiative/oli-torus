@@ -971,11 +971,7 @@ defmodule Oli.Accounts do
     username = Map.get(fields, "cognito:username")
 
     %Author{}
-    |> Author.noauth_changeset(%{
-      name: username,
-      email: email,
-      email_confirmed_at: DateTime.truncate(DateTime.utc_now(), :second)
-    })
+    |> Author.sso_changeset(%{name: username, email: email})
     |> Repo.insert()
     |> case do
       {:ok, author} = result ->
