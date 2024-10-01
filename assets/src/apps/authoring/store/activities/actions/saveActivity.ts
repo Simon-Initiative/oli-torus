@@ -58,10 +58,16 @@ export const saveActivity = createAsyncThunk(
           },
         ];
       } else if (activity.authoring.parts.length > 1) {
-        // don't need the default part if another has been added
-        activity.authoring.parts = activity.authoring.parts.filter(
-          (part: any) => part.id !== '__default',
-        );
+        const isActivityPartObjectWritable = Object.getOwnPropertyDescriptors(
+          activity?.authoring?.parts,
+        )[0]?.writable;
+        // if the Part object of activity is read only then do try to write to it
+        if (!isActivityPartObjectWritable) {
+          // don't need the default part if another has been added
+          activity.authoring.parts = activity.authoring.parts.filter(
+            (part: any) => part.id !== '__default',
+          );
+        }
       }
 
       if (appMode === 'flowchart') {
