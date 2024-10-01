@@ -184,12 +184,22 @@ defmodule OliWeb.Components.Project.AsyncExporter do
     ~H"""
     <%= case @project_export_status do %>
       <% status when status in [:not_available, :expired] -> %>
-        <.button variant={:link} class="!px-3" phx-click={@on_generate_project_export}>
+        <.button
+          variant={:link}
+          class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pl-0 pr-3 py-2"
+          phx-click={@on_generate_project_export}
+        >
           Export
         </.button>
         <div>Download this project and its contents</div>
       <% :in_progress -> %>
-        <.button variant={:link} class="!px-3" disabled>Export in Progress</.button>
+        <.button
+          variant={:link}
+          class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pl-0 pr-3 py-2"
+          disabled
+        >
+          Export in Progress
+        </.button>
         <div class="flex flex-col">
           <div>Download this project and its contents</div>
           <div class="text-sm text-gray-500">
@@ -198,20 +208,33 @@ defmodule OliWeb.Components.Project.AsyncExporter do
           </div>
         </div>
       <% :available -> %>
-        <.button variant={:link} class="!px-3" href={@project_export_url} download>
+        <.button
+          variant={:link}
+          class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pl-0 pr-3 py-2"
+          href={@project_export_url}
+          download
+        >
           <i class="fa-solid fa-download mr-1"></i> Download Latest Export
         </.button>
         <div class="flex flex-col">
           <div>Download this project and its contents.</div>
           <div class="text-sm text-gray-500">
             Created <%= date(@project_export_timestamp, @ctx) %>.
-            <.button variant={:link} phx-click={@on_generate_project_export}>
+            <.button
+              variant={:link}
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pl-0 pr-3 py-2"
+              phx-click={@on_generate_project_export}
+            >
               <i class="fa-solid fa-rotate-right mr-1"></i>Regenerate
             </.button>
           </div>
         </div>
       <% :error -> %>
-        <.button variant={:link} class="!px-3" phx-click={@on_generate_project_export}>
+        <.button
+          variant={:link}
+          class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pl-0 pr-3 py-2"
+          phx-click={@on_generate_project_export}
+        >
           Export
         </.button>
         <div class="flex flex-col">

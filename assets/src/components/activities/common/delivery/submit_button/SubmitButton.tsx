@@ -4,8 +4,14 @@ interface Props {
   shouldShow?: boolean;
   disabled?: boolean;
   onClick: () => void;
+  label?: string;
 }
-export const SubmitButton: React.FC<Props> = ({ shouldShow = true, disabled = false, onClick }) => {
+export const SubmitButton: React.FC<Props> = ({
+  shouldShow = true,
+  disabled = false,
+  onClick,
+  label = 'Submit',
+}) => {
   if (!shouldShow) {
     return null;
   }
@@ -17,7 +23,7 @@ export const SubmitButton: React.FC<Props> = ({ shouldShow = true, disabled = fa
       disabled={disabled}
       onClick={onClick}
     >
-      Submit
+      {label}
     </button>
   );
 };

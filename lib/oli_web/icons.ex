@@ -1380,6 +1380,36 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :selected_question_number, :integer
+
+  def previous_question_arrow(assigns) do
+    ~H"""
+    <svg width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1.95898 5H11.959M1.95898 5L5.95898 9M1.95898 5L5.95898 1"
+        stroke={if(@selected_question_number == 1, do: "#9b9b9b", else: "#0062F2")}
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def next_question_arrow(assigns) do
+    ~H"""
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M11.2002 5.21094H1.2002M11.2002 5.21094L7.2002 9.21094M11.2002 5.21094L7.2002 1.21094"
+        stroke="#0062F2"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Studend Delivery Icons (end) ##########
 
   ########## Instructor Navigation Bar Icons (start) ##########

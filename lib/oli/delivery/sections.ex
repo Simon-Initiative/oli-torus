@@ -4580,7 +4580,8 @@ defmodule Oli.Delivery.Sections do
       select_merge: %{
         numbering_index: sr.numbering_index,
         start_date: coalesce(se.start_date, sr.start_date),
-        end_date: coalesce(se.end_date, sr.end_date)
+        end_date: coalesce(se.end_date, sr.end_date),
+        scheduling_type: sr.scheduling_type
       }
     )
     |> where(^graded_filter)

@@ -13,17 +13,13 @@ defmodule OliWeb.CognitoController do
 
   def index(
         conn,
-        %{
-          "id_token" => _jwt,
-          "error_url" => _error_url,
-          "community_id" => community_id
-        } = params
+        %{"id_token" => _jwt, "error_url" => _error_url, "community_id" => community_id} = params
       ) do
-    case Accounts.setup_sso_user(conn.assigns.claims, community_id, link_author: true) do
+    case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       {:ok, user, author} ->
         conn
         |> create_pow_user(:user, user)
-        |> maybe_send_invite_email(author)
+        |> create_pow_user(:author, author)
         |> redirect(to: ~p"/workspaces/instructor")
 
       {:error, %Ecto.Changeset{}} ->
@@ -37,16 +33,13 @@ defmodule OliWeb.CognitoController do
 
   def launch(
         conn,
-        %{
-          "id_token" => _jwt,
-          "error_url" => _error_url,
-          "community_id" => community_id
-        } = params
+        %{"id_token" => _jwt, "error_url" => _error_url, "community_id" => community_id} = params
       ) do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, user, _} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
+         {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       conn
       |> create_pow_user(:user, user)
+      |> create_pow_user(:author, author)
       |> create_or_prompt(user, anchor)
     else
       nil ->
@@ -198,27 +191,5 @@ defmodule OliWeb.CognitoController do
       {:error, error} ->
         redirect_with_error(conn, error_url, snake_case_to_friendly(error))
     end
-  end
-
-  defp maybe_send_invite_email(conn, nil), do: conn
-
-  defp maybe_send_invite_email(conn, author) do
-    brand_name = Application.get_env(:oli, :branding)[:name]
-
-    if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-      token = PowInvitation.Plug.sign_invitation_token(conn, author)
-
-      Oli.Email.invitation_email(
-        author.email,
-        :infiniscope_invitation,
-        %{
-          brand_name: brand_name,
-          url: Routes.url(conn) <> ~p"/authoring/invitations/#{token}/edit"
-        }
-      )
-      |> Oli.Mailer.deliver_now()
-    end
-
-    conn
   end
 end

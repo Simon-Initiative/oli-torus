@@ -263,7 +263,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             To create course sections,
             <button
               onclick="window.showHelpModal();"
-              class="text-blue-400 text-base font-bold font-['Open Sans'] tracking-tight cursor-pointer"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline text-base font-bold font-['Open Sans'] tracking-tight cursor-pointer"
             >
               contact support.
             </button>

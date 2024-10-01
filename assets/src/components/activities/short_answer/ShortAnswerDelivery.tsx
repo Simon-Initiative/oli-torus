@@ -154,7 +154,10 @@ export const ShortAnswerComponent: React.FC = () => {
           onBlur={() => deferredSave.current.flushPendingChanges(false)}
         />
 
-        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
+        <SubmitResetConnected
+          onReset={() => dispatch(resetAction(onResetActivity, resetParts))}
+          submitLabel={model.submitAndCompare ? 'Submit and Compare' : undefined}
+        />
 
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
