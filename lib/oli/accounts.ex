@@ -928,7 +928,6 @@ defmodule Oli.Accounts do
 
   @doc """
   Inserts or updates a user logged in via SSO, and adds the user as a member of the given community.
-  If `opts` includes `link_author: true`, an author is created and linked with the user.
 
   ## Examples
 
