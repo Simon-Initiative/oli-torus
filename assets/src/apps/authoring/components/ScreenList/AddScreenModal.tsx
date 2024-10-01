@@ -37,14 +37,13 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
   const [activeScreenType, setScreenType] = React.useState<ScreenTypes | null>(null);
 
   const onNext = useCallback(() => {
-    onCreate(title, activeScreenType || 'blank_screen');
+    onCreate(title || 'Adaptive Screen', activeScreenType || 'blank_screen');
   }, [activeScreenType, onCreate, title]);
 
-  const validInput = title.length > 0 && activeScreenType !== null;
-
+  const isOnlyScreenTypeSelected = !title?.length && activeScreenType !== null;
   return (
     <AdvancedAuthoringModal
-      dialogClassName="modal-800 add-screen-modal"
+      dialogClassName="modal-870 add-screen-modal"
       show={true}
       onHide={onCancel}
     >
@@ -54,7 +53,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="title-input"
-          placeholder="Name your screen here"
+          placeholder="Add screen title..."
         />
         <hr />
         <h2>Select the screen type</h2>
@@ -76,7 +75,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
             </div>
           </div>
 
-          <div className="column">
+          <div className="column second-column">
             <label>Screen with choices component</label>
             <div className="grid">
               {questionPages.map((screenType) => (
@@ -93,9 +92,21 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
           </div>
         </div>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="link" onClick={onNext} disabled={!validInput}>
-          Next
+      <Modal.Footer className={isOnlyScreenTypeSelected ? 'screen-not-selected' : ''}>
+        {isOnlyScreenTypeSelected && (
+          <span style={{ alignSelf: 'flex-start' }}>
+            <b>Are you sure?</b> <span style={{ fontSize: 'x-large' }}>| </span>A screen title may
+            be helpful while creating a lesson.
+          </span>
+        )}
+        <Button
+          variant="button"
+          className={
+            isOnlyScreenTypeSelected ? ' continue-button btn btn-primary' : 'btn btn-primary'
+          }
+          onClick={onNext}
+        >
+          {isOnlyScreenTypeSelected ? 'Continue' : 'Next'}
           <svg
             width={24}
             height={24}
@@ -105,7 +116,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
           >
             <path
               d="M5 12h14M12 5l7 7-7 7"
-              stroke={validInput ? '#2C6ABF' : '#b1b1b1'}
+              stroke={isOnlyScreenTypeSelected ? '#2c6abf' : 'white'}
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
