@@ -5,7 +5,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Icons
-  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole, Section}
   alias Oli.Repo
 
   import Ecto.Query, warn: false
@@ -13,12 +12,12 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   @default_params %{text_search: "", sidebar_expanded: true}
 
-  @platform_instructor_roles_ids [
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor).id
+  @platform_instructor_roles [
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
   ]
 
-  @context_instructor_roles_ids [
-    Lti_1p3.Tool.ContextRoles.get_role(:context_instructor).id
+  @context_instructor_roles [
+    Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
   ]
 
   @impl Phoenix.LiveView
@@ -428,21 +427,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   defp sections_where_user_is_instructor(user_id) do
+    sections =
+      Oli.Delivery.Sections.get_sections_by_role_ids(
+        user_id,
+        @context_instructor_roles,
+        @platform_instructor_roles
+      )
+
     Repo.all(
-      from s in Section,
-        join: e in Enrollment,
-        on: s.id == e.section_id,
-        left_join: ecr in EnrollmentContextRole,
-        on: e.id == ecr.enrollment_id,
-        left_join: upr in "users_platform_roles",
-        on: e.user_id == upr.user_id,
-        where: e.user_id == ^user_id,
+      from s in sections,
         where: s.open_and_free == true,
-        where: s.status == :active,
-        where:
-          ecr.context_role_id in ^@context_instructor_roles_ids or
-            upr.platform_role_id in ^@platform_instructor_roles_ids,
-        select: s
+        where: s.status == :active
     )
   end
 end
