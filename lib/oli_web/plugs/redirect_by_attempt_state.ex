@@ -222,7 +222,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     end
   end
 
-  defp ensure_path(conn, rendering_type) when rendering_type == :lesson do
+  defp ensure_path(conn, :lesson) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
@@ -242,7 +242,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     end
   end
 
-  defp ensure_path(conn, rendering_type) when rendering_type == :adaptive_lesson do
+  defp ensure_path(conn, :adaptive_lesson) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
