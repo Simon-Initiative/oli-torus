@@ -178,6 +178,11 @@ defmodule Oli.Utils do
     end
   end
 
+  def put_email_confirmed_at(changeset) do
+    now = DateTime.truncate(DateTime.utc_now(), :second)
+    Ecto.Changeset.put_change(changeset, :email_confirmed_at, now)
+  end
+
   def lowercase_email(changeset) do
     case changeset.changes[:email] do
       nil -> changeset
