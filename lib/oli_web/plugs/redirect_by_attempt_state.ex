@@ -251,7 +251,6 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
          "/adaptive_lesson/"
        ) do
       conn
-      |> put_session(:request_path, conn.params["request_path"])
       |> assign(:already_been_redirected?, false)
     else
       # adaptive lesson in iframes do not support query params in the url
