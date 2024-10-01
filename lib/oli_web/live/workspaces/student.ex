@@ -44,7 +44,7 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(current_user.id),
+       disable_sidebar?: user_is_only_a_student?(current_user),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -416,7 +416,9 @@ defmodule OliWeb.Workspaces.Student do
     }
   end
 
-  defp user_is_only_a_student?(user_id) do
+  defp user_is_only_a_student?(%{can_create_sections: true}), do: false
+
+  defp user_is_only_a_student?(%{id: user_id}) do
     !Repo.exists?(
       from e in Enrollment,
         left_join: ecr in EnrollmentContextRole,
