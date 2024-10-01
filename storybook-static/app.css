@@ -5521,12 +5521,20 @@ table.table-striped tbody tr:nth-child(even) {
   width: 114px;
 }
 
+.w-\[117\.45px\] {
+  width: 117.45px;
+}
+
 .w-\[1170px\] {
   width: 1170px;
 }
 
 .w-\[124px\] {
   width: 124px;
+}
+
+.w-\[130px\] {
+  width: 130px;
 }
 
 .w-\[157px\] {
@@ -5539,6 +5547,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[173px\] {
   width: 173px;
+}
+
+.w-\[187\.52px\] {
+  width: 187.52px;
 }
 
 .w-\[18px\] {
@@ -5677,8 +5689,16 @@ table.table-striped tbody tr:nth-child(even) {
   width: 80px;
 }
 
+.w-\[84px\] {
+  width: 84px;
+}
+
 .w-\[92px\] {
   width: 92px;
+}
+
+.w-\[93\.51px\] {
+  width: 93.51px;
 }
 
 .w-\[981px\] {
@@ -6837,6 +6857,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(15 13 15 / 0.05);
 }
 
+.border-\[\#0f6bf5\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(15 107 245 / var(--tw-border-opacity));
+}
+
 .border-\[\#B0B0B0\] {
   --tw-border-opacity: 1;
   border-color: rgb(176 176 176 / var(--tw-border-opacity));
@@ -6850,6 +6875,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#d9d9de\] {
   --tw-border-opacity: 1;
   border-color: rgb(217 217 222 / var(--tw-border-opacity));
+}
+
+.border-\[\#e7e7e7\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(231 231 231 / var(--tw-border-opacity));
 }
 
 .border-black {
@@ -8876,9 +8906,9 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(76 166 255 / var(--tw-text-opacity)) !important;
 }
 
-.\!text-\[\#757682\] {
+.\!text-\[\#9b9b9b\] {
   --tw-text-opacity: 1 !important;
-  color: rgb(117 118 130 / var(--tw-text-opacity)) !important;
+  color: rgb(155 155 155 / var(--tw-text-opacity)) !important;
 }
 
 .\!text-blue-500 {
@@ -8894,6 +8924,11 @@ table.table-striped tbody tr:nth-child(even) {
 .\!text-zinc-300 {
   --tw-text-opacity: 1 !important;
   color: rgb(212 212 216 / var(--tw-text-opacity)) !important;
+}
+
+.text-\[\#0062f2\] {
+  --tw-text-opacity: 1;
+  color: rgb(0 98 242 / var(--tw-text-opacity));
 }
 
 .text-\[\#006CD9\] {
@@ -8924,6 +8959,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#353740\] {
   --tw-text-opacity: 1;
   color: rgb(53 55 64 / var(--tw-text-opacity));
+}
+
+.text-\[\#373a44\] {
+  --tw-text-opacity: 1;
+  color: rgb(55 58 68 / var(--tw-text-opacity));
 }
 
 .text-\[\#4CA6FF\] {
