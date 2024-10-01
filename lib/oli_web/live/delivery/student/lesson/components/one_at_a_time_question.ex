@@ -66,7 +66,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
               class="w-[187.52px] h-[30px] px-5 py-2.5 bg-[#0062f2] rounded-md shadow justify-center items-center gap-2.5 inline-flex"
             >
               <div class="justify-end items-center gap-2 flex">
-                <div class="opacity-90 text-right text-white text-sm font-semibold leading-[14px]">
+                <div class="opacity-90 text-right text-white text-sm font-semibold leading-[14px] whitespace-nowrap">
                   Yes, Finish The Attempt
                 </div>
               </div>
