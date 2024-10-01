@@ -681,9 +681,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
           )
         )
 
+      # adaptive pages should not have query params in the url (MER-3708)
       assert redirect_path ==
-               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug) <>
-                 "?request_path=some_request_path&selected_view=gallery"
+               live_view_adaptive_lesson_live_route(section.slug, exploration_1.slug)
     end
 
     test "can see default logo", %{
