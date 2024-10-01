@@ -5,12 +5,19 @@ import { SubmitButtonConnected } from './submit_button/SubmitButtonConnected';
 interface Props {
   onReset: () => void;
   submitDisabled?: boolean;
+  submitLabel?: string;
 }
 
-export const SubmitResetConnected: React.FC<Props> = ({ onReset, submitDisabled }) => {
+export const SubmitResetConnected: React.FC<Props> = ({ onReset, submitDisabled, submitLabel }) => {
   return (
     <SubmitResetLayout
-      submitButton={<SubmitButtonConnected hideOnSubmitted={false} disabled={submitDisabled} />}
+      submitButton={
+        <SubmitButtonConnected
+          hideOnSubmitted={false}
+          disabled={submitDisabled}
+          label={submitLabel}
+        />
+      }
       resetButton={<ResetButtonConnected hideBeforeSubmit={false} onReset={onReset} />}
     />
   );
