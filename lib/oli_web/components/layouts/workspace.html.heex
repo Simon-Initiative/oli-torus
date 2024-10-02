@@ -89,7 +89,9 @@
         </div>
       <% end %>
     </div>
-    <%= @inner_content %>
+    <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
+      <%= @inner_content %>
+    </div>
   </div>
   <div
     :if={assigns[:footer_enabled?] && true}
