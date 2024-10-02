@@ -18,17 +18,14 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{current_user: current_user}} = socket)
       when not is_nil(current_user) do
-    sections =
-      current_user.id
-      |> sections_where_user_is_instructor()
-      |> add_instructors()
+    sections = fetch_sections(current_user.id)
 
     {:ok,
-     assign(socket,
-       sections: sections,
-       filtered_sections: sections,
-       active_workspace: :instructor
-     )}
+     socket
+     |> assign(active_workspace: :instructor)
+     |> assign(filtering: false)
+     |> assign(sections_count: length(sections))
+     |> stream(:sections, sections)}
   end
 
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
@@ -61,14 +58,34 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(params, _uri, %{assigns: %{sections: sections}} = socket) do
+  def handle_params(params, _uri, %{assigns: %{current_user: current_user}} = socket) do
     params = decode_params(params)
 
-    {:noreply,
-     assign(socket,
-       filtered_sections: maybe_filter_by_text(sections, params.text_search),
-       params: params
-     )}
+    cond do
+      params.text_search != "" && current_user ->
+        sections = filter_sections(current_user.id, params.text_search)
+
+        {:noreply,
+         socket
+         |> assign(params: params)
+         |> assign(filtering: true)
+         |> assign(sections_count: length(sections))
+         |> stream(:sections, sections, reset: true)}
+
+      # Text search reset
+      params.text_search == "" && current_user ->
+        sections = fetch_sections(current_user.id)
+
+        {:noreply,
+         socket
+         |> assign(params: params)
+         |> assign(filtering: false)
+         |> assign(sections_count: length(sections))
+         |> stream(:sections, sections, reset: true)}
+
+      true ->
+        {:noreply, assign(socket, params: params)}
+    end
   end
 
   def handle_params(params, _uri, socket) do
@@ -298,17 +315,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
 
         <div class="flex w-full mb-10">
-          <%= if length(@sections) == 0 do %>
+          <%= if !@filtering && @sections_count == 0 do %>
             <p>You are not enrolled in any courses as an instructor.</p>
           <% else %>
-            <div class="flex flex-wrap w-full gap-3">
+            <div id="section_list" class="flex flex-wrap w-full gap-3">
               <.course_card
-                :for={{section, index} <- Enum.with_index(@filtered_sections)}
-                index={index}
+                :for={{id, section} <- @streams.sections}
+                index={id}
                 section={section}
                 params={@params}
               />
-              <p :if={length(@filtered_sections) == 0} class="mt-4">
+              <p :if={@filtering && @sections_count == 0} class="mt-4">
                 No course found matching <strong>"<%= @params.text_search %>"</strong>
               </p>
             </div>
@@ -330,7 +347,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       phx-mounted={
         JS.transition(
           {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
-          time: 300 + @index * 60
+          time: 300
         )
       }
       class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
@@ -379,6 +396,12 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      )}
   end
 
+  defp fetch_sections(user_id) do
+    user_id
+    |> sections_where_user_is_instructor()
+    |> add_instructors()
+  end
+
   defp add_instructors([]), do: []
 
   defp add_instructors(sections) do
@@ -390,13 +413,11 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
     end)
   end
 
-  defp maybe_filter_by_text(sections, nil), do: sections
-  defp maybe_filter_by_text(sections, ""), do: sections
-
-  defp maybe_filter_by_text(sections, text_search) do
+  defp filter_sections(user_id, text_search) do
     normalized_text_search = String.downcase(text_search)
 
-    sections
+    user_id
+    |> fetch_sections()
     |> Enum.filter(fn section ->
       # searchs by course name or instructor name
 
