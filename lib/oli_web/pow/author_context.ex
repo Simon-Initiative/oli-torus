@@ -16,7 +16,6 @@ defmodule OliWeb.Pow.AuthorContext do
     user
     |> Author.lock_changeset()
     |> Repo.update()
-    |> maybe_delete_author_cached()
   end
 
   @spec unlock(map()) :: {:ok, map()} | {:error, map()}
@@ -24,17 +23,47 @@ defmodule OliWeb.Pow.AuthorContext do
     user
     |> Author.noauth_changeset(%{locked_at: nil})
     |> Repo.update()
-    |> maybe_delete_author_cached()
   end
 
-  defp maybe_delete_author_cached(db_result) do
-    case db_result do
-      {:ok, author} = result ->
-        Oli.AccountLookupCache.delete("author_#{author.id}")
-        result
+  @doc """
+  Overrides the default Pow.Ecto.Context `create`.
+  """
+  @impl true
+  def create(params) do
+    case Accounts.get_author_by_email(params["email"]) do
+      %Author{email: email} = author ->
+        if author.email_confirmed_at,
+          do:
+            Oli.Email.create_email(
+              email,
+              "Account already exists",
+              "account_already_exists.html",
+              %{
+                url:
+                  Utils.ensure_absolute_url(
+                    Routes.authoring_pow_session_path(OliWeb.Endpoint, :new)
+                  ),
+                forgot_password:
+                  Utils.ensure_absolute_url(
+                    Routes.authoring_pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
+                  )
+              }
+            )
+            |> Oli.Mailer.deliver_now()
 
-      error ->
-        error
+        {:error, %{email: "has already been taken"}}
+
+      _nil ->
+        %Author{}
+        |> Author.changeset(params)
+        |> Repo.insert()
+        |> case do
+          {:ok, author} ->
+            {:ok, author}
+
+          {:error, error} ->
+            {:error, error}
+        end
     end
   end
 

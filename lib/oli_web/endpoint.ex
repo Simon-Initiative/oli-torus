@@ -9,6 +9,9 @@ defmodule OliWeb.Endpoint do
     secure: true
   ]
 
+  @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
+  @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
+
   socket("/v1/api/state", OliWeb.UserSocket,
     websocket: true,
     longpoll: false
@@ -72,7 +75,6 @@ defmodule OliWeb.Endpoint do
 
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user))
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-  plug(PowPersistentSession.Plug.Cookie)
 
   plug(OliWeb.Router)
 end

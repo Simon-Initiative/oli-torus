@@ -3,7 +3,6 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
   use Appsignal.Instrumentation.Decorators
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
-  alias Oli.AccountLookupCache
 
   @decorate transaction_event("SetUser")
   def on_mount(:with_preloads, _, session, socket) do
@@ -27,7 +26,7 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
 
   def set_author(socket, %{"current_author_id" => current_author_id})
       when not is_nil(current_author_id) do
-    case AccountLookupCache.get_author(current_author_id) do
+    case Accounts.get_author(current_author_id) do
       {:ok, current_author} ->
         case current_author do
           %Author{} ->
@@ -52,16 +51,9 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
 
   def set_user(socket, session, opts \\ [])
 
-  def set_user(socket, %{"current_user_id" => current_user_id} = session, opts)
+  def set_user(socket, %{"current_user_id" => current_user_id} = session, _opts)
       when not is_nil(current_user_id) do
-    {:ok, current_user} =
-      case opts[:preload] do
-        nil ->
-          AccountLookupCache.get_user(current_user_id)
-
-        preload ->
-          Accounts.get_user(current_user_id, preload: preload)
-      end
+    {:ok, current_user} = Accounts.get_user(current_user_id)
 
     socket
     |> assign(

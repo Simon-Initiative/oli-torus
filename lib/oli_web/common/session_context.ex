@@ -23,8 +23,8 @@ defmodule OliWeb.Common.SessionContext do
   in LiveViews. The result can then be passed in to a view via assigns.
   """
 
+  alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
-  alias Oli.AccountLookupCache
   alias OliWeb.Common.FormatDateTime
 
   @enforce_keys [
@@ -74,7 +74,7 @@ defmodule OliWeb.Common.SessionContext do
           nil
 
         %Author{id: author_id} ->
-          case Oli.AccountLookupCache.get_author(author_id) do
+          case Accounts.get_author(author_id) do
             {:ok, author} -> author
             _ -> nil
           end
@@ -86,7 +86,7 @@ defmodule OliWeb.Common.SessionContext do
           nil
 
         %User{id: user_id} ->
-          case Oli.AccountLookupCache.get_user(user_id) do
+          case Accounts.get_user(user_id) do
             {:ok, user} -> user
             _ -> nil
           end
@@ -118,7 +118,7 @@ defmodule OliWeb.Common.SessionContext do
             nil
 
           author_id ->
-            case AccountLookupCache.get_author(author_id) do
+            case Accounts.get_author(author_id) do
               {:ok, author} ->
                 author
 
@@ -137,7 +137,7 @@ defmodule OliWeb.Common.SessionContext do
             nil
 
           user_id ->
-            case AccountLookupCache.get_user(user_id) do
+            case Accounts.get_user(user_id) do
               {:ok, user} ->
                 user
 

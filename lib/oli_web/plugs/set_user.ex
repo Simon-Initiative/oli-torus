@@ -4,7 +4,6 @@ defmodule Oli.Plugs.SetCurrentUser do
   import Oli.Utils, only: [value_or: 2]
 
   alias Oli.Accounts
-  alias Oli.AccountLookupCache
 
   def init(_params) do
   end
@@ -20,7 +19,7 @@ defmodule Oli.Plugs.SetCurrentUser do
   def set_author(conn) do
     with pow_config <- OliWeb.Pow.PowHelpers.get_pow_config(:author),
          %{id: author_id} <- Pow.Plug.current_user(conn, pow_config),
-         {:ok, current_author} <- AccountLookupCache.get_author(author_id) do
+         {:ok, current_author} <- Accounts.get_author(author_id) do
       conn
       |> put_session(:current_author_id, current_author.id)
       |> put_session(:is_community_admin, current_author.community_admin_count > 0)
@@ -41,7 +40,7 @@ defmodule Oli.Plugs.SetCurrentUser do
   def set_user(conn) do
     with pow_config <- OliWeb.Pow.PowHelpers.get_pow_config(:user),
          %{id: user_id} <- Pow.Plug.current_user(conn, pow_config),
-         {:ok, current_user} <- AccountLookupCache.get_user(user_id),
+         {:ok, current_user} <- Accounts.get_user(user_id),
          active_datashop_session_id <- get_session(conn, :datashop_session_id) do
       conn
       |> put_session(:current_user_id, current_user.id)

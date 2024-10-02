@@ -10,9 +10,6 @@ defmodule OliWeb.Router do
 
   import Oli.Plugs.EnsureAdmin
 
-  @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
-  @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
-
   ### BASE PIPELINES ###
   # We have five "base" pipelines: :browser, :api, :lti, :skip_csrf_protection, and :sso
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
@@ -78,7 +75,7 @@ defmodule OliWeb.Router do
       persistent_session_cookie_key: @author_persistent_session_cookie_key
     )
 
-    plug(Oli.Plugs.SetCurrentUser)
+    # plug(Oli.Plugs.SetCurrentUser)
 
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
@@ -91,7 +88,7 @@ defmodule OliWeb.Router do
       persistent_session_cookie_key: @user_persistent_session_cookie_key
     )
 
-    plug(Oli.Plugs.SetCurrentUser)
+    # plug(Oli.Plugs.SetCurrentUser)
     plug(Oli.Plugs.SetVrAgentValue)
   end
 
@@ -144,7 +141,10 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    plug(OliWeb.Plugs.RequireAuthenticated,
+    # plug(OliWeb.Plugs.RequireAuthenticated,
+    #   error_handler: Pow.Phoenix.PlugErrorHandler
+    # )
+    plug(Pow.Plug.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
@@ -315,7 +315,7 @@ defmodule OliWeb.Router do
 
   # open access routes
   scope "/", OliWeb do
-    pipe_through([:browser, :delivery, :authoring])
+    pipe_through([:browser])
 
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
@@ -856,9 +856,19 @@ defmodule OliWeb.Router do
   ###
 
   scope "/sections", OliWeb do
-    pipe_through([:browser])
+    pipe_through([
+      :browser,
+      :delivery_protected
+    ])
 
-    live("/join/invalid", Sections.InvalidSectionInviteView)
+    live_session :sections,
+      on_mount: [
+        {OliWeb.Pow.Phoenix.LiveView, :delivery_protected}
+      ] do
+      live("/", Delivery.OpenAndFreeIndex)
+
+      live("/join/invalid", Sections.InvalidSectionInviteView)
+    end
   end
 
   scope "/sections", OliWeb do
@@ -975,7 +985,6 @@ defmodule OliWeb.Router do
       :browser,
       :set_sidebar,
       :require_section,
-      :delivery,
       :student,
       :delivery_protected,
       :enforce_enroll_and_paywall,
@@ -1061,9 +1070,8 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery,
-      :redirect_by_attempt_state,
       :delivery_protected,
+      :redirect_by_attempt_state,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
@@ -1123,9 +1131,9 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/preview", OliWeb do
     pipe_through([
       :browser,
+      :delivery_protected,
       :require_section,
       :authorize_section_preview,
-      :delivery_protected,
       :delivery_layout,
       :pow_email_layout
     ])
@@ -1165,8 +1173,8 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
-      :require_section,
       :delivery_protected,
+      :require_section,
       :pow_email_layout
     ])
 
@@ -1259,8 +1267,8 @@ defmodule OliWeb.Router do
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([
       :browser,
-      :require_section,
       :delivery_protected,
+      :require_section,
       :pow_email_layout
     ])
 
