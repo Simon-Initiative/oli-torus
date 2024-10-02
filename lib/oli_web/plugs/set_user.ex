@@ -30,11 +30,11 @@ defmodule Oli.Plugs.SetCurrentUser do
     else
       _ ->
         conn
-        |> delete_session(:current_author_id)
-        |> delete_session(:is_community_admin)
-        |> delete_session(:is_system_admin)
-        |> assign(:current_author, nil)
-        |> assign(:is_system_admin, false)
+        # |> delete_session(:current_author_id)
+        # |> delete_session(:is_community_admin)
+        # |> delete_session(:is_system_admin)
+        # |> assign(:current_author, nil)
+        # |> assign(:is_system_admin, false)
     end
   end
 
@@ -53,9 +53,9 @@ defmodule Oli.Plugs.SetCurrentUser do
     else
       _ ->
         conn
-        |> delete_session(:current_user_id)
-        |> delete_session(:datashop_session_id)
-        |> assign(:current_user, nil)
+        # |> delete_session(:current_user_id)
+        # |> delete_session(:datashop_session_id)
+        # |> assign(:current_user, nil)
     end
   end
 
