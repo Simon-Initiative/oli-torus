@@ -2371,5 +2371,37 @@ defmodule Oli.Delivery.SectionsTest do
       assert s3.title == "LiveView"
       assert s2.title == "Phoenix"
     end
+
+    test "retrieve open_and_free active sections by roles" do
+      user = insert(:user)
+
+      # Create sections
+      section_1 = insert(:section, title: "Elixir", open_and_free: true, status: :active)
+      section_2 = insert(:section, title: "Phoenix", open_and_free: true, status: :active)
+      section_3 = insert(:section, title: "LiveView", open_and_free: true, status: :archived)
+
+      Sections.enroll(user.id, section_1.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+      ])
+
+      Sections.enroll(user.id, section_2.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.enroll(user.id, section_3.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+      sections =
+        Sections.get_open_and_free_active_sections_by_roles(user.id, [
+          Lti_1p3.Tool.ContextRoles.get_role(:context_learner),
+          Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+        ])
+
+      assert length(sections) == 2
+      section_ids = Enum.map(sections, & &1.id)
+      assert section_1.id in section_ids
+      assert section_2.id in section_ids
+    end
   end
 end
