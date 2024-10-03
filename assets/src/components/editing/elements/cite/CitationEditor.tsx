@@ -77,9 +77,9 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
         const text2 = item2.html.replace(/<[^>]*>/g, '');
         return text1.localeCompare(text2);
       };
-      bibItems.sort(compareItemHtml);
+      const sortedItems = bibItems.sort(compareItemHtml);
 
-      return bibItems.map((bibItem) => {
+      return sortedItems.map((bibItem) => {
         const classes =
           selected.bibref === bibItem.id
             ? 'w-full px-4 py-2 text-left bg-gray-200 border-b border-gray-200 cursor-pointer focus:outline-none dark:bg-gray-800 dark:border-gray-600'
