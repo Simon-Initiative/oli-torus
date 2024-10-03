@@ -68,7 +68,7 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
       };
 
       // need full list of items with formatted entry html for sorting
-      let bibItems = bibEntrys.map((bibEntry) => {
+      const bibItems = bibEntrys.map((bibEntry) => {
         return { id: bibEntry.id, slug: bibEntry.slug, html: bibOut(bibEntry) };
       });
 
