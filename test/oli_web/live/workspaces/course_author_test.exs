@@ -28,7 +28,8 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
             given_name: "me",
             family_name: "too",
             password: "some_password",
-            password_confirmation: "some_password"
+            password_confirmation: "some_password",
+            email_confirmed_at: Timex.now()
           },
           "g-recaptcha-response": "any"
         }
