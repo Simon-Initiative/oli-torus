@@ -48,9 +48,6 @@ defmodule Oli.Resources.PageContent do
   end
 
   defp item_with_children(%{"children" => children} = item, acc, map_fn, tr_context) do
-    # content_children = children
-    # |> addprop(item, "caption")
-    # |> addprop(item, "pronunciation");
     {children, acc} =
       Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
         {item, acc} =
