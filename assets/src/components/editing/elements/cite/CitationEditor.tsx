@@ -67,20 +67,19 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
         });
       };
 
-      // need full list of items with formatted entry html for sorting
-      let bibItems = bibEntrys.map((bibEntry) => {
+      // build full list of items with formatted entry html for sorting
+      const bibItems = bibEntrys.map((bibEntry) => {
         return { id: bibEntry.id, slug: bibEntry.slug, html: bibOut(bibEntry) };
       });
-
-      // sort items alphabetically by plain text of entry html
+      // sort alphabetically by plain text of entry html
       const compareItemHtml = (item1: { html: string }, item2: { html: string }) => {
         const text1 = item1.html.replace(/<[^>]*>/g, '');
         const text2 = item2.html.replace(/<[^>]*>/g, '');
         return text1.localeCompare(text2);
       };
-      const sortedItems = bibItems.sort(compareItemHtml);
+      bibItems.sort(compareItemHtml);
 
-      return sortedItems.map((bibItem) => {
+      return bibItems.map((bibItem) => {
         const classes =
           selected.bibref === bibItem.id
             ? 'w-full px-4 py-2 text-left bg-gray-200 border-b border-gray-200 cursor-pointer focus:outline-none dark:bg-gray-800 dark:border-gray-600'
