@@ -20,7 +20,7 @@ defmodule OliWeb.Common.FilterBox do
   def render(assigns) do
     ~H"""
     <div class="mb-3 w-full">
-      <h3><%= @card_header_text %></h3>
+      <h2 id="header_id" class="pb-2"><%= @card_header_text %></h2>
       <div>
         <p class="mt-1 mb-4"><%= @card_body_text %></p>
         <div class="filter-opts flex flex-wrap items-center gap-2">
