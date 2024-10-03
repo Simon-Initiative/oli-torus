@@ -20,7 +20,7 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
     conn
     |> Phoenix.Controller.put_flash(
       :error,
-      ControllerCallbacks.messages(conn).invalid_credentials(conn)
+      Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).invalid_credentials(conn)
     )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
 
