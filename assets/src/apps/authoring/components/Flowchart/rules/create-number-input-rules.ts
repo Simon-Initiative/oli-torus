@@ -27,7 +27,7 @@ import {
   getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
-import { generateThreeTryWorkflow } from './create-three-try-workflow';
+import { generateMaxTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
 export const generteNumberInputRules = (
@@ -126,7 +126,7 @@ export const generteNumberInputRules = (
     1,
   );
 
-  return generateThreeTryWorkflow(
+  return generateMaxTryWorkflow(
     correct,
     incorrect,
     commonErrorConditionsFeedback,

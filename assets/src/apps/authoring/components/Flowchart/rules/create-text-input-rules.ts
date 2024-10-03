@@ -17,7 +17,7 @@ import {
   IConditionWithFeedback,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
-import { generateThreeTryWorkflow } from './create-three-try-workflow';
+import { generateMaxTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
 export const generateTextInputRules = (
@@ -93,15 +93,10 @@ export const generateTextInputRules = (
 
   threeTimesFeedback += 'Click next to continue. ';
 
-  return generateThreeTryWorkflow(
-    correct,
-    incorrect,
-    [],
-    setCorrect,
-    blankCondition,
-    disableAction,
-    { threeTimesFeedback, maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
-  );
+  return generateMaxTryWorkflow(correct, incorrect, [], setCorrect, blankCondition, disableAction, {
+    threeTimesFeedback,
+    maxAttempt: screen?.content?.custom?.maxAttempt || '2',
+  });
 };
 
 export const createTextInputCorrectCondition = (
