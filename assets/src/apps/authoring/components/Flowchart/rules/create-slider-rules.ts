@@ -107,7 +107,7 @@ export const generateSliderRules = (
 
   const setCorrect: IAction[] = [
     {
-      // Sets the correct answer in the dropdown
+      // Sets the correct  answer in the dropdown
       type: 'mutateState',
       params: {
         value: String(answer),
