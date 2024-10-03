@@ -330,7 +330,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       phx-mounted={
         JS.transition(
           {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
-          time: 300 + @index * 60
+          time: 300
         )
       }
       class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
