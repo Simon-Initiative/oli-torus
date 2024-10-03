@@ -19,7 +19,7 @@ export const findConditionById = (
 ): JanusNestedCondition | null => {
   let found = conditions.find((condition) => condition.id === id) || null;
   if (!found) {
-    // check if any of the conditions are blocks of any or all
+    // check if any of the conditions are blocks of any or  all
     const blocks = conditions.filter(
       (condition) => (condition as JanusAllConditions).all || (condition as JanusAnyConditions).any,
     );
