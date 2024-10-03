@@ -12,6 +12,9 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
 
   @default_params %{text_search: ""}
 
+  on_mount {OliWeb.Pow.Phoenix.MountUser, :current_user}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     sections =

@@ -293,7 +293,7 @@ defmodule OliWeb.Router do
 
   # open access routes
   scope "/", OliWeb do
-    pipe_through([:browser, :delivery, :authoring])
+    pipe_through([:browser])
 
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)

@@ -25,6 +25,7 @@ defmodule OliWeb.Pow.UserContext do
     clauses = Keyword.put_new(clauses, :independent_learner, true)
 
     pow_get_by(clauses)
+    |> Repo.preload([:platform_roles])
   end
 
   @spec lock(map()) :: {:ok, map()} | {:error, map()}
