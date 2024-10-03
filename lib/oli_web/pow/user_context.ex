@@ -70,8 +70,7 @@ defmodule OliWeb.Pow.UserContext do
               "Account already exists",
               "account_already_exists.html",
               %{
-                url:
-                  Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
+                url: Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
                 forgot_password:
                   Utils.ensure_absolute_url(
                     Routes.pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
