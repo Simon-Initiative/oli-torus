@@ -18,10 +18,18 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
         config
       ) do
     conn
-    |> Phoenix.Controller.put_flash(:error, ControllerCallbacks.messages(conn).invalid_credentials(conn))
+    |> Phoenix.Controller.put_flash(
+      :error,
+      ControllerCallbacks.messages(conn).invalid_credentials(conn)
+    )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
 
-    ControllerCallbacks.before_respond(Pow.Phoenix.SessionController, :create, {:ok, conn}, config)
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.SessionController,
+      :create,
+      {:ok, conn},
+      config
+    )
   end
 
   def before_respond(
@@ -44,7 +52,12 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
     )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
 
-    ControllerCallbacks.before_respond(Pow.Phoenix.SessionController, :create, {:ok, conn}, config)
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.SessionController,
+      :create,
+      {:ok, conn},
+      config
+    )
   end
 
   def before_respond(
@@ -53,9 +66,14 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
         {:ok, conn},
         config
       ) do
-
     conn = conn |> maybe_logout_user()
-    ControllerCallbacks.before_respond(Pow.Phoenix.SessionController, :create, {:ok, conn}, config)
+
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.SessionController,
+      :create,
+      {:ok, conn},
+      config
+    )
   end
 
   def before_respond(
@@ -99,26 +117,38 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
         conn
       end
 
-      ControllerCallbacks.before_respond(Pow.Phoenix.RegistrationController, :create, {:error, %{author_changeset | errors: updated_errors}, conn}, config)
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.RegistrationController,
+      :create,
+      {:error, %{author_changeset | errors: updated_errors}, conn},
+      config
+    )
   end
 
   def before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, author, conn}, config) do
     conn = maybe_assign_request_path(conn)
 
-    {:ok, author, conn} = case conn do
-      %{query_params: %{"link_to_user_account?" => "true"}, assigns: %{ctx: %{user: user}}}
-      when not is_nil(user) ->
-        {:ok, _updated_user} = link_to_user_account(user, author.id)
+    {:ok, author, conn} =
+      case conn do
+        %{query_params: %{"link_to_user_account?" => "true"}, assigns: %{ctx: %{user: user}}}
+        when not is_nil(user) ->
+          {:ok, _updated_user} = link_to_user_account(user, author.id)
 
-        {:ok, author, conn}
+          {:ok, author, conn}
 
-      _ ->
-        {:ok, author, conn}
-    end
-    ControllerCallbacks.before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, author, conn}, config)
+        _ ->
+          {:ok, author, conn}
+      end
+
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.RegistrationController,
+      :create,
+      {:ok, author, conn},
+      config
+    )
   end
 
-  defdelegate before_respond(controller, action, results, config), to:  ControllerCallbacks
+  defdelegate before_respond(controller, action, results, config), to: ControllerCallbacks
 
   defdelegate before_process(controller, action, results, config), to: ControllerCallbacks
 
