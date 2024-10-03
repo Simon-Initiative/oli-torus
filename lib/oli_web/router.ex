@@ -75,8 +75,6 @@ defmodule OliWeb.Router do
       persistent_session_cookie_key: @author_persistent_session_cookie_key
     )
 
-    # plug(Oli.Plugs.SetCurrentUser)
-
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
   end
@@ -88,7 +86,6 @@ defmodule OliWeb.Router do
       persistent_session_cookie_key: @user_persistent_session_cookie_key
     )
 
-    # plug(Oli.Plugs.SetCurrentUser)
     plug(Oli.Plugs.SetVrAgentValue)
   end
 
@@ -412,7 +409,7 @@ defmodule OliWeb.Router do
 
     live_session :load_projects,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
+        {OliWeb.Pow.Phoenix.MountUser, :current_author},
         OliWeb.LiveSessionPlugs.SetProject
       ] do
       live("/:project_id", Projects.OverviewLive)
@@ -808,8 +805,10 @@ defmodule OliWeb.Router do
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
+        {OliWeb.Pow.Phoenix.MountUser, :current_user},
+        {OliWeb.Pow.Phoenix.MountUser, :current_author},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
-        OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.SetProjectOrSection,
@@ -861,14 +860,7 @@ defmodule OliWeb.Router do
       :delivery_protected
     ])
 
-    live_session :sections,
-      on_mount: [
-        {OliWeb.Pow.Phoenix.LiveView, :delivery_protected}
-      ] do
-      live("/", Delivery.OpenAndFreeIndex)
-
-      live("/join/invalid", Sections.InvalidSectionInviteView)
-    end
+    live("/join/invalid", Sections.InvalidSectionInviteView)
   end
 
   scope "/sections", OliWeb do
@@ -893,7 +885,12 @@ defmodule OliWeb.Router do
 
   ### Sections - Payments
   scope "/sections", OliWeb do
-    pipe_through([:browser, :require_section, :delivery_protected, :pow_email_layout])
+    pipe_through([
+      :browser,
+      :delivery_protected,
+      :require_section,
+      :pow_email_layout
+    ])
 
     get("/:section_slug/payment", PaymentController, :guard)
     get("/:section_slug/payment/new", PaymentController, :make_payment)
@@ -935,11 +932,16 @@ defmodule OliWeb.Router do
   ### Sections - Instructor Dashboard
   #### preview routes must come before the non-preview routes to properly match
   scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
-    pipe_through([:browser, :delivery, :delivery_protected, :pow_email_layout])
+    pipe_through([
+      :browser,
+      :delivery_protected,
+      :pow_email_layout
+    ])
 
     live_session :instructor_dashboard_preview,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
+        {OliWeb.Pow.Phoenix.MountUser, :current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
@@ -962,7 +964,8 @@ defmodule OliWeb.Router do
 
     live_session :instructor_dashboard,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
+        {OliWeb.Pow.Phoenix.MountUser, :current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -983,10 +986,11 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :delivery_protected,
       :set_sidebar,
       :require_section,
       :student,
-      :delivery_protected,
+      :require_section,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
       :force_required_survey,
@@ -999,7 +1003,8 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery},
         on_mount: [
-          OliWeb.LiveSessionPlugs.SetUser,
+          {OliWeb.Pow.Phoenix.MountUser, :current_user},
+          OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1024,8 +1029,9 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery},
         on_mount: [
+          {OliWeb.Pow.Phoenix.MountUser, :current_user},
+          OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
-          OliWeb.LiveSessionPlugs.SetUser,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
@@ -1069,8 +1075,8 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
-      :require_section,
       :delivery_protected,
+      :require_section,
       :redirect_by_attempt_state,
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
@@ -1084,7 +1090,8 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
-          OliWeb.LiveSessionPlugs.SetUser,
+          {OliWeb.Pow.Phoenix.MountUser, :current_user},
+          OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
           {OliWeb.LiveSessionPlugs.InitPage, :set_prologue_context},
           OliWeb.LiveSessionPlugs.SetBrand,
@@ -1102,7 +1109,8 @@ defmodule OliWeb.Router do
         root_layout: {OliWeb.LayoutView, :delivery},
         layout: {OliWeb.Layouts, :student_delivery_lesson},
         on_mount: [
-          OliWeb.LiveSessionPlugs.SetUser,
+          {OliWeb.Pow.Phoenix.MountUser, :current_user},
+          OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
           {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
           OliWeb.LiveSessionPlugs.SetBrand,
@@ -1156,8 +1164,9 @@ defmodule OliWeb.Router do
 
     live_session :load_section,
       on_mount: [
+        {OliWeb.Pow.Phoenix.MountUser, :current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
-        OliWeb.LiveSessionPlugs.SetUser,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
         OliWeb.LiveSessionPlugs.RequireEnrollment
@@ -1191,7 +1200,8 @@ defmodule OliWeb.Router do
 
     live_session :manage_section,
       on_mount: [
-        OliWeb.LiveSessionPlugs.SetUser,
+        {OliWeb.Pow.Phoenix.MountUser, :current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,

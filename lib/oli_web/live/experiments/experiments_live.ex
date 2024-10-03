@@ -18,7 +18,7 @@ defmodule OliWeb.Experiments.ExperimentsView do
   alias OliWeb.Common.Modal.FormModal
   alias OliWeb.Router.Helpers, as: Routes
 
-  on_mount {OliWeb.LiveSessionPlugs.SetUser, :default}
+  on_mount {OliWeb.Pow.Phoenix.MountUser, :current_user}
   on_mount {OliWeb.LiveSessionPlugs.SetProject, :default}
 
   @title "Experiments"
