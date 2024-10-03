@@ -56,33 +56,46 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
 
   const createBibEntryEditors = () => {
     if (!bibEntrys.isEmpty()) {
-      return bibEntrys.map((bibEntry) => {
-        const bibOut = () => {
-          const data = new Cite(bibEntry.content.data);
-          return data.format('bibliography', {
-            format: 'html',
-            template: 'apa',
-            lang: 'en-US',
-            // include any note, used for URL in legacy bib entries
-            append: (entry: any) => ` ${entry.note}`,
-          });
-        };
+      const bibOut = (bibEntry: BibEntry) => {
+        const data = new Cite(bibEntry.content.data);
+        return data.format('bibliography', {
+          format: 'html',
+          template: 'apa',
+          lang: 'en-US',
+          // include any note, used for URL in legacy bib entries
+          append: (entry: any) => `${entry.note ? ' ' + entry.note : ''}`,
+        });
+      };
 
+      // need full list of items with formatted entry html for sorting
+      let bibItems = bibEntrys.map((bibEntry) => {
+        return { id: bibEntry.id, slug: bibEntry.slug, html: bibOut(bibEntry) };
+      });
+
+      // sort items alphabetically by plain text of entry html
+      const compareItemHtml = (item1: { html: string }, item2: { html: string }) => {
+        const text1 = item1.html.replace(/<[^>]*>/g, '');
+        const text2 = item2.html.replace(/<[^>]*>/g, '');
+        return text1.localeCompare(text2);
+      };
+      const sortedItems = bibItems.sort(compareItemHtml);
+
+      return sortedItems.map((bibItem) => {
         const classes =
-          selected.bibref === bibEntry.id
+          selected.bibref === bibItem.id
             ? 'w-full px-4 py-2 text-left bg-gray-200 border-b border-gray-200 cursor-pointer focus:outline-none dark:bg-gray-800 dark:border-gray-600'
             : 'w-full px-4 py-2 text-left border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-500 dark:focus:text-white';
 
-        const r = selected.bibref === bibEntry.id ? { ref: inputEl } : {};
+        const r = selected.bibref === bibItem.id ? { ref: inputEl } : {};
 
         return (
           <button
             {...r}
-            key={bibEntry.slug}
+            key={bibItem.slug}
             className={classes}
-            onClick={() => onClick(bibEntry.slug)}
+            onClick={() => onClick(bibItem.slug)}
           >
-            <div dangerouslySetInnerHTML={{ __html: bibOut() }}></div>
+            <div dangerouslySetInnerHTML={{ __html: bibItem.html }}></div>
           </button>
         );
       });
@@ -95,7 +108,7 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
 
   return (
     <div
-      className="settings-editor-wrapper"
+      className="settings-editor-wrapper overflow-y-auto overflow-x-hidden"
       onMouseDown={(e) => {
         e.preventDefault();
         e.stopPropagation();
