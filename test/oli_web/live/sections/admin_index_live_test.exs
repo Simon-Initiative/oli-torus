@@ -33,7 +33,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     test "loads correctly when there are no sections", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "h3", "Browse Course Sections")
+      assert has_element?(view, "#header_id", "Browse Course Sections")
       assert has_element?(view, "p", "None exist")
     end
 
