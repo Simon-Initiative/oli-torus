@@ -57,6 +57,8 @@ a.download::after {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+  width: 0px;
+  background: transparent;
 }
 
 .scrollbar-hide {

@@ -19,8 +19,15 @@ defmodule OliWeb.Workspaces.Utils do
 
   def sub_menu(assigns) do
     ~H"""
-    <div id="sub_menu">
-      <.title {assigns} />
+    <div
+      id="sub_menu"
+      class={
+        if @sidebar_expanded,
+          do:
+            "overflow-y-scroll scrollbar-hide h-[calc(100vh-var(--header-height)-var(--toggler-button-height)-var(--main-links-height)-var(--footer-buttons-height))]",
+          else: "-mt-5"
+      }
+    >
       <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
         <.sub_menu_item
           :for={sub_menu_item <- @hierarchy}
