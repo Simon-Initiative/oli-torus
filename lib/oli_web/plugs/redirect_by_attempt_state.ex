@@ -75,6 +75,10 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
           # practice pages do not have prologue page.
           ensure_path(conn, :lesson)
 
+        {:practice, :not_adaptive, _, true} ->
+          # practice pages do not have prologue page.
+          ensure_path(conn, :review, :not_adaptive)
+
         {:practice, :adaptive_chromeless, _, false} ->
           ensure_path(conn, :adaptive_lesson)
       end

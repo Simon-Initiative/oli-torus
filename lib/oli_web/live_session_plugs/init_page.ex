@@ -8,6 +8,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   alias OliWeb.Router.Helpers, as: Routes
 
   def on_mount(:set_prologue_context, %{"revision_slug" => revision_slug}, _session, socket) do
+
     %{section: section, current_user: current_user} = socket.assigns
 
     page_context =
@@ -29,6 +30,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   end
 
   def on_mount(:set_page_context, %{"revision_slug" => revision_slug}, _session, socket) do
+
     %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
       socket.assigns
 
@@ -51,6 +53,15 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     else
       {:cont, socket}
     end
+  end
+
+
+  def on_mount(:set_page_context_review, :not_mounted_at_router, _session, socket) do
+    {:cont, socket}
+  end
+
+  def on_mount(:set_page_context_review, %{"attempt_guid" => attempt_guid}, _session, socket) do
+    {:cont, socket}
   end
 
   def on_mount(
@@ -238,6 +249,16 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
          _params
        ) do
     assign(socket, %{view: :error})
+  end
+
+
+  defp init_context_state(
+
+           socket,
+         _params
+       ) do
+    IO.inspect socket.assigns
+    socket
   end
 
   defp plural(1), do: ""
