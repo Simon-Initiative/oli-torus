@@ -13330,6 +13330,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(170 195 240 / 0.75) !important;
 }
 
+.hover\:\!bg-\[\#E6E9F2\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(230 233 242 / var(--tw-bg-opacity)) !important;
+}
+
 .hover\:\!bg-\[\#F4CFFF\]:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(244 207 255 / var(--tw-bg-opacity)) !important;
@@ -13349,9 +13354,9 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(0 117 235 / var(--tw-bg-opacity));
 }
 
-.hover\:bg-\[\#D9D9DD\]:hover {
+.hover\:bg-\[\#F5F5F6\]:hover {
   --tw-bg-opacity: 1;
-  background-color: rgb(217 217 221 / var(--tw-bg-opacity));
+  background-color: rgb(245 245 246 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-black\/\[\.1\]:hover {
@@ -14422,11 +14427,6 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#202022\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(32 32 34 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#222126\] {
   --tw-bg-opacity: 1;
   background-color: rgb(34 33 38 / var(--tw-bg-opacity));
@@ -15074,6 +15074,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(8 111 78 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .dark\:hover\:\!bg-\[\#222126\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(34 33 38 / var(--tw-bg-opacity)) !important;
+}
+
 .dark .dark\:hover\:\!bg-\[\#2957A9\]:hover {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(41 87 169 / var(--tw-bg-opacity)) !important;
@@ -15102,11 +15107,6 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:hover\:bg-\[\#33181A\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(51 24 26 / var(--tw-bg-opacity));
-}
-
-.dark .dark\:hover\:bg-\[\#404044\]:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(64 64 68 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:hover\:bg-\[\#FFFFFF\]\/5:hover {
@@ -15173,6 +15173,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:hover\:bg-yellow-500:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(247 174 50 / var(--tw-bg-opacity));
+}
+
+.dark .hover\:dark\:\!bg-\[\#222126\]:hover {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(34 33 38 / var(--tw-bg-opacity)) !important;
 }
 
 .dark .hover\:dark\:bg-\[\#262626\]:hover {
