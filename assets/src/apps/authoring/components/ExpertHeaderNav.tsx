@@ -21,10 +21,11 @@ interface HeaderNavProps {
   isVisible: boolean;
   authoringContainer: React.RefObject<HTMLElement>;
   onToggleExport?: () => void;
+  initialSidebarExpanded?: boolean;
 }
 
 const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
-  const { panelState, isVisible } = props;
+  const { panelState, isVisible, initialSidebarExpanded } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const paths = useSelector(selectPaths);
@@ -37,7 +38,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(initialSidebarExpanded);
 
   const handleSidebarExpanded = () => {
     setSidebarExpanded((prev) => !prev);

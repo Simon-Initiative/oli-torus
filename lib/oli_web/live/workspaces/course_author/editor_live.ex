@@ -154,7 +154,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
             },
             activityTypes: activity_types,
             partComponentTypes: part_component_types,
-            appsignalKey: Application.get_env(:appsignal, :client_key)
+            appsignalKey: Application.get_env(:appsignal, :client_key),
+            initialSidebarExpanded: socket.assigns[:sidebar_expanded]
           })
 
         _ ->

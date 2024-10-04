@@ -48,6 +48,7 @@ export interface AuthoringProps {
   resourceId?: number;
   paths: Record<string, string>;
   appsignalKey: string | null;
+  initialSidebarExpanded: boolean;
 }
 
 const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
@@ -254,6 +255,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
               currentRule={currentRule}
               handlePanelStateChange={handlePanelStateChange}
               panelState={panelState}
+              initialSidebarExpanded={props.initialSidebarExpanded}
             />
           )}
 

@@ -19,10 +19,11 @@ export interface BottomPanelProps {
   onToggle: any;
   children?: any;
   content?: any;
+  initialSidebarExpanded?: boolean;
 }
 
 export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps) => {
-  const { panelState, onToggle, children } = props;
+  const { panelState, onToggle, children, initialSidebarExpanded } = props;
   const PANEL_SIDE_WIDTH = '270px';
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
@@ -33,7 +34,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const isLayer = getIsLayer();
 
   const ref = useRef<HTMLElement>(null);
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(initialSidebarExpanded);
 
   const handleSidebarExpanded = () => {
     setSidebarExpanded((prev) => !prev);

@@ -6,11 +6,12 @@ export interface SidePanelProps {
   panelState: any;
   onToggle: any;
   children?: any;
+  initialSidebarExpanded?: boolean;
 }
 
 export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
-  const { position, panelState, onToggle, children } = props;
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const { position, panelState, onToggle, children, initialSidebarExpanded } = props;
+  const [sidebarExpanded, setSidebarExpanded] = useState(initialSidebarExpanded);
 
   const handleSidebarExpanded = () => {
     setSidebarExpanded((prev) => !prev);
