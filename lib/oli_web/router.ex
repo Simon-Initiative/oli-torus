@@ -1105,7 +1105,6 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPaywallSummary
         ] do
         live("/", Delivery.Student.LessonLive)
-        live("/attempt/:attempt_guid/review", Delivery.Student.ReviewLive)
       end
     end
 
@@ -1117,6 +1116,36 @@ defmodule OliWeb.Router do
         PageDeliveryController,
         :review_attempt
       )
+    end
+  end
+
+  scope "/sections/:section_slug", OliWeb do
+    pipe_through([
+      :browser,
+      :require_section,
+      :delivery,
+      :delivery_protected,
+      :maybe_gated_resource,
+      :enforce_enroll_and_paywall,
+      :ensure_user_section_visit,
+      :force_required_survey,
+      :pow_email_layout
+    ])
+
+    scope "/lesson/:revision_slug/attempt/:attempt_guid/review" do
+      live_session :delivery_lesson_review,
+        root_layout: {OliWeb.LayoutView, :delivery},
+        layout: {OliWeb.Layouts, :student_delivery_lesson},
+        on_mount: [
+          OliWeb.LiveSessionPlugs.SetUser,
+          OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetBrand,
+          OliWeb.LiveSessionPlugs.SetPreviewMode,
+          OliWeb.LiveSessionPlugs.RequireEnrollment,
+          OliWeb.LiveSessionPlugs.SetPaywallSummary
+        ] do
+        live("/", Delivery.Student.ReviewLive)
+      end
     end
   end
 
