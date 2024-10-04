@@ -23,7 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   alias OliWeb.Curriculum.{OptionsModalContent, HyperlinkDependencyModal}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Workspaces.CourseAuthor.Pages.TableModel, as: PagesTableModel
-  alias OliWeb.Workspaces.CourseAuthor.EditorLive
+  alias OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive
 
   @default_limit 25
 

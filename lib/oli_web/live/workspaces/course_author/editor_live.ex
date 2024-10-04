@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
+defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   use OliWeb, :live_view
   use Phoenix.HTML
 
@@ -137,7 +137,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.EditorLive do
       raw_context: context,
       revision_slug: revision_slug,
       scripts: Activities.get_activity_scripts(:authoring_script),
-      title: "Edit | " <> context.title
+      title: "Edit | " <> context.title,
+      resource_title: project.title,
+      resource_slug: project.slug
     }
 
     content =
