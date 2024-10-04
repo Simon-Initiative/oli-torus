@@ -33,6 +33,11 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const isLayer = getIsLayer();
 
   const ref = useRef<HTMLElement>(null);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+
+  const handleSidebarExpanded = () => {
+    setSidebarExpanded((prev) => !prev);
+  };
 
   useEffect(() => {
     if (currentRule === undefined) return;
@@ -154,10 +159,19 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
 
   return (
     <>
+      <button
+        role="update sidebar state on React"
+        className="hidden"
+        onClick={() => {
+          handleSidebarExpanded();
+        }}
+      ></button>
       <section
         id="aa-bottom-panel"
         ref={ref}
-        className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''}`}
+        className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''} ${
+          !sidebarExpanded ? '' : 'ml-[135px]'
+        }`}
         style={{
           left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
           right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
