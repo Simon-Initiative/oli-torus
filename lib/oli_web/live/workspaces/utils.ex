@@ -180,6 +180,17 @@ defmodule OliWeb.Workspaces.Utils do
     """
   end
 
+  @urls_without_padding ~w[/workspaces/instructor /workspaces/course_author /workspaces/student]
+
+  def maybe_add_padding(nil), do: ""
+
+  def maybe_add_padding(uri) do
+    case URI.parse(uri).path do
+      url when url in @urls_without_padding -> ""
+      _ -> "container mx-auto p-8"
+    end
+  end
+
   defp active_view_in_children?(children, active_view) do
     Enum.any?(children, &(&1.view == active_view))
   end

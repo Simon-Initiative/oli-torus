@@ -300,7 +300,12 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="container_label"]}, "Unit 1")
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="resource_type"]}, "Assignment")
       assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="title"]}, "Graded 1")
-      assert has_element?(lcd, ~s{#schedule_item_1_1 div[role="details"]}, "Past Due")
+
+      assert has_element?(
+               lcd,
+               ~s{#schedule_item_1_1 div[role="details"]},
+               "Past suggested date by"
+             )
 
       # Displays Lesson group in Unit 1 > Module 1 (contains Graded 2 and Practice 1)
       assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="container_label"]}, "Unit 1")
@@ -314,7 +319,7 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponentTest do
                "2 pages"
              )
 
-      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Due Today")
+      assert has_element?(lcd, ~s{#schedule_item_1_2 div[role="details"]}, "Suggested for Today")
 
       ## Displays next week
       assert has_element?(lcd, ~s{#schedule_week_2 div[role="schedule_title"]}, "Next Week")

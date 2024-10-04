@@ -26,6 +26,8 @@ defmodule OliWeb.CognitoControllerTest do
     [community: community, section: section, email: email, author: author, project: project]
   end
 
+  import Phoenix.LiveViewTest
+
   describe "index" do
     test "redirects user to my courses", %{
       conn: conn,
@@ -53,12 +55,24 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"/workspaces/instructor\">redirected</a>.</body></html>"
     end
 
-    test "creates new user and author, sends author setup email and redirects user to my courses",
-         %{
-           conn: conn,
-           community: community
-         } do
-      email = "new_user@email.com"
+    test "preserve existing linked author account", %{
+      conn: conn,
+      community: community,
+      email: email
+    } do
+      author_email = "author@email.com"
+
+      {:ok, author} = Accounts.insert_or_update_author(%{email: author_email})
+
+      {:ok, _user} =
+        Accounts.insert_or_update_lms_user(%{
+          sub: "user999",
+          preferred_username: "user999",
+          email: email,
+          can_create_sections: true,
+          author_id: author.id
+        })
+
       {id_token, jwk, issuer} = generate_token(email)
       jwks_url = issuer <> "/.well-known/jwks.json"
 
@@ -66,46 +80,34 @@ defmodule OliWeb.CognitoControllerTest do
 
       params = valid_index_params(community.id, id_token)
 
-      refute Accounts.get_user_by(email: email)
+      conn = get(conn, ~p"/cognito/launch?#{params}")
 
-      assert conn
-             |> get(Routes.cognito_path(conn, :index, params))
-             |> html_response(302) =~
-               "<html><body>You are being <a href=\"/workspaces/instructor\">redirected</a>.</body></html>"
+      {:ok, view, _html} = live(recycle(conn), ~p"/workspaces/instructor")
 
-      {:ok, claims} = Joken.peek_claims(id_token)
-      user = Accounts.get_user_by(email: email)
-      author = Accounts.get_author_by_email(email)
+      assert view
+             |> element(
+               ~s(#workspace-user-menu-dropdown div[role="linked authoring account email"])
+             )
+             |> render() =~ author_email
 
-      assert user.sub == claims["sub"]
-      assert user.preferred_username == claims["cognito:username"]
-      assert user.name == claims["name"]
-      assert user.can_create_sections == true
-      assert user.author_id == author.id
+      # SSO user is logged into the course_author workspace automatically
+      {:ok, view, _html} = live(recycle(conn), ~p"/workspaces/course_author")
 
-      assert author.email == email
-      assert author.name == claims["cognito:username"]
-      assert author.invitation_token
-      refute author.invitation_accepted_at
-
-      assert_delivered_email_matches(%{to: [{_, ^email}], subject: subject, text_body: text_body})
-
-      assert subject == "Create Course Author Password"
-
-      assert text_body =~
-               "We received notice that you have been approved as an Infiniscope\ninstructor"
-
-      assert text_body =~ "Create Password"
-      assert text_body =~ ~r{/authoring/invitations/.*/edit}
+      assert view |> has_element?(~s(#button-new-project), "New Project")
     end
 
-    test "creates new user but does not create author nor send email when it already exists",
-         %{
-           conn: conn,
-           community: community
-         } do
-      email = "new_user@email.com"
-      author = insert(:author, email: email)
+    test "create and linked an author account", %{
+      conn: conn,
+      community: community,
+      email: email
+    } do
+      {:ok, user} =
+        Accounts.insert_or_update_lms_user(%{
+          sub: "user999",
+          preferred_username: "user999",
+          email: email,
+          can_create_sections: true
+        })
 
       {id_token, jwk, issuer} = generate_token(email)
       jwks_url = issuer <> "/.well-known/jwks.json"
@@ -114,23 +116,15 @@ defmodule OliWeb.CognitoControllerTest do
 
       params = valid_index_params(community.id, id_token)
 
-      refute Accounts.get_user_by(email: email)
+      conn = get(conn, ~p"/cognito/launch?#{params}")
 
-      assert conn
-             |> get(Routes.cognito_path(conn, :index, params))
-             |> html_response(302) =~
-               "<html><body>You are being <a href=\"/workspaces/instructor\">redirected</a>.</body></html>"
+      {:ok, view, _html} = live(recycle(conn), ~p"/workspaces/instructor")
 
-      {:ok, claims} = Joken.peek_claims(id_token)
-      user = Accounts.get_user_by(email: email)
-
-      assert user.sub == claims["sub"]
-      assert user.preferred_username == claims["cognito:username"]
-      assert user.name == claims["name"]
-      assert user.can_create_sections == true
-      assert user.author_id == author.id
-
-      assert_no_emails_delivered()
+      assert view
+             |> element(
+               ~s(#workspace-user-menu-dropdown div[role="linked authoring account email"])
+             )
+             |> render() =~ user.email
     end
 
     test "redirects to provided error_url with missing params", %{

@@ -485,150 +485,143 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="container flex flex-col gap-y-6 p-8">
-      <%= render_modal(assigns) %>
+    <%= render_modal(assigns) %>
 
-      <Modal.modal
-        id="options_modal"
-        class="w-auto min-w-[50%]"
-        body_class="px-6"
-        on_cancel={JS.push("restart_options_modal")}
-      >
-        <:title>
-          <%= @options_modal_assigns[:title] %>
-        </:title>
+    <Modal.modal
+      id="options_modal"
+      class="w-auto min-w-[50%]"
+      body_class="px-6"
+      on_cancel={JS.push("restart_options_modal")}
+    >
+      <:title>
+        <%= @options_modal_assigns[:title] %>
+      </:title>
 
-        <%= if @options_modal_assigns do %>
-          <.live_component
-            module={OptionsModalContent}
-            id="modal_content"
-            ctx={@ctx}
-            redirect_url={@options_modal_assigns.redirect_url}
-            revision={@options_modal_assigns.revision}
-            changeset={@options_modal_assigns.changeset}
-            project={@project}
-            project_hierarchy={@project_hierarchy}
-            validate={JS.push("validate-options")}
-            submit={JS.push("save-options")}
-            cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
-            form={to_form(@options_modal_assigns.changeset)}
+      <%= if @options_modal_assigns do %>
+        <.live_component
+          module={OptionsModalContent}
+          id="modal_content"
+          ctx={@ctx}
+          redirect_url={@options_modal_assigns.redirect_url}
+          revision={@options_modal_assigns.revision}
+          changeset={@options_modal_assigns.changeset}
+          project={@project}
+          project_hierarchy={@project_hierarchy}
+          validate={JS.push("validate-options")}
+          submit={JS.push("save-options")}
+          cancel={Modal.hide_modal("options_modal") |> JS.push("restart_options_modal")}
+          form={to_form(@options_modal_assigns.changeset)}
+        />
+      <% end %>
+      <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
+      </div>
+    </Modal.modal>
+
+    <div class="container mx-auto">
+      <div class="flex flex-row justify-between">
+        <FilterBox.render
+          card_header_text="Browse All Pages"
+          card_body_text=""
+          table_model={@table_model}
+          show_sort={false}
+          show_more_opts={true}
+        >
+          <TextSearch.render
+            id="text-search"
+            text={@options.text_search}
+            event_target="#text-search-input"
           />
-        <% end %>
-        <div id="options-modal-assigns-trigger" data-show_modal={Modal.show_modal("options_modal")}>
-        </div>
-      </Modal.modal>
 
-      <div class="container mx-auto">
-        <div class="flex flex-row justify-between">
-          <FilterBox.render
-            card_header_text="Browse All Pages"
-            card_body_text=""
-            table_model={@table_model}
-            show_sort={false}
-            show_more_opts={true}
-          >
-            <TextSearch.render
-              id="text-search"
-              text={@options.text_search}
-              event_target="#text-search-input"
-            />
-
-            <:extra_opts>
-              <form phx-change="change_graded" class="d-flex">
-                <select
-                  name="graded"
-                  id="select_graded"
-                  class="custom-select custom-select mr-2"
-                  style="width: 170px;"
+          <:extra_opts>
+            <form phx-change="change_graded" class="d-flex">
+              <select
+                name="graded"
+                id="select_graded"
+                class="custom-select custom-select mr-2"
+                style="width: 170px;"
+              >
+                <option value="" selected>Scoring Type</option>
+                <option
+                  :for={
+                    {value, str} <-
+                      graded_opts()
+                  }
+                  value={Kernel.to_string(value)}
+                  selected={@options.graded == value}
                 >
-                  <option value="" selected>Scoring Type</option>
-                  <option
-                    :for={
-                      {value, str} <-
-                        graded_opts()
-                    }
-                    value={Kernel.to_string(value)}
-                    selected={@options.graded == value}
-                  >
-                    <%= str %>
-                  </option>
-                </select>
-              </form>
+                  <%= str %>
+                </option>
+              </select>
+            </form>
 
-              <form phx-change="change_type" class="d-flex">
-                <select
-                  name="type"
-                  id="select_type"
-                  class="custom-select custom-select mr-2"
-                  style="width: 170px;"
+            <form phx-change="change_type" class="d-flex">
+              <select
+                name="type"
+                id="select_type"
+                class="custom-select custom-select mr-2"
+                style="width: 170px;"
+              >
+                <option value="" selected>Page Type</option>
+                <option
+                  :for={
+                    {value, str} <-
+                      type_opts()
+                  }
+                  value={Kernel.to_string(value)}
+                  selected={@options.basic == value}
                 >
-                  <option value="" selected>Page Type</option>
-                  <option
-                    :for={
-                      {value, str} <-
-                        type_opts()
-                    }
-                    value={Kernel.to_string(value)}
-                    selected={@options.basic == value}
-                  >
-                    <%= str %>
-                  </option>
-                </select>
-              </form>
-            </:extra_opts>
-          </FilterBox.render>
-        </div>
+                  <%= str %>
+                </option>
+              </select>
+            </form>
+          </:extra_opts>
+        </FilterBox.render>
+      </div>
 
-        <div class="dropdown btn-group flex justify-end">
+      <div class="dropdown btn-group flex justify-end">
+        <button
+          type="button"
+          class="btn btn-primary dropdown-toggle"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          Create <i class="fa-solid fa-caret-down ml-2"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-right">
           <button
             type="button"
-            class="btn btn-primary dropdown-toggle"
-            data-bs-toggle="dropdown"
-            aria-haspopup="true"
-            aria-expanded="false"
+            class="dropdown-item"
+            phx-click="create_page"
+            phx-value-type="Unscored"
           >
-            Create <i class="fa-solid fa-caret-down ml-2"></i>
+            Practice Page
           </button>
-          <div class="dropdown-menu dropdown-menu-right">
+          <button type="button" class="dropdown-item" phx-click="create_page" phx-value-type="Scored">
+            Scored Assessment
+          </button>
+          <%= if Oli.Features.enabled?("adaptivity") do %>
             <button
               type="button"
               class="dropdown-item"
               phx-click="create_page"
-              phx-value-type="Unscored"
+              phx-value-type="Adaptive"
             >
-              Practice Page
+              Adaptive Page
             </button>
-            <button
-              type="button"
-              class="dropdown-item"
-              phx-click="create_page"
-              phx-value-type="Scored"
-            >
-              Scored Assessment
-            </button>
-            <%= if Oli.Features.enabled?("adaptivity") do %>
-              <button
-                type="button"
-                class="dropdown-item"
-                phx-click="create_page"
-                phx-value-type="Adaptive"
-              >
-                Adaptive Page
-              </button>
-            <% end %>
-          </div>
+          <% end %>
         </div>
-
-        <PagedTable.render
-          filter={@options.text_search}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={limit()}
-          scrollable={false}
-          no_records_message="There are no pages in this project"
-        />
       </div>
+
+      <PagedTable.render
+        filter={@options.text_search}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={limit()}
+        scrollable={false}
+        no_records_message="There are no pages in this project"
+      />
     </div>
     """
   end

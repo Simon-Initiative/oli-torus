@@ -561,12 +561,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             class="text-right dark:text-white text-opacity-90 text-xs font-semibold"
           >
             <%= if is_nil(@lesson.settings),
-              do: Utils.coalesce(@lesson.end_date, @lesson.start_date) |> Utils.days_difference(@ctx),
+              do:
+                Utils.coalesce(@lesson.end_date, @lesson.start_date)
+                |> Utils.days_difference(@lesson.scheduling_type, @ctx),
               else:
                 Utils.coalesce(@lesson.settings.end_date, @lesson.end_date)
                 |> Utils.coalesce(@lesson.settings.start_date)
                 |> Utils.coalesce(@lesson.start_date)
-                |> Utils.days_difference(@ctx) %>
+                |> Utils.days_difference(@lesson.settings.scheduling_type, @ctx) %>
           </div>
         </div>
       </div>

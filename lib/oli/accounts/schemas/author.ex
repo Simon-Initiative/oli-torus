@@ -12,9 +12,6 @@ defmodule Oli.Accounts.Author do
   import Ecto.Changeset
   import Oli.Utils
 
-  import PowInvitation.Ecto.Schema,
-    only: [invitation_token_changeset: 1]
-
   alias Oli.Accounts.SystemRole
 
   schema "authors" do
@@ -95,6 +92,18 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc """
+  Creates a changeset that is used in the SSO context
+  """
+
+  def sso_changeset(author, attrs \\ %{}) do
+    author
+    |> cast(attrs, [:name, :email])
+    |> default_system_role()
+    |> lowercase_email()
+    |> put_email_confirmed_at()
+  end
+
+  @doc """
   Creates a changeset that is used to update an author's profile
   """
 
@@ -112,13 +121,6 @@ defmodule Oli.Accounts.Author do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
-  end
-
-  @spec invite_changeset(Author.t() | Ecto.Changeset.t(), integer(), map()) :: Ecto.Changeset.t()
-  def invite_changeset(user_or_changeset, nil, attrs) do
-    user_or_changeset
-    |> Ecto.Changeset.cast(attrs, [:name, :email, :invitation_token, :given_name, :family_name])
-    |> invitation_token_changeset()
   end
 
   def invite_changeset(user_or_changeset, invited_by, attrs) do

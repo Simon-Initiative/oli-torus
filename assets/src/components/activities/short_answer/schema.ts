@@ -7,6 +7,7 @@ export const isInputType = (s: string): s is InputType =>
 export interface ShortAnswerModelSchema extends ActivityModelSchema {
   stem: Stem;
   inputType: InputType;
+  submitAndCompare?: boolean;
   authoring: {
     parts: Part[];
     transformations: Transformation[];

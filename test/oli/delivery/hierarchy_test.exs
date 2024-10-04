@@ -3,8 +3,13 @@ defmodule Oli.Delivery.HierarchyTest do
 
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Resources.ResourceType
+
+  import Oli.Factory
 
   describe "hierarchy node" do
     setup do
@@ -257,5 +262,245 @@ defmodule Oli.Delivery.HierarchyTest do
              |> Enum.at(0)
              |> Map.get(:resource_id) == nested_page1.id
     end
+  end
+
+  describe "contained_scheduling_types/1" do
+    setup [:create_elixir_project]
+
+    test "returns the correct data per container id", %{
+      section: section,
+      root_container: root_container,
+      unit_1: unit_1,
+      unit_2: unit_2,
+      module_1: module_1,
+      section_1: section_1
+    } do
+      full_hierarchy =
+        SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
+          Hierarchy.full_hierarchy(section)
+        end)
+
+      scheduling_types =
+        Hierarchy.contained_scheduling_types(full_hierarchy)
+
+      assert Map.get(scheduling_types, root_container.resource_id) |> Enum.sort() == [
+               :due_by,
+               :inclass_activity,
+               :read_by
+             ]
+
+      assert Map.get(scheduling_types, unit_1.resource_id) |> Enum.sort() == [
+               :due_by,
+               :read_by
+             ]
+
+      assert Map.get(scheduling_types, unit_2.resource_id) |> Enum.sort() == [
+               :due_by,
+               :read_by
+             ]
+
+      assert Map.get(scheduling_types, module_1.resource_id) |> Enum.sort() == [
+               :due_by,
+               :read_by
+             ]
+
+      assert Map.get(scheduling_types, section_1.resource_id) |> Enum.sort() == [
+               :due_by
+             ]
+    end
+  end
+
+  defp create_elixir_project(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    #  Root Container:
+    #       |_ Page 1 (scheduling_type = :inclass_activity)
+    #       |_ Unit 1:
+    #         |_ Page 2 (scheduling_type = :due_by)
+    #         |_ Page 3 (scheduling_type = :read_by)
+    #       |_ Unit 2:
+    #         |_ Module 1:
+    #           |_ Page 4 (scheduling_type = :read_by)
+    #           |_ Page 5 (scheduling_type = :read_by)
+    #           |_ Section 1:
+    #             |_ Page 6 (scheduling_type = :due_by)
+    #             |_ Page 7 (scheduling_type = :due_by)
+
+    # revisions...
+
+    ## pages...
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 1"
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 2"
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 3"
+      )
+
+    page_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 4"
+      )
+
+    page_5_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 5"
+      )
+
+    page_6_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 6"
+      )
+
+    page_7_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 7"
+      )
+
+    ## modules...
+
+    section_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_6_revision.resource_id, page_7_revision.resource_id],
+        title: "Section 1"
+      })
+
+    module_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [
+          section_1_revision.resource_id,
+          page_4_revision.resource_id,
+          page_5_revision.resource_id
+        ],
+        title: "How to use this course"
+      })
+
+    ## units...
+    unit_1_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [page_2_revision.resource_id, page_3_revision.resource_id],
+        title: "Introduction"
+      })
+
+    unit_2_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [module_1_revision.resource_id],
+        title: "OTP"
+      })
+
+    ## root container...
+    root_container_revision =
+      insert(:revision, %{
+        resource_type_id: ResourceType.get_id_by_type("container"),
+        children: [
+          page_1_revision.resource_id,
+          unit_1_revision.resource_id,
+          unit_2_revision.resource_id
+        ],
+        title: "Root Container"
+      })
+
+    all_revisions =
+      [
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        page_4_revision,
+        page_5_revision,
+        page_6_revision,
+        page_7_revision,
+        section_1_revision,
+        module_1_revision,
+        unit_1_revision,
+        unit_2_revision,
+        root_container_revision
+      ]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{
+        project: project,
+        root_resource_id: root_container_revision.resource_id
+      })
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: project,
+        title: "The best course ever!",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    # update page's scheduling types
+    Sections.get_section_resource(section.id, page_1_revision.resource_id)
+    |> Sections.update_section_resource(%{scheduling_type: :inclass_activity})
+
+    Sections.get_section_resource(section.id, page_2_revision.resource_id)
+    |> Sections.update_section_resource(%{scheduling_type: :due_by})
+
+    Sections.get_section_resource(section.id, page_6_revision.resource_id)
+    |> Sections.update_section_resource(%{scheduling_type: :due_by})
+
+    Sections.get_section_resource(section.id, page_7_revision.resource_id)
+    |> Sections.update_section_resource(%{scheduling_type: :due_by})
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      page_5: page_4_revision,
+      page_6: page_4_revision,
+      page_7: page_4_revision,
+      section_1: section_1_revision,
+      module_1: module_1_revision,
+      unit_1: unit_1_revision,
+      unit_2: unit_2_revision,
+      root_container: root_container_revision
+    }
   end
 end

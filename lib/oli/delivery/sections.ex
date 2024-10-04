@@ -4580,7 +4580,8 @@ defmodule Oli.Delivery.Sections do
       select_merge: %{
         numbering_index: sr.numbering_index,
         start_date: coalesce(se.start_date, sr.start_date),
-        end_date: coalesce(se.end_date, sr.end_date)
+        end_date: coalesce(se.end_date, sr.end_date),
+        scheduling_type: sr.scheduling_type
       }
     )
     |> where(^graded_filter)
@@ -5326,5 +5327,23 @@ defmodule Oli.Delivery.Sections do
          }}
       )
     )
+  end
+
+  @doc """
+  Returns all active open and free sections that a given user is enrolled with the given context roles
+  """
+  def get_open_and_free_active_sections_by_roles(user_id, context_roles) do
+    context_role_ids = Enum.map(context_roles, & &1.id)
+
+    from(s in Section,
+      join: e in assoc(s, :enrollments),
+      join: ecr in EnrollmentContextRole,
+      on: e.id == ecr.enrollment_id,
+      where: e.user_id == ^user_id,
+      where: s.open_and_free == true,
+      where: s.status == :active,
+      where: ecr.context_role_id in ^context_role_ids
+    )
+    |> Repo.all()
   end
 end

@@ -37,7 +37,7 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
     end
   end
 
-  describe "days_difference/1" do
+  describe "days_difference/3" do
     setup do
       stub_real_current_time()
 
@@ -52,25 +52,30 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       ]
     end
 
-    test "returns 'Due Today' when the resource end date is today", %{context: ctx} do
+    test "returns the correct label when the resource end date is today", %{context: ctx} do
       today = Oli.DateTime.utc_now()
-      assert Utils.days_difference(today, ctx) == "Due Today"
+      assert Utils.days_difference(today, :due_by, ctx) == "Due Today"
+      assert Utils.days_difference(today, :read_by, ctx) == "Suggested for Today"
     end
 
     test "returns '1 day left' when the resource end date is tomorrow", %{context: ctx} do
       tomorrow = Oli.DateTime.utc_now() |> Timex.shift(days: 1)
-      assert Utils.days_difference(tomorrow, ctx) == "1 day left"
+      assert Utils.days_difference(tomorrow, :due_by, ctx) == "1 day left"
     end
 
-    test "returns 'Past Due by a day' when the resource end date was yesterday", %{context: ctx} do
+    test "returns the correct label when the resource end date was yesterday", %{context: ctx} do
       yesterday = Oli.DateTime.utc_now() |> Timex.shift(days: -1)
-      assert Utils.days_difference(yesterday, ctx) == "Past Due by a day"
+      assert Utils.days_difference(yesterday, :due_by, ctx) == "Past Due by a day"
+      assert Utils.days_difference(yesterday, :read_by, ctx) == "Past suggested date by a day"
     end
 
-    test "returns 'Past Due by X days' when the resource end date was X days ago", %{context: ctx} do
+    test "returns the correct label when the resource end date was X days ago", %{context: ctx} do
       days_ago = 5
       past_date = Oli.DateTime.utc_now() |> Timex.shift(days: -days_ago)
-      assert Utils.days_difference(past_date, ctx) == "Past Due by #{days_ago} days"
+      assert Utils.days_difference(past_date, :due_by, ctx) == "Past Due by #{days_ago} days"
+
+      assert Utils.days_difference(past_date, :read_by, ctx) ==
+               "Past suggested date by #{days_ago} days"
     end
 
     test "returns 'X days left' when the resource end date is X days in the future", %{
@@ -78,10 +83,10 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
     } do
       days_ahead = 7
       future_date = Oli.DateTime.utc_now() |> Timex.shift(days: days_ahead)
-      assert Utils.days_difference(future_date, ctx) == "#{days_ahead} days left"
+      assert Utils.days_difference(future_date, :due_by, ctx) == "#{days_ahead} days left"
     end
 
-    test "still returns 'Past Due by a day' when the resource end date was yesterday but less than 24 hours ago",
+    test "still returns the correct label when the resource end date was yesterday but less than 24 hours ago",
          %{
            context: ctx
          } do
@@ -90,14 +95,15 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
 
       # The end date is 2:59:59 AM in UTC, which is 11:59:59 PM the 23th in Montevideo
       previous_day = ~U[2024-06-24 02:59:59Z]
-      assert Utils.days_difference(previous_day, ctx) == "Past Due by a day"
+      assert Utils.days_difference(previous_day, :due_by, ctx) == "Past Due by a day"
+      assert Utils.days_difference(previous_day, :read_by, ctx) == "Past suggested date by a day"
     end
 
     test "still returns 'X days left' when the resource end date cannot be localized" do
       ctx = nil
       days_ahead = 7
       future_date = Oli.DateTime.utc_now() |> Timex.shift(days: days_ahead)
-      assert Utils.days_difference(future_date, ctx) == "#{days_ahead} days left"
+      assert Utils.days_difference(future_date, :due_by, ctx) == "#{days_ahead} days left"
     end
   end
 

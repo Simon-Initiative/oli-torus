@@ -15,7 +15,7 @@ export const BibEntryView: React.FC<BibEntryViewProps> = (props: BibEntryViewPro
       template: 'apa',
       lang: 'en-US',
       // include any note, used for URL in legacy bib entries
-      append: (entry: any) => ` ${entry.note}`,
+      append: (entry: any) => `${entry.note ? ' ' + entry.note : ''}`,
     });
   };
 

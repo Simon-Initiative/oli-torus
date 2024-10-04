@@ -72,7 +72,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="overview container mx-auto p-8">
+    <div class="overview">
       <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"
@@ -162,7 +162,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
             <.link
               :if={@project.has_experiments}
-              class="btn btn-link pl-0"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
             >
               Manage Experiments
@@ -218,7 +218,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
           <div class="mt-5">
             <div>
-              <.link navigate={~p"/workspaces/course_author/#{@project.slug}/alternatives"}>
+              <.link
+                navigate={~p"/workspaces/course_author/#{@project.slug}/alternatives"}
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+              >
                 Manage Alternatives
               </.link>
             </div>
@@ -358,7 +361,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <%= if @is_admin do %>
           <div class="flex items-center">
             <.link
-              class="btn btn-link action-button"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
               href={~p"/workspaces/course_author/#{@project.slug}/index_csv"}
             >
               Bulk Resource Attribute Edit
@@ -372,7 +375,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <%= button("Duplicate",
               to: Routes.project_path(@socket, :clone_project, @project),
               method: :post,
-              class: "btn btn-link action-button",
+              class:
+                "text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2",
               data_confirm: "Are you sure you want to duplicate this project?"
             ) %>
           </div>
@@ -391,7 +395,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <div :if={@is_admin} class="flex items-center">
           <%= case @latest_publication do %>
             <% nil -> %>
-              <.button variant={:link} class="btn btn-link action-button !px-3" disabled>
+              <.button
+                variant={:link}
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
+                disabled
+              >
                 Datashop Analytics
               </.button>
               <span>
@@ -399,7 +407,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               </span>
             <% _pub -> %>
               <.link
-                class="btn btn-link action-button"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
                 navigate={~p"/workspaces/course_author/#{@project.slug}/datashop"}
               >
                 Datashop Analytics
@@ -411,7 +419,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         <div class="flex items-center mt-8">
           <button
             type="button"
-            class="btn btn-link text-danger action-button"
+            class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
             onclick="OLI.showModal('delete-package-modal')"
           >
             Delete
@@ -633,7 +641,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp datashop_link(assigns) do
     ~H"""
-    <a class="text-primary external" href="https://pslcdatashop.web.cmu.edu/" target="_blank">
+    <a
+      class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline py-2 external"
+      href="https://pslcdatashop.web.cmu.edu/"
+      target="_blank"
+    >
       datashop
     </a>
     """
