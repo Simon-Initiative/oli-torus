@@ -80,16 +80,26 @@ defmodule OliWeb.Workspaces.Utils do
     <div class="w-full relative">
       <.button
         id={"button_for_#{@item.view}"}
-        class="w-full h-[35px] px-0 flex-col justify-center items-center flex hover:no-underline"
+        class={
+          "w-full h-[35px] px-0 flex-col justify-center items-center flex hover:no-underline hover:bg-[#F5F5F6] dark:hover:bg-[#141416] rounded-lg
+          #{if(!@sidebar_expanded and active_view_in_children?(@item.children, @active_view),
+          do: "bg-[#E6E9F2] dark:bg-[#222126] hover:!bg-[#E6E9F2] dark:hover:!bg-[#222126]")}"
+        }
+        xphx-mouseover={
+          !@sidebar_expanded &&
+            JS.hide(to: "div[role='expandable_submenu'") |> JS.show(to: "##{@item_id}_children")
+        }
         phx-click={
-          JS.toggle(to: "##{@item_id}_children")
-          |> toggle_class("-rotate-90", to: "##{@item_id}_expand_icon")
-          |> JS.remove_class("rotate-0", to: "##{@item_id}_expand_icon")
+          @sidebar_expanded &&
+            JS.toggle(to: "##{@item_id}_children")
+            |> toggle_class("-rotate-90", to: "##{@item_id}_expand_icon")
+            |> JS.remove_class("rotate-0", to: "##{@item_id}_expand_icon")
         }
       >
         <.nav_link_content
           is_active={@active_view == @item.view}
           sidebar_expanded={@sidebar_expanded}
+          additional_classes={if(!@sidebar_expanded, do: "pointer-events-none")}
           sub_menu_item={@item}
           active_view={@active_view}
         />
@@ -97,7 +107,7 @@ defmodule OliWeb.Workspaces.Utils do
       <div
         role="expandable_submenu"
         id={"#{@item_id}_children"}
-        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
+        class={"pl-4 #{if @sidebar_expanded and active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
       >
         <.sub_menu_item
@@ -117,9 +127,13 @@ defmodule OliWeb.Workspaces.Utils do
   attr :is_active, :boolean, default: false
   attr :sidebar_expanded, :boolean, default: true
   attr :badge, :integer, default: nil
-  attr :on_active_bg, :string, default: "bg-[#E6E9F2] dark:bg-[#202022]"
+
+  attr :on_active_bg, :string,
+    default: "bg-[#E6E9F2] dark:bg-[#222126] hover:!bg-[#E6E9F2] hover:dark:!bg-[#222126]"
+
   attr :sub_menu_item, :map
   attr :active_view, :atom, default: nil
+  attr :additional_classes, :string, default: ""
 
   def nav_link_content(assigns) do
     item_id = assigns.sub_menu_item.text |> String.downcase() |> String.replace(" ", "_")
@@ -127,8 +141,9 @@ defmodule OliWeb.Workspaces.Utils do
 
     ~H"""
     <div class={[
-      "w-full px-3 py-2 dark:hover:bg-[#404044] hover:bg-[#D9D9DD] rounded-lg justify-start items-center gap-3 inline-flex",
-      if(@is_active, do: @on_active_bg)
+      "w-full px-3 py-2 hover:bg-[#F5F5F6] dark:hover:bg-[#141416] rounded-lg justify-start items-center gap-3 inline-flex",
+      if(@is_active, do: @on_active_bg),
+      @additional_classes
     ]}>
       <div :if={@sub_menu_item.icon} class="w-5 flex items-center justify-center">
         <%= apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns]) %>
