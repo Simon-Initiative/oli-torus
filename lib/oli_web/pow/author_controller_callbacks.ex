@@ -27,7 +27,7 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
     ControllerCallbacks.before_respond(
       Pow.Phoenix.SessionController,
       :create,
-      {:ok, conn},
+      {:error, conn},
       config
     )
   end
