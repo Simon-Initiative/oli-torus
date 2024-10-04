@@ -5244,6 +5244,22 @@ table.table-striped tbody tr:nth-child(even) {
   height: calc(100vh - 56px);
 }
 
+.h-\[calc\(100vh-var\(--header-height\)-var\(--toggler-button-height\)-var\(--main-links-height\)-var\(--footer-buttons-height\)\)\] {
+  height: calc(100vh - var(--header-height) - var(--toggler-button-height) - var(--main-links-height) - var(--footer-buttons-height));
+}
+
+.h-\[var\(--footer-buttons-height\)\] {
+  height: var(--footer-buttons-height);
+}
+
+.h-\[var\(--header-height\)\] {
+  height: var(--header-height);
+}
+
+.h-\[var\(--main-links-height\)\] {
+  height: var(--main-links-height);
+}
+
 .h-auto {
   height: auto;
 }
@@ -12737,6 +12753,8 @@ a.download::after {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+  width: 0px;
+  background: transparent;
 }
 
 .scrollbar-hide {
