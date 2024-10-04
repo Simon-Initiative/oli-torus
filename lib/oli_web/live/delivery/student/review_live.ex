@@ -24,6 +24,9 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         %{assigns: %{section: section}} = socket
       ) do
 
+    is_system_admin = socket.assigns.is_system_admin
+    current_user = Map.get(socket.assigns, :current_user)
+
     if connected?(socket) do
 
       user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
@@ -42,7 +45,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       page_revision = page_context.page
 
-      if PageLifecycle.can_access_attempt?(attempt_guid, user, section) and
+      if (is_system_admin or PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
            review_allowed?(page_context) do
         socket =
           socket
