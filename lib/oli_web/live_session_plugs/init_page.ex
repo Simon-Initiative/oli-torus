@@ -8,7 +8,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   alias OliWeb.Router.Helpers, as: Routes
 
   def on_mount(:set_prologue_context, %{"revision_slug" => revision_slug}, _session, socket) do
-
     %{section: section, current_user: current_user} = socket.assigns
 
     page_context =
@@ -30,7 +29,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
   end
 
   def on_mount(:set_page_context, %{"revision_slug" => revision_slug}, _session, socket) do
-
     %{section: section, current_user: current_user, datashop_session_id: datashop_session_id} =
       socket.assigns
 

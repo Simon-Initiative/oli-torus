@@ -63,7 +63,6 @@ defmodule Oli.Plugs.MaybeGatedResource do
           end
       end
     end
-
   end
 
   defp gated_resource_unavailable(conn, section, revision, blocking_gates) do

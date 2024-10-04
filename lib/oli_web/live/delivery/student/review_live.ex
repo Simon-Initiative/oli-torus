@@ -23,29 +23,35 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         session,
         %{assigns: %{section: section}} = socket
       ) do
-
     is_system_admin = socket.assigns.is_system_admin
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
-
       user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
       socket = assign(socket, page_context: page_context)
 
-      socket = if Map.get(socket.assigns, :user_token) == nil do
-        assign(socket, user_token: "")
-      else
-        socket
-      end
-      {:cont, socket} = OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
-      {:cont, socket} = OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
-      {:cont, socket} = OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
+      socket =
+        if Map.get(socket.assigns, :user_token) == nil do
+          assign(socket, user_token: "")
+        else
+          socket
+        end
+
+      {:cont, socket} =
+        OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
+
+      {:cont, socket} =
+        OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
+
+      {:cont, socket} =
+        OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
 
       page_revision = page_context.page
 
-      if (is_system_admin or PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
+      if (is_system_admin or
+            PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
            review_allowed?(page_context) do
         socket =
           socket
