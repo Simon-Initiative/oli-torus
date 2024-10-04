@@ -1,20 +1,37 @@
 import React from 'react';
+import { useState } from 'react';
 
 export interface SidePanelProps {
   position: string;
   panelState: any;
   onToggle: any;
   children?: any;
+  initialSidebarExpanded?: boolean;
 }
 
 export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
-  const { position, panelState, onToggle, children } = props;
+  const { position, panelState, onToggle, children, initialSidebarExpanded } = props;
+  const [sidebarExpanded, setSidebarExpanded] = useState(initialSidebarExpanded);
+
+  const handleSidebarExpanded = () => {
+    setSidebarExpanded((prev) => !prev);
+  };
+
   return (
     <>
       <button
+        role="update sidebar state on React"
+        className="hidden"
+        onClick={() => {
+          handleSidebarExpanded();
+        }}
+      ></button>
+      <button
         className={`aa-panel-side-toggle ${position}${
           panelState[position] ? ' open' : ''
-        } btn btn-secondary btn-sm m-0 p-0 d-flex justify-content-center align-items-center`}
+        } btn btn-secondary btn-sm m-0 p-0 d-flex justify-content-center align-items-center ${
+          !sidebarExpanded ? '' : 'ml-[135px]'
+        }`}
         onClick={() => onToggle()}
       >
         <span className="bg-circle">
@@ -40,7 +57,11 @@ export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
           )}
         </span>
       </button>
-      <section className={`aa-panel ${position}-panel${panelState[position] ? ' open' : ''}`}>
+      <section
+        className={`aa-panel ${position}-panel${panelState[position] ? ' open' : ''} ${
+          !sidebarExpanded ? '' : 'ml-[135px]'
+        }`}
+      >
         <div className="aa-panel-inner">{children}</div>
       </section>
     </>

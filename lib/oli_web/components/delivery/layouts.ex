@@ -221,7 +221,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <button
       role="toggle sidebar"
-      phx-click={JS.patch(path_for(@active, @section, @preview_mode, !@sidebar_expanded))}
+      phx-click={
+        JS.patch(path_for(@active, @section, @preview_mode, !@sidebar_expanded))
+        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
+      }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
@@ -246,6 +249,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       phx-click={
         JS.patch(toggled_workspace_path(@sidebar_expanded, @uri))
         |> JS.hide(to: "div[role='expandable_submenu']")
+        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"

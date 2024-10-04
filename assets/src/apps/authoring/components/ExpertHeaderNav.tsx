@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -20,10 +21,11 @@ interface HeaderNavProps {
   isVisible: boolean;
   authoringContainer: React.RefObject<HTMLElement>;
   onToggleExport?: () => void;
+  initialSidebarExpanded?: boolean;
 }
 
 const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
-  const { panelState, isVisible } = props;
+  const { panelState, isVisible, initialSidebarExpanded } = props;
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
   const paths = useSelector(selectPaths);
@@ -35,6 +37,12 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
+
+  const [sidebarExpanded, setSidebarExpanded] = useState(initialSidebarExpanded);
+
+  const handleSidebarExpanded = () => {
+    setSidebarExpanded((prev) => !prev);
+  };
 
   const handleReadOnlyClick = () => {
     // TODO: show a modal offering to confirm if you want to disable read only
@@ -54,13 +62,20 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
       <nav
         className={`aa-header-nav top-panel overflow-hidden${
           isVisible ? ' open' : ''
-        } d-flex aa-panel-section-title-bar`}
+        } d-flex aa-panel-section-title-bar ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
         style={{
           alignItems: 'center',
           left: panelState['left'] ? '335px' : '65px', // 335 = PANEL_SIDE_WIDTH + 65px (torus sidebar width)
           right: panelState['right'] ? PANEL_SIDE_WIDTH : 0,
         }}
       >
+        <button
+          role="update sidebar state on React"
+          className="hidden"
+          onClick={() => {
+            handleSidebarExpanded();
+          }}
+        ></button>
         <div className="btn-toolbar" role="toolbar">
           <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
             <UndoRedoToolbar />
