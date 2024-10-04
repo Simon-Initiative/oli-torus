@@ -39,7 +39,7 @@ defmodule OliWeb.LiveSessionPlugs.AssignActiveMenu do
             |> Enum.reject(&(&1 == "Live"))
             |> Enum.map(&String.downcase/1)
             |> Enum.join("_")
-            |> String.to_existing_atom()
+            |> String.to_atom()
 
           assign(socket, active_workspace: :course_author, active_view: active_view)
 
