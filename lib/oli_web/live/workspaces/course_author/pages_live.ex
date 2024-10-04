@@ -658,7 +658,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
                offset: socket.assigns.offset,
                text_search: socket.assigns.options.text_search,
                basic: socket.assigns.options.basic,
-               graded: socket.assigns.options.graded
+               graded: socket.assigns.options.graded,
+               sidebar_expanded: socket.assigns.sidebar_expanded
              },
              changes
            )
