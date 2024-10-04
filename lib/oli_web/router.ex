@@ -10,6 +10,9 @@ defmodule OliWeb.Router do
 
   import Oli.Plugs.EnsureAdmin
 
+  @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
+  @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
+
   ### BASE PIPELINES ###
   # We have five "base" pipelines: :browser, :api, :lti, :skip_csrf_protection, and :sso
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
@@ -68,12 +71,11 @@ defmodule OliWeb.Router do
   ### PIPELINE EXTENSIONS ###
   # Extend the base pipelines specific routes
 
+  # Note: authoring and delivery pipelines must remain separate and should
+  # not be combined in a routes pipelines
+
   pipeline :authoring do
     plug(Oli.Plugs.SetDefaultPow, :author)
-
-    plug(PowPersistentSession.Plug.Cookie,
-      persistent_session_cookie_key: @author_persistent_session_cookie_key
-    )
 
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
@@ -82,11 +84,62 @@ defmodule OliWeb.Router do
   pipeline :delivery do
     plug(Oli.Plugs.SetDefaultPow, :user)
 
+    plug(Oli.Plugs.SetVrAgentValue)
+  end
+
+  # Ensure that we have a logged in user
+  pipeline :authoring_protected do
+    plug(:authoring)
+
+    plug(PowPersistentSession.Plug.Cookie,
+      persistent_session_cookie_key: @author_persistent_session_cookie_key
+    )
+
+    plug(PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
+
+    # plug(OliWeb.Plugs.RequireAuthenticated,
+    #   error_handler: Pow.Phoenix.PlugErrorHandler
+    # )
+    plug(Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
+    )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
+  end
+
+  pipeline :delivery_protected do
+    plug(:delivery)
+
+
     plug(PowPersistentSession.Plug.Cookie,
       persistent_session_cookie_key: @user_persistent_session_cookie_key
     )
 
-    plug(Oli.Plugs.SetVrAgentValue)
+    plug(PowAssent.Plug.Reauthorization,
+      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
+    )
+
+    # plug(OliWeb.Plugs.RequireAuthenticated,
+    #   error_handler: Pow.Phoenix.PlugErrorHandler
+    # )
+    plug(Pow.Plug.RequireAuthenticated,
+      error_handler: Pow.Phoenix.PlugErrorHandler
+    )
+
+    plug(OliWeb.EnsureUserNotLockedPlug)
+
+    plug(OliWeb.Plugs.PreloadPlatformRoles)
+
+    plug(Oli.Plugs.RemoveXFrameOptions)
+
+    plug(:delivery_layout)
+  end
+
+  # Ensure that the user logged in is an admin user
+  pipeline :admin do
+    plug(Oli.Plugs.RequireAdmin)
   end
 
   # set the layout to be workspace
@@ -128,54 +181,6 @@ defmodule OliWeb.Router do
 
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
-  end
-
-  # Ensure that we have a logged in user
-  pipeline :delivery_protected do
-    plug(:delivery)
-
-    plug(PowAssent.Plug.Reauthorization,
-      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    )
-
-    # plug(OliWeb.Plugs.RequireAuthenticated,
-    #   error_handler: Pow.Phoenix.PlugErrorHandler
-    # )
-    plug(Pow.Plug.RequireAuthenticated,
-      error_handler: Pow.Phoenix.PlugErrorHandler
-    )
-
-    plug(OliWeb.EnsureUserNotLockedPlug)
-
-    plug(Oli.Plugs.RemoveXFrameOptions)
-
-    plug(:delivery_layout)
-  end
-
-  pipeline :authoring_and_delivery do
-    plug(:delivery)
-    plug(OliWeb.EnsureUserNotLockedPlug)
-    plug(:authoring)
-    plug(OliWeb.EnsureUserNotLockedPlug)
-  end
-
-  pipeline :authoring_protected do
-    plug(:authoring)
-
-    plug(PowAssent.Plug.Reauthorization,
-      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    )
-
-    plug(OliWeb.Plugs.RequireAuthenticated,
-      error_handler: Pow.Phoenix.PlugErrorHandler
-    )
-
-    plug(OliWeb.EnsureUserNotLockedPlug)
-  end
-
-  # Ensure that the user logged in is an admin user
-  pipeline :admin do
-    plug(Oli.Plugs.RequireAdmin)
   end
 
   # parse url encoded forms
@@ -797,15 +802,14 @@ defmodule OliWeb.Router do
     get("/authorize_redirect", LtiController, :authorize_redirect)
   end
 
-  ### Workspaces
+  ### Authoring Workspaces
   scope "/workspaces/", OliWeb.Workspaces do
-    pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
+    pipe_through([:browser, :authoring_protected, :set_sidebar])
 
-    live_session :workspaces,
+    live_session :authoring_workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
-        {OliWeb.Pow.Phoenix.MountUser, :current_user},
         {OliWeb.Pow.Phoenix.MountUser, :current_author},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
@@ -837,7 +841,25 @@ defmodule OliWeb.Router do
         live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
       end
+    end
+  end
 
+  ### Delivery Workspaces
+  scope "/workspaces/", OliWeb.Workspaces do
+    pipe_through([:browser, :delivery_protected, :set_sidebar])
+
+    live_session :delivery_workspaces,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.Pow.Phoenix.MountUser, :current_user},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
+      ] do
       scope "/instructor", Instructor do
         live("/", IndexLive)
         live("/:section_slug/:view", DashboardLive)

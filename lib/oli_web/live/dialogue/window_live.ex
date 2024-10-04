@@ -76,6 +76,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         %{"current_user_id" => current_user_id, "section_slug" => section_slug} = session,
         socket
       ) do
+    current_user = Oli.Accounts.get_user!(current_user_id)
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
 
     if Sections.assistant_enabled?(section) do
@@ -86,14 +87,14 @@ defmodule OliWeb.Dialogue.WindowLive do
          enabled: true,
          minimized: true,
          dialogue:
-           build_dialogue(section, project, session["revision_id"], current_user_id, self()),
+           build_dialogue(section, project, session["revision_id"], current_user.id, self()),
          form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
          streaming: false,
          allow_submission?: true,
          active_message: nil,
          function_call: nil,
          title: "Dot",
-         current_user: Oli.Accounts.get_user!(current_user_id),
+         current_user: current_user,
          height: 500,
          width: 400,
          section: section,

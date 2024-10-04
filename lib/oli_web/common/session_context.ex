@@ -27,6 +27,8 @@ defmodule OliWeb.Common.SessionContext do
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Common.FormatDateTime
 
+  alias Oli.Repo
+
   @enforce_keys [
     :browser_timezone,
     :local_tz,
@@ -73,11 +75,8 @@ defmodule OliWeb.Common.SessionContext do
         nil ->
           nil
 
-        %Author{id: author_id} ->
-          case Accounts.get_author(author_id) do
-            {:ok, author} -> author
-            _ -> nil
-          end
+        %Author{} = author ->
+          author
       end
 
     user =
@@ -85,11 +84,8 @@ defmodule OliWeb.Common.SessionContext do
         nil ->
           nil
 
-        %User{id: user_id} ->
-          case Accounts.get_user(user_id) do
-            {:ok, user} -> user
-            _ -> nil
-          end
+        %User{} = user ->
+          user |> Repo.preload(:platform_roles)
       end
 
     %__MODULE__{
@@ -137,7 +133,7 @@ defmodule OliWeb.Common.SessionContext do
             nil
 
           user_id ->
-            case Accounts.get_user(user_id) do
+            case Accounts.get_user(user_id, [:platform_roles]) do
               {:ok, user} ->
                 user
 
@@ -154,15 +150,5 @@ defmodule OliWeb.Common.SessionContext do
       user: user,
       is_liveview: true
     }
-  end
-
-  def set_user_author(%__MODULE__{} = ctx, user, author) do
-    ctx
-    |> Map.put(:user, user)
-    |> Map.put(:author, author)
-    |> Map.put(
-      :local_tz,
-      FormatDateTime.tz_preference_or_default(author, user, ctx.browser_timezone)
-    )
   end
 end

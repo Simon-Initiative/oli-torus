@@ -1,6 +1,6 @@
 <div class="h-screen flex flex-col overscroll-none">
   <Components.Delivery.Layouts.header
-    ctx={@ctx}
+    ctx={dbg(@ctx)}
     is_system_admin={assigns[:is_system_admin] || false}
     section={@section}
     preview_mode={@preview_mode}
@@ -32,7 +32,10 @@
       </div>
       <%= if @section do %>
         <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
-          session: %{"section_slug" => @section.slug},
+          session: %{
+            "section_slug" => @section.slug,
+            "current_user_id" => @current_user.id
+          },
           id: "dialogue-window"
         ) %>
       <% end %>

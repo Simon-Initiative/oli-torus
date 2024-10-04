@@ -421,8 +421,6 @@ defmodule OliWeb.LtiController do
 
                 # sign current user in and redirect to home page
                 conn
-                |> Plug.Conn.put_private(:pow_persistent_session_store, true)
-                |> PowPersistentSession.Plug.create(user)
                 |> Pow.Plug.create(user)
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end

@@ -115,6 +115,7 @@
         <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
           session: %{
             "section_slug" => @section.slug,
+            "current_user_id" => @current_user.id,
             "resource_id" => @page_context.page.resource_id,
             "revision_id" => @page_context.page.id,
             "is_page" => true
