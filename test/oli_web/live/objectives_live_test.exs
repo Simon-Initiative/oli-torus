@@ -677,7 +677,7 @@ defmodule OliWeb.ObjectivesLiveTest do
          %{conn: conn, project: project, publication: publication} do
       create_objective(project, publication, "obj_a", "Objective A")
 
-      conn = get(conn, "/authoring/project/#{project.slug}/objectives")
+      conn = get(conn, "/workspaces/course_author/#{project.slug}/objectives")
 
       {:ok, view, _html} = live(conn)
 
