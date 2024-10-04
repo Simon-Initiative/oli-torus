@@ -55,15 +55,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
     end
   end
 
-
-  def on_mount(:set_page_context_review, :not_mounted_at_router, _session, socket) do
-    {:cont, socket}
-  end
-
-  def on_mount(:set_page_context_review, %{"attempt_guid" => attempt_guid}, _session, socket) do
-    {:cont, socket}
-  end
-
   def on_mount(
         :previous_next_index,
         _params,
@@ -249,16 +240,6 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
          _params
        ) do
     assign(socket, %{view: :error})
-  end
-
-
-  defp init_context_state(
-
-           socket,
-         _params
-       ) do
-    IO.inspect socket.assigns
-    socket
   end
 
   defp plural(1), do: ""

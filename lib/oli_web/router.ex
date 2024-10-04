@@ -1132,7 +1132,6 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-
     scope "/lesson/:revision_slug/attempt/:attempt_guid/review" do
       live_session :delivery_lesson_review,
         root_layout: {OliWeb.LayoutView, :delivery},
