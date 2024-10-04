@@ -99,10 +99,7 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    # plug(OliWeb.Plugs.RequireAuthenticated,
-    #   error_handler: Pow.Phoenix.PlugErrorHandler
-    # )
-    plug(Pow.Plug.RequireAuthenticated,
+    plug(OliWeb.Plugs.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 
@@ -121,10 +118,7 @@ defmodule OliWeb.Router do
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
     )
 
-    # plug(OliWeb.Plugs.RequireAuthenticated,
-    #   error_handler: Pow.Phoenix.PlugErrorHandler
-    # )
-    plug(Pow.Plug.RequireAuthenticated,
+    plug(OliWeb.Plugs.RequireAuthenticated,
       error_handler: Pow.Phoenix.PlugErrorHandler
     )
 

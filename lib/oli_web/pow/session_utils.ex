@@ -12,8 +12,6 @@ defmodule OliWeb.Pow.SessionUtils do
   import OliWeb.Pow.PowHelpers
   import Plug.Conn, only: [delete_session: 2]
 
-  alias Oli.AccountLookupCache
-
   @doc """
   Performs the sign-out process for a user.
 
@@ -37,7 +35,6 @@ defmodule OliWeb.Pow.SessionUtils do
   @spec perform_signout(Plug.Conn.t(), String.t()) :: Plug.Conn.t()
   def perform_signout(conn, type) do
     conn
-    |> delete_cache_entry(type)
     |> delete_pow_user(String.to_atom(type))
     |> delete_session_data(type)
     |> delete_session("completed_section_surveys")
@@ -53,14 +50,4 @@ defmodule OliWeb.Pow.SessionUtils do
   defp session_data_to_delete(type),
     do: [String.to_atom("current_#{type}_id") | @shared_session_data_to_delete]
 
-  defp delete_cache_entry(conn, type) do
-    id =
-      conn.assigns
-      |> Map.get(String.to_existing_atom("current_#{type}"))
-      |> Map.get(:id)
-
-    AccountLookupCache.delete("#{type}_#{id}")
-
-    conn
-  end
 end
