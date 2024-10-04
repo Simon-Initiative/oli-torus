@@ -21,14 +21,14 @@ interface AuthoringPageEditorProps {
   panelState: PanelState;
   handlePanelStateChange: (p: Partial<PanelState>) => void;
   currentRule: string;
-  initialSidebarExpanded?: boolean;
+  sidebarExpanded?: boolean;
 }
 
 export const AuthoringExpertPageEditor: React.FC<AuthoringPageEditorProps> = ({
   panelState,
   handlePanelStateChange,
   currentRule,
-  initialSidebarExpanded,
+  sidebarExpanded,
 }) => {
   const authoringContainer = useRef<HTMLDivElement>(null);
   const [exportOpen, toggleExport] = useToggle();
@@ -40,13 +40,13 @@ export const AuthoringExpertPageEditor: React.FC<AuthoringPageEditorProps> = ({
         authoringContainer={authoringContainer}
         panelState={panelState}
         isVisible={panelState.top}
-        initialSidebarExpanded={initialSidebarExpanded}
+        sidebarExpanded={sidebarExpanded}
       />
       <SidePanel
         position="left"
         panelState={panelState}
         onToggle={() => handlePanelStateChange({ left: !panelState.left })}
-        initialSidebarExpanded={initialSidebarExpanded}
+        sidebarExpanded={sidebarExpanded}
       >
         <LeftMenu />
       </SidePanel>
@@ -54,7 +54,7 @@ export const AuthoringExpertPageEditor: React.FC<AuthoringPageEditorProps> = ({
       <BottomPanel
         panelState={panelState}
         onToggle={() => handlePanelStateChange({ bottom: !panelState.bottom })}
-        initialSidebarExpanded={initialSidebarExpanded}
+        sidebarExpanded={sidebarExpanded}
       >
         {currentRule === 'initState' && <InitStateEditor authoringContainer={authoringContainer} />}
         {currentRule !== 'initState' && <AdaptivityEditor />}

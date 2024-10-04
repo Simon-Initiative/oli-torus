@@ -1,31 +1,18 @@
 import React from 'react';
-import { useState } from 'react';
 
 export interface SidePanelProps {
   position: string;
   panelState: any;
   onToggle: any;
   children?: any;
-  initialSidebarExpanded?: boolean;
+  sidebarExpanded?: boolean;
 }
 
 export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
-  const { position, panelState, onToggle, children, initialSidebarExpanded } = props;
-  const [sidebarExpanded, setSidebarExpanded] = useState(initialSidebarExpanded);
-
-  const handleSidebarExpanded = () => {
-    setSidebarExpanded((prev) => !prev);
-  };
+  const { position, panelState, onToggle, children, sidebarExpanded } = props;
 
   return (
     <>
-      <button
-        role="update sidebar state on React"
-        className="hidden"
-        onClick={() => {
-          handleSidebarExpanded();
-        }}
-      ></button>
       <button
         className={`aa-panel-side-toggle ${position}${
           panelState[position] ? ' open' : ''

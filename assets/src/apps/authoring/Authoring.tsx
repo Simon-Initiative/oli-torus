@@ -121,6 +121,12 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
+  const [sidebarExpanded, setSidebarExpanded] = useState(props.initialSidebarExpanded);
+
+  const handleSidebarExpanded = () => {
+    setSidebarExpanded((prev) => !prev);
+  };
+
   const onOnboardComplete = (appMode: ApplicationMode, title: string) => {
     const { revisionSlug } = props;
     const pageContent = props.content.content;
@@ -240,6 +246,13 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
 
   return (
     <AppsignalContext.Provider value={appsignal}>
+      <button
+        role="update sidebar state on React"
+        className="hidden"
+        onClick={() => {
+          handleSidebarExpanded();
+        }}
+      ></button>
       <ErrorBoundary>
         <ModalContainer>
           {isLoading && (
@@ -255,7 +268,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
               currentRule={currentRule}
               handlePanelStateChange={handlePanelStateChange}
               panelState={panelState}
-              initialSidebarExpanded={props.initialSidebarExpanded}
+              sidebarExpanded={sidebarExpanded}
             />
           )}
 
@@ -263,10 +276,11 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             <AuthoringFlowchartPageEditor
               handlePanelStateChange={handlePanelStateChange}
               panelState={panelState}
+              sidebarExpanded={sidebarExpanded}
             />
           )}
 
-          {shouldShowFlowchartEditor && <FlowchartEditor />}
+          {shouldShowFlowchartEditor && <FlowchartEditor sidebarExpanded={sidebarExpanded} />}
 
           {shouldShowReadOnlyWarning && (
             <ReadOnlyWarning
