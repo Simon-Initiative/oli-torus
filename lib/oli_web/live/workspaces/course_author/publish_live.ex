@@ -88,6 +88,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Publish</h2>
     <%= render_modal(assigns) %>
     <div class="publish">
       <div class="flex flex-row">

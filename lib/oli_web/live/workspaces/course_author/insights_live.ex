@@ -142,6 +142,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Insights</h2>
     <div class="mb-3">
       <p>
         Insights can help you improve your course by providing a statistical analysis of

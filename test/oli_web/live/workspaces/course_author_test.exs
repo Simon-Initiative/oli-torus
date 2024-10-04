@@ -565,7 +565,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/objectives")
 
-      assert has_element?(view, "h3", "Learning Objectives")
+      assert has_element?(view, "#header_id", "Learning Objectives")
 
       assert has_element?(
                view,
@@ -626,7 +626,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activities")
 
-      assert has_element?(view, "h3", "Browse All Activities")
+      assert has_element?(view, "h2", "Browse All Activities")
       assert has_element?(view, ~s(input[id='text-search-input']))
       assert has_element?(view, "a", "Open Sync View")
     end
