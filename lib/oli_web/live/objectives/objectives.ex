@@ -187,7 +187,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         >
           <Listing.render
             revision_history_link={
-              @has_show_links_uri_hash and Accounts.at_least_content_admin?(@author)
+              (assigns[:has_show_links_uri_hash] || false) and
+                Accounts.at_least_content_admin?(@author)
             }
             rows={@table_model.rows}
             selected={@selected}
