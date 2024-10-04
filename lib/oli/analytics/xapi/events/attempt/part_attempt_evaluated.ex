@@ -20,7 +20,8 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.PartAttemptEvaluated do
           out_of: out_of,
           feedback: feedback,
           date_evaluated: timestamp,
-          part_id: part_id
+          part_id: part_id,
+          datashop_session_id: session_id
         },
         %{
           attempt_guid: page_attempt_guid,
@@ -95,7 +96,8 @@ defmodule Oli.Analytics.XAPI.Events.Attempt.PartAttemptEvaluated do
           "http://oli.cmu.edu/extensions/activity_id" => activity_revision.resource_id,
           "http://oli.cmu.edu/extensions/activity_revision_id" => activity_revision.id,
           "http://oli.cmu.edu/extensions/part_id" => part_id,
-          "http://oli.cmu.edu/extensions/attached_objectives" => attached_objectives
+          "http://oli.cmu.edu/extensions/attached_objectives" => attached_objectives,
+          "http://oli.cmu.edu/extensions/session_id" => session_id
         }
       },
       "timestamp" => timestamp
