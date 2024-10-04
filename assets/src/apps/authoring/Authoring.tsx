@@ -243,7 +243,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       <ErrorBoundary>
         <ModalContainer>
           {isLoading && (
-            <div id="aa-loading">
+            <div id="aa-loading" className="!z-10">
               <div className="loader spinner-border text-primary" role="status">
                 <span className="sr-only">Loading...</span>
               </div>
