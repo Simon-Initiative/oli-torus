@@ -276,10 +276,11 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
             <AuthoringFlowchartPageEditor
               handlePanelStateChange={handlePanelStateChange}
               panelState={panelState}
+              sidebarExpanded={sidebarExpanded}
             />
           )}
 
-          {shouldShowFlowchartEditor && <FlowchartEditor />}
+          {shouldShowFlowchartEditor && <FlowchartEditor sidebarExpanded={sidebarExpanded} />}
 
           {shouldShowReadOnlyWarning && (
             <ReadOnlyWarning
