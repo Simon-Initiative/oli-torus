@@ -28,7 +28,9 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  socket.assigns.table_model,
                  0,
                  socket.assigns.query,
-                 Map.get(socket.assigns, :filter, %{})
+                 Map.get(socket.assigns, :filter, %{}),
+                 nil,
+                 socket.assigns.sidebar_expanded
                )
              ),
            replace: true
@@ -45,7 +47,9 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  socket.assigns.table_model,
                  0,
                  "",
-                 Map.get(socket.assigns, :filter, %{})
+                 Map.get(socket.assigns, :filter, %{}),
+                 nil,
+                 socket.assigns.sidebar_expanded
                )
              ),
            replace: true
@@ -62,7 +66,9 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  socket.assigns.table_model,
                  String.to_integer(offset),
                  socket.assigns.applied_query,
-                 Map.get(socket.assigns, :filter, %{})
+                 Map.get(socket.assigns, :filter, %{}),
+                 nil,
+                 socket.assigns.sidebar_expanded
                )
              ),
            replace: true
@@ -87,7 +93,9 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  table_model,
                  offset,
                  socket.assigns.applied_query,
-                 Map.get(socket.assigns, :filter, %{})
+                 Map.get(socket.assigns, :filter, %{}),
+                 nil,
+                 socket.assigns.sidebar_expanded
                )
              ),
            replace: true
@@ -112,22 +120,43 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                  socket.assigns.table_model,
                  0,
                  socket.assigns.query,
-                 filter
+                 filter,
+                 nil,
+                 socket.assigns.sidebar_expanded
                )
              ),
            replace: true
          )}
       end
 
-      defp get_patch_params(table_model, offset, query, filter, selected \\ nil) do
+      defp get_patch_params(
+             table_model,
+             offset,
+             query,
+             filter,
+             selected \\ nil,
+             sidebar_expanded \\ true
+           ) do
         Map.merge(
-          %{"offset" => offset, "query" => query, "filter" => filter, "selected" => selected},
+          %{
+            "offset" => offset,
+            "query" => query,
+            "filter" => filter,
+            "selected" => selected,
+            "sidebar_expanded" => sidebar_expanded
+          },
           SortableTableModel.to_params(table_model)
         )
       end
 
+      defp sidebar_expanded(nil), do: true
+      defp sidebar_expanded("false"), do: false
+      defp sidebar_expanded("true"), do: true
+
       def handle_params(params, _, socket) do
         offset = Params.get_int_param(params, "offset", 0)
+
+        sidebar_expanded = sidebar_expanded(params["sidebar_expanded"])
 
         # Ensure that the offset is 0 or one minus a factor of the limit. So for a
         # limit of 20, valid offsets or 0, 20, 40, etc.  This logic overrides any attempt
@@ -174,7 +203,9 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
            filter: filter,
            total_count: length(filtered),
            selected: selected,
-           params: get_patch_params(table_model, offset, query, filter, selected)
+           sidebar_expanded: sidebar_expanded,
+           params:
+             get_patch_params(table_model, offset, query, filter, selected, sidebar_expanded)
          )}
       end
 

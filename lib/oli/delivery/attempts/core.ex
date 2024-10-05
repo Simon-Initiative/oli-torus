@@ -35,6 +35,20 @@ defmodule Oli.Delivery.Attempts.Core do
     Repo.one(query)
   end
 
+  def get_user_from_attempt_guid(attempt_guid) do
+    query =
+      from(access in ResourceAccess,
+        join: attempt in ResourceAttempt,
+        on: access.id == attempt.resource_access_id,
+        join: user in User,
+        on: access.user_id == user.id,
+        select: user,
+        where: attempt.attempt_guid == ^attempt_guid
+      )
+
+    Repo.one(query)
+  end
+
   @doc """
   For a given user, section, and resource id, determine whether any resource attempts are
   present.

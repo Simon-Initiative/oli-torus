@@ -385,16 +385,12 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                       }
                     />
                     <div class="ml-2">
+                      <% explanation_strategy =
+                        Ecto.Changeset.get_field(@form.source, :explanation_strategy) %>
+
                       <.input
                         :if={
-                          Ecto.Changeset.get_field(
-                            @form.source,
-                            :explanation_strategy
-                          ) &&
-                            Ecto.Changeset.get_field(
-                              @form.source,
-                              :explanation_strategy
-                            ).type == :after_set_num_attempts
+                          explanation_strategy && explanation_strategy.type == :after_set_num_attempts
                         }
                         name="revision[explanation_strategy][set_num_attempts]"
                         type="number"
@@ -402,6 +398,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                         placeholder="# of Attempts"
                         min={1}
                         field={es[:set_num_attempts]}
+                        value={explanation_strategy.set_num_attempts || 2}
                       />
                     </div>
                   </.inputs_for>

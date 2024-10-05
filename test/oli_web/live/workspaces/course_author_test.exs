@@ -28,7 +28,8 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
             given_name: "me",
             family_name: "too",
             password: "some_password",
-            password_confirmation: "some_password"
+            password_confirmation: "some_password",
+            email_confirmed_at: Timex.now()
           },
           "g-recaptcha-response": "any"
         }
@@ -545,7 +546,6 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
-      assert has_element?(view, ~s(div[class="overview container mx-auto p-8"]))
       assert has_element?(view, "h4", "Details")
       assert has_element?(view, "h4", "Project Attributes")
       assert has_element?(view, "h4", "Content Types")
@@ -566,7 +566,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/objectives")
 
-      assert has_element?(view, "h3", "Learning Objectives")
+      assert has_element?(view, "#header_id", "Learning Objectives")
 
       assert has_element?(
                view,
@@ -627,7 +627,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activities")
 
-      assert has_element?(view, "h3", "Browse All Activities")
+      assert has_element?(view, "h2", "Browse All Activities")
       assert has_element?(view, ~s(input[id='text-search-input']))
       assert has_element?(view, "a", "Open Sync View")
     end

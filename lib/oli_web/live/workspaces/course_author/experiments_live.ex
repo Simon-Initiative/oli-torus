@@ -35,6 +35,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Experiments</h2>
     <%= render_modal(assigns) %>
 
     <h3>A/B Testing with UpGrade</h3>

@@ -197,7 +197,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       {:ok, view, _html} = live(conn, live_view_all_pages_route(project.slug))
 
       assert view
-             |> element("h3")
+             |> element("#header_id")
              |> render() =~
                "Browse All Pages"
 

@@ -105,6 +105,14 @@ defmodule OliWeb.Dialogue.WindowLive do
     end
   end
 
+  def mount(
+        _params,
+        _session,
+        socket
+      ) do
+    {:ok, assign(socket, enabled: false)}
+  end
+
   def render(assigns) do
     ~H"""
     <div

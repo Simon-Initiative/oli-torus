@@ -27,7 +27,7 @@ import {
   getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
-import { generateThreeTryWorkflow } from './create-three-try-workflow';
+import { generateMaxTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
 export const generateSliderRules = (
@@ -107,7 +107,7 @@ export const generateSliderRules = (
 
   const setCorrect: IAction[] = [
     {
-      // Sets the correct answer in the dropdown
+      // Sets the correct  answer in the dropdown
       type: 'mutateState',
       params: {
         value: String(answer),
@@ -126,13 +126,14 @@ export const generateSliderRules = (
     4,
   );
 
-  return generateThreeTryWorkflow(
+  return generateMaxTryWorkflow(
     correct,
     incorrect,
     commonErrorConditionsFeedback,
     setCorrect,
     blankCondition,
     disableAction,
+    { maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
   );
 };
 

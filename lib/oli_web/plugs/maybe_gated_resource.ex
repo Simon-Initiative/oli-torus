@@ -31,33 +31,37 @@ defmodule Oli.Plugs.MaybeGatedResource do
   end
 
   defp enforce_gating(conn, resource_id, revision) do
-    %{section: section, current_user: user} = conn.assigns
+    %{section: section, current_user: user, is_system_admin: is_admin} = conn.assigns
 
-    case Gating.blocked_by(section, user, resource_id) do
-      [] ->
-        conn
+    if is_admin do
+      conn
+    else
+      case Gating.blocked_by(section, user, resource_id) do
+        [] ->
+          conn
 
-      blocking_gates ->
-        # Graded resources are governed by the graded_resource_policy of gates. At this level
-        # if there is at least one gate that has the `allows_nothing` policy we block access
-        # to this graded resource
-        if revision.graded do
-          if Enum.any?(blocking_gates, fn gc -> gc.graded_resource_policy == :allows_nothing end) or
-               !Core.has_any_attempts?(user, section, resource_id) do
-            gated_resource_unavailable(conn, section, revision, blocking_gates)
+        blocking_gates ->
+          # Graded resources are governed by the graded_resource_policy of gates. At this level
+          # if there is at least one gate that has the `allows_nothing` policy we block access
+          # to this graded resource
+          if revision.graded do
+            if Enum.any?(blocking_gates, fn gc -> gc.graded_resource_policy == :allows_nothing end) or
+                 !Core.has_any_attempts?(user, section, resource_id) do
+              gated_resource_unavailable(conn, section, revision, blocking_gates)
+            else
+              # These are the gates that apply at a more granular level that "allows_nothing"
+              blocking_gates =
+                Enum.filter(blocking_gates, fn gc ->
+                  gc.graded_resource_policy == :allows_review
+                end)
+
+              conn
+              |> Plug.Conn.assign(:blocking_gates, blocking_gates)
+            end
           else
-            # These are the gates that apply at a more granular level that "allows_nothing"
-            blocking_gates =
-              Enum.filter(blocking_gates, fn gc ->
-                gc.graded_resource_policy == :allows_review
-              end)
-
-            conn
-            |> Plug.Conn.assign(:blocking_gates, blocking_gates)
+            gated_resource_unavailable(conn, section, revision, blocking_gates)
           end
-        else
-          gated_resource_unavailable(conn, section, revision, blocking_gates)
-        end
+      end
     end
   end
 

@@ -5,7 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Pages.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Curriculum.Actions
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Workspaces.CourseAuthor.{CurriculumLive, EditorLive}
+  alias OliWeb.Workspaces.CourseAuthor.{CurriculumLive, Curriculum.EditorLive}
 
   def render(assigns) do
     ~H"""

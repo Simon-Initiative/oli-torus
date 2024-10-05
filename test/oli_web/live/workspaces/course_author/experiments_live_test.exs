@@ -190,6 +190,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       |> step(:test_duplicate_error_message)
       |> step(:test_experiment_has_2_options)
     end
+
+    test "renders header", %{view: view} do
+      assert view
+             |> element("#header_id")
+             |> render() =~
+               "Experiments"
+    end
   end
 
   defp evaluate_assertion(to_evaluate, assert_or_refute) do

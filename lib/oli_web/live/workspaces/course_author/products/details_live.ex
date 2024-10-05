@@ -67,6 +67,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Product Overview</h2>
     <%= render_modal(assigns) %>
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">

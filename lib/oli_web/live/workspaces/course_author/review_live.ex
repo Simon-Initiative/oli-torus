@@ -35,6 +35,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ReviewLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Review</h2>
     <div class="review">
       <div class="grid grid-cols-12">
         <div class="col-span-12">

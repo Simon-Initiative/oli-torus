@@ -115,6 +115,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         w-full
         hidden
         h-[100vh]
+        scrollbar-hide
         md:flex
         flex-col
         justify-between
@@ -220,7 +221,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <button
       role="toggle sidebar"
-      phx-click={JS.patch(path_for(@active, @section, @preview_mode, !@sidebar_expanded))}
+      phx-click={
+        JS.patch(path_for(@active, @section, @preview_mode, !@sidebar_expanded))
+        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
+      }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
@@ -245,6 +249,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       phx-click={
         JS.patch(toggled_workspace_path(@sidebar_expanded, @uri))
         |> JS.hide(to: "div[role='expandable_submenu']")
+        |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
       class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
@@ -272,6 +277,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <div>
       <nav
         id="desktop-workspace-nav-menu"
+        style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
         class={["
         transition-all
         duration-100
@@ -281,6 +287,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         w-full
         hidden
         h-[100vh]
+        scrollbar-hide
         md:flex
         flex-col
         justify-between
@@ -288,13 +295,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
         shadow-sm
         bg-delivery-navbar
         dark:bg-delivery-navbar-dark
-      ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
+      ", if(!@sidebar_expanded, do: "md:!w-[60px]")]}
         aria-expanded={"#{@sidebar_expanded}"}
       >
         <div class="w-full">
           <div
             class={[
-              "h-14 w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
+              "h-[var(--header-height)] w-48 py-2 flex shrink-0 border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]",
               if(!@sidebar_expanded, do: "w-14")
             ]}
             tab-index="0"
@@ -316,21 +323,27 @@ defmodule OliWeb.Components.Delivery.Layouts do
             resource_slug={@resource_slug}
             uri={@uri}
           />
-          <div class="h-[24px]">
-            <h2
-              :if={@sidebar_expanded}
-              class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
-            >
-              WORKSPACE
-            </h2>
-          </div>
-          <.workspace_sidebar_links
-            preview_mode={@preview_mode}
-            sidebar_expanded={@sidebar_expanded}
-            active_workspace={@active_workspace}
-          />
-          <div :if={!@sidebar_expanded && @resource_slug} class="flex justify-center">
-            <OliWeb.Icons.line_32 />
+          <div class="h-[var(--main-links-height)]">
+            <div class="h-[24px]">
+              <h2
+                :if={@sidebar_expanded}
+                class="text-[14px] font-bold ml-5 dark:text-[#B8B4BF] text-[#353740] tracking-[-1%] leading-6"
+              >
+                WORKSPACE
+              </h2>
+            </div>
+            <.workspace_sidebar_links
+              preview_mode={@preview_mode}
+              sidebar_expanded={@sidebar_expanded}
+              active_workspace={@active_workspace}
+            />
+            <div :if={!@sidebar_expanded && @resource_slug} class="flex justify-center">
+              <OliWeb.Icons.line_32 />
+            </div>
+            <WorkspaceUtils.title
+              sidebar_expanded={@sidebar_expanded}
+              resource_title={@resource_title}
+            />
           </div>
           <WorkspaceUtils.sub_menu
             :if={@resource_slug}
@@ -342,7 +355,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             active_workspace={@active_workspace}
           />
         </div>
-        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex">
+        <div class="p-2 flex-col justify-center items-center gap-4 inline-flex h-[var(--footer-buttons-height)]">
           <.tech_support_button id="tech-support" ctx={@ctx} sidebar_expanded={@sidebar_expanded} />
           <.exit_workspace_button
             :if={@resource_slug}
