@@ -10,6 +10,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Delivery.Student.Utils
 
+  require Logger
+
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
@@ -23,7 +25,9 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         session,
         %{assigns: %{section: section}} = socket
       ) do
-    is_system_admin = socket.assigns.is_system_admin
+    Logger.debug("ReviewLive mount")
+
+    is_system_admin = Map.get(socket.assigns, :is_system_admin, false)
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
@@ -47,6 +51,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
+
+      socket = assign(socket, loaded: true)
 
       page_revision = page_context.page
 
@@ -81,13 +87,15 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         #    objectives: []
         #  ]}
       else
+        Logger.debug("ReviewLive mount, did not have permission")
+
         {:ok,
          socket
          |> put_flash(:error, "You are not allowed to review this attempt.")
          |> redirect(to: Utils.learn_live_path(section.slug))}
       end
     else
-      {:ok, socket}
+      {:ok, assign(socket, loaded: false)}
     end
   end
 
@@ -134,6 +142,12 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   defp review_allowed?(page_context),
     do: page_context.effective_settings.review_submission == :allow
 
+  def render(%{loaded: false} = assigns) do
+    ~H"""
+    <div></div>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
@@ -153,7 +167,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             objectives={@objectives}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" phx-update="ignore" class="content w-full" role="page_content">
+          <div id="rawContent" class="content w-full" role="page_content">
             <%= raw(@html) %>
           </div>
           <.link
