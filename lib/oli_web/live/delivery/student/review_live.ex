@@ -77,8 +77,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
           |> assign_objectives()
           |> slim_assigns()
 
-        script_sources =
-          Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+        #script_sources =
+        #  Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
         #send(self(), :gc)
 
