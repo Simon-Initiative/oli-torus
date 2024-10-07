@@ -62,7 +62,8 @@ defmodule OliWeb.CommunityLiveTest do
     setup [:author_conn]
 
     test "redirects to projects when accessing the index view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/projects"}}} = live(conn, @live_view_index_route)
+      {:error, {:redirect, %{to: "/workspaces/course_author"}}} =
+        live(conn, @live_view_index_route)
     end
 
     test "returns forbidden when accessing the create view", %{conn: conn} do
@@ -74,7 +75,7 @@ defmodule OliWeb.CommunityLiveTest do
     test "redirects to projects when accessing the show view", %{conn: conn} do
       community = insert(:community)
 
-      {:error, {:redirect, %{to: "/authoring/projects"}}} =
+      {:error, {:redirect, %{to: "/workspaces/course_author"}}} =
         live(conn, live_view_show_route(community.id))
     end
 
