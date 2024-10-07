@@ -19,6 +19,20 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Workspaces.Utils, as: WorkspaceUtils
 
+  attr(:breadcrumbs, :list, default: [])
+  attr(:socket, :map, required: true)
+
+  def breadcrumb_trail(%{breadcrumbs: breadcrumbs} = assigns) when not is_nil(breadcrumbs) do
+    ~H"""
+    <nav class="breadcrumb-bar flex flex-row align-items-center border-gray-300 dark:border-neutral-800">
+      <%= live_render(@socket, OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive,
+        id: "breadcrumb-trail",
+        session: %{"breadcrumbs" => @breadcrumbs}
+      ) %>
+    </nav>
+    """
+  end
+
   attr(:ctx, SessionContext)
   attr(:is_system_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
@@ -385,6 +399,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           preview_mode={@preview_mode}
           sidebar_expanded={@sidebar_expanded}
           active_workspace={@active_workspace}
+          platform="mobile"
         />
         <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
           <div class="flex items-center">
@@ -405,12 +420,13 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:preview_mode, :boolean)
   attr(:sidebar_expanded, :boolean)
   attr(:active_workspace, :atom)
+  attr(:platform, :string, default: "desktop")
 
   def workspace_sidebar_links(assigns) do
     ~H"""
     <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
       <.nav_link
-        id="course_author_workspace_nav_link"
+        id={"#{@platform}_course_author_workspace_nav_link"}
         href={path_for_workspace(:course_author, @sidebar_expanded)}
         is_active={@active_workspace == :course_author}
         sidebar_expanded={@sidebar_expanded}
@@ -424,7 +440,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        id="instructor_workspace_nav_link"
+        id={"#{@platform}_instructor_workspace_nav_link"}
         href={path_for_workspace(:instructor, @sidebar_expanded)}
         is_active={@active_workspace == :instructor}
         sidebar_expanded={@sidebar_expanded}
@@ -437,7 +453,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
-        id="student_workspace_nav_link"
+        id={"#{@platform}_student_workspace_nav_link"}
         href={path_for_workspace(:student, @sidebar_expanded)}
         is_active={@active_workspace == :student}
         sidebar_expanded={@sidebar_expanded}
