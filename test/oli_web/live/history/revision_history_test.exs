@@ -207,7 +207,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
       {:error, {:redirect, %{flash: %{"info" => flash_message}, to: redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
 
-      assert redirect_path == "/authoring/projects"
+      assert redirect_path == "/workspaces/course_author"
       assert flash_message == "You don't have access to that project"
     end
 
