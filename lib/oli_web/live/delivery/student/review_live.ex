@@ -102,13 +102,14 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
           socket
           |> put_flash(:error, "You are not allowed to review this attempt.")
           |> redirect(to: Utils.learn_live_path(section.slug))}
-
-        rescue
-          e in RuntimeError ->
-            Logger.error("ReviewLive mount, error: #{inspect(e)}")
-            {:ok, socket}
         end
+
+      rescue
+        e in RuntimeError ->
+          Logger.error("ReviewLive mount, error: #{inspect(e)}")
+          {:ok, socket}
       end
+
     else
       {:ok, assign(socket, loaded: false)}
     end
