@@ -10,6 +10,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Delivery.Student.Utils
 
+  require Logger
+
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
@@ -24,13 +26,20 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         %{assigns: %{section: section}} = socket
       ) do
 
+    Logger.debug("ReviewLive mount")
+
     is_system_admin = Map.get(socket.assigns, :is_system_admin, false)
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
+
+      Logger.debug("ReviewLive mount, connected")
       user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
+
+      Logger.debug("ReviewLive mount, got user")
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
+      Logger.debug("ReviewLive mount, created context")
       socket = assign(socket, page_context: page_context)
 
       socket =
@@ -42,12 +51,15 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
+      Logger.debug("ReviewLive mount, ran init_context_state")
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
+      Logger.debug("ReviewLive mount, ran previous_next_index")
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
+      Logger.debug("ReviewLive mount, ran SetRequestPath")
 
       page_revision = page_context.page
 
@@ -82,6 +94,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         #    objectives: []
         #  ]}
       else
+        Logger.debug("ReviewLive mount, did not have permission")
+
         {:ok,
          socket
          |> put_flash(:error, "You are not allowed to review this attempt.")
