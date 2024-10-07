@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
@@ -12,6 +12,7 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import {
   selectCurrentActivityTree,
+  selectCurrentSequenceId,
   selectSequence,
 } from '../../../../delivery/store/features/groups/selectors/deck';
 import {
@@ -110,10 +111,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const revisionSlug = useSelector(selectRevisionSlug);
   const availablePartComponents = useSelector(selectPartComponentTypes);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
-
+  const [newPartAddOffset, setNewPartAddOffset] = useState<number>(0);
   const activities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
-
+  const currentSequenceId = useSelector(selectCurrentSequenceId);
   const dispatch = useDispatch();
 
   const hasRedo = useSelector(selectHasRedo);
@@ -139,6 +140,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
 
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
+
+  useEffect(() => {
+    setNewPartAddOffset(0);
+  }, [currentSequenceId]);
 
   const previewLesson = useCallback(async () => {
     await dispatch(verifyFlowchartLesson({}));
@@ -239,14 +244,14 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
         // only ever add to the current activity, not a layer
-
+        setNewPartAddOffset(newPartAddOffset + 1);
         const part = new PartClass() as any;
         const newPartData = {
           id: `${partComponentType}-${guid()}`,
           type: partComponent.delivery_element,
           custom: {
-            x: 10,
-            y: 10,
+            x: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
+            y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             z: 0,
             width: 100,
             height: 100,
@@ -262,7 +267,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
         }
       }
     },
-    [availablePartComponents, currentActivityTree, dispatch],
+    [availablePartComponents, currentActivityTree, dispatch, newPartAddOffset],
   );
 
   return (

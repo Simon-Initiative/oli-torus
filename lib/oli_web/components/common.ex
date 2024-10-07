@@ -194,7 +194,7 @@ defmodule OliWeb.Components.Common do
   attr(:href, :string, default: nil)
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
-  attr(:rest, :global, include: ~w(disabled form name value target rel download))
+  attr(:rest, :global, include: ~w(disabled form name value target rel download xphx-mouseover))
 
   slot(:inner_block, required: true)
 

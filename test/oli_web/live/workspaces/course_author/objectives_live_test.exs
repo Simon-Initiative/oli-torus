@@ -662,10 +662,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       create_objective(project, publication, "obj_a", "Objective A")
 
       conn =
-        get(conn, "/authoring/project/#{project.slug}/objectives#show_links")
+        get(conn, "/workspaces/course_author/#{project.slug}/objectives#show_links")
         |> Map.put(
           :request_path,
-          "/authoring/project/#{project.slug}/curriculum#show_links"
+          "/workspaces/course_author/#{project.slug}/objectives#show_links"
         )
 
       {:ok, view, _html} = live(conn)

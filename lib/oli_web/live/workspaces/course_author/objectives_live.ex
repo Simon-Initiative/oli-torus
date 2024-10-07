@@ -32,7 +32,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     do: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     project = socket.assigns.project
     author = socket.assigns.current_author
 
@@ -50,10 +50,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        all_children: all_children,
        objective_attachments: [],
        query: "",
+       selected: "",
        offset: 0,
        limit: 20,
        resource_slug: project.slug,
-       resource_title: project.title
+       resource_title: project.title,
+       params: params
      )
      |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
        {:cont,
@@ -96,7 +98,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
       >
         <Listing.render
           revision_history_link={
-            @has_show_links_uri_hash and Accounts.at_least_content_admin?(@author)
+            (assigns[:has_show_links_uri_hash] || false) and Accounts.at_least_content_admin?(@author)
           }
           rows={@table_model.rows}
           selected={@selected}

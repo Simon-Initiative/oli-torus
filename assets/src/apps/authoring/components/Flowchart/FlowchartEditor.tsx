@@ -29,7 +29,11 @@ import { FlowchartTopToolbar } from './toolbar/FlowchartTopToolbar';
   The FlowchartComponent deals in flowchart related data.
 */
 
-export const FlowchartEditor = () => {
+interface FlowchartEditorProps {
+  sidebarExpanded?: boolean;
+}
+
+export const FlowchartEditor: React.FC<FlowchartEditorProps> = ({ sidebarExpanded }) => {
   const dispatch = useDispatch();
 
   const activities = useSelector(selectAllActivities);
@@ -107,7 +111,7 @@ export const FlowchartEditor = () => {
 
   return (
     <FlowchartEventContext.Provider value={events}>
-      <div className="flowchart-editor">
+      <div className={`flowchart-editor ${!sidebarExpanded ? '' : 'ml-[135px]'}`}>
         <DndProvider backend={HTML5Backend}>
           <div className="flowchart-left">
             <FlowchartModeOptions activeMode="flowchart" onPageEditMode={onPageEditMode} />

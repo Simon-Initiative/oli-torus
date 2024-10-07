@@ -257,7 +257,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLive do
                selected: socket.assigns.table_model.selected,
                offset: socket.assigns.offset,
                text_search: socket.assigns.options.text_search,
-               activity_type_id: socket.assigns.options.activity_type_id
+               activity_type_id: socket.assigns.options.activity_type_id,
+               sidebar_expanded: socket.assigns.sidebar_expanded
              },
              changes
            )

@@ -1,4 +1,4 @@
-defmodule OliWeb.Workspaces.CourseAuthor.EditorLiveTest do
+defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest

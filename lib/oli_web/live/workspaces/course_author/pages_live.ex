@@ -23,7 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   alias OliWeb.Curriculum.{OptionsModalContent, HyperlinkDependencyModal}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Workspaces.CourseAuthor.Pages.TableModel, as: PagesTableModel
-  alias OliWeb.Workspaces.CourseAuthor.EditorLive
+  alias OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive
 
   @default_limit 25
 
@@ -658,7 +658,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
                offset: socket.assigns.offset,
                text_search: socket.assigns.options.text_search,
                basic: socket.assigns.options.basic,
-               graded: socket.assigns.options.graded
+               graded: socket.assigns.options.graded,
+               sidebar_expanded: socket.assigns.sidebar_expanded
              },
              changes
            )
