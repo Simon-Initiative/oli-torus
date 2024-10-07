@@ -40,65 +40,74 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
       Logger.debug("ReviewLive mount, created context")
-      socket = assign(socket, page_context: page_context)
 
-      socket =
-        if Map.get(socket.assigns, :user_token) == nil do
-          assign(socket, user_token: "")
-        else
-          socket
-        end
+      try do
 
-      {:cont, socket} =
-        OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
-      Logger.debug("ReviewLive mount, ran init_context_state")
+        socket = assign(socket, page_context: page_context)
 
-      {:cont, socket} =
-        OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
-      Logger.debug("ReviewLive mount, ran previous_next_index")
-
-      {:cont, socket} =
-        OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
-      Logger.debug("ReviewLive mount, ran SetRequestPath")
-
-      socket = assign(socket, loaded: true)
-
-      page_revision = page_context.page
-
-      if (is_system_admin or
-            PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
-           review_allowed?(page_context) do
         socket =
+          if Map.get(socket.assigns, :user_token) == nil do
+            assign(socket, user_token: "")
+          else
+            socket
+          end
+
+        {:cont, socket} =
+          OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
+        Logger.debug("ReviewLive mount, ran init_context_state")
+
+        {:cont, socket} =
+          OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
+        Logger.debug("ReviewLive mount, ran previous_next_index")
+
+        {:cont, socket} =
+          OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
+        Logger.debug("ReviewLive mount, ran SetRequestPath")
+
+        socket = assign(socket, loaded: true)
+
+        page_revision = page_context.page
+
+        if (is_system_admin or
+              PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
+            review_allowed?(page_context) do
+          socket =
+            socket
+            |> assign(page_context: page_context)
+            |> assign(page_progress_state: page_context.progress_state)
+            |> assign(page_revision: page_revision)
+            |> assign_html_and_scripts()
+            |> assign_objectives()
+            |> slim_assigns()
+
+          #script_sources =
+          #  Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
+
+          #send(self(), :gc)
+
+          {:ok, socket}
+
+          # These temp assigns were disabled in MER-3672
+          #  temporary_assigns: [
+          #    scripts: [],
+          #    html: [],
+          #    page_context: %{},
+          #    page_revision: %{},
+          #    objectives: []
+          #  ]}
+        else
+          Logger.debug("ReviewLive mount, did not have permission")
+
+          {:ok,
           socket
-          |> assign(page_context: page_context)
-          |> assign(page_progress_state: page_context.progress_state)
-          |> assign(page_revision: page_revision)
-          |> assign_html_and_scripts()
-          |> assign_objectives()
-          |> slim_assigns()
+          |> put_flash(:error, "You are not allowed to review this attempt.")
+          |> redirect(to: Utils.learn_live_path(section.slug))}
 
-        #script_sources =
-        #  Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
-
-        #send(self(), :gc)
-
-        {:ok, socket}
-
-        # These temp assigns were disabled in MER-3672
-        #  temporary_assigns: [
-        #    scripts: [],
-        #    html: [],
-        #    page_context: %{},
-        #    page_revision: %{},
-        #    objectives: []
-        #  ]}
-      else
-        Logger.debug("ReviewLive mount, did not have permission")
-
-        {:ok,
-         socket
-         |> put_flash(:error, "You are not allowed to review this attempt.")
-         |> redirect(to: Utils.learn_live_path(section.slug))}
+        rescue
+          e in RuntimeError ->
+            Logger.error("ReviewLive mount, error: #{inspect(e)}")
+            {:ok, socket}
+        end
       end
     else
       {:ok, assign(socket, loaded: false)}
