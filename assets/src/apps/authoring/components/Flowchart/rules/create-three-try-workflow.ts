@@ -22,7 +22,7 @@ import { RulesAndVariables } from './rule-compilation';
  * [A correct rule to catch the learner doing it right - with correct feedback and navigation]
  * [Catch a blank response, give feedback, reset the current attempt count]
  *  [A common-error rule for each common error that has navigation (and possibly feedback)]
- * [A rule to catch max-incorrect answers, gives feedback, sets the correct answer, navigates]
+ * [A rule to catch 3-incorrect answers, gives feedback, sets the correct answer, navigates]
  *  [A common-error rule for each common error that has no navigation but does have feedback]
  * [A first/second-attempt general incorrect rule with feedback, no nav]
  * [A generic default incorrect rule with feedback, no nav]
@@ -36,7 +36,7 @@ import { RulesAndVariables } from './rule-compilation';
  * @param blankCondition - A condition that checks if the question is currently blank.
  * @param disableAction - An action that disables the question on screen. This is used when the user is about to be forced to a screen so they don't think they should go and try again
  */
-export const generateMaxTryWorkflow = (
+export const generateThreeTryWorkflow = (
   correct: Required<IConditionWithFeedback>,
   incorrect: Required<IConditionWithFeedback>,
   commonErrors: IConditionWithFeedback[],
@@ -45,7 +45,6 @@ export const generateMaxTryWorkflow = (
   disableAction: IAction,
   extraOptions: Partial<{
     threeTimesFeedback: string;
-    maxAttempt: string;
   }> = {},
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
@@ -73,14 +72,14 @@ export const generateMaxTryWorkflow = (
     });
 
   // [A third (or later) try correct rule to catch the learner doing it right for no credit - with correct feedback and navigation] (?)
-  // update: Originally, above had a first or second conddistion and this was to mark it wrong on max tries, but I don't think we need this one.
+  // update: Originally, above had a first or second conddistion and this was to mark it wrong on 3+ tries, but I don't think we need this one.
   //         A general correct rule with no tries-criteria
   //         will catch it, it is tehnically correct, and the number of tries will cause it to be 0 points.
   // incorrect.destinationId &&
   //   rules.push(
   //     generateDestinationRule(
   //       'max-attempt-correct',
-  //       [maxOrLaterTry(extraOptions.maxAttempt || '2'), ...correct.conditions.map(newId)],
+  //       [thirdOrLaterTry(), ...correct.conditions.map(newId)],
   //       incorrect.destinationId,
   //       false,
   //       null,
@@ -96,7 +95,7 @@ export const generateMaxTryWorkflow = (
     );
 
   // [Common errors that have nav]
-  // We need these first, because if they happen, we want them to happen instead of the incorrect-max-attempt rule
+  // We need these first, because if they happen, we want them to happen instead of the incorrect-3-times rule
   for (const commonError of commonErrors.filter((e) => e.destinationId)) {
     rules.push(
       generateRule(
@@ -111,12 +110,12 @@ export const generateMaxTryWorkflow = (
     );
   }
 
-  // [max incorrect, that sets the correct value in the control - with incorrect feedback plus nav]
+  // [3+ incorrect, that sets the correct value in the control - with incorrect feedback plus nav]
   incorrect.destinationId &&
     rules.push(
       generateRule(
-        'incorrect-max-attempt',
-        [maxOrLaterTry(extraOptions.maxAttempt || '2'), ...incorrect.conditions.map(newId)],
+        'incorrect-3-times',
+        [thirdOrLaterTry(), ...incorrect.conditions.map(newId)],
         incorrect.destinationId,
         false,
         40,
@@ -126,7 +125,7 @@ export const generateMaxTryWorkflow = (
     );
 
   // [Common errors that don't have nav]
-  // These have to come after the max incorrect rule, because it should take precedence over them.
+  // These have to come after the 3+ incorrect rule, because it should take precedence over them.
   for (const commonError of commonErrors.filter((e) => !e.destinationId)) {
     rules.push(
       generateRule(
@@ -158,10 +157,18 @@ export const generateMaxTryWorkflow = (
   return { rules, variables };
 };
 
-const maxOrLaterTry = (value: string): ICondition => ({
+// const firstOrSecondTry = (): ICondition => ({
+//   fact: 'session.attemptNumber',
+//   operator: 'lessThan',
+//   value: '3',
+//   type: 1,
+//   id: guid(),
+// });
+
+const thirdOrLaterTry = (): ICondition => ({
   fact: 'session.attemptNumber',
   operator: 'greaterThan',
-  value: value,
+  value: '2',
   type: 1,
   id: guid(),
 });
