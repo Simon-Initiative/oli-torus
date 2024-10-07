@@ -29,7 +29,6 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   }
 
   def mount(params, _session, socket) do
-
     %{page_context: page_context} = socket.assigns
 
     if connected?(socket) do

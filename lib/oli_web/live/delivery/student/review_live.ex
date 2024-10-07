@@ -25,18 +25,17 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         session,
         %{assigns: %{section: section}} = socket
       ) do
-
     Logger.debug("ReviewLive mount")
 
     is_system_admin = Map.get(socket.assigns, :is_system_admin, false)
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
-
       user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
       socket = assign(socket, page_context: page_context)
+
       socket =
         if Map.get(socket.assigns, :user_token) == nil do
           assign(socket, user_token: "")
@@ -145,8 +144,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
   def render(%{loaded: false} = assigns) do
     ~H"""
-    <div>
-    </div>
+    <div></div>
     """
   end
 
