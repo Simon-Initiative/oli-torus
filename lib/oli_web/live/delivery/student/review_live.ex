@@ -33,15 +33,10 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
     if connected?(socket) do
 
-      Logger.debug("ReviewLive mount, connected")
       user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
-
-      Logger.debug("ReviewLive mount, got user")
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
-      Logger.debug("ReviewLive mount, created context")
       socket = assign(socket, page_context: page_context)
-
       socket =
         if Map.get(socket.assigns, :user_token) == nil do
           assign(socket, user_token: "")
@@ -51,15 +46,12 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
-      Logger.debug("ReviewLive mount, ran init_context_state")
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
-      Logger.debug("ReviewLive mount, ran previous_next_index")
 
       {:cont, socket} =
         OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
-      Logger.debug("ReviewLive mount, ran SetRequestPath")
 
       socket = assign(socket, loaded: true)
 
