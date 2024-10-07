@@ -26,7 +26,7 @@ import {
   getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
-import { generateMaxTryWorkflow } from './create-three-try-workflow';
+import { generateThreeTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
 // Check all that apply, aka Multiple Choice Question with multi-selection enabled
@@ -142,14 +142,13 @@ export const generateCATAChoiceRules = (
     return generateAllCorrectWorkflow(correct, [], disableAction, blankCondition);
   }
 
-  return generateMaxTryWorkflow(
+  return generateThreeTryWorkflow(
     correct,
     incorrect,
     commonErrorConditionsFeedback,
     setCorrect,
     blankCondition,
     disableAction,
-    { maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
   );
 };
 

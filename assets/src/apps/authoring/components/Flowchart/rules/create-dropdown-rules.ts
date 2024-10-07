@@ -25,7 +25,7 @@ import {
   getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
-import { generateMaxTryWorkflow } from './create-three-try-workflow';
+import { generateThreeTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
 export const generateDropdownRules = (
@@ -118,14 +118,13 @@ export const generateDropdownRules = (
     2,
   );
 
-  return generateMaxTryWorkflow(
+  return generateThreeTryWorkflow(
     correct,
     incorrect,
     commonErrorConditionsFeedback,
     setCorrect,
     blankCondition,
     disableAction,
-    { maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
   );
 };
 
