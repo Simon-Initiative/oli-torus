@@ -61,6 +61,8 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
       Logger.debug("ReviewLive mount, ran SetRequestPath")
 
+      socket = assign(socket, loaded: true)
+
       page_revision = page_context.page
 
       if (is_system_admin or
@@ -78,12 +80,9 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         script_sources =
           Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-        send(self(), :gc)
+        #send(self(), :gc)
 
-        {:ok,
-         push_event(socket, "load_survey_scripts", %{
-           script_sources: script_sources
-         })}
+        {:ok, socket}
 
         # These temp assigns were disabled in MER-3672
         #  temporary_assigns: [
@@ -102,7 +101,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
          |> redirect(to: Utils.learn_live_path(section.slug))}
       end
     else
-      {:ok, socket}
+      {:ok, assign(socket, loaded: false)}
     end
   end
 
@@ -148,6 +147,13 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
   defp review_allowed?(page_context),
     do: page_context.effective_settings.review_submission == :allow
+
+  def render(%{loaded: false} = assigns) do
+    ~H"""
+    <div>
+    </div>
+    """
+  end
 
   def render(assigns) do
     ~H"""
