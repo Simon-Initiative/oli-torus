@@ -9015,6 +9015,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(142 142 142 / var(--tw-text-opacity));
 }
 
+.text-\[\#A3A3A3\] {
+  --tw-text-opacity: 1;
+  color: rgb(163 163 163 / var(--tw-text-opacity));
+}
+
 .text-\[\#EC8CFF\] {
   --tw-text-opacity: 1;
   color: rgb(236 140 255 / var(--tw-text-opacity));
