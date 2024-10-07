@@ -6,6 +6,8 @@ defmodule OliWeb.Common.Breadcrumb do
     associated with them.
   """
 
+  use OliWeb, :verified_routes
+
   alias OliWeb.Common.Breadcrumb
   alias Oli.Resources.Numbering
   alias OliWeb.Router.Helpers, as: Routes
@@ -65,7 +67,15 @@ defmodule OliWeb.Common.Breadcrumb do
      [%Breadcrumb{ curriculum }, %Breadcrumb{ container_1 }, ..., %Breadcrumb{ revision_slug }]
 
   """
-  def trail_to(project_or_section_slug, revision_slug, resolver, custom_labels) do
+  def trail_to(
+        project_or_section_slug,
+        revision_slug,
+        resolver,
+        custom_labels,
+        workspace \\ :workspace
+      )
+
+  def trail_to(project_or_section_slug, revision_slug, resolver, custom_labels, workspace) do
     with numberings <-
            Numbering.number_full_tree(resolver, project_or_section_slug, custom_labels),
          numbering <-
@@ -78,29 +88,42 @@ defmodule OliWeb.Common.Breadcrumb do
         {:ok, [_root | path]} ->
           trail =
             Enum.map(path, fn revision ->
-              make_breadcrumb(project_or_section_slug, revision, numberings)
+              make_breadcrumb(project_or_section_slug, revision, numberings, workspace)
             end)
 
-          [
-            curriculum(project_or_section_slug)
-            | trail
-          ]
+          [curriculum(project_or_section_slug, workspace) | trail]
 
         {:error, :target_resource_not_found} ->
           revision = resolver.from_revision_slug(project_or_section_slug, revision_slug)
 
-          all_pages(project_or_section_slug) ++
-            [
-              new(%{
-                full_title: revision.title,
-                link: nil
-              })
-            ]
+          all_pages(project_or_section_slug) ++ [new(%{full_title: revision.title, link: nil})]
       end
     end
   end
 
-  defp make_breadcrumb(project_or_section_slug, revision, numberings) do
+  defp make_breadcrumb(project_or_section_slug, revision, numberings, :workspace = workspace) do
+    with resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id),
+         link <- Links.resource_path(revision, [], project_or_section_slug, workspace),
+         numbering <- Map.get(numberings, revision.id) do
+      case resource_type do
+        "container" ->
+          new(%{
+            full_title: Numbering.prefix(numbering) <> ": " <> revision.title,
+            short_title: Numbering.prefix(numbering),
+            slug: revision.slug,
+            action_descriptions: [
+              "Rename"
+            ],
+            link: link
+          })
+
+        _ ->
+          new(%{full_title: revision.title, link: link})
+      end
+    end
+  end
+
+  defp make_breadcrumb(project_or_section_slug, revision, numberings, _) do
     with resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id),
          link <- Links.resource_path(revision, [], project_or_section_slug),
          numbering <- Map.get(numberings, revision.id) do
@@ -138,15 +161,19 @@ defmodule OliWeb.Common.Breadcrumb do
      %Breadcrumb{ full_title: "Curriculum", link: curriculum_path }
 
   """
-  def curriculum(project_slug) do
+  def curriculum(project_slug, workspace \\ nil)
+
+  def curriculum(project_slug, :workspace) do
     new(%{
       full_title: "Curriculum",
-      link:
-        Routes.container_path(
-          OliWeb.Endpoint,
-          :index,
-          project_slug
-        )
+      link: ~p"/workspaces/course_author/#{project_slug}/curriculum"
+    })
+  end
+
+  def curriculum(project_slug, _space) do
+    new(%{
+      full_title: "Curriculum",
+      link: Routes.container_path(OliWeb.Endpoint, :index, project_slug)
     })
   end
 

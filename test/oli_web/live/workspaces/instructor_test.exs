@@ -368,7 +368,9 @@ defmodule OliWeb.Workspaces.InstructorTest do
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=false]})
 
       view
-      |> element(~s{nav[id=desktop-workspace-nav-menu] a[id="student_workspace_nav_link"]})
+      |> element(
+        ~s{nav[id=desktop-workspace-nav-menu] a[id="desktop_student_workspace_nav_link"]}
+      )
       |> render_click()
 
       assert_redirect(view, "/workspaces/student?sidebar_expanded=false")

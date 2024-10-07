@@ -90,6 +90,12 @@
       <% end %>
     </div>
     <div class={OliWeb.Workspaces.Utils.maybe_add_padding(assigns[:uri])}>
+      <Components.Delivery.Layouts.breadcrumb_trail
+        :if={assigns[:breadcrumbs]}
+        breadcrumbs={assigns[:breadcrumbs]}
+        socket={@socket}
+      />
+
       <%= @inner_content %>
     </div>
   </div>
