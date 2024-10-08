@@ -77,7 +77,9 @@ defmodule OliWeb.Curriculum.Actions do
           <.link
             :if={@revision_history_link}
             class="dropdown-item"
-            navigate={~p[/project/#{@project_slug}/history/slug/#{@child.slug}]}
+            navigate={
+              ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@child.slug}/history"
+            }
           >
             <i class="fas fa-history mr-1"></i> View revision history
           </.link>

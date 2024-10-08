@@ -127,7 +127,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
             handleFactChange(e.target.value);
             dispatch(setCurrentPartPropertyFocus({ focus: true }));
           }}
-          title={fact.toString()}
+          title={fact?.toString() || ''}
           tabIndex={0}
         />
       </div>
@@ -157,7 +157,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         placeholder="Operator"
         defaultValue={operator}
         onChange={(e) => handleOperatorChange(e)}
-        title={operator.toString()}
+        title={operator?.toString() || ''}
         tabIndex={0}
       >
         {getFilteredConditionOperatorOptions().map(
@@ -182,7 +182,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
           dispatch(setCurrentPartPropertyFocus({ focus: true }));
         }}
         onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
-        title={value.toString()}
+        title={value?.toString() || ''}
         placeholder="Value"
         tabIndex={0}
       />

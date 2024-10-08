@@ -130,7 +130,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       conn: conn,
       project: project
     } do
-      redirect_path = "/authoring/projects"
+      redirect_path = "/workspaces/course_author"
 
       {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, live_view_route(project.slug))
     end
@@ -677,7 +677,7 @@ defmodule OliWeb.ObjectivesLiveTest do
          %{conn: conn, project: project, publication: publication} do
       create_objective(project, publication, "obj_a", "Objective A")
 
-      conn = get(conn, "/authoring/project/#{project.slug}/objectives")
+      conn = get(conn, "/workspaces/course_author/#{project.slug}/objectives")
 
       {:ok, view, _html} = live(conn)
 

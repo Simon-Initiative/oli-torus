@@ -21,10 +21,12 @@ interface PanelState {
 interface AuthoringPageEditorProps {
   panelState: PanelState;
   handlePanelStateChange: (p: Partial<PanelState>) => void;
+  sidebarExpanded?: boolean;
 }
 
 export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = ({
   panelState,
+  sidebarExpanded,
 }) => {
   const authoringContainer = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch();
@@ -51,7 +53,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   return (
     <div
       id="advanced-authoring"
-      className="advanced-authoring flowchart-editor "
+      className={`advanced-authoring flowchart-editor ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
       ref={authoringContainer}
     >
       <FlowchartHeaderNav
@@ -59,15 +61,11 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
         isVisible={panelState.top}
         authoringContainer={authoringContainer}
       />
-
       <ScreenList onFlowchartMode={onFlowchartMode} />
-
       <EditingCanvas />
-
       <div className="fixed-right-panel">
         <RightMenu />
       </div>
-
       {requiresTemplateSelection && (
         <TemplatePicker
           screenType={activity?.authoring?.flowchart?.screenType}
@@ -75,7 +73,6 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
           onCancel={onCancelTemplate}
         />
       )}
-
       <FlowchartErrorDisplay />
     </div>
   );

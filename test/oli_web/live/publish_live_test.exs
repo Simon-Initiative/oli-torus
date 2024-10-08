@@ -182,7 +182,7 @@ defmodule OliWeb.PublishLiveTest do
       assert conn
              |> get(live_view_publish_route(project.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/authoring/projects\">redirected</a>"
+               "You are being <a href=\"/workspaces/course_author\">redirected</a>"
     end
   end
 

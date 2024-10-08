@@ -92,7 +92,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
                project_slug,
                container.slug,
                Oli.Publishing.AuthoringResolver,
-               project.customizations
+               project.customizations,
+               :workspace
              ),
            adaptivity_flag: Oli.Features.enabled?("adaptivity"),
            rollup: rollup,

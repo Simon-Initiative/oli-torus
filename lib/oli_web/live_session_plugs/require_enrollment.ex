@@ -11,7 +11,7 @@ defmodule OliWeb.LiveSessionPlugs.RequireEnrollment do
 
     case {socket.assigns[:current_user], is_admin?} do
       {_, true} ->
-        {:cont, assign(socket, is_enrolled: false)}
+        {:cont, assign(socket, is_enrolled: true)}
 
       {nil, _} ->
         # if this plug is checking for enrollment, we can infer that we are expecting a user to be already logged in

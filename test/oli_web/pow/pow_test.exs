@@ -57,7 +57,7 @@ defmodule OliWeb.Common.PowTest do
         )
 
       assert html_response(conn, 302) =~
-               Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+               ~p"/workspaces/course_author"
 
       # author who is already signed in should be automatically redirected away from sign in page
       conn =
@@ -65,7 +65,7 @@ defmodule OliWeb.Common.PowTest do
         |> get(Routes.authoring_pow_session_path(conn, :new))
 
       assert html_response(conn, 302) =~
-               Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+               ~p"/workspaces/course_author"
     end
 
     test "shows auth providers sign in buttons", %{conn: conn} do

@@ -20,11 +20,20 @@ defmodule Oli.Delivery.Attempts.ScoringTest do
   end
 
   test "most recent" do
-    items = [%{score: 5, out_of: 10}]
+    items = [%{score: 5, out_of: 10, date_evaluated: ~U[2021-01-01 00:00:00Z]}]
     assert %Result{score: 5, out_of: 10} = Scoring.calculate_score("most_recent", items)
 
-    items = [%{score: 5, out_of: 10}, %{score: 1, out_of: 20}]
-    assert %Result{score: 1, out_of: 20} = Scoring.calculate_score("most_recent", items)
+    items = [
+      %{score: 2, out_of: 10, date_evaluated: ~U[2019-01-01 00:00:00Z]},
+      %{score: 5, out_of: 10, date_evaluated: ~U[2023-01-01 00:00:00Z]},
+      %{score: 1, out_of: 20, date_evaluated: ~U[2021-01-01 00:00:00Z]},
+      %{score: 9, out_of: 20, date_evaluated: nil}
+    ]
+
+    most_recent_id = Oli.Resources.ScoringStrategy.get_id_by_type("most_recent")
+    assert %Result{score: 5, out_of: 10} = Scoring.calculate_score(most_recent_id, items)
+
+    assert %Result{score: 5, out_of: 10} = Scoring.calculate_score("most_recent", items)
   end
 
   test "best" do

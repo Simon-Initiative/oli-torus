@@ -296,7 +296,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert conn
              |> get(live_view_author_edit(project.slug, page_revision.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/authoring/projects\">redirected</a>"
+               "You are being <a href=\"/workspaces/course_author\">redirected</a>"
     end
   end
 

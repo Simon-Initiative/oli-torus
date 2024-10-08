@@ -33,6 +33,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Activity Bank</h2>
     <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/activitybank.js")}>
     </script>
 

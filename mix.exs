@@ -208,7 +208,7 @@ defmodule Oli.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
-      {:tzdata, "~> 1.1"},
+      {:tzdata, "~> 1.1.2"},
       {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.3.0"},
       {:vega_lite, "~> 0.1.9"},

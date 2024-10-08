@@ -422,15 +422,15 @@ defmodule OliWeb.Delivery.Student.Utils do
   end
 
   def build_html(assigns, mode, opts \\ []) do
-    %{section: section, current_user: current_user, page_context: page_context} = assigns
+    %{section: section, page_context: page_context} = assigns
 
     render_context = %Context{
       enrollment:
         Oli.Delivery.Sections.get_enrollment(
           section.slug,
-          current_user.id
+          page_context.user.id
         ),
-      user: current_user,
+      user: page_context.user,
       section_slug: section.slug,
       project_slug: Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
       mode: mode,

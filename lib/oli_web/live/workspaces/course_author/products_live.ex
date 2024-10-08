@@ -58,6 +58,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Products</h2>
     <%= if @published? do %>
       <.form
         :let={f}

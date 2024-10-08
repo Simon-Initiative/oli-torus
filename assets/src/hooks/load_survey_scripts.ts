@@ -9,7 +9,7 @@ export const LoadSurveyScripts = {
             const script = document.createElement('script') as HTMLScriptElement;
             script.src = source;
             script.addEventListener('load', () => resolve());
-            script.addEventListener('error', () => reject());
+            script.addEventListener('error', () => resolve());
             head.appendChild(script);
           }),
       );

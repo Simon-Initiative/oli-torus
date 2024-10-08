@@ -718,5 +718,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
 
       assert length(enqueued_jobs) == 0
     end
+
+    test "renders header", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_publish_route(project.slug))
+
+      assert view
+             |> element("#header_id")
+             |> render() =~
+               "Publish"
+    end
   end
 end
