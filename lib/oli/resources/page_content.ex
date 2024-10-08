@@ -70,13 +70,12 @@ defmodule Oli.Resources.PageContent do
     end
 
     # must process content in certain properties as well as children
+    props = ["children", "caption", "pronunciation", "translations", "content"]
+
     {item, acc} =
-      {item, acc}
-      |> map_reduce_property.("children")
-      |> map_reduce_property.("caption")
-      |> map_reduce_property.("pronunciation")
-      |> map_reduce_property.("translations")
-      |> map_reduce_property.("content")
+      Enum.reduce(props, {item, acc}, fn prop, {item, acc} ->
+        map_reduce_property.({item, acc}, prop)
+      end)
 
     map_fn.(item, acc, tr_context)
   end
