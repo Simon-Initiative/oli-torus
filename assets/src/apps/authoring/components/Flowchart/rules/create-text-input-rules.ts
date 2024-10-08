@@ -95,7 +95,7 @@ export const generateTextInputRules = (
 
   return generateMaxTryWorkflow(correct, incorrect, [], setCorrect, blankCondition, disableAction, {
     threeTimesFeedback,
-    maxAttempt: screen?.content?.custom?.maxAttempt || '2',
+    maxAttempt: screen?.content?.custom?.maxAttempt || '3',
   });
 };
 

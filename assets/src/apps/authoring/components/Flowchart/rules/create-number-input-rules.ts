@@ -133,7 +133,7 @@ export const generteNumberInputRules = (
     setCorrect,
     blankCondition,
     disableAction,
-    { maxAttempt: screen?.content?.custom?.maxAttempt || '2' },
+    { maxAttempt: screen?.content?.custom?.maxAttempt || '3' },
   );
 };
 

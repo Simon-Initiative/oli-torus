@@ -116,7 +116,7 @@ export const generateMaxTryWorkflow = (
     rules.push(
       generateRule(
         'incorrect-max-attempt',
-        [maxOrLaterTry(extraOptions.maxAttempt || '2'), ...incorrect.conditions.map(newId)],
+        [maxOrLaterTry(extraOptions.maxAttempt || '3'), ...incorrect.conditions.map(newId)],
         incorrect.destinationId,
         false,
         40,
@@ -160,7 +160,7 @@ export const generateMaxTryWorkflow = (
 
 const maxOrLaterTry = (value: string): ICondition => ({
   fact: 'session.attemptNumber',
-  operator: 'greaterThan',
+  operator: 'equal',
   value: value,
   type: 1,
   id: guid(),
