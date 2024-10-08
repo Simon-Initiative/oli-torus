@@ -47,20 +47,38 @@ defmodule Oli.Resources.PageContent do
     map_fn.(item, acc, tr_context)
   end
 
-  defp item_with_children(%{"children" => children} = item, acc, map_fn, tr_context) do
-    {children, acc} =
-      Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
-        {item, acc} =
-          map_reduce(item, acc, map_fn, %TraversalContext{
-            tr_context
-            | level: tr_context.level + 1
-          })
+  defp item_with_children(%{"children" => _children} = item, acc, map_fn, tr_context) do
+    map_reduce_property = fn {item, acc}, property ->
+      children = Map.get(item, property)
 
-        {items ++ [item], acc}
-      end)
+      if is_list(children) do
+        {mapped_children, acc} =
+          Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
+            {item, acc} =
+              map_reduce(item, acc, map_fn, %TraversalContext{
+                tr_context
+                | level: tr_context.level + 1
+              })
 
-    Map.put(item, "children", children)
-    |> map_fn.(acc, tr_context)
+            {items ++ [item], acc}
+          end)
+
+        {Map.put(item, property, mapped_children), acc}
+      else
+        {item, acc}
+      end
+    end
+
+    # must process content in certain properties as well as children
+    {item, acc} =
+      {item, acc}
+      |> map_reduce_property.("children")
+      |> map_reduce_property.("caption")
+      |> map_reduce_property.("pronunciation")
+      |> map_reduce_property.("translations")
+      |> map_reduce_property.("content")
+
+    map_fn.(item, acc, tr_context)
   end
 
   @doc """
