@@ -38,7 +38,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     offset: 0,
     limit: 20,
     sort_order: :asc,
-    sort_by: :title,
+    sort_by: :order,
     text_search: nil
   }
 
@@ -455,11 +455,14 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
       :title ->
         Enum.sort_by(assessments, &String.downcase(&1.title), sort_order)
+
+      :order ->
+        Enum.sort_by(assessments, fn a -> Map.get(a, :order) end, sort_order)
     end
   end
 
   defp decode_params(params) do
-    sort_options = [:title, :due_date, :avg_score, :total_attempts, :students_completion]
+    sort_options = [:order, :title, :due_date, :avg_score, :total_attempts, :students_completion]
 
     %{
       offset: Params.get_int_param(params, "offset", @default_params.offset),

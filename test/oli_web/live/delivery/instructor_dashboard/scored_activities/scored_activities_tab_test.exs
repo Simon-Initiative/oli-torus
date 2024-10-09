@@ -1136,6 +1136,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       case tab_name do
         :assessments ->
           [
+            :order,
             :title,
             :due_date,
             :avg_score,
@@ -1297,6 +1298,50 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
              ] = table_as_list_of_maps(view, :assessments) |> Enum.map(& &1.due_date)
     end
 
+    test "sorting by Order number", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
+      [a0, _a1, _a2, _a3, a4] = table_as_list_of_maps(view, :assessments)
+
+      assert view
+             |> element("tr:first-child > td:first-child > div")
+             |> render() =~ a0.order
+
+      assert view
+             |> element("tr:first-child > td:nth-child(2) > div")
+             |> render() =~ a0.title
+
+      assert view
+             |> element("tr:last-child > td:first-child > div")
+             |> render() =~ a4.order
+
+      assert view
+             |> element("tr:last-child > td:nth-child(2) > div > div")
+             |> render() =~ "Page 4"
+
+      view
+      |> element("th[phx-value-sort_by=order]")
+      |> render_click()
+
+      assert view
+             |> element("tr:first-child > td:first-child > div")
+             |> render() =~ a4.order
+
+      assert view
+             |> element("tr:first-child > td:nth-child(2) > div > div > a")
+             |> render() =~ "Page 4"
+
+      assert view
+             |> element("tr:last-child > td:first-child > div")
+             |> render() =~ a0.order
+
+      assert view
+             |> element("tr:last-child > td:nth-child(2) > div")
+             |> render() =~ a0.title
+    end
+
     test "displays custom labels", %{
       conn: conn,
       section: section
@@ -1342,7 +1387,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
           assert String.starts_with?(url_with_params, url)
           assert url_with_params =~ "assessment_table_params[offset]=0"
           assert url_with_params =~ "assessment_table_params[limit]=20"
-          assert url_with_params =~ "assessment_table_params[sort_by]=title"
+          assert url_with_params =~ "assessment_table_params[sort_by]=order"
           assert url_with_params =~ "assessment_table_params[assessment_id]="
           assert url_with_params =~ "assessment_table_params[text_search]="
           assert url_with_params =~ "assessment_table_params[sort_order]=asc"

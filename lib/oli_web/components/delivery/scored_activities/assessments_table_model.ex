@@ -8,32 +8,38 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
   def new(assessments, ctx, target) do
     column_specs = [
       %ColumnSpec{
+        name: :order,
+        label: "ORDER",
+        render_fn: &render_order_column/3,
+        th_class: "pl-10"
+      },
+      %ColumnSpec{
         name: :title,
         label: "ASSESSMENT",
-        render_fn: &__MODULE__.render_assessment_column/3,
+        render_fn: &render_assessment_column/3,
         th_class: "pl-10"
       },
       %ColumnSpec{
         name: :due_date,
         label: "DUE DATE",
-        render_fn: &__MODULE__.render_due_date_column/3
+        render_fn: &render_due_date_column/3
       },
       %ColumnSpec{
         name: :avg_score,
         label: "AVG SCORE",
-        render_fn: &__MODULE__.render_avg_score_column/3
+        render_fn: &render_avg_score_column/3
       },
       %ColumnSpec{
         name: :total_attempts,
         label: "TOTAL ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3
+        render_fn: &render_attempts_column/3
       },
       %ColumnSpec{
         name: :students_completion,
         label: "STUDENTS PROGRESS",
         tooltip:
           "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
-        render_fn: &__MODULE__.render_students_completion_column/3
+        render_fn: &render_students_completion_column/3
       }
     ]
 
@@ -47,6 +53,16 @@ defmodule OliWeb.Delivery.ScoredActivities.AssessmentsTableModel do
         target: target
       }
     )
+  end
+
+  def render_order_column(assigns, assessment, _) do
+    assigns = Map.merge(assigns, %{order: assessment.order})
+
+    ~H"""
+    <div class="pl-9 pr-4 flex flex-col">
+      <%= @order %>
+    </div>
+    """
   end
 
   def render_assessment_column(assigns, assessment, _) do
