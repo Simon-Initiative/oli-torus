@@ -113,7 +113,7 @@ export const generateMaxTryWorkflow = (
   }
 
   // [max incorrect, that sets the correct value in the control - with incorrect feedback plus nav]
-  // [Special handling for maxAttempt = 1. If the author sets the attempts to 1, the max attempt feedback should display on the first incorrect attempt
+  // [Special handling for maxAttempt = 1.  If the author sets the attempts to 1, the max attempt feedback should display on the first incorrect attempt
   //  unless the author has provided custom incorrect feedback. In such a case, the custom feedback should be displayed instead.]
   incorrect.destinationId &&
     rules.push(
