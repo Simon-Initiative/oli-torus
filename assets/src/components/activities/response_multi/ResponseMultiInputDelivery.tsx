@@ -62,7 +62,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
 
   const deferredSaves = useRef(
     model.inputs.reduce((m: any, input: MultiInput) => {
-      const p = initializePersistence();
+      const p = initializePersistence(750, 1200);
       m[input.id] = p;
       return m;
     }, {}),

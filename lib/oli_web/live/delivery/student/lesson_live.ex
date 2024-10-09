@@ -22,7 +22,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
-  alias OliWeb.Icons
 
   require Logger
 
@@ -171,16 +170,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event("survey_scripts_loaded", _params, socket) do
     {:noreply, assign(socket, scripts_loaded: true)}
-  end
-
-  def handle_event("select_question", %{"id" => selected_id}, socket) do
-    questions =
-      socket.assigns.questions
-      |> Enum.into(%{}, fn {id, question} ->
-        {id, Map.put(question, :selected, id == selected_id)}
-      end)
-
-    {:noreply, assign(socket, questions: questions)}
   end
 
   def handle_event(
@@ -669,6 +658,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     end
   end
 
+  def handle_info({:disable_question_inputs, question_id}, socket) do
+    {:noreply, push_event(socket, "disable_question_inputs", %{"question_id" => question_id})}
+  end
+
   # handle assigns directly from async tasks
   def handle_info({ref, result}, socket) do
     Process.demonitor(ref, [:flush])
@@ -818,159 +811,31 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="one_at_a_time_questions" class="relative h-[500px]">
-            <%!--  render this as a component on MER-3640 --%>
-            <% question_number =
-              Enum.find(@questions, {1, nil}, fn {_, q} -> q.selected end) |> elem(0) %>
-            <% total_questions = Enum.count(@questions) %>
-            <% question_points = Enum.random(5..10) %>
-            <div class="absolute w-screen flex flex-col items-center -left-[50vw]">
-              <div role="questions header" class="w-[1170px] pl-[189px]">
-                <div class="flex w-full justify-between">
-                  <div class="text-[#757682] text-xs font-normal font-['Open Sans'] leading-[18px]">
-                    Question <%= question_number %> / <%= total_questions %> • <%= question_points %> points
-                  </div>
-                  <button class="flex items-center gap-2">
-                    <div class="opacity-90 text-right text-[#0080ff] text-base font-bold font-['Open Sans'] leading-normal">
-                      Finish Quiz
-                    </div>
-                    <Icons.finish_quiz_flag />
-                  </button>
-                </div>
-                <div
-                  role="progress bar"
-                  class="mb-3 w-[976px] h-[3.30px] bg-[#1c1c1c]/10 flex-col justify-start items-start inline-flex"
-                >
-                  <div class="w-[2.60px] h-1 bg-[#0062f2]"></div>
-                </div>
-              </div>
-              <div role="questions main content" class="mx-auto flex justify-center gap-8 w-full">
-                <.questions_menu questions={@questions} />
-                <div
-                  role="questions content"
-                  class="content h-[484px] w-[981px] rounded-md border border-[#c8c8c8]"
-                >
-                  <div
-                    id="eventIntercept"
-                    phx-update="ignore"
-                    class="flex h-[400px] border-b border-[#c8c8c8]"
-                  >
-                    <div
-                      :for={{index, question} <- @questions}
-                      id={"question_#{index}"}
-                      role="one at a time question"
-                      class={[
-                        "overflow-scroll p-10 h-[400px] w-[808px] oveflow-hidden border-r border-[#c8c8c8]",
-                        if(!question.selected, do: "hidden")
-                      ]}
-                    >
-                      <%= raw(question.raw_content) %>
-                    </div>
-                    <div
-                      role="score summary"
-                      class="w-[173px] px-10 py-6 text-sm font-normal font-['Open Sans'] leading-none whitespace-nowrap"
-                    >
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 1:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
-                      </div>
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 2:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
-                      </div>
-                      <div>
-                        <span class="text-[#757682]">
-                          Part 3:
-                        </span>
-                        <span class="text-[#353740]">
-                          2 points
-                        </span>
-                        <div>
-                          <span class="text-[#757682]">
-                            Part 4:
-                          </span>
-                          <span class="text-[#353740]">
-                            2 points
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="flex justify-center w-full h-[84px] items-center">
-                    <button
-                      disabled
-                      class="h-[30px] px-5 py-2.5 bg-[#9d9d9d] rounded-md shadow justify-center items-center gap-2.5 inline-flex opacity-90 text-right text-white text-base font-semibold font-['Open Sans'] leading-normal whitespace-nowrap"
-                    >
-                      Submit Response
-                    </button>
-                  </div>
-                  <.references ctx={@ctx} bib_app_params={@bib_app_params} />
-                </div>
-              </div>
-              <div
-                role="questions footer"
-                class="w-[1170px] pl-[189px] mb-32 py-8 flex justify-between"
-              >
-                <button
-                  phx-click={JS.dispatch("click", to: "#question_#{question_number - 1}_button")}
-                  disabled={question_number == 1}
-                  class={[
-                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
-                    if(question_number == 1, do: "!text-[#757682]")
-                  ]}
-                >
-                  <svg
-                    width="13"
-                    height="10"
-                    viewBox="0 0 13 10"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M1.5 5H11.5M1.5 5L5.5 9M1.5 5L5.5 1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                  <span>Previous Question</span>
-                </button>
-                <button
-                  phx-click={JS.dispatch("click", to: "#question_#{question_number + 1}_button")}
-                  disabled={question_number == total_questions}
-                  class={[
-                    "px-5 py-2.5 rounded-md shadow border flex justify-center items-center gap-2.5 opacity-90 text-right text-[#0080ff] text-sm font-semibold font-['Open Sans'] leading-[14px] whitespace-nowrap",
-                    if(question_number == total_questions, do: "!text-[#757682]")
-                  ]}
-                >
-                  <span>Next Question</span>
-                  <svg
-                    width="13"
-                    height="10"
-                    viewBox="0 0 13 10"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M11.2544 5H1.25439M11.2544 5L7.25439 9M11.2544 5L7.25439 1"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            </div>
+          <div :if={@questions != []} class="relative min-h-[500px]">
+            <.live_component
+              id="one_at_a_time_questions"
+              module={OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion}
+              questions={@questions}
+              attempt_number={@attempt_number}
+              max_attempt_number={@max_attempt_number}
+              datashop_session_id={@datashop_session_id}
+              ctx={@ctx}
+              bib_app_params={@bib_app_params}
+              request_path={@request_path}
+              revision_slug={@revision_slug}
+              attempt_guid={@attempt_guid}
+              section_slug={@section.slug}
+            />
+          </div>
+          <div :if={@questions == []} class="flex w-full justify-center">
+            <p>
+              There are no questions available for this page.
+            </p>
+          </div>
+          <div :if={@questions == []} class="flex w-full justify-center">
+            <p>
+              There are no questions available for this page.
+            </p>
           </div>
         </div>
       </div>
@@ -999,10 +864,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             <div class="flex w-full justify-center">
               <button
                 id="submit_answers"
-                phx-click="finalize_attempt"
+                phx-hook="DelayedSubmit"
                 class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
               >
-                Submit Answers
+                <span class="button-text">Submit Answers</span>
+                <span class="spinner hidden ml-2 animate-spin">
+                  <svg
+                    class="w-5 h-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    >
+                    </circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    >
+                    </path>
+                  </svg>
+                </span>
               </button>
             </div>
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
@@ -1037,42 +927,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <div></div>
     """
-  end
-
-  def questions_menu(assigns) do
-    ~H"""
-    <div id="questions_menu" class="w-[157px] h-[468px] ml-0 my-2 overflow-y-scroll flex flex-col">
-      <button
-        :for={{id, question} <- @questions}
-        id={"question_#{id}_button"}
-        phx-click={select_question(id)}
-        phx-value-id={id}
-        class={[
-          "flex items-center gap-[18px] h-[33px] pl-[16.5px]",
-          if(question.selected, do: "!bg-[#0f6bf5]/5")
-        ]}
-      >
-        <div class={[
-          "w-2.5 h-2.5 bg-[#d9d9d9] rounded-full",
-          if(question.selected, do: "!border-2 !border-[#0062f2]")
-        ]}>
-        </div>
-        <span class={[
-          "text-[#353740] text-base font-normal font-['Open Sans'] leading-normal",
-          if(question.selected, do: "!text-[#0f6bf5] !font-bold")
-        ]}>
-          Question <%= id %>
-        </span>
-      </button>
-    </div>
-    """
-  end
-
-  defp select_question(js \\ %JS{}, id) do
-    js
-    |> JS.push("select_question", value: %{id: id})
-    |> JS.hide(to: "div[role='one at a time question']")
-    |> JS.show(to: "#question_#{id}")
   end
 
   def countdown(assigns) do
@@ -1454,19 +1308,88 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp maybe_assign_questions(socket, :traditional), do: socket
 
   defp maybe_assign_questions(socket, :one_at_a_time) do
+    activity_part_points_mapper =
+      build_activity_part_points_mapper(socket.assigns.page_context.activities)
+
     questions =
       socket.assigns.html
       |> List.flatten()
-      |> Enum.reduce({1, %{}}, fn element, {index, map} ->
+      |> Enum.reduce({1, []}, fn element, {index, activities} ->
         if String.contains?(element, "activity-container") do
-          {index + 1, Map.put(map, index, %{raw_content: element, selected: index == 1})}
+          state =
+            element
+            |> Floki.parse_fragment!()
+            |> Floki.attribute("state")
+            |> hd()
+            |> Jason.decode!()
+
+          context =
+            element
+            |> Floki.parse_fragment!()
+            |> Floki.attribute("context")
+            |> hd()
+            |> Jason.decode!()
+
+          {index + 1,
+           [
+             %{
+               number: index,
+               raw_content: element,
+               selected: index == 1,
+               state: state,
+               context: context,
+               answered: !Enum.any?(state["parts"], fn part -> part["response"] in ["", nil] end),
+               submitted:
+                 !Enum.any?(state["parts"], fn part -> part["dateSubmitted"] in ["", nil] end),
+               part_points: activity_part_points_mapper[state["activityId"]]
+             }
+             | activities
+           ]}
         else
-          {index, map}
+          {index, activities}
         end
       end)
       |> elem(1)
+      |> Enum.reverse()
 
-    assign(socket, questions: questions)
+    assign(socket,
+      questions: questions,
+      attempt_number: attempt_number(socket.assigns.page_context),
+      max_attempt_number: max_attempt_number(socket.assigns.page_context)
+    )
+  end
+
+  defp max_attempt_number(%{effective_settings: %{max_attempts: 0}} = _page_context),
+    do: "unlimited"
+
+  defp max_attempt_number(%{effective_settings: %{max_attempts: max_attempts}} = _page_context),
+    do: max_attempts
+
+  defp attempt_number(%{resource_attempts: resource_attempts} = _page_context),
+    do: hd(resource_attempts).attempt_number
+
+  defp build_activity_part_points_mapper(activities) do
+    # activity_id => %{"part_id" => total_part_points}
+    # %{
+    #   12742 => %{"1" => 1},
+    #   12745 => %{"1" => 1},
+    #   12746 => %{"1" => 1, "3660145108" => 1}
+    # }
+
+    Enum.reduce(activities, %{}, fn {activity_id, activity_summary}, act_acum ->
+      part_scores =
+        activity_summary.unencoded_model["authoring"]["parts"]
+        |> Enum.reduce(%{}, fn part, part_acum ->
+          Map.merge(part_acum, %{
+            part["id"] =>
+              Enum.reduce(part["responses"], 0, fn response, acum_score ->
+                acum_score + response["score"]
+              end)
+          })
+        end)
+
+      Map.merge(act_acum, %{activity_id => part_scores})
+    end)
   end
 
   defp to_epoch(nil), do: nil

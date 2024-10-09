@@ -75,6 +75,10 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
           # practice pages do not have prologue page.
           ensure_path(conn, :lesson)
 
+        {:practice, :not_adaptive, _, true} ->
+          # practice pages do not have prologue page.
+          ensure_path(conn, :review, :not_adaptive)
+
         {:practice, :adaptive_chromeless, _, false} ->
           ensure_path(conn, :adaptive_lesson)
       end
@@ -222,13 +226,13 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     end
   end
 
-  defp ensure_path(conn, rendering_type) when rendering_type in [:adaptive_lesson, :lesson] do
+  defp ensure_path(conn, :lesson) do
     section_slug = conn.params["section_slug"]
     revision_slug = conn.params["revision_slug"]
 
     if String.contains?(
          conn.request_path,
-         "/#{rendering_type}/"
+         "/lesson/"
        ) do
       conn
       |> assign(:already_been_redirected?, false)
@@ -237,7 +241,31 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       |> halt()
       |> assign(:already_been_redirected?, true)
       |> Phoenix.Controller.redirect(
-        to: "/sections/#{section_slug}/#{rendering_type}/#{revision_slug}?#{conn.query_string}"
+        to: "/sections/#{section_slug}/lesson/#{revision_slug}?#{conn.query_string}"
+      )
+    end
+  end
+
+  defp ensure_path(conn, :adaptive_lesson) do
+    section_slug = conn.params["section_slug"]
+    revision_slug = conn.params["revision_slug"]
+
+    if String.contains?(
+         conn.request_path,
+         "/adaptive_lesson/"
+       ) do
+      conn
+      |> assign(:already_been_redirected?, false)
+    else
+      # adaptive lesson in iframes do not support query params in the url
+      # so we store the request_path in the session.
+      # * the request_path is used by the adaptive page to redirect the user back to the appropriate page
+      conn
+      |> halt()
+      |> put_session(:request_path, conn.params["request_path"])
+      |> assign(:already_been_redirected?, true)
+      |> Phoenix.Controller.redirect(
+        to: "/sections/#{section_slug}/adaptive_lesson/#{revision_slug}"
       )
     end
   end

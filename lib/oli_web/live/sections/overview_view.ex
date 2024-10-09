@@ -8,12 +8,16 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.Details.ImageUpload
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
   alias OliWeb.Common.MonacoEditor
+  alias Oli.Utils.S3Storage
   alias Oli.Repo
+
+  require Logger
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
@@ -83,6 +87,7 @@ defmodule OliWeb.Sections.OverviewView do
            instructors: fetch_instructors(section),
            user: user,
            section: section,
+           changeset: Section.changeset(section, %{}),
            updates_count: updates_count,
            has_submitted_attempts:
              Oli.Delivery.Attempts.ManualGrading.has_submitted_attempts(section),
@@ -90,6 +95,12 @@ defmodule OliWeb.Sections.OverviewView do
            resource_slug: revision_slug,
            show_required_section_config: show_required_section_config,
            base_project: base_project
+         )
+         |> Phoenix.LiveView.allow_upload(:cover_image,
+           accept: ~w(.jpg .jpeg .png),
+           max_entries: 1,
+           auto_upload: true,
+           max_file_size: 5_000_000
          )}
     end
   end
@@ -122,6 +133,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     ~H"""
     <%= render_modal(assigns) %>
+    <div class="ml-auto"><.flash_message flash={@flash} /></div>
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
@@ -142,18 +154,26 @@ defmodule OliWeb.Sections.OverviewView do
         <% end %>
         <div class="flex flex-col form-group">
           <label>Base Project</label>
-          <a href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @base_project.slug)
-          }>
+          <a
+            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @base_project.slug)}
+            class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+          >
             <%= @base_project.title %>
           </a>
         </div>
         <%= unless is_nil(@section.blueprint_id) do %>
           <div class="flex flex-col form-group">
             <label>Product</label>
-            <a href={
-              Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, @section.blueprint.slug)
-            }>
+            <a
+              href={
+                Routes.live_path(
+                  OliWeb.Endpoint,
+                  OliWeb.Products.DetailsView,
+                  @section.blueprint.slug
+                )
+              }
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
               <%= @section.blueprint.title %>
             </a>
           </div>
@@ -165,7 +185,11 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render label="Curriculum" description="Manage content delivered to students">
         <ul class="link-list">
           <li>
-            <a target="_blank" href={~p"/sections/#{@section.slug}/preview"} class="btn btn-link">
+            <a
+              target="_blank"
+              href={~p"/sections/#{@section.slug}/preview"}
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+            >
               <span>Preview Course as Student</span>
               <i class="fas fa-external-link-alt self-center ml-1" />
             </a>
@@ -173,7 +197,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Customize Content
             </a>
@@ -181,7 +205,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Scheduling
             </a>
@@ -196,7 +220,7 @@ defmodule OliWeb.Sections.OverviewView do
                   @section.slug
                 )
               }
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Manage Source Materials
               <%= if @updates_count > 0 do %>
@@ -212,7 +236,7 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Invite Students
               </a>
@@ -221,7 +245,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Edit Section Details
             </a>
@@ -229,7 +253,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Browse Collaborative Spaces
             </a>
@@ -245,7 +269,7 @@ defmodule OliWeb.Sections.OverviewView do
                   :all
                 )
               }
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Assessment Settings
             </a>
@@ -253,7 +277,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <button
               type="button"
-              class="btn btn-link text-danger action-button"
+              class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
               phx-click="show_delete_modal"
             >
               Delete Section
@@ -307,11 +331,7 @@ defmodule OliWeb.Sections.OverviewView do
         </section>
       </Group.render>
 
-      <Group.render
-        label="Scoring"
-        description="View and manage student scores and progress"
-        is_last={not @is_lms_or_system_admin or @section.open_and_free}
-      >
+      <Group.render label="Scoring" description="View and manage student scores and progress">
         <ul class="link-list">
           <li>
             <a
@@ -322,7 +342,7 @@ defmodule OliWeb.Sections.OverviewView do
                   @section.slug
                 )
               }
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Score Manually Graded Activities
               <%= if @has_submitted_attempts do %>
@@ -333,7 +353,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               View all Scores
             </a>
@@ -341,7 +361,7 @@ defmodule OliWeb.Sections.OverviewView do
           <li>
             <a
               href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
-              class="btn btn-link"
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Download Gradebook as <code>.csv</code> file
             </a>
@@ -353,7 +373,7 @@ defmodule OliWeb.Sections.OverviewView do
                 href={
                   Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)
                 }
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Manage Snapshot Records
               </a>
@@ -363,7 +383,7 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Manage LMS Gradebook
               </a>
@@ -373,7 +393,7 @@ defmodule OliWeb.Sections.OverviewView do
                 href={
                   Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)
                 }
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 View scores that failed to sync
               </a>
@@ -388,7 +408,7 @@ defmodule OliWeb.Sections.OverviewView do
                       @section.slug
                     )
                   }
-                  class="btn btn-link"
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
                 >
                   Observe score updates in real-time
                 </a>
@@ -399,7 +419,7 @@ defmodule OliWeb.Sections.OverviewView do
                 href={
                   Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)
                 }
-                class="btn btn-link"
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Browse LMS Score Update Log
               </a>
@@ -409,14 +429,27 @@ defmodule OliWeb.Sections.OverviewView do
       </Group.render>
 
       <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render
-          label="LMS Admin"
-          description="Administrator LMS Connection"
-          is_last={!@is_system_admin}
-        >
+        <Group.render label="LMS Admin" description="Administrator LMS Connection">
           <UnlinkSection.render unlink="unlink" section={@section} />
         </Group.render>
       <% end %>
+
+      <Group.render
+        label="Cover Image"
+        description="Manage the cover image for this section. Max file size is 5 MB."
+        is_last={!@is_system_admin}
+      >
+        <section>
+          <ImageUpload.render
+            section={@section}
+            uploads={@uploads}
+            changeset={to_form(@changeset)}
+            upload_event="update_image"
+            change="change"
+            cancel_upload="cancel_upload"
+          />
+        </section>
+      </Group.render>
 
       <div :if={@is_system_admin} class="border-t dark:border-gray-700">
         <Group.render
@@ -628,6 +661,43 @@ defmodule OliWeb.Sections.OverviewView do
     {:noreply, assign(socket, section: section)}
   end
 
+  def handle_event("update_image", _, socket) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
+    [uploaded_path] =
+      consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
+        temp_file_path = meta.path
+        section_path = "sections/#{socket.assigns.section.slug}"
+        image_file_name = "#{entry.uuid}.#{ext(entry)}"
+        upload_path = "#{section_path}/#{image_file_name}"
+
+        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+      end)
+
+    with {:ok, section} <-
+           Sections.update_section(socket.assigns.section, %{cover_image: uploaded_path}) do
+      socket = put_flash(socket, :info, "Section changes saved")
+      {:noreply, assign(socket, section: section, changeset: Section.changeset(section, %{}))}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        socket = put_flash(socket, :info, "Couldn't update section image")
+        {:noreply, assign(socket, changeset: changeset)}
+
+      {:error, payload} ->
+        Logger.error("Error uploading section image to S3: #{inspect(payload)}")
+        socket = put_flash(socket, :info, "Couldn't update section image")
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :cover_image, ref)}
+  end
+
+  def handle_event("validate_image", _, socket) do
+    {:noreply, socket}
+  end
+
   attr :section, Section
 
   def assistant_toggle_button(assigns) do
@@ -642,5 +712,45 @@ defmodule OliWeb.Sections.OverviewView do
       </.button>
     <% end %>
     """
+  end
+
+  defp flash_message(assigns) do
+    ~H"""
+    <%= if Phoenix.Flash.get(@flash, :info) do %>
+      <div class="alert alert-info flex flex-row justify-between" role="alert">
+        <%= Phoenix.Flash.get(@flash, :info) %>
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="info"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    <% end %>
+    <%= if Phoenix.Flash.get(@flash, :error) do %>
+      <div class="alert alert-danger flex flex-row justify-between" role="alert">
+        <%= Phoenix.Flash.get(@flash, :error) %>
+        <button
+          type="button"
+          class="close ml-4"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-click="lv:clear-flash"
+          phx-value-key="error"
+        >
+          <i class="fa-solid fa-xmark fa-lg" />
+        </button>
+      </div>
+    <% end %>
+    """
+  end
+
+  defp ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    ext
   end
 end

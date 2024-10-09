@@ -36,8 +36,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
      assign(socket,
        resource_slug: project.slug,
        resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :products,
        published?: published?,
        is_admin_view: false,
        include_archived: include_archived,
@@ -50,75 +48,55 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   end
 
   @impl Phoenix.LiveView
-  def handle_params(params, _, socket) do
-    # If the sidebar was toggled, we don't need to update the table model
-    sidebar_was_toggled = Map.keys(socket.assigns.__changed__) == [:sidebar_expanded]
-
-    if sidebar_was_toggled do
-      {:noreply, socket}
-    else
-      table_model =
-        SortableTableModel.update_from_params(socket.assigns.table_model, params)
-
-      offset = Params.get_int_param(params, "offset", @initial_offset)
-      include_archived = Params.get_boolean_param(params, "include_archived", false)
-
-      products = get_products(socket.assigns)
-
-      table_model = Map.put(table_model, :rows, products)
-
-      {:noreply,
-       assign(socket,
-         offset: offset,
-         table_model: table_model,
-         include_archived: include_archived
-       )}
-    end
+  def handle_params(params, _uri, socket) do
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
+    table_model = Map.put(table_model, :rows, table_model.rows)
+    socket = assign(socket, table_model: table_model)
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div>
-      <%= if @published? do %>
-        <.form
-          :let={f}
-          for={@create_product_form}
-          as={:create_product_form}
-          class="full flex items-end w-full gap-1"
-          phx-submit="create"
-        >
-          <div class="flex flex-col-reverse phx-no-feedback w-[40%]">
-            <.input
-              class="full"
-              field={f[:product_title]}
-              label="Create a new product with title:"
-              required
-            />
-          </div>
-          <button class="btn btn-primary">
-            Create Product
-          </button>
-        </.form>
+    <h2 id="header_id" class="pb-2">Products</h2>
+    <%= if @published? do %>
+      <.form
+        :let={f}
+        for={@create_product_form}
+        as={:create_product_form}
+        class="full flex items-end w-full gap-1"
+        phx-submit="create"
+      >
+        <div class="flex flex-col-reverse phx-no-feedback w-[40%]">
+          <.input
+            class="full"
+            field={f[:product_title]}
+            label="Create a new product with title:"
+            required
+          />
+        </div>
+        <button class="btn btn-primary">
+          Create Product
+        </button>
+      </.form>
 
-        <Check.render checked={@include_archived} click="include_archived">
-          Include archived Products
-        </Check.render>
+      <Check.render checked={@include_archived} click="include_archived">
+        Include archived Products
+      </Check.render>
 
-        <div class="mb-3" />
+      <div class="mb-3" />
 
-        <PagedTable.render
-          page_change="paged_table_page_change"
-          sort="paged_table_sort"
-          total_count={Enum.count(@table_model.rows)}
-          limit={@limit}
-          offset={@offset}
-          table_model={@table_model}
-        />
-      <% else %>
-        <div>Products cannot be created until project is published.</div>
-      <% end %>
-    </div>
+      <PagedTable.render
+        page_change="paged_table_page_change"
+        sort="paged_table_sort"
+        total_count={Enum.count(@table_model.rows)}
+        limit={@limit}
+        offset={@offset}
+        table_model={@table_model}
+      />
+    <% else %>
+      <div>Products cannot be created until project is published.</div>
+    <% end %>
     """
   end
 

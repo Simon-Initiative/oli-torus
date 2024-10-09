@@ -1,0 +1,36 @@
+<%= render_layout "authoring.html", assigns do %>
+  <div class="workspace">
+    <a id="skip-nav" tabindex="1" class="screenreader-text" href="#main-content">
+      Skip Navigation
+    </a>
+    <div class="workspace-top d-flex flex-row shadow">
+      <div class="logo justify-content-center align-items-center">
+        <% logo_url =
+          if @is_system_admin,
+            do: ~p"/workspaces/course_author",
+            else: OliWeb.Router.Helpers.static_page_path(@conn, :index) %>
+        <a href={logo_url}>
+          <img class="self-center mx-auto" src={Oli.VendorProperties.workspace_logo()} />
+        </a>
+      </div>
+      <%= render(OliWeb.LayoutView, "_workspace_header.html", assigns) %>
+    </div>
+    <div class="d-flex flex-grow-1">
+      <div class="workspace-left">
+        <%= render(
+          OliWeb.LayoutView,
+          "_#{if @conn.params["project_id"], do: "project", else: "workspace"}_sidebar.html",
+          assigns
+        ) %>
+      </div>
+      <div class="workspace-right">
+        <main role="main" id="main-content" class="flex-1">
+          <%= @inner_content %>
+        </main>
+        <%= OliWeb.Components.Footer.global_footer(%{}) %>
+      </div>
+    </div>
+  </div>
+
+  <%= react_component("Components.ModalDisplay") %>
+<% end %>

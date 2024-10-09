@@ -23,6 +23,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
   attr(:objective_map, :map, required: true)
   attr(:view, :string, required: true)
   attr(:revision_history_link, :boolean, default: false)
+  attr(:sidebar_expanded, :boolean)
 
   def render(assigns) do
     ~H"""
@@ -52,7 +53,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
             <.link
               class="entry-title mx-3"
-              href={~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}"}
+              href={
+                ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
+              }
             >
               Edit Page
             </.link>
@@ -118,6 +121,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
         revision.title
       end
 
-    link(title, to: path, class: class)
+    assigns = %{path: path, class: class, title: title}
+
+    ~H"""
+    <.link navigate={@path} class={@class}><%= @title %></.link>
+    """
   end
 end

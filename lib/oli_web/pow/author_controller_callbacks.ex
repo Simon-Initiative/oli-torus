@@ -4,21 +4,32 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
   for example, to link the just created authoring account to the user account that is currently in the conn.
   More info in https://hexdocs.pm/pow/1.0.31/README.html#phoenix-controllers
   """
-  use Pow.Extension.Phoenix.ControllerCallbacks.Base
+  alias Pow.Extension.Phoenix.ControllerCallbacks
   use OliWeb, :verified_routes
 
   alias Oli.Utils
+  alias OliWeb.Pow.SessionUtils
   alias OliWeb.Router.Helpers, as: Routes
 
   def before_respond(
         Pow.Phoenix.SessionController,
         :create,
         {:error, %Plug.Conn{assigns: %{request_path: "/workspaces/course_author"}} = conn},
-        _config
+        config
       ) do
     conn
-    |> Phoenix.Controller.put_flash(:error, messages(conn).invalid_credentials(conn))
+    |> Phoenix.Controller.put_flash(
+      :error,
+      Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).invalid_credentials(conn)
+    )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
+
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.SessionController,
+      :create,
+      {:error, conn},
+      config
+    )
   end
 
   def before_respond(
@@ -28,24 +39,48 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
          %Plug.Conn{
            assigns: %{request_path: "/workspaces/course_author", ctx: %{user: %{author_id: nil}}}
          } = conn},
-        _config
+        config
       ) do
     {:ok, _updated_user} =
       link_to_user_account(conn.assigns.current_user, conn.assigns.current_author.id)
 
     conn
+    |> maybe_logout_user()
     |> Phoenix.Controller.put_flash(
       :info,
       "Account '#{conn.assigns.current_author.email}' is now linked to '#{conn.assigns.current_user.email}'"
     )
     |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
+
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.SessionController,
+      :create,
+      {:ok, conn},
+      config
+    )
+  end
+
+  def before_respond(
+        Pow.Phoenix.SessionController,
+        :create,
+        {:ok, conn},
+        config
+      ) do
+    conn = conn |> maybe_logout_user()
+
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.SessionController,
+      :create,
+      {:ok, conn},
+      config
+    )
   end
 
   def before_respond(
         Pow.Phoenix.RegistrationController,
         :create,
         {:error, author_changeset, conn},
-        _config
+        config
       ) do
     # for security reasons (possible account information leakage)
     # we don't want to show the email "has already been taken" error message (see MER-3129)
@@ -82,24 +117,40 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
         conn
       end
 
-    {:error, %{author_changeset | errors: updated_errors}, conn}
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.RegistrationController,
+      :create,
+      {:error, %{author_changeset | errors: updated_errors}, conn},
+      config
+    )
   end
 
-  def before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, author, conn}, _config) do
-    conn =
-      maybe_assign_request_path(conn)
+  def before_respond(Pow.Phoenix.RegistrationController, :create, {:ok, author, conn}, config) do
+    conn = maybe_assign_request_path(conn)
 
-    case conn do
-      %{query_params: %{"link_to_user_account?" => "true"}, assigns: %{ctx: %{user: user}}}
-      when not is_nil(user) ->
-        {:ok, _updated_user} = link_to_user_account(user, author.id)
+    {:ok, author, conn} =
+      case conn do
+        %{query_params: %{"link_to_user_account?" => "true"}, assigns: %{ctx: %{user: user}}}
+        when not is_nil(user) ->
+          {:ok, _updated_user} = link_to_user_account(user, author.id)
 
-        {:ok, author, conn}
+          {:ok, author, conn}
 
-      _ ->
-        {:ok, author, conn}
-    end
+        _ ->
+          {:ok, author, conn}
+      end
+
+    ControllerCallbacks.before_respond(
+      Pow.Phoenix.RegistrationController,
+      :create,
+      {:ok, author, conn},
+      config
+    )
   end
+
+  defdelegate before_respond(controller, action, results, config), to: ControllerCallbacks
+
+  defdelegate before_process(controller, action, results, config), to: ControllerCallbacks
 
   _docp = """
   If there is a "request_path" query parameter in the request, assign it to the conn.
@@ -118,4 +169,13 @@ defmodule OliWeb.Pow.AuthorControllerCallbacks do
 
   defp link_to_user_account(user_account, author_id),
     do: OliWeb.Pow.UserContext.update(user_account, %{author_id: author_id})
+
+  defp maybe_logout_user(conn) do
+    if conn.assigns.current_user != nil and
+         Oli.Accounts.is_system_admin?(conn.assigns.current_author) do
+      SessionUtils.perform_signout(conn, "user")
+    else
+      conn
+    end
+  end
 end

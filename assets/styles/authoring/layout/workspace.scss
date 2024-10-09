@@ -152,6 +152,16 @@ $workspace-sidebar-width: 65px;
         }
       }
     }
+
+    .breadcrumb-item-workspace {
+      display: inline-block;
+
+      & + .breadcrumb-item {
+        &::before {
+          padding-right: 0.35rem;
+        }
+      }
+    }
   }
 
   .workspace-sidebar {

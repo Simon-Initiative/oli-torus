@@ -1,6 +1,8 @@
 defmodule OliWeb.StaticPageControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Accounts
 
   test "GET /", %{conn: conn} do
@@ -144,6 +146,27 @@ defmodule OliWeb.StaticPageControllerTest do
       assert response(conn, 200) =~ "Easily access and participate in your enrolled courses"
       assert response(conn, 200) =~ "Need an account?"
     end
+
+    test "shows 'access my courses' link if user is logged in and is an independent learner",
+         conn do
+      {:ok, conn: conn, user: _user} = user_conn(conn)
+
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~ "Access my courses"
+    end
+
+    test "shows informative text if user is logged in and is an LMS user", %{conn: conn} do
+      {:ok, conn: conn, user: user} =
+        user_conn(%{conn: conn}, %{name: "Kevin Durant", independent_learner: false})
+
+      insert(:lti_params, user_id: user.id)
+
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert response(conn, 200) =~
+               "Navigate to your institution’s LMS to access your online course."
+    end
   end
 
   describe "enrollment info" do
@@ -170,6 +193,31 @@ defmodule OliWeb.StaticPageControllerTest do
                "for help enrolling or setting up your Torus student account. If you require further assistance, please"
 
       assert response(conn, 200) =~ "contact our support team."
+    end
+  end
+
+  describe "index" do
+    setup [:admin_conn]
+
+    test "does not allow access to the index page when logged in as an admin", %{
+      conn: conn
+    } do
+      conn = get(conn, Routes.static_page_path(conn, :index))
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "Admins are not allowed to access this page."
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/workspaces/course_author\">redirected"
+    end
+  end
+
+  describe "enrollment link" do
+    test "displays 'Create an Account' link if from_invitation_link?", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :index, from_invitation_link?: true))
+
+      assert html_response(conn, 200) =~
+               "href=\"/registration/new?from_invitation_link%3F=true\">Create an Account"
     end
   end
 end

@@ -349,47 +349,6 @@ defmodule Oli.AccountsTest do
       refute Accounts.get_user_by(%{sub: "sub", email: "email"})
     end
 
-    test "setup_sso_user/3 returns the created user and author and links them when link_author option is passed" do
-      community = insert(:community)
-      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
-      {:ok, user, author} = Accounts.setup_sso_user(fields, community.id, link_author: true)
-
-      assert user.sub == "sub"
-      assert user.preferred_username == "username"
-      assert user.email == "email"
-      assert user.can_create_sections
-
-      assert %CommunityAccount{} =
-               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
-
-      assert Accounts.get_user!(user.id).author_id == author.id
-      assert author.name == "username"
-      assert author.email == "email"
-      assert author.invitation_token
-      refute author.invitation_accepted_at
-    end
-
-    test "setup_sso_user/3 returns the created user and already existing author and links them when link_author option is passed" do
-      community = insert(:community)
-      author = insert(:author, email: "email", name: "another_name")
-
-      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => author.email}
-      {:ok, user, author} = Accounts.setup_sso_user(fields, community.id, link_author: true)
-
-      assert user.sub == "sub"
-      assert user.preferred_username == "username"
-      assert user.email == "email"
-      assert user.can_create_sections
-
-      assert %CommunityAccount{} =
-               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
-
-      assert Accounts.get_user!(user.id).author_id == author.id
-      assert author.name == "another_name"
-      assert author.email == "email"
-      refute author.invitation_token
-    end
-
     test "setup_sso_author/2 creates author and user if do not exist and associates user to the given community" do
       community = insert(:community)
       fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
@@ -653,6 +612,73 @@ defmodule Oli.AccountsTest do
 
       assert [%Community{} | _tail] = communties
       assert 2 = length(communties)
+    end
+  end
+
+  describe "user roles" do
+    test "list all context/platform roles for a given user" do
+      user = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(user.id, section.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+      Accounts.update_user_platform_roles(user, [
+        Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor),
+        Lti_1p3.Tool.PlatformRoles.get_role(:institution_student)
+      ])
+
+      user_roles = Accounts.user_roles(user.id) |> Enum.map(& &1.uri)
+      assert Lti_1p3.Tool.ContextRoles.get_role(:context_learner).uri in user_roles
+      assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor).uri in user_roles
+      assert Lti_1p3.Tool.PlatformRoles.get_role(:institution_student).uri in user_roles
+    end
+  end
+
+  describe "setup_sso_user/2" do
+    test "creates both a user and an author, and links them together" do
+      user_email = "user@email.com"
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => user_email}
+
+      {:ok, user, author} = Accounts.setup_sso_user(fields, community.id)
+
+      user_id = user.id
+      author_id = author.id
+
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == user_email
+      assert user.can_create_sections
+
+      assert %CommunityAccount{user_id: ^user_id} =
+               Groups.get_community_account_by!(%{user_id: user_id, community_id: community.id})
+
+      assert Accounts.get_user!(user_id).author_id == author_id
+      assert author.name == "username"
+      assert author.email == user_email
+      assert author.email_confirmed_at
+
+      # Ensure the author is linked to the user
+      assert user.author_id == author_id
+    end
+
+    test "preserves the existing association that a user has with their linked author" do
+      user_email = "user@email.com"
+      author_email = "author@email.com"
+      existing_author = insert(:author, email: author_email)
+      existing_user = insert(:user, email: user_email, author: existing_author, sub: "sub")
+
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => user_email}
+
+      {:ok, user, author} = Accounts.setup_sso_user(fields, community.id)
+
+      # Ensure the existing user is preserved
+      assert user.email == existing_user.email
+      # Ensure the existing linked author is preserved
+      assert user.author_id == author.id
     end
   end
 end

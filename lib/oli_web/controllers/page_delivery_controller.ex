@@ -738,7 +738,8 @@ defmodule OliWeb.PageDeliveryController do
         pageTitle: context.page.title,
         pageSlug: context.page.slug,
         graded: context.page.graded,
-        content: build_page_content(context.page.content, conn.params["request_path"]),
+        content:
+          build_page_content(context.page.content, Plug.Conn.get_session(conn, :request_path)),
         resourceAttemptState: resource_attempt.state,
         resourceAttemptGuid: resource_attempt.attempt_guid,
         currentServerTime: DateTime.utc_now() |> to_epoch,
@@ -803,7 +804,7 @@ defmodule OliWeb.PageDeliveryController do
   before they accessed the page we are building (i.e. the "Learn", "Home" or "Schedule" page)
   """
 
-  defp build_page_content(content, nil), do: content
+  defp build_page_content(content, request_path) when request_path in ["", nil], do: content
   defp build_page_content(content, request_path), do: Map.put(content, "backUrl", request_path)
 
   defp to_epoch(nil), do: nil

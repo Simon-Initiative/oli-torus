@@ -1,7 +1,8 @@
 defmodule Oli.Plugs.AuthorizeProject do
+  use OliWeb, :verified_routes
+
   alias Oli.Authoring.Course
   alias Oli.Accounts
-  alias OliWeb.Router.Helpers, as: Routes
 
   def init(opts), do: opts
 
@@ -10,9 +11,7 @@ defmodule Oli.Plugs.AuthorizeProject do
       nil ->
         conn
         |> Phoenix.Controller.put_flash(:info, "That project does not exist")
-        |> Phoenix.Controller.redirect(
-          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
-        )
+        |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
         |> Plug.Conn.halt()
 
       project ->
@@ -24,9 +23,7 @@ defmodule Oli.Plugs.AuthorizeProject do
         else
           conn
           |> Phoenix.Controller.put_flash(:info, "You don't have access to that project")
-          |> Phoenix.Controller.redirect(
-            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
-          )
+          |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
           |> Plug.Conn.halt()
         end
     end

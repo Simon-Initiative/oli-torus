@@ -28,7 +28,8 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
             given_name: "me",
             family_name: "too",
             password: "some_password",
-            password_confirmation: "some_password"
+            password_confirmation: "some_password",
+            email_confirmed_at: Timex.now()
           },
           "g-recaptcha-response": "any"
         }
@@ -474,7 +475,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       |> element("a", project.title)
       |> render_click()
 
-      assert_redirected(view, "/authoring/project/#{project.slug}")
+      assert_redirected(view, "/workspaces/course_author/#{project.slug}/overview")
     end
 
     test "exit project button works well by navigating to course author index", %{
@@ -539,13 +540,33 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(view, "div", "Insights")
     end
 
+    test "overview menu is shown correctly", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
+
+      assert has_element?(view, "h4", "Details")
+      assert has_element?(view, "h4", "Project Attributes")
+      assert has_element?(view, "h4", "Content Types")
+      assert has_element?(view, "h4", "Project Labels")
+      assert has_element?(view, "h4", "Collaborators")
+      assert has_element?(view, "h4", "Advanced Activities")
+      assert has_element?(view, "h4", "Allow Duplication")
+      assert has_element?(view, "h4", "Notes")
+      assert has_element?(view, "h4", "Course Discussions")
+      assert has_element?(view, "h4", "Required Survey")
+      assert has_element?(view, "h4", "Transfer Payment Codes")
+      assert has_element?(view, "h4", "Actions")
+    end
+
     test "objectives menu is shown correctly", %{
       conn: conn,
       project: project
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/objectives")
 
-      assert has_element?(view, "h3", "Learning Objectives")
+      assert has_element?(view, "#header_id", "Learning Objectives")
 
       assert has_element?(
                view,
@@ -606,7 +627,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activities")
 
-      assert has_element?(view, "h3", "Browse All Activities")
+      assert has_element?(view, "h2", "Browse All Activities")
       assert has_element?(view, ~s(input[id='text-search-input']))
       assert has_element?(view, "a", "Open Sync View")
     end
@@ -637,8 +658,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(
                view,
                "p",
-               "Insights can help you improve your course by providing a statistical analysis of
-      the skills covered by each question to find areas where students are struggling."
+               "Insights can help you improve your course by providing a statistical analysis of\n    the skills covered by each question to find areas where students are struggling."
              )
 
       assert has_element?(view, "button", "Raw Analytics")

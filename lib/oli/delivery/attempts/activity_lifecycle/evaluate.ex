@@ -474,7 +474,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     )
   end
 
-  defp update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+  def update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
     part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
     part_inputs =

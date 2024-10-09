@@ -59,3 +59,15 @@ export function useGlobalState(userId: number, active: boolean) {
 
   return data;
 }
+
+declare global {
+  interface Window {
+    ReactToLiveView?: LiveViewHook;
+  }
+}
+
+interface LiveViewHook {
+  el: HTMLElement;
+  pushEvent: (event: string, payload: any) => void;
+  pushEventTo: (selectorOrTarget: string | HTMLElement, event: string, payload: any) => void;
+}

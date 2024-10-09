@@ -1,9 +1,9 @@
 defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias OliWeb.Common.SessionContext
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
 
   def new(%SessionContext{} = ctx, sections) do
     column_specs = [
@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
       %ColumnSpec{
         name: :inserted_at,
         label: "Created",
-        render_fn: &OliWeb.Common.Table.Common.render_date/3
+        render_fn: &Common.render_date/3
       },
       %ColumnSpec{
         name: :name,
@@ -46,7 +46,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewTableModel do
     case name do
       :title ->
         ~H"""
-        <.link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)}>
+        <.link
+          navigate={~p"/workspaces/course_author/#{@project.slug}/overview"}
+          class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+        >
           <%= @project.title %>
         </.link>
         """

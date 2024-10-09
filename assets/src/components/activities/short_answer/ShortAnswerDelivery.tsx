@@ -77,7 +77,7 @@ export const ShortAnswerComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { surveyId } = context;
   const dispatch = useDispatch();
-  const deferredSave = useRef(initializePersistence());
+  const deferredSave = useRef(initializePersistence(750, 1200));
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -121,11 +121,16 @@ export const ShortAnswerComponent: React.FC = () => {
       }),
     );
 
-    deferredSave.current.save(() =>
+    const doSave = () =>
       onSaveActivity(uiState.attemptState.attemptGuid, [
         { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
-      ]),
-    );
+      ]);
+
+    if ((uiState.model as ShortAnswerModelSchema).inputType == 'textarea') {
+      deferredSave.current.save(doSave);
+    } else {
+      doSave();
+    }
   };
 
   return (
@@ -149,7 +154,10 @@ export const ShortAnswerComponent: React.FC = () => {
           onBlur={() => deferredSave.current.flushPendingChanges(false)}
         />
 
-        <SubmitResetConnected onReset={() => dispatch(resetAction(onResetActivity, resetParts))} />
+        <SubmitResetConnected
+          onReset={() => dispatch(resetAction(onResetActivity, resetParts))}
+          submitLabel={model.submitAndCompare ? 'Submit and Compare' : undefined}
+        />
 
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}

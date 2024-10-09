@@ -32,7 +32,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     do: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     project = socket.assigns.project
     author = socket.assigns.current_author
 
@@ -50,12 +50,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
        all_children: all_children,
        objective_attachments: [],
        query: "",
+       selected: "",
        offset: 0,
        limit: 20,
        resource_slug: project.slug,
        resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :objectives
+       params: params
      )
      |> attach_hook(:has_show_links_uri_hash, :handle_params, fn _params, uri, socket ->
        {:cont,
@@ -70,48 +70,41 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLive do
     ~H"""
     <%= render_modal(assigns) %>
 
-    <div class="container mx-auto p-8">
-      <FilterBox.render
+    <FilterBox.render
+      table_model={@table_model}
+      show_more_opts={false}
+      card_header_text="Learning Objectives"
+      card_body_text={card_body_text(assigns)}
+    >
+      <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
+    </FilterBox.render>
+
+    <div class="d-flex flex-row-reverse">
+      <button class="btn btn-primary" phx-click="display_new_modal">Create new Objective</button>
+    </div>
+
+    <div id="objectives-table" class="my-4">
+      <Table.render
+        filter={@query}
         table_model={@table_model}
-        show_more_opts={false}
-        card_header_text="Learning Objectives"
-        card_body_text={card_body_text(assigns)}
+        total_count={@total_count}
+        offset={@offset}
+        limit={@limit}
+        sort="sort"
+        page_change="page_change"
+        show_bottom_paging={false}
+        additional_table_class="table-sm text-center"
+        with_body={true}
       >
-        <Filter.render
-          change="change_search"
-          reset="reset_search"
-          apply="apply_search"
-          query={@query}
+        <Listing.render
+          revision_history_link={
+            (assigns[:has_show_links_uri_hash] || false) and Accounts.at_least_content_admin?(@author)
+          }
+          rows={@table_model.rows}
+          selected={@selected}
+          project_slug={@project.slug}
         />
-      </FilterBox.render>
-
-      <div class="d-flex flex-row-reverse">
-        <button class="btn btn-primary" phx-click="display_new_modal">Create new Objective</button>
-      </div>
-
-      <div id="objectives-table" class="my-4">
-        <Table.render
-          filter={@query}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          sort="sort"
-          page_change="page_change"
-          show_bottom_paging={false}
-          additional_table_class="table-sm text-center"
-          with_body={true}
-        >
-          <Listing.render
-            revision_history_link={
-              @has_show_links_uri_hash and Accounts.at_least_content_admin?(@author)
-            }
-            rows={@table_model.rows}
-            selected={@selected}
-            project_slug={@project.slug}
-          />
-        </Table.render>
-      </div>
+      </Table.render>
     </div>
     """
   end

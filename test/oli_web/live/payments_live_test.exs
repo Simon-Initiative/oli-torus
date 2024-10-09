@@ -60,7 +60,7 @@ defmodule OliWeb.PaymentsLiveTest do
       product: product
     } do
       product_slug = product.slug
-      redirect_path = "/authoring/projects"
+      redirect_path = "/workspaces/course_author"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_product_route(product_slug))

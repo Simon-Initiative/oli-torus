@@ -11,7 +11,7 @@ defmodule Oli.Plugs.SetSidebar do
     conn
     |> put_session(
       :sidebar_expanded,
-      Oli.Utils.string_to_boolean(conn.params["sidebar_expanded"] || "false")
+      Oli.Utils.string_to_boolean(conn.params["sidebar_expanded"] || "true")
     )
   end
 end

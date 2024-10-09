@@ -1,12 +1,8 @@
 defmodule OliWeb.Delivery.Student.ReviewLive do
   use OliWeb, :live_view
 
-  on_mount {OliWeb.LiveSessionPlugs.InitPage, :init_context_state}
-  on_mount {OliWeb.LiveSessionPlugs.InitPage, :previous_next_index}
-
   import OliWeb.Delivery.Student.Utils, only: [page_header: 1]
 
-  alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Metrics
@@ -14,31 +10,59 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias OliWeb.Delivery.Student.Utils
 
+  require Logger
+
   # this is an optimization to reduce the memory footprint of the liveview process
   @required_keys_per_assign %{
     section:
-      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations], %Sections.Section{}},
-    current_user: {[:id, :name, :email], %User{}}
+      {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations], %Sections.Section{}}
   }
 
   def mount(
         %{
-          "revision_slug" => revision_slug,
           "attempt_guid" => attempt_guid
-        },
-        _session,
-        %{assigns: %{current_user: user, section: section}} = socket
+        } = params,
+        session,
+        %{assigns: %{section: section}} = socket
       ) do
-    if connected?(socket) do
-      page_revision = Resolver.from_revision_slug(section.slug, revision_slug)
+    Logger.debug("ReviewLive mount")
 
+    is_system_admin = Map.get(socket.assigns, :is_system_admin, false)
+    current_user = Map.get(socket.assigns, :current_user)
+
+    if connected?(socket) do
+      user = Oli.Delivery.Attempts.Core.get_user_from_attempt_guid(attempt_guid)
       page_context = PageContext.create_for_review(section.slug, attempt_guid, user, false)
 
-      if PageLifecycle.can_access_attempt?(attempt_guid, user, section) and
+      socket = assign(socket, page_context: page_context)
+
+      socket =
+        if Map.get(socket.assigns, :user_token) == nil do
+          assign(socket, user_token: "")
+        else
+          socket
+        end
+
+      {:cont, socket} =
+        OliWeb.LiveSessionPlugs.InitPage.on_mount(:init_context_state, params, session, socket)
+
+      {:cont, socket} =
+        OliWeb.LiveSessionPlugs.InitPage.on_mount(:previous_next_index, params, session, socket)
+
+      {:cont, socket} =
+        OliWeb.LiveSessionPlugs.SetRequestPath.on_mount(:default, params, session, socket)
+
+      socket = assign(socket, loaded: true)
+
+      page_revision = page_context.page
+
+      if (is_system_admin or
+            PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
            review_allowed?(page_context) do
         socket =
           socket
           |> assign(page_context: page_context)
+          |> assign(page_progress_state: page_context.progress_state)
           |> assign(page_revision: page_revision)
           |> assign_html_and_scripts()
           |> assign_objectives()
@@ -63,13 +87,15 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
         #    objectives: []
         #  ]}
       else
+        Logger.debug("ReviewLive mount, did not have permission")
+
         {:ok,
          socket
          |> put_flash(:error, "You are not allowed to review this attempt.")
          |> redirect(to: Utils.learn_live_path(section.slug))}
       end
     else
-      {:ok, socket}
+      {:ok, assign(socket, loaded: false)}
     end
   end
 
@@ -80,7 +106,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   end
 
   defp assign_objectives(socket) do
-    %{page_context: %{page: page}, current_user: current_user, section: section} =
+    %{page_context: %{page: page, user: current_user}, section: section} =
       socket.assigns
 
     page_attached_objectives =
@@ -116,6 +142,12 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
   defp review_allowed?(page_context),
     do: page_context.effective_settings.review_submission == :allow
 
+  def render(%{loaded: false} = assigns) do
+    ~H"""
+    <div></div>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <div class="flex pb-20 flex-col w-full items-center gap-15 flex-1 overflow-auto">
@@ -135,7 +167,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
             objectives={@objectives}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div id="eventIntercept" phx-update="ignore" class="content w-full" role="page_content">
+          <div id="rawContent" class="content w-full" role="page_content">
             <%= raw(@html) %>
           </div>
           <.link

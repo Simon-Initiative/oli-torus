@@ -6,15 +6,22 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1]
+  import Oli.Utils, only: [string_to_boolean: 1]
 
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.{DeliveryResolver}
 
-  def on_mount(:default, _params, session, socket) do
+  def on_mount(:default, params, session, socket) do
+    section_slug =
+      case params do
+        %{"section_slug" => section_slug} -> section_slug
+        _ -> nil
+      end
+
     socket =
       socket
-      |> assign_notes_and_discussions_enabled(session["section_slug"])
+      |> assign_notes_and_discussions_enabled(section_slug)
       |> assign(sidebar_expanded: session["sidebar_expanded"])
       |> assign(disable_sidebar?: false)
       |> assign(header_enabled?: true)
@@ -24,16 +31,51 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
       socket =
         attach_hook(socket, :sidebar_hook, :handle_params, fn
           params, uri, socket ->
-            sidebar_expanded = Oli.Utils.string_to_boolean(params["sidebar_expanded"] || "true")
+            sidebar_from_assigns = socket.assigns.sidebar_expanded
+            sidebar_from_params = string_to_boolean(params["sidebar_expanded"] || "true")
 
-            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_expanded)
+            socket = assign(socket, uri: uri, sidebar_expanded: sidebar_from_params)
 
-            {:cont, socket}
+            previous_lv_url = socket.private[:connect_params]["_live_referer"]
+            current_lv_url = uri
+
+            has_sidebar_changed = sidebar_from_assigns != sidebar_from_params
+            is_same_workspace = is_same_workspace(previous_lv_url, current_lv_url)
+
+            if is_same_workspace and has_sidebar_changed do
+              {:halt, socket}
+            else
+              {:cont, socket}
+            end
         end)
 
       {:cont, socket}
     else
       {:cont, socket}
+    end
+  end
+
+  defp is_same_workspace(nil, _current_url) do
+    true
+  end
+
+  defp is_same_workspace(previous_url, current_url) do
+    previous_workspace = extract_workspace(previous_url)
+    current_workspace = extract_workspace(current_url)
+
+    previous_workspace == current_workspace
+  end
+
+  defp extract_workspace(url) do
+    URI.parse(url)
+    |> Map.get(:path)
+    |> String.split("/", trim: true)
+    |> case do
+      ["workspaces", workspace | _rest] ->
+        workspace
+
+      _ ->
+        nil
     end
   end
 
@@ -46,18 +88,16 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
 
     notes_enabled = collab_space_pages_count > 0
 
-    %{slug: revision_slug} = DeliveryResolver.root_container(section_slug)
-
     discussions_enabled =
-      case Collaboration.get_collab_space_config_for_page_in_section(
-             revision_slug,
-             section_slug
-           ) do
-        {:ok, %CollabSpaceConfig{status: :enabled}} ->
-          true
-
-        _ ->
-          false
+      with %{slug: revision_slug} <- DeliveryResolver.root_container(section_slug),
+           {:ok, %CollabSpaceConfig{status: :enabled}} <-
+             Collaboration.get_collab_space_config_for_page_in_section(
+               revision_slug,
+               section_slug
+             ) do
+        true
+      else
+        _ -> false
       end
 
     assign(socket, notes_enabled: notes_enabled, discussions_enabled: discussions_enabled)

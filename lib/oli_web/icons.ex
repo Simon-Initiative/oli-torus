@@ -1380,6 +1380,36 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :selected_question_number, :integer
+
+  def previous_question_arrow(assigns) do
+    ~H"""
+    <svg width="13" height="10" viewBox="0 0 13 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1.95898 5H11.959M1.95898 5L5.95898 9M1.95898 5L5.95898 1"
+        stroke={if(@selected_question_number == 1, do: "#9b9b9b", else: "#0062F2")}
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def next_question_arrow(assigns) do
+    ~H"""
+    <svg width="13" height="11" viewBox="0 0 13 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M11.2002 5.21094H1.2002M11.2002 5.21094L7.2002 9.21094M11.2002 5.21094L7.2002 1.21094"
+        stroke="#0062F2"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Studend Delivery Icons (end) ##########
 
   ########## Instructor Navigation Bar Icons (start) ##########
@@ -1469,5 +1499,37 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def right_arrow_login(assigns) do
+    ~H"""
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M5 12H19M19 12L15 16M19 12L15 8"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Instructor Navigation Bar Icons (end) ##########
+
+  ########## Start of Sidebar Icons  ##########
+  def line_32(assigns) do
+    ~H"""
+    <svg
+      width="36"
+      height="1"
+      viewBox="0 0 36 1"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      class="stroke-[#757682] dark:stroke-[#BAB8BF]"
+    >
+      <line x1="4.37114e-08" y1="0.5" x2="36" y2="0.500003" />
+    </svg>
+    """
+  end
+
+  ########## End of Sidebar Icons  ##########
 end

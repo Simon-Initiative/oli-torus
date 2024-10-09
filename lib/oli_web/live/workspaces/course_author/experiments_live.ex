@@ -28,65 +28,58 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLive do
        is_upgrade_enabled: project.has_experiments,
        experiment: experiment,
        resource_slug: project.slug,
-       resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :experiments
+       resource_title: project.title
      )}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Experiments</h2>
     <%= render_modal(assigns) %>
-    <div class="container flex flex-col gap-y-6 p-8">
-      <h3>A/B Testing with UpGrade</h3>
-      <p>
-        To support A/B testing, Torus integrates with the A/B testing platform,
-        <a
-          class="underline text-inherit decoration-grey-500/30"
-          href="https://upgrade.oli.cmu.edu/login"
-        >
-          UpGrade
-        </a>
-      </p>
-      <.input
-        type="checkbox"
-        class="form-check-input"
-        name="experiments"
-        value={@is_upgrade_enabled}
-        label="Enable A/B testing with UpGrade"
-        phx-click="enable_upgrade"
-        checked={@is_upgrade_enabled}
+
+    <h3>A/B Testing with UpGrade</h3>
+    <p>
+      To support A/B testing, Torus integrates with the A/B testing platform,
+      <a
+        class="underline text-inherit decoration-grey-500/30"
+        href="https://upgrade.oli.cmu.edu/login"
+      >
+        UpGrade
+      </a>
+    </p>
+    <.input
+      type="checkbox"
+      class="form-check-input"
+      name="experiments"
+      value={@is_upgrade_enabled}
+      label="Enable A/B testing with UpGrade"
+      phx-click="enable_upgrade"
+      checked={@is_upgrade_enabled}
+    />
+
+    <%= if @experiment do %>
+      <OliWeb.Resources.AlternativesEditor.group
+        group={@experiment}
+        editing_enabled={@is_upgrade_enabled}
+        source={:experiments}
       />
+    <% end %>
 
-      <%= if @experiment do %>
-        <OliWeb.Resources.AlternativesEditor.group
-          group={@experiment}
-          editing_enabled={@is_upgrade_enabled}
-          source={:experiments}
-        />
-      <% end %>
+    <div :if={@is_upgrade_enabled} class="flex gap-4">
+      <.button
+        class="btn btn-md btn-primary mt-2"
+        href={Routes.experiment_path(OliWeb.Endpoint, :segment_download, assigns.project.slug)}
+      >
+        Download Segment JSON
+      </.button>
 
-      <div :if={@is_upgrade_enabled} class="flex gap-4">
-        <.button
-          class="btn btn-md btn-primary mt-2"
-          href={Routes.experiment_path(OliWeb.Endpoint, :segment_download, assigns.project.slug)}
-        >
-          Download Segment JSON
-        </.button>
-
-        <.button
-          class="btn btn-md btn-primary mt-2"
-          href={Routes.experiment_path(OliWeb.Endpoint, :experiment_download, assigns.project.slug)}
-        >
-          Download Experiment JSON
-        </.button>
-      </div>
+      <.button
+        class="btn btn-md btn-primary mt-2"
+        href={Routes.experiment_path(OliWeb.Endpoint, :experiment_download, assigns.project.slug)}
+      >
+        Download Experiment JSON
+      </.button>
     </div>
     """
   end

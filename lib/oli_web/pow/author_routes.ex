@@ -1,6 +1,8 @@
 defmodule OliWeb.Pow.AuthorRoutes do
   use Pow.Phoenix.Routes
   use OliWeb, :controller
+  use OliWeb, :verified_routes
+
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
 
@@ -8,7 +10,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
   def after_sign_in_path(conn) do
     case maybe_link_account_route(conn) do
       nil ->
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        ~p"/workspaces/course_author"
 
       route ->
         route
@@ -19,7 +21,7 @@ defmodule OliWeb.Pow.AuthorRoutes do
   def after_registration_path(conn) do
     case maybe_link_account_route(conn) do
       nil ->
-        Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+        ~p"/workspaces/course_author"
 
       route ->
         route

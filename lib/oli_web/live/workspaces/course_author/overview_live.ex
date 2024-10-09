@@ -4,30 +4,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   import Phoenix.Component
   import OliWeb.Components.Common
 
-  alias Oli.Accounts
-  alias Oli.Authoring.Course
-  alias Oli.Authoring.Course.Project
-  alias Oli.Inventories
-  alias Oli.Publishing
-  alias Oli.Activities
+  alias Oli.{Accounts, Activities, Inventories, Publishing}
+  alias Oli.Authoring.{Broadcaster, Course, ProjectExportWorker}
+  alias Oli.Authoring.Broadcaster.Subscriber
+  alias Oli.Authoring.Course.{CreativeCommons, Project}
+  alias Oli.Delivery.Experiments
+  alias Oli.LanguageCodesIso639
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Collaboration
-  alias Oli.Authoring.Broadcaster
-  alias Oli.Authoring.Broadcaster.Subscriber
-  alias Oli.Authoring.ProjectExportWorker
-  alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Components.Overview
-  alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
-  alias OliWeb.Common.SessionContext
-  alias OliWeb.Components.Common
+  alias OliWeb.Common.Utils
+  alias OliWeb.Components.{Common, Overview}
   alias OliWeb.Components.Project.AsyncExporter
+  alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
 
   @impl Phoenix.LiveView
-  def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
-    project = socket.assigns.project
+  def mount(_params, _session, socket) do
+    %{project: project, current_author: author, ctx: ctx} = socket.assigns
 
-    author = socket.assigns[:current_author]
     is_admin? = Accounts.has_admin_role?(author)
 
     latest_published_publication =
@@ -38,7 +31,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     latest_publication = Publishing.get_latest_published_publication_by_slug(project.slug)
 
     cc_options =
-      Oli.Authoring.Course.CreativeCommons.cc_options()
+      CreativeCommons.cc_options()
       |> Enum.map(fn {k, v} -> {v.text, k} end)
       |> Enum.sort(:desc)
 
@@ -51,46 +44,36 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     # Subscribe to any project export progress updates for this project
     Subscriber.subscribe_to_project_export_status(project.slug)
 
-    socket =
-      assign(socket,
-        ctx: ctx,
-        breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
-        active: :overview,
-        collaborators: Accounts.project_authors(project),
-        activities_enabled: Activities.advanced_activities(project, is_admin?),
-        can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
-        is_admin: is_admin?,
-        changeset: Project.changeset(project),
-        latest_published_publication: latest_published_publication,
-        publishers: Inventories.list_publishers(),
-        resource_title: project.title,
-        resource_slug: project.slug,
-        attributes: project.attributes,
-        language_codes: Oli.LanguageCodesIso639.codes(),
-        license_opts: cc_options,
-        collab_space_config: collab_space_config,
-        revision_slug: revision_slug,
-        latest_publication: latest_publication,
-        notes_config: %{},
-        project_export_status: project_export_status,
-        project_export_url: project_export_url,
-        project_export_timestamp: project_export_timestamp,
-        active_workspace: :course_author,
-        active_view: :overview
-      )
-
-    {:ok, socket}
-  end
-
-  @impl Phoenix.LiveView
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
+    {:ok,
+     assign(socket,
+       ctx: ctx,
+       collaborators: Accounts.project_authors(project),
+       activities_enabled: Activities.advanced_activities(project, is_admin?),
+       can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
+       is_admin: is_admin?,
+       changeset: Project.changeset(project),
+       latest_published_publication: latest_published_publication,
+       publishers: Inventories.list_publishers(),
+       resource_title: project.title,
+       resource_slug: project.slug,
+       attributes: project.attributes,
+       language_codes: LanguageCodesIso639.codes(),
+       license_opts: cc_options,
+       collab_space_config: collab_space_config,
+       revision_slug: revision_slug,
+       latest_publication: latest_publication,
+       notes_config: %{},
+       project_export_status: project_export_status,
+       project_export_url: project_export_url,
+       project_export_timestamp: project_export_timestamp
+     )}
   end
 
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <div class="overview container mx-auto">
+    <div class="overview">
+      <h2 id="header_id" class="pb-2">Overview</h2>
       <.form :let={f} for={@changeset} phx-submit="update" phx-change="validate">
         <Overview.section
           title="Details"
@@ -149,7 +132,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <%= case @latest_published_publication do %>
               <% %{edition: edition, major: major, minor: minor} -> %>
                 <p class="text-secondary">
-                  <%= OliWeb.Common.Utils.render_version(edition, major, minor) %>
+                  <%= Utils.render_version(edition, major, minor) %>
                 </p>
               <% _ -> %>
                 <p class="text-secondary">This project has not been published</p>
@@ -178,20 +161,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               />
             </div>
 
-            <a
+            <.link
               :if={@project.has_experiments}
-              type="button"
-              class="btn btn-link pl-0"
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Experiments.ExperimentsView,
-                  @project.slug
-                )
-              }
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+              navigate={~p"/workspaces/course_author/#{@project.slug}/experiments"}
             >
               Manage Experiments
-            </a>
+            </.link>
           </div>
 
           <%= submit("Save", class: "btn btn-md btn-primary mt-2") %>
@@ -243,19 +219,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           </div>
           <div class="mt-5">
             <div>
-              <a
-                type="button"
-                class="btn btn-link pl-0"
-                href={
-                  Routes.live_path(
-                    OliWeb.Endpoint,
-                    OliWeb.Resources.AlternativesEditor,
-                    @project.slug
-                  )
-                }
+              <.link
+                navigate={~p"/workspaces/course_author/#{@project.slug}/alternatives"}
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
                 Manage Alternatives
-              </a>
+              </.link>
             </div>
             <small>
               Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.
@@ -391,31 +360,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
       <Overview.section title="Actions" is_last={true}>
         <%= if @is_admin do %>
-          <div class="d-flex align-items-center">
-            <div>
-              <%= button("Bulk Resource Attribute Edit",
-                to: Routes.ingest_path(@socket, :index_csv, @project.slug),
-                method: :get,
-                class: "btn btn-link action-button"
-              ) %>
-            </div>
+          <div class="flex items-center">
+            <.link
+              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
+              href={~p"/workspaces/course_author/#{@project.slug}/index_csv"}
+            >
+              Bulk Resource Attribute Edit
+            </.link>
             <span>Imports a <code>.csv</code> file to set new attributes.</span>
           </div>
         <% end %>
 
-        <div class="d-flex align-items-center">
+        <div class="flex items-center">
           <div>
             <%= button("Duplicate",
               to: Routes.project_path(@socket, :clone_project, @project),
               method: :post,
-              class: "btn btn-link action-button",
+              class:
+                "text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2",
               data_confirm: "Are you sure you want to duplicate this project?"
             ) %>
           </div>
           <span>Create a complete copy of this project.</span>
         </div>
 
-        <div class="d-flex align-items-center">
+        <div class="flex items-center">
           <AsyncExporter.project_export
             ctx={@ctx}
             project_export_status={@project_export_status}
@@ -424,28 +393,34 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           />
         </div>
 
-        <div :if={@is_admin} class="d-flex align-items-center">
+        <div :if={@is_admin} class="flex items-center">
           <%= case @latest_publication do %>
             <% nil -> %>
-              <.button variant={:link} disabled>Datashop Analytics</.button>
+              <.button
+                variant={:link}
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
+                disabled
+              >
+                Datashop Analytics
+              </.button>
               <span>
                 Project must be published to create a <.datashop_link /> snapshot for download
               </span>
             <% _pub -> %>
-              <.button
-                class="btn btn-link action-button !px-3"
-                href={~p"/project/#{@project.slug}/datashop"}
+              <.link
+                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
+                navigate={~p"/workspaces/course_author/#{@project.slug}/datashop"}
               >
                 Datashop Analytics
-              </.button>
+              </.link>
               <span>Create a <.datashop_link /> snapshot for download</span>
           <% end %>
         </div>
 
-        <div class="d-flex align-items-center mt-8">
+        <div class="flex items-center mt-8">
           <button
             type="button"
-            class="btn btn-link text-danger action-button"
+            class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
             onclick="OLI.showModal('delete-package-modal')"
           >
             Delete
@@ -569,8 +544,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         {:noreply,
-         push_navigate(socket,
-           to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+         redirect(socket,
+           to: ~p"/workspaces/course_author"
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -667,7 +642,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp datashop_link(assigns) do
     ~H"""
-    <a class="text-primary external" href="https://pslcdatashop.web.cmu.edu/" target="_blank">
+    <a
+      class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline py-2 external"
+      href="https://pslcdatashop.web.cmu.edu/"
+      target="_blank"
+    >
       datashop
     </a>
     """

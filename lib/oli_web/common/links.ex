@@ -1,5 +1,6 @@
 defmodule OliWeb.Common.Links do
   use Phoenix.HTML
+  use OliWeb, :verified_routes
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Resources.Numbering
 
@@ -7,7 +8,11 @@ defmodule OliWeb.Common.Links do
   Returns a path uri for a given revision. If the revision type is not
   routable or of a known type, returns nil
   """
-  def resource_path(revision, parent_pages, project_slug) do
+  def resource_path(revision, parent_pages, project_slug, workspace \\ nil) do
+    do_resource_path(revision, parent_pages, project_slug, workspace)
+  end
+
+  def do_resource_path(revision, parent_pages, project_slug, workspace) do
     case Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
       "objective" ->
         Routes.live_path(
@@ -39,12 +44,16 @@ defmodule OliWeb.Common.Links do
         end
 
       "container" ->
-        Routes.container_path(
-          OliWeb.Endpoint,
-          :index,
-          project_slug,
-          revision.slug
-        )
+        if workspace == :workspace do
+          ~p"/workspaces/course_author/#{project_slug}/curriculum/#{revision.slug}"
+        else
+          Routes.container_path(
+            OliWeb.Endpoint,
+            :index,
+            project_slug,
+            revision.slug
+          )
+        end
 
       "tag" ->
         Routes.activity_bank_path(

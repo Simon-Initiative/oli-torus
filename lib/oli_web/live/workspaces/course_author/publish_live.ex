@@ -57,8 +57,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
      assign(socket,
        active_publication: active_publication,
        active_publication_changes: active_publication_changes,
-       active_view: :publish,
-       active_workspace: :course_author,
        active_sections: active_sections,
        auto_update_sections: project.auto_update_sections,
        changeset: Publishing.change_publication(active_publication),
@@ -90,8 +88,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Publish</h2>
     <%= render_modal(assigns) %>
-    <div class="publish container p-8">
+    <div class="publish">
       <div class="flex flex-row">
         <div class="flex-1">
           <.live_component

@@ -1059,7 +1059,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                ~s{div[role="expanded module header"] span},
-               "Due: Wed Nov 15, 2023"
+               "Read by: Wed Nov 15, 2023"
              )
     end
 
@@ -1533,12 +1533,12 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert view
              |> element(~s{div[role="unit_1"] div[role="schedule_details"]})
              |> render() =~
-               "Due:\n              </span>\n              Sun, Dec 31, 2023 (8:00pm)"
+               "Read by: \n              </span>\n              Sun, Dec 31, 2023 (8:00pm)"
 
       # unit 2 has not been scheduled by instructor, so there must not be a schedule details data
       assert view
              |> element(~s{div[role="unit_2"] div[role="schedule_details"]})
-             |> render() =~ "Due:\n              </span>\n              Not yet scheduled"
+             |> render() =~ "Due by:\n              </span>\n              Not yet scheduled"
     end
 
     test "can see units, modules and page (at module level) progresses", %{

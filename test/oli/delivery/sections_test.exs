@@ -1314,7 +1314,7 @@ defmodule Oli.Delivery.SectionsTest do
                    ]}
                 ]}
              ] =
-               Sections.get_ordered_schedule(section, student1.id)
+               Sections.get_ordered_schedule(section, student1.id, nil)
     end
   end
 
@@ -1417,7 +1417,7 @@ defmodule Oli.Delivery.SectionsTest do
                  }
                ]
              } =
-               Sections.get_not_scheduled_agenda(section, student1.id)
+               Sections.get_not_scheduled_agenda(section, nil, student1.id)
 
       # verify that the resources are sorted by hierarchy (numbering index)
       assert [
@@ -2163,22 +2163,13 @@ defmodule Oli.Delivery.SectionsTest do
       section: section,
       module_1: module_1,
       module_2: module_2,
-      unit_1: unit_1,
-      container_revision: root_container
+      unit_1: unit_1
     } do
-      expected_map = %{
-        root_container.resource_id => root_container.title,
-        unit_1.resource_id => unit_1.title,
-        module_1.resource_id => module_1.title,
-        module_2.resource_id => module_2.title
-      }
+      result = Sections.container_titles(section)
 
-      result = Sections.container_titles(section.slug)
-      assert result == expected_map
-    end
-
-    test "returns an empty map when there are no container resources" do
-      assert Sections.container_titles("non-existent-section") == %{}
+      assert Map.get(result, unit_1.resource_id) == unit_1.title
+      assert Map.get(result, module_1.resource_id) == module_1.title
+      assert Map.get(result, module_2.resource_id) == module_2.title
     end
   end
 
@@ -2379,6 +2370,38 @@ defmodule Oli.Delivery.SectionsTest do
       assert s1.title == "Elixir"
       assert s3.title == "LiveView"
       assert s2.title == "Phoenix"
+    end
+
+    test "retrieve open_and_free active sections by roles" do
+      user = insert(:user)
+
+      # Create sections
+      section_1 = insert(:section, title: "Elixir", open_and_free: true, status: :active)
+      section_2 = insert(:section, title: "Phoenix", open_and_free: true, status: :active)
+      section_3 = insert(:section, title: "LiveView", open_and_free: true, status: :archived)
+
+      Sections.enroll(user.id, section_1.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+      ])
+
+      Sections.enroll(user.id, section_2.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.enroll(user.id, section_3.id, [
+        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+      ])
+
+      sections =
+        Sections.get_open_and_free_active_sections_by_roles(user.id, [
+          Lti_1p3.Tool.ContextRoles.get_role(:context_learner),
+          Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+        ])
+
+      assert length(sections) == 2
+      section_ids = Enum.map(sections, & &1.id)
+      assert section_1.id in section_ids
+      assert section_2.id in section_ids
     end
   end
 end

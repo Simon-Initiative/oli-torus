@@ -95,9 +95,20 @@
             <div class="flex justify-center">
               <%= submit("Sign In",
                 class:
-                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
+                  "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-10 mt-2"
               ) %>
             </div>
+
+            <%= if @conn.params["from_invitation_link?"] == "true" do %>
+              <hr class="mt-0 mb-6 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10" />
+              <div class="flex justify-center mb-8">
+                  <%= link("Create an Account",
+                    to: Routes.pow_registration_path(@conn, :new, @conn.params),
+                    class:
+                      "text-center text-[#4ca6ff] text-lg font-bold font-['Open Sans'] leading-snug"
+                  ) %>
+              </div>
+            <% end %>
           <% end %>
         </div>
       </div>

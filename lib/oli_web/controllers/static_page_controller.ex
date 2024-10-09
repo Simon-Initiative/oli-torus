@@ -6,8 +6,12 @@ defmodule OliWeb.StaticPageController do
   alias Oli.Accounts
   alias OliWeb.Pow.PowHelpers
 
+  plug Oli.Plugs.RestrictAdminAccess when action in [:index]
+
   def index(conn, _params) do
-    render(PowHelpers.use_pow_config(conn, :user), "index.html")
+    if conn.assigns.current_user,
+      do: render(PowHelpers.use_pow_config(conn, :user), "index_logged_in.html"),
+      else: render(PowHelpers.use_pow_config(conn, :user), "index.html")
   end
 
   def unauthorized(conn, _params) do

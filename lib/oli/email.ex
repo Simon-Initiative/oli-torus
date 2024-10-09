@@ -13,14 +13,6 @@ defmodule Oli.Email do
     |> html_text_body()
   end
 
-  def invitation_email(recipient_email, :infiniscope_invitation, assigns) do
-    base_email()
-    |> to(recipient_email)
-    |> subject("Create Course Author Password")
-    |> render(:infiniscope_invitation, assigns)
-    |> html_text_body()
-  end
-
   def invitation_email(recipient_email, view, assigns) do
     base_email()
     |> to(recipient_email)

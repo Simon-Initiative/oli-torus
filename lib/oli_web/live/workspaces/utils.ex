@@ -19,8 +19,15 @@ defmodule OliWeb.Workspaces.Utils do
 
   def sub_menu(assigns) do
     ~H"""
-    <div id="sub_menu">
-      <.title {assigns} />
+    <div
+      id="sub_menu"
+      class={
+        if @sidebar_expanded,
+          do:
+            "overflow-y-scroll scrollbar-hide h-[calc(100vh-var(--header-height)-var(--toggler-button-height)-var(--main-links-height)-var(--footer-buttons-height))]",
+          else: "-mt-5"
+      }
+    >
       <div class="w-full p-2 flex-col justify-center gap-2 items-center inline-flex">
         <.sub_menu_item
           :for={sub_menu_item <- @hierarchy}
@@ -58,7 +65,7 @@ defmodule OliWeb.Workspaces.Utils do
     ~H"""
     <.link
       navigate={@route}
-      class={["w-full h-[35px] flex-col justify-center items-center flex hover:no-underline"]}
+      class={["w-full flex-col justify-center items-center flex hover:no-underline"]}
     >
       <.nav_link_content
         is_active={@active_view == @item.view}
@@ -80,16 +87,26 @@ defmodule OliWeb.Workspaces.Utils do
     <div class="w-full relative">
       <.button
         id={"button_for_#{@item.view}"}
-        class="w-full h-[35px] px-0 flex-col justify-center items-center flex hover:no-underline"
+        class={
+          "w-full h-[35px] px-0 flex-col justify-center items-center flex hover:no-underline hover:bg-[#F5F5F6] dark:hover:bg-[#141416] rounded-lg
+          #{if(!@sidebar_expanded and active_view_in_children?(@item.children, @active_view),
+          do: "bg-[#E6E9F2] dark:bg-[#222126] hover:!bg-[#E6E9F2] dark:hover:!bg-[#222126]")}"
+        }
+        xphx-mouseover={
+          !@sidebar_expanded &&
+            JS.hide(to: "div[role='expandable_submenu'") |> JS.show(to: "##{@item_id}_children")
+        }
         phx-click={
-          JS.toggle(to: "##{@item_id}_children")
-          |> toggle_class("-rotate-90", to: "##{@item_id}_expand_icon")
-          |> JS.remove_class("rotate-0", to: "##{@item_id}_expand_icon")
+          @sidebar_expanded &&
+            JS.toggle(to: "##{@item_id}_children")
+            |> toggle_class("-rotate-90", to: "##{@item_id}_expand_icon")
+            |> JS.remove_class("rotate-0", to: "##{@item_id}_expand_icon")
         }
       >
         <.nav_link_content
           is_active={@active_view == @item.view}
           sidebar_expanded={@sidebar_expanded}
+          additional_classes={if(!@sidebar_expanded, do: "pointer-events-none")}
           sub_menu_item={@item}
           active_view={@active_view}
         />
@@ -97,7 +114,7 @@ defmodule OliWeb.Workspaces.Utils do
       <div
         role="expandable_submenu"
         id={"#{@item_id}_children"}
-        class={"pl-4 #{if active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-12 bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
+        class={"pl-4 #{if @sidebar_expanded and active_view_in_children?(@item.children, @active_view), do: "block", else: "hidden"} #{if !@sidebar_expanded, do: "absolute top-0 left-[52px] bg-white dark:bg-[#222126] pl-0 rounded-md"}"}
         phx-click-away={!@sidebar_expanded && JS.hide(to: "##{@item_id}_children")}
       >
         <.sub_menu_item
@@ -117,9 +134,13 @@ defmodule OliWeb.Workspaces.Utils do
   attr :is_active, :boolean, default: false
   attr :sidebar_expanded, :boolean, default: true
   attr :badge, :integer, default: nil
-  attr :on_active_bg, :string, default: "bg-[#E6E9F2] dark:bg-[#202022]"
+
+  attr :on_active_bg, :string,
+    default: "bg-[#E6E9F2] dark:bg-[#222126] hover:!bg-[#E6E9F2] hover:dark:!bg-[#222126]"
+
   attr :sub_menu_item, :map
   attr :active_view, :atom, default: nil
+  attr :additional_classes, :string, default: ""
 
   def nav_link_content(assigns) do
     item_id = assigns.sub_menu_item.text |> String.downcase() |> String.replace(" ", "_")
@@ -127,10 +148,11 @@ defmodule OliWeb.Workspaces.Utils do
 
     ~H"""
     <div class={[
-      "relative w-full h-9 px-3 py-3 dark:hover:bg-[#404044] hover:bg-[#D9D9DD] rounded-lg justify-start items-center gap-3 inline-flex",
-      if(@is_active, do: @on_active_bg)
+      "w-full px-3 py-2 hover:bg-[#F5F5F6] dark:hover:bg-[#141416] rounded-lg justify-start items-center gap-3 inline-flex",
+      if(@is_active, do: @on_active_bg),
+      @additional_classes
     ]}>
-      <div :if={@sub_menu_item.icon} class="w-5 h-5 flex items-center justify-center">
+      <div :if={@sub_menu_item.icon} class="w-5 flex items-center justify-center">
         <%= apply(Icons, String.to_existing_atom(@sub_menu_item.icon), [assigns]) %>
       </div>
       <div class={[
@@ -138,8 +160,8 @@ defmodule OliWeb.Workspaces.Utils do
         if(@is_active, do: "!font-semibold dark:!text-white !text-[#353740]")
       ]}>
         <div
-          :if={@sidebar_expanded or not is_nil(@sub_menu_item.parent_view)}
-          class="whitespace-nowrap"
+          :if={@sidebar_expanded || @sub_menu_item.parent_view}
+          class={if(!@sidebar_expanded, do: "whitespace-nowrap")}
         >
           <%= @sub_menu_item.text %>
         </div>
@@ -178,6 +200,17 @@ defmodule OliWeb.Workspaces.Utils do
       <%= @resource_title %>
     </div>
     """
+  end
+
+  @urls_without_padding ~w[/workspaces/instructor /workspaces/course_author /workspaces/student]
+
+  def maybe_add_padding(nil), do: ""
+
+  def maybe_add_padding(uri) do
+    case URI.parse(uri).path do
+      url when url in @urls_without_padding -> ""
+      _ -> "container mx-auto p-8"
+    end
   end
 
   defp active_view_in_children?(children, active_view) do
@@ -321,7 +354,7 @@ defmodule OliWeb.Workspaces.Utils do
           },
           %SubMenuItem{
             text: "Quiz Scores",
-            view: :quiz_cores,
+            view: :quiz_scores,
             parent_view: :overview
           },
           %SubMenuItem{

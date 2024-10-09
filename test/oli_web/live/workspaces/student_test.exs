@@ -283,6 +283,13 @@ defmodule OliWeb.Workspaces.StudentTest do
       assert has_element?(view, "h5", "Maths")
     end
 
+    test "does show sidebar if user can create_sections", ctx do
+      {:ok, conn: conn, user: _} = user_conn(ctx, %{can_create_sections: true})
+      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      assert render(view) =~ "desktop-workspace-nav-menu"
+    end
+
     test "can signout from student account and return to student workspace (and author account stays signed in)",
          %{conn: conn, user: user} do
       section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})

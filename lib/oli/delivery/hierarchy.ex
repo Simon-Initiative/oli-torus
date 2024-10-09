@@ -753,4 +753,90 @@ defmodule Oli.Delivery.Hierarchy do
     |> Map.put_new(:inspect_revision_title, node.revision.title)
     |> Map.put_new(:inspect_revision_slug, node.revision.slug)
   end
+
+  @doc """
+    Builds a map of resource_id to unique contained scheduling types for all containers in the hierarchy.
+
+    For example, given this hierarchy:
+
+    Root Container (resource_id = 1):
+      |_ Page 1 (resource_id = 2, scheduling_type = :inclass_activity)
+      |_ Unit 1 (resource_id = 3):
+        |_ Page 2 (resource_id = 4, scheduling_type = :due_by)
+        |_ Page 3 (resource_id = 5, scheduling_type = :read_by)
+      |_ Unit 2 (resource_id = 6):
+        |_ Module 1 (resource_id = 7):
+          |_ Page 4 (resource_id = 8, scheduling_type = :read_by)
+          |_ Page 5 (resource_id = 9, scheduling_type = :read_by)
+          |_ Section 1 (resource_id = 10):
+            |_ Page 6 (resource_id = 11, scheduling_type = :due_by)
+            |_ Page 7 (resource_id = 12, scheduling_type = :due_by)
+
+    The map would be:
+    %{
+      1 => [:inclass_activity, :due_by, :read_by],
+      3 => [:due_by, :read_by],
+      6 => [:read_by, :due_by],
+      7 => [:read_by, :due_by],
+      10 => [:due_by]
+    }
+  """
+
+  def contained_scheduling_types(full_hierarchy) do
+    contained_scheduling_types(full_hierarchy["children"], [], full_hierarchy["resource_id"], %{})
+  end
+
+  @container_resource_type_id Oli.Resources.ResourceType.id_for_container()
+  defp contained_scheduling_types([] = _children, acum_list, current_container_id, result_map),
+    do:
+      Map.put(
+        result_map,
+        current_container_id,
+        acum_list
+        |> List.flatten()
+        |> Enum.uniq()
+      )
+
+  defp contained_scheduling_types(
+         [%{"children" => [], "resource_type_id" => @container_resource_type_id} = child | rest],
+         acum_list,
+         current_container_id,
+         result_map
+       ) do
+    # an edge case of a container with no children
+    contained_scheduling_types(
+      rest,
+      acum_list,
+      current_container_id,
+      Map.put(result_map, child["resource_id"], [])
+    )
+  end
+
+  defp contained_scheduling_types(
+         [%{"children" => []} = child | rest],
+         acum_list,
+         current_container_id,
+         result_map
+       ) do
+    # a page case
+    contained_scheduling_types(
+      rest,
+      [child["section_resource"].scheduling_type | acum_list],
+      current_container_id,
+      result_map
+    )
+  end
+
+  defp contained_scheduling_types([child | rest], acum_list, current_container_id, result_map) do
+    # a container with children case
+    result_map_for_current_child =
+      contained_scheduling_types(child["children"], [], child["resource_id"], %{})
+
+    contained_scheduling_types(
+      rest,
+      [Map.get(result_map_for_current_child, child["resource_id"]) | acum_list],
+      current_container_id,
+      Map.merge(result_map, result_map_for_current_child)
+    )
+  end
 end

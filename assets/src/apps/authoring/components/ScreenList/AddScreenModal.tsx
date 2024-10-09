@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import { ScreenIcon } from '../Flowchart/screen-icons/screen-icons';
@@ -34,17 +34,30 @@ export const screenTypeToTitle: Record<string, string> = {
 
 export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
   const [title, setTitle] = React.useState('');
+  const [showValidationMessage, setShowValidationMessage] = React.useState(false);
   const [activeScreenType, setScreenType] = React.useState<ScreenTypes | null>(null);
-
   const onNext = useCallback(() => {
-    onCreate(title, activeScreenType || 'blank_screen');
+    if (!validInput) {
+      setShowValidationMessage(true);
+    } else {
+      onCreate(title || 'Adaptive Screen', activeScreenType || 'blank_screen');
+    }
+  }, [activeScreenType, onCreate, title]);
+  const onContinue = useCallback(() => {
+    onCreate(title || 'Adaptive Screen', activeScreenType || 'blank_screen');
   }, [activeScreenType, onCreate, title]);
 
   const validInput = title.length > 0 && activeScreenType !== null;
-
+  const isOnlyScreenTypeSelected = !title?.length && activeScreenType !== null;
+  const isOnlyScreenTitleSelected = title?.length && activeScreenType === null;
+  useEffect(() => {
+    if (validInput) {
+      setShowValidationMessage(false);
+    }
+  }, [validInput, showValidationMessage]);
   return (
     <AdvancedAuthoringModal
-      dialogClassName="modal-800 add-screen-modal"
+      dialogClassName="modal-870 add-screen-modal"
       show={true}
       onHide={onCancel}
     >
@@ -54,7 +67,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="title-input"
-          placeholder="Name your screen here"
+          placeholder="Add screen title..."
         />
         <hr />
         <h2>Select the screen type</h2>
@@ -76,7 +89,7 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
             </div>
           </div>
 
-          <div className="column">
+          <div className="column screen-with-component">
             <label>Screen with choices component</label>
             <div className="grid">
               {questionPages.map((screenType) => (
@@ -93,25 +106,69 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
           </div>
         </div>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="link" onClick={onNext} disabled={!validInput}>
-          Next
-          <svg
-            width={24}
-            height={24}
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
+      <Modal.Footer
+        className={
+          showValidationMessage &&
+          (isOnlyScreenTitleSelected || !validInput || isOnlyScreenTypeSelected)
+            ? 'screen-not-selected'
+            : ''
+        }
+      >
+        {showValidationMessage && !validInput && (
+          <span style={{ alignSelf: 'flex-start' }}>
+            <b>Are you sure?</b> <span style={{ fontSize: 'x-large' }}>| </span>A{' '}
+            {isOnlyScreenTypeSelected
+              ? 'screen title '
+              : isOnlyScreenTitleSelected
+              ? 'screen type'
+              : ' screen title and screen type'}{' '}
+            may be helpful while creating a lesson.
+          </span>
+        )}
+        {!showValidationMessage && (
+          <Button variant="button" className="btn btn-primary" onClick={onNext}>
+            Next
+            <svg
+              width={24}
+              height={24}
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 12h14M12 5l7 7-7 7"
+                stroke="white"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Button>
+        )}
+        {showValidationMessage && (
+          <Button
+            variant="button"
+            className=" continue-button btn btn-primary"
+            onClick={onContinue}
           >
-            <path
-              d="M5 12h14M12 5l7 7-7 7"
-              stroke={validInput ? '#2C6ABF' : '#b1b1b1'}
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Button>
+            Continue
+            <svg
+              width={24}
+              height={24}
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5 12h14M12 5l7 7-7 7"
+                stroke="#2c6abf"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </Button>
+        )}
       </Modal.Footer>
     </AdvancedAuthoringModal>
   );

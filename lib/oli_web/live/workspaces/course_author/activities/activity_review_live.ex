@@ -9,8 +9,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Activities.ActivityReviewLive do
      assign(socket,
        resource_slug: project.slug,
        resource_title: project.title,
-       active_workspace: :course_author,
-       active_view: :activities,
        scripts: Oli.Activities.get_activity_scripts()
      )}
   end

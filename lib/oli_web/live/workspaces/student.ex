@@ -2,10 +2,9 @@ defmodule OliWeb.Workspaces.Student do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Metrics
-  alias OliWeb.Backgrounds
   alias Oli.Delivery.Sections
+  alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
-  alias OliWeb.Components.Delivery.Utils
 
   import Ecto.Query, warn: false
   import OliWeb.Common.SourceImage
@@ -16,24 +15,26 @@ defmodule OliWeb.Workspaces.Student do
     sidebar_expanded: true
   }
 
+  @platform_student_roles [
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student),
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner)
+  ]
+
+  @context_student_roles [
+    Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+  ]
+
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
-    {:ok,
-     assign(socket,
-       active_workspace: :student
-     )}
+    {:ok, assign(socket, active_workspace: :student)}
   end
 
   @impl Phoenix.LiveView
-  def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
+  def mount(params, _session, %{assigns: %{current_user: current_user, ctx: ctx}} = socket)
       when not is_nil(current_user) do
-    all_sections =
-      Sections.list_user_open_and_free_sections(current_user)
-      |> add_user_role(current_user)
-
     sections =
-      all_sections
-      |> filter_by_role(:student)
+      current_user.id
+      |> sections_where_user_is_student()
       |> add_instructors()
       |> add_sections_progress(current_user.id)
 
@@ -41,7 +42,7 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(all_sections),
+       disable_sidebar?: user_is_only_a_student?(ctx),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -81,8 +82,9 @@ defmodule OliWeb.Workspaces.Student do
      )}
   end
 
-  def handle_params(params, _uri, socket),
-    do: {:noreply, assign(socket, params: decode_params(params))}
+  def handle_params(params, _uri, socket) do
+    {:noreply, assign(socket, params: decode_params(params))}
+  end
 
   @impl Phoenix.LiveView
 
@@ -254,7 +256,7 @@ defmodule OliWeb.Workspaces.Student do
                 JS.transition(
                   {"ease-out duration-300", "opacity-0 -translate-x-1/2",
                    "opacity-100 translate-x-0"},
-                  time: 300 + index * 60
+                  time: if(index < 6, do: 100 + index * 20, else: 240)
                 )
                 |> JS.remove_class("opacity-100 translate-x-0")
               }
@@ -276,11 +278,7 @@ defmodule OliWeb.Workspaces.Student do
                   <h5 class="text-[36px] leading-[49px] font-semibold drop-shadow-md">
                     <%= section.title %>
                   </h5>
-                  <div
-                    :if={section.user_role == "student"}
-                    class="flex drop-shadow-md"
-                    role={"progress_for_section_#{section.id}"}
-                  >
+                  <div class="flex drop-shadow-md" role={"progress_for_section_#{section.id}"}>
                     <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
                       Course Progress
                     </h4>
@@ -311,7 +309,7 @@ defmodule OliWeb.Workspaces.Student do
       phx-mounted={
         JS.transition(
           {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
-          time: 300 + @index * 60
+          time: if(@index < 6, do: 100 + @index * 20, else: 240)
         )
       }
       class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
@@ -360,15 +358,6 @@ defmodule OliWeb.Workspaces.Student do
      )}
   end
 
-  defp add_user_role([], _user), do: []
-
-  defp add_user_role(sections, user) do
-    sections
-    |> Enum.map(fn s ->
-      Map.merge(s, %{user_role: Utils.user_role(s, user) |> Atom.to_string()})
-    end)
-  end
-
   defp add_instructors([]), do: []
 
   defp add_instructors(sections) do
@@ -394,9 +383,6 @@ defmodule OliWeb.Workspaces.Student do
     end)
   end
 
-  defp filter_by_role(sections, :student),
-    do: Enum.filter(sections, fn s -> s.user_role == "student" end)
-
   defp maybe_filter_by_text(sections, nil), do: sections
   defp maybe_filter_by_text(sections, ""), do: sections
 
@@ -417,11 +403,8 @@ defmodule OliWeb.Workspaces.Student do
     end)
   end
 
-  defp get_course_url(%{user_role: "student", slug: slug}, sidebar_expanded),
-    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
-
   defp get_course_url(%{slug: slug}, sidebar_expanded),
-    do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
+    do: ~p"/sections/#{slug}?#{%{sidebar_expanded: sidebar_expanded}}"
 
   defp decode_params(params) do
     %{
@@ -431,5 +414,26 @@ defmodule OliWeb.Workspaces.Student do
     }
   end
 
-  defp user_is_only_a_student?(sections), do: Enum.all?(sections, &(&1.user_role == "student"))
+  defp user_is_only_a_student?(%{author: author}) when not is_nil(author), do: false
+  defp user_is_only_a_student?(%{user: %{can_create_sections: true}}), do: false
+
+  defp user_is_only_a_student?(%{user: %{id: user_id}}) do
+    user_roles =
+      user_id
+      |> Oli.Accounts.user_roles()
+      |> Enum.map(& &1.uri)
+      |> MapSet.new()
+
+    student_roles =
+      (@context_student_roles ++ @platform_student_roles)
+      |> Enum.map(& &1.uri)
+      |> MapSet.new()
+
+    roles_other_than_student = MapSet.difference(user_roles, student_roles)
+    MapSet.size(roles_other_than_student) == 0
+  end
+
+  defp sections_where_user_is_student(user_id) do
+    Sections.get_open_and_free_active_sections_by_roles(user_id, @context_student_roles)
+  end
 end

@@ -1,5 +1,5 @@
 defmodule Oli.Plugs.CommunityAdmin do
-  alias OliWeb.Router.Helpers, as: Routes
+  use OliWeb, :verified_routes
 
   def init(opts), do: opts
 
@@ -10,9 +10,7 @@ defmodule Oli.Plugs.CommunityAdmin do
     else
       conn
       |> Phoenix.Controller.put_flash(:info, "You are not allowed to access Communities")
-      |> Phoenix.Controller.redirect(
-        to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
-      )
+      |> Phoenix.Controller.redirect(to: ~p"/workspaces/course_author")
       |> Plug.Conn.halt()
     end
   end

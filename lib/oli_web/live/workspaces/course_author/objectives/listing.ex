@@ -40,7 +40,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Objectives.Listing do
               </div>
               <.link
                 :if={@revision_history_link}
-                navigate={~p[/project/#{@project_slug}/history/slug/#{item.slug}]}
+                navigate={
+                  ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{item.slug}/history"
+                }
               >
                 <i class="fas fa-history"></i> View revision history
               </.link>

@@ -194,7 +194,7 @@ defmodule OliWeb.Components.Common do
   attr(:href, :string, default: nil)
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
-  attr(:rest, :global, include: ~w(disabled form name value target rel download))
+  attr(:rest, :global, include: ~w(disabled form name value target rel download xphx-mouseover))
 
   slot(:inner_block, required: true)
 
@@ -588,6 +588,7 @@ defmodule OliWeb.Components.Common do
   attr(:show_percent, :boolean, default: true)
   attr(:role, :string, default: "progress_bar")
   attr(:height, :string, default: "h-1")
+  attr(:rounded, :string, default: "rounded-[60px]")
 
   attr(:on_going_colour, :string,
     default: "bg-[#1E9531]",
@@ -599,17 +600,20 @@ defmodule OliWeb.Components.Common do
     doc: "the colour of the progress bar when progress = 100%"
   )
 
+  attr(:not_completed_colour, :string,
+    default: "bg-gray-600/20 dark:bg-white/20",
+    doc: "the colour of the not completed section of the progress bar"
+  )
+
   def progress_bar(assigns) do
     ~H"""
     <div class="flex flex-row items-center gap-3 mx-auto" role={@role}>
       <div class="flex justify-center w-full">
-        <div
-          class={"rounded-[60px] bg-gray-600/20 #{@height} dark:bg-white/20"}
-          style={"width: #{@width}"}
-        >
+        <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
+            role="progress"
             class={[
-              "rounded-[60px] #{@height}",
+              "#{@rounded} #{@height}",
               if(@percent == 100, do: @completed_colour, else: @on_going_colour)
             ]}
             style={"width: #{if @percent == 0, do: 1, else: @percent}%"}

@@ -38,6 +38,7 @@ defmodule OliWeb.Components.Modal do
   slot :subtitle
   slot :confirm
   slot :cancel
+  slot :custom_footer
 
   def modal(assigns) do
     ~H"""
@@ -118,6 +119,7 @@ defmodule OliWeb.Components.Modal do
                 <%= render_slot(@inner_block) %>
               </div>
               <!-- Modal footer -->
+              <%= render_slot(@custom_footer) %>
               <div :if={@confirm != [] or @cancel != []}>
                 <div class="flex justify-end p-6 space-x-2">
                   <.button

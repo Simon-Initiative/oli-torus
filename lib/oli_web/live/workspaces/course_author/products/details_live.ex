@@ -67,6 +67,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   def render(assigns) do
     ~H"""
+    <h2 id="header_id" class="pb-2">Product Overview</h2>
     <%= render_modal(assigns) %>
     <div class="overview container">
       <div class="grid grid-cols-12 py-5 border-b">
@@ -145,11 +146,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
       <% end %>
     </div>
     """
-  end
-
-  # Needed to handle sidebar_expaded event
-  def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
   end
 
   def handle_event("validate", %{"section" => params}, socket) do

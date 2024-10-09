@@ -70,6 +70,7 @@ export interface AppState {
   activityTypes: ActivityRegistration[];
   allObjectives: Objective[];
   copiedPart: any | null;
+  copiedPartActivityId: any | null;
   readonly: boolean;
   showDiagnosticsWindow: boolean;
   showScoringOverview: boolean;
@@ -98,6 +99,7 @@ const initialState: AppState = {
   activityTypes: [],
   allObjectives: [],
   copiedPart: null,
+  copiedPartActivityId: null,
   readonly: true,
   showDiagnosticsWindow: false,
   showScoringOverview: false,
@@ -116,6 +118,7 @@ export interface AppConfig {
   activityTypes?: any[];
   allObjectives?: Objective[];
   copiedPart?: any;
+  copiedPartActivityId?: any;
   applicationMode: ApplicationMode;
 }
 
@@ -146,6 +149,8 @@ const slice: Slice<AppState> = createSlice({
 
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
+      state.copiedPartActivityId =
+        action.payload.copiedPartActivityId || initialState.copiedPartActivityId;
       state.applicationMode = action.payload.applicationMode || initialState.applicationMode;
       state.editingMode = state.applicationMode === 'flowchart' ? 'flowchart' : 'page'; // Default to the flowchart editor when in flowchart mode.
     },
@@ -203,6 +208,9 @@ const slice: Slice<AppState> = createSlice({
     setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
       state.copiedPart = action.payload.copiedPart;
     },
+    setCopiedPartActivityId(state, action: PayloadAction<{ copiedPartActivityId: any }>) {
+      state.copiedPartActivityId = action.payload.copiedPartActivityId;
+    },
     setReadonly(state, action: PayloadAction<{ readonly: boolean }>) {
       state.readonly = action.payload.readonly;
     },
@@ -247,6 +255,7 @@ export const {
   setRightPanelActiveTab,
   setCurrentRule,
   setCopiedPart,
+  setCopiedPartActivityId,
   setDebugConfig,
   setReadonly,
   setShowDiagnosticsWindow,
@@ -333,7 +342,10 @@ export const selectCurrentRule = createSelector(
 );
 
 export const selectCopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
-
+export const selectCopiedPartActivityId = createSelector(
+  selectState,
+  (state: AppState) => state.copiedPartActivityId,
+);
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
 
 export const selectHasEditingLock = createSelector(

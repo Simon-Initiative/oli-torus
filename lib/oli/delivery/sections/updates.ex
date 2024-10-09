@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Sections.Updates do
   alias Oli.Publishing.Publications.PublicationDiff
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.PostProcessing
+  alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Resources.Numbering
 
   alias Oli.Delivery.Sections.{
     Section,
@@ -278,10 +280,73 @@ defmodule Oli.Delivery.Sections.Updates do
         "perform_update.MAJOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
       )
 
+      renumber_hierarchy(section)
+
       {:ok, :ok}
     else
       e -> e
     end
+  end
+
+  # Rebuild the numberin the hierarchy, and issue a bulk update to set those
+  # new values in the section resource records
+  defp renumber_hierarchy(section) do
+    {hierarchy, _} =
+      MinimalHierarchy.full_hierarchy(section.slug)
+      |> Numbering.renumber_hierarchy()
+
+    section_resource_rows =
+      collapse_section_hierarchy(hierarchy, section.id, [])
+      |> Enum.filter(fn sr -> sr.numbering_level != 0 end)
+
+    {values, params, _} =
+      Enum.reduce(section_resource_rows, {[], [], 0}, fn sr, {values, params, i} ->
+        {
+          values ++ ["($#{i + 1}::bigint, $#{i + 2}::bigint, $#{i + 3}::bigint)"],
+          params ++ [sr.id, sr.numbering_level, sr.numbering_index],
+          i + 3
+        }
+      end)
+
+    values = Enum.join(values, ",")
+
+    sql = """
+      UPDATE section_resources
+      SET
+        numbering_level = batch_values.numbering_level,
+        numbering_index = batch_values.numbering_index
+      FROM (
+          VALUES
+          #{values}
+      ) AS batch_values (id, numbering_level, numbering_index)
+      WHERE section_resources.id = batch_values.id
+    """
+
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+  end
+
+  defp collapse_section_hierarchy(
+         %HierarchyNode{
+           finalized: true,
+           numbering: numbering,
+           section_resource: %SectionResource{id: id},
+           children: children
+         },
+         section_id,
+         section_resources \\ []
+       ) do
+    section_resources =
+      Enum.reduce(children, section_resources, fn child, section_resources ->
+        section_resources ++ collapse_section_hierarchy(child, section_id)
+      end)
+
+    section_resource = %{
+      numbering_index: numbering.index,
+      numbering_level: numbering.level,
+      id: id
+    }
+
+    [section_resource | section_resources]
   end
 
   defp cull_unreachable_pages(section) do
