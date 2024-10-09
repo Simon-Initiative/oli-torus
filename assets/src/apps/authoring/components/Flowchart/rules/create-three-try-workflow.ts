@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_BLANK_FEEDBACK,
   DEFAULT_FILLED_IN_FEEDBACK,
+  DEFAULT_INCORRECT_FEEDBACK,
   IConditionWithFeedback,
   generateRule,
   newId,
@@ -112,6 +113,8 @@ export const generateMaxTryWorkflow = (
   }
 
   // [max incorrect, that sets the correct value in the control - with incorrect feedback plus nav]
+  // [Special handling for maxAttempt = 1. If the author sets the attempts to 1, the max attempt feedback should display on the first incorrect attempt
+  //  unless the author has provided custom incorrect feedback. In such a case, the custom feedback should be displayed instead.]
   incorrect.destinationId &&
     rules.push(
       generateRule(
@@ -120,7 +123,9 @@ export const generateMaxTryWorkflow = (
         incorrect.destinationId,
         false,
         40,
-        options.threeTimesFeedback,
+        extraOptions.maxAttempt == '1' && incorrect.feedback != DEFAULT_INCORRECT_FEEDBACK
+          ? incorrect.feedback
+          : options.threeTimesFeedback,
         [...setCorrectAction],
       ),
     );
