@@ -60,6 +60,7 @@ export interface ActivityContext {
   pageAttemptGuid: string;
   pageState?: any;
   showFeedback: boolean | null;
+  showExplanation?: boolean;
   resourceId?: number;
   renderPointMarkers: boolean;
   isAnnotationLevel: boolean;

@@ -4,6 +4,7 @@ defmodule Oli.Rendering.Activity.Html do
   """
   import Oli.Utils
 
+  alias Oli.Delivery.Settings
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
   alias Oli.Rendering.Activity.ActivitySummary
@@ -179,7 +180,12 @@ defmodule Oli.Rendering.Activity.Html do
         groupId: group_id,
         bibParams: bib_params,
         learningLanguage: learning_language,
-        showFeedback: Oli.Delivery.Settings.show_feedback?(effective_settings),
+        showFeedback: Settings.show_feedback?(effective_settings),
+        showExplanation:
+          Settings.show_explanation?(
+            effective_settings,
+            resource_attempt.attempt_number
+          ),
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""

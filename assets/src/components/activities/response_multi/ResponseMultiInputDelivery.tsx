@@ -400,6 +400,7 @@ export const ResponseMultiInputComponent: React.FC = () => {
             surveyId === null &&
             (!context.graded || mode === 'review')
           }
+          showExplanation={context.showExplanation}
           attemptState={uiState.attemptState}
           context={writerContext}
         />
