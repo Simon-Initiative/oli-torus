@@ -4522,55 +4522,72 @@ defmodule Oli.Delivery.Sections do
   """
   def get_nearest_upcoming_lessons(section, user_id, lessons_count, opts \\ []) do
 
+    page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
     today =
       Oli.Date.utc_today()
       |> DateTime.new!(~T[00:00:00])
 
-    ignore_schedule = Keyword.get(opts, :ignore_schedule, false)
-    graded_only = Keyword.get(opts, :only_graded, false)
-
-    # Query to get any student exceptions for the user in the section
-    exceptions = from(se in Oli.Delivery.Settings.StudentException,
-      where: se.section_id == ^section.id and se.user_id == ^user_id)
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn se, acc -> Map.put(acc, se.resource_id, se) end)
-
-    # From the depot, pull the relevant pages and match them up with student exceptions
-    # and then filter by schedule date (if necessary)
-    Oli.Delivery.Sections.SectionResourceDepot.get_lessons(section, graded_only)
-    |> Enum.map(fn %SectionResource{} = sr ->
-      case Map.get(exceptions, sr.resource_id) do
-        nil -> sr
-        e ->
-          sr = if is_nil(e.end_date) do
-            sr
-          else
-            Map.put(sr, :end_date, e.end_date)
-          end
-
-          if is_nil(e.start_date) do
-            sr
-          else
-            Map.put(sr, :start_date, e.end_date)
-          end
+    graded_filter =
+      if opts[:only_graded] do
+        dynamic([_sr, _s, _spp, _pr, rev, _ra], rev.graded)
+      else
+        true
       end
-    end)
-    |> Enum.filter(fn %SectionResource{} = sr ->
-      ignore_schedule
-        or (!is_nil(sr.end_date) and DateTime.compare(sr.end_date, today) == :gt)
-        or (!is_nil(sr.start_date) and DateTime.compare(sr.start_date, today) == :gt)
-    end)
-    |> Enum.map(fn %SectionResource{} = sr ->
-      Map.put(sr, :to_sort_by, if is_nil(sr.end_date) do sr.start_date else sr.end_date end)
-    end)
-    |> Enum.sort(fn a, b ->
-        case DateTime.compare(a.to_sort_by, b.to_sort_by) do
-          :eq -> a.numbering_index < b.numbering_index
-          :lt -> true
-          _ -> false
-        end
-    end)
-    |> Enum.take(lessons_count)
+
+    schedule_filter =
+      if opts[:ignore_schedule] do
+        true
+      else
+        dynamic(
+          [sr, _s, _spp, _pr, _rev, _ra, _r_att, se],
+          coalesce(se.start_date, se.end_date)
+          |> coalesce(sr.start_date)
+          |> coalesce(sr.end_date) >=
+            ^today
+        )
+      end
+
+    from([rev: rev, sr: sr] in DeliveryResolver.section_resource_revisions(section.slug),
+      left_join: ra in ResourceAccess,
+      on: ra.resource_id == rev.resource_id and ra.user_id == ^user_id,
+      left_join: r_att in ResourceAttempt,
+      on: r_att.resource_access_id == ra.id,
+      left_join: se in Oli.Delivery.Settings.StudentException,
+      on:
+        se.resource_id == ra.resource_id and se.user_id == ^user_id and
+          se.section_id == ^section.id,
+      where:
+        rev.resource_type_id == ^page_resource_type_id and
+          is_nil(r_att.id) and not sr.hidden,
+      where: ^schedule_filter,
+      order_by: [
+        asc:
+          coalesce(se.start_date, se.end_date) |> coalesce(sr.start_date) |> coalesce(sr.end_date),
+        asc: sr.numbering_index
+      ],
+      limit: ^lessons_count,
+      select:
+        map(rev, [
+          :id,
+          :title,
+          :slug,
+          :duration_minutes,
+          :resource_id,
+          :graded,
+          :purpose,
+          :max_attempts
+        ]),
+      select_merge: %{
+        numbering_index: sr.numbering_index,
+        start_date: coalesce(se.start_date, sr.start_date),
+        end_date: coalesce(se.end_date, sr.end_date),
+        scheduling_type: sr.scheduling_type
+      }
+    )
+    |> where(^graded_filter)
+    |> Repo.all()
+
   end
 
   @doc """

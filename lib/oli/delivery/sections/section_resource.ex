@@ -80,7 +80,9 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :title, :string
     field :graded, :boolean
     field :revision_slug, :string
-    field :purpose, :string
+    field :purpose, Ecto.Enum,
+      values: [:foundation, :application, :deliberate_practice],
+      default: :foundation
     field :duration_minutes, :integer
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil

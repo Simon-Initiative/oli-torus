@@ -73,8 +73,8 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     conditions = case graded_only do
-      true  -> [resource_type_id: page_type_id, graded: true]
-      false  -> [resource_type_id: page_type_id]
+      true  -> [resource_type_id: page_type_id, graded: true, hidden: false]
+      false  -> [resource_type_id: page_type_id, hidden: false]
     end
 
     Depot.query(@depot_desc, section.id, conditions)

@@ -59,7 +59,7 @@ defmodule Oli.Delivery.Depot.Serializer do
   defp encode_by_type(value, :utc_datetime) do
     case value do
       nil -> nil
-      _ -> DateTime.to_unix(value, :millisecond)
+      _ -> DateTime.to_unix(value, :second)
     end
   end
 
@@ -69,7 +69,7 @@ defmodule Oli.Delivery.Depot.Serializer do
     case value do
       nil -> nil
       _ ->
-        {:ok, value} = DateTime.from_unix(value, :millisecond)
+        {:ok, value} = DateTime.from_unix(value, :second)
         value
     end
   end

@@ -119,7 +119,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
       when resources_to_update_count == updated_count ->
         # we need to update the section cache to reflect the schedule changes
         SectionCache.clear(section_slug)
-        Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.DepotCoordinator.get().clear(
             Oli.Delivery.Sections.SectionResourceDepot.depot_desc(), section_id)
 
         {:ok, updated_count}
