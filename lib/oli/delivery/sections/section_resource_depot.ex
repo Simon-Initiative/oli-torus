@@ -1,5 +1,18 @@
 defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
+  @moduledoc """
+  This module provides a data store for cached section resource records.
+
+  It largely delegates to the more generic Depot module, but layers on top of
+  it SectionResource specific logic. In this manner, we can have client
+  code use the SectionResourceDepot module without needing to know the underlying
+  implementation details (such as the Depot query syntax).
+
+  Any client code that is making changes to SectionResource records must
+  be calling the DepotCoordinator module to ensure that (potentially distributed)
+  caches are invalidated.  This module is only for reading data.
+  """
+
   import Ecto.Query
   alias Oli.Delivery.Depot
   alias Oli.Delivery.Depot.DepotDesc
@@ -18,6 +31,13 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
   def depot_desc(), do: @depot_desc
 
+  @doc """
+  Retrieve the full hierarchy of section resources for a given section.
+
+  Usefull for generating a full hierarchy of section resources for a section,
+  in places where code had been calling Oli.Delivery.Hierarchy.full_hierarchy
+  directly.
+  """
   def get_full_hierarchy(%Section{} = section) do
     init_if_necessary(section.id)
 
@@ -28,6 +48,14 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Oli.Delivery.Hierarchy.full_hierarchy(section, srs)
   end
 
+  @doc """
+  Retrieve the full hierarchy of section resources for a given section as would
+  the DeliveryResolver.
+
+  Usefull for generating a full hierarchy of section resources for a section,
+  in places where code had been calling Oli.Publishing.DeliveryResolver.full_hierarchy
+  directly.
+  """
   def get_delivery_resolver_full_hierarchy(%Section{} = section) do
     init_if_necessary(section.id)
 
@@ -38,6 +66,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Oli.Publishing.DeliveryResolver.full_hierarchy(section, srs)
   end
 
+  @doc """
+  Returns a list of SectionResource records for all graded pages for a given section.
+  """
   def graded_pages(section_id) do
     init_if_necessary(section_id)
 
@@ -46,6 +77,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     |> Enum.sort_by(&(&1.numbering_index))
   end
 
+  @doc """
+  Access the SectionResource records pertaining to the course schedule.
+  """
   def retrieve_schedule(section_id, filter_resource_type \\ false) do
     init_if_necessary(section_id)
 
