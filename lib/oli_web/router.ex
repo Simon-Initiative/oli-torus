@@ -527,15 +527,20 @@ defmodule OliWeb.Router do
 
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
 
-    put("/test/evaluate", Api.ActivityController, :evaluate)
-    put("/test/transform", Api.ActivityController, :transform)
-
     post("/:project/lock/:resource", Api.LockController, :acquire)
     delete("/:project/lock/:resource", Api.LockController, :release)
 
     get("/:project/alternatives", Api.ResourceController, :alternatives)
 
     get("/:project/activities/with_report", Api.ResourceController, :activities_with_report)
+  end
+
+  scope "/api/v1/activity", OliWeb do
+    pipe_through([:api])
+
+    # activity evaluation and transformation services used by the authoring tool and preview mode
+    put("/evaluate", Api.ActivityController, :evaluate)
+    put("/transform", Api.ActivityController, :transform)
   end
 
   # Storage Service
@@ -1102,7 +1107,9 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetRequestPath,
-          OliWeb.LiveSessionPlugs.SetPaywallSummary
+          OliWeb.LiveSessionPlugs.SetPaywallSummary,
+          {OliWeb.LiveSessionPlugs.SetPublishingResolver, :delivery},
+          {OliWeb.LiveSessionPlugs.SetDeliveryContext, :learner}
         ] do
         live("/", Delivery.Student.LessonLive)
       end

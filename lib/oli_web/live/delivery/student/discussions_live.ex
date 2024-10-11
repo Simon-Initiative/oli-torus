@@ -718,7 +718,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                 <Annotations.post
                   class="bg-white dark:bg-gray-900"
                   post={post}
-                  current_user={@ctx.user}
+                  user_id={@ctx.user.id}
                   enable_unread_badge={true}
                 />
               </div>
@@ -742,7 +742,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           </div>
         <% results -> %>
           <div role="search-results list" class="w-full">
-            <Annotations.search_results search_results={results} current_user={@current_user} />
+            <Annotations.search_results search_results={results} user_id={@current_user.id} />
           </div>
       <% end %>
     </section>
@@ -771,7 +771,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
                 <Annotations.post
                   class="bg-white dark:bg-gray-900"
                   post={post}
-                  current_user={@ctx.user}
+                  user_id={@ctx.user.id}
                   go_to_post_href={~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"}
                 />
               </div>
@@ -798,7 +798,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
             <Annotations.search_results
               section_slug={@section_slug}
               search_results={results}
-              current_user={@current_user}
+              user_id={@current_user.id}
               show_go_to_post_link={true}
             />
           </div>

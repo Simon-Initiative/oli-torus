@@ -11,13 +11,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       emit_page_viewed_event: 1
     ]
 
-  alias Oli.Accounts.User
+  alias Oli.Delivery.DeliveryContext.DeliveryContextProvider
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings
-  alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
@@ -32,7 +31,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   @required_keys_per_assign %{
     section:
       {[:id, :slug, :title, :brand, :lti_1p3_deployment, :customizations], %Sections.Section{}},
-    current_user: {[:id, :name, :email], %User{}}
+    delivery_context: :all
   }
 
   @decorate transaction_event()
@@ -40,13 +39,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
-      %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
-      is_instructor = Sections.has_instructor_role?(current_user, section.slug)
+      %{delivery_context: delivery_context, section: section, page_context: page_context} =
+        socket.assigns
+
+      is_instructor = DeliveryContextProvider.user_effective_role(delivery_context) == :instructor
 
       async_load_annotations(
         section,
         page_context.page.resource_id,
-        current_user,
+        delivery_context,
         page_context.collab_space_config,
         if(is_instructor, do: :public, else: :private),
         nil
@@ -272,7 +273,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       async_load_annotations(
         socket.assigns.section,
         page_resource_id,
-        socket.assigns.current_user,
+        socket.assigns.delivery_context,
         collab_space_config,
         visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         nil
@@ -287,7 +288,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       async_load_annotations(
         socket.assigns.section,
         page_resource_id,
-        socket.assigns.current_user,
+        socket.assigns.delivery_context,
         collab_space_config,
         visibility_for_active_tab(socket.assigns.annotations.active_tab, is_instructor),
         point_marker_id
@@ -313,44 +314,49 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("create_annotation", %{"content" => value} = params, socket) do
-    %{
-      current_user: current_user,
-      is_instructor: is_instructor,
-      section: section,
-      page_resource_id: page_resource_id,
-      collab_space_config: collab_space_config,
-      annotations: %{
-        selected_point: selected_point,
-        active_tab: active_tab,
-        auto_approve_annotations: auto_approve_annotations
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(socket.assigns.delivery_context) do
+      %{
+        is_instructor: is_instructor,
+        section: section,
+        page_resource_id: page_resource_id,
+        collab_space_config: collab_space_config,
+        annotations: %{
+          selected_point: selected_point,
+          active_tab: active_tab,
+          auto_approve_annotations: auto_approve_annotations
+        }
+      } = socket.assigns
+
+      # if the selected point is the page resource id, we treat it as nil
+      selected_point =
+        if(selected_point == :page, do: nil, else: selected_point)
+
+      attrs = %{
+        status: if(auto_approve_annotations, do: :approved, else: :submitted),
+        user_id: user_id,
+        section_id: section.id,
+        resource_id: page_resource_id,
+        annotated_resource_id: page_resource_id,
+        annotated_block_id: selected_point,
+        annotation_type: if(selected_point, do: :point, else: :none),
+        anonymous: collab_space_config.anonymous_posting && params["anonymous"] == "true",
+        visibility: visibility_for_active_tab(active_tab, is_instructor),
+        content: %Collaboration.PostContent{message: value}
       }
-    } = socket.assigns
 
-    # if the selected point is the page resource id, we treat it as nil
-    selected_point =
-      if(selected_point == :page, do: nil, else: selected_point)
+      case Collaboration.create_post(attrs) do
+        {:ok, post} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Note created successfully")
+           |> optimistically_add_post(selected_point, post)}
 
-    attrs = %{
-      status: if(auto_approve_annotations, do: :approved, else: :submitted),
-      user_id: current_user.id,
-      section_id: section.id,
-      resource_id: page_resource_id,
-      annotated_resource_id: page_resource_id,
-      annotated_block_id: selected_point,
-      annotation_type: if(selected_point, do: :point, else: :none),
-      anonymous: collab_space_config.anonymous_posting && params["anonymous"] == "true",
-      visibility: visibility_for_active_tab(active_tab, is_instructor),
-      content: %Collaboration.PostContent{message: value}
-    }
-
-    case Collaboration.create_post(attrs) do
-      {:ok, post} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Note created successfully")
-         |> optimistically_add_post(selected_point, post)}
-
-      {:error, _} ->
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to create note")}
+      end
+    else
+      _ ->
         {:noreply, put_flash(socket, :error, "Failed to create note")}
     end
   end
@@ -367,7 +373,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
     if socket.assigns.annotations.search_term not in [nil, ""] do
       %{
-        current_user: current_user,
+        delivery_context: delivery_context,
         section: section,
         page_resource_id: page_resource_id,
         annotations: %{
@@ -379,7 +385,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       async_search_annotations(
         section,
         page_resource_id,
-        current_user,
+        delivery_context,
         visibility_for_active_tab(tab, is_instructor),
         selected_point,
         search_term
@@ -392,7 +398,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       async_load_annotations(
         socket.assigns.section,
         socket.assigns.page_resource_id,
-        socket.assigns.current_user,
+        socket.assigns.delivery_context,
         socket.assigns.collab_space_config,
         visibility_for_active_tab(tab, is_instructor),
         socket.assigns.annotations.selected_point
@@ -403,21 +409,25 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   def handle_event("toggle_post_replies", %{"post-id" => post_id}, socket) do
-    %{current_user: current_user} = socket.assigns
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(socket.assigns.delivery_context) do
+      post_id = String.to_integer(post_id)
+      post = get_post(socket, post_id)
 
-    post_id = String.to_integer(post_id)
-    post = get_post(socket, post_id)
+      case post.replies do
+        nil ->
+          # load replies
+          async_load_post_replies(user_id, post_id)
 
-    case post.replies do
-      nil ->
-        # load replies
-        async_load_post_replies(current_user.id, post_id)
+          {:noreply, update_post_replies(socket, post_id, :loading, fn _ -> :loading end)}
 
-        {:noreply, update_post_replies(socket, post_id, :loading, fn _ -> :loading end)}
-
+        _ ->
+          # unload replies
+          {:noreply, update_post_replies(socket, post_id, nil, fn _ -> nil end)}
+      end
+    else
       _ ->
-        # unload replies
-        {:noreply, update_post_replies(socket, post_id, nil, fn _ -> nil end)}
+        {:noreply, put_flash(socket, :error, "Failed to load replies")}
     end
   end
 
@@ -427,54 +437,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{"parent-post-id" => parent_post_id, "post-id" => post_id, "reaction" => reaction},
         socket
       ) do
-    %{current_user: current_user} = socket.assigns
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(socket.assigns.delivery_context) do
+      parent_post_id = String.to_integer(parent_post_id)
+      post_id = String.to_integer(post_id)
+      reaction = String.to_existing_atom(reaction)
 
-    parent_post_id = String.to_integer(parent_post_id)
-    post_id = String.to_integer(post_id)
-    reaction = String.to_existing_atom(reaction)
-
-    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
-      {:ok, change} ->
-        {:noreply,
-         update_post_replies(socket, parent_post_id, nil, fn replies ->
-           Enum.map(
-             replies,
-             fn post ->
-               if post.id == post_id do
-                 %{
-                   post
-                   | reaction_summaries: update_reaction_summaries(post, reaction, change)
-                 }
-               else
-                 post
-               end
-             end
-           )
-         end)}
-
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
-    end
-  end
-
-  # handle toggle_reaction for root posts
-  def handle_event(
-        "toggle_reaction",
-        %{"post-id" => post_id, "reaction" => reaction},
-        socket
-      ) do
-    %{current_user: current_user, annotations: %{posts: posts}} = socket.assigns
-
-    post_id = String.to_integer(post_id)
-    reaction = String.to_existing_atom(reaction)
-
-    case Collaboration.toggle_reaction(post_id, current_user.id, reaction) do
-      {:ok, change} ->
-        {:noreply,
-         assign_annotations(socket,
-           posts:
+      case Collaboration.toggle_reaction(post_id, user_id, reaction) do
+        {:ok, change} ->
+          {:noreply,
+           update_post_replies(socket, parent_post_id, nil, fn replies ->
              Enum.map(
-               posts,
+               replies,
                fn post ->
                  if post.id == post_id do
                    %{
@@ -486,9 +460,55 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                  end
                end
              )
-         )}
+           end)}
 
-      {:error, _} ->
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+      end
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+    end
+  end
+
+  # handle toggle_reaction for root posts
+  def handle_event(
+        "toggle_reaction",
+        %{"post-id" => post_id, "reaction" => reaction},
+        socket
+      ) do
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(socket.assigns.delivery_context) do
+      %{annotations: %{posts: posts}} = socket.assigns
+
+      post_id = String.to_integer(post_id)
+      reaction = String.to_existing_atom(reaction)
+
+      case Collaboration.toggle_reaction(post_id, user_id, reaction) do
+        {:ok, change} ->
+          {:noreply,
+           assign_annotations(socket,
+             posts:
+               Enum.map(
+                 posts,
+                 fn post ->
+                   if post.id == post_id do
+                     %{
+                       post
+                       | reaction_summaries: update_reaction_summaries(post, reaction, change)
+                     }
+                   else
+                     post
+                   end
+                 end
+               )
+           )}
+
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
+      end
+    else
+      _ ->
         {:noreply, put_flash(socket, :error, "Failed to update reaction for post")}
     end
   end
@@ -502,51 +522,56 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         %{"parent-post-id" => parent_post_id, "content" => value} = params,
         socket
       ) do
-    parent_post_id = String.to_integer(parent_post_id)
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(socket.assigns.delivery_context) do
+      parent_post_id = String.to_integer(parent_post_id)
 
-    %{
-      current_user: current_user,
-      is_instructor: is_instructor,
-      section: section,
-      page_resource_id: page_resource_id,
-      collab_space_config: collab_space_config,
-      annotations: %{
-        selected_point: selected_point,
-        active_tab: active_tab,
-        auto_approve_annotations: auto_approve_annotations
+      %{
+        is_instructor: is_instructor,
+        section: section,
+        page_resource_id: page_resource_id,
+        collab_space_config: collab_space_config,
+        annotations: %{
+          selected_point: selected_point,
+          active_tab: active_tab,
+          auto_approve_annotations: auto_approve_annotations
+        }
+      } = socket.assigns
+
+      # if the selected point is the page, we treat it as nil
+      selected_point =
+        if(selected_point == :page, do: nil, else: selected_point)
+
+      attrs = %{
+        status: if(auto_approve_annotations, do: :approved, else: :submitted),
+        user_id: user_id,
+        section_id: section.id,
+        resource_id: page_resource_id,
+        annotated_resource_id: page_resource_id,
+        annotated_block_id: selected_point,
+        annotation_type: if(selected_point, do: :point, else: :none),
+        anonymous: collab_space_config.anonymous_posting && params["anonymous"] == "true",
+        visibility: visibility_for_active_tab(active_tab, is_instructor),
+        content: %Collaboration.PostContent{message: value},
+        parent_post_id: parent_post_id,
+        thread_root_id: parent_post_id
       }
-    } = socket.assigns
 
-    # if the selected point is the page, we treat it as nil
-    selected_point =
-      if(selected_point == :page, do: nil, else: selected_point)
+      case Collaboration.create_post(attrs) do
+        {:ok, post} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Reply successfully created")
+           |> optimistically_add_reply_post(
+             %Collaboration.Post{post | reaction_summaries: %{}},
+             parent_post_id
+           )}
 
-    attrs = %{
-      status: if(auto_approve_annotations, do: :approved, else: :submitted),
-      user_id: current_user.id,
-      section_id: section.id,
-      resource_id: page_resource_id,
-      annotated_resource_id: page_resource_id,
-      annotated_block_id: selected_point,
-      annotation_type: if(selected_point, do: :point, else: :none),
-      anonymous: collab_space_config.anonymous_posting && params["anonymous"] == "true",
-      visibility: visibility_for_active_tab(active_tab, is_instructor),
-      content: %Collaboration.PostContent{message: value},
-      parent_post_id: parent_post_id,
-      thread_root_id: parent_post_id
-    }
-
-    case Collaboration.create_post(attrs) do
-      {:ok, post} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Reply successfully created")
-         |> optimistically_add_reply_post(
-           %Collaboration.Post{post | reaction_summaries: %{}},
-           parent_post_id
-         )}
-
-      {:error, _} ->
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Failed to create reply")}
+      end
+    else
+      _ ->
         {:noreply, put_flash(socket, :error, "Failed to create reply")}
     end
   end
@@ -557,7 +582,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   def handle_event("search", %{"search_term" => search_term}, socket) do
     %{
-      current_user: current_user,
+      delivery_context: delivery_context,
       is_instructor: is_instructor,
       section: section,
       page_resource_id: page_resource_id,
@@ -570,7 +595,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     async_search_annotations(
       section,
       page_resource_id,
-      current_user,
+      delivery_context,
       visibility_for_active_tab(active_tab, is_instructor),
       selected_point,
       search_term
@@ -583,7 +608,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     async_load_annotations(
       socket.assigns.section,
       socket.assigns.page_resource_id,
-      socket.assigns.current_user,
+      socket.assigns.delivery_context,
       socket.assigns.collab_space_config,
       visibility_for_active_tab(
         socket.assigns.annotations.active_tab,
@@ -603,7 +628,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     %{
       section: section,
       page_resource_id: page_resource_id,
-      current_user: current_user,
+      delivery_context: delivery_context,
       is_instructor: is_instructor,
       annotations: %{
         active_tab: active_tab
@@ -620,7 +645,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     async_load_annotations(
       section,
       page_resource_id,
-      current_user,
+      delivery_context,
       collab_space_config,
       visibility_for_active_tab(active_tab, is_instructor),
       point_marker_id,
@@ -711,6 +736,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         phx-hook="PointMarkers"
       >
         <%= raw(@html) %>
+
         <div class="flex w-full justify-center">
           <.reset_attempts_button
             activity_count={@activity_count}
@@ -743,18 +769,22 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </:sidebar_toggle>
 
       <:sidebar>
-        <Annotations.panel
-          section_slug={@section.slug}
-          collab_space_config={@collab_space_config}
-          create_new_annotation={@annotations.create_new_annotation}
-          annotations={@annotations.posts}
-          current_user={@current_user}
-          is_instructor={@is_instructor}
-          active_tab={@annotations.active_tab}
-          search_results={@annotations.search_results}
-          search_term={@annotations.search_term}
-          selected_point={@annotations.selected_point}
-        />
+        <%= with user_id when not is_nil(user_id) <- DeliveryContextProvider.maybe_real_user_id(@delivery_context),
+                 is_guest <- DeliveryContextProvider.is_guest(@delivery_context) do %>
+          <Annotations.panel
+            section_slug={@section.slug}
+            collab_space_config={@collab_space_config}
+            create_new_annotation={@annotations.create_new_annotation}
+            annotations={@annotations.posts}
+            user_id={user_id}
+            is_guest={is_guest}
+            is_instructor={@is_instructor}
+            active_tab={@annotations.active_tab}
+            search_results={@annotations.search_results}
+            search_term={@annotations.search_term}
+            selected_point={@annotations.selected_point}
+          />
+        <% end %>
       </:sidebar>
     </.page_content_with_sidebar_layout>
     """
@@ -776,6 +806,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           <div id="page_content" class="content" phx-update="ignore" role="page content">
             <%= raw(@html) %>
+
             <div class="flex w-full justify-center">
               <.reset_attempts_button
                 activity_count={@activity_count}
@@ -861,6 +892,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           />
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
+
             <div class="flex w-full justify-center">
               <button
                 id="submit_answers"
@@ -1041,18 +1073,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   @decorate transaction_event()
   defp assign_objectives(socket) do
-    %{page_context: %{page: page}, current_user: current_user, section: section} =
+    %{
+      delivery_context: delivery_context,
+      page_context: %{page: page},
+      section: section,
+      publishing_resolver: publishing_resolver
+    } =
       socket.assigns
 
     page_attached_objectives =
-      Resolver.objectives_by_resource_ids(page.objectives["attached"], section.slug)
+      publishing_resolver.objectives_by_resource_ids(page.objectives["attached"], section.slug)
 
     student_proficiency_per_page_level_learning_objective =
-      Metrics.proficiency_for_student_per_learning_objective(
-        page_attached_objectives,
-        current_user.id,
-        section
-      )
+      case DeliveryContextProvider.maybe_real_user_id(delivery_context) do
+        nil ->
+          %{}
+
+        user_id ->
+          Metrics.proficiency_for_student_per_learning_objective(
+            page_attached_objectives,
+            user_id,
+            section
+          )
+      end
 
     objectives =
       page_attached_objectives
@@ -1122,13 +1165,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp async_load_annotations(
          section,
          resource_id,
-         current_user,
+         delivery_context,
          collab_space_config,
          visibility,
          point_block_id,
          load_replies_for_post_id \\ nil
        ) do
-    if current_user do
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(delivery_context) do
       Task.async(fn ->
         case collab_space_config do
           %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept} ->
@@ -1137,7 +1181,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               Collaboration.list_post_counts_for_user_in_section(
                 section.id,
                 resource_id,
-                current_user.id,
+                user_id,
                 visibility
               )
 
@@ -1146,7 +1190,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               Collaboration.list_posts_for_user_in_point_block(
                 section.id,
                 resource_id,
-                current_user.id,
+                user_id,
                 visibility,
                 point_block_id
               )
@@ -1157,7 +1201,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               if load_replies_for_post_id do
                 post_replies =
                   Collaboration.list_replies_for_post(
-                    current_user.id,
+                    user_id,
                     load_replies_for_post_id
                   )
 
@@ -1198,24 +1242,27 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp async_search_annotations(
          section,
          resource_id,
-         current_user,
+         delivery_context,
          visibility,
          point_block_id,
          search_term
        ) do
-    Task.async(fn ->
-      search_results =
-        Collaboration.search_posts_for_user_in_point_block(
-          section.id,
-          resource_id,
-          current_user.id,
-          visibility,
-          point_block_id,
-          search_term
-        )
+    with user_id when not is_nil(user_id) <-
+           DeliveryContextProvider.maybe_real_user_id(delivery_context) do
+      Task.async(fn ->
+        search_results =
+          Collaboration.search_posts_for_user_in_point_block(
+            section.id,
+            resource_id,
+            user_id,
+            visibility,
+            point_block_id,
+            search_term
+          )
 
-      {:assign_annotations, %{search_results: search_results}}
-    end)
+        {:assign_annotations, %{search_results: search_results}}
+      end)
+    end
   end
 
   defp assign_annotations(socket, annotations) do
@@ -1287,15 +1334,20 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   defp slim_assigns(socket) do
-    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
-                                                      socket ->
+    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, required_keys}, socket ->
       assign(
         socket,
         assign_name,
-        Map.merge(
-          struct,
-          Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
-        )
+        case required_keys do
+          :all ->
+            socket.assigns[assign_name]
+
+          {required_keys, struct} ->
+            Map.merge(
+              struct,
+              Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
+            )
+        end
       )
     end)
   end

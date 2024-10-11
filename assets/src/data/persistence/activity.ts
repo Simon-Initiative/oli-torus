@@ -263,7 +263,7 @@ export function transform(model: ActivityModelSchema) {
   const params = {
     method: 'PUT',
     body: JSON.stringify({ model }),
-    url: '/project/test/transform',
+    url: '/activity/transform',
   };
 
   return makeRequest<Transformed>(params);
@@ -273,7 +273,7 @@ export function evaluate(model: ActivityModelSchema, partResponses: PartResponse
   const params = {
     method: 'PUT',
     body: JSON.stringify({ model, partResponses }),
-    url: '/project/test/evaluate',
+    url: '/activity/evaluate',
   };
 
   return makeRequest<Evaluated>(params);

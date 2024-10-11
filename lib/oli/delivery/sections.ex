@@ -224,6 +224,26 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns the context roles for a given user in a given section.
+  """
+  def get_context_roles(user, section_slug) do
+    user_id = user.id
+
+    query =
+      from e in Enrollment,
+        preload: [:context_roles],
+        join: s in Section,
+        on: e.section_id == s.id,
+        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        select: e
+
+    case Repo.one(query) do
+      nil -> []
+      enrollment -> enrollment.context_roles
+    end
+  end
+
+  @doc """
   Determines the user roles (student / instructor) in a given section
   """
   def get_user_roles(%User{id: user_id}, section_slug) do

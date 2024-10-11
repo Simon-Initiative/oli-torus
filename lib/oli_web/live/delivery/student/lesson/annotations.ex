@@ -11,7 +11,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   attr :collab_space_config, :map, required: true
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
+  attr :is_guest, :integer, required: true
   attr :is_instructor, :boolean, default: false
   attr :selected_point, :any, required: true
   attr :active_tab, :atom, default: :my_notes
@@ -42,7 +43,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <.annotations
               active_tab={@active_tab}
               annotations={@annotations}
-              current_user={@current_user}
+              user_id={@user_id}
+              is_guest={@is_guest}
               create_new_annotation={@create_new_annotation}
               selected_point={@selected_point}
               collab_space_config={@collab_space_config}
@@ -51,7 +53,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <.search_results
               section_slug={@section_slug}
               search_results={@search_results}
-              current_user={@current_user}
+              user_id={@user_id}
               on_reveal_post="reveal_post"
             />
         <% end %>
@@ -62,7 +64,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   attr :create_new_annotation, :boolean, default: false
   attr :annotations, :any, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
+  attr :is_guest, :boolean, required: true
   attr :selected_point, :any, required: true
   attr :active_tab, :atom, required: true
   attr :collab_space_config, :map, required: true
@@ -75,7 +78,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         class="my-2"
         active={@create_new_annotation}
         disable_anonymous_option={
-          @active_tab == :my_notes || is_guest(@current_user) ||
+          @active_tab == :my_notes || @is_guest ||
             !@collab_space_config.anonymous_posting
         }
         save_label={if(@active_tab == :my_notes, do: "Save", else: "Post")}
@@ -93,9 +96,9 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
           <%= for annotation <- annotations do %>
             <.post
               post={annotation}
-              current_user={@current_user}
+              user_id={@user_id}
               disable_anonymous_option={
-                @active_tab == :my_notes || is_guest(@current_user) ||
+                @active_tab == :my_notes || @is_guest ||
                   !@collab_space_config.anonymous_posting
               }
             />
@@ -105,7 +108,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     """
   end
 
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
   attr :search_results, :any, default: nil
   attr :on_reveal_post, :string, default: nil
   attr :section_slug, :string, default: nil
@@ -129,7 +132,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             >
               <.search_result
                 post={post}
-                current_user={@current_user}
+                user_id={@user_id}
                 go_to_post_href={
                   if(@show_go_to_post_link,
                     do: ~p"/sections/#{@section_slug}/lesson/#{post.resource_slug}"
@@ -144,7 +147,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
   attr :is_reply, :boolean, default: false
   attr :go_to_post_href, :string, default: nil
 
@@ -156,7 +159,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ]}>
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
-          <%= post_creator(@post, @current_user) %>
+          <%= post_creator(@post, @user_id) %>
         </div>
         <div class="text-sm text-gray-500">
           <%= Timex.from_now(@post.inserted_at) %>
@@ -175,7 +178,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         <% replies -> %>
           <div class="flex flex-col gap-2 pl-4">
             <%= for reply <- replies do %>
-              <.search_result post={reply} current_user={@current_user} is_reply={true} />
+              <.search_result post={reply} user_id={@user_id} is_reply={true} />
             <% end %>
           </div>
       <% end %>
@@ -189,9 +192,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     </div>
     """
   end
-
-  defp is_guest(%User{guest: guest}), do: guest
-  defp is_guest(_), do: false
 
   defp empty_label(:my_notes), do: "There are no notes yet"
   defp empty_label(_), do: "There are no posts yet"
@@ -436,7 +436,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
   attr :disable_anonymous_option, :boolean, default: false
   attr :enable_unread_badge, :boolean, default: false
   attr :go_to_post_href, :string, default: nil
@@ -458,7 +458,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             class="w-2 h-2 my-2 mr-3 bg-primary rounded-full"
           />
           <div class="font-semibold" role="user name">
-            <%= post_creator(@post, @current_user) %>
+            <%= post_creator(@post, @user_id) %>
           </div>
         </div>
         <div role="posted at" class="text-sm text-gray-500">
@@ -475,7 +475,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       </p>
       <.post_actions
         post={@post}
-        current_user={@current_user}
+        user_id={@user_id}
         on_toggle_reaction="toggle_reaction"
         on_toggle_replies="toggle_post_replies"
         go_to_post_href={@go_to_post_href}
@@ -483,25 +483,25 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       />
       <.post_replies
         post={@post}
-        current_user={@current_user}
+        user_id={@user_id}
         disable_anonymous_option={@disable_anonymous_option}
       />
     </div>
     """
   end
 
-  defp post_creator(%{anonymous: true} = post, current_user) do
+  defp post_creator(%{anonymous: true} = post, user_id) do
     anonymous_name = "Anonymous " <> Oli.Predefined.map_id_to_anonymous_name(post.user_id)
 
-    if post.user_id == current_user.id do
+    if post.user_id == user_id do
       anonymous_name <> " (Me)"
     else
       anonymous_name
     end
   end
 
-  defp post_creator(post, current_user) do
-    if post.user_id == current_user.id do
+  defp post_creator(post, user_id) do
+    if post.user_id == user_id do
       "Me"
     else
       case post.user do
@@ -515,7 +515,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
   attr :on_toggle_reaction, :string, default: nil
   attr :on_toggle_replies, :string, default: nil
   attr :go_to_post_href, :string, default: nil
@@ -574,7 +574,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% href -> %>
               <.button variant={:link} href={href}>Go to Page</.button>
           <% end %>
-          <%= if @current_user.id == @post.user_id do %>
+          <%= if @user_id == @post.user_id do %>
             <button
               disabled={@post.status == :deleted}
               class={[
@@ -604,7 +604,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <% href -> %>
               <.button variant={:link} href={href}>Go to Page</.button>
           <% end %>
-          <%= if @current_user.id == @post.user_id do %>
+          <%= if @user_id == @post.user_id do %>
             <button
               disabled={@post.status == :deleted}
               class={[
@@ -627,7 +627,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
   attr :disable_anonymous_option, :boolean, default: false
 
   defp post_replies(assigns) do
@@ -644,7 +644,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
       <% replies -> %>
         <div class="flex flex-col gap-2 pl-4">
           <%= for reply <- replies do %>
-            <.reply post={reply} current_user={@current_user} />
+            <.reply post={reply} user_id={@user_id} />
           <% end %>
         </div>
         <.add_new_reply_input
@@ -701,14 +701,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   end
 
   attr :post, Oli.Resources.Collaboration.Post, required: true
-  attr :current_user, Oli.Accounts.User, required: true
+  attr :user_id, :integer, required: true
 
   defp reply(assigns) do
     ~H"""
     <div class="flex flex-col my-2 pl-4 border-l-2 border-gray-200 dark:border-gray-800">
       <div class="flex flex-row justify-between mb-1">
         <div class="font-semibold">
-          <%= post_creator(@post, @current_user) %>
+          <%= post_creator(@post, @user_id) %>
         </div>
         <div class="text-sm text-gray-500">
           <%= Timex.from_now(@post.inserted_at) %>
@@ -722,7 +722,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
             <%= @post.content.message %>
         <% end %>
       </p>
-      <.post_actions post={@post} current_user={@current_user} on_toggle_reaction="toggle_reaction" />
+      <.post_actions post={@post} user_id={@user_id} on_toggle_reaction="toggle_reaction" />
     </div>
     """
   end
