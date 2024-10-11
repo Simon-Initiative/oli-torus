@@ -1625,9 +1625,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # select assessment 1
       view
       |> form(~s{form[id=assessment_select]})
-      |> render_change(%{
-        "assessments" => %{"assessment_id" => page_1.resource.id}
-      })
+      |> render_change(%{"assessment_id" => page_1.resource.id})
 
       assert [se_1, se_2] = table_as_list_of_maps(view, :student_exceptions)
       assert se_1.student =~ student_1.name
@@ -1637,9 +1635,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # select assessment 2
       view
       |> form(~s{form[id=assessment_select]})
-      |> render_change(%{
-        "assessments" => %{"assessment_id" => page_2.resource.id}
-      })
+      |> render_change(%{"assessment_id" => page_2.resource.id})
 
       assert [se_1] = table_as_list_of_maps(view, :student_exceptions)
       assert se_1.student =~ student_1.name
@@ -1648,9 +1644,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # select assessment 3
       view
       |> form(~s{form[id=assessment_select]})
-      |> render_change(%{
-        "assessments" => %{"assessment_id" => page_3.resource.id}
-      })
+      |> render_change(%{"assessment_id" => page_3.resource.id})
 
       assert [] = table_as_list_of_maps(view, :student_exceptions)
       assert render(view) =~ "None exist"
