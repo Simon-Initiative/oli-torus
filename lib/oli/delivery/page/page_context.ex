@@ -88,6 +88,7 @@ defmodule Oli.Delivery.Page.PageContext do
               resource_attempt,
               latest_attempts,
               resource_attempt.revision,
+              effective_settings,
               Oli.Delivery.Settings.show_feedback?(effective_settings)
             )
 
@@ -209,7 +210,14 @@ defmodule Oli.Delivery.Page.PageContext do
           {:ok,
            {state,
             %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-            assemble_final_context(state, resource_attempt, latest_attempts, page_revision, true)
+            assemble_final_context(
+              state,
+              resource_attempt,
+              latest_attempts,
+              page_revision,
+              effective_settings,
+              true
+            )
 
           {:error, _} ->
             {:error, [], %{}}
@@ -278,7 +286,8 @@ defmodule Oli.Delivery.Page.PageContext do
          %{
            content: %{"advancedDelivery" => true}
          },
-         _
+         _effective_settings,
+         _show_feedback
        ) do
     {state, [resource_attempt], latest_attempts, latest_attempts}
   end
@@ -289,6 +298,7 @@ defmodule Oli.Delivery.Page.PageContext do
          resource_attempt,
          latest_attempts,
          page_revision,
+         effective_settings,
          show_feedback
        ) do
     content_for_ordinal_assignment =
@@ -303,6 +313,7 @@ defmodule Oli.Delivery.Page.PageContext do
         latest_attempts,
         resource_attempt,
         page_revision,
+        effective_settings,
         assign_ordinals_from: content_for_ordinal_assignment,
         show_feedback: show_feedback
       )

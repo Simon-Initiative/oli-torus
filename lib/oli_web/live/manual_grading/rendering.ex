@@ -15,6 +15,8 @@ defmodule OliWeb.ManualGrading.Rendering do
     resource_attempt =
       Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: attempt.resource_attempt_guid)
 
+    effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
+
     %Context{
       user: attempt.user,
       section_slug: section_slug,
@@ -27,6 +29,7 @@ defmodule OliWeb.ManualGrading.Rendering do
           attempt_parts,
           nil,
           nil,
+          effective_settings,
           prune: false
         ),
       activity_types_map: activity_types_map,
