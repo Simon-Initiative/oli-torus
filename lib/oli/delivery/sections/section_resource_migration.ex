@@ -1,23 +1,22 @@
 defmodule Oli.Delivery.Sections.SectionResourceMigration do
-
   alias Oli.Repo
   import Ecto.Query
   alias Oli.Delivery.Sections.SectionResource
 
   def requires_migration?(section_id) do
-
-    query = from sr in SectionResource,
-            where: sr.section_id == ^section_id,
-            select: sr.graded,
-            limit: 1
+    query =
+      from sr in SectionResource,
+        where: sr.section_id == ^section_id,
+        select: sr.graded,
+        limit: 1
 
     case Oli.Repo.all(query) do
       [nil] ->
         true
+
       _ ->
         false
     end
-
   end
 
   def migrate(section_id) do
@@ -70,10 +69,8 @@ defmodule Oli.Delivery.Sections.SectionResourceMigration do
     """
 
     case Ecto.Adapters.SQL.query(Repo, sql, [section_id, section_id]) do
-
       {:ok, %Postgrex.Result{num_rows: num_rows}} -> {:ok, num_rows}
       e -> e
     end
   end
-
 end

@@ -1502,7 +1502,6 @@ defmodule Oli.Delivery.Sections do
 
       Map.put(acc, Integer.to_string(page.resource_id), container_id)
     end)
-
   end
 
   @doc """
@@ -2911,8 +2910,10 @@ defmodule Oli.Delivery.Sections do
       |> Repo.transaction()
 
       # reset any section cached data
-      Oli.Delivery.DepotCoordinator.clear(Oli.Delivery.Sections.SectionResourceDepot.depot_desc(), section_id)
-
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section_id
+      )
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
@@ -4521,7 +4522,6 @@ defmodule Oli.Delivery.Sections do
   - Returns a list of maps with details of the upcoming lessons.
   """
   def get_nearest_upcoming_lessons(section, user_id, lessons_count, opts \\ []) do
-
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 
     today =
@@ -4587,7 +4587,6 @@ defmodule Oli.Delivery.Sections do
     )
     |> where(^graded_filter)
     |> Repo.all()
-
   end
 
   @doc """

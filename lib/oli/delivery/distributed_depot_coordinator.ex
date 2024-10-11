@@ -24,19 +24,17 @@ defmodule Oli.Delivery.DistributedDepotCoordinator do
   end
 
   def handle_info({:clear, depot_desc, table_id}, state) do
-
     if Depot.table_exists?(depot_desc, table_id) do
       Depot.clear(depot_desc, table_id)
     end
 
     {:noreply, state}
-
   end
 
   def handle_info({:update_all, depot_desc, entries}, state) do
-
     [first | _rest] = entries
     table_id = Map.get(first, depot_desc.table_id_field)
+
     if Depot.table_exists?(depot_desc, table_id) do
       Depot.update_all(depot_desc, entries)
     end

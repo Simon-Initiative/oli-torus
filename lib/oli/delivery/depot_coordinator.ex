@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.DepotCoordinator do
-
   alias Oli.Delivery.Depot.DepotDesc
 
   def get() do
@@ -8,5 +7,4 @@ defmodule Oli.Delivery.DepotCoordinator do
 
   def update_all(%DepotDesc{} = depot_desc, entries), do: get().update_all(depot_desc, entries)
   def clear(%DepotDesc{} = depot_desc, table_id), do: get().clear(depot_desc, table_id)
-
 end

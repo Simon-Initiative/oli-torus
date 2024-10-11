@@ -19,5 +19,4 @@ defmodule Oli.Repo.Migrations.ReplicateRevisionFields do
       add :revision_id, references(:revisions, on_delete: :delete_all)
     end
   end
-
 end

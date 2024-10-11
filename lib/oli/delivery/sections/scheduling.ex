@@ -46,8 +46,11 @@ defmodule Oli.Delivery.Sections.Scheduling do
         {[], []} ->
           # we need to update the section cache to reflect the schedule changes
           SectionCache.clear(section_slug)
+
           Oli.Delivery.DepotCoordinator.clear(
-            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(), section_id)
+            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+            section_id
+          )
 
           {:ok, 0}
 
@@ -72,8 +75,11 @@ defmodule Oli.Delivery.Sections.Scheduling do
             {:ok, %{num_rows: num_rows}} ->
               # we need to update the section cache to reflect the schedule changes
               SectionCache.clear(section_slug)
+
               Oli.Delivery.DepotCoordinator.clear(
-                Oli.Delivery.Sections.SectionResourceDepot.depot_desc(), section_id)
+                Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+                section_id
+              )
 
               {:ok, num_rows}
 
@@ -119,8 +125,11 @@ defmodule Oli.Delivery.Sections.Scheduling do
       when resources_to_update_count == updated_count ->
         # we need to update the section cache to reflect the schedule changes
         SectionCache.clear(section_slug)
+
         Oli.Delivery.DepotCoordinator.get().clear(
-            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(), section_id)
+          Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+          section_id
+        )
 
         {:ok, updated_count}
 

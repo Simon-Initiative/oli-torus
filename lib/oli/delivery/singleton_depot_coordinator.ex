@@ -9,6 +9,7 @@ defmodule Oli.Delivery.SingletonDepotCoordinator do
   def update_all(%DepotDesc{} = depot_desc, entries) do
     [first | _rest] = entries
     table_id = Map.get(first, depot_desc.table_id_field)
+
     if Depot.table_exists?(depot_desc, table_id) do
       Depot.update_all(depot_desc, entries)
     end
@@ -19,5 +20,4 @@ defmodule Oli.Delivery.SingletonDepotCoordinator do
       Depot.clear(depot_desc, table_id)
     end
   end
-
 end

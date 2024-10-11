@@ -350,7 +350,6 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   defp hierarchy_nodes_by_sr_id(section, section_resources) do
-
     labels =
       case section.customizations do
         nil -> CustomLabels.default_map()
@@ -358,7 +357,6 @@ defmodule Oli.Publishing.DeliveryResolver do
       end
 
     Enum.reduce(section_resources, {%{}, nil}, fn sr, {nodes, root} ->
-
       node = %HierarchyNode{
         uuid: uuid(),
         numbering: %Numbering{
@@ -389,7 +387,6 @@ defmodule Oli.Publishing.DeliveryResolver do
         Map.put(nodes, sr.id, node),
         if(section.root_section_resource_id == sr.id, do: node, else: root)
       }
-
     end)
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)

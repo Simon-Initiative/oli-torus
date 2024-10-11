@@ -1,5 +1,4 @@
 defmodule Oli.Delivery.Sections.SectionResourceDepot do
-
   @moduledoc """
   This module provides a data store for cached section resource records.
 
@@ -22,11 +21,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   alias Oli.Repo
 
   @depot_desc %DepotDesc{
-      name: "SectionResource",
-      schema: SectionResource,
-      table_name_prefix: :section_resources,
-      key_field: :resource_id,
-      table_id_field: :section_id
+    name: "SectionResource",
+    schema: SectionResource,
+    table_name_prefix: :section_resources,
+    key_field: :resource_id,
+    table_id_field: :section_id
   }
 
   def depot_desc(), do: @depot_desc
@@ -73,8 +72,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     init_if_necessary(section_id)
 
     page = Oli.Resources.ResourceType.id_for_page()
+
     Depot.query(@depot_desc, section_id, graded: true, resource_type_id: page)
-    |> Enum.sort_by(&(&1.numbering_index))
+    |> Enum.sort_by(& &1.numbering_index)
   end
 
   @doc """
@@ -106,20 +106,19 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
-    conditions = case graded_only do
-      true  -> [resource_type_id: page_type_id, graded: true, hidden: false]
-      false  -> [resource_type_id: page_type_id, hidden: false]
-    end
+    conditions =
+      case graded_only do
+        true -> [resource_type_id: page_type_id, graded: true, hidden: false]
+        false -> [resource_type_id: page_type_id, hidden: false]
+      end
 
     Depot.query(@depot_desc, section.id, conditions)
-
   end
 
   defp init_if_necessary(section_id) do
     if Depot.table_exists?(@depot_desc, section_id) do
       {:ok, :exists}
     else
-
       if SectionResourceMigration.requires_migration?(section_id) do
         SectionResourceMigration.migrate(section_id)
       end
@@ -132,18 +131,18 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   defp load(section_id) do
-
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
     objective = Oli.Resources.ResourceType.id_for_objective()
 
-    query = from sr in SectionResource,
-            where: sr.section_id == ^section_id and sr.resource_type_id in [^page, ^container, ^objective],
-            select: sr
+    query =
+      from sr in SectionResource,
+        where:
+          sr.section_id == ^section_id and sr.resource_type_id in [^page, ^container, ^objective],
+        select: sr
 
     results = Repo.all(query)
 
     Depot.clear_and_set(@depot_desc, section_id, results)
   end
-
 end

@@ -473,6 +473,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
     # Instruct the DepotCoordinator to update the SRS for these assessments
     srs = get_assessment_srs(socket.assigns.section.id, Enum.map(assessments, & &1.resource_id))
+
     Oli.Delivery.DepotCoordinator.update_all(
       Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
       srs
