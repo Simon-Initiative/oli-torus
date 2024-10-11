@@ -747,6 +747,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           attempt_map =
             Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
 
+          effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
+
           # flat map the results since the results may contain an additional explanation action
           Enum.map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
             attempt = Map.get(attempt_map, attempt_guid)
@@ -766,7 +768,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               part_attempt: attempt,
               activity_attempt: activity_attempt,
               resource_attempt: resource_attempt,
-              resource_revision: resource_attempt.revision
+              resource_revision: resource_attempt.revision,
+              effective_settings: effective_settings
             })
           end)
 

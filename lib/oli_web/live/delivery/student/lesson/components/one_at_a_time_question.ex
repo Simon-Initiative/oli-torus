@@ -321,7 +321,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       Enum.map(socket.assigns.questions, fn
         %{selected: true} = selected_question ->
           Map.merge(selected_question, %{
-            state: get_updated_state(attempt_guid),
+            state: get_updated_state(attempt_guid, socket.assigns.effective_settings),
             submitted: true
           })
 
@@ -426,7 +426,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     }
   end
 
-  defp get_updated_state(attempt_guid) do
+  defp get_updated_state(attempt_guid, effective_settings) do
     {:ok, [attempt]} = Oli.Delivery.Attempts.Core.get_activity_attempts([attempt_guid])
     model = Oli.Delivery.Attempts.Core.select_model(attempt)
 
@@ -437,7 +437,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt.attempt_guid),
       parsed_model,
       nil,
-      nil
+      nil,
+      effective_settings
     )
     # string keys are expected...
     |> Jason.encode!()
