@@ -190,8 +190,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     "Components.Evaluation",
                     %{
                       attemptState: selected_question.state,
-                      context: selected_question.context,
-                      showExplanation: false
+                      context: selected_question.context
                     },
                     id: "activity_evaluation_for_question_#{selected_question.number}",
                     container: [class: "flex flex-col w-full"]

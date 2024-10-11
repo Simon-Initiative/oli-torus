@@ -346,47 +346,6 @@ defmodule Oli.Delivery.Settings do
 
   def show_feedback?(nil), do: true
 
-  @doc """
-  Determine if an explanation should be shown to the user based on the explanation strategy and the current attempt number.
-  """
-  def show_explanation?(
-        %{
-          explanation_strategy: %Oli.Resources.ExplanationStrategy{
-            type: :after_max_resource_attempts_exhausted
-          },
-          max_attempts: max_attempts
-        },
-        attempt_number
-      )
-      when attempt_number >= max_attempts and max_attempts > 0 do
-    true
-  end
-
-  def show_explanation?(
-        %{
-          explanation_strategy: %Oli.Resources.ExplanationStrategy{
-            type: :after_set_num_attempts,
-            set_num_attempts: set_num_attempts
-          }
-        },
-        attempt_number
-      )
-      when attempt_number >= set_num_attempts do
-    true
-  end
-
-  def show_explanation?(
-        %{
-          explanation_strategy: %Oli.Resources.ExplanationStrategy{
-            type: :none
-          }
-        },
-        _attempt_number
-      ),
-      do: false
-
-  def show_explanation?(_combined_settings, _attempt_number), do: false
-
   def check_password(_effective_settings, ""), do: {:empty_password}
   def check_password(_effective_settings, nil), do: {:allowed}
 

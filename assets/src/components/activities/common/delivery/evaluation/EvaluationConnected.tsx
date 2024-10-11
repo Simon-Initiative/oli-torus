@@ -15,7 +15,6 @@ export const EvaluationConnected: React.FC = () => {
       <Evaluation
         shouldShow={context.showFeedback == true && isEvaluated(uiState) && surveyId === null}
         attemptState={uiState.attemptState}
-        showExplanation={context.showExplanation}
         context={writerContext}
       />
       <Submission attemptState={uiState.attemptState} surveyId={surveyId} />

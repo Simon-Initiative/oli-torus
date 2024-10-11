@@ -181,11 +181,6 @@ defmodule Oli.Rendering.Activity.Html do
         bibParams: bib_params,
         learningLanguage: learning_language,
         showFeedback: Settings.show_feedback?(effective_settings),
-        showExplanation:
-          Settings.show_explanation?(
-            effective_settings,
-            resource_attempt.attempt_number
-          ),
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""

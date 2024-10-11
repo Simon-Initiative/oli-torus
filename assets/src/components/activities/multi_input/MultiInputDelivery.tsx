@@ -346,7 +346,6 @@ export const MultiInputComponent: React.FC = () => {
             (!context.graded || mode === 'review')
           }
           attemptState={uiState.attemptState}
-          showExplanation={context.showExplanation}
           context={writerContext}
           partOrder={orderedPartIds}
         />
