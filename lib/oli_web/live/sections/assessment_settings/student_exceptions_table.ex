@@ -91,8 +91,6 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
   attr(:selected_setting, :map)
 
   def render(assigns) do
-    assigns = assign(assigns, assessment_changeset: to_form(%{}, as: :assessments))
-
     ~H"""
     <div id="student_exceptions_table" class="bg-white dark:bg-gray-800 shadow-sm">
       <%= due_date_modal(assigns) %>
@@ -102,7 +100,8 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
         <div class="flex flex-col pl-9 mr-auto">
           <h4 class="torus-h4">Student Exceptions</h4>
           <.form
-            for={@assessment_changeset}
+            :let={f}
+            for={%{}}
             id="assessment_select"
             phx-change="change_assessment"
             phx-target={@myself}
@@ -110,9 +109,10 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
             <div class="form-group">
               <.input
                 type="select"
-                field={@assessment_changeset[:assessment_id]}
+                field={f[:assessment_id]}
                 label="Select an assessment to manage student specific exceptions"
                 class="ml-4"
+                value={@selected_assessment && @selected_assessment.resource_id}
                 options={@options_for_select}
               />
             </div>
@@ -746,11 +746,7 @@ defmodule OliWeb.Sections.AssessmentSettings.StudentExceptionsTable do
      )}
   end
 
-  def handle_event(
-        "change_assessment",
-        %{"assessments" => %{"assessment_id" => assessment_id}},
-        socket
-      ) do
+  def handle_event("change_assessment", %{"assessment_id" => assessment_id}, socket) do
     {:noreply,
      push_patch(socket,
        to:
