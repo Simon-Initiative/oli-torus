@@ -1824,6 +1824,39 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       refute render(view) =~ "None exist"
     end
 
+    test "retains the selected option after opening modal", ctx do
+      %{conn: conn, section: section, page_1: page_1, page_2: page_2} = ctx
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_overview_route(section.slug, "student_exceptions", page_1.resource.id)
+        )
+
+      # Select Page 2
+      view
+      |> form(~s{form[id=assessment_select]})
+      |> render_change(%{"assessment_id" => page_2.resource.id})
+
+      target_element = ~s{select[id=assessment_select_assessment_id] > option[selected=selected]}
+
+      assert view |> element(target_element) |> render() =~ "Page 2"
+
+      # Open "Add New" modal
+      view
+      |> element(~s{button[phx-click=show_modal]}, "Add New")
+      |> render_click()
+
+      assert view |> element(target_element) |> render() =~ "Page 2"
+
+      # Close "Add New" modal
+      view
+      |> element(~s{button[id=cancel_exception_button]}, "Cancel")
+      |> render_click()
+
+      assert view |> element(target_element) |> render() =~ "Page 2"
+    end
+
     test "the add button is disabled if all students already have an exception for the given assessment",
          %{
            conn: conn,
