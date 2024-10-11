@@ -25,6 +25,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   attr :revision_slug, :string
   attr :attempt_guid, :string
   attr :section_slug, :string
+  attr :effective_settings, :map
 
   def render(assigns) do
     ~H"""
@@ -311,7 +312,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     )
     |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
     |> Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
-      socket.assigns.datashop_session_id
+      socket.assigns.datashop_session_id,
+      socket.assigns.effective_settings
     )
 
     ## and update it's state in the assigns (to render the feedback in the UI)
