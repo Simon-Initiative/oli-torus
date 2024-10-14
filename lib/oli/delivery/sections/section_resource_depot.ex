@@ -45,7 +45,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
 
-    srs = Depot.query(@depot_desc, section.id, [{:resource_type_id, :in, [page, container]}])
+    srs = Depot.query(@depot_desc, section.id, [{:resource_type_id, {:in, [page, container]}}])
     Oli.Delivery.Hierarchy.full_hierarchy(section, srs)
   end
 
