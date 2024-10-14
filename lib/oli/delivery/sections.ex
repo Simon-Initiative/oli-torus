@@ -2911,6 +2911,7 @@ defmodule Oli.Delivery.Sections do
 
       # reset any section cached data
       SectionCache.clear(section.slug)
+
       Oli.Delivery.DepotCoordinator.clear(
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
