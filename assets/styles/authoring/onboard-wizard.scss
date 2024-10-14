@@ -48,7 +48,9 @@ $headerColor: $darkForeground;
     }
 
     .title-input {
-      border: none;
+      background: #fafafa;
+      border-radius: 4px;
+      border: 1px solid #acbbc9;
       outline: none;
       font-family: 'Open Sans';
       font-style: normal;
@@ -56,15 +58,12 @@ $headerColor: $darkForeground;
       font-size: 60px;
       line-height: 70px;
       color: #373a44;
-      position: absolute;
+      position: relative;
+      margin: auto;
       bottom: 15px;
       &:focus {
         box-shadow: none;
       }
-    }
-    .title-input:focus {
-      border: none;
-      outline: none;
     }
 
     .wizard-body {
@@ -72,6 +71,9 @@ $headerColor: $darkForeground;
       height: 320px;
       overflow: hidden;
       border-bottom: 1px solid #acbbc9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       &.working {
         display: flex;
         flex-direction: column;
@@ -96,6 +98,27 @@ $headerColor: $darkForeground;
       line-height: 100%;
     }
 
+    .wizard-buttons {
+      display: flex;
+      gap: 1rem;
+
+      button {
+        background-color: #2c6abf !important;
+        font-weight: 400 !important;
+        text-align: right !important;
+        border-radius: 4px !important;
+
+        &:hover {
+          background-color: #275fab !important;
+        }
+
+        &[disabled] {
+          background: #ebebeb !important;
+          color: #737373 !important;
+        }
+      }
+    }
+
     .btn-link {
       color: $primary;
       font-family: 'Open Sans';
@@ -103,6 +126,7 @@ $headerColor: $darkForeground;
       font-weight: 600;
       font-size: 16px;
       line-height: 100%;
+      border-radius: 4px;
     }
 
     .builder-version-options {
