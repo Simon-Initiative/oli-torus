@@ -7,7 +7,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
-    ActivityAttempt
+    ActivityAttempt,
+    ResourceAccess,
+    ResourceAttempt
   }
 
   import Oli.Delivery.Attempts.Core
@@ -94,7 +96,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp construct_attempt_prototypes(%VisitContext{
          effective_settings: %{retake_mode: :targeted, assessment_mode: :traditional},
          latest_resource_attempt: latest_resource_attempt,
-         page_revision: page_revision
+         page_revision: %Revision{graded: true} = page_revision
        }) do
     # If the page has changed revisions between attempts, we do not allow previous
     # correct attempts to manifest as constraining prototypes.  The issue here is that
@@ -102,6 +104,24 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     # make this step more robust by diffing all the referenced activities and selections.
     if latest_resource_attempt.revision_id == page_revision.id do
       get_correct_attempts(latest_resource_attempt.id)
+      |> Enum.map(fn attempt ->
+        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
+      end)
+    else
+      []
+    end
+  end
+
+  defp construct_attempt_prototypes(%VisitContext{
+    latest_resource_attempt: latest_resource_attempt,
+    page_revision: %Revision{graded: false} = page_revision
+  }) do
+    # For ungraded pages, when the revision of page has changed, we
+    # construct activity attempt prototypes for all activities to pull forward
+    # their state, but only for those whose own revisions have not changed
+    if latest_resource_attempt.revision_id != page_revision.id do
+
+      get_migratable_activity_attempts(latest_resource_attempt.id)
       |> Enum.map(fn attempt ->
         Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
       end)
@@ -506,6 +526,30 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       )
     )
     |> results_to_activity_map
+  end
+
+  def get_migratable_activity_attempts(resource_attempt_id) do
+    Repo.all(
+      from(aa1 in ActivityAttempt,
+        join: ra in ResourceAttempt,
+        on:
+          aa1.resource_attempt_id == ra.id,
+        join: r in assoc(aa1, :revision),
+        left_join: aa2 in ActivityAttempt,
+        on:
+          aa1.resource_id == aa2.resource_id and aa1.id < aa2.id and
+            aa1.resource_attempt_id == aa2.resource_attempt_id,
+        left_join: a in ResourceAccess, on: a.id == ra.resource_access_id,
+        left_join: spp in Oli.Delivery.Sections.SectionsProjectsPublications,
+        on: spp.section_id == a.section_id,
+        left_join: pr in Oli.Publishing.PublishedResource,
+        on: pr.publication_id == spp.publication_id and aa1.revision_id == pr.revision_id,
+        where:
+          ra.id == ^resource_attempt_id and is_nil(aa2.id) and pr.revision_id == r.id,
+        preload: [revision: r],
+        select: aa1
+      )
+    )
   end
 
   # Retrieve the activity attempts that were "correct" for a given resource attempt. This

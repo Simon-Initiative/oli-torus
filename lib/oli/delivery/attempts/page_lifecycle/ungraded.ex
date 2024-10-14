@@ -38,8 +38,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           page_revision: page_revision
         } = context
       ) do
-    if is_nil(latest_resource_attempt) or
-         latest_resource_attempt.lifecycle_state == :evaluated do
+    if needs_new_attempt?(latest_resource_attempt, page_revision) do
       case start(context) do
         {:ok, %AttemptState{} = attempt_state} ->
           {:ok, {:in_progress, attempt_state}}
@@ -136,4 +135,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   defp do_update_progress(resource_access, _) do
     Oli.Delivery.Metrics.reset_progress(resource_access)
   end
+
+  # We need a new attempt when:
+
+  # There isn't a previous attempt
+  defp needs_new_attempt?(nil, _), do: true
+  # The previous attempt is evaluated
+  defp needs_new_attempt?(%{lifecycle_state: :evaluated}, _), do: true
+  # The previous attempt's page revision differs from the current page revision
+  defp needs_new_attempt?(%{revision_id: revision_id}, %{id: id}) do
+    revision_id != id
+  end
+
 end

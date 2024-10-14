@@ -148,6 +148,74 @@ defmodule Oli.Delivery.AttemptsTest do
       end
     end
 
+    test "visiting an already started ungraded moves to new revision, preserving activity attempts", %{
+      p1: %{revision: revision, resource: resource},
+      a1: a1,
+      a2: a2,
+      section: section,
+      user1: user1
+    } = map do
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
+      datashop_session_id = UUID.uuid4()
+
+      {:ok, revision} = Oli.Resources.update_revision(revision, %{graded: false})
+
+      effective_settings =
+        Oli.Delivery.Settings.get_combined_settings(revision, section.id, user1.id)
+
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Oli.Delivery.Attempts.Core.track_access(resource.id, section.id, user1.id)
+
+      # Visit the page, which implicitly creates the attempt
+      {:ok, {:in_progress, %AttemptState{resource_attempt: resource_attempt1, attempt_hierarchy: h}}} =
+        PageLifecycle.visit(
+          revision,
+          section.slug,
+          datashop_session_id,
+          user1,
+          effective_settings,
+          activity_provider
+        )
+
+      # Set some state on both of the activity attempts in this page attempt
+      {attempt, _} = Map.get(h, a1.resource.id)
+      Oli.Delivery.Attempts.Core.update_activity_attempt(attempt, %{lifecycle_state: :evaluated})
+      {attempt, _} = Map.get(h, a2.resource.id)
+      Oli.Delivery.Attempts.Core.update_activity_attempt(attempt, %{lifecycle_state: :evaluated})
+
+      # Verify the attempt was created
+      latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
+      assert latest_attempt.id == resource_attempt1.id
+
+      # Now simulate applying a new publication, where the page and a1 has changed. It
+      # is sufficient to simply track a change on each revision.
+      {:ok, new_revision} = Oli.Publishing.ChangeTracker.track_revision(map.project.slug, revision, %{duration: 1})
+      {:ok, _} = Oli.Publishing.ChangeTracker.track_revision(map.project.slug, a1.revision, %{duration: 1})
+
+      # Visit the page again, which will move forward the state only of a2
+      {:ok, {:in_progress, %AttemptState{resource_attempt: resource_attempt2, attempt_hierarchy: h}}} =
+        PageLifecycle.visit(
+          new_revision,
+          section.slug,
+          datashop_session_id,
+          user1,
+          effective_settings,
+          activity_provider
+        )
+
+      # Verify that we indeed got a new page attempt created
+      assert resource_attempt1.id != resource_attempt2.id
+
+      {attempt1, _} = Map.get(h, a1.resource.id)
+      {attempt2, _} = Map.get(h, a2.resource.id)
+
+      # Verify that the state of only a2 was pulled forward
+      assert attempt1.lifecycle_state == :active
+      assert attempt2.lifecycle_state == :evaluated
+
+    end
+
     @tag isolation: "serializable"
     test "starting a graded resource attempt with one user", %{
       p1: %{revision: revision, resource: resource},
