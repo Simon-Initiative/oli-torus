@@ -356,38 +356,40 @@ defmodule Oli.Publishing.DeliveryResolver do
         l -> Map.from_struct(l)
       end
 
-    Enum.reduce(section_resources, {%{}, nil}, fn sr, {nodes, root} ->
-      node = %HierarchyNode{
-        uuid: uuid(),
-        numbering: %Numbering{
-          index: sr.numbering_index,
-          level: sr.numbering_level,
-          labels: labels
-        },
-        children: sr.children,
-        resource_id: sr.resource_id,
-        revision: %{
-          id: sr.revision_id,
+    fn ->
+      Enum.reduce(section_resources, {%{}, nil}, fn sr, {nodes, root} ->
+        node = %HierarchyNode{
+          uuid: uuid(),
+          numbering: %Numbering{
+            index: sr.numbering_index,
+            level: sr.numbering_level,
+            labels: labels
+          },
+          children: sr.children,
           resource_id: sr.resource_id,
-          title: sr.title,
-          slug: sr.revision_slug,
-          resource_type_id: sr.resource_type_id,
-          objectives: sr.objectives,
-          graded: sr.graded,
-          relates_to: sr.relates_to,
-          purpose: sr.purpose,
-          deleted: false
-        },
-        project_id: sr.project_id,
-        project_slug: sr.proj_slug,
-        section_resource: sr
-      }
+          revision: %{
+            id: sr.revision_id,
+            resource_id: sr.resource_id,
+            title: sr.title,
+            slug: sr.revision_slug,
+            resource_type_id: sr.resource_type_id,
+            objectives: sr.objectives,
+            graded: sr.graded,
+            relates_to: sr.relates_to,
+            purpose: sr.purpose,
+            deleted: false
+          },
+          project_id: sr.project_id,
+          project_slug: sr.project_slug,
+          section_resource: sr
+        }
 
-      {
-        Map.put(nodes, sr.id, node),
-        if(section.root_section_resource_id == sr.id, do: node, else: root)
-      }
-    end)
+        {
+          Map.put(nodes, sr.id, node),
+          if(section.root_section_resource_id == sr.id, do: node, else: root)
+        }
+      end)
+    end
     |> run()
     |> emit([:oli, :resolvers, :delivery], :duration)
   end
