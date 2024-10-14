@@ -132,8 +132,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     Oli.Delivery.Metrics.mark_progress_completed(resource_access)
   end
 
-  defp do_update_progress(resource_access, _) do
+  defp do_update_progress(%{progress: nil}, _) do
     Oli.Delivery.Metrics.reset_progress(resource_access)
+  end
+
+  defp do_update_progress(r, _) do
+    {:ok, r}
   end
 
   # We need a new attempt when:
