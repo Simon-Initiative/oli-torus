@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Any client code that is making changes to SectionResource records must
   be calling the DepotCoordinator module to ensure that (potentially distributed)
   caches are invalidated.  This module is only for reading data.
+
+  Note: only containers, pages and objectives are included in the SectionResourceCache at the moment. There just wasn't a need yet to include activities and tags or any other resource type.
   """
 
   import Ecto.Query
