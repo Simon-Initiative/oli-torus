@@ -19,18 +19,24 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
         render_fn: &OliWeb.Resources.ActivitiesTableModel.render_type_column/3
       },
       %ColumnSpec{
+        name: :title,
+        label: "Title"
+      },
+      %ColumnSpec{
         name: :scope,
         label: "Scope"
       },
       %ColumnSpec{
         name: :content,
         label: "Stem",
-        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_content_column/3
+        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_content_column/3,
+        sortable: false
       },
       %ColumnSpec{
         name: :resource_id,
         label: "Page",
-        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_page_column/3
+        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_page_column/3,
+        sortable: false
       },
       %ColumnSpec{
         name: :updated_at,
