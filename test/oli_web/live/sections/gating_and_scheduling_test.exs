@@ -439,6 +439,82 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
                timezone
              ) == input_end_date
     end
+
+    test "create student exceptions for more than one student works correctly", %{
+      conn: conn,
+      section_1: section,
+      gating_condition: gating_condition,
+      revision: revision
+    } do
+      user = user_fixture(%{family_name: "Curry", given_name: "Stephen"})
+      user_2 = user_fixture(%{family_name: "Durant", given_name: "Kevin"})
+
+      # create a student exception for the user
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: revision.resource_id,
+        parent_id: gating_condition.id,
+        user_id: user.id
+      })
+
+      # create a student exception for the user_2
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: revision.resource_id,
+        parent_id: gating_condition.id,
+        user_id: user_2.id
+      })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_edit_route(section.slug, gating_condition.id)
+        )
+
+      # get the count of exceptions for the gating condition
+      count_exceptions = Gating.count_exceptions(gating_condition.id)
+
+      # assert that the count of exceptions is 2
+      assert count_exceptions == 2
+
+      # assert that the view displays the correct message
+      assert view |> element("div.alert.alert-primary > div") |> render() =~
+               "This gate has #{count_exceptions} student-specific exceptions."
+
+      # click on the "Manage Student Exceptions" button
+      view
+      |> element(
+        "~s(a[href='/sections/#{section.slug}/gating_and_scheduling/exceptions/#{gating_condition.id}'])",
+        "Manage Student Exceptions"
+      )
+      |> render_click()
+
+      # assert that we are redirected to the exceptions page
+      assert_redirected(
+        view,
+        ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{gating_condition.id}"
+      )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          ~p"/sections/#{section.slug}/gating_and_scheduling/exceptions/#{gating_condition.id}"
+        )
+
+      # assert that we have the correct exceptions in the view
+      assert view
+             |> element("tbody > tr:first-child > td:first-child a")
+             |> render() =~
+               "#{user.family_name}, #{user.given_name}"
+
+      assert view
+             |> element("tbody > tr:nth-child(2) > td:first-child a")
+             |> render() =~
+               "#{user_2.family_name}, #{user_2.given_name}"
+
+      # assert that we have the button to create a new exception
+      assert has_element?(view, "a", "New Student Exception")
+    end
   end
 
   describe "gating and scheduling new live test" do
