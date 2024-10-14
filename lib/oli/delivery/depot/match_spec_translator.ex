@@ -20,17 +20,17 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
 
   Example (return only the titles where the duration equals 10):
 
-  > translate([{:title, :string}, {:duration, :integer}], 1, [duration: 10], [:title])
+  > translate([{:title, :string}, {:duration, :integer}], [duration: 10], [:title])
   {{1, :"$f1", 10}, [], [:"$f1"]}
 
   Example (return all fields where the duration is between 5 and 10):
 
-  > translate([{:title, :string}, {:duration, :integer}], 1, [{:duration, {:between, 5, 10}}], nil)
+  > translate([{:title, :string}, {:duration, :integer}], [{:duration, {:between, 5, 10}}], nil)
   {{1, :_, :"$f1"}, [{:andalso, {:>, :"$f1", 5}, {:<, :"$f1", 10}}], [:"$_"]}
 
   Example (return all fields where the duration is 5 and the title is "foo"):
 
-  > translate([{:title, :string}, {:duration, :integer}], 1, duration: 5, title: "foo")
+  > translate([{:title, :string}, {:duration, :integer}], duration: 5, title: "foo")
   {{1, "foo", 5}, [], [:"$_"]}
 
 
