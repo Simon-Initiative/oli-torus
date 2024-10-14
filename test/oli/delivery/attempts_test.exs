@@ -148,13 +148,14 @@ defmodule Oli.Delivery.AttemptsTest do
       end
     end
 
-    test "visiting an already started ungraded moves to new revision, preserving activity attempts", %{
-      p1: %{revision: revision, resource: resource},
-      a1: a1,
-      a2: a2,
-      section: section,
-      user1: user1
-    } = map do
+    test "visiting an already started ungraded moves to new revision, preserving activity attempts",
+         %{
+           p1: %{revision: revision, resource: resource},
+           a1: a1,
+           a2: a2,
+           section: section,
+           user1: user1
+         } = map do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/6
       datashop_session_id = UUID.uuid4()
 
@@ -168,7 +169,8 @@ defmodule Oli.Delivery.AttemptsTest do
       Oli.Delivery.Attempts.Core.track_access(resource.id, section.id, user1.id)
 
       # Visit the page, which implicitly creates the attempt
-      {:ok, {:in_progress, %AttemptState{resource_attempt: resource_attempt1, attempt_hierarchy: h}}} =
+      {:ok,
+       {:in_progress, %AttemptState{resource_attempt: resource_attempt1, attempt_hierarchy: h}}} =
         PageLifecycle.visit(
           revision,
           section.slug,
@@ -190,11 +192,15 @@ defmodule Oli.Delivery.AttemptsTest do
 
       # Now simulate applying a new publication, where the page and a1 has changed. It
       # is sufficient to simply track a change on each revision.
-      {:ok, new_revision} = Oli.Publishing.ChangeTracker.track_revision(map.project.slug, revision, %{duration: 1})
-      {:ok, _} = Oli.Publishing.ChangeTracker.track_revision(map.project.slug, a1.revision, %{duration: 1})
+      {:ok, new_revision} =
+        Oli.Publishing.ChangeTracker.track_revision(map.project.slug, revision, %{duration: 1})
+
+      {:ok, _} =
+        Oli.Publishing.ChangeTracker.track_revision(map.project.slug, a1.revision, %{duration: 1})
 
       # Visit the page again, which will move forward the state only of a2
-      {:ok, {:in_progress, %AttemptState{resource_attempt: resource_attempt2, attempt_hierarchy: h}}} =
+      {:ok,
+       {:in_progress, %AttemptState{resource_attempt: resource_attempt2, attempt_hierarchy: h}}} =
         PageLifecycle.visit(
           new_revision,
           section.slug,
@@ -213,7 +219,6 @@ defmodule Oli.Delivery.AttemptsTest do
       # Verify that the state of only a2 was pulled forward
       assert attempt1.lifecycle_state == :active
       assert attempt2.lifecycle_state == :evaluated
-
     end
 
     @tag isolation: "serializable"

@@ -150,5 +150,4 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   defp needs_new_attempt?(%{revision_id: revision_id}, %{id: id}) do
     revision_id != id
   end
-
 end

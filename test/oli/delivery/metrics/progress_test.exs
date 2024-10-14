@@ -242,8 +242,9 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       assert_in_delta 0.75, ra.progress, 0.0001
 
       # Now lets simulate a second attempt for this page, which has a lower progress (0%)
-      map = map
-      |> Seeder.create_resource_attempt(
+      map =
+        map
+        |> Seeder.create_resource_attempt(
           %{attempt_number: 2, lifecycle_state: :active},
           :this_user,
           :our_page,
@@ -255,6 +256,7 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
           :attempt1,
           :a1
         )
+
       assert {:ok, :updated} = Metrics.update_page_progress(guid)
 
       # Verify that the progress remains at 0.75 and does not go down to zero,
