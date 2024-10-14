@@ -103,7 +103,11 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Depot.query(@depot_desc, section_id, filter_by_resource_type)
   end
 
-  def get_lessons(section, graded_only) do
+  @doc """
+  Returns a list of SectionResource pages (graded + ungraded) for a given section.
+  An optional parameter `graded_only` can be passed to filter only graded pages.
+  """
+  def get_lessons(section, graded_only \\ false) do
     init_if_necessary(section.id)
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
