@@ -73,7 +73,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_link
-      href={Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)}
+      href={Routes.authoring_pow_session_path(OliWeb.Endpoint, :delete)}
       method={:delete}
     >
       Sign out
@@ -97,10 +97,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_link
-      href={Routes.session_path(OliWeb.Endpoint, :signout, type: :user)}
-      method={:delete}
-    >
+    <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
     """
@@ -122,8 +119,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_link href={signout_path(@ctx)} method={:delete}>
-      <%= if @ctx.user.guest, do: "Leave course", else: "Sign out" %>
+    <.menu_item_link href={~p"/users/log_out"}>
+      Leave Guest account
     </.menu_item_link>
     """
   end
@@ -405,18 +402,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def linked_author_account(%User{author: %Author{email: email}}), do: email
   def linked_author_account(_), do: nil
-
-  defp signout_path(%SessionContext{user: user, author: author}) do
-    is_admin? = Oli.Accounts.has_admin_role?(author)
-
-    case {user, is_admin?} do
-      {_, true} ->
-        Routes.authoring_session_path(OliWeb.Endpoint, :signout, type: :author)
-
-      {_user, _} ->
-        Routes.session_path(OliWeb.Endpoint, :signout, type: :user)
-    end
-  end
 
   defp to_initials(%{name: nil}), do: "G"
 

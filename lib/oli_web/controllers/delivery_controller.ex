@@ -197,7 +197,7 @@ defmodule OliWeb.DeliveryController do
     conn
     |> assign(:changeset, changeset)
     |> assign(:action, Routes.pow_registration_path(conn, :create))
-    |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
+    |> assign(:sign_in_path, ~p"/users/log_in")
     |> assign(:cancel_path, Routes.delivery_path(conn, :index))
     |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationHTML)
     |> Phoenix.Controller.render("new.html")
@@ -386,18 +386,6 @@ defmodule OliWeb.DeliveryController do
     |> Phoenix.Controller.render("new.html")
   end
 
-  def signin(conn, %{"section" => section}) do
-    conn
-    |> delete_pow_user(:user)
-    |> redirect(to: Routes.pow_session_path(conn, :new, section: section))
-  end
-
-  def create_account(conn, %{"section" => section}) do
-    conn
-    |> delete_pow_user(:user)
-    |> redirect(to: Routes.pow_registration_path(conn, :new, section: section))
-  end
-
   def show_enroll(conn, params) do
     case Sections.available?(conn.assigns.section) do
       {:available, section} ->
@@ -416,7 +404,7 @@ defmodule OliWeb.DeliveryController do
             ]
 
             redirect_path =
-              ~p"/session/new?#{login_params}"
+              ~p"/users/log_in?#{login_params}"
 
             conn
             |> redirect(to: redirect_path)

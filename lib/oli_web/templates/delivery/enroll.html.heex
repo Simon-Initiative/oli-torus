@@ -45,10 +45,7 @@
           <a
             :if={!assigns[:auto_enroll_as_guest]}
             href={
-              Routes.pow_session_path(@conn, :new,
-                section: @section.slug,
-                from_invitation_link?: assigns[:from_invitation_link?]
-              )
+              ~p"/users/log_in?#{[section: @section.slug, from_invitation_link?: assigns[:from_invitation_link?]]}"
             }
             class="btn btn-md btn-outline-primary btn-block mt-2"
           >

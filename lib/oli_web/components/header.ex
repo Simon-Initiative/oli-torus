@@ -6,7 +6,6 @@ defmodule OliWeb.Components.Header do
 
   import OliWeb.Components.Delivery.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
@@ -80,7 +79,7 @@ defmodule OliWeb.Components.Header do
             </div>
           <% true -> %>
             <div class="inline-flex items-center">
-              <%= link to: Routes.pow_session_path(OliWeb.Endpoint, :new), class: "btn btn-primary btn-sm mr-2 inline-flex items-center" do %>
+              <%= link to: ~p"/users/log_in", class: "btn btn-primary btn-sm mr-2 inline-flex items-center" do %>
                 <span class="hidden sm:inline">Learner/Educator Sign In</span>
                 <span class="inline sm:hidden">Sign In</span>
               <% end %>

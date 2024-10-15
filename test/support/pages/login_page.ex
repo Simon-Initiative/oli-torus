@@ -21,7 +21,7 @@ defmodule LoginPage do
 
   def go_to_educator_login do
     # TODO - It would be better for these to have explicit id or aria-label attributes instead of relying on the implemention-detail of the url they go to
-    click({:xpath, "//*[@href='#{Routes.pow_session_path(OliWeb.Endpoint, :new)}']"})
+    click({:xpath, "//*[@href='#{~p"/users/log_in"}']"})
   end
 
   def login("", _), do: IO.puts("Username / Password not specified")

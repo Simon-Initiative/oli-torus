@@ -10,6 +10,8 @@ defmodule OliWeb.Delivery.OpenAndFreeIndex do
   import OliWeb.Common.SourceImage
   import OliWeb.Components.Delivery.Layouts
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+
   @default_params %{text_search: ""}
 
   @impl Phoenix.LiveView
