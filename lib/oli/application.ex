@@ -59,6 +59,7 @@ defmodule Oli.Application do
 
         # Starts Cachex to store user/author info across requests
         Oli.AccountLookupCache,
+        Oli.Delivery.DistributedDepotCoordinator,
         {Cachex, name: :page_content_cache},
 
         # Starts Cachex to store datashop export info
