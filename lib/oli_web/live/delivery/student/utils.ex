@@ -274,7 +274,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def reset_attempts_button(assigns) do
     ~H"""
     <button
-      :if={@page_context.review_mode == false && not @advanced_delivery}
+      :if={@page_context.review_mode == false && not @advanced_delivery && @activity_count > 0}
       id="reset_answers"
       class="btn btn-link btn-sm text-center mb-10"
       onClick={"window.OLI.finalize('#{@section_slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid}', false, 'reset_answers')"}
