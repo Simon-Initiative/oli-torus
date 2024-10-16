@@ -2,6 +2,7 @@ defmodule OliWeb.Pow.UserContext do
   @moduledoc """
   Custom module that handles pow users context for user.
   """
+  use OliWeb, :verified_routes
 
   use Pow.Ecto.Context,
     repo: Oli.Repo,
@@ -63,18 +64,15 @@ defmodule OliWeb.Pow.UserContext do
   def create(params) do
     case Accounts.get_independent_user_by(%{email: params["email"]}) do
       %User{email: email} = user ->
-        if user.email_confirmed_at,
+        if user.confirmed_at,
           do:
             Oli.Email.create_email(
               email,
               "Account already exists",
               "account_already_exists.html",
               %{
-                url: Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
-                forgot_password:
-                  Utils.ensure_absolute_url(
-                    Routes.pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
-                  )
+                url: ~p"/users/log_in",
+                forgot_password: Utils.ensure_absolute_url(~p"/users/reset_password")
               }
             )
             |> Oli.Mailer.deliver_now()
@@ -86,8 +84,8 @@ defmodule OliWeb.Pow.UserContext do
           with %{"section" => section_slug} <- params,
                %Section{skip_email_verification: true} <-
                  Sections.get_section_by_slug(section_slug) do
-            email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
-            Map.put(params, "email_confirmed_at", email_confirmed_at)
+            confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+            Map.put(params, "confirmed_at", confirmed_at)
           else
             _ -> params
           end

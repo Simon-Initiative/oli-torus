@@ -207,12 +207,13 @@ defmodule OliWeb.DeliveryController do
     |> render_link_account_form()
   end
 
+  # MER-3835 TODO
   def render_user_register_form(conn, changeset) do
     # The learner/educator register form.
     conn
     |> assign(:changeset, changeset)
-    |> assign(:action, Routes.pow_registration_path(conn, :create))
-    |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
+    |> assign(:action, ~p"/users/register")
+    |> assign(:sign_in_path, ~p"/users/log_in")
     |> assign(:cancel_path, Routes.delivery_path(conn, :index))
     |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationHTML)
     |> Phoenix.Controller.render("new.html")
@@ -362,18 +363,6 @@ defmodule OliWeb.DeliveryController do
     |> Phoenix.Controller.render("new.html")
   end
 
-  def signin(conn, %{"section" => section}) do
-    conn
-    |> delete_pow_user(:user)
-    |> redirect(to: Routes.pow_session_path(conn, :new, section: section))
-  end
-
-  def create_account(conn, %{"section" => section}) do
-    conn
-    |> delete_pow_user(:user)
-    |> redirect(to: Routes.pow_registration_path(conn, :new, section: section))
-  end
-
   def show_enroll(conn, params) do
     section = conn.assigns.section
     from_invitation_link? = params["from_invitation_link?"] || false
@@ -397,7 +386,7 @@ defmodule OliWeb.DeliveryController do
       # guest user cannot access courses that require enrollment
       {:redirect, nil} ->
         redirect(conn,
-          to: ~p"/?#{[section: section.slug, from_invitation_link?: true]}"
+          to: ~p"/users/log_in?#{[section: section.slug, from_invitation_link?: true]}"
         )
     end
   end

@@ -24,6 +24,8 @@ defmodule OliWeb.Workspaces.Student do
     Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
   ]
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+
   def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
     # admin case...
     {:ok, assign(socket, active_workspace: :student)}
@@ -154,7 +156,7 @@ defmodule OliWeb.Workspaces.Student do
             >
               OR
             </div>
-            <%= form_for :user, Routes.session_path(@socket, :signin, type: :user, after_sign_in_target: :student_workspace), [as: :user], fn f -> %>
+            <%= form_for :user, ~p"/users/log_in?#{[redirect_to: ~p"/workspaces/student"]}", [as: :user], fn f -> %>
               <div class="flex flex-col gap-y-2">
                 <div class="w-80 h-11 m-auto form-label-group border-none">
                   <%= email_input(f, Pow.Ecto.Schema.user_id_field(@socket),
@@ -193,7 +195,7 @@ defmodule OliWeb.Workspaces.Student do
                 <% end %>
                 <div class="custom-control">
                   <%= link("Forgot password?",
-                    to: Routes.pow_reset_password_reset_password_path(@socket, :new),
+                    to: ~p"/users/reset_password",
                     tabindex: "1",
                     class:
                       "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"

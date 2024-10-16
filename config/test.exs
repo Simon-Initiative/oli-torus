@@ -1,5 +1,8 @@
 import Config
 
+# Only in tests, remove the complexity from the password hashing algorithm
+config :bcrypt_elixir, :log_rounds, 1
+
 config :oli,
   env: :test,
   s3_media_bucket_name: System.get_env("TEST_S3_MEDIA_BUCKET_NAME"),

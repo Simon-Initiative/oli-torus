@@ -1,12 +1,15 @@
 defmodule Oli.Plugs.RegistrationCaptcha do
+  use OliWeb, :verified_routes
+
   import Plug.Conn
+
   alias OliWeb.Router.Helpers, as: Routes
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
     # plug is only applicable to registration POSTs
-    register_path = Routes.pow_registration_path(conn, :create)
+    register_path = ~p"/users/register"
 
     author_register_path = Routes.authoring_pow_registration_path(conn, :create)
 

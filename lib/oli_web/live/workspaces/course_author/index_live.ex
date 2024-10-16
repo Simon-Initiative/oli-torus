@@ -260,7 +260,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                 <% end %>
                 <div class="custom-control">
                   <%= link("Forgot password?",
-                    to: Routes.pow_reset_password_reset_password_path(@socket, :new),
+                    to: ~p"/users/reset_password",
                     tabindex: "1",
                     class:
                       "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
@@ -406,6 +406,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   def create_authoring_account_link(%{ctx: %{user: %{author_id: author_id}}} = assigns)
       when not is_nil(author_id) do
     ~H"""
+
     """
   end
 

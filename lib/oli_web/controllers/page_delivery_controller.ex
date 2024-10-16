@@ -751,7 +751,7 @@ defmodule OliWeb.PageDeliveryController do
           |> to_epoch,
         lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
-        signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+        signoutUrl: ~p"/users/log_out",
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,

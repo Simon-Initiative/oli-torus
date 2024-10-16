@@ -1,5 +1,6 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
+
   use Pow.Phoenix.Router
   use PowAssent.Phoenix.Router
 
@@ -7,6 +8,7 @@ defmodule OliWeb.Router do
     extensions: [PowResetPassword, PowEmailConfirmation]
 
   import Phoenix.LiveDashboard.Router
+  import OliWeb.UserAuth
 
   import Oli.Plugs.EnsureAdmin
 
@@ -21,6 +23,7 @@ defmodule OliWeb.Router do
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
+    plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :default})
     plug(:put_layout, html: {OliWeb.LayoutView, :app})
@@ -36,6 +39,7 @@ defmodule OliWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
     plug(:fetch_session)
+    plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
@@ -85,13 +89,13 @@ defmodule OliWeb.Router do
   end
 
   pipeline :delivery do
-    plug(Oli.Plugs.SetDefaultPow, :user)
+    # plug(Oli.Plugs.SetDefaultPow, :user)
 
-    plug(PowPersistentSession.Plug.Cookie,
-      persistent_session_cookie_key: @user_persistent_session_cookie_key
-    )
+    # plug(PowPersistentSession.Plug.Cookie,
+    #   persistent_session_cookie_key: @user_persistent_session_cookie_key
+    # )
 
-    plug(Oli.Plugs.SetCurrentUser)
+    # plug(Oli.Plugs.SetCurrentUser)
     plug(Oli.Plugs.SetVrAgentValue)
   end
 
@@ -140,15 +144,7 @@ defmodule OliWeb.Router do
   pipeline :delivery_protected do
     plug(:delivery)
 
-    plug(PowAssent.Plug.Reauthorization,
-      handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    )
-
-    plug(OliWeb.Plugs.RequireAuthenticated,
-      error_handler: Pow.Phoenix.PlugErrorHandler
-    )
-
-    plug(OliWeb.EnsureUserNotLockedPlug)
+    plug(:require_authenticated_user)
 
     plug(Oli.Plugs.RemoveXFrameOptions)
 
@@ -242,18 +238,42 @@ defmodule OliWeb.Router do
 
   ### ROUTES ###
 
-  scope "/" do
-    pipe_through([
-      :browser,
-      :delivery,
-      :registration_captcha,
-      :pow_email_layout,
-      :restrict_admin_access
-    ])
+  ## Authentication routes
 
-    pow_routes()
-    pow_assent_routes()
-    pow_extension_routes()
+  scope "/", OliWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated]
+
+    live_session :redirect_if_user_is_authenticated,
+      on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      live "/users/register", UserRegistrationLive, :new
+      live "/users/log_in", UserLoginLive, :new
+      live "/users/reset_password", UserForgotPasswordLive, :new
+      live "/users/reset_password/:token", UserResetPasswordLive, :edit
+    end
+
+    post "/users/log_in", UserSessionController, :create
+  end
+
+  scope "/", OliWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :require_authenticated_user,
+      on_mount: [{OliWeb.UserAuth, :ensure_authenticated}] do
+      live "/users/settings", UserSettingsLive, :edit
+      live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+    end
+  end
+
+  scope "/", OliWeb do
+    pipe_through [:browser]
+
+    delete "/users/log_out", UserSessionController, :delete
+
+    live_session :current_user,
+      on_mount: [{OliWeb.UserAuth, :mount_current_user}] do
+      live "/users/confirm/:token", UserConfirmationLive, :edit
+      live "/users/confirm", UserConfirmationInstructionsLive, :new
+    end
   end
 
   scope "/" do
@@ -291,8 +311,6 @@ defmodule OliWeb.Router do
     # handle linking accounts when using a social account provider to login
     get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
     get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
-
-    delete("/signout", OliWeb.SessionController, :signout)
   end
 
   scope "/authoring" do
@@ -324,7 +342,6 @@ defmodule OliWeb.Router do
     # update session timezone information
     get("/timezones", StaticPageController, :list_timezones)
     post("/update_timezone", StaticPageController, :update_timezone)
-    post("/signin", SessionController, :signin)
   end
 
   scope "/", OliWeb do
@@ -1317,16 +1334,7 @@ defmodule OliWeb.Router do
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery, :delivery_layout, :pow_email_layout])
 
-    get("/signin", DeliveryController, :signin)
     get("/create_account", DeliveryController, :create_account)
-  end
-
-  # Delivery Auth (Signout)
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :pow_email_layout])
-
-    delete("/signout", SessionController, :signout)
-    get("/signout", SessionController, :signout)
   end
 
   scope "/course", OliWeb do

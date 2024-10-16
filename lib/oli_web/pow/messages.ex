@@ -3,6 +3,8 @@ defmodule OliWeb.Pow.Messages do
   Custom module that handles returned messages by pow actions for users.
   """
   use Pow.Phoenix.Messages
+  use OliWeb, :verified_routes
+
   alias Phoenix.Naming
 
   use Pow.Extension.Phoenix.Messages,
@@ -29,7 +31,7 @@ defmodule OliWeb.Pow.Messages do
     message = [
       @before_signin_message,
       ", ",
-      Link.link("Create an Account", to: Routes.pow_registration_path(conn, :new)),
+      Link.link("Create an Account", to: ~p"/users/register"),
       "."
     ]
 

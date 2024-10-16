@@ -81,7 +81,7 @@
               <% end %>
               <div class="custom-control">
                 <%= link("Forgot password?",
-                  to: Routes.pow_reset_password_reset_password_path(@conn, :new),
+                  to: ~p"/users/reset_password",
                   tabindex: "1",
                   class:
                     "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
@@ -198,7 +198,7 @@
               <% end %>
               <div class="custom-control">
                 <%= link("Forgot password?",
-                  to: Routes.pow_reset_password_reset_password_path(@conn, :new),
+                  to: ~p"/users/reset_password",
                   tabindex: "1",
                   class:
                     "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
@@ -221,10 +221,10 @@
             <% registration_path =
               case @conn.params["section"] do
                 nil ->
-                  Routes.pow_registration_path(@conn, :new)
+                  ~p"/users/register"
 
                 section ->
-                  Routes.pow_registration_path(@conn, :new, section: section)
+                  ~p"/users/register?section=#{section.id}"
               end %>
             <%= link("Create an Account",
               to: registration_path,

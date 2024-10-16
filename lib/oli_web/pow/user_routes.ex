@@ -53,7 +53,7 @@ defmodule OliWeb.Pow.UserRoutes do
   @impl true
   def after_user_updated_path(conn) do
     conn
-    |> request_path_or(Routes.pow_registration_path(OliWeb.Endpoint, :edit))
+    |> request_path_or(~p"/users/settings")
   end
 
   # Pow stores the request redirect path in the assigns. If that value is
@@ -88,22 +88,14 @@ defmodule OliWeb.Pow.UserRoutes do
             ~p"/?#{params_for(conn, [:request_path, :section, :from_invitation_link?])}"
 
           %{section: _section} ->
-            Pow.Phoenix.Routes.session_path(
-              conn,
-              :new,
-              params_for(conn, [:request_path, :section, :from_invitation_link?])
-            )
+            ~p"/users/log_in?#{params_for(conn, [:request_path, :section, :from_invitation_link?])}"
 
           _ ->
-            Pow.Phoenix.Routes.session_path(
-              conn,
-              :new,
-              params_for(conn, [:request_path, :from_invitation_link?])
-            )
+            ~p"/users/log_in?#{params_for(conn, [:request_path, :from_invitation_link?])}"
         end
 
       _method ->
-        Pow.Phoenix.Routes.session_path(conn, :new, params_for(conn, [:from_invitation_link?]))
+        ~p"/users/log_in?#{params_for(conn, [:from_invitation_link?])}"
     end
   end
 
