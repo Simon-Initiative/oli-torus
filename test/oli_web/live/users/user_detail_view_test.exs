@@ -266,6 +266,30 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     end
   end
 
+  describe "System Admin" do
+    setup [:admin_conn]
+
+    test "can create a reset password link for a user", %{conn: conn} do
+      user = insert(:user)
+
+      {:ok, view, _html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user.id))
+
+      view
+      |> element(~s{button[phx-click="generate_reset_password_link"]})
+      |> render_click()
+
+      assert has_element?(view, "p", "This link will expire in 24 hours.")
+
+      assert view
+             |> element(~s{input[id="password-reset-link-1"]})
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.attribute("value")
+             |> hd() =~ "/reset-password/"
+    end
+  end
+
   describe "Enrolled sections info" do
     setup [:admin_conn, :enrolled_student_to_sections, :stub_real_current_time]
 
