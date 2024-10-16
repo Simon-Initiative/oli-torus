@@ -825,6 +825,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               revision_slug={@revision_slug}
               attempt_guid={@attempt_guid}
               section_slug={@section.slug}
+              effective_settings={@page_context.effective_settings}
             />
           </div>
           <div :if={@questions == []} class="flex w-full justify-center">

@@ -21,16 +21,25 @@ defmodule Oli.Delivery.Page.ActivityContext do
   @spec create_context_map(
           boolean(),
           %{},
-          Oli.Delivery.Attempts.Core.ResourceAttempt.t(),
-          Oli.Resources.Revision.t()
+          %Oli.Delivery.Attempts.Core.ResourceAttempt{},
+          %Oli.Resources.Revision{},
+          %Oli.Delivery.Settings.Combined{}
         ) :: %{}
   @decorate transaction_event()
-  def create_context_map(graded, latest_attempts, resource_attempt, page_revision, opts \\ []) do
+  def create_context_map(
+        graded,
+        latest_attempts,
+        resource_attempt,
+        page_revision,
+        effective_settings,
+        opts \\ []
+      ) do
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
 
-    activity_states = State.from_attempts(latest_attempts, resource_attempt, page_revision)
+    activity_states =
+      State.from_attempts(latest_attempts, resource_attempt, page_revision, effective_settings)
 
     ordinal_assign_fn = create_ordinal_assignment_fn(graded, opts)
 
