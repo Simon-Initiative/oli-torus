@@ -100,6 +100,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     resource_attempt = get_resource_attempt_and_revision(activity_attempt.resource_attempt_id)
 
+    effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
+
     result =
       Repo.transaction(fn ->
         if is_nil(activity_attempt) do
@@ -119,8 +121,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
               activity_attempt.resource_id
             )
 
-          if activity_attempt.revision.max_attempts > 0 and
-               activity_attempt.revision.max_attempts <= attempt_count do
+          if effective_settings.max_attempts > 0 and
+               effective_settings.max_attempts <= attempt_count do
             Repo.rollback({:no_more_attempts})
           else
             part_attempts = get_latest_part_attempts(activity_attempt_guid)
@@ -166,7 +168,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                  new_part_attempts,
                  model,
                  resource_attempt,
-                 resource_attempt.revision
+                 resource_attempt.revision,
+                 effective_settings
                ), ModelPruner.prune(working_model)}
             else
               {:error, error} -> Repo.rollback(error)
@@ -293,7 +296,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             part_attempt: part_attempt,
             activity_attempt: activity_attempt,
             resource_attempt: resource_attempt,
-            resource_revision: resource_attempt.revision
+            resource_revision: resource_attempt.revision,
+            effective_settings: Oli.Delivery.Settings.get_combined_settings(resource_attempt)
           })
         end
 

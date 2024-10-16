@@ -2,6 +2,7 @@ import Config
 
 config :oli,
   env: :test,
+  depot_coordinator: Oli.Delivery.SingletonDepotCoordinator,
   s3_media_bucket_name: System.get_env("TEST_S3_MEDIA_BUCKET_NAME"),
   s3_xapi_bucket_name: System.get_env("S3_XAPI_BUCKET_NAME"),
   media_url: System.get_env("TEST_MEDIA_URL"),

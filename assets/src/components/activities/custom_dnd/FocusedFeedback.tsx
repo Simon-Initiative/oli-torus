@@ -28,7 +28,7 @@ export const FocusedFeedback: React.FC<FocusedFeedbackProps> = (props: FocusedFe
       <React.Fragment>
         {uiState.attemptState.parts.map((part) => (
           <React.Fragment key={part.partId}>
-            {renderPartFeedback(part, writerContext, true)}
+            {renderPartFeedback(part, writerContext)}
           </React.Fragment>
         ))}
       </React.Fragment>
@@ -36,6 +36,6 @@ export const FocusedFeedback: React.FC<FocusedFeedbackProps> = (props: FocusedFe
   } else {
     // otherwise, only render the currently focused part feedback
     const part = uiState.attemptState.parts.find((ps) => ps.partId === focusedPart);
-    return part !== undefined ? renderPartFeedback(part, writerContext, true) : null;
+    return part !== undefined ? renderPartFeedback(part, writerContext) : null;
   }
 };

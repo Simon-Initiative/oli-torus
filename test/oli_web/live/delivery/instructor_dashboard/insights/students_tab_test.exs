@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   import Ecto.Query
 
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Attempts.Core
   alias Oli.{Repo, Seeder}
 
@@ -505,6 +505,103 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert payment_status_1 =~ "Grace Period: 8d remaining"
       assert payment_status_2 =~ "Grace Period: 8d remaining"
       assert payment_status_3 =~ "Grace Period: 8d remaining"
+    end
+
+    test "sort by payment status column works correctly", %{conn: conn, instructor: instructor} do
+      stub_real_current_time()
+
+      %{section: section} = Oli.Seeder.base_project_with_larger_hierarchy()
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          requires_payment: true,
+          amount: Money.new(:USD, 100),
+          grace_period_days: 1
+        })
+
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+      user_3 = insert(:user, %{given_name: "Neymar", family_name: "Jr"})
+      user_4 = insert(:user, %{given_name: "Angelito", family_name: "Di Maria"})
+      user_5 = insert(:user, %{given_name: "Lionel", family_name: "Scaloni"})
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_3.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_4.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_5.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      enrollment_1 = Sections.get_enrollment(section.slug, user_1.id)
+      enrollment_4 = Sections.get_enrollment(section.slug, user_4.id)
+      enrollment_5 = Sections.get_enrollment(section.slug, user_5.id)
+
+      # Messi has paid
+      Paywall.create_payment(%{
+        generation_date: ~U[2024-08-01 10:16:10.686389Z],
+        application_date: ~U[2024-08-01 10:16:10.686389Z],
+        amount: Money.new(100, "USD"),
+        section_id: section.id,
+        enrollment_id: enrollment_1.id
+      })
+
+      # Di Maria has paid
+      Paywall.create_payment(%{
+        generation_date: ~U[2024-08-20 10:16:10.686389Z],
+        application_date: ~U[2024-08-20 10:16:10.686389Z],
+        amount: Money.new(100, "USD"),
+        section_id: section.id,
+        enrollment_id: enrollment_4.id
+      })
+
+      # Scaloni has paid
+      Paywall.create_payment(%{
+        generation_date: ~U[2024-09-15 10:16:10.686389Z],
+        application_date: ~U[2024-09-15 10:16:10.686389Z],
+        amount: Money.new(100, "USD"),
+        section_id: section.id,
+        enrollment_id: enrollment_5.id
+      })
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      # sorting by payment status in asc order
+      view
+      |> element(".instructor_dashboard_table th[phx-value-sort_by=\"payment_status\"]")
+      |> render_click()
+
+      [payment_status_1, payment_status_2, payment_status_3, payment_status_4, payment_status_5] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table td:last-child})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      # asserts the order of the payment status is ascending
+      assert payment_status_1 =~ "Not Paid"
+      assert payment_status_2 =~ "Not Paid"
+      assert payment_status_3 =~ "Paid on August 1, 2024 6:16 AM"
+      assert payment_status_4 =~ "Paid on August 20, 2024 6:16 AM"
+      assert payment_status_5 =~ "Paid on September 15, 2024 6:16 AM"
+
+      # sorting by payment status in desc order
+      view
+      |> element(".instructor_dashboard_table th[phx-value-sort_by=\"payment_status\"]")
+      |> render_click()
+
+      # asserts the order of the payment status is descending
+      [payment_status_1, payment_status_2, payment_status_3, payment_status_4, payment_status_5] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table td:last-child})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      assert payment_status_1 =~ "Paid on September 15, 2024 6:16 AM"
+      assert payment_status_2 =~ "Paid on August 20, 2024 6:16 AM"
+      assert payment_status_3 =~ "Paid on August 1, 2024 6:16 AM"
+      assert payment_status_4 =~ "Not Paid"
+      assert payment_status_5 =~ "Not Paid"
     end
 
     test "cards to filter works correctly", %{conn: conn, instructor: instructor} do

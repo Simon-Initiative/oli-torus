@@ -14,7 +14,7 @@ export const RightArrow: React.FC<{ stroke?: string }> = ({ stroke = '#2C6ABF', 
       <path
         d="M5 12h14M12 5l7 7-7 7"
         stroke={stroke}
-        strokeWidth={2}
+        strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
