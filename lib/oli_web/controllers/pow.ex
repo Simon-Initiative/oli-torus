@@ -27,7 +27,7 @@ defmodule OliWeb.PowController do
     |> generate_password_reset_url()
   end
 
-  def send_user_password_reset_link(conn, %{"id" => id}) do
+  def send_user_password_reset_link(conn, %{"user_id" => id}) do
     user = Repo.get(User, id)
 
     conn
@@ -40,7 +40,7 @@ defmodule OliWeb.PowController do
     |> redirect(to: Routes.live_path(conn, OliWeb.Users.UsersDetailView, user.id))
   end
 
-  def send_author_password_reset_link(conn, %{"id" => id}) do
+  def send_author_password_reset_link(conn, %{"user_id" => id}) do
     author = Repo.get(Author, id)
 
     conn
