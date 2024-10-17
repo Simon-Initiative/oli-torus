@@ -169,7 +169,7 @@ defmodule OliWeb.Products.DetailsView do
     {:noreply, socket}
   end
 
-  def handle_event("_bsmodal.unmount", _, socket) do
+  def handle_event("phx_modal.unmount", _, socket) do
     {:noreply, assign(socket, show_confirm: false)}
   end
 
