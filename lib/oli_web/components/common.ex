@@ -1135,4 +1135,36 @@ defmodule OliWeb.Components.Common do
     </div>
     """
   end
+
+  @doc """
+  Renders a system message banner.
+  """
+  attr :messages, :list, required: true
+
+  def system_messages(assigns) do
+    ~H"""
+    <div id="system_messages" class="fixed top-0 left-0 z-[99] w-full">
+      <div
+        :for={active_message <- @messages}
+        class="system-banner alert alert-warning flex justify-between"
+        role="system message alert"
+      >
+        <%= active_message.message
+        |> Oli.Utils.find_and_linkify_urls_in_string()
+        |> Phoenix.HTML.raw() %>
+        <button
+          id={"system-message-close-#{active_message.id}"}
+          type="button"
+          class="close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+          phx-hook="SystemMessage"
+          message-id={active_message.id}
+        >
+          <i class="fa-solid fa-xmark fa-lg"></i>
+        </button>
+      </div>
+    </div>
+    """
+  end
 end

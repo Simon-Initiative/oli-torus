@@ -1,3 +1,5 @@
+<.system_messages messages={assigns[:system_messages] || []} />
+
 <div id="eventIntercept" phx-hook="LoadSurveyScripts">
   <div :if={Phoenix.LiveView.connected?(@socket) and assigns[:scripts_loaded]}>
     <script>
