@@ -7,26 +7,16 @@ defmodule Oli.Interop.ExportTest do
   import Oli.Factory
 
   describe "export" do
-    setup [:setup_project_with_survey]
+    setup [:setup_project_with_survey, :setup_export]
 
-    test "project export preserves student surveys", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves student surveys", %{project: project, export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
       assert project_json["required_student_survey"] ==
                Integer.to_string(project.required_survey_resource_id)
     end
 
-    test "project export preserves attributes", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves attributes", %{project: project, export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
       # Check that learning language in the project attributes is preserved
@@ -34,31 +24,18 @@ defmodule Oli.Interop.ExportTest do
                project.attributes.learning_language
     end
 
-    test "project export preserves customizations", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves customizations", %{project: project, export: export} do
       {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
 
-      [type_labels] =
-        hierarchy_json["children"] |> Enum.filter(&(&1["type"] == "labels"))
+      [type_labels] = hierarchy_json["children"] |> Enum.filter(&(&1["type"] == "labels"))
 
       # Check that customizations in the project are preserved
       assert type_labels["unit"] == project.customizations.unit
-
       assert type_labels["module"] == project.customizations.module
-
       assert type_labels["section"] == project.customizations.section
     end
 
-    test "project export preserves welcome title and encouraging subtitle", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves welcome title and encouraging subtitle", %{export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
       assert project_json["welcomeTitle"] == %{"test" => "test"}
@@ -71,10 +48,8 @@ defmodule Oli.Interop.ExportTest do
       root_revision = AuthoringResolver.root_container(project.slug)
 
       ## Modify the root revision to have a non-revision child resource
-      Resources.update_revision(root_revision, %{
-        children: [1000],
-        author_id: author.id
-      })
+      params = %{children: [1000], author_id: author.id}
+      Resources.update_revision(root_revision, params)
 
       export =
         Export.export(project)
@@ -86,12 +61,7 @@ defmodule Oli.Interop.ExportTest do
       assert hierarchy_json["children"] |> Enum.filter(&(&1 == nil)) |> length() == 1
     end
 
-    test "carry over products and their settings", %{project: project, section: section} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "carry over products and their settings", %{section: section, export: export} do
       product_id = section.id
 
       {:ok, product_json} = Jason.decode(Map.get(export, ~c"#{product_id}.json"))
@@ -109,6 +79,15 @@ defmodule Oli.Interop.ExportTest do
       assert product_json["amount"]["currency"] == "#{section.amount.currency}"
       assert product_json["requiresPayment"] == section.requires_payment
     end
+  end
+
+  defp setup_export(ctx) do
+    export =
+      Export.export(ctx.project)
+      |> unzip_to_memory()
+      |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+    {:ok, export: export}
   end
 
   defp setup_project_with_survey(_) do
