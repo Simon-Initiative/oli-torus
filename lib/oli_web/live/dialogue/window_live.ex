@@ -43,15 +43,12 @@ defmodule OliWeb.Dialogue.WindowLive do
   # For now we just use the page prompt template to be able to render
   # the bot in those pages.
   defp build_course_prompt(section, project, user_id) do
-    # TODO: use a different prompt template (and probably other bindings) for the course prompt
     bindings = %{
       current_user_id: user_id,
       section_id: section.id,
       course_title: project.title,
-      page_content: "a page content",
-      course_description: project.description,
-      # TODO: replace this with the actual topic
-      topic: "Chemistry"
+      page_content: Sections.get_or_generate_section_prompt_info(section.slug),
+      course_description: project.description
     }
 
     realize_prompt_template(section.page_prompt_template, bindings)

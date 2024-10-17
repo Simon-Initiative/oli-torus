@@ -19,7 +19,8 @@ defmodule Oli.Delivery.Sections.SectionCache do
     :ordered_container_labels,
     :contained_scheduling_types,
     :page_to_container_map,
-    :full_hierarchy
+    :full_hierarchy,
+    :section_prompt_info
   ]
 
   @broadcastable_cache_keys [
