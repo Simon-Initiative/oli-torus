@@ -156,7 +156,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
     {:noreply, assign(socket, show_confirm: false, unsaved_system_message: nil)}
   end
 
-  def handle_event("_bsmodal.unmount", _, socket) do
+  def handle_event("phx_modal.unmount", _, socket) do
     {:noreply, assign(socket, show_confirm: false, unsaved_system_message: nil)}
   end
 
