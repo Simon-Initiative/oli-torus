@@ -175,7 +175,7 @@ defmodule Oli.Resources.PageContentTest do
       assert visited_id_count == length(original_ids)
 
       # verify mapped all ids to "new"-prefixed ones
-      new_ids = extract_ids(mapped_content)
+      new_ids = extract_ids(mapped_content) |> Enum.uniq()
       assert length(new_ids) == length(original_ids)
       assert Enum.all?(new_ids, &String.starts_with?(&1, "new"))
     end
