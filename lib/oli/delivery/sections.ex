@@ -1793,7 +1793,7 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn node ->
       node.revision.resource_type_id == ResourceType.get_id_by_type("container")
     end)
-    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, section_resource: sr, revision: rev} ->
+    |> Enum.map(fn %HierarchyNode{resource_id: resource_id, revision: rev, section_resource: sr} ->
       {resource_id,
        label_for(sr.numbering_level, sr.numbering_index, rev.title, short_label, customizations)}
     end)
@@ -2911,6 +2911,11 @@ defmodule Oli.Delivery.Sections do
 
       # reset any section cached data
       SectionCache.clear(section.slug)
+
+      Oli.Delivery.DepotCoordinator.clear(
+        Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+        section_id
+      )
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
@@ -4518,8 +4523,6 @@ defmodule Oli.Delivery.Sections do
   ## Returns:
   - Returns a list of maps with details of the upcoming lessons.
   """
-  @spec get_nearest_upcoming_lessons(Section.t(), integer(), integer(), Keyword.t() | nil) ::
-          list(map())
   def get_nearest_upcoming_lessons(section, user_id, lessons_count, opts \\ []) do
     page_resource_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
 

@@ -84,7 +84,6 @@ defmodule Oli.Delivery.Sections.SchedulingTest do
       scheduled_resources = Scheduling.retrieve(section)
 
       assert Enum.count(scheduled_resources) == 3
-
       root = by_slug.(scheduled_resources, "root_container")
       assert root.resource_type_id == Oli.Resources.ResourceType.id_for_container()
       assert root.title == "Root Container"

@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   alias Oli.Delivery.Evaluation.ExplanationContext
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt}
   alias Oli.Delivery.Evaluation.Actions.FeedbackAction
+  alias Oli.Delivery.Settings.Combined
 
   @doc """
   Determines whether an explanation should be shown using the given explanation context.
@@ -51,14 +52,16 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   # (ignore unscored pages for now)
   defp check_explanation_condition(%ExplanationContext{
          resource_revision: %Revision{
-           graded: true,
+           graded: true
+         },
+         resource_attempt: %ResourceAttempt{
+           attempt_number: resource_attempt_number
+         },
+         effective_settings: %Combined{
            explanation_strategy: %ExplanationStrategy{
              type: :after_max_resource_attempts_exhausted
            },
            max_attempts: max_attempts
-         },
-         resource_attempt: %ResourceAttempt{
-           attempt_number: resource_attempt_number
          }
        }) do
     if resource_attempt_number >= max_attempts && max_attempts > 0 do
@@ -71,14 +74,16 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   # show after set number of attempts strategy for scored pages
   defp check_explanation_condition(%ExplanationContext{
          resource_revision: %Revision{
-           graded: true,
+           graded: true
+         },
+         resource_attempt: %ResourceAttempt{
+           attempt_number: resource_attempt_number
+         },
+         effective_settings: %Combined{
            explanation_strategy: %ExplanationStrategy{
              type: :after_set_num_attempts,
              set_num_attempts: set_num_attempts
            }
-         },
-         resource_attempt: %ResourceAttempt{
-           attempt_number: resource_attempt_number
          }
        }) do
     if resource_attempt_number >= set_num_attempts do
@@ -91,17 +96,19 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   # show after set number of attempts strategy for unscored pages
   defp check_explanation_condition(%ExplanationContext{
          resource_revision: %Revision{
-           graded: false,
-           explanation_strategy: %ExplanationStrategy{
-             type: :after_set_num_attempts,
-             set_num_attempts: set_num_attempts
-           }
+           graded: false
          },
          activity_attempt: %ActivityAttempt{
            attempt_number: activity_attempt_number,
            part_attempts: part_attempts
          },
-         part_attempt: part_attempt
+         part_attempt: part_attempt,
+         effective_settings: %Combined{
+           explanation_strategy: %ExplanationStrategy{
+             type: :after_set_num_attempts,
+             set_num_attempts: set_num_attempts
+           }
+         }
        }) do
     if length(part_attempts) > 1 do
       if part_attempt.attempt_number >= set_num_attempts,

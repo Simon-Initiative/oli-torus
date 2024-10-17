@@ -56,15 +56,16 @@ export const simpleScreenSchema: JSONSchema7 = {
       type: 'object',
       title: 'Scoring',
       properties: {
-        // maxAttempt: {
-        //   title: 'Max Attempts',
-        //   type: 'number',
-        //   default: 3,
-        // },
         maxScore: {
           title: 'Max Score',
           type: 'number',
           default: 4,
+        },
+        maxAttempt: {
+          title: 'Max Attempts',
+          type: 'number',
+          default: 3,
+          enum: [1, 2, 3, 4, 5],
         },
       },
     },

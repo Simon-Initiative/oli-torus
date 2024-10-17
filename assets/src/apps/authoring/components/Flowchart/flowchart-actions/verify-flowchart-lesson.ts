@@ -86,7 +86,7 @@ const verifySingleEmptyRule = async (getState: () => unknown, dispatch: any) => 
   }
 };
 
-// Our rules logic is set up for 3-tries and you're done, so we want the maxAttempt capped at 2 for scoring.
+// Our rules logic is set up for default 3-tries and you're done, so we want the maxAttempt default capped at 3 for scoring.
 const verifyMaxAttempts = async (getState: () => unknown, dispatch: any) => {
   const allActivities = selectAllActivities(getState() as AuthoringRootState);
   for (const activity of allActivities) {
@@ -94,9 +94,9 @@ const verifyMaxAttempts = async (getState: () => unknown, dispatch: any) => {
       continue;
     }
 
-    if (activity.content.custom.maxScore > 0 && activity.content.custom.maxAttempt !== 2) {
+    if (activity.content.custom.maxScore > 0 && !activity.content.custom?.maxAttempt) {
       const modifiedActivity = clone(activity);
-      modifiedActivity.content.custom.maxAttempt = 2;
+      modifiedActivity.content.custom.maxAttempt = 3;
       dispatch(saveActivity({ activity: modifiedActivity, undoable: false, immediate: true }));
       await dispatch(upsertActivity({ activity: modifiedActivity }));
     }

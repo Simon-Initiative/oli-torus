@@ -88,7 +88,7 @@ export const addFlowchartScreen = createAsyncThunk(
       };
       activity.model.partsLayout = [await createSimpleText('Hello World')];
 
-      activity.model.custom.maxAttempt = 2;
+      activity.model.custom.maxAttempt = 3;
 
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],

@@ -471,6 +471,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     )
     |> Repo.update_all(set: set_values)
 
+    # Instruct the DepotCoordinator to update the SRS for these assessments
+    srs = get_assessment_srs(socket.assigns.section.id, Enum.map(assessments, & &1.resource_id))
+
+    Oli.Delivery.DepotCoordinator.update_all(
+      Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+      srs
+    )
+
     settings_changes =
       assessments
       |> Enum.filter(fn a -> a.resource_id != base_assessment.resource_id end)
@@ -1096,4 +1104,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   defp get_user_type(%Author{} = _), do: :author
   defp get_user_type(_), do: :instructor
+
+  defp get_assessment_srs(section_id, resource_ids) do
+    Repo.all(
+      from(s in SectionResource,
+        where: s.section_id == ^section_id and s.resource_id in ^resource_ids,
+        select: s
+      )
+    )
+  end
 end

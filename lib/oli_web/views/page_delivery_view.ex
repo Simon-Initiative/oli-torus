@@ -196,13 +196,21 @@ defmodule OliWeb.PageDeliveryView do
   defp encode_attempt(registered_activity_slug_map, {activity_attempt, part_attempts_map}) do
     {:ok, model} = Core.select_model(activity_attempt) |> Oli.Activities.Model.parse()
 
+    resource_attempt =
+      Oli.Delivery.Attempts.Core.get_resource_attempt_and_revision(
+        activity_attempt.resource_attempt_id
+      )
+
+    effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
+
     state =
       Oli.Activities.State.ActivityState.from_attempt(
         activity_attempt,
         Map.values(part_attempts_map),
         model,
         nil,
-        nil
+        nil,
+        effective_settings
       )
 
     activity_type_slug =

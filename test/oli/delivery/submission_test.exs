@@ -272,7 +272,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
         |> Seeder.add_objective("objective one", :o1)
-        |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :activity)
+        |> Seeder.add_activity(%{title: "one", content: content}, :activity)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
 
@@ -290,7 +290,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
               }
             ]
           },
-          objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
+          objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+          max_attempts: 2
         },
         :ungraded_page
       )

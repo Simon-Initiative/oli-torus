@@ -409,7 +409,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, evaluations}
   end
 
-  def update_part_attempts_and_get_activity_attempts(resource_attempt, datashop_session_id) do
+  def update_part_attempts_and_get_activity_attempts(
+        resource_attempt,
+        datashop_session_id,
+        effective_settings
+      ) do
     activity_attempts =
       case resource_attempt.revision do
         %{content: %{"advancedDelivery" => true}} ->
@@ -432,7 +436,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         if activity_attempt.lifecycle_state != :evaluated and activity_attempt.scoreable do
           activity_attempt = Map.put(activity_attempt, :resource_attempt, resource_attempt)
 
-          case update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+          case update_part_attempts_for_activity(
+                 activity_attempt,
+                 datashop_session_id,
+                 effective_settings
+               ) do
             {:ok, part_inputs} ->
               part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
@@ -474,7 +482,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     )
   end
 
-  def update_part_attempts_for_activity(activity_attempt, datashop_session_id) do
+  def update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
     part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
     part_inputs =
@@ -493,7 +501,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       |> filter_already_evaluated(part_attempts)
 
     case activity_attempt
-         |> do_evaluate_submissions(part_inputs, part_attempts)
+         |> do_evaluate_submissions(part_inputs, part_attempts, effective_settings)
          |> persist_evaluations(part_inputs, fn result -> result end, datashop_session_id) do
       {:ok, _} -> {:ok, part_inputs}
       e -> e
@@ -725,12 +733,27 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   defp do_evaluate_submissions(
+         activity_attempt,
+         part_inputs,
+         part_attempts,
+         effective_settings \\ nil
+       )
+
+  defp do_evaluate_submissions(activity_attempt, part_inputs, part_attempts, nil) do
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(activity_attempt.resource_attempt)
+
+    do_evaluate_submissions(activity_attempt, part_inputs, part_attempts, effective_settings)
+  end
+
+  defp do_evaluate_submissions(
          %ActivityAttempt{
            resource_attempt: resource_attempt,
            attempt_number: attempt_number
          } = activity_attempt,
          part_inputs,
-         part_attempts
+         part_attempts,
+         effective_settings
        ) do
     activity_model = select_model(activity_attempt)
 
@@ -766,7 +789,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               part_attempt: attempt,
               activity_attempt: activity_attempt,
               resource_attempt: resource_attempt,
-              resource_revision: resource_attempt.revision
+              resource_revision: resource_attempt.revision,
+              effective_settings: effective_settings
             })
           end)
 

@@ -7,6 +7,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Resources.ExplanationStrategy
   alias Oli.Delivery.Attempts.Core.PartAttempt
+  alias Oli.Delivery.Sections
 
   defp setup_explanation(_) do
     %{}
@@ -42,9 +43,13 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
     test "after_max_resource_attempts_exhausted strategy explanation in a scored page", map do
       datashop_session_id_user1 = UUID.uuid4()
 
+      Sections.get_section_resource(map.section.id, map.scored_page2.resource_id)
+      |> Sections.update_section_resource(%{
+        max_attempts: 3
+      })
+
       map =
         map
-        |> Seeder.Project.set_revision_max_attempts(ref(:scored_page2), 3)
         |> Seeder.Project.set_revision_explanation_strategy(
           ref(:scored_page2),
           %ExplanationStrategy{

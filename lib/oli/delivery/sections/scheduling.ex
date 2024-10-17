@@ -6,12 +6,11 @@ defmodule Oli.Delivery.Sections.Scheduling do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
-  alias Oli.Publishing.PublishedResource
+
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
-  alias Oli.Resources.Revision
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Repo
 
   @doc """
@@ -19,48 +18,7 @@ defmodule Oli.Delivery.Sections.Scheduling do
   section resources (that is, all containers and pages).
   """
   def retrieve(%Section{id: section_id}, filter_resource_type \\ false) do
-    page_type_id = Oli.Resources.ResourceType.id_for_page()
-    container_type_id = Oli.Resources.ResourceType.id_for_container()
-
-    filter_by_resource_type =
-      case filter_resource_type do
-        :pages ->
-          dynamic([sr, _s, _spp, _pr, rev], rev.resource_type_id == ^page_type_id)
-
-        :containers ->
-          dynamic([sr, _s, _spp, _pr, rev], rev.resource_type_id == ^container_type_id)
-
-        _ ->
-          dynamic(
-            [sr, _s, _spp, _pr, rev],
-            rev.resource_type_id == ^container_type_id or rev.resource_type_id == ^page_type_id
-          )
-      end
-
-    query =
-      SectionResource
-      |> join(:left, [sr], s in Section, on: sr.section_id == s.id)
-      |> join(:left, [_sr, s], spp in SectionsProjectsPublications, on: spp.section_id == s.id)
-      |> join(:left, [_sr, _s, spp], pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id
-      )
-      |> join(:left, [_sr, _s, _spp, pr], rev in Revision, on: pr.revision_id == rev.id)
-      |> where(
-        [sr, s, spp, pr, rev],
-        sr.project_id == spp.project_id and s.id == ^section_id and
-          pr.resource_id == sr.resource_id
-      )
-      |> where(^filter_by_resource_type)
-      |> select_merge([_sr, _s, _spp, _pr, rev], %{
-        title: rev.title,
-        resource_type_id: rev.resource_type_id,
-        graded: rev.graded,
-        purpose: rev.purpose,
-        revision_slug: rev.slug,
-        duration_minutes: rev.duration_minutes
-      })
-
-    Repo.all(query)
+    SectionResourceDepot.retrieve_schedule(section_id, filter_resource_type)
   end
 
   @doc """
@@ -88,6 +46,12 @@ defmodule Oli.Delivery.Sections.Scheduling do
         {[], []} ->
           # we need to update the section cache to reflect the schedule changes
           SectionCache.clear(section_slug)
+
+          Oli.Delivery.DepotCoordinator.clear(
+            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+            section_id
+          )
+
           {:ok, 0}
 
         {values, params} ->
@@ -111,6 +75,12 @@ defmodule Oli.Delivery.Sections.Scheduling do
             {:ok, %{num_rows: num_rows}} ->
               # we need to update the section cache to reflect the schedule changes
               SectionCache.clear(section_slug)
+
+              Oli.Delivery.DepotCoordinator.clear(
+                Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+                section_id
+              )
+
               {:ok, num_rows}
 
             e ->
@@ -155,6 +125,12 @@ defmodule Oli.Delivery.Sections.Scheduling do
       when resources_to_update_count == updated_count ->
         # we need to update the section cache to reflect the schedule changes
         SectionCache.clear(section_slug)
+
+        Oli.Delivery.DepotCoordinator.get().clear(
+          Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+          section_id
+        )
+
         {:ok, updated_count}
 
       {:ok, _} ->

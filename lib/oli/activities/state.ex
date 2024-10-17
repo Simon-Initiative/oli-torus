@@ -7,7 +7,7 @@ defmodule Oli.Activities.State do
   produce the corresponding activity state representation,
   returning those in a map of activity ids to the state.
   """
-  def from_attempts(latest_attempts, resource_attempt, page_revision) do
+  def from_attempts(latest_attempts, resource_attempt, page_revision, effective_settings) do
     Enum.map(latest_attempts, fn {id, {activity_attempt, part_attempts}} ->
       {:ok, model} = Oli.Delivery.Attempts.Core.select_model(activity_attempt) |> Model.parse()
 
@@ -17,7 +17,8 @@ defmodule Oli.Activities.State do
          Map.values(part_attempts),
          model,
          resource_attempt,
-         page_revision
+         page_revision,
+         effective_settings
        )}
     end)
     |> Map.new()

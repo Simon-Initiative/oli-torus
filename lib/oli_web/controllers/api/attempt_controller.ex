@@ -347,6 +347,13 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, [attempt]} ->
         model = Oli.Delivery.Attempts.Core.select_model(attempt)
 
+        resource_attempt =
+          Oli.Delivery.Attempts.Core.get_resource_attempt_and_revision(
+            attempt.resource_attempt_id
+          )
+
+        effective_settings = Oli.Delivery.Settings.get_combined_settings(resource_attempt)
+
         {:ok, parsed_model} = Oli.Activities.Model.parse(model)
 
         state =
@@ -355,7 +362,8 @@ defmodule OliWeb.Api.AttemptController do
             Attempts.get_latest_part_attempts(attempt.attempt_guid),
             parsed_model,
             nil,
-            nil
+            nil,
+            effective_settings
           )
 
         json(conn, %{

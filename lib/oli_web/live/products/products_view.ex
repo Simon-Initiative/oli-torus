@@ -154,12 +154,6 @@ defmodule OliWeb.Products.ProductsView do
   end
 
   def handle_params(params, _, socket) do
-    table_model =
-      SortableTableModel.update_from_params(
-        socket.assigns.table_model,
-        params
-      )
-
     offset = Params.get_int_param(params, "offset", 0)
     text_search = Params.get_param(params, "text_search", "")
     include_archived = Params.get_boolean_param(params, "include_archived", false)
@@ -167,13 +161,19 @@ defmodule OliWeb.Products.ProductsView do
     products =
       Blueprint.browse(
         %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        %Sorting{
+          direction: socket.assigns.table_model.sort_order,
+          field: socket.assigns.table_model.sort_by_spec.name
+        },
         text_search: text_search,
         include_archived: include_archived,
         project_id: socket.assigns.project && socket.assigns.project.id
       )
 
-    table_model = Map.put(table_model, :rows, products)
+    table_model =
+      socket.assigns.table_model
+      |> Map.put(:rows, products)
+      |> SortableTableModel.update_from_params(params)
 
     total_count = determine_total(products)
 

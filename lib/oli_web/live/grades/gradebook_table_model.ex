@@ -35,10 +35,10 @@ defmodule OliWeb.Grades.GradebookTableModel do
           td_class: "sticky bg-white dark:bg-neutral-800 left-0 z-10"
         }
       ] ++
-        Enum.map(graded_pages, fn revision ->
+        Enum.map(graded_pages, fn sr ->
           %ColumnSpec{
-            name: revision.resource_id,
-            label: String.upcase(revision.title),
+            name: sr.resource_id,
+            label: String.upcase(sr.title),
             render_fn: &__MODULE__.render_score/3,
             th_class: "whitespace-nowrap",
             sortable: false

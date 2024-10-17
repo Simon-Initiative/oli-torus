@@ -35,7 +35,7 @@ defmodule Oli.Delivery.Settings.Combined do
           review_submission: :allow | :disallow,
           feedback_mode: :allow | :disallow | :scheduled,
           feedback_scheduled_date: DateTime.t(),
-          collab_space_config: Oli.Resources.Collaboration.CollabSpaceConfig.t(),
-          explanation_strategy: Oli.Resources.ExplanationStrategy.t()
+          collab_space_config: %Oli.Resources.Collaboration.CollabSpaceConfig{},
+          explanation_strategy: %Oli.Resources.ExplanationStrategy{}
         }
 end

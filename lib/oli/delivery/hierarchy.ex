@@ -297,7 +297,12 @@ defmodule Oli.Delivery.Hierarchy do
   @doc """
   Generates the full hierarchy of a given section, including all the attributrs required for student delivery views.
   """
-  @spec full_hierarchy(Oli.Delivery.Sections.Section.t()) :: map()
+  def full_hierarchy(section, section_resources) when is_list(section_resources) do
+    {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section, section_resources)
+
+    hierarchy_node_with_children(root_hierarchy_node, hierarchy_nodes)
+  end
+
   def full_hierarchy(section) do
     {hierarchy_nodes, root_hierarchy_node} = hierarchy_nodes_by_sr_id(section)
 
@@ -317,6 +322,18 @@ defmodule Oli.Delivery.Hierarchy do
 
     hierarchy_nodes_query(section.slug, page_id, container_id)
     |> Oli.Repo.all()
+    |> Enum.map(&add_uuid_and_labels(&1, labels))
+    |> Enum.reduce({%{}, nil}, &add_nodes_and_root/2)
+  end
+
+  defp hierarchy_nodes_by_sr_id(section, section_resources) do
+    labels =
+      case section.customizations do
+        nil -> Oli.Branding.CustomLabels.default_map()
+        l -> Map.from_struct(l)
+      end
+
+    hierarchy_nodes_from_srs(section.root_section_resource_id, section_resources)
     |> Enum.map(&add_uuid_and_labels(&1, labels))
     |> Enum.reduce({%{}, nil}, &add_nodes_and_root/2)
   end
@@ -359,6 +376,29 @@ defmodule Oli.Delivery.Hierarchy do
           fragment("CASE WHEN ? = ? THEN true ELSE false END", sr.id, s.root_section_resource_id)
       }
     )
+  end
+
+  defp hierarchy_nodes_from_srs(root_section_resource_id, section_resources) do
+    Enum.map(section_resources, fn sr ->
+      %{
+        "id" => sr.revision_id,
+        "numbering" => %{"index" => sr.numbering_index, "level" => sr.numbering_level},
+        "children" => sr.children,
+        "resource_id" => sr.resource_id,
+        "project_id" => sr.project_id,
+        "project_slug" => sr.slug,
+        "title" => sr.title,
+        "slug" => sr.revision_slug,
+        "graded" => sr.graded,
+        "intro_video" => sr.intro_video,
+        "poster_image" => sr.poster_image,
+        "intro_content" => sr.intro_content,
+        "duration_minutes" => sr.duration_minutes,
+        "resource_type_id" => sr.resource_type_id,
+        "section_resource" => sr,
+        "is_root?" => sr.id == root_section_resource_id
+      }
+    end)
   end
 
   defp hierarchy_node_with_children(%{"children" => children_ids} = node, nodes_by_sr_id) do

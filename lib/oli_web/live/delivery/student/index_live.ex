@@ -77,7 +77,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   section
                   |> get_or_compute_full_hierarchy()
                   |> Hierarchy.find_module_ancestor(
-                    page[:resource_id],
+                    Map.get(page, :resource_id),
                     Oli.Resources.ResourceType.get_id_by_type("container")
                   )
                   |> get_in(["numbering", "index"])

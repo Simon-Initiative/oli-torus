@@ -183,6 +183,11 @@ defmodule OliWeb.Api.SchedulingController do
     if can_access_section?(conn, section) do
       case Scheduling.clear(section) do
         {:ok, _} ->
+          Oli.Delivery.DepotCoordinator.clear(
+            Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+            section.id
+          )
+
           json(conn, %{"result" => "success"})
 
         {:error, error} ->

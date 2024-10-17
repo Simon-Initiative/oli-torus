@@ -25,6 +25,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   attr :revision_slug, :string
   attr :attempt_guid, :string
   attr :section_slug, :string
+  attr :effective_settings, :map
 
   def render(assigns) do
     ~H"""
@@ -190,8 +191,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
                     "Components.Evaluation",
                     %{
                       attemptState: selected_question.state,
-                      context: selected_question.context,
-                      showExplanation: false
+                      context: selected_question.context
                     },
                     id: "activity_evaluation_for_question_#{selected_question.number}",
                     container: [class: "flex flex-col w-full"]
@@ -312,7 +312,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     )
     |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
     |> Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
-      socket.assigns.datashop_session_id
+      socket.assigns.datashop_session_id,
+      socket.assigns.effective_settings
     )
 
     ## and update it's state in the assigns (to render the feedback in the UI)
@@ -321,7 +322,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       Enum.map(socket.assigns.questions, fn
         %{selected: true} = selected_question ->
           Map.merge(selected_question, %{
-            state: get_updated_state(attempt_guid),
+            state: get_updated_state(attempt_guid, socket.assigns.effective_settings),
             submitted: true
           })
 
@@ -426,7 +427,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
     }
   end
 
-  defp get_updated_state(attempt_guid) do
+  defp get_updated_state(attempt_guid, effective_settings) do
     {:ok, [attempt]} = Oli.Delivery.Attempts.Core.get_activity_attempts([attempt_guid])
     model = Oli.Delivery.Attempts.Core.select_model(attempt)
 
@@ -437,7 +438,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt.attempt_guid),
       parsed_model,
       nil,
-      nil
+      nil,
+      effective_settings
     )
     # string keys are expected...
     |> Jason.encode!()
