@@ -35,7 +35,7 @@ defmodule OliWeb.CognitoControllerTest do
       email: email
     } do
       {:ok, _user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -65,7 +65,7 @@ defmodule OliWeb.CognitoControllerTest do
       {:ok, author} = Accounts.insert_or_update_author(%{email: author_email})
 
       {:ok, _user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -102,7 +102,7 @@ defmodule OliWeb.CognitoControllerTest do
       email: email
     } do
       {:ok, user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -260,7 +260,7 @@ defmodule OliWeb.CognitoControllerTest do
            email: email
          } do
       {:ok, user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -295,7 +295,7 @@ defmodule OliWeb.CognitoControllerTest do
            email: email
          } do
       {:ok, user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,

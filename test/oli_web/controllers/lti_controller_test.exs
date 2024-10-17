@@ -1,13 +1,15 @@
 defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
-  alias Lti_1p3.Platform.PlatformInstance
-  alias Lti_1p3.Platform.LoginHint
-  alias Lti_1p3.Platform.LoginHints
+  alias Lti_1p3.Platform.{LoginHint, LoginHints, PlatformInstance}
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Institutions
   alias Oli.Lti.LtiParams
+  alias Oli.Delivery.Sections
+  alias Oli.Accounts.User
 
   import Mox
+  import Oli.Factory
 
   describe "lti_controller" do
     setup [:create_fixtures]
@@ -180,7 +182,7 @@ defmodule OliWeb.LtiControllerTest do
       assert html_response(conn, 200) =~ "value=\"#{deployment.deployment_id}\""
     end
 
-    test "launch successful for valid params", %{
+    test "launch successful for valid params and creates lms user", %{
       conn: conn,
       registration: registration
     } do
@@ -213,6 +215,71 @@ defmodule OliWeb.LtiControllerTest do
       # ensure lti params are cached and id is stored in session
       assert get_session(conn, :lti_params_id) != nil
       assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
+    end
+
+    test "launch successful for valid params and updates lms user", %{
+      conn: conn,
+      registration: registration,
+      institution: institution
+    } do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer, aud: registration.client_id)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      # Create users with same sub.
+      sub = Oli.Lti.TestHelpers.security_detail_data()["sub"]
+      email = Oli.Lti.TestHelpers.user_detail_data()["email"]
+
+      lti_user = insert(:user, %{sub: sub, email: email})
+      another_lti_user = insert(:user, %{sub: sub, email: "another_lti_user@email.com"})
+
+      # Create another institution and sections.
+      another_institution = insert(:institution)
+      lti_section = insert(:section, institution: institution)
+      another_section = insert(:section, institution: another_institution)
+
+      # Enroll users to sections
+      Sections.enroll(lti_user.id, lti_section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.enroll(another_lti_user.id, another_section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+
+      # ensure lti params are cached and id is stored in session
+      assert get_session(conn, :lti_params_id) != nil
+      assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
+
+      # Check that the user is the same as lti_user, but has some new field defined (it was updated).
+      logged_user = conn.assigns[:current_user]
+      new_name = Oli.Lti.TestHelpers.user_detail_data()["name"]
+
+      assert logged_user.id == lti_user.id
+      assert logged_user.name == new_name
+
+      # Check that the other user was ignored.
+      refute Oli.Repo.get_by(User, email: another_lti_user.email).name == new_name
     end
 
     test "launch successful when aud claim is a list", %{
