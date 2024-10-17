@@ -5356,19 +5356,19 @@ defmodule Oli.Delivery.Sections do
     SectionCache.get_or_compute(section_slug, :section_prompt_info, fn ->
       instructors =
         section_slug
-        |> Sections.fetch_instructors()
+        |> fetch_instructors()
         |> Enum.map(&"#{&1.name} (#{&1.email})")
         |> Enum.join("\n")
 
       course_layout =
         section_slug
-        |> Sections.fetch_ordered_container_labels()
+        |> fetch_ordered_container_labels()
         |> Enum.map(&elem(&1, 1))
         |> Enum.join("\n")
 
       pages_with_links =
         section_slug
-        |> Sections.fetch_all_pages()
+        |> fetch_all_pages()
         |> Enum.map(
           &"#{&1.title} (#{Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, &1.slug)})"
         )
