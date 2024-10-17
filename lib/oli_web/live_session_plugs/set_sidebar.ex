@@ -12,6 +12,13 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.{DeliveryResolver}
 
+  def on_mount(:default, :not_mounted_at_router, _session, socket) do
+    # this case will handle the liveview cases rendered directly in the template
+    # for example:
+    # <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
+    {:cont, socket}
+  end
+
   def on_mount(:default, params, _session, socket) do
     section_slug =
       case params do
