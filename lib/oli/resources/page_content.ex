@@ -47,20 +47,37 @@ defmodule Oli.Resources.PageContent do
     map_fn.(item, acc, tr_context)
   end
 
-  defp item_with_children(%{"children" => children} = item, acc, map_fn, tr_context) do
-    {children, acc} =
-      Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
-        {item, acc} =
-          map_reduce(item, acc, map_fn, %TraversalContext{
-            tr_context
-            | level: tr_context.level + 1
-          })
+  defp item_with_children(%{"children" => _children} = item, acc, map_fn, tr_context) do
+    map_reduce_property = fn {item, acc}, property ->
+      children = Map.get(item, property)
 
-        {items ++ [item], acc}
+      if is_list(children) do
+        {mapped_children, acc} =
+          Enum.reduce(children, {[], acc}, fn item, {items, acc} ->
+            {item, acc} =
+              map_reduce(item, acc, map_fn, %TraversalContext{
+                tr_context
+                | level: tr_context.level + 1
+              })
+
+            {items ++ [item], acc}
+          end)
+
+        {Map.put(item, property, mapped_children), acc}
+      else
+        {item, acc}
+      end
+    end
+
+    # must process content in certain properties as well as children
+    props = ["children", "caption", "pronunciation", "translations", "content"]
+
+    {item, acc} =
+      Enum.reduce(props, {item, acc}, fn prop, {item, acc} ->
+        map_reduce_property.({item, acc}, prop)
       end)
 
-    Map.put(item, "children", children)
-    |> map_fn.(acc, tr_context)
+    map_fn.(item, acc, tr_context)
   end
 
   @doc """
