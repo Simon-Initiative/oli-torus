@@ -232,9 +232,10 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("generate_reset_password_link", params, socket) do
-    password_reset_link = OliWeb.PowController.create_user_password_reset_link(params)
-    socket = assign(socket, password_reset_link: password_reset_link)
-    {:noreply, socket}
+    {:noreply,
+     assign(socket,
+       password_reset_link: OliWeb.PowController.create_password_reset_link(params, :user)
+     )}
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
