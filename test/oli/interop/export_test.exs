@@ -85,9 +85,33 @@ defmodule Oli.Interop.ExportTest do
 
       assert hierarchy_json["children"] |> Enum.filter(&(&1 == nil)) |> length() == 1
     end
+
+    test "carry over products and their settings", %{project: project, section: section} do
+      export =
+        Export.export(project)
+        |> unzip_to_memory()
+        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+      product_id = section.id
+
+      {:ok, product_json} = Jason.decode(Map.get(export, ~c"#{product_id}.json"))
+
+      assert product_json["type"] == "Product"
+      assert product_json["title"] == section.title
+
+      assert product_json["welcomeTitle"] == %{"test" => "Product welcome title test"}
+      assert product_json["encouragingSubtitle"] == "Product encouraging subtitle test"
+
+      assert product_json["gracePeriodDays"] == section.grace_period_days
+      assert product_json["payByInstitution"] == section.pay_by_institution
+      assert product_json["paymentOptions"] == "#{section.payment_options}"
+      assert product_json["amount"]["amount"] == "#{section.amount.amount}"
+      assert product_json["amount"]["currency"] == "#{section.amount.currency}"
+      assert product_json["requiresPayment"] == section.requires_payment
+    end
   end
 
-  def setup_project_with_survey(_) do
+  defp setup_project_with_survey(_) do
     author = insert(:author)
 
     survey_revision =
@@ -108,6 +132,17 @@ defmodule Oli.Interop.ExportTest do
         encouraging_subtitle: "Subtitle test"
       )
 
+    section =
+      insert(:section, %{
+        base_project: project,
+        status: :active,
+        type: :blueprint,
+        amount: Money.new(:USD, "88.00"),
+        grace_period_days: 12,
+        welcome_title: %{test: "Product welcome title test"},
+        encouraging_subtitle: "Product encouraging subtitle test"
+      })
+
     container_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.id_for_container()
@@ -119,6 +154,18 @@ defmodule Oli.Interop.ExportTest do
         root_resource_id: container_revision.resource.id,
         published: nil
       })
+
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
+
+    insert(:section_resource, %{
+      project: project,
+      section: section,
+      resource_id: container_revision.resource.id
+    })
 
     insert(:published_resource, %{
       publication: publication,
@@ -141,6 +188,6 @@ defmodule Oli.Interop.ExportTest do
       resource_id: container_revision.resource.id
     })
 
-    {:ok, project: project}
+    {:ok, project: project, section: section}
   end
 end
