@@ -150,6 +150,8 @@
   <body class="dark:bg-body-dark dark:text-white">
     <input type="hidden" id="layout-id" data-layout-id="authoring" />
 
+    <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
+
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>

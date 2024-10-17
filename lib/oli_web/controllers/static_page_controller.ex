@@ -9,17 +9,9 @@ defmodule OliWeb.StaticPageController do
   plug Oli.Plugs.RestrictAdminAccess when action in [:index]
 
   def index(conn, _params) do
-    system_messages = Oli.Notifications.list_active_system_messages()
-
     if conn.assigns.current_user,
-      do:
-        render(PowHelpers.use_pow_config(conn, :user), "index_logged_in.html", %{
-          system_messages: system_messages
-        }),
-      else:
-        render(PowHelpers.use_pow_config(conn, :user), "index.html", %{
-          system_messages: system_messages
-        })
+      do: render(PowHelpers.use_pow_config(conn, :user), "index_logged_in.html"),
+      else: render(PowHelpers.use_pow_config(conn, :user), "index.html")
   end
 
   def unauthorized(conn, _params) do
