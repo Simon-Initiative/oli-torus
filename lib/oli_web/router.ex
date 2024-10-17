@@ -214,10 +214,6 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnsureUserSectionVisit)
   end
 
-  pipeline :set_sidebar do
-    plug(Oli.Plugs.SetSidebar)
-  end
-
   pipeline :delivery_preview do
     plug(Oli.Plugs.DeliveryPreview)
   end
@@ -801,7 +797,7 @@ defmodule OliWeb.Router do
 
   ### Workspaces
   scope "/workspaces/", OliWeb.Workspaces do
-    pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
+    pipe_through([:browser, :authoring_and_delivery])
 
     live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -973,7 +969,6 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
-      :set_sidebar,
       :require_section,
       :delivery,
       :student,
