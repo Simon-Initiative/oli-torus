@@ -26,8 +26,10 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     height,
   };
   const imageContainerRef = useRef<HTMLImageElement>(null);
+  const manipulateImageSize = () => {
     if (!imageContainerRef?.current) {
       return;
+    }
     const naturalWidth = imageContainerRef.current.naturalWidth;
     const naturalHeight = imageContainerRef.current.naturalHeight;
     const ratioWidth = naturalWidth / imageContainerRef.current.width;
