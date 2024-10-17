@@ -457,6 +457,11 @@ defmodule Oli.Interop.Export do
       title: product.title,
       welcomeTitle: product.welcome_title,
       encouragingSubtitle: product.encouraging_subtitle,
+      requiresPayment: product.requires_payment,
+      paymentOptions: product.payment_options,
+      payByInstitution: product.pay_by_institution,
+      gracePeriodDays: product.grace_period_days,
+      amount: product.amount,
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_resource_id, id) end)
     }
     |> entry("#{product.id}.json")

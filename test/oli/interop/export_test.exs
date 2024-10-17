@@ -7,26 +7,16 @@ defmodule Oli.Interop.ExportTest do
   import Oli.Factory
 
   describe "export" do
-    setup [:setup_project_with_survey]
+    setup [:setup_project_with_survey, :setup_export]
 
-    test "project export preserves student surveys", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves student surveys", %{project: project, export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
       assert project_json["required_student_survey"] ==
                Integer.to_string(project.required_survey_resource_id)
     end
 
-    test "project export preserves attributes", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves attributes", %{project: project, export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
       # Check that learning language in the project attributes is preserved
@@ -34,31 +24,18 @@ defmodule Oli.Interop.ExportTest do
                project.attributes.learning_language
     end
 
-    test "project export preserves customizations", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves customizations", %{project: project, export: export} do
       {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
 
-      [type_labels] =
-        hierarchy_json["children"] |> Enum.filter(&(&1["type"] == "labels"))
+      [type_labels] = hierarchy_json["children"] |> Enum.filter(&(&1["type"] == "labels"))
 
       # Check that customizations in the project are preserved
       assert type_labels["unit"] == project.customizations.unit
-
       assert type_labels["module"] == project.customizations.module
-
       assert type_labels["section"] == project.customizations.section
     end
 
-    test "project export preserves welcome title and encouraging subtitle", %{project: project} do
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
+    test "project export preserves welcome title and encouraging subtitle", %{export: export} do
       {:ok, project_json} = Jason.decode(Map.get(export, ~c"_project.json"))
 
       assert project_json["welcomeTitle"] == %{"test" => "test"}
@@ -71,10 +48,8 @@ defmodule Oli.Interop.ExportTest do
       root_revision = AuthoringResolver.root_container(project.slug)
 
       ## Modify the root revision to have a non-revision child resource
-      Resources.update_revision(root_revision, %{
-        children: [1000],
-        author_id: author.id
-      })
+      params = %{children: [1000], author_id: author.id}
+      Resources.update_revision(root_revision, params)
 
       export =
         Export.export(project)
@@ -85,9 +60,37 @@ defmodule Oli.Interop.ExportTest do
 
       assert hierarchy_json["children"] |> Enum.filter(&(&1 == nil)) |> length() == 1
     end
+
+    test "carry over products and their settings", %{section: section, export: export} do
+      product_id = section.id
+
+      {:ok, product_json} = Jason.decode(Map.get(export, ~c"#{product_id}.json"))
+
+      assert product_json["type"] == "Product"
+      assert product_json["title"] == section.title
+
+      assert product_json["welcomeTitle"] == %{"test" => "Product welcome title test"}
+      assert product_json["encouragingSubtitle"] == "Product encouraging subtitle test"
+
+      assert product_json["gracePeriodDays"] == section.grace_period_days
+      assert product_json["payByInstitution"] == section.pay_by_institution
+      assert product_json["paymentOptions"] == "#{section.payment_options}"
+      assert product_json["amount"]["amount"] == "#{section.amount.amount}"
+      assert product_json["amount"]["currency"] == "#{section.amount.currency}"
+      assert product_json["requiresPayment"] == section.requires_payment
+    end
   end
 
-  def setup_project_with_survey(_) do
+  defp setup_export(ctx) do
+    export =
+      Export.export(ctx.project)
+      |> unzip_to_memory()
+      |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
+
+    {:ok, export: export}
+  end
+
+  defp setup_project_with_survey(_) do
     author = insert(:author)
 
     survey_revision =
@@ -108,6 +111,17 @@ defmodule Oli.Interop.ExportTest do
         encouraging_subtitle: "Subtitle test"
       )
 
+    section =
+      insert(:section, %{
+        base_project: project,
+        status: :active,
+        type: :blueprint,
+        amount: Money.new(:USD, "88.00"),
+        grace_period_days: 12,
+        welcome_title: %{test: "Product welcome title test"},
+        encouraging_subtitle: "Product encouraging subtitle test"
+      })
+
     container_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.id_for_container()
@@ -119,6 +133,18 @@ defmodule Oli.Interop.ExportTest do
         root_resource_id: container_revision.resource.id,
         published: nil
       })
+
+    insert(:section_project_publication, %{
+      project: project,
+      section: section,
+      publication: publication
+    })
+
+    insert(:section_resource, %{
+      project: project,
+      section: section,
+      resource_id: container_revision.resource.id
+    })
 
     insert(:published_resource, %{
       publication: publication,
@@ -141,6 +167,6 @@ defmodule Oli.Interop.ExportTest do
       resource_id: container_revision.resource.id
     })
 
-    {:ok, project: project}
+    {:ok, project: project, section: section}
   end
 end
