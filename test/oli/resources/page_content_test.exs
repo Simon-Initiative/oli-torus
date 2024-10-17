@@ -1,6 +1,7 @@
 defmodule Oli.Resources.PageContentTest do
   use ExUnit.Case, async: true
 
+  alias Oli.TestHelpers
   alias Oli.Resources.PageContent
 
   @basic_content %{
@@ -124,6 +125,59 @@ defmodule Oli.Resources.PageContentTest do
       assert mapping["00001"] === [1]
       assert mapping["00002"] === nil
       assert mapping["00003"] === [3, 2]
+    end
+  end
+
+  # map_reduce descending into structured content, as PageContent.map_reduce does not
+  defp map_reduce_all_content(content, init_acc, map_fn) do
+    PageContent.map_reduce(content, init_acc, fn item, acc, tr_context ->
+      case item do
+        %{"type" => "content"} ->
+          PageContent.visit_children(item, acc, map_fn)
+
+        _other ->
+          map_fn.(item, acc, tr_context)
+      end
+    end)
+  end
+
+  # get all id values w/o using traversal functions under test
+  defp extract_ids(content) do
+    json = Jason.encode!(content)
+
+    Regex.scan(~r/"id": ?"([^"]+)"/, json, capture: :all_but_first)
+    |> List.flatten()
+  end
+
+  describe "map_property_content" do
+    test "reaches content in img and popup properties" do
+      {:ok, %{"content" => content}} =
+        TestHelpers.read_json_file("./test/oli/resources/page.json")
+
+      # all & only content elements carry id attributes w/unique values
+      original_ids = extract_ids(content)
+
+      {mapped_content, visited_id_count} =
+        map_reduce_all_content(
+          content,
+          0,
+          fn item, acc, _tr_context ->
+            id = Map.get(item, "id")
+
+            case id do
+              nil -> {item, acc}
+              id -> {Map.put(item, "id", "new" <> id), acc + 1}
+            end
+          end
+        )
+
+      # found all original ids
+      assert visited_id_count == length(original_ids)
+
+      # mapped all ids to "new"-prefixed ones
+      new_ids = extract_ids(mapped_content)
+      assert length(new_ids) == length(original_ids)
+      assert Enum.all?(new_ids, &String.starts_with?(&1, "new"))
     end
   end
 end

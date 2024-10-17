@@ -1,0 +1,187 @@
+{
+  "id": "278749",
+  "type": "Page",
+  "tags": [],
+  "title": "Test Page",
+  "content": {
+    "bibrefs": ["278748", "278747"],
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "Here is a bit of initial text. "
+              }
+            ],
+            "id": "3028536558",
+            "type": "p"
+          },
+          {
+            "caption": [
+              {
+                "children": [
+                  {
+                    "text": "This "
+                  },
+                  {
+                    "children": [
+                      {
+                        "strong": true,
+                        "text": "thingamajig"
+                      }
+                    ],
+                    "content": [
+                      {
+                        "children": [
+                          {
+                            "text": "A watchamacallit "
+                          }
+                        ],
+                        "id": "1967646312",
+                        "type": "p"
+                      }
+                    ],
+                    "id": "4120843613",
+                    "trigger": "hover",
+                    "type": "popup"
+                  },
+                  {
+                    "text": " from book"
+                  },
+                  {
+                    "bibref": 278748,
+                    "children": [
+                      {
+                        "text": "[citation]"
+                      }
+                    ],
+                    "id": "3592083575",
+                    "type": "cite"
+                  },
+                  {
+                    "text": " I like"
+                  }
+                ],
+                "id": "3219108061",
+                "type": "p"
+              }
+            ],
+            "children": [
+              {
+                "id": "231pnc24ygd4lsh",
+                "text": ""
+              }
+            ],
+            "display": "block",
+            "id": "3532111699",
+            "src": "https://free-images.com/tn/30ad/books_old_books_press.jpg",
+            "type": "img"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "3019815556",
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "id": "1638770113",
+        "textDirection": "ltr",
+        "type": "content"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "This is some "
+              },
+              {
+                "children": [
+                  {
+                    "strong": true,
+                    "text": "sesquipedalian"
+                  }
+                ],
+                "content": [
+                  {
+                    "children": [
+                      {
+                        "text": "Of a word, long and pedantic."
+                      }
+                    ],
+                    "id": "1242368618",
+                    "type": "p"
+                  },
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "2390437295",
+                    "type": "p"
+                  },
+                  {
+                    "children": [
+                      {
+                        "text": "Note this word describes itself."
+                      }
+                    ],
+                    "id": "1791462443",
+                    "type": "p"
+                  }
+                ],
+                "id": "220632361",
+                "trigger": "hover",
+                "type": "popup"
+              },
+              {
+                "text": " text "
+              },
+              {
+                "bibref": "278747",
+                "children": [
+                  {
+                    "text": "[citation]"
+                  }
+                ],
+                "id": "438197390",
+                "type": "cite"
+              },
+              {
+                "text": "  I like."
+              }
+            ],
+            "id": "2868870094",
+            "type": "p"
+          }
+        ],
+        "editor": "slate",
+        "id": "2261463222",
+        "textDirection": "ltr",
+        "type": "content"
+      }
+    ],
+    "version": "0.1.0"
+  },
+  "objectives": [],
+  "purpose": "foundation",
+  "originalFile": "",
+  "unresolvedReferences": [],
+  "collabSpace": {
+    "status": "disabled",
+    "threaded": true,
+    "auto_accept": true,
+    "show_full_history": true,
+    "participation_min_replies": 0,
+    "participation_min_posts": 0,
+    "anonymous_posting": true
+  },
+  "isGraded": false,
+  "relatesTo": []
+}
