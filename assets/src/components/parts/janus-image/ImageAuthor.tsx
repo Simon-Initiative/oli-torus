@@ -37,11 +37,9 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     let newAdjustedHeight = imageContainerRef.current.height;
     let newAdjustedWidth = imageContainerRef.current.width;
     if (ratioWidth > ratioHeight) {
-      const newHeight = Number(naturalHeight / ratioWidth).toFixed();
-      newAdjustedHeight = parseInt(newHeight);
+      newAdjustedHeight = parseInt(Number(naturalHeight / ratioWidth).toFixed());
     } else {
-      const newWidth = Number(naturalWidth / ratioHeight).toFixed();
-      newAdjustedWidth = parseInt(newWidth);
+      newAdjustedWidth = parseInt(Number(naturalWidth / ratioHeight).toFixed());
     }
     const modelClone = clone(model);
     modelClone.height = newAdjustedHeight;
