@@ -156,8 +156,6 @@
   <body class="min-h-screen flex flex-col bg-delivery-body text-delivery-body-color dark:bg-delivery-body-dark dark:text-delivery-body-color-dark">
     <input type="hidden" id="layout-id" data-layout-id="delivery" />
 
-    <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
-
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
     <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>

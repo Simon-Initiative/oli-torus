@@ -1,3 +1,5 @@
+<.system_messages messages={assigns[:system_messages] || []} />
+
 <main role="main" class="relative flex flex-col">
   <div
     :if={assigns[:header_enabled?] && !@disable_sidebar? && assigns[:active_workspace]}
