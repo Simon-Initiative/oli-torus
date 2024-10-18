@@ -1,4 +1,5 @@
 defmodule Oli.Authoring.Collaborators do
+  use OliWeb, :verified_routes
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Repo
   alias Oli.Accounts
@@ -145,7 +146,7 @@ defmodule Oli.Authoring.Collaborators do
           Routes.pow_invitation_invitation_path(conn, :edit, token)
 
         :existing_user ->
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+          ~p"/workspaces/course_author/#{project.slug}/overview"
       end
 
     invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
