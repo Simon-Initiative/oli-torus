@@ -275,7 +275,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceView do
   # so we can set "typing" to false
 
   def handle_event(
-        "_bsmodal.unmount",
+        "phx_modal.unmount",
         _,
         socket = %{assigns: %{topic: topic, user: %{id: user_id}}}
       ) do

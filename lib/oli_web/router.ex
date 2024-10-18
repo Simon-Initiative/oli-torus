@@ -27,9 +27,9 @@ defmodule OliWeb.Router do
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
-    plug(OliWeb.SetLiveCSRF)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
+    plug(OliWeb.Plugs.HeaderSizeLogger)
   end
 
   # pipline for REST api endpoint routes
@@ -213,10 +213,6 @@ defmodule OliWeb.Router do
 
   pipeline :ensure_user_section_visit do
     plug(Oli.Plugs.EnsureUserSectionVisit)
-  end
-
-  pipeline :set_sidebar do
-    plug(Oli.Plugs.SetSidebar)
   end
 
   pipeline :delivery_preview do
@@ -802,7 +798,7 @@ defmodule OliWeb.Router do
 
   ### Workspaces
   scope "/workspaces/", OliWeb.Workspaces do
-    pipe_through([:browser, :authoring_and_delivery, :set_sidebar])
+    pipe_through([:browser, :authoring_and_delivery])
 
     live_session :workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -974,7 +970,6 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
-      :set_sidebar,
       :require_section,
       :delivery,
       :student,

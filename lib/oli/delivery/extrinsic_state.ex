@@ -112,7 +112,7 @@ defmodule Oli.Delivery.ExtrinsicState do
   Updates or inserts key value pairs into the extrinsic state for a user for an attempt context.
   Returns {:ok, map} of the new updated state.
   """
-  def upsert_atttempt(attempt_guid, key_values) do
+  def upsert_attempt(attempt_guid, key_values) do
     case Attempts.get_resource_attempt_by(attempt_guid: attempt_guid) do
       nil ->
         {:error, {:not_found}}

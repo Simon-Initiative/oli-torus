@@ -431,7 +431,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
         is_active={@active_workspace == :course_author}
         sidebar_expanded={@sidebar_expanded}
         on_active_bg="bg-[#F4CFFF] hover:!bg-[#F4CFFF] dark:bg-[#7E2899] dark:hover:!bg-[#7E2899]"
-        navigation_type="href"
       >
         <:icon>
           <Icons.writing_pencil is_active={@active_workspace == :course_author} />
