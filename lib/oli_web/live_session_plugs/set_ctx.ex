@@ -13,7 +13,6 @@ defmodule OliWeb.LiveSessionPlugs.SetCtx do
       assign(socket,
         ctx:
           SessionContext.init(socket, session,
-            user: socket.assigns[:current_user],
             is_liveview: true
           )
       )

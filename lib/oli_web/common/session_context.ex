@@ -68,29 +68,8 @@ defmodule OliWeb.Common.SessionContext do
   def init(%Plug.Conn{assigns: assigns} = conn) do
     browser_timezone = Plug.Conn.get_session(conn, "browser_timezone")
 
-    author =
-      case Map.get(assigns, :current_author) do
-        nil ->
-          nil
-
-        %Author{id: author_id} ->
-          case Oli.AccountLookupCache.get_author(author_id) do
-            {:ok, author} -> author
-            _ -> nil
-          end
-      end
-
-    user =
-      case Map.get(assigns, :current_user) do
-        nil ->
-          nil
-
-        %User{id: user_id} ->
-          case Oli.AccountLookupCache.get_user(user_id) do
-            {:ok, user} -> user
-            _ -> nil
-          end
-      end
+    author = Map.get(assigns, :current_author)
+    user = Map.get(assigns, :current_user)
 
     %__MODULE__{
       browser_timezone: browser_timezone,
@@ -106,46 +85,11 @@ defmodule OliWeb.Common.SessionContext do
   given as options (previously loaded by set_user plug), they will be used instead of looking up
   the user/author from the session map and making a cache lookup/database call.
   """
-  def init(%Phoenix.LiveView.Socket{} = _socket, %{} = session, opts \\ []) do
+  def init(%Phoenix.LiveView.Socket{assigns: assigns} = _socket, %{} = session, opts \\ []) do
     browser_timezone = Map.get(session, "browser_timezone")
 
-    author =
-      Keyword.get(
-        opts,
-        :author,
-        case Map.get(session, "current_author_id") do
-          nil ->
-            nil
-
-          author_id ->
-            case AccountLookupCache.get_author(author_id) do
-              {:ok, author} ->
-                author
-
-              _ ->
-                nil
-            end
-        end
-      )
-
-    user =
-      Keyword.get(
-        opts,
-        :user,
-        case Map.get(session, "current_user_id") do
-          nil ->
-            nil
-
-          user_id ->
-            case AccountLookupCache.get_user(user_id) do
-              {:ok, user} ->
-                user
-
-              _ ->
-                nil
-            end
-        end
-      )
+    author = Map.get(assigns, :current_author)
+    user = Map.get(assigns, :current_user)
 
     %__MODULE__{
       browser_timezone: browser_timezone,
@@ -154,15 +98,5 @@ defmodule OliWeb.Common.SessionContext do
       user: user,
       is_liveview: true
     }
-  end
-
-  def set_user_author(%__MODULE__{} = ctx, user, author) do
-    ctx
-    |> Map.put(:user, user)
-    |> Map.put(:author, author)
-    |> Map.put(
-      :local_tz,
-      FormatDateTime.tz_preference_or_default(author, user, ctx.browser_timezone)
-    )
   end
 end

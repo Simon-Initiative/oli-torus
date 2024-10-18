@@ -192,7 +192,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_link
-      href={Routes.authoring_pow_session_path(OliWeb.Endpoint, :delete)}
+      href={~p"/authors/log_out"}
       method={:delete}
     >
       Sign out

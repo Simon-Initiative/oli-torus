@@ -1,3 +1,4 @@
+## MER-3835 TODO: REMOVE
 defmodule OliWeb.EnsureUserNotLockedPlug do
   @moduledoc """
   This plug ensures that a user isn't locked.

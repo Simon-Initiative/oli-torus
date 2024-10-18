@@ -17,7 +17,6 @@ defmodule OliWeb.Pow.Messages do
     ]
 
   alias Oli.Accounts
-  alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.HTML.Link
   alias Pow.Phoenix.Messages
 

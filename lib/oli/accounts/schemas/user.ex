@@ -1,14 +1,6 @@
 defmodule Oli.Accounts.User do
   use Ecto.Schema
 
-  use Pow.Ecto.Schema,
-    password_hash_verify: {&Bcrypt.hash_pwd_salt/1, &Bcrypt.verify_pass/2}
-
-  use PowAssent.Ecto.Schema
-
-  use Pow.Extension.Ecto.Schema,
-    extensions: [PowResetPassword, PowEmailConfirmation, PowInvitation]
-
   import Ecto.Changeset
   import Oli.Utils
 
@@ -286,17 +278,10 @@ defmodule Oli.Accounts.User do
     |> validate_required([:given_name, :family_name])
     |> maybe_name_from_given_and_family()
     |> lowercase_email()
-    |> pow_user_id_field_changeset(attrs)
     |> unique_constraint(:email,
       name: :users_email_independent_learner_index,
       message: "Email has already been taken by another independent learner"
     )
-  end
-
-  def invite_changeset(user_or_changeset, invited_by, attrs) do
-    user_or_changeset
-    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name])
-    |> pow_invite_changeset(invited_by, attrs)
   end
 
   @doc """
@@ -305,7 +290,6 @@ defmodule Oli.Accounts.User do
   """
   def verification_changeset(user, attrs \\ %{}) do
     user
-    |> pow_extension_changeset(attrs)
     |> cast(attrs, [
       :sub,
       :name,
@@ -351,13 +335,6 @@ defmodule Oli.Accounts.User do
     |> lowercase_email()
     |> validate_email_confirmation()
     |> maybe_name_from_given_and_family()
-  end
-
-  def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
-    user_or_changeset
-    |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
-    |> maybe_create_unique_sub()
-    |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
   @spec lock_changeset(Ecto.Schema.t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()

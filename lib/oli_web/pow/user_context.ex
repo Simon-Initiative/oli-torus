@@ -13,7 +13,6 @@ defmodule OliWeb.Pow.UserContext do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.{Repo, Utils}
-  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 

@@ -98,8 +98,6 @@ defmodule OliWeb.UserAuth do
 
     conn
     |> assign(:current_user, user)
-    #  MER-3835 TODO: Add system admin check, this should be done in the fetch_current_author function
-    |> assign(:is_system_admin, false)
   end
 
   defp ensure_user_token(conn) do
@@ -181,9 +179,32 @@ defmodule OliWeb.UserAuth do
   end
 
   defp mount_current_user(socket, session) do
+    # Note: When a user first accesses an application using LiveView, the LiveView is first rendered
+    # in its disconnected state, as part of a regular HTML response. By using assign_new in the
+    # mount callback of your LiveView, you can instruct LiveView to re-use any assigns already set
+    # in conn during disconnected state.
     Phoenix.Component.assign_new(socket, :current_user, fn ->
       if user_token = session["user_token"] do
         Accounts.get_user_by_session_token(user_token)
+      end
+    end)
+    |> ensure_user_platform_roles_loaded()
+    |> assign_datashop_session_id(session)
+  end
+
+  defp ensure_user_platform_roles_loaded(socket) do
+    case socket.assigns.current_user do
+      nil -> socket
+      user -> Phoenix.Component.assign(socket, :current_user, Accounts.preload_platform_roles(user))
+    end
+  end
+
+  defp assign_datashop_session_id(socket, session) do
+    Phoenix.Component.assign_new(socket, :datashop_session_id, fn ->
+      if datashop_session_id = session["datashop_session_id"] do
+        datashop_session_id
+      else
+        nil
       end
     end)
   end
