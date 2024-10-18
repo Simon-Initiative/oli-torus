@@ -1,6 +1,7 @@
 defmodule Oli.Interop.ExportTest do
   use OliWeb.ConnCase
 
+  alias Oli.Delivery.Sections.Section
   alias Oli.Interop.Export
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
@@ -79,6 +80,33 @@ defmodule Oli.Interop.ExportTest do
       assert product_json["amount"]["currency"] == "#{section.amount.currency}"
       assert product_json["requiresPayment"] == section.requires_payment
     end
+
+    test "export and import a project", %{
+      project: project,
+      author: author,
+      section: exported_product
+    } do
+      {:ok, imported_project} =
+        project
+        |> Export.export()
+        |> unzip_to_memory()
+        |> Oli.Interop.Ingest.process(author)
+
+      imported_product = Oli.Repo.get_by!(Section, %{base_project_id: imported_project.id})
+
+      assert imported_product.type == exported_product.type
+      assert imported_product.title == exported_product.title
+
+      assert imported_product.welcome_title == imported_product.welcome_title
+      assert imported_product.encouraging_subtitle == imported_product.encouraging_subtitle
+
+      assert imported_product.grace_period_days == exported_product.grace_period_days
+      assert imported_product.pay_by_institution == exported_product.pay_by_institution
+      assert imported_product.payment_options == exported_product.payment_options
+      assert imported_product.amount.amount == exported_product.amount.amount
+      assert imported_product.amount.currency == exported_product.amount.currency
+      assert imported_product.requires_payment == exported_product.requires_payment
+    end
   end
 
   defp setup_export(ctx) do
@@ -119,7 +147,8 @@ defmodule Oli.Interop.ExportTest do
         amount: Money.new(:USD, "88.00"),
         grace_period_days: 12,
         welcome_title: %{test: "Product welcome title test"},
-        encouraging_subtitle: "Product encouraging subtitle test"
+        encouraging_subtitle: "Product encouraging subtitle test",
+        pay_by_institution: true
       })
 
     container_revision =
@@ -167,6 +196,6 @@ defmodule Oli.Interop.ExportTest do
       resource_id: container_revision.resource.id
     })
 
-    {:ok, project: project, section: section}
+    {:ok, project: project, section: section, author: author}
   end
 end

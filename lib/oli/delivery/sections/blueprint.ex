@@ -161,7 +161,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "title" => title,
             "requires_payment" => attrs["requires_payment"] || false,
             "payment_options" => attrs["payment_options"] || "direct_and_deferred",
-            "pay_by_institution" => attrs[""] || false,
+            "pay_by_institution" => attrs["pay_by_institution"] || false,
             "registration_open" => attrs["registration_open"] || false,
             "grace_period_days" => attrs["grace_period_days"] || 1,
             "amount" =>
