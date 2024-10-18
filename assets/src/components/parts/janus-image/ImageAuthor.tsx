@@ -20,7 +20,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, alt } = model;
+  const { width, height, src, alt, defaultWidth, defaultHeight, defaultSrc } = model;
   const imageStyles: CSSProperties = {
     width,
     height,
@@ -30,23 +30,25 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     if (!imageContainerRef?.current) {
       return;
     }
-    const naturalWidth = imageContainerRef.current.naturalWidth;
-    const naturalHeight = imageContainerRef.current.naturalHeight;
-    const ratioWidth = naturalWidth / imageContainerRef.current.width;
-    const ratioHeight = naturalHeight / imageContainerRef.current.height;
-    let newAdjustedHeight = imageContainerRef.current.height;
-    let newAdjustedWidth = imageContainerRef.current.width;
-    if (ratioWidth > ratioHeight) {
-      newAdjustedHeight = parseInt(Number(naturalHeight / ratioWidth).toFixed());
-    } else {
-      newAdjustedWidth = parseInt(Number(naturalWidth / ratioHeight).toFixed());
-    }
-    const modelClone = clone(model);
-    modelClone.height = newAdjustedHeight;
-    modelClone.width = newAdjustedWidth;
-    if (newAdjustedHeight != height || newAdjustedWidth != width) {
-      //console.log('I AM SETTING NOW ->', { newAdjustedHeight, newAdjustedWidth, model });
-      onSaveConfigure({ id, snapshot: modelClone });
+    // if author has not resized the image and the src is not the default src then only we adjust the aspect ratio
+    if (defaultWidth === width && defaultHeight === height && defaultSrc !== src) {
+      const naturalWidth = imageContainerRef.current.naturalWidth;
+      const naturalHeight = imageContainerRef.current.naturalHeight;
+      const ratioWidth = naturalWidth / imageContainerRef.current.width;
+      const ratioHeight = naturalHeight / imageContainerRef.current.height;
+      let newAdjustedHeight = imageContainerRef.current.height;
+      let newAdjustedWidth = imageContainerRef.current.width;
+      if (ratioWidth > ratioHeight) {
+        newAdjustedHeight = parseInt(Number(naturalHeight / ratioWidth).toFixed());
+      } else {
+        newAdjustedWidth = parseInt(Number(naturalWidth / ratioHeight).toFixed());
+      }
+      const modelClone = clone(model);
+      modelClone.height = newAdjustedHeight;
+      modelClone.width = newAdjustedWidth;
+      if (newAdjustedHeight != height || newAdjustedWidth != width) {
+        onSaveConfigure({ id, snapshot: modelClone });
+      }
     }
   };
   return ready ? (

@@ -93,6 +93,8 @@ const AddComponentToolbar: React.FC<{
             z: 0,
             width: 100,
             height: 100,
+            defaultHeight: 100,
+            defaultWidth: 100,
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };
