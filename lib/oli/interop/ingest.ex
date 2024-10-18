@@ -225,7 +225,12 @@ defmodule Oli.Interop.Ingest do
 
     new_product_attrs = %{
       "welcome_title" => Map.get(product, "welcomeTitle"),
-      "encouraging_subtitle" => Map.get(product, "encouragingSubtitle")
+      "encouraging_subtitle" => Map.get(product, "encouragingSubtitle"),
+      "requires_payment" => Map.get(product, "requiresPayment"),
+      "payment_options" => Map.get(product, "paymentOptions"),
+      "pay_by_institution" => Map.get(product, "payByInstitution"),
+      "grace_period_days" => Map.get(product, "gracePeriodDays"),
+      "amount" => Map.get(product, "amount")
     }
 
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
