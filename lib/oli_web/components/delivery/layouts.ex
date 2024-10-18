@@ -923,7 +923,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           selected_view: selected_view
         )
 
-      # If the given resource is other than a unit or module (page, section/sub-section, unit), we navigate to lesson page.
+      # If the given resource is other than a unit or module (page, section/sub-section), we navigate to lesson page.
       _ ->
         # If the request_path is the Learn page and we navigate to a different lesson,
         # we need to update the request_path to include the new target resource.
