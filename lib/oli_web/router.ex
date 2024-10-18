@@ -29,6 +29,7 @@ defmodule OliWeb.Router do
     plug(:protect_from_forgery)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
+    plug(OliWeb.Plugs.HeaderSizeLogger)
   end
 
   # pipline for REST api endpoint routes
