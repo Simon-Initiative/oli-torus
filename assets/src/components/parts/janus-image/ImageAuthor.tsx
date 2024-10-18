@@ -47,6 +47,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
       modelClone.height = newAdjustedHeight;
       modelClone.width = newAdjustedWidth;
       if (newAdjustedHeight != height || newAdjustedWidth != width) {
+        //we need to save the new width and height of the image so that the custom property is updated with adjusted values
         onSaveConfigure({ id, snapshot: modelClone });
       }
     }
