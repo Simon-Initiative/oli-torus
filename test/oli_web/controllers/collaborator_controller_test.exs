@@ -28,7 +28,7 @@ defmodule OliWeb.CollaboratorControllerTest do
           "g-recaptcha-response": "any"
         )
 
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
                "Collaborator invitations sent!"
@@ -44,7 +44,7 @@ defmodule OliWeb.CollaboratorControllerTest do
           "g-recaptcha-response": "any"
         )
 
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
                "Collaborator invitations sent!"
@@ -60,7 +60,7 @@ defmodule OliWeb.CollaboratorControllerTest do
           "g-recaptcha-response": "any"
         )
 
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
                "Collaborator invitations sent!"
@@ -77,7 +77,8 @@ defmodule OliWeb.CollaboratorControllerTest do
                    "g-recaptcha-response": "any"
                  )
 
-               assert html_response(conn, 302) =~ "/project/"
+               assert html_response(conn, 302) =~
+                        "/workspaces/course_author/#{project.slug}/overview"
 
                assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                         "Failed to add some collaborators: notevenan_email"
@@ -95,7 +96,7 @@ defmodule OliWeb.CollaboratorControllerTest do
           "g-recaptcha-response": "any"
         )
 
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
     end
 
     test "shows an error message when the author's email already exists", %{
@@ -114,7 +115,7 @@ defmodule OliWeb.CollaboratorControllerTest do
           "g-recaptcha-response": "any"
         )
 
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "workspaces/course_author/#{project.slug}/overview"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "This person is already a collaborator in this project."
@@ -139,7 +140,7 @@ defmodule OliWeb.CollaboratorControllerTest do
           "g-recaptcha-response": "any"
         )
 
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "Collaborator invitations cannot exceed 20 emails at a time. Please try again with fewer invites"
@@ -184,12 +185,12 @@ defmodule OliWeb.CollaboratorControllerTest do
     test "redirects to project path when data is valid", %{conn: conn, project: project} do
       Oli.Authoring.Collaborators.add_collaborator(@admin_email, project.slug)
       conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @admin_email))
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
       conn = delete(conn, Routes.collaborator_path(conn, :delete, project, @invalid_email))
-      assert html_response(conn, 302) =~ "/project/"
+      assert html_response(conn, 302) =~ "/workspaces/course_author/#{project.slug}/overview"
     end
   end
 end
