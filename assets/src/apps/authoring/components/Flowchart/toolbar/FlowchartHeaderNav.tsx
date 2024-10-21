@@ -245,7 +245,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
       if (PartClass) {
         const defaultNewPartWidth = 100;
         const defaultNewPartHeight = 100;
-        // only ever add to the current activity,  not a layer
+        // only ever add to the current activity, not a layer
         setNewPartAddOffset(newPartAddOffset + 1);
         const part = new PartClass() as any;
         const newPartData = {
