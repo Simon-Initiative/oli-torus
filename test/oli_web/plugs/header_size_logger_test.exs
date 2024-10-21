@@ -7,6 +7,7 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
   import Plug.Conn
 
   alias OliWeb.Plugs.HeaderSizeLogger
+  alias OliWeb.Pow.SessionUtils
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -18,13 +19,6 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
     |> Keyword.get(:http, [])
     |> Keyword.get(:protocol_options, [])
     |> Keyword.get(:max_header_value_length, 4096)
-  end
-
-  defp calculate_headers_size(headers) do
-    Enum.reduce(headers, 0, fn {key, value}, acc ->
-      # +4 for ": " and "\r\n"
-      acc + byte_size(key) + byte_size(value) + 4
-    end)
   end
 
   test "does not log when request headers are below threshold" do
@@ -56,7 +50,8 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
       |> put_req_header("user-agent", "test-agent")
       |> assign(:remote_ip, {127, 0, 0, 1})
 
-    expected_size = calculate_headers_size(conn.req_headers)
+    expected_size =
+      SessionUtils.calculate_headers_size(conn.req_headers)
 
     log = capture_log(fn -> HeaderSizeLogger.call(conn, opts) end)
 
@@ -109,7 +104,7 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
         |> send_resp(200, "OK")
       end)
 
-    expected_size = calculate_headers_size(conn.resp_headers)
+    expected_size = SessionUtils.calculate_headers_size(conn.resp_headers)
 
     assert log =~
              "Response headers size (#{expected_size} bytes) exceeds the threshold of #{threshold} bytes."

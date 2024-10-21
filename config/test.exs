@@ -74,10 +74,27 @@ config :lti_1p3,
   ],
   ags_line_item_prefix: "oli-torus-"
 
+# Configurable http/https protocol options for cowboy
+# https://ninenines.eu/docs/en/cowboy/2.5/manual/cowboy_http/
+http_max_header_name_length =
+  System.get_env("HTTP_MAX_HEADER_NAME_LENGTH", "64") |> String.to_integer()
+
+http_max_header_value_length =
+  System.get_env("HTTP_MAX_HEADER_VALUE_LENGTH", "4096") |> String.to_integer()
+
+http_max_headers = System.get_env("HTTP_MAX_HEADERS", "100") |> String.to_integer()
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :oli, OliWeb.Endpoint,
-  http: [port: 4002],
+  http: [
+    port: 4002,
+    protocol_options: [
+      max_header_name_length: http_max_header_name_length,
+      max_header_value_length: http_max_header_value_length,
+      max_headers: http_max_headers
+    ]
+  ],
   server: false,
   url: [scheme: "https"]
 

@@ -70,4 +70,14 @@ defmodule OliWeb.Pow.SessionUtils do
 
     conn
   end
+
+  @doc """
+  Calculates the size of the given headers in bytes.
+  """
+  def calculate_headers_size(headers) do
+    Enum.reduce(headers, 0, fn {key, value}, acc ->
+      # +4 for ": " and "\r\n"
+      acc + byte_size(key) + byte_size(value) + 4
+    end)
+  end
 end
