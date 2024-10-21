@@ -1323,12 +1323,12 @@ defmodule Oli.Delivery.Metrics do
         UPDATE
           resource_accesses
         SET
-          progress = (SELECT
+          progress = GREATEST((SELECT
               COUNT(aa2.id) filter (WHERE aa2.lifecycle_state = 'evaluated' OR aa2.lifecycle_state = 'submitted')::float / COUNT(aa2.id)::float
             FROM activity_attempts as aa
             JOIN resource_attempts as ra ON ra.id = aa.resource_attempt_id
             JOIN activity_attempts as aa2 ON ra.id = aa2.resource_attempt_id
-            WHERE aa.attempt_guid = $1 AND aa2.scoreable = true AND aa2.attempt_number = 1),
+            WHERE aa.attempt_guid = $1 AND aa2.scoreable = true AND aa2.attempt_number = 1), resource_accesses.progress),
           updated_at = NOW()
         WHERE
           id =
