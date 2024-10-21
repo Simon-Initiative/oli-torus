@@ -1,5 +1,6 @@
 defmodule OliWeb.Common.PowTest do
   use OliWeb.ConnCase
+  use Bamboo.Test
 
   import Oli.Factory
 
@@ -404,6 +405,32 @@ defmodule OliWeb.Common.PowTest do
 
       assert %User{email: @user_email} = user = Accounts.get_user_by(%{email: @user_email})
       assert user.email_confirmed_at
+    end
+  end
+
+  describe "Admin" do
+    setup [:admin_conn]
+
+    test "can send password reset link to user", %{conn: conn} do
+      user = insert(:user)
+      user_email = user.email
+
+      conn = post(conn, "/admin/accounts/send_user_password_reset_link", %{user_id: user.id})
+
+      assert_delivered_email_matches(%{to: [{_, ^user_email}], subject: "Reset password link"})
+      assert conn.assigns.flash["info"] == "Password reset link sent to user #{user.email}."
+      assert html_response(conn, 302) =~ ~p"/admin/users/#{user.id}"
+    end
+
+    test "can send password reset link to author", %{conn: conn} do
+      author = insert(:author)
+      author_email = author.email
+
+      conn = post(conn, "/admin/accounts/send_author_password_reset_link", %{user_id: author.id})
+
+      assert_delivered_email_matches(%{to: [{_, ^author_email}], subject: "Reset password link"})
+      assert conn.assigns.flash["info"] == "Password reset link sent to user #{author.email}."
+      assert html_response(conn, 302) =~ ~p"/admin/authors/#{author.id}"
     end
   end
 
