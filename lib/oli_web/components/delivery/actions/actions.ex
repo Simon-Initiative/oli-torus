@@ -96,7 +96,7 @@ defmodule OliWeb.Components.Delivery.Actions do
             id="payment_status_modal"
             class="w-5/6"
             on_confirm={
-              JS.push("update_payment_status", target: @myself)
+              JS.push("invalidate_payment", target: @myself)
               |> Modal.hide_modal("payment_status_modal")
             }
             on_cancel={
@@ -186,6 +186,18 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def handle_event("force_reset_payment_status", _params, socket) do
     {:noreply, assign(socket, payment_status_uuid: UUID.uuid4())}
+  end
+
+  def handle_event("invalidate_payment", _params, socket) do
+    Paywall.get_payment_by(enrollment_id: socket.assigns.enrollment.id)
+    |> Paywall.update_payment(%{
+      type: :invalidated,
+      invalidated_by_user_id: socket.assigns.current_user.id
+    })
+    |> case do
+      {:ok, _} -> {:noreply, assign(socket, has_payment: false)}
+      _ -> {:noreply, put_flash(socket, :error, "Could not update payment status.")}
+    end
   end
 
   def handle_event("unenroll", _params, socket) do

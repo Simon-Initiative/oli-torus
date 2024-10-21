@@ -110,7 +110,7 @@ defmodule Oli.Delivery.Paywall do
     query =
       from(
         p in Payment,
-        where: p.enrollment_id == ^id,
+        where: p.enrollment_id == ^id and p.type != :invalidated,
         limit: 1,
         select: p
       )
