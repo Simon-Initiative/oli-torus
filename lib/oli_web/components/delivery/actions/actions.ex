@@ -44,7 +44,8 @@ defmodule OliWeb.Components.Delivery.Actions do
        has_payment: has_payment,
        current_user: current_user,
        is_admin: Accounts.has_admin_role?(current_user),
-       is_suspended?: is_suspended?
+       is_suspended?: is_suspended?,
+       payment_status_uuid: UUID.uuid4()
      )}
   end
 
@@ -90,6 +91,23 @@ defmodule OliWeb.Components.Delivery.Actions do
             <%= "Are you sure you want to unenroll #{@user.name} from the course #{@section.title}" %>
             <:confirm>Confirm</:confirm>
           </Modal.modal>
+
+          <Modal.modal
+            id="payment_status_modal"
+            class="w-5/6"
+            on_confirm={
+              JS.push("update_payment_status", target: @myself)
+              |> Modal.hide_modal("payment_status_modal")
+            }
+            on_cancel={
+              JS.push("force_reset_payment_status", target: @myself)
+              |> Modal.hide_modal("payment_status_modal")
+            }
+          >
+            <:title>Update payment status</:title>
+            <%= "Are you sure you want to change the payment status of #{@user.name} in the course #{@section.title} to NOT PAID?" %>
+            <:confirm>Confirm</:confirm>
+          </Modal.modal>
           <div class="flex flex-col sm:flex-row sm:items-end instructor_dashboard_table">
             <h4 class="torus-h4 !py-0 mr-auto dark:text-white">Actions</h4>
           </div>
@@ -126,17 +144,14 @@ defmodule OliWeb.Components.Delivery.Actions do
                 Apply Bypass Payment
               </button>
             </div>
-          <% end %>
-
-          <%= if @is_admin do %>
-            <div class="flex justify-between items-center">
+            <div :if={@has_payment} class="flex justify-between items-center">
               <div class="flex flex-col">
                 <span class="dark:text-white">Update payment status</span>
-                <span class="text-xs text-gray-400 dark:text-gray-950">
-                  Select the payment status for the user in this section.
-                </span>
               </div>
-              <form phx-change="placeholder_event" phx-target={@myself}>
+              <form
+                id={"payment_status_form_#{@payment_status_uuid}"}
+                phx-change={Modal.show_modal("payment_status_modal")}
+              >
                 <select class="torus-select pr-32" name="filter_by_role_id">
                   <option selected={true} value={:paid}>
                     Paid
@@ -147,7 +162,9 @@ defmodule OliWeb.Components.Delivery.Actions do
                 </select>
               </form>
             </div>
+          <% end %>
 
+          <%= if @is_admin do %>
             <.live_component
               id="transfer_enrollment"
               module={OliWeb.Delivery.Actions.TransferEnrollment}
@@ -165,6 +182,10 @@ defmodule OliWeb.Components.Delivery.Actions do
       <% end %>
     </div>
     """
+  end
+
+  def handle_event("force_reset_payment_status", _params, socket) do
+    {:noreply, assign(socket, payment_status_uuid: UUID.uuid4())}
   end
 
   def handle_event("unenroll", _params, socket) do
