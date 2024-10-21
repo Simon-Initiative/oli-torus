@@ -78,7 +78,7 @@ defmodule OliWeb.Components.Delivery.Actions do
           </div>
         </div>
       <% else %>
-        <div id="enrolled_student_actions">
+        <div id="enrolled_student_actions" class="flex flex-col gap-6">
           <Modal.modal
             id="unenroll_user_modal"
             class="w-5/6"
@@ -112,7 +112,7 @@ defmodule OliWeb.Components.Delivery.Actions do
             </form>
           </div>
           <%= if @section.requires_payment and @is_admin do %>
-            <div class="flex justify-between items-center px-14 py-8">
+            <div class="flex justify-between items-center">
               <div class="flex flex-col">
                 <span class="dark:text-black">Bypass payment</span>
                 <span class="text-xs text-gray-400 dark:text-gray-950">Apply bypass payment</span>
@@ -129,6 +129,25 @@ defmodule OliWeb.Components.Delivery.Actions do
           <% end %>
 
           <%= if @is_admin do %>
+            <div class="flex justify-between items-center">
+              <div class="flex flex-col">
+                <span class="dark:text-white">Update payment status</span>
+                <span class="text-xs text-gray-400 dark:text-gray-950">
+                  Select the payment status for the user in this section.
+                </span>
+              </div>
+              <form phx-change="placeholder_event" phx-target={@myself}>
+                <select class="torus-select pr-32" name="filter_by_role_id">
+                  <option selected={true} value={:paid}>
+                    Paid
+                  </option>
+                  <option selected={false} value={:unpaid}>
+                    Not Paid
+                  </option>
+                </select>
+              </form>
+            </div>
+
             <.live_component
               id="transfer_enrollment"
               module={OliWeb.Delivery.Actions.TransferEnrollment}
