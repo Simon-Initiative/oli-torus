@@ -1,9 +1,9 @@
 defmodule OliWeb.Projects.TableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
 
   def new(%SessionContext{} = ctx, sections) do
     column_specs = [
@@ -46,7 +46,7 @@ defmodule OliWeb.Projects.TableModel do
     case name do
       :title ->
         ~H"""
-        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)}>
+        <a href={~p"/workspaces/course_author/#{@project.slug}/overview"}>
           <%= @project.title %>
         </a>
         """

@@ -60,7 +60,7 @@ defmodule OliWeb.Products.ProductsTableModel do
   def render_project_column(assigns, %{base_project: base_project}, _) do
     route_path =
       case Map.get(assigns, :project_slug) do
-        "" -> Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
+        "" -> ~p"/workspaces/course_author/#{base_project.slug}/overview"
         _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
       end
 
