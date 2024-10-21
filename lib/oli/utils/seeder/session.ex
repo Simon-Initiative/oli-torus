@@ -1,6 +1,8 @@
 defmodule Oli.Utils.Seeder.Session do
   import Oli.Utils.Seeder.Utils
 
+  alias OliWeb.{AuthorAuth, UserAuth}
+
   @doc """
   Creates an author session
   """
@@ -9,7 +11,7 @@ defmodule Oli.Utils.Seeder.Session do
 
     conn =
       Plug.Test.init_test_session(conn, %{})
-      |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> AuthorAuth.log_in_author(author)
 
     %{seeds | conn: conn}
   end
@@ -22,7 +24,7 @@ defmodule Oli.Utils.Seeder.Session do
 
     conn =
       Plug.Test.init_test_session(conn, %{})
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> UserAuth.log_in_user(user)
 
     %{seeds | conn: conn}
   end

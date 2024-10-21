@@ -34,24 +34,25 @@
           <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
             Student Sign In
           </div>
-          <% provider_links = OliWeb.Pow.PowHelpers.provider_links(@conn) %>
+          <% #MER-3835 TODO %>
+          <% provider_links = [] %>
           <%= for link <- provider_links, do: raw(link) %>
           <%= if provider_links != [] do %>
             <div class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug">
               OR
             </div>
           <% end %>
-          <%= form_for @conn, ~p"/users/log_in?#{[redirect_to: ~p"/workspaces/student"]}", [as: :user], fn f -> %>
+          <%= form_for @conn, ~p"/users/log_in?#{[request_path: ~p"/workspaces/student"]}", [as: :user], fn f -> %>
             <div class="flex flex-col gap-y-2">
               <div class="w-80 h-11 m-auto form-label-group border-none">
-                <%= email_input(f, Pow.Ecto.Schema.user_id_field(@conn),
+                <%= email_input(f, :email,
                   class:
                     "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
                   placeholder: "Email",
                   required: true,
                   autofocus: true
                 ) %>
-                <%= error_tag(f, Pow.Ecto.Schema.user_id_field(@conn)) %>
+                <%= error_tag(f, :email) %>
               </div>
               <div class="w-80 h-11 m-auto form-label-group border-none">
                 <%= password_input(f, :password,

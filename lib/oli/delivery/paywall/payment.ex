@@ -60,11 +60,11 @@ defmodule Oli.Delivery.Paywall.Payment do
   end
 
   def to_human_readable(code) do
-    CrockfordBase32.encode(code) |> partition(partitions: 2)
+    Base32Crockford.encode(code) |> partition(partitions: 2)
   end
 
   def from_human_readable(human_readable_code) do
-    CrockfordBase32.decode_to_integer(human_readable_code)
+    Base32Crockford.decode(human_readable_code)
   end
 
   defp partition(binary, opts) do

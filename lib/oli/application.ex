@@ -29,8 +29,7 @@ defmodule Oli.Application do
         # Start the Oban background job processor
         {Oban, oban_config()},
 
-        # Start the Pow MnesiaCache to persist session across multiple servers
-        Oli.MnesiaClusterSupervisor,
+        # Starts the presence tracker
         OliWeb.Presence,
 
         # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day

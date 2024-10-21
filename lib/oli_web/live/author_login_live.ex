@@ -8,7 +8,7 @@ defmodule OliWeb.AuthorLoginLive do
         Sign in to account
         <:subtitle>
           Don't have an account?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/authors/register"} class="font-semibold text-brand hover:underline">
             Sign up
           </.link>
           for an account now.
@@ -21,7 +21,7 @@ defmodule OliWeb.AuthorLoginLive do
 
         <:actions>
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
+          <.link href={~p"/authors/reset_password"} class="text-sm font-semibold">
             Forgot your password?
           </.link>
         </:actions>
@@ -36,6 +36,7 @@ defmodule OliWeb.AuthorLoginLive do
   end
 
   def mount(_params, _session, socket) do
+    #MER-3835 TODO fix warning
     email = live_flash(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "author")
     {:ok, assign(socket, form: form), temporary_assigns: [form: form]}

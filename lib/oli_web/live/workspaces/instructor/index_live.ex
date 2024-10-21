@@ -43,12 +43,8 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
     app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
     secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
 
-    provider_links =
-      %Plug.Conn{}
-      |> Map.replace(:private, app_conf)
-      |> Map.replace(:secret_key_base, secret_key_base)
-      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-      |> OliWeb.Pow.PowHelpers.provider_links()
+    # MER-3835 TODO
+    provider_links = []
 
     {:ok,
      assign(socket,
@@ -159,17 +155,17 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             >
               OR
             </div>
-            <%= form_for :user, ~p"/users/log_in?#{[redirect_to: ~p"/workspaces/instructor"]}", [as: :user], fn f -> %>
+            <%= form_for :user, ~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}", [as: :user], fn f -> %>
               <div class="flex flex-col gap-y-2">
                 <div class="w-80 h-11 m-auto form-label-group border-none">
-                  <%= email_input(f, Pow.Ecto.Schema.user_id_field(@socket),
+                  <%= email_input(f, :email,
                     class:
                       "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
                     placeholder: "Email",
                     required: true,
                     autofocus: true
                   ) %>
-                  <%= error_tag(f, Pow.Ecto.Schema.user_id_field(@socket)) %>
+                  <%= error_tag(f, :email) %>
                 </div>
                 <div class="w-80 h-11 m-auto form-label-group border-none">
                   <%= password_input(f, :password,

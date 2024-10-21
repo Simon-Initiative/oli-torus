@@ -22,7 +22,6 @@ defmodule Oli.Accounts do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.AccountLookupCache
-  alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.DataProviders.EctoProvider
 
@@ -97,16 +96,8 @@ defmodule Oli.Accounts do
       [%User{id: 3}, %User{id: 4}]
   """
   def bulk_invite_users(user_emails, inviter_user) do
-    now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-    users =
-      Enum.map(user_emails, fn email ->
-        %{changes: changes} = User.invite_changeset(%User{}, inviter_user, %{email: email})
-
-        Enum.into(changes, %{inserted_at: now, updated_at: now})
-      end)
-
-    Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
+    #MER-3835 TODO
+    throw "NOT IMPLEMENTED"
   end
 
   def browse_authors(
@@ -233,20 +224,6 @@ defmodule Oli.Accounts do
       preload: [platform_roles: platform_roles, author: author]
     )
     |> Repo.one()
-  end
-
-  @doc """
-  Creates a user.
-  ## Examples
-      iex> create_user(%{field: value})
-      {:ok, %User{}}
-      iex> create_user(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_user(attrs \\ %{}) do
-    %User{}
-    |> User.changeset(attrs)
-    |> Repo.insert()
   end
 
   @doc """
@@ -881,8 +858,8 @@ defmodule Oli.Accounts do
       false
   """
   def user_confirmation_pending?(user) do
-    EmailConfirmationContext.current_email_unconfirmed?(user, []) or
-      EmailConfirmationContext.pending_email_change?(user, [])
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
   end
 
   @doc """

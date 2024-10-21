@@ -12,7 +12,6 @@ defmodule OliWeb.EnsureUserNotLockedPlug do
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.Controller
   alias Plug.Conn
-  alias Pow.Plug
 
   @doc false
   @spec init(any()) :: any()
@@ -22,7 +21,7 @@ defmodule OliWeb.EnsureUserNotLockedPlug do
   @spec call(Conn.t(), any()) :: Conn.t()
   def call(conn, _opts) do
     conn
-    |> Plug.current_user()
+    |> Kernel.get_in([:assigns, :current_user])
     |> locked?()
     |> maybe_halt(conn)
   end
@@ -31,18 +30,8 @@ defmodule OliWeb.EnsureUserNotLockedPlug do
   defp locked?(_user), do: false
 
   defp maybe_halt(true, conn) do
-    conn
-    |> Plug.delete()
-    |> PowPersistentSession.Plug.delete()
-    |> Controller.put_flash(:error, "Sorry, your account is locked. Please contact support.")
-    |> then(fn conn ->
-      if conn.private.pow_config |> Keyword.get(:user) == Oli.Accounts.Author do
-        Controller.redirect(conn, to: Routes.authoring_pow_session_path(conn, :new))
-      else
-        Controller.redirect(conn, to: Routes.pow_session_path(conn, :new))
-      end
-    end)
-    |> halt()
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
   end
 
   defp maybe_halt(_any, conn), do: conn

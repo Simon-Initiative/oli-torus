@@ -10,6 +10,7 @@ defmodule OliWeb.CognitoController do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias OliWeb.{UserAuth, AuthorAuth}
 
   def index(
         conn,
@@ -18,8 +19,8 @@ defmodule OliWeb.CognitoController do
     case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       {:ok, user, author} ->
         conn
-        |> create_pow_user(:user, user)
-        |> create_pow_user(:author, author)
+        |> UserAuth.log_in_user(user)
+        |> AuthorAuth.log_in_author(author)
         |> redirect(to: ~p"/workspaces/instructor")
 
       {:error, %Ecto.Changeset{}} ->
@@ -38,8 +39,8 @@ defmodule OliWeb.CognitoController do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, user, author} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       conn
-      |> create_pow_user(:user, user)
-      |> create_pow_user(:author, author)
+      |> UserAuth.log_in_user(user)
+      |> AuthorAuth.log_in_author(author)
       |> create_or_prompt(user, anchor)
     else
       nil ->
@@ -65,7 +66,7 @@ defmodule OliWeb.CognitoController do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id) do
       conn
-      |> create_pow_user(:author, author)
+      |> AuthorAuth.log_in_author(author)
       |> clone_or_prompt(author, anchor, get_error_url(params))
     else
       nil ->

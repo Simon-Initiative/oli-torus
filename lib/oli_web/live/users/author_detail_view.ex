@@ -18,7 +18,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias OliWeb.Pow.AuthorContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
   alias OliWeb.Common.SessionContext
@@ -219,7 +218,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
         socket
       ) do
     author = Accounts.get_author!(id)
-    AuthorContext.unlock(author)
+
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
 
     {:noreply,
      socket
@@ -281,7 +282,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
         socket
       ) do
     author = Accounts.get_author!(id)
-    AuthorContext.lock(author)
+
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
 
     {:noreply,
      socket

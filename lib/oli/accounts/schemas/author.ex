@@ -202,8 +202,7 @@ defmodule Oli.Accounts.Author do
       :picture,
       :system_role_id,
       :locked_at,
-      :email_confirmed_at,
-      :email_confirmation_token
+      :confirmed_at,
     ])
     |> cast_embed(:preferences)
     |> default_system_role()

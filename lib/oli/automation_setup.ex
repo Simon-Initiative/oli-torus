@@ -225,7 +225,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.create_user(%{
+      Oli.Accounts.register_independent_user(%{
         email: generate_email("learner"),
         given_name: "Test",
         family_name: "Learner",
@@ -255,7 +255,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.create_user(%{
+      Oli.Accounts.register_independent_user(%{
         email: generate_email("educator"),
         given_name: "Test",
         family_name: "Educator",
@@ -263,7 +263,7 @@ defmodule Oli.AutomationSetup do
         password_confirmation: password,
         age_verified: true,
         email_verified: true,
-        email_confirmed_at: Timex.now(),
+        confirmed_at: Timex.now(),
         research_opt_out: true,
         can_create_sections: true,
         author_id: if(is_nil(author), do: nil, else: author.id)
@@ -280,14 +280,14 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.create_author(%{
+      Oli.Accounts.register_author(%{
         email: generate_email("author"),
         given_name: "Test",
         family_name: "Author",
         password: password,
         password_confirmation: password,
         system_role_id: Oli.Accounts.SystemRole.role_id().author,
-        email_confirmed_at: Timex.now()
+        confirmed_at: Timex.now()
       })
 
     {:ok, {user, password}}
@@ -365,18 +365,8 @@ defmodule Oli.AutomationSetup do
   end
 
   defp validate_user(email, password, user_type, expected_name) do
-    config = OliWeb.Pow.PowHelpers.get_pow_config(user_type)
-
-    case Pow.Operations.get_by([{:name, expected_name}, {:email, email}], config) do
-      nil ->
-        {:error, "User not found"}
-
-      user ->
-        case user.__struct__.verify_password(user, password) do
-          true -> {:ok, user}
-          false -> {:error, "Credentials didn't match"}
-        end
-    end
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
   end
 
   defp generate_email(prefix) do

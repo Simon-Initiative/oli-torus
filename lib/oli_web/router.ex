@@ -1,12 +1,6 @@
 defmodule OliWeb.Router do
   use OliWeb, :router
 
-  use Pow.Phoenix.Router
-  use PowAssent.Phoenix.Router
-
-  use Pow.Extension.Phoenix.Router,
-    extensions: [PowResetPassword, PowEmailConfirmation]
-
   import Phoenix.LiveDashboard.Router
   import OliWeb.UserAuth
   import OliWeb.AuthorAuth
@@ -75,28 +69,11 @@ defmodule OliWeb.Router do
   # Extend the base pipelines specific routes
 
   pipeline :authoring do
-    ## MER-3835 TODO: REMOVE
-    # plug(Oli.Plugs.SetDefaultPow, :author)
-
-    # plug(PowPersistentSession.Plug.Cookie,
-    #   persistent_session_cookie_key: @author_persistent_session_cookie_key
-    # )
-
-    # plug(Oli.Plugs.SetCurrentUser)
-
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
   end
 
   pipeline :delivery do
-    ## MER-3835 TODO: REMOVE
-    # plug(Oli.Plugs.SetDefaultPow, :user)
-
-    # plug(PowPersistentSession.Plug.Cookie,
-    #   persistent_session_cookie_key: @user_persistent_session_cookie_key
-    # )
-
-    # plug(Oli.Plugs.SetCurrentUser)
     plug(Oli.Plugs.SetVrAgentValue)
   end
 
@@ -153,16 +130,6 @@ defmodule OliWeb.Router do
     plug(:authoring)
 
     plug(:require_authenticated_author)
-
-    # plug(PowAssent.Plug.Reauthorization,
-    #   handler: PowAssent.Phoenix.ReauthorizationPlugHandler
-    # )
-
-    # plug(OliWeb.Plugs.RequireAuthenticated,
-    #   error_handler: Pow.Phoenix.PlugErrorHandler
-    # )
-
-    # plug(OliWeb.EnsureUserNotLockedPlug)
   end
 
   # Ensure that the user logged in is an admin user
@@ -177,14 +144,6 @@ defmodule OliWeb.Router do
 
   pipeline :authorize_project do
     plug(Oli.Plugs.AuthorizeProject)
-  end
-
-  pipeline :registration_captcha do
-    plug(Oli.Plugs.RegistrationCaptcha)
-  end
-
-  pipeline :pow_email_layout do
-    plug(:put_pow_mailer_layout, {OliWeb.LayoutView, :email})
   end
 
   # For independent section creation/management functionality
@@ -224,10 +183,6 @@ defmodule OliWeb.Router do
   pipeline :restrict_admin_access do
     plug(Oli.Plugs.RestrictAdminAccess)
   end
-
-  ### HELPERS ###
-
-  defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layouts, layout)
 
   ### ROUTES ###
 
@@ -316,48 +271,21 @@ defmodule OliWeb.Router do
     )
 
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
-
-    pow_assent_authorization_post_callback_routes()
   end
 
   scope "/", OliWeb do
     pipe_through([:browser, :delivery_protected])
-
-    # keep a session active by periodically calling this endpoint
-    get("/keep-alive", StaticPageController, :keep_alive)
 
     get("/research_consent", DeliveryController, :show_research_consent)
     post("/research_consent", DeliveryController, :research_consent)
   end
 
   scope "/authoring", as: :authoring do
-    pipe_through([:browser, :authoring, :registration_captcha, :pow_email_layout])
-
-    pow_routes()
-    pow_assent_routes()
-    pow_extension_routes()
+    pipe_through([:browser, :authoring])
 
     # handle linking accounts when using a social account provider to login
     get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
     get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
-  end
-
-  scope "/authoring" do
-    pipe_through([:skip_csrf_protection, :authoring])
-
-    pow_assent_authorization_post_callback_routes()
-  end
-
-  scope "/authoring", PowInvitation.Phoenix, as: :pow_invitation do
-    pipe_through([:browser, :authoring, :registration_captcha])
-
-    resources("/invitations", InvitationController, only: [:edit, :update])
-  end
-
-  scope "/delivery", PowInvitation.Phoenix, as: :delivery_pow_invitation do
-    pipe_through([:browser, :delivery, :registration_captcha])
-
-    resources("/invitations", InvitationController, only: [:edit, :update])
   end
 
   # open access routes
@@ -404,9 +332,6 @@ defmodule OliWeb.Router do
   # authorization protected routes
   scope "/authoring", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace])
-
-    # keep a session active by periodically calling this endpoint
-    get("/keep-alive", StaticPageController, :keep_alive, as: :author_keep_alive)
 
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
@@ -931,8 +856,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
-      :delivery_layout,
-      :pow_email_layout
+      :delivery_layout
     ])
 
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
@@ -948,7 +872,7 @@ defmodule OliWeb.Router do
 
   ### Sections - Payments
   scope "/sections", OliWeb do
-    pipe_through([:browser, :require_section, :delivery_protected, :pow_email_layout])
+    pipe_through([:browser, :require_section, :delivery_protected])
 
     get("/:section_slug/payment", PaymentController, :guard)
     get("/:section_slug/payment/new", PaymentController, :make_payment)
@@ -959,7 +883,7 @@ defmodule OliWeb.Router do
   ### Sections - Student Dashboard
 
   scope "/sections/:section_slug/student_dashboard/:student_id", OliWeb do
-    pipe_through([:browser, :delivery_protected, :pow_email_layout])
+    pipe_through([:browser, :delivery_protected])
 
     live_session :student_dashboard,
       on_mount: [
@@ -990,7 +914,7 @@ defmodule OliWeb.Router do
   ### Sections - Instructor Dashboard
   #### preview routes must come before the non-preview routes to properly match
   scope "/sections/:section_slug/instructor_dashboard/preview", OliWeb do
-    pipe_through([:browser, :delivery, :delivery_protected, :pow_email_layout])
+    pipe_through([:browser, :delivery, :delivery_protected])
 
     live_session :instructor_dashboard_preview,
       on_mount: [
@@ -1006,7 +930,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/sections/:section_slug/instructor_dashboard", OliWeb do
-    pipe_through([:browser, :delivery_protected, :pow_email_layout])
+    pipe_through([:browser, :delivery_protected])
 
     get("/downloads/progress/:container_id", MetricsController, :download_container_progress)
     get("/downloads/course_content", DeliveryController, :download_course_content_info)
@@ -1047,8 +971,7 @@ defmodule OliWeb.Router do
       :delivery_protected,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
-      :force_required_survey,
-      :pow_email_layout
+      :force_required_survey
     ])
 
     ### Student Course Delivery
@@ -1136,8 +1059,7 @@ defmodule OliWeb.Router do
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
-      :force_required_survey,
-      :pow_email_layout
+      :force_required_survey
     ])
 
     scope "/prologue/:revision_slug" do
@@ -1198,8 +1120,7 @@ defmodule OliWeb.Router do
       :maybe_gated_resource,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
-      :force_required_survey,
-      :pow_email_layout
+      :force_required_survey
     ])
 
     scope "/lesson/:revision_slug/attempt/:attempt_guid/review" do
@@ -1227,8 +1148,7 @@ defmodule OliWeb.Router do
       :require_section,
       :authorize_section_preview,
       :delivery_protected,
-      :delivery_layout,
-      :pow_email_layout
+      :delivery_layout
     ])
 
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
@@ -1268,8 +1188,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected,
-      :pow_email_layout
+      :delivery_protected
     ])
 
     get("/grades/export", PageDeliveryController, :export_gradebook)
@@ -1363,8 +1282,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
-      :delivery_protected,
-      :pow_email_layout
+      :delivery_protected
     ])
 
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
@@ -1376,8 +1294,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
-      :delivery_layout,
-      :pow_email_layout
+      :delivery_layout
     ])
 
     get("/:section_slug/enroll", DeliveryController, :show_enroll)
@@ -1388,13 +1305,13 @@ defmodule OliWeb.Router do
 
   # Delivery Auth (Signin)
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery, :delivery_layout, :pow_email_layout])
+    pipe_through([:browser, :delivery, :delivery_layout])
 
     get("/create_account", DeliveryController, :create_account)
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :maybe_load_lti_params, :pow_email_layout])
+    pipe_through([:browser, :delivery_protected, :maybe_load_lti_params])
 
     get("/", DeliveryController, :index)
 
@@ -1403,7 +1320,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
+    pipe_through([:browser, :delivery_protected, :require_lti_params])
 
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end
@@ -1430,8 +1347,7 @@ defmodule OliWeb.Router do
       :browser,
       :authoring_protected,
       :workspace,
-      :admin,
-      :pow_email_layout
+      :admin
     ])
 
     # General
@@ -1525,30 +1441,6 @@ defmodule OliWeb.Router do
       resources("/registrations", RegistrationController, except: [:index]) do
         resources("/deployments", DeploymentController, except: [:index, :show])
       end
-
-      post(
-        "/accounts/resend_user_confirmation_link",
-        PowController,
-        :resend_user_confirmation_link
-      )
-
-      post(
-        "/accounts/resend_author_confirmation_link",
-        PowController,
-        :resend_author_confirmation_link
-      )
-
-      post(
-        "/accounts/send_user_password_reset_link",
-        PowController,
-        :send_user_password_reset_link
-      )
-
-      post(
-        "/accounts/send_author_password_reset_link",
-        PowController,
-        :send_author_password_reset_link
-      )
     end
 
     # Routes rejected for account and content admin

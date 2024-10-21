@@ -30,7 +30,7 @@ defmodule OliWeb.AuthorAuth do
     token = Accounts.generate_author_session_token(author)
 
     author_return_to =
-      params["redirect_to"] || get_session(conn, :author_return_to) || signed_in_path(conn)
+      params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
 
     conn
     |> renew_session()

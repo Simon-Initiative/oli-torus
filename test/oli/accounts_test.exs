@@ -12,6 +12,12 @@ defmodule Oli.AccountsTest do
   alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.ContextRoles
 
+  def user_fixture(attrs \\ %{}) do
+    %User{}
+    |> User.noauth_changeset(attrs)
+    |> Repo.insert()
+  end
+
   describe "authors" do
     test "system role defaults to author", %{} do
       {:ok, author} =
@@ -216,17 +222,13 @@ defmodule Oli.AccountsTest do
         @valid_attrs
         |> Map.put(:author_id, author.id)
 
-      {:ok, user} = valid_attrs |> Accounts.create_user()
+      {:ok, user} = valid_attrs |> user_fixture()
 
       {:ok, %{user: user, author: author, valid_attrs: valid_attrs}}
     end
 
     test "get_user!/1 returns the user with given id", %{user: user} do
       assert Accounts.get_user!(user.id).email == user.email
-    end
-
-    test "create_user/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
     end
 
     test "verification_changeset/2 runs age verification check when enabled" do
@@ -681,6 +683,8 @@ defmodule Oli.AccountsTest do
       assert user.email == existing_user.email
       # Ensure the existing linked author is preserved
       assert user.author_id == author.id
+    end
+  end
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do

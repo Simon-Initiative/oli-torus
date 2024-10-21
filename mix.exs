@@ -194,8 +194,6 @@ defmodule Oli.MixProject do
       {:plug_cowboy, "~> 2.1"},
       {:poison, "~> 5.0"},
       {:postgrex, ">= 0.0.0"},
-      {:pow, "~> 1.0.31"},
-      {:pow_assent, "~> 0.4.17"},
       {:react_phoenix, "~> 1.3"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},

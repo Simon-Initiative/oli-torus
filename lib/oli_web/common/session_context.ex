@@ -24,7 +24,6 @@ defmodule OliWeb.Common.SessionContext do
   """
 
   alias Oli.Accounts.{User, Author}
-  alias Oli.AccountLookupCache
   alias OliWeb.Common.FormatDateTime
 
   @enforce_keys [
@@ -85,7 +84,7 @@ defmodule OliWeb.Common.SessionContext do
   given as options (previously loaded by set_user plug), they will be used instead of looking up
   the user/author from the session map and making a cache lookup/database call.
   """
-  def init(%Phoenix.LiveView.Socket{assigns: assigns} = _socket, %{} = session, opts \\ []) do
+  def init(%Phoenix.LiveView.Socket{assigns: assigns} = _socket, %{} = session, _opts \\ []) do
     browser_timezone = Map.get(session, "browser_timezone")
 
     author = Map.get(assigns, :current_author)

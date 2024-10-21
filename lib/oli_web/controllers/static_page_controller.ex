@@ -4,14 +4,13 @@ defmodule OliWeb.StaticPageController do
   import Oli.Branding
 
   alias Oli.Accounts
-  alias OliWeb.Pow.PowHelpers
 
   plug Oli.Plugs.RestrictAdminAccess when action in [:index]
 
   def index(conn, _params) do
     if conn.assigns.current_user,
-      do: render(PowHelpers.use_pow_config(conn, :user), "index_logged_in.html"),
-      else: render(PowHelpers.use_pow_config(conn, :user), "index.html")
+      do: render(conn, "index_logged_in.html"),
+      else: render(conn, "index.html")
   end
 
   def unauthorized(conn, _params) do
@@ -20,11 +19,6 @@ defmodule OliWeb.StaticPageController do
 
   def not_found(conn, _params) do
     render(conn, "not_found.html")
-  end
-
-  def keep_alive(conn, _params) do
-    conn
-    |> send_resp(200, "Ok")
   end
 
   def timezone(conn, %{"browser_timezone" => browser_timezone}) do

@@ -19,7 +19,6 @@ defmodule OliWeb.Users.UsersDetailView do
 
   alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias OliWeb.Pow.UserContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
 
@@ -232,7 +231,10 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("generate_reset_password_link", params, socket) do
-    password_reset_link = OliWeb.PowController.create_user_password_reset_link(params)
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
+    password_reset_link = ~p"/"
+
     socket = assign(socket, password_reset_link: password_reset_link)
     {:noreply, socket}
   end
@@ -280,7 +282,9 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("lock_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
-    UserContext.lock(user)
+
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
 
     {:noreply,
      socket
@@ -305,7 +309,9 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("unlock_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
-    UserContext.unlock(user)
+
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
 
     {:noreply,
      socket

@@ -31,12 +31,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
     app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
     secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
 
-    provider_links =
-      %Plug.Conn{}
-      |> Map.replace(:private, app_conf)
-      |> Map.replace(:secret_key_base, secret_key_base)
-      |> OliWeb.Pow.PowHelpers.use_pow_config(:author)
-      |> OliWeb.Pow.PowHelpers.provider_links()
+    # MER-3835 TODO
+    provider_links = []
 
     {:ok,
      assign(socket,
@@ -221,17 +217,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
             >
               OR
             </div>
-            <%= form_for :user, Routes.authoring_pow_session_path(OliWeb.Endpoint, :create, request_path: ~p"/workspaces/course_author"), [as: :user], fn f -> %>
+            <%= form_for :user, ~p"/authors/log_in?#{[request_path: ~p"/workspaces/course_author"]}", [as: :user], fn f -> %>
               <div class="flex flex-col gap-y-2">
                 <div class="w-80 h-11 m-auto form-label-group border-none">
-                  <%= email_input(f, Pow.Ecto.Schema.user_id_field(@socket),
+                  <%= email_input(f, :email,
                     class:
                       "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
                     placeholder: "Email",
                     required: true,
                     autofocus: true
                   ) %>
-                  <%= error_tag(f, Pow.Ecto.Schema.user_id_field(@socket)) %>
+                  <%= error_tag(f, :email) %>
                 </div>
                 <div class="w-80 h-11 m-auto form-label-group border-none">
                   <%= password_input(f, :password,
@@ -424,16 +420,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
 
   defp create_authoring_account_path(nil),
     do:
-      Routes.authoring_pow_registration_path(OliWeb.Endpoint, :new,
-        request_path: ~p"/workspaces/course_author"
-      )
+      ~p"/authors/register?#{[request_path: ~p"/workspaces/course_author"]}"
 
   defp create_authoring_account_path(_user),
-    do:
-      Routes.authoring_pow_registration_path(OliWeb.Endpoint, :new,
-        link_to_user_account?: "true",
-        request_path: ~p"/workspaces/course_author"
-      )
+    do: ~p"/authors/register?#{[link_to_user_account?: "true", request_path: ~p"/workspaces/course_author"]}"
 
   def patch_with(socket, changes) do
     %{table_model: table_model, params: params, show_all: show_all, show_deleted: show_deleted} =

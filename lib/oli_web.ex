@@ -25,7 +25,6 @@ defmodule OliWeb do
 
       import Plug.Conn
       import OliWeb.Gettext
-      import OliWeb.Pow.PowHelpers
       import Phoenix.LiveView.Controller
 
       alias OliWeb.Router.Helpers, as: Routes

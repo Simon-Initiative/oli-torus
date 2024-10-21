@@ -181,7 +181,7 @@ defmodule OliWeb.LtiController do
                 "default" => get_course_navigation_default(params),
                 "windowTarget" => "_blank"
               }
-              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin 
+              ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
               # assignment_selection when we support deep linking
               # %{
               #   "placement" => "assignment_selection",
@@ -421,7 +421,7 @@ defmodule OliWeb.LtiController do
 
                 # sign current user in and redirect to home page
                 conn
-                |> create_pow_user(:user, user)
+                |> UserAuth.log_in_user(user)
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end
 

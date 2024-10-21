@@ -1,7 +1,6 @@
 defmodule OliWeb.Workspaces.AccountDetailsLive do
   use OliWeb, :live_view
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias OliWeb.Common.Properties.{Groups, Group}
@@ -42,11 +41,9 @@ defmodule OliWeb.Workspaces.AccountDetailsLive do
               <%= if Enum.count(providers_for(@current_author)) > 0 do %>
                 <h4 class="mt-3">Credentials Managed By</h4>
                 <div :for={provider <- providers_for(@current_author)} class="my-2">
-                  <span class={"provider provider-#{OliWeb.Pow.PowHelpers.provider_class(provider)}"}>
-                    <%= OliWeb.Pow.PowHelpers.provider_icon(provider) %> <%= OliWeb.Pow.PowHelpers.provider_name(
-                      provider
-                    ) %>
-                  </span>
+                  <%
+                    # MER-3835 TODO
+                  %>
                 </div>
               <% end %>
             </div>
@@ -54,7 +51,7 @@ defmodule OliWeb.Workspaces.AccountDetailsLive do
           <div class="grid grid-cols-12 my-4">
             <div class="col-span-12">
               <%= link("Change Account Details",
-                to: Routes.authoring_pow_registration_path(OliWeb.Endpoint, :edit),
+                to: ~p"/authors/settings",
                 class: "btn btn-outline-primary"
               ) %>
             </div>
@@ -125,10 +122,7 @@ defmodule OliWeb.Workspaces.AccountDetailsLive do
   end
 
   defp providers_for(%Author{} = author) do
-    config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
-
-    author
-    |> PowAssent.Operations.all(config)
-    |> Enum.map(&String.to_existing_atom(&1.provider))
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
   end
 end

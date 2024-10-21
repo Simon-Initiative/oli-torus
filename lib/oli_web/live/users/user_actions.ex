@@ -2,7 +2,6 @@ defmodule OliWeb.Users.Actions do
   use OliWeb, :html
 
   alias Oli.Accounts
-  alias OliWeb.Router.Helpers, as: Routes
 
   attr(:for_author, :boolean, default: false)
   attr(:user, :any, required: true)
@@ -16,8 +15,10 @@ defmodule OliWeb.Users.Actions do
         false -> {:resend_user_confirmation_link, :send_user_password_reset_link}
       end
 
-    resend_confirmation_link_path = Routes.pow_path(OliWeb.Endpoint, resend)
-    reset_password_link_path = Routes.pow_path(OliWeb.Endpoint, reset)
+    # MER-3835 TODO
+    throw "NOT IMPLEMENTED"
+    resend_confirmation_link_path = ~p"/"
+    reset_password_link_path = ~p"/"
 
     assigns =
       assign(assigns,

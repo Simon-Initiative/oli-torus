@@ -30,7 +30,7 @@ defmodule OliWeb.UserAuth do
     token = Accounts.generate_user_session_token(user)
 
     user_return_to =
-      params["redirect_to"] || get_session(conn, :user_return_to) || signed_in_path(conn)
+      params["request_path"] || get_session(conn, :user_return_to) || signed_in_path(conn)
 
     conn
     |> renew_session()
