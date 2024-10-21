@@ -14,7 +14,7 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
   @threshold Application.compile_env(:oli, OliWeb.Endpoint, [])
              |> Keyword.get(:http, [])
              |> Keyword.get(:protocol_options, [])
-             |> Keyword.get(:max_header_value_length, 4096)
+             |> Keyword.get(:max_header_value_length)
 
   def init(opts) do
     # Allow passing a custom capture module for testing
