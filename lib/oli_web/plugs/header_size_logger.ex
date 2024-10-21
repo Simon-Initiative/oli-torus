@@ -13,11 +13,6 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
   import Plug.Conn
   require Logger
 
-  @threshold Application.compile_env(:oli, OliWeb.Endpoint, [])
-             |> Keyword.get(:http, [])
-             |> Keyword.get(:protocol_options, [])
-             |> Keyword.get(:max_header_value_length)
-
   def init(opts) do
     # Allow passing a custom capture module for testing
     Keyword.put_new(opts, :capture_module, Oli.Utils.Appsignal)
@@ -35,7 +30,7 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
         if opts[:type] == :request, do: conn.req_headers, else: conn.resp_headers
       )
 
-    if header_size > @threshold, do: log_to_analytics(header_size, conn, opts)
+    if header_size > max_header_threshold(), do: log_to_analytics(header_size, conn, opts)
 
     conn
   end
@@ -54,11 +49,18 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
     }
 
     message =
-      "#{request_type} headers size (#{size} bytes) exceeds the threshold of #{@threshold} bytes."
+      "#{request_type} headers size (#{size} bytes) exceeds the threshold of #{max_header_threshold()} bytes."
 
     capture_module = opts[:capture_module]
     capture_module.capture_error("#{message}: #{inspect(additional_data)}")
 
     Logger.warning("#{message}: #{inspect(additional_data)}")
+  end
+
+  defp max_header_threshold() do
+    Application.get_env(:oli, OliWeb.Endpoint, [])
+    |> Keyword.get(:http, [])
+    |> Keyword.get(:protocol_options, [])
+    |> Keyword.get(:max_header_value_length)
   end
 end
