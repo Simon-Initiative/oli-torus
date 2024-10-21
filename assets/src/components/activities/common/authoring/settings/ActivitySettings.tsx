@@ -97,15 +97,16 @@ export const ActivitySettings: React.FC<{
 }> = ({ settings }) => {
   const { editMode } = useAuthoringElementContext();
 
+  const settingsToShow = settings.filter((s) => !!s);
+  if (settingsToShow.length === 0) return null;
+
   return (
     <Menu>
-      {settings
-        .filter((s) => !!s)
-        .map(({ isEnabled, onToggle, label }: Setting, i) => (
-          <Setting key={i} isEnabled={isEnabled} onToggle={onToggle} editMode={editMode}>
-            {label}
-          </Setting>
-        ))}
+      {settingsToShow.map(({ isEnabled, onToggle, label }: Setting, i) => (
+        <Setting key={i} isEnabled={isEnabled} onToggle={onToggle} editMode={editMode}>
+          {label}
+        </Setting>
+      ))}
     </Menu>
   );
 };
