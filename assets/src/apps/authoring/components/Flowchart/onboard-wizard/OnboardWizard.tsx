@@ -104,13 +104,13 @@ const Step3Advanced: React.FC<{
       <div className="wizard-footer">
         <div className="wizard-step">Step 3/3</div>
         <div className="wizard-buttons">
-          <Button onClick={onBack} variant="link">
-            <LeftArrow />
+          <Button onClick={onBack}>
+            <LeftArrow stroke="#FFFFFF" />
             Back
           </Button>
-          <Button onClick={onNext} variant="link">
+          <Button onClick={onNext}>
             Next
-            <RightArrow />
+            <RightArrow stroke="#FFFFFF" />
           </Button>
         </div>
       </div>
@@ -153,13 +153,13 @@ const Step3: React.FC<{
       <div className="wizard-footer">
         <div className="wizard-step">Step 3/3</div>
         <div className="wizard-buttons">
-          <Button onClick={onBack} variant="link">
-            <LeftArrow />
+          <Button onClick={onBack}>
+            <LeftArrow stroke="#FFFFFF" />
             Back
           </Button>
-          <Button disabled={selected === 0} onClick={onNext} variant="link">
+          <Button disabled={selected === 0} onClick={onNext}>
             Next
-            <RightArrow />
+            <RightArrow stroke={selected === 0 ? '#737373' : '#FFFFFF'} />
           </Button>
         </div>
       </div>
@@ -203,13 +203,13 @@ const Step2: React.FC<{
       <div className="wizard-footer">
         <div className="wizard-step">Step 2/3</div>
         <div className="wizard-buttons">
-          <Button onClick={onBack} variant="link">
-            <LeftArrow />
+          <Button onClick={onBack}>
+            <LeftArrow stroke="#FFFFFF" />
             Back
           </Button>
-          <Button disabled={selected === 0} onClick={onNext} variant="link">
+          <Button disabled={selected === 0} onClick={onNext}>
             Next
-            <RightArrow />
+            <RightArrow stroke={selected === 0 ? '#737373' : '#FFFFFF'} />
           </Button>
         </div>
       </div>
@@ -231,15 +231,17 @@ const Step1: React.FC<{
           onChange={(e) => setTitle(e.target.value)}
           type="text"
           className="title-input"
-          placeholder="Enter title..."
+          placeholder="Add lesson title..."
         />
       </div>
       <div className="wizard-footer">
         <div className="wizard-step">Step 1/3</div>
-        <Button disabled={title.length === 0} onClick={onNext} variant="link">
-          Next
-          <RightArrow />
-        </Button>
+        <div className="wizard-buttons">
+          <Button disabled={title.length === 0} onClick={onNext}>
+            Next
+            <RightArrow stroke={title.length === 0 ? '#737373' : '#FFFFFF'} />
+          </Button>
+        </div>
       </div>
     </div>
   );

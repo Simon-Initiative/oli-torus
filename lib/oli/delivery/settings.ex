@@ -32,6 +32,24 @@ defmodule Oli.Delivery.Settings do
     combine(resolved_revision, section_resource, nil)
   end
 
+  @doc """
+  For a ResourceAttempt, return the combined settings for that page, section, and user. This is the settings that will
+  be used for the user when they are viewing the page. This takes into account any
+  instructor customizations for the section, as well as any student exceptions for the
+  user.
+  """
+  def get_combined_settings(%ResourceAttempt{} = resource_attempt) do
+    %{revision: resolved_revision, resource_access: %{user_id: user_id, section_id: section_id}} =
+      Repo.preload(resource_attempt, [:revision, :resource_access])
+
+    section_resource =
+      Oli.Delivery.Sections.get_section_resource(section_id, resolved_revision.resource_id)
+
+    student_exception = get_student_exception(resolved_revision.resource_id, section_id, user_id)
+
+    combine(resolved_revision, section_resource, student_exception)
+  end
+
   def get_combined_settings_for_all_resources(section_id, user_id, resource_ids \\ nil) do
     section = Oli.Delivery.Sections.get_section!(section_id)
 

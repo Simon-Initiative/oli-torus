@@ -51,7 +51,7 @@ defmodule OliWeb.Users.Actions do
         </div>
 
         <p :if={@password_reset_link not in [nil, ""]} class="mb-1">
-          This link will expired in 24 hours.
+          This link will expire in 24 hours.
         </p>
         <button
           phx-click="generate_reset_password_link"

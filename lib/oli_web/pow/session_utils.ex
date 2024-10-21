@@ -7,7 +7,14 @@ defmodule OliWeb.Pow.SessionUtils do
   It is designed to be flexible for future additions related to session management.
   """
 
-  @shared_session_data_to_delete [:dismissed_messages]
+  @shared_session_data_to_delete [
+    :dismissed_messages,
+    :request_path,
+    :section_slug,
+    :is_community_admin,
+    :is_system_admin,
+    :datashop_session_id
+  ]
 
   import OliWeb.Pow.PowHelpers
   import Plug.Conn, only: [delete_session: 2]
@@ -62,5 +69,15 @@ defmodule OliWeb.Pow.SessionUtils do
     AccountLookupCache.delete("#{type}_#{id}")
 
     conn
+  end
+
+  @doc """
+  Calculates the size of the given headers in bytes.
+  """
+  def calculate_headers_size(headers) do
+    Enum.reduce(headers, 0, fn {key, value}, acc ->
+      # +4 for ": " and "\r\n"
+      acc + byte_size(key) + byte_size(value) + 4
+    end)
   end
 end

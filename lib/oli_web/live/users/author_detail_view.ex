@@ -43,7 +43,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token, "current_author_id" => author_id} = session,
+        %{"current_author_id" => author_id} = session,
         socket
       ) do
     author = Accounts.get_author(author_id)
@@ -58,11 +58,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
            breadcrumbs: set_breadcrumbs(user),
            author: author,
            user: user,
-           csrf_token: csrf_token,
+           csrf_token: Phoenix.Controller.get_csrf_token(),
            changeset: author_changeset(user),
            disabled_edit: true,
            ctx: SessionContext.init(socket, session),
-           authors: SystemRole.role_id()
+           authors: SystemRole.role_id(),
+           password_reset_link: ""
          )}
     end
   end
@@ -158,7 +159,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
-            <Actions.render user={@user} csrf_token={@csrf_token} for_author={true} />
+            <Actions.render
+              user={@user}
+              csrf_token={@csrf_token}
+              for_author={true}
+              password_reset_link={@password_reset_link}
+            />
           <% end %>
         </Group.render>
       </Groups.render>
@@ -211,6 +217,13 @@ defmodule OliWeb.Users.AuthorsDetailView do
     end
 
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event("generate_reset_password_link", params, socket) do
+    {:noreply,
+     assign(socket,
+       password_reset_link: OliWeb.PowController.create_password_reset_link(params, :author)
+     )}
   end
 
   def handle_event(

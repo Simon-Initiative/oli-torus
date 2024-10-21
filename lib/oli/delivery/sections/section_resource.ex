@@ -75,12 +75,25 @@ defmodule Oli.Delivery.Sections.SectionResource do
     # resource delivery policy
     belongs_to :delivery_policy, DeliveryPolicy
 
-    field(:title, :string, virtual: true)
-    field(:graded, :boolean, virtual: true)
-    field(:resource_type_id, :integer, virtual: true)
-    field(:revision_slug, :string, virtual: true)
-    field(:purpose, :string, virtual: true)
-    field(:duration_minutes, :integer, virtual: true)
+    # Fields replicated from the resource revision and project
+    field :project_slug, :string
+    field :title, :string
+    field :graded, :boolean
+    field :revision_slug, :string
+
+    field :purpose, Ecto.Enum,
+      values: [:foundation, :application, :deliberate_practice],
+      default: :foundation
+
+    field :duration_minutes, :integer
+    field :intro_content, :map, default: %{}
+    field :intro_video, :string, default: nil
+    field :poster_image, :string, default: nil
+    field :objectives, :map, default: %{}
+    field :relates_to, {:array, :id}, default: []
+    belongs_to :resource_type, Oli.Resources.ResourceType
+    belongs_to :revision, Oli.Activities.ActivityRegistration
+    belongs_to :activity_type, Oli.Resources.Revision
 
     timestamps(type: :utc_datetime)
   end
@@ -114,7 +127,21 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :resource_id,
       :project_id,
       :section_id,
-      :delivery_policy_id
+      :delivery_policy_id,
+      :project_slug,
+      :title,
+      :graded,
+      :revision_slug,
+      :purpose,
+      :duration_minutes,
+      :intro_content,
+      :intro_video,
+      :poster_image,
+      :objectives,
+      :relates_to,
+      :resource_type_id,
+      :revision_id,
+      :activity_type_id
     ])
     |> cast_embed(:explanation_strategy)
     |> cast_embed(:collab_space_config)

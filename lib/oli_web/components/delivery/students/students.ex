@@ -318,7 +318,11 @@ defmodule OliWeb.Components.Delivery.Students do
         Enum.sort_by(students, fn student -> student.engagement end, sort_order)
 
       :payment_status ->
-        Enum.sort_by(students, fn student -> student.payment_status end, sort_order)
+        Enum.sort_by(
+          students,
+          &{&1.payment_status, &1.payment_date && DateTime.to_unix(&1.payment_date)},
+          sort_order
+        )
 
       _ ->
         Enum.sort_by(

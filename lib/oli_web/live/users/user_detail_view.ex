@@ -42,7 +42,7 @@ defmodule OliWeb.Users.UsersDetailView do
   @impl true
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token} = session,
+        session,
         socket
       ) do
     ctx = SessionContext.init(socket, session)
@@ -62,7 +62,7 @@ defmodule OliWeb.Users.UsersDetailView do
            ctx: ctx,
            breadcrumbs: set_breadcrumbs(user),
            user: user,
-           csrf_token: csrf_token,
+           csrf_token: Phoenix.Controller.get_csrf_token(),
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
@@ -232,9 +232,10 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("generate_reset_password_link", params, socket) do
-    password_reset_link = OliWeb.PowController.create_user_password_reset_link(params)
-    socket = assign(socket, password_reset_link: password_reset_link)
-    {:noreply, socket}
+    {:noreply,
+     assign(socket,
+       password_reset_link: OliWeb.PowController.create_password_reset_link(params, :user)
+     )}
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do

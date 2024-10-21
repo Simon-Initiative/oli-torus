@@ -431,7 +431,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
         is_active={@active_workspace == :course_author}
         sidebar_expanded={@sidebar_expanded}
         on_active_bg="bg-[#F4CFFF] hover:!bg-[#F4CFFF] dark:bg-[#7E2899] dark:hover:!bg-[#7E2899]"
-        navigation_type="href"
       >
         <:icon>
           <Icons.writing_pencil is_active={@active_workspace == :course_author} />
@@ -916,14 +915,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
          selected_view
        ) do
     case {type, Integer.parse(level)} do
-      # If the given resource is a module (level == 2), we navigate to learn page.
-      {"container", {2, _}} ->
+      # If the given resource is a unit or module (level <= 2), we navigate to learn page.
+      {"container", {level, _}} when level <= 2 ->
         Utils.learn_live_path(section_slug,
           target_resource_id: resource_id,
           selected_view: selected_view
         )
 
-      # If the given resource is other than a module (page, section/sub-section, unit), we navigate to lesson page.
+      # If the given resource is other than a unit or module (page, section/sub-section), we navigate to lesson page.
       _ ->
         # If the request_path is the Learn page and we navigate to a different lesson,
         # we need to update the request_path to include the new target resource.
