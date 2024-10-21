@@ -71,7 +71,7 @@ defmodule OliWeb.Api.ResourceAttemptStateController do
        }
   def upsert(conn, %{"resource_attempt_guid" => attempt_guid} = params) do
     State.upsert(conn, params, fn %{key_values: key_values} ->
-      ExtrinsicState.upsert_atttempt(attempt_guid, key_values)
+      ExtrinsicState.upsert_attempt(attempt_guid, key_values)
     end)
   end
 

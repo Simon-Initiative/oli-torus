@@ -42,7 +42,7 @@ defmodule OliWeb.Users.UsersDetailView do
   @impl true
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token} = session,
+        session,
         socket
       ) do
     ctx = SessionContext.init(socket, session)
@@ -62,7 +62,7 @@ defmodule OliWeb.Users.UsersDetailView do
            ctx: ctx,
            breadcrumbs: set_breadcrumbs(user),
            user: user,
-           csrf_token: csrf_token,
+           csrf_token: Phoenix.Controller.get_csrf_token(),
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,

@@ -12,7 +12,14 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   alias Oli.Resources.Collaboration
   alias Oli.Publishing.{DeliveryResolver}
 
-  def on_mount(:default, params, session, socket) do
+  def on_mount(:default, :not_mounted_at_router, _session, socket) do
+    # this case will handle the liveview cases rendered directly in the template
+    # for example:
+    # <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
+    {:cont, socket}
+  end
+
+  def on_mount(:default, params, _session, socket) do
     section_slug =
       case params do
         %{"section_slug" => section_slug} -> section_slug
@@ -22,7 +29,13 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
     socket =
       socket
       |> assign_notes_and_discussions_enabled(section_slug)
-      |> assign(sidebar_expanded: session["sidebar_expanded"])
+      |> assign(
+        sidebar_expanded:
+          case Map.get(params, "sidebar_expanded") do
+            "false" -> false
+            _ -> true
+          end
+      )
       |> assign(disable_sidebar?: false)
       |> assign(header_enabled?: true)
       |> assign(footer_enabled?: true)
