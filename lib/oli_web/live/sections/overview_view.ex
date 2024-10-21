@@ -155,7 +155,7 @@ defmodule OliWeb.Sections.OverviewView do
         <div class="flex flex-col form-group">
           <label>Base Project</label>
           <a
-            href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @base_project.slug)}
+            href={~p"/workspaces/course_author/#{@base_project.slug}/overview"}
             class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
           >
             <%= @base_project.title %>

@@ -11,7 +11,7 @@
 
   <ul>
     <%= for p <- @projects do %>
-      <li><%= link p.title, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, p.slug) %></li>
+      <li><%= link p.title, to: ~p"/workspaces/course_author/#{p.slug}/overview" %></li>
     <% end %>
   </ul>
 

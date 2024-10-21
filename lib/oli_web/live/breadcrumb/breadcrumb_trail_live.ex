@@ -1,6 +1,6 @@
 defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
   use Phoenix.LiveView
-  alias OliWeb.Router.Helpers, as: Routes
+  use OliWeb, :verified_routes
   alias Oli.Authoring.Course
   alias OliWeb.Breadcrumb.BreadcrumbLive
   alias OliWeb.Common.Breadcrumb
@@ -37,7 +37,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailLive do
             breadcrumb={
               Breadcrumb.new(%{
                 full_title: @project.title,
-                link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug)
+                link: ~p"/workspaces/course_author/#{@project.slug}/overview"
               })
             }
             is_last={false}

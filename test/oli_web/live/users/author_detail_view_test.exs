@@ -337,8 +337,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
-             |> render() =~
-               Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+             |> render() =~ ~p"/workspaces/course_author/#{project.slug}/overview"
     end
 
     test "system admin can edit author role", %{conn: conn} do

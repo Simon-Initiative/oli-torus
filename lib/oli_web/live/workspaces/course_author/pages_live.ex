@@ -630,7 +630,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
     [
       Breadcrumb.new(%{
         full_title: "Project Overview",
-        link: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+        link: ~p"/workspaces/course_author/#{project.slug}/overview"
       }),
       Breadcrumb.new(%{full_title: "All Pages"})
     ]

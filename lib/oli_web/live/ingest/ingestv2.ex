@@ -118,7 +118,7 @@ defmodule OliWeb.Admin.IngestV2 do
     <%= if @ingestion_step == :processed do %>
       <h4>Ingest succeeded</h4>
 
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @state.project.slug)}>
+      <a href={~p"/workspaces/course_author/#{@state.project.slug}/overview"}>
         Access your new course here
       </a>
     <% end %>
