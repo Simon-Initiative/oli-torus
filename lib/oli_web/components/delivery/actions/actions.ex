@@ -31,8 +31,7 @@ defmodule OliWeb.Components.Delivery.Actions do
     } =
       enrollment_info
 
-    has_payment =
-      !is_suspended? and !is_nil(Paywall.get_payment_by(enrollment_id: enrollment.id))
+    has_payment = !is_suspended? and Paywall.has_paid?(enrollment)
 
     {:ok,
      assign(socket,
@@ -189,14 +188,17 @@ defmodule OliWeb.Components.Delivery.Actions do
   end
 
   def handle_event("invalidate_payment", _params, socket) do
-    Paywall.get_payment_by(enrollment_id: socket.assigns.enrollment.id)
-    |> Paywall.update_payment(%{
-      type: :invalidated,
-      invalidated_by_user_id: socket.assigns.current_user.id
-    })
-    |> case do
-      {:ok, _} -> {:noreply, assign(socket, has_payment: false)}
-      _ -> {:noreply, put_flash(socket, :error, "Could not update payment status.")}
+    with {:ok, active_payment} <-
+           Paywall.get_active_payment_for(socket.assigns.enrollment.id, socket.assigns.section.id),
+         {:ok, _updated_payment} <-
+           Paywall.update_payment(active_payment, %{
+             type: :invalidated,
+             invalidated_by_user_id: socket.assigns.current_user.id
+           }) do
+      {:noreply, assign(socket, has_payment: false)}
+    else
+      _ ->
+        {:noreply, put_flash(socket, :error, "Could not update payment status.")}
     end
   end
 

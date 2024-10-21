@@ -690,6 +690,21 @@ defmodule Oli.Delivery.Paywall do
     Repo.get_by(Payment, clauses)
   end
 
+  def get_active_payment_for(enrollment_id, section_id) do
+    from(
+      p in Payment,
+      where:
+        p.enrollment_id == ^enrollment_id and p.section_id == ^section_id and
+          p.type != :invalidated,
+      select: p
+    )
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :no_active_payment_found}
+      payment -> {:ok, payment}
+    end
+  end
+
   @doc """
   Fetches and filters payment records based on various parameters.
 
