@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { Button, Modal } from 'react-bootstrap';
+import { useDispatch } from 'react-redux';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { AdvancedAuthoringModal } from '../AdvancedAuthoringModal';
 import { ScreenIcon } from '../Flowchart/screen-icons/screen-icons';
 import { ScreenTypes } from '../Flowchart/screens/screen-factories';
@@ -33,6 +35,7 @@ export const screenTypeToTitle: Record<string, string> = {
 };
 
 export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
+  const dispatch = useDispatch();
   const [title, setTitle] = React.useState('');
   const [showValidationMessage, setShowValidationMessage] = React.useState(false);
   const [activeScreenType, setScreenType] = React.useState<ScreenTypes | null>(null);
@@ -41,10 +44,12 @@ export const AddScreenModal: React.FC<Props> = ({ onCancel, onCreate }) => {
       setShowValidationMessage(true);
     } else {
       onCreate(title || 'Adaptive Screen', activeScreenType || 'blank_screen');
+      dispatch(setCurrentPartPropertyFocus({ focus: false }));
     }
   }, [activeScreenType, onCreate, title]);
   const onContinue = useCallback(() => {
     onCreate(title || 'Adaptive Screen', activeScreenType || 'blank_screen');
+    dispatch(setCurrentPartPropertyFocus({ focus: false }));
   }, [activeScreenType, onCreate, title]);
 
   const validInput = title.length > 0 && activeScreenType !== null;
