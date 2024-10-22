@@ -231,6 +231,19 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
+  describe "delivery_controller" do
+    setup [:setup_lti_session]
+
+    test "blocks LMS users from manually enrollment", %{conn: conn, section: section} do
+      # Assert that the user is an LMS user
+      assert conn.assigns.current_user.independent_learner == false
+
+      enrollment_path = ~p"/sections/#{section.slug}/enroll"
+      conn = get(conn, enrollment_path)
+      assert response(conn, 302) =~ "You are being <a href=\"/course\">redirected</a>"
+    end
+  end
+
   describe "download_course_content_info" do
     setup [:setup_lti_session, :create_project_with_units_and_modules]
 
