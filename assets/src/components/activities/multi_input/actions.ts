@@ -185,6 +185,9 @@ export const MultiInputActions = {
         );
       }
 
+      // math keyboard currently incompatible with submitPerPart option
+      if (type === 'math') model.submitPerPart = false;
+
       part.responses = {
         dropdown: Responses.forMultipleChoice(choices[0].id),
         text: Responses.forTextInput(),
