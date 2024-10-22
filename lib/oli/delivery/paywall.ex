@@ -111,8 +111,7 @@ defmodule Oli.Delivery.Paywall do
       from(
         p in Payment,
         where: p.enrollment_id == ^id and p.type != :invalidated,
-        limit: 1,
-        select: p
+        limit: 1
       )
 
     case Repo.all(query) do
@@ -705,8 +704,7 @@ defmodule Oli.Delivery.Paywall do
       p in Payment,
       where:
         p.enrollment_id == ^enrollment_id and p.section_id == ^section_id and
-          p.type != :invalidated,
-      select: p
+          p.type != :invalidated
     )
     |> Repo.one()
     |> case do
