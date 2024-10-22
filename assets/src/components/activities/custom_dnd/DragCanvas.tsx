@@ -6,7 +6,7 @@ export type ResetListener = () => void;
 
 export type DragCanvasProps = {
   model: CustomDnDSchema;
-  onSubmitPart: (targetId: string, draggableId: string) => void;
+  onDrop: (targetId: string, draggableId: string) => void;
   onFocusChange: (targetId: string | null, draggableId: string | null) => void;
   onDetach: (targetId: string, draggableId: string) => Promise<void>;
   initialState: Record<string, string>;
@@ -151,7 +151,7 @@ function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
         if (prevTargetId) {
           await props.onDetach(prevTargetId, inputVal);
         }
-        props.onSubmitPart(targetId, inputVal);
+        props.onDrop(targetId, inputVal);
       }
     } catch (e) {
       console.error('customDND target drop handler failed', e);
