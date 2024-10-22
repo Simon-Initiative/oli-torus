@@ -11,7 +11,7 @@ export const Submission: React.FC<Props> = ({ attemptState, surveyId }) => {
     attemptState.dateSubmitted !== null &&
     surveyId === null
   ) {
-    return <p>Your attempt has been submitted for instructor grading</p>;
+    return <p>Your response has been received</p>;
   } else {
     return null;
   }
