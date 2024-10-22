@@ -154,11 +154,11 @@ defmodule OliWeb.Components.Delivery.Actions do
                   id={"payment_status_form_#{@payment_status_uuid}"}
                   phx-change={Modal.show_modal("payment_status_modal")}
                 >
-                  <select class="torus-select pr-32" name="filter_by_role_id">
+                  <select class="torus-select pr-32" name="payment_status">
                     <option selected={true} value={:paid}>
                       Paid
                     </option>
-                    <option selected={false} value={:unpaid}>
+                    <option selected={false} value={:not_paid}>
                       Not Paid
                     </option>
                   </select>

@@ -9,6 +9,8 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Paywall.Payment
 
   defp live_view_students_actions_route(
          section_slug,
@@ -26,9 +28,12 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
   defp enrolled_student_and_instructor(%{section: section, instructor: instructor}) do
     student = insert(:user)
-    Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    {:ok, student_enrollment} =
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
     Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
-    %{student: student}
+    %{student: student, student_enrollment: student_enrollment}
   end
 
   defp create_section_with_requires_payment(_) do
@@ -364,6 +369,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       |> element("button[phx-click=\"display_bypass_modal\"]")
       |> render_click()
 
+      # and the update payment status action is not visible (since there is no active payment)
+      refute has_element?(view, "span", "Update payment status")
+
       assert view
              |> element("div.modal-body")
              |> render() =~
@@ -378,6 +386,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
              |> element("button[phx-click=\"display_bypass_modal\"][disabled]")
              |> render() =~
                "Apply Bypass Payment"
+
+      # and the update payment status action is now visible (since there is an active payment that could be invalidated)
+      assert has_element?(view, "span", "Update payment status")
     end
   end
 
@@ -620,6 +631,111 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       refute has_element?(view, "span", "Transfer Enrollment")
       refute has_element?(view, "button", "Transfer")
+    end
+  end
+
+  describe "Update payment status for admin" do
+    setup [:admin_conn, :create_section_with_requires_payment]
+
+    test "is not visible for an admin if there is no payment for that student", %{
+      conn: conn,
+      section: section
+    } do
+      student = insert(:user)
+
+      Sections.enroll(student.id, section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section.slug, student.id, :actions)
+        )
+
+      refute has_element?(view, "span", "Update payment status")
+    end
+
+    test "can be set to not paid by an admin", %{
+      conn: conn,
+      section: section,
+      admin: admin
+    } do
+      # insert, enroll and set payment for a student
+      student = insert(:user)
+
+      {:ok, %Oli.Delivery.Sections.Enrollment{id: enrollment_id}} =
+        Sections.enroll(student.id, section.id, [
+          ContextRoles.get_role(:context_learner)
+        ])
+
+      {:ok, payment} =
+        Paywall.create_payment(%{
+          generation_date: DateTime.utc_now(),
+          amount: Money.new(50, "USD"),
+          section_id: section.id,
+          enrollment_id: enrollment_id
+        })
+
+      assert payment.type == :direct
+      refute payment.invalidated_by_user_id
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section.slug, student.id, :actions)
+        )
+
+      assert has_element?(view, "span", "Update payment status")
+
+      assert has_element?(
+               view,
+               "#payment_status_modal",
+               "Are you sure you want to change the payment status of #{student.name} in the course #{section.title} to NOT PAID?"
+             )
+
+      # we directly confirm the change in the modal since we cannot trigger the modal
+      # from the test (JS is not executed)
+
+      view
+      |> element("button[id=payment_status_modal-confirm]", "Confirm")
+      |> render_click()
+
+      # the action is not visible anymore and the student's payment status in invalidated
+      refute has_element?(view, "span", "Update payment status")
+
+      updated_payment = Oli.Repo.get(Payment, payment.id)
+
+      assert updated_payment.type == :invalidated
+      assert updated_payment.invalidated_by_user_id == admin.id
+    end
+  end
+
+  describe "Update payment status for instructor" do
+    setup [:instructor_conn, :section_without_pages, :enrolled_student_and_instructor]
+
+    test "is not visible (even for students that have already paid)", %{
+      conn: conn,
+      section: section,
+      student: student,
+      student_enrollment: student_enrollment
+    } do
+      {:ok, _payment} =
+        Paywall.create_payment(%{
+          generation_date: DateTime.utc_now(),
+          amount: Money.new(50, "USD"),
+          section_id: section.id,
+          enrollment_id: student_enrollment.id
+        })
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_students_actions_route(section.slug, student.id, :actions)
+        )
+
+      refute has_element?(view, "span", "Update payment status")
+      open_browser(view)
     end
   end
 end
