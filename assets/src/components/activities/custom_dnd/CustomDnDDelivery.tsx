@@ -17,6 +17,7 @@ import {
   resetAction,
   resetAndSubmitPart,
   resetPart,
+  setSelection,
   submitPart,
 } from 'data/activities/DeliveryState';
 import { safelySelectFiles } from 'data/activities/utils';
@@ -35,6 +36,7 @@ export const CustomDnDComponent: React.FC = () => {
     context,
     onResetActivity,
     onSubmitActivity,
+    onSaveActivity,
     onResetPart,
     onSubmitPart,
   } = useDeliveryElementContext<CustomDnDSchema>();
@@ -95,7 +97,7 @@ export const CustomDnDComponent: React.FC = () => {
   }, []);
 
   const findPart = (partId: string) => {
-    return uiState.attemptState.parts.find((p) => p.partId === partId) as any;
+    return uiState.attemptState.parts.find((p) => p.partId === partId);
   };
   const toStudentResponse = (input: string) => ({ input });
 
@@ -113,7 +115,7 @@ export const CustomDnDComponent: React.FC = () => {
     const partId = partIdBearers === 'targets' ? targetId : draggableId;
 
     const part = findPart(partId);
-    if (part === null) console.log('part not found! id=' + partId);
+    if (part == null) console.log('part not found! id=' + partId);
     else {
       setWorking(true);
       await dispatch(resetPart(uiState.attemptState.attemptGuid, part.attemptGuid, onResetPart));
@@ -121,16 +123,20 @@ export const CustomDnDComponent: React.FC = () => {
     }
   };
 
-  const onSubmit = async (targetId: string, draggableId: string) => {
+  const saveOrSubmit = async (targetId: string, draggableId: string) => {
     const [partId, choiceId] =
       partIdBearers === 'targets' ? [targetId, draggableId] : [draggableId, targetId];
     const response = partId + '_' + choiceId;
-    // console.log('DND onSubmit: partId=' + partId + ' response= ' + response);
+    console.log('DND onDrop: partId=' + partId + ' response= ' + response);
 
-    const state = getState();
-    const part = state.attemptState.parts.find((p: any) => p.partId === partId);
-    if (part !== undefined) {
-      setWorking(true);
+    const part = findPart(partId);
+    if (part == null) return;
+
+    setWorking(true);
+    if (context.graded || context.surveyId) {
+      // Don't submit for evaluation. setSelection sets input and saves
+      await dispatch(setSelection(partId, response, onSaveActivity, 'single'));
+    } else {
       if (part.dateEvaluated !== null) {
         await dispatch(
           resetAndSubmitPart(
@@ -151,8 +157,8 @@ export const CustomDnDComponent: React.FC = () => {
           ),
         );
       }
-      setWorking(false);
     }
+    setWorking(false);
   };
 
   const editMode = mode !== 'review' && uiState.attemptState.dateEvaluated === null;
@@ -169,7 +175,7 @@ export const CustomDnDComponent: React.FC = () => {
           onRegisterResetCallback={(listener) => {
             setResetListener(() => listener);
           }}
-          onSubmitPart={onSubmit}
+          onDrop={saveOrSubmit}
           onFocusChange={onFocusChange}
           onDetach={onDetach}
         />
