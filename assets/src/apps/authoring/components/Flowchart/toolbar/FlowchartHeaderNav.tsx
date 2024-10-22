@@ -243,6 +243,8 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
       }
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
+        const defaultNewPartWidth = 100;
+        const defaultNewPartHeight = 100;
         // only ever add to the current activity, not a layer
         setNewPartAddOffset(newPartAddOffset + 1);
         const part = new PartClass() as any;
@@ -253,8 +255,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
             x: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             z: 0,
-            width: 100,
-            height: 100,
+            width: defaultNewPartWidth,
+            height: defaultNewPartHeight,
+            defaultHeight: defaultNewPartHeight,
+            defaultWidth: defaultNewPartWidth,
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };
