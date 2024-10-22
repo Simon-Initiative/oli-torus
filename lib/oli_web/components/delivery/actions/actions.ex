@@ -54,7 +54,7 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def render(assigns) do
     ~H"""
-    <div>
+    <div id="student_actions">
       <div id="modals">
         <Modal.modal
           id="unenroll_user_modal"
@@ -79,6 +79,7 @@ defmodule OliWeb.Components.Delivery.Actions do
         </Modal.modal>
 
         <Modal.modal
+          :if={@section.requires_payment and @is_admin}
           id="payment_status_modal"
           class="w-5/6"
           on_confirm={
@@ -96,10 +97,7 @@ defmodule OliWeb.Components.Delivery.Actions do
           <:confirm>Confirm</:confirm>
         </Modal.modal>
       </div>
-      <div
-        id="student_actions"
-        class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6"
-      >
+      <div class="mx-10 mb-10 bg-white dark:bg-gray-800 shadow-sm px-14 py-7 flex flex-col gap-6">
         <%= if @is_suspended? do %>
           <div id="unenrolled_student_actions">
             <div class="ml-auto">

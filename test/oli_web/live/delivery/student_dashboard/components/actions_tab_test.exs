@@ -735,7 +735,6 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
         )
 
       refute has_element?(view, "span", "Update payment status")
-      open_browser(view)
     end
   end
 end
