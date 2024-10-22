@@ -43,7 +43,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token, "current_author_id" => author_id} = session,
+        %{"current_author_id" => author_id} = session,
         socket
       ) do
     author = Accounts.get_author(author_id)
@@ -58,7 +58,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
            breadcrumbs: set_breadcrumbs(user),
            author: author,
            user: user,
-           csrf_token: csrf_token,
+           csrf_token: Phoenix.Controller.get_csrf_token(),
            changeset: author_changeset(user),
            disabled_edit: true,
            ctx: SessionContext.init(socket, session),

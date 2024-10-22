@@ -1,4 +1,6 @@
 defmodule OliWeb.CollaborationLive.AdminTableModel do
+  use OliWeb, :verified_routes
+
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -48,7 +50,7 @@ defmodule OliWeb.CollaborationLive.AdminTableModel do
   end
 
   def render_project_title(assigns, %{project: %{title: title, slug: project_slug}}, _) do
-    route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project_slug)
+    route_path = ~p"/workspaces/course_author/#{project_slug}/overview"
     SortableTableModel.render_link_column(assigns, title, route_path)
   end
 

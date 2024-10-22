@@ -185,7 +185,7 @@ defmodule OliWeb.CognitoController do
     case Clone.clone_project(project_slug, author, author_in_project_title: true) do
       {:ok, dupe} ->
         redirect(conn,
-          to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, dupe.slug)
+          to: ~p"/workspaces/course_author/#{dupe.slug}/overview"
         )
 
       {:error, error} ->

@@ -450,5 +450,5 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
     do: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
 
   defp details_view(section),
-    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, section.project.slug)
+    do: ~p"/workspaces/course_author/#{section.project.slug}/overview"
 end

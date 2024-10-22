@@ -17,7 +17,7 @@ defmodule OliWeb.SystemMessageLive.ShowView do
       Notifications.list_active_system_messages()
       |> filter_dismissed_messages(dismissed_messages)
 
-    {:ok, assign(socket, messages: messages)}
+    {:ok, assign(socket, messages: messages), layout: false}
   end
 
   attr(:messages, :list, default: [])

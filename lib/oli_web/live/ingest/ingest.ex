@@ -65,7 +65,7 @@ defmodule OliWeb.Admin.Ingest do
            ) do
       {:noreply,
        redirect(socket,
-         to: Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+         to: ~s"workspaces/course_author/#{project.slug}/overview"
        )}
     else
       error ->

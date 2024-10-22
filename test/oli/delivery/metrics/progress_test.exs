@@ -240,6 +240,29 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
 
       ra = Oli.Repo.get(ResourceAccess, map.attempt1.resource_access_id)
       assert_in_delta 0.75, ra.progress, 0.0001
+
+      # Now lets simulate a second attempt for this page, which has a lower progress (0%)
+      map =
+        map
+        |> Seeder.create_resource_attempt(
+          %{attempt_number: 2, lifecycle_state: :active},
+          :this_user,
+          :our_page,
+          :attempt2
+        )
+        |> Seeder.create_activity_attempt(
+          %{attempt_number: 1, lifecycle_state: :active, scoreable: true},
+          :activity_a,
+          :attempt1,
+          :a1
+        )
+
+      assert {:ok, :updated} = Metrics.update_page_progress(guid)
+
+      # Verify that the progress remains at 0.75 and does not go down to zero,
+      # because it can never go lower
+      ra = Oli.Repo.get(ResourceAccess, map.attempt2.resource_access_id)
+      assert_in_delta 0.75, ra.progress, 0.0001
     end
 
     test "progress_for_page/3 calculates correctly", %{

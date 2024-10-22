@@ -1,9 +1,9 @@
 defmodule OliWeb.Users.AuthorProjectsTableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Router.Helpers, as: Routes
 
   def new(projects, ctx) do
     column_specs = [
@@ -48,7 +48,7 @@ defmodule OliWeb.Users.AuthorProjectsTableModel do
     assigns = Map.merge(assigns, %{title: project.title, slug: project.slug})
 
     ~H"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @slug)}>
+    <a href={~p"/workspaces/course_author/#{@slug}/overview"}>
       <%= @title %>
     </a>
     """

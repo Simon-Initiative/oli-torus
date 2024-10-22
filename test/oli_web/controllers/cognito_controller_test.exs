@@ -484,7 +484,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/authoring/project"
+               "<html><body>You are being <a href=\"/workspaces/course_author"
 
       # creates new author and links it with user
       author = Accounts.get_author_by_email(email)
@@ -633,7 +633,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :clone, project.slug))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/authoring/project"
+               "<html><body>You are being <a href=\"/workspaces/course_author"
     end
 
     test "fails if the project does not allow duplication",
@@ -686,7 +686,7 @@ defmodule OliWeb.CognitoControllerTest do
                "Would you like to\n<a href=\"/cognito/clone/#{project.slug}\">create another copy</a>"
 
       assert html =~
-               "<a href=\"/authoring/project/#{duplicated.slug}\">#{duplicated.title}</a>"
+               "<a href=\"/workspaces/course_author/#{duplicated.slug}/overview\">#{duplicated.title}</a>"
     end
   end
 
