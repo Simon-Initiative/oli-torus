@@ -72,7 +72,6 @@ export const CustomDnDComponent: React.FC = () => {
   const [working, setWorking] = useState(false);
   const [resetListener, setResetListener] = useState<ResetListener | null>(null);
   const dispatch = useDispatch();
-  const { getState } = useStore();
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -127,7 +126,7 @@ export const CustomDnDComponent: React.FC = () => {
     const [partId, choiceId] =
       partIdBearers === 'targets' ? [targetId, draggableId] : [draggableId, targetId];
     const response = partId + '_' + choiceId;
-    console.log('DND onDrop: partId=' + partId + ' response= ' + response);
+    // console.log('DND onDrop: partId=' + partId + ' response= ' + response);
 
     const part = findPart(partId);
     if (part == null) return;
