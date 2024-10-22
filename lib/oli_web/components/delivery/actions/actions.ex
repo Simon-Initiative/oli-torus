@@ -156,8 +156,8 @@ defmodule OliWeb.Components.Delivery.Actions do
                     <option selected={true} value={:paid}>
                       Paid
                     </option>
-                    <option selected={false} value={:not_paid}>
-                      Not Paid
+                    <option selected={false} value={:unpaid}>
+                      Unpaid
                     </option>
                   </select>
                 </form>
