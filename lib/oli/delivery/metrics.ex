@@ -18,7 +18,6 @@ defmodule Oli.Delivery.Metrics do
     SectionResource
   }
 
-  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
 
@@ -731,26 +730,7 @@ defmodule Oli.Delivery.Metrics do
     proficiency_range(proficiency_value, total_count)
   end
 
-  def raw_proficiency_per_learning_objective(%Section{analytics_version: :v1, slug: section_slug}) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug,
-        group_by: sn.objective_id,
-        select:
-          {sn.objective_id,
-           {fragment(
-              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float)",
-              sn.correct
-            ), fragment("CAST(COUNT(*) as float)")}}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
-
-  def raw_proficiency_per_learning_objective(%Section{analytics_version: :v2, id: section_id}) do
+  def raw_proficiency_per_learning_objective(%Section{id: section_id}) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
     query =
@@ -781,42 +761,7 @@ defmodule Oli.Delivery.Metrics do
       )
 
   def raw_proficiency_for_student_per_learning_objective(
-        %Section{analytics_version: :v1, slug: section_slug},
-        student_id,
-        objective_ids
-      ) do
-    filter_by_objective_id =
-      case objective_ids do
-        nil ->
-          true
-
-        _ ->
-          dynamic([sn, _s], sn.objective_id in ^objective_ids)
-      end
-
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
-            sn.user_id == ^student_id,
-        where: ^filter_by_objective_id,
-        group_by: sn.objective_id,
-        select:
-          {sn.objective_id,
-           {fragment(
-              "CAST(COUNT(CASE WHEN ? THEN 1 END) as float)",
-              sn.correct
-            ), fragment("CAST(COUNT(*) as float)")}}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{})
-  end
-
-  def raw_proficiency_for_student_per_learning_objective(
-        %Section{analytics_version: :v2, id: section_id},
+        %Section{analytics_version: _both, id: section_id},
         student_id,
         objective_ids
       ) do
@@ -864,23 +809,7 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_per_container(%Section{id: id, analytics_version: :v1}, contained_pages) do
-    query =
-      from(sn in Snapshot,
-        where: sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^id,
-        group_by: sn.resource_id,
-        select: {
-          sn.resource_id,
-          fragment("CAST(COUNT(CASE WHEN ? THEN 1 END) as float)", sn.correct),
-          fragment("CAST(COUNT(*) as float)")
-        }
-      )
-
-    Repo.all(query)
-    |> bucket_into_container_totals(contained_pages)
-  end
-
-  def proficiency_per_container(%Section{id: section_id, analytics_version: :v2}, contained_pages) do
+  def proficiency_per_container(%Section{id: section_id, analytics_version: _both}, contained_pages) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
@@ -917,45 +846,8 @@ defmodule Oli.Delivery.Metrics do
   """
   def proficiency_per_student_across(section, container_id \\ nil)
 
-  def proficiency_per_student_across(%Section{analytics_version: :v1} = section, container_id) do
-    filter_by_container =
-      case container_id do
-        nil ->
-          true
-
-        _ ->
-          pages_for_container =
-            from(cp in ContainedPage,
-              where: cp.section_id == ^section.id and cp.container_id == ^container_id,
-              select: cp.page_id
-            )
-            |> Repo.all()
-
-          dynamic([sn, _s], sn.resource_id in ^pages_for_container)
-      end
-
-    query =
-      from(sn in Snapshot,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^section.id,
-        where: ^filter_by_container,
-        group_by: sn.user_id,
-        select:
-          {sn.user_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           ), fragment("CAST(COUNT(*) as float)")}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
-      {student_id, proficiency_range(proficiency, num_first_attempts)}
-    end)
-  end
-
   def proficiency_per_student_across(
-        %Section{analytics_version: :v2, id: section_id} = section,
+        %Section{analytics_version: _both, id: section_id} = section,
         container_id
       ) do
     filter_by_container =
@@ -1013,29 +905,7 @@ defmodule Oli.Delivery.Metrics do
     }
   """
   def proficiency_for_student_per_container(
-        %Section{id: id, analytics_version: :v1},
-        student_id,
-        contained_pages
-      ) do
-    query =
-      from(sn in Snapshot,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and sn.section_id == ^id and
-            sn.user_id == ^student_id,
-        group_by: sn.resource_id,
-        select: {
-          sn.resource_id,
-          fragment("CAST(COUNT(CASE WHEN ? THEN 1 END) as float)", sn.correct),
-          fragment("CAST(COUNT(*) as float)")
-        }
-      )
-
-    Repo.all(query)
-    |> bucket_into_container_totals(contained_pages)
-  end
-
-  def proficiency_for_student_per_container(
-        %Section{id: section_id, analytics_version: :v2},
+        %Section{id: section_id, analytics_version: _both},
         student_id,
         contained_pages
       ) do
@@ -1072,33 +942,7 @@ defmodule Oli.Delivery.Metrics do
     }
   """
   def proficiency_for_student_per_page(
-        %Section{slug: section_slug, analytics_version: :v1},
-        student_id
-      ) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
-            sn.user_id == ^student_id,
-        group_by: sn.resource_id,
-        select:
-          {sn.resource_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           ), fragment("CAST(COUNT(*) as float)")}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {resource_id, proficiency, num_first_attempts} ->
-      {resource_id, proficiency_range(proficiency, num_first_attempts)}
-    end)
-  end
-
-  def proficiency_for_student_per_page(
-        %Section{id: section_id, analytics_version: :v2},
+        %Section{id: section_id, analytics_version: _both},
         student_id
       ) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
@@ -1139,33 +983,7 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def proficiency_per_student_for_page(
-        %Section{slug: section_slug, analytics_version: :v1},
-        page_id
-      ) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
-            sn.resource_id == ^page_id,
-        group_by: sn.user_id,
-        select:
-          {sn.user_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           ), fragment("CAST(COUNT(*) as float)")}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
-      {student_id, proficiency_range(proficiency, num_first_attempts)}
-    end)
-  end
-
-  def proficiency_per_student_for_page(%Section{id: section_id, analytics_version: :v2}, page_id) do
+  def proficiency_per_student_for_page(%Section{id: section_id, analytics_version: _both}, page_id) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
@@ -1203,30 +1021,7 @@ defmodule Oli.Delivery.Metrics do
       page_id_n => "Low"
     }
   """
-  def proficiency_per_page(%Section{slug: section_slug, analytics_version: :v1}, page_ids) do
-    query =
-      from(sn in Snapshot,
-        join: s in Section,
-        on: sn.section_id == s.id,
-        where:
-          sn.attempt_number == 1 and sn.part_attempt_number == 1 and s.slug == ^section_slug and
-            sn.resource_id in ^page_ids,
-        group_by: sn.resource_id,
-        select:
-          {sn.resource_id,
-           fragment(
-             "CAST(COUNT(CASE WHEN ? THEN 1 END) as float) / CAST(COUNT(*) as float)",
-             sn.correct
-           ), fragment("CAST(COUNT(*) as float)")}
-      )
-
-    Repo.all(query)
-    |> Enum.into(%{}, fn {page_id, proficiency, num_first_attempts} ->
-      {page_id, proficiency_range(proficiency, num_first_attempts)}
-    end)
-  end
-
-  def proficiency_per_page(%Section{id: section_id, analytics_version: :v2}, page_ids) do
+  def proficiency_per_page(%Section{id: section_id, analytics_version: _both}, page_ids) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =

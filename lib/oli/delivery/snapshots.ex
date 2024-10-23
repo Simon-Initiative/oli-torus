@@ -13,11 +13,6 @@ defmodule Oli.Delivery.Snapshots do
   ```
   """
 
-  import Ecto.Query, warn: false
-
-  alias Oli.Repo
-  alias Oli.Delivery.Snapshots.Snapshot
-
   def maybe_create_snapshot(result, part_inputs, section_slug) do
     case result do
       {:ok, _} ->
@@ -48,31 +43,5 @@ defmodule Oli.Delivery.Snapshots do
     end
   end
 
-  @doc """
-  Updates all snapshot records for a given section and user.
-  """
 
-  def update_snapshots_by_section_and_user(
-        current_section_id,
-        current_user_id,
-        target_section_id,
-        target_user_id
-      ) do
-    from(
-      sn in Snapshot,
-      where: sn.section_id == ^current_section_id and sn.user_id == ^current_user_id
-    )
-    |> Repo.update_all(set: [section_id: target_section_id, user_id: target_user_id])
-  end
-
-  @doc """
-  Deletes all snapshot records for a given section and user.
-  """
-  def delete_snapshots_by_section_and_user(target_section_id, target_user_id) do
-    from(
-      sn in Snapshot,
-      where: sn.section_id == ^target_section_id and sn.user_id == ^target_user_id
-    )
-    |> Repo.delete_all()
-  end
 end

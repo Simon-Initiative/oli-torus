@@ -1,6 +1,6 @@
 defmodule Oli.Analytics.Common do
   import Ecto.Query, warn: false
-  alias Oli.Delivery.Snapshots.Snapshot
+
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Resources.Revision
@@ -18,57 +18,50 @@ defmodule Oli.Analytics.Common do
     |> Enum.join("\n")
   end
 
-  def stream_project_raw_analytics_to_file!(project_slug, append_to_filepath) do
-    objectives_map =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        join: objective in Revision,
-        on: snapshot.objective_revision_id == objective.id,
-        group_by: [snapshot.objective_revision_id, objective.title, objective.resource_id],
-        select: {
-          snapshot.objective_revision_id,
-          objective.title,
-          objective.resource_id
-        }
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn {revision_id, title, resource_id}, acc ->
-        Map.put(acc, revision_id, %{title: title, resource_id: resource_id})
-      end)
+  defp get_objectives_map(project_slug) do
 
-    activities_map =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        join: activity in Revision,
-        on: snapshot.revision_id == activity.id,
-        group_by: [
-          snapshot.revision_id,
-          activity.title,
-          activity.resource_id,
-          activity.activity_type_id,
-          activity.content
-        ],
-        select: {
-          snapshot.revision_id,
-          activity.title,
-          activity.resource_id,
-          activity.activity_type_id,
-          activity.content
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
+
+    from(m in Oli.Publishing.PublishedResource,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          m.publication_id in subquery(Oli.Publishing.AuthoringResolver.project_working_publication(project_slug)) and
+            rev.resource_type_id == ^resource_type_id,
+        select: %{
+          resource_id: rev.resource_id,
+          title: rev.title
         }
       )
       |> Repo.all()
-      |> Enum.reduce(%{}, fn {revision_id, title, resource_id, activity_type_id, content}, acc ->
-        Map.put(acc, revision_id, %{
-          title: title,
-          resource_id: resource_id,
-          activity_type_id: activity_type_id,
-          content: content
-        })
-      end)
+      |> Enum.reduce(%{}, fn %{resource_id: id} = o, m -> Map.put(m, id, o) end)
+  end
+
+  defp get_activities_map(project_slug) do
+
+    resource_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
+
+    from(m in Oli.Publishing.PublishedResource,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          m.publication_id in subquery(Oli.Publishing.AuthoringResolver.project_working_publication(project_slug)) and
+            rev.resource_type_id == ^resource_type_id,
+        select: %{
+          title: rev.title,
+          resource_id: rev.resource_id,
+          activity_type_id: rev.activity_type_id,
+          content: rev.content
+        }
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn %{resource_id: id} = o, m -> Map.put(m, id, o) end)
+  end
+
+  def stream_project_raw_analytics_to_file!(project_slug, append_to_filepath) do
+
+    objectives_map = get_objectives_map(project_slug)
+    activities_map = get_activities_map(project_slug)
 
     activity_registration_map =
       Activities.list_activity_registrations()
@@ -78,14 +71,11 @@ defmodule Oli.Analytics.Common do
 
     sections_map =
       from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
         join: section in Section,
-        on: snapshot.section_id == section.id,
-        group_by: [snapshot.section_id, section.title, section.slug],
+        on: section.base_project_id == project.id,
+        where: project.slug == ^project_slug and section.type == :enrollable,
         select: {
-          snapshot.section_id,
+          section.id,
           section.title,
           section.slug
         }
@@ -95,93 +85,101 @@ defmodule Oli.Analytics.Common do
         Map.put(acc, section_id, %{title: title, slug: slug})
       end)
 
+    all_section_ids = Map.keys(sections_map)
+
     Repo.transaction(fn ->
       Repo.stream(
-        from(project in Project,
-          where: project.slug == ^project_slug,
-          join: snapshot in Snapshot,
-          on: snapshot.project_id == project.id,
-          join: part_attempt in PartAttempt,
-          on: snapshot.part_attempt_id == part_attempt.id,
+        from(part_attempt in PartAttempt,
           join: activity_attempt in ActivityAttempt,
           on: part_attempt.activity_attempt_id == activity_attempt.id,
-          select: {
-            snapshot.part_attempt_id,
-            snapshot.revision_id,
-            snapshot.objective_revision_id,
-            snapshot.activity_id,
-            snapshot.resource_id,
-            snapshot.attempt_number,
-            snapshot.graded,
-            snapshot.correct,
-            snapshot.score,
-            snapshot.out_of,
-            snapshot.hints,
-            snapshot.inserted_at,
-            snapshot.user_id,
-            snapshot.section_id,
-            part_attempt.score,
-            part_attempt.out_of,
-            part_attempt.response,
-            part_attempt.feedback,
-            part_attempt.activity_attempt_id,
-            activity_attempt.resource_attempt_id
+          join: resource_attempt in Oli.Delivery.Attempts.Core.ResourceAttempt,
+          on: resource_attempt.id == activity_attempt.resource_attempt_id,
+          join: resource_access in Oli.Delivery.Attempts.Core.ResourceAccess,
+          on: resource_access.id == resource_attempt.resource_access_id,
+          where: resource_access.section_id in ^all_section_ids,
+          select: %{
+            part_attempt_id: part_attempt.id,
+            part_id: part_attempt.part_id,
+            part_attempt_attempt_number: part_attempt.attempt_number,
+            activity_revision_id: activity_attempt.revision_id,
+            page_revision_id: resource_attempt.revision_id,
+            activity_id: activity_attempt.resource_id,
+            page_id: resource_attempt.resource_id,
+            activity_attempt_number: activity_attempt.attempt_number,
+            hints: part_attempt.hints,
+            inserted_at: part_attempt.inserted_at,
+            user_id: resource_access.user_id,
+            section_id: resource_access.section_id,
+            score: part_attempt.score,
+            out_of: part_attempt.out_of,
+            response: part_attempt.response,
+            feedback: part_attempt.feedback,
+            activity_attempt_id: activity_attempt.id,
+            resource_attempt_id: resource_attempt.id
           }
         )
       )
-      |> Stream.map(fn {
-                         snapshot_part_attempt_id,
-                         snapshot_revision_id,
-                         snapshot_objective_revision_id,
-                         snapshot_activity_id,
-                         snapshot_resource_id,
-                         snapshot_attempt_number,
-                         snapshot_graded,
-                         snapshot_correct,
-                         snapshot_score,
-                         snapshot_out_of,
-                         snapshot_hints,
-                         snapshot_inserted_at,
-                         snapshot_user_id,
-                         snapshot_section_id,
-                         part_attempt_score,
-                         part_attempt_out_of,
-                         part_attempt_response,
-                         part_attempt_feedback,
-                         part_attempt_activity_attempt_id,
-                         activity_attempt_resource_attempt_id
-                       } ->
-        objective = Map.get(objectives_map, snapshot_objective_revision_id)
-        activity = Map.get(activities_map, snapshot_revision_id)
+      |> Stream.map(fn %{
+                          part_attempt_id: part_attempt_id,
+                          part_id: part_id,
+                          activity_revision_id: activity_attempt_revision_id,
+                          page_revision_id: resource_attempt_revision_id,
+                          activity_id: activity_attempt_resource_id,
+                          page_id: resource_attempt_resource_id,
+                          part_attempt_attempt_number: part_attempt_attempt_number,
+                          activity_attempt_id: activity_attempt_id,
+                          resource_attempt_id: resource_attempt_id,
+                          hints: hints,
+                          inserted_at: inserted_at,
+                          user_id: user_id,
+                          section_id: section_id,
+                          score: score,
+                          out_of: out_of,
+                          response: response,
+                          feedback: feedback
+                        } ->
+
+        activity = Map.get(activities_map, activity_attempt_resource_id)
         activity_registration = Map.get(activity_registration_map, activity.activity_type_id)
-        section = Map.get(sections_map, snapshot_section_id)
+        section = Map.get(sections_map, section_id)
+
+        activity_revision = Oli.DatashopCache.get_revision!(activity_attempt_revision_id)
+        page_revision = Oli.DatashopCache.get_revision!(resource_attempt_revision_id)
+
+        objectives = Map.get(activity_revision, :objectives, %{} |> Map.put(part_id, []))
+        |> Map.get(part_id, [])
+        |> Enum.dedup()
+        |> Enum.map(fn id ->
+          case Map.get(objectives_map, id) do
+            nil -> %{resource_id: id, title: "Unknown"}
+            item -> item
+          end
+        end)
 
         [
           [
-            snapshot_part_attempt_id,
-            snapshot_activity_id,
-            snapshot_resource_id,
-            safe_get(objective, :resource_id),
+            part_attempt_id,
+            part_id,
+            activity_attempt_resource_id,
+            resource_attempt_resource_id,
             activity.title,
             activity_registration.title,
-            safe_get(objective, :title),
-            snapshot_attempt_number,
-            snapshot_graded,
-            snapshot_correct,
-            snapshot_score,
-            snapshot_out_of,
-            snapshot_hints,
-            part_attempt_score,
-            part_attempt_out_of,
-            Jason.encode_to_iodata!(part_attempt_response),
-            Jason.encode_to_iodata!(part_attempt_feedback),
+            part_attempt_attempt_number,
+            page_revision.graded,
+            if score == out_of do true else false end,
+            score,
+            out_of,
+            hints,
+            Jason.encode_to_iodata!(response),
+            Jason.encode_to_iodata!(feedback),
             Jason.encode_to_iodata!(activity.content),
+            Jason.encode_to_iodata!(%{objectives: objectives}),
             section.title,
             section.slug,
-            FormatDateTime.date(snapshot_inserted_at),
-            snapshot_user_id,
-            part_attempt_activity_attempt_id,
-            activity_attempt_resource_attempt_id
+            FormatDateTime.date(inserted_at),
+            user_id,
+            activity_attempt_id,
+            resource_attempt_id
           ]
         ]
         |> CSV.encode(separator: ?\t)
@@ -191,220 +189,4 @@ defmodule Oli.Analytics.Common do
     end)
   end
 
-  defp safe_get(map, key, default \\ nil) do
-    case map do
-      nil -> nil
-      map -> Map.get(map, key, default)
-    end
-  end
-
-  def analytics_by_activity(project_slug, []) do
-    activity_num_attempts_rel_difficulty =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        group_by: [snapshot.activity_id],
-        select: %{
-          activity_id: snapshot.activity_id,
-          number_of_attempts: count(snapshot.part_attempt_id, :distinct),
-          relative_difficulty:
-            fragment(
-              "sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
-              snapshot.hints,
-              snapshot.correct,
-              snapshot.id
-            )
-        }
-      )
-
-    get_analytics(project_slug, activity_num_attempts_rel_difficulty)
-  end
-
-  def analytics_by_activity(project_slug, section_ids) do
-    activity_num_attempts_rel_difficulty =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        where: snapshot.section_id in ^section_ids,
-        group_by: [snapshot.activity_id],
-        select: %{
-          activity_id: snapshot.activity_id,
-          number_of_attempts: count(snapshot.part_attempt_id, :distinct),
-          relative_difficulty:
-            fragment(
-              "sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
-              snapshot.hints,
-              snapshot.correct,
-              snapshot.id
-            )
-        }
-      )
-
-    get_analytics(project_slug, activity_num_attempts_rel_difficulty)
-  end
-
-  defp get_analytics(project_slug, activity_num_attempts_rel_difficulty) do
-    activity_correctness =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        group_by: [snapshot.activity_id, snapshot.user_id],
-        select: %{
-          activity_id: snapshot.activity_id,
-          user_id: snapshot.user_id,
-          is_eventually_correct: fragment("bool_or(?)", snapshot.correct),
-          is_first_try_correct:
-            fragment("bool_or(? is true and ? = 1)", snapshot.correct, snapshot.attempt_number)
-        }
-      )
-
-    corrections =
-      from(correctness in subquery(activity_correctness),
-        group_by: [correctness.activity_id],
-        select: %{
-          activity_id: correctness.activity_id,
-          eventually_correct_ratio:
-            sum(
-              fragment(
-                "(case when ? is true then 1 else 0 end)::float",
-                correctness.is_eventually_correct
-              )
-            ) /
-              count(correctness.user_id),
-          first_try_correct_ratio:
-            sum(
-              fragment(
-                "(case when ? is true then 1 else 0 end)::float",
-                correctness.is_first_try_correct
-              )
-            ) /
-              count(correctness.user_id)
-        }
-      )
-
-    from(a in subquery(corrections),
-      join: b in subquery(activity_num_attempts_rel_difficulty),
-      on: a.activity_id == b.activity_id,
-      select: %{
-        activity_id: a.activity_id,
-        eventually_correct: a.eventually_correct_ratio,
-        first_try_correct: a.first_try_correct_ratio,
-        number_of_attempts: b.number_of_attempts,
-        relative_difficulty: b.relative_difficulty
-      }
-    )
-  end
-
-  def analytics_by_objective(project_slug, []) do
-    activity_num_attempts_rel_difficulty =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        group_by: [snapshot.objective_id],
-        select: %{
-          objective_id: snapshot.objective_id,
-          number_of_attempts: count(snapshot.id),
-          relative_difficulty:
-            fragment(
-              "sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
-              snapshot.hints,
-              snapshot.correct,
-              snapshot.id
-            )
-        }
-      )
-
-    get_analytics_for_objective(
-      project_slug,
-      activity_num_attempts_rel_difficulty
-    )
-  end
-
-  def analytics_by_objective(project_slug, section_ids) do
-    activity_num_attempts_rel_difficulty =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        where: snapshot.section_id in ^section_ids,
-        group_by: [snapshot.objective_id],
-        select: %{
-          objective_id: snapshot.objective_id,
-          number_of_attempts: count(snapshot.id),
-          relative_difficulty:
-            fragment(
-              "sum(? + case when ? is false then 1 else 0 end)::float / count(?)",
-              snapshot.hints,
-              snapshot.correct,
-              snapshot.id
-            )
-        }
-      )
-
-    get_analytics_for_objective(
-      project_slug,
-      activity_num_attempts_rel_difficulty
-    )
-  end
-
-  defp get_analytics_for_objective(
-         project_slug,
-         activity_num_attempts_rel_difficulty
-       ) do
-    activity_correctness =
-      from(project in Project,
-        where: project.slug == ^project_slug,
-        join: snapshot in Snapshot,
-        on: snapshot.project_id == project.id,
-        group_by: [snapshot.objective_id, snapshot.user_id, snapshot.activity_id],
-        select: %{
-          objective_id: snapshot.objective_id,
-          user_id: snapshot.user_id,
-          activity_id: snapshot.activity_id,
-          is_eventually_correct: fragment("bool_or(?)", snapshot.correct),
-          is_first_try_correct:
-            fragment("bool_or(? is true and ? = 1)", snapshot.correct, snapshot.attempt_number)
-        }
-      )
-
-    corrections =
-      from(correctness in subquery(activity_correctness),
-        group_by: [correctness.objective_id],
-        select: %{
-          objective_id: correctness.objective_id,
-          eventually_correct_ratio:
-            sum(
-              fragment(
-                "(case when ? is true then 1 else 0 end)::float",
-                correctness.is_eventually_correct
-              )
-            ) /
-              fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id),
-          first_try_correct_ratio:
-            sum(
-              fragment(
-                "(case when ? is true then 1 else 0 end)::float",
-                correctness.is_first_try_correct
-              )
-            ) /
-              fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id)
-        }
-      )
-
-    from(a in subquery(corrections),
-      join: b in subquery(activity_num_attempts_rel_difficulty),
-      on: a.objective_id == b.objective_id,
-      select: %{
-        objective_id: a.objective_id,
-        eventually_correct: a.eventually_correct_ratio,
-        first_try_correct: a.first_try_correct_ratio,
-        number_of_attempts: b.number_of_attempts,
-        relative_difficulty: b.relative_difficulty
-      }
-    )
-  end
 end

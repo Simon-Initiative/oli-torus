@@ -367,18 +367,6 @@ defmodule OliWeb.Sections.OverviewView do
             </a>
           </li>
 
-          <%= if @is_system_admin do %>
-            <li>
-              <a
-                href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Snapshots.SnapshotsView, @section.slug)
-                }
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-              >
-                Manage Snapshot Records
-              </a>
-            </li>
-          <% end %>
           <%= if !@section.open_and_free do %>
             <li>
               <a

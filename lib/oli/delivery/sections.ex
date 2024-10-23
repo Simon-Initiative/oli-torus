@@ -36,7 +36,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Authoring.Course.{Project, ProjectAttributes}
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
-  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
@@ -551,10 +550,10 @@ defmodule Oli.Delivery.Sections do
   def has_student_data?(section_slug) do
     query =
       from(
-        snapshot in Snapshot,
-        join: s in assoc(snapshot, :section),
+        summary in Oli.Analytics.Summary.ResourceSummary,
+        join: s in Section, on: summary.section_id == s.id,
         where: s.slug == ^section_slug,
-        select: snapshot
+        select: summary
       )
 
     Repo.aggregate(query, :count, :id) > 0

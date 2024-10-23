@@ -8,6 +8,8 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
 
   alias Oli.Utils
   alias Oli.Authoring.Broadcaster
+  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Analytics.Summary.BrowseInsights
   alias Oli.Authoring.Course
 
   @impl Oban.Worker
@@ -128,12 +130,20 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
       "First Try Correct"
     ]
 
+    project_id = Oli.Authoring.Course.get_project_by_slug(project_slug).id
+
     [
-      {"by_page.tsv", Oli.Analytics.ByPage.query_against_project_slug(project_slug, [])},
-      {"by_activity.tsv", Oli.Analytics.ByActivity.query_against_project_slug(project_slug, [])},
-      {"by_objective.tsv", Oli.Analytics.ByObjective.query_against_project_slug(project_slug, [])}
+      {"by_page.tsv", analytics_by_resource_type(project_id,
+        Oli.Resources.ResourceType.get_id_by_type("page"))},
+      {"by_activity.tsv", analytics_by_resource_type(project_id,
+        Oli.Resources.ResourceType.get_id_by_type("activity"))},
+      {"by_objective.tsv", analytics_by_resource_type(project_id,
+        Oli.Resources.ResourceType.get_id_by_type("objective"))}
     ]
-    |> Enum.map(fn {name, data} -> {name, [analytics_title_row | extract_analytics(data)]} end)
+    |> Enum.map(fn {name, data} ->
+      records = Enum.map(data, fn data -> extract_analytics(data) end)
+      {name, [analytics_title_row | records]}
+    end)
     |> Enum.map(fn {name, data} ->
       {name, data |> CSV.encode(separator: ?\t)}
     end)
@@ -149,25 +159,42 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     end)
   end
 
-  def extract_analytics([
-        %{
-          slice: slice,
+  defp analytics_by_resource_type(project_id, resource_type_id) do
+
+    options = %Oli.Analytics.Summary.BrowseInsightsOptions{
+      project_id: project_id,
+      resource_type_id: resource_type_id,
+      section_ids: nil
+    }
+
+    BrowseInsights.browse_insights(
+      %Paging{offset: 0, limit: 50000},
+      %Sorting{field: :resource_id, direction: :asc},
+      options)
+    |> Enum.map(fn r ->
+      %{
+        resource_id: r.resource_id,
+        title: r.title,
+        number_of_attempts: r.num_attempts,
+        relative_difficulty: r.relative_difficulty,
+        eventually_correct: r.eventually_correct,
+        first_attempt_correct: r.first_attempt_correct
+      }
+    end)
+
+  end
+
+  def extract_analytics(%{
+          title: title,
+          resource_id: resource_id,
           number_of_attempts: number_of_attempts,
           relative_difficulty: relative_difficulty,
           eventually_correct: eventually_correct,
           first_try_correct: first_try_correct
-        } = h
-        | t
-      ]) do
-    [
+        }) do
       [
-        slice.title,
-        case Map.get(h, :activity) do
-          nil -> slice.title
-          %{title: nil} -> slice.title
-          %{title: title} -> title
-          _ -> slice.title
-        end,
+        resource_id,
+        title,
         if is_nil(number_of_attempts) do
           "No attempts"
         else
@@ -189,8 +216,6 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
           format_percent(first_try_correct)
         end
       ]
-      | extract_analytics(t)
-    ]
   end
 
   def extract_analytics([]), do: []

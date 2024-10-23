@@ -13,8 +13,6 @@ defmodule Oli.SectionsTest do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Snapshots.Snapshot
-  alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Transfer
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
@@ -475,13 +473,8 @@ defmodule Oli.SectionsTest do
       assert %Ecto.Changeset{} = Sections.change_section(section)
     end
 
-    test "has_student_data?/1 returns false when section has no snapshots", %{section: section} do
+    test "has_student_data?/1 returns false when section has no data", %{section: section} do
       refute Sections.has_student_data?(section.slug)
-    end
-
-    test "has_student_data?/1 returns true when section has snapshots" do
-      section = insert(:snapshot).section
-      assert Sections.has_student_data?(section.slug)
     end
 
     test "get_remixed_projects/2 returns a list of remixed projects for a section", %{
@@ -2034,77 +2027,7 @@ defmodule Oli.SectionsTest do
       assert Core.get_part_attempts_by_activity_attempts(activity_attempts) |> length() == 0
     end
 
-    test "deletes snapshot by section and user", %{section_1: section_1, user_1: user_1} do
-      # assert that there is a snapshot in target section and user
-      assert Oli.Repo.all(
-               from(sn in Snapshot,
-                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
-               )
-             )
-             |> length() == 1
 
-      # delete snapshot for target section and user
-      Snapshots.delete_snapshots_by_section_and_user(section_1.id, user_1.id)
-
-      # assert that there is no snapshot in target section and user
-      assert Oli.Repo.all(
-               from(sn in Snapshot,
-                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
-               )
-             )
-             |> length() == 0
-    end
-
-    test "updates resource accesses and snapshots from current section and user to target section and user",
-         %{
-           section_1: section_1,
-           section_2: section_2,
-           user_1: user_1,
-           user_2: user_2
-         } do
-      # assert that there is a resource access and spanshot in current section
-      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 1
-      assert Oli.Repo.get_by(Snapshot, section_id: section_1.id).section_id == section_1.id
-
-      # assert that there is no resource access and spanshot in target section
-      assert Core.get_resource_accesses(section_2.slug, user_1.id) |> length() == 0
-      assert Oli.Repo.get_by(Snapshot, section_id: section_2.id).section_id == section_2.id
-
-      # update resource accesses and snapshots from current section and user to target section and user
-      Core.update_resource_accesses_by_section_and_user(
-        section_1.id,
-        user_1.id,
-        section_2.id,
-        user_2.id
-      )
-
-      Snapshots.update_snapshots_by_section_and_user(
-        section_1.id,
-        user_1.id,
-        section_2.id,
-        user_2.id
-      )
-
-      # assert that there is no resource access and spanshot in current section
-      assert Core.get_resource_accesses(section_1.slug, user_1.id) |> length() == 0
-
-      assert Oli.Repo.all(
-               from(sn in Snapshot,
-                 where: sn.section_id == ^section_1.id and sn.user_id == ^user_1.id
-               )
-             )
-             |> length() == 0
-
-      # assert that there is a resource access and spanshot in target section
-      assert Core.get_resource_accesses(section_2.slug, user_2.id) |> length() == 2
-
-      assert Oli.Repo.all(
-               from(sn in Snapshot,
-                 where: sn.section_id == ^section_2.id and sn.user_id == ^user_2.id
-               )
-             )
-             |> length() == 2
-    end
   end
 
   describe "get_next_activities_for_student/3" do
