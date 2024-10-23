@@ -1,5 +1,14 @@
-import React, { ChangeEvent, ChangeEventHandler, ReactNode, useCallback } from 'react';
+import React, {
+  ChangeEvent,
+  ChangeEventHandler,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import {
   dateWithTimeLabel,
   dateWithoutTimeLabel,
@@ -21,6 +30,8 @@ interface SaveIndicatorProps {
 
 interface PageDetailEditorProps {
   selectedItem: HierarchyItem | null;
+  dateInputValue: any;
+  dateTimeInputValue: any;
   onChangeTypeHandler: ChangeEventHandler<HTMLSelectElement>;
   onChangeEndHandler: ChangeEventHandler<HTMLInputElement>;
   onChangeDueEndHandler: ChangeEventHandler<HTMLInputElement>;
@@ -47,6 +58,8 @@ const DateRangeView: React.FC<{ selectedItem: HierarchyItem | undefined | null }
 
 const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
   selectedItem,
+  dateInputValue,
+  dateTimeInputValue,
   onChangeTypeHandler,
   onChangeEndHandler,
   onChangeDueEndHandler,
@@ -89,8 +102,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="date"
-                onBlur={onChangeEndHandler}
-                defaultValue={dateWithoutTimeLabel(selectedItem.endDate) || ''}
+                onChange={onChangeEndHandler}
+                value={dateInputValue}
               />
             )}
 
@@ -98,8 +111,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="datetime-local"
-                onBlur={onChangeDueEndHandler}
-                defaultValue={dateWithTimeLabel(selectedItem.endDateTime) || ''}
+                onChange={onChangeDueEndHandler}
+                value={dateTimeInputValue}
               />
             )}
           </InputField>
@@ -140,6 +153,66 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const selectedItem = useSelector(getSelectedItem);
   const saving = useSelector(isSaving);
   const dispatch = useDispatch();
+  const [dateInputValue, setDateInputValue] = useState('');
+  const [dateTimeInputValue, setDateTimeInputValue] = useState('');
+
+  useEffect(() => {
+    setDateInputValue(selectedItem ? dateWithoutTimeLabel(selectedItem.endDate) || '' : '');
+    setDateTimeInputValue(selectedItem ? dateWithTimeLabel(selectedItem.endDateTime) || '' : '');
+  }, [selectedItem]);
+
+  const debouncedEndUpdate = useRef(
+    debounce((newValue, currentSelectedItem) => {
+      const target = newValue ? stringToDateWithoutTime(newValue) : null;
+      if (!currentSelectedItem) return;
+
+      dispatch(
+        moveScheduleItem({
+          itemId: currentSelectedItem.id,
+          startDate: currentSelectedItem.startDateTime || currentSelectedItem.startDate,
+          endDate: target,
+        }),
+      );
+    }, 700),
+  ).current;
+
+  const debouncedDueEndUpdate = useRef(
+    debounce((newValue, currentSelectedItem) => {
+      const target = newValue ? stringToDateWithTime(newValue) : null;
+      if (!currentSelectedItem) return;
+
+      dispatch(
+        moveScheduleItem({
+          itemId: currentSelectedItem.id,
+          startDate: currentSelectedItem.startDateTime || currentSelectedItem.startDate,
+          endDate: target,
+        }),
+      );
+    }, 700),
+  ).current;
+
+  useEffect(() => {
+    return () => {
+      debouncedEndUpdate.cancel();
+      debouncedDueEndUpdate.cancel();
+    };
+  }, [debouncedEndUpdate, debouncedDueEndUpdate]);
+
+  const onChangeEndHandler = (e) => {
+    const newValue = e.target.value;
+    setDateInputValue(newValue);
+
+    const currentSelectedItem = selectedItem;
+    debouncedEndUpdate(newValue, currentSelectedItem);
+  };
+
+  const onChangeDueEndHandler = (e) => {
+    const newValue = e.target.value;
+    setDateTimeInputValue(newValue);
+
+    const currentSelectedItem = selectedItem;
+    debouncedDueEndUpdate(newValue, currentSelectedItem);
+  };
 
   const onChangeTypeHandler = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -149,23 +222,6 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
         changeScheduleType({
           itemId: selectedItem.id,
           type: newType,
-        }),
-      );
-    },
-    [dispatch, selectedItem],
-  );
-
-  const onChangeEndHandler = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newDate = e.target.value;
-      const target = newDate ? stringToDateWithoutTime(newDate) : null;
-      if (!selectedItem) return;
-
-      dispatch(
-        moveScheduleItem({
-          itemId: selectedItem.id,
-          startDate: selectedItem.startDateTime || selectedItem.startDate,
-          endDate: target,
         }),
       );
     },
@@ -188,22 +244,6 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     [dispatch, selectedItem],
   );
 
-  const onChangeDueEndHandler = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      // End date changing includes time
-      const newDate = e.target.value;
-      const target = newDate ? stringToDateWithTime(newDate) : null;
-      if (!selectedItem) return;
-      dispatch(
-        moveScheduleItem({
-          itemId: selectedItem.id,
-          startDate: selectedItem.startDateTime || selectedItem.startDate,
-          endDate: target,
-        }),
-      );
-    },
-    [dispatch, selectedItem],
-  );
   const pageIsSelected = selectedItem && selectedItem.resource_type_id === ScheduleItemType.Page;
   if (!unsavedChanges && !saving && !pageIsSelected) return null;
   return (
@@ -216,11 +256,11 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
           onChangeTypeHandler={onChangeTypeHandler}
           onChangeAvailableFromHandler={onChangeAvailableFromHandler}
           selectedItem={selectedItem}
+          dateInputValue={dateInputValue}
+          dateTimeInputValue={dateTimeInputValue}
         />
       )}
-
       <div className="flex-grow" />
-
       <div className="flex gap-3 justify-center ">
         {saving && (
           <button
