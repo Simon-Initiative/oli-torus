@@ -919,7 +919,7 @@ defmodule OliWeb.Router do
     live_session :instructor_dashboard_preview,
       on_mount: [
         {OliWeb.UserAuth, :ensure_authenticated},
-          OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
@@ -943,7 +943,7 @@ defmodule OliWeb.Router do
     live_session :instructor_dashboard,
       on_mount: [
         {OliWeb.UserAuth, :ensure_authenticated},
-          OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1205,7 +1205,7 @@ defmodule OliWeb.Router do
     live_session :manage_section,
       on_mount: [
         {OliWeb.UserAuth, :ensure_authenticated},
-          OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,

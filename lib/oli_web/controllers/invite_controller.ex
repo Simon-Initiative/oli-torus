@@ -54,7 +54,7 @@ defmodule OliWeb.InviteController do
           case user.status do
             :new_user ->
               {"Join now",
-               ~p"/registration/new?#{[section: section.slug, from_invitation_link?: true]}"}
+               ~p"/users/register?#{[section: section.slug, from_invitation_link?: true]}"}
 
             :existing_user ->
               {"Go to the course", ~p"/sections/#{section.slug}?#{[from_invitation_link?: true]}"}
@@ -121,7 +121,7 @@ defmodule OliWeb.InviteController do
     |> case do
       nil ->
         # MER-3835 TODO
-        throw "NOT IMPLEMENTED"
+        throw("NOT IMPLEMENTED")
 
       author ->
         if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
@@ -134,6 +134,6 @@ defmodule OliWeb.InviteController do
 
   defp deliver_invitation_email(conn, user) do
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
   end
 end

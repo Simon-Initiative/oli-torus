@@ -1163,6 +1163,8 @@ defmodule OliWeb.Components.Common do
     """
   end
 
+  #### MER-3835 TODO: REMOVE
+
   @doc """
   Renders a simple form.
 
