@@ -83,7 +83,7 @@ defmodule Oli.Analytics.Datashop do
         sub: user.sub,
         slug: activity_revision.slug,
         part_attempt: part_attempt,
-        page_id: resource_attempt.resource_id,
+        page_id: resource_access.resource_id,
         objectives: activity_revision.objectives,
         activity_type_id: activity_revision.activity_type_id
       },

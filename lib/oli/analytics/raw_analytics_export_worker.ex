@@ -164,7 +164,7 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     options = %Oli.Analytics.Summary.BrowseInsightsOptions{
       project_id: project_id,
       resource_type_id: resource_type_id,
-      section_ids: nil
+      section_ids: []
     }
 
     BrowseInsights.browse_insights(
@@ -190,7 +190,7 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
           number_of_attempts: number_of_attempts,
           relative_difficulty: relative_difficulty,
           eventually_correct: eventually_correct,
-          first_try_correct: first_try_correct
+          first_attempt_correct: first_try_correct
         }) do
       [
         resource_id,

@@ -104,7 +104,7 @@ defmodule Oli.Analytics.Common do
             activity_revision_id: activity_attempt.revision_id,
             page_revision_id: resource_attempt.revision_id,
             activity_id: activity_attempt.resource_id,
-            page_id: resource_attempt.resource_id,
+            page_id: resource_access.resource_id,
             activity_attempt_number: activity_attempt.attempt_number,
             hints: part_attempt.hints,
             inserted_at: part_attempt.inserted_at,
