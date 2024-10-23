@@ -12,10 +12,6 @@ export interface PlainEntryEditorProps {
 export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEntryEditorProps) => {
   const [value, setValue] = useState<string>('');
 
-  const textAreaStyle: CSSProperties = {
-    width: '100%',
-  };
-
   useEffect(() => {
     if (props.bibEntry) {
       const data = new Cite(JSON.stringify(props.bibEntry?.content.data[0]));
@@ -50,7 +46,7 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
           </div>
         </>
       )}
-      <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value} />
+      <textarea className={'w-full bg-inherit'} rows={20} onChange={handleOnChange} value={value} />
     </div>
   );
 };
