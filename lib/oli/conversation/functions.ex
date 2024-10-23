@@ -83,12 +83,12 @@ defmodule Oli.Conversation.Functions do
       parameters: %{
         type: "object",
         properties: %{
-          section_slug: %{
-            type: "string",
-            description: "The current course section's slug"
+          section_id: %{
+            type: "integer",
+            description: "The current course section's id"
           }
         },
-        required: ["section_slug"]
+        required: ["section_id"]
       }
     }
   ]
@@ -197,6 +197,6 @@ defmodule Oli.Conversation.Functions do
     end)
   end
 
-  def get_section_information(%{"section_slug" => section_slug}),
-    do: Oli.Delivery.Sections.get_section_prompt_info(section_slug)
+  def get_section_information(%{"section_id" => section_id}),
+    do: Oli.Delivery.Sections.get_section_prompt_info(section_id)
 end

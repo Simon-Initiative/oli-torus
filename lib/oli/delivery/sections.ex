@@ -5351,8 +5351,9 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
-  @spec get_section_prompt_info(section_slug :: String.t()) :: String.t()
-  def get_section_prompt_info(section_slug) do
+  def get_section_prompt_info(section_id) do
+    section_slug = Repo.get(Section, section_id).slug
+
     instructors =
       section_slug
       |> fetch_instructors()
@@ -5360,12 +5361,12 @@ defmodule Oli.Delivery.Sections do
 
     layout =
       section_slug
-      |> Oli.Delivery.Sections.fetch_ordered_container_labels()
+      |> fetch_ordered_container_labels()
       |> Enum.map(&elem(&1, 1))
 
     content =
       section_slug
-      |> Oli.Delivery.Sections.fetch_all_pages()
+      |> fetch_all_pages()
       |> Enum.map(
         &%{
           title: &1.title,
