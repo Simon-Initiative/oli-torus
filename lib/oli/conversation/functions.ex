@@ -197,6 +197,6 @@ defmodule Oli.Conversation.Functions do
     end)
   end
 
-  def get_section_information(section_slug),
+  def get_section_information(%{"section_slug" => section_slug}),
     do: Oli.Delivery.Sections.get_section_prompt_info(section_slug)
 end

@@ -48,7 +48,11 @@ defmodule OliWeb.Dialogue.WindowLive do
       section_id: section.id,
       course_title: project.title,
       course_description: project.description,
-      page_content: ""
+      page_content: """
+      function call: yes
+      function name: get_section_information
+      function args: {"section_slug": "#{section.slug}"}
+      """
     }
 
     realize_prompt_template(section.page_prompt_template, bindings)
