@@ -335,7 +335,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
     end
-
   end
 
   describe "page size change" do

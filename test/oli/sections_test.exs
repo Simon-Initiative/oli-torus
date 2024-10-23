@@ -2026,8 +2026,6 @@ defmodule Oli.SectionsTest do
 
       assert Core.get_part_attempts_by_activity_attempts(activity_attempts) |> length() == 0
     end
-
-
   end
 
   describe "get_next_activities_for_student/3" do
