@@ -193,37 +193,37 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
   end
 
   def extract_analytics(%{
-          title: title,
-          resource_id: resource_id,
-          number_of_attempts: number_of_attempts,
-          relative_difficulty: relative_difficulty,
-          eventually_correct: eventually_correct,
-          first_attempt_correct: first_try_correct
-        }) do
-      [
-        resource_id,
-        title,
-        if is_nil(number_of_attempts) do
-          "No attempts"
-        else
-          Integer.to_string(number_of_attempts)
-        end,
-        if is_nil(relative_difficulty) do
-          ""
-        else
-          Float.to_string(truncate(relative_difficulty))
-        end,
-        if is_nil(eventually_correct) do
-          ""
-        else
-          format_percent(eventually_correct)
-        end,
-        if is_nil(first_try_correct) do
-          ""
-        else
-          format_percent(first_try_correct)
-        end
-      ]
+        title: title,
+        resource_id: resource_id,
+        number_of_attempts: number_of_attempts,
+        relative_difficulty: relative_difficulty,
+        eventually_correct: eventually_correct,
+        first_attempt_correct: first_try_correct
+      }) do
+    [
+      resource_id,
+      title,
+      if is_nil(number_of_attempts) do
+        "No attempts"
+      else
+        Integer.to_string(number_of_attempts)
+      end,
+      if is_nil(relative_difficulty) do
+        ""
+      else
+        Float.to_string(truncate(relative_difficulty))
+      end,
+      if is_nil(eventually_correct) do
+        ""
+      else
+        format_percent(eventually_correct)
+      end,
+      if is_nil(first_try_correct) do
+        ""
+      else
+        format_percent(first_try_correct)
+      end
+    ]
   end
 
   def extract_analytics([]), do: []
