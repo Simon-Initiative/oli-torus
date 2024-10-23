@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 import { BibEntry } from 'data/content/bibentry';
 
 const Cite = (window as any).cite;
@@ -46,7 +46,7 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
           </div>
         </>
       )}
-      <textarea className={'w-full bg-inherit'} rows={20} onChange={handleOnChange} value={value} />
+      <textarea className="w-full bg-inherit" rows={20} onChange={handleOnChange} value={value} />
     </div>
   );
 };
