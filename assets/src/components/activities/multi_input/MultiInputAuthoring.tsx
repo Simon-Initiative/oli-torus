@@ -8,7 +8,7 @@ import {
   changePerPartSubmission,
   shuffleAnswerChoiceSetting,
 } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
 import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
@@ -47,6 +47,13 @@ export const MultiInputComponent = () => {
   const input = model.inputs.find((input) => input.id === selectedInputRef?.id);
   const index = model.inputs.findIndex((input) => input.id === selectedInputRef?.id);
 
+  // submitPerPart setting incompatible with use of math keyboard
+  const usesMathKeyboard = model.inputs.some((input: MultiInput) => input.inputType === 'math');
+  const settings = [
+    shuffleAnswerChoiceSetting(model, dispatch, input),
+    !usesMathKeyboard && changePerPartSubmission(model, dispatch),
+  ];
+
   return (
     <>
       <MultiInputStem
@@ -76,12 +83,7 @@ export const MultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
-          <ActivitySettings
-            settings={[
-              shuffleAnswerChoiceSetting(model, dispatch, input),
-              changePerPartSubmission(model, dispatch),
-            ]}
-          />
+          <ActivitySettings settings={settings} />
         </TabbedNavigation.Tabs>
       ) : (
         'Select an input to edit it'
