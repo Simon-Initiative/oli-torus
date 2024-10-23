@@ -5351,37 +5351,32 @@ defmodule Oli.Delivery.Sections do
     |> Repo.all()
   end
 
-  @spec get_or_generate_section_prompt_info(section_slug :: String.t()) :: String.t()
-  def get_or_generate_section_prompt_info(section_slug) do
+  @spec get_section_prompt_info(section_slug :: String.t()) :: String.t()
+  def get_section_prompt_info(section_slug) do
     instructors =
       section_slug
       |> fetch_instructors()
-      |> Enum.map(&"#{&1.name} (#{&1.email})")
-      |> Enum.join("\n")
+      |> Enum.map(&%{name: &1.name, email: &1.email})
 
-    course_layout =
+    layout =
       section_slug
-      |> fetch_ordered_container_labels()
+      |> Oli.Delivery.Sections.fetch_ordered_container_labels()
       |> Enum.map(&elem(&1, 1))
-      |> Enum.join("\n")
 
-    pages_with_links =
+    content =
       section_slug
-      |> fetch_all_pages()
+      |> Oli.Delivery.Sections.fetch_all_pages()
       |> Enum.map(
-        &"#{&1.title} (#{Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, &1.slug)})"
+        &%{
+          title: &1.title,
+          url: Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, &1.slug)
+        }
       )
-      |> Enum.join("\n")
 
-    """
-    Section Instructors:
-    #{instructors}
-
-    Section Layout:
-    #{course_layout}
-
-    Section Content:
-    #{pages_with_links}
-    """
+    %{
+      instructors: instructors,
+      layout: layout,
+      content: content
+    }
   end
 end

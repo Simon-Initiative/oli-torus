@@ -7,7 +7,8 @@ defmodule Oli.Conversation.Functions do
   @lookup_table %{
     "avg_score_for" => "Elixir.Oli.Conversation.Functions.avg_score_for",
     "up_next" => "Elixir.Oli.Conversation.Functions.up_next",
-    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content"
+    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content",
+    "get_section_information" => "Elixir.Oli.Conversation.Functions.get_section_information"
   }
 
   @functions [
@@ -69,6 +70,25 @@ defmodule Oli.Conversation.Functions do
           }
         },
         required: ["student_input", "section_id"]
+      }
+    },
+    %{
+      name: "get_section_information",
+      description: """
+      For a given course section return the following information:
+      - instructors: name and email
+      - layout: all modules and units
+      - content: title and url for all the pages
+      """,
+      parameters: %{
+        type: "object",
+        properties: %{
+          section_slug: %{
+            type: "string",
+            description: "The current course section's slug"
+          }
+        },
+        required: ["section_slug"]
       }
     }
   ]
@@ -176,4 +196,7 @@ defmodule Oli.Conversation.Functions do
       }
     end)
   end
+
+  def get_section_information(section_slug),
+    do: Oli.Delivery.Sections.get_section_prompt_info(section_slug)
 end

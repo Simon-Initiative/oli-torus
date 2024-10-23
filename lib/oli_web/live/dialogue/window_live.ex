@@ -47,8 +47,8 @@ defmodule OliWeb.Dialogue.WindowLive do
       current_user_id: user_id,
       section_id: section.id,
       course_title: project.title,
-      page_content: Sections.get_or_generate_section_prompt_info(section.slug),
-      course_description: project.description
+      course_description: project.description,
+      page_content: ""
     }
 
     realize_prompt_template(section.page_prompt_template, bindings)
