@@ -133,12 +133,21 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     project_id = Oli.Authoring.Course.get_project_by_slug(project_slug).id
 
     [
-      {"by_page.tsv", analytics_by_resource_type(project_id,
-        Oli.Resources.ResourceType.get_id_by_type("page"))},
-      {"by_activity.tsv", analytics_by_resource_type(project_id,
-        Oli.Resources.ResourceType.get_id_by_type("activity"))},
-      {"by_objective.tsv", analytics_by_resource_type(project_id,
-        Oli.Resources.ResourceType.get_id_by_type("objective"))}
+      {"by_page.tsv",
+       analytics_by_resource_type(
+         project_id,
+         Oli.Resources.ResourceType.get_id_by_type("page")
+       )},
+      {"by_activity.tsv",
+       analytics_by_resource_type(
+         project_id,
+         Oli.Resources.ResourceType.get_id_by_type("activity")
+       )},
+      {"by_objective.tsv",
+       analytics_by_resource_type(
+         project_id,
+         Oli.Resources.ResourceType.get_id_by_type("objective")
+       )}
     ]
     |> Enum.map(fn {name, data} ->
       records = Enum.map(data, fn data -> extract_analytics(data) end)
@@ -160,7 +169,6 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
   end
 
   defp analytics_by_resource_type(project_id, resource_type_id) do
-
     options = %Oli.Analytics.Summary.BrowseInsightsOptions{
       project_id: project_id,
       resource_type_id: resource_type_id,
@@ -170,7 +178,8 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
     BrowseInsights.browse_insights(
       %Paging{offset: 0, limit: 50000},
       %Sorting{field: :resource_id, direction: :asc},
-      options)
+      options
+    )
     |> Enum.map(fn r ->
       %{
         resource_id: r.resource_id,
@@ -181,41 +190,40 @@ defmodule Oli.Analytics.RawAnalyticsExportWorker do
         first_attempt_correct: r.first_attempt_correct
       }
     end)
-
   end
 
   def extract_analytics(%{
-          title: title,
-          resource_id: resource_id,
-          number_of_attempts: number_of_attempts,
-          relative_difficulty: relative_difficulty,
-          eventually_correct: eventually_correct,
-          first_try_correct: first_try_correct
-        }) do
-      [
-        resource_id,
-        title,
-        if is_nil(number_of_attempts) do
-          "No attempts"
-        else
-          Integer.to_string(number_of_attempts)
-        end,
-        if is_nil(relative_difficulty) do
-          ""
-        else
-          Float.to_string(truncate(relative_difficulty))
-        end,
-        if is_nil(eventually_correct) do
-          ""
-        else
-          format_percent(eventually_correct)
-        end,
-        if is_nil(first_try_correct) do
-          ""
-        else
-          format_percent(first_try_correct)
-        end
-      ]
+        title: title,
+        resource_id: resource_id,
+        number_of_attempts: number_of_attempts,
+        relative_difficulty: relative_difficulty,
+        eventually_correct: eventually_correct,
+        first_try_correct: first_try_correct
+      }) do
+    [
+      resource_id,
+      title,
+      if is_nil(number_of_attempts) do
+        "No attempts"
+      else
+        Integer.to_string(number_of_attempts)
+      end,
+      if is_nil(relative_difficulty) do
+        ""
+      else
+        Float.to_string(truncate(relative_difficulty))
+      end,
+      if is_nil(eventually_correct) do
+        ""
+      else
+        format_percent(eventually_correct)
+      end,
+      if is_nil(first_try_correct) do
+        ""
+      else
+        format_percent(first_try_correct)
+      end
+    ]
   end
 
   def extract_analytics([]), do: []

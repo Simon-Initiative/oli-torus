@@ -39,6 +39,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
   def perform_now([], _, _unused) do
     :ok
   end
+
   def perform_now(part_attempt_guids, section_slug, _unused) do
     # Fetch all the necessary context information to be able to create snapshots
     results =
@@ -70,7 +71,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
     case Oli.Analytics.Summary.execute_analytics_pipeline(results, project_id, host_name()) do
       {:ok, %Pipeline{data: attempt_group}} ->
-
         body =
           StatementFactory.to_statements(attempt_group)
           |> Oli.Analytics.Common.to_jsonlines()
@@ -91,7 +91,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
       e ->
         e
     end
-
   end
 
   defp create_bundle_id(attempt_group) do
@@ -110,5 +109,4 @@ defmodule Oli.Delivery.Snapshots.Worker do
     |> Keyword.get(:url)
     |> Keyword.get(:host)
   end
-
 end

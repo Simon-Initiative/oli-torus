@@ -42,6 +42,4 @@ defmodule Oli.Delivery.Snapshots do
         |> Oban.insert()
     end
   end
-
-
 end

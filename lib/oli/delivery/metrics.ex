@@ -809,7 +809,10 @@ defmodule Oli.Delivery.Metrics do
       container_id_n => "Low"
     }
   """
-  def proficiency_per_container(%Section{id: section_id, analytics_version: _both}, contained_pages) do
+  def proficiency_per_container(
+        %Section{id: section_id, analytics_version: _both},
+        contained_pages
+      ) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =
@@ -983,7 +986,10 @@ defmodule Oli.Delivery.Metrics do
       student_id_n => "Low"
     }
   """
-  def proficiency_per_student_for_page(%Section{id: section_id, analytics_version: _both}, page_id) do
+  def proficiency_per_student_for_page(
+        %Section{id: section_id, analytics_version: _both},
+        page_id
+      ) do
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
     query =

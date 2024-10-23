@@ -92,7 +92,7 @@ defmodule Oli.Analytics.Datashop do
       limit: ^limit
     )
     |> Repo.stream()
-end
+  end
 
   def count(section_ids) do
     from(part_attempt in Oli.Delivery.Attempts.Core.PartAttempt,

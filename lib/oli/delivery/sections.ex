@@ -551,7 +551,8 @@ defmodule Oli.Delivery.Sections do
     query =
       from(
         summary in Oli.Analytics.Summary.ResourceSummary,
-        join: s in Section, on: summary.section_id == s.id,
+        join: s in Section,
+        on: summary.section_id == s.id,
         where: s.slug == ^section_slug,
         select: summary
       )

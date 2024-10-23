@@ -19,47 +19,48 @@ defmodule Oli.Analytics.Common do
   end
 
   defp get_objectives_map(project_slug) do
-
     resource_type_id = Oli.Resources.ResourceType.get_id_by_type("objective")
 
     from(m in Oli.Publishing.PublishedResource,
-        join: rev in Revision,
-        on: rev.id == m.revision_id,
-        where:
-          m.publication_id in subquery(Oli.Publishing.AuthoringResolver.project_working_publication(project_slug)) and
-            rev.resource_type_id == ^resource_type_id,
-        select: %{
-          resource_id: rev.resource_id,
-          title: rev.title
-        }
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn %{resource_id: id} = o, m -> Map.put(m, id, o) end)
+      join: rev in Revision,
+      on: rev.id == m.revision_id,
+      where:
+        m.publication_id in subquery(
+          Oli.Publishing.AuthoringResolver.project_working_publication(project_slug)
+        ) and
+          rev.resource_type_id == ^resource_type_id,
+      select: %{
+        resource_id: rev.resource_id,
+        title: rev.title
+      }
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn %{resource_id: id} = o, m -> Map.put(m, id, o) end)
   end
 
   defp get_activities_map(project_slug) do
-
     resource_type_id = Oli.Resources.ResourceType.get_id_by_type("activity")
 
     from(m in Oli.Publishing.PublishedResource,
-        join: rev in Revision,
-        on: rev.id == m.revision_id,
-        where:
-          m.publication_id in subquery(Oli.Publishing.AuthoringResolver.project_working_publication(project_slug)) and
-            rev.resource_type_id == ^resource_type_id,
-        select: %{
-          title: rev.title,
-          resource_id: rev.resource_id,
-          activity_type_id: rev.activity_type_id,
-          content: rev.content
-        }
-      )
-      |> Repo.all()
-      |> Enum.reduce(%{}, fn %{resource_id: id} = o, m -> Map.put(m, id, o) end)
+      join: rev in Revision,
+      on: rev.id == m.revision_id,
+      where:
+        m.publication_id in subquery(
+          Oli.Publishing.AuthoringResolver.project_working_publication(project_slug)
+        ) and
+          rev.resource_type_id == ^resource_type_id,
+      select: %{
+        title: rev.title,
+        resource_id: rev.resource_id,
+        activity_type_id: rev.activity_type_id,
+        content: rev.content
+      }
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn %{resource_id: id} = o, m -> Map.put(m, id, o) end)
   end
 
   def stream_project_raw_analytics_to_file!(project_slug, append_to_filepath) do
-
     objectives_map = get_objectives_map(project_slug)
     activities_map = get_activities_map(project_slug)
 
@@ -120,25 +121,24 @@ defmodule Oli.Analytics.Common do
         )
       )
       |> Stream.map(fn %{
-                          part_attempt_id: part_attempt_id,
-                          part_id: part_id,
-                          activity_revision_id: activity_attempt_revision_id,
-                          page_revision_id: resource_attempt_revision_id,
-                          activity_id: activity_attempt_resource_id,
-                          page_id: resource_attempt_resource_id,
-                          part_attempt_attempt_number: part_attempt_attempt_number,
-                          activity_attempt_id: activity_attempt_id,
-                          resource_attempt_id: resource_attempt_id,
-                          hints: hints,
-                          inserted_at: inserted_at,
-                          user_id: user_id,
-                          section_id: section_id,
-                          score: score,
-                          out_of: out_of,
-                          response: response,
-                          feedback: feedback
-                        } ->
-
+                         part_attempt_id: part_attempt_id,
+                         part_id: part_id,
+                         activity_revision_id: activity_attempt_revision_id,
+                         page_revision_id: resource_attempt_revision_id,
+                         activity_id: activity_attempt_resource_id,
+                         page_id: resource_attempt_resource_id,
+                         part_attempt_attempt_number: part_attempt_attempt_number,
+                         activity_attempt_id: activity_attempt_id,
+                         resource_attempt_id: resource_attempt_id,
+                         hints: hints,
+                         inserted_at: inserted_at,
+                         user_id: user_id,
+                         section_id: section_id,
+                         score: score,
+                         out_of: out_of,
+                         response: response,
+                         feedback: feedback
+                       } ->
         activity = Map.get(activities_map, activity_attempt_resource_id)
         activity_registration = Map.get(activity_registration_map, activity.activity_type_id)
         section = Map.get(sections_map, section_id)
@@ -146,15 +146,16 @@ defmodule Oli.Analytics.Common do
         activity_revision = Oli.DatashopCache.get_revision!(activity_attempt_revision_id)
         page_revision = Oli.DatashopCache.get_revision!(resource_attempt_revision_id)
 
-        objectives = Map.get(activity_revision, :objectives, %{} |> Map.put(part_id, []))
-        |> Map.get(part_id, [])
-        |> Enum.dedup()
-        |> Enum.map(fn id ->
-          case Map.get(objectives_map, id) do
-            nil -> %{resource_id: id, title: "Unknown"}
-            item -> item
-          end
-        end)
+        objectives =
+          Map.get(activity_revision, :objectives, %{} |> Map.put(part_id, []))
+          |> Map.get(part_id, [])
+          |> Enum.dedup()
+          |> Enum.map(fn id ->
+            case Map.get(objectives_map, id) do
+              nil -> %{resource_id: id, title: "Unknown"}
+              item -> item
+            end
+          end)
 
         [
           [
@@ -166,7 +167,11 @@ defmodule Oli.Analytics.Common do
             activity_registration.title,
             part_attempt_attempt_number,
             page_revision.graded,
-            if score == out_of do true else false end,
+            if score == out_of do
+              true
+            else
+              false
+            end,
             score,
             out_of,
             hints,
@@ -188,5 +193,4 @@ defmodule Oli.Analytics.Common do
       |> Stream.run()
     end)
   end
-
 end
