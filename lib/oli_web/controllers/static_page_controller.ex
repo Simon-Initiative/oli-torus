@@ -9,10 +9,17 @@ defmodule OliWeb.StaticPageController do
   plug Oli.Plugs.RestrictAdminAccess when action in [:index]
 
   def index(conn, _params) do
-    if conn.assigns.current_user,
-      do: render(PowHelpers.use_pow_config(conn, :user), "index_logged_in.html"),
-      else: render(PowHelpers.use_pow_config(conn, :user), "index.html")
+    if conn.assigns.current_user do
+      render(PowHelpers.use_pow_config(conn, :user), "index_logged_in.html")
+    else
+      render(PowHelpers.use_pow_config(maybe_put_request_path(conn), :user), "index.html")
+    end
   end
+
+  defp maybe_put_request_path(%{params: %{"request_path" => enrollment_path}} = conn),
+    do: Plug.Conn.put_session(conn, :enrollment_path, enrollment_path)
+
+  defp maybe_put_request_path(conn), do: conn
 
   def unauthorized(conn, _params) do
     render(conn, "unauthorized.html")
