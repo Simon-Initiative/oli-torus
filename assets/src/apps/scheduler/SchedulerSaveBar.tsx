@@ -31,6 +31,7 @@ interface SaveIndicatorProps {
 interface PageDetailEditorProps {
   selectedItem: HierarchyItem | null;
   dateInputValue: string;
+  availableDateInputValue: string;
   onChangeTypeHandler: ChangeEventHandler<HTMLSelectElement>;
   onChangeEndHandler: ChangeEventHandler<HTMLInputElement>;
   onChangeAvailableFromHandler: (event: ChangeEvent<HTMLInputElement> | null) => void;
@@ -57,6 +58,7 @@ const DateRangeView: React.FC<{ selectedItem: HierarchyItem | undefined | null }
 const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
   selectedItem,
   dateInputValue,
+  availableDateInputValue,
   onChangeTypeHandler,
   onChangeEndHandler,
   onChangeAvailableFromHandler,
@@ -75,8 +77,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="datetime-local"
-                onBlur={onChangeAvailableFromHandler}
-                defaultValue={dateWithTimeLabel(selectedItem.startDateTime) || ''}
+                onChange={onChangeAvailableFromHandler}
+                value={availableDateInputValue}
               />
             </InputField>
           </InputRow>
@@ -139,6 +141,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const saving = useSelector(isSaving);
   const dispatch = useDispatch();
   const [dateInputValue, setDateInputValue] = useState('');
+  const [availableDateInputValue, setAvailableDateInputValue] = useState('');
 
   useEffect(() => {
     const parsedValue = selectedItem
@@ -147,7 +150,13 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
         : dateWithoutTimeLabel(selectedItem.endDate) || ''
       : '';
 
+    const parsedAvailableDate =
+      selectedItem && selectedItem.graded
+        ? dateWithTimeLabel(selectedItem.startDateTime) || ''
+        : '';
+
     setDateInputValue(parsedValue);
+    setAvailableDateInputValue(parsedAvailableDate);
   }, [selectedItem]);
 
   const debouncedEndUpdate = useRef(
@@ -164,11 +173,38 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     }, 700),
   ).current;
 
+  const debouncedAvailableFromUpdate = useRef(
+    debounce((parsedNewAvailableValue, currentSelectedItem) => {
+      if (!currentSelectedItem) return;
+
+      dispatch(
+        moveScheduleItem({
+          itemId: currentSelectedItem.id,
+          startDate: parsedNewAvailableValue,
+          endDate: currentSelectedItem.endDateTime || currentSelectedItem.endDate,
+        }),
+      );
+    }, 700),
+  ).current;
+
   useEffect(() => {
     return () => {
       debouncedEndUpdate.cancel();
+      debouncedAvailableFromUpdate.cancel();
     };
-  }, [debouncedEndUpdate]);
+  }, [debouncedEndUpdate, debouncedAvailableFromUpdate]);
+
+  const onChangeAvailableFromHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setAvailableDateInputValue(newValue);
+
+    const currentSelectedItem = selectedItem;
+
+    const parsedNewAvailableValue =
+      selectedItem && newValue ? stringToDateWithTime(newValue) : null;
+
+    debouncedAvailableFromUpdate(parsedNewAvailableValue, currentSelectedItem);
+  };
 
   const onChangeEndHandler = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -200,22 +236,6 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     [dispatch, selectedItem],
   );
 
-  const onChangeAvailableFromHandler = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newDate = e.target.value;
-      const target = newDate ? stringToDateWithTime(newDate) : null;
-      if (!selectedItem) return;
-      dispatch(
-        moveScheduleItem({
-          itemId: selectedItem.id,
-          startDate: target,
-          endDate: selectedItem.endDateTime || selectedItem.endDate,
-        }),
-      );
-    },
-    [dispatch, selectedItem],
-  );
-
   const pageIsSelected = selectedItem && selectedItem.resource_type_id === ScheduleItemType.Page;
   if (!unsavedChanges && !saving && !pageIsSelected) return null;
   return (
@@ -228,6 +248,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
           onChangeAvailableFromHandler={onChangeAvailableFromHandler}
           selectedItem={selectedItem}
           dateInputValue={dateInputValue}
+          availableDateInputValue={availableDateInputValue}
         />
       )}
       <div className="flex-grow" />
