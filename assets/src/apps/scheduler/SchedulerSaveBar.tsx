@@ -170,7 +170,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     };
   }, [debouncedEndUpdate]);
 
-  const onChangeEndHandler = (e) => {
+  const onChangeEndHandler = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setDateInputValue(newValue);
 
