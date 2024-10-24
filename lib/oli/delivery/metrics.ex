@@ -721,16 +721,19 @@ defmodule Oli.Delivery.Metrics do
 
   defp aggregate_raw_proficiency(raw_values) do
     {first_correct, first_count, _correct, _total} =
-      Enum.reduce(raw_values, {0, 0, 0, 0}, fn {first_correct, first_count, correct, count}, acc ->
-        {first_correct + elem(acc, 0), first_count + elem(acc, 1), correct + elem(acc, 2), count + elem(acc, 3)}
+      Enum.reduce(raw_values, {0, 0, 0, 0}, fn {first_correct, first_count, correct, count},
+                                               acc ->
+        {first_correct + elem(acc, 0), first_count + elem(acc, 1), correct + elem(acc, 2),
+         count + elem(acc, 3)}
       end)
 
-    proficiency_value = if first_count == 0 do
-      0
-    else
-      ((1.0 * first_correct) + (0.2 * (first_count - first_correct)))
-        / (first_count)
-    end
+    proficiency_value =
+      if first_count == 0 do
+        0
+      else
+        (1.0 * first_correct + 0.2 * (first_count - first_correct)) /
+          first_count
+      end
 
     proficiency_range(proficiency_value, first_count)
   end
@@ -756,8 +759,14 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts, num_correct, num_total}, acc ->
-      Map.put(acc, objective_id, {num_first_attempts_correct, num_first_attempts, num_correct, num_total})
+    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts,
+                            num_correct, num_total},
+                           acc ->
+      Map.put(
+        acc,
+        objective_id,
+        {num_first_attempts_correct, num_first_attempts, num_correct, num_total}
+      )
     end)
   end
 
@@ -802,8 +811,14 @@ defmodule Oli.Delivery.Metrics do
       )
 
     Repo.all(query)
-    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts, num_correct, num_total}, acc ->
-      Map.put(acc, objective_id, {num_first_attempts_correct, num_first_attempts, num_correct, num_total})
+    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts,
+                            num_correct, num_total},
+                           acc ->
+      Map.put(
+        acc,
+        objective_id,
+        {num_first_attempts_correct, num_first_attempts, num_correct, num_total}
+      )
     end)
   end
 
@@ -894,18 +909,19 @@ defmodule Oli.Delivery.Metrics do
         group_by: summary.user_id,
         select:
           {summary.user_id,
-            fragment(
-              """
-              (
-                (1 * NULLIF(CAST(SUM(?) as float), 0.0001)) +
-                (0.2 * (NULLIF(CAST(SUM(?) as float), 0.0001) - NULLIF(CAST(SUM(?) as float), 0.0001)))
-              ) /
-              NULLIF(CAST(SUM(?) as float), 0.0001)
-              """,
-              summary.num_first_attempts_correct,
-              summary.num_first_attempts, summary.num_first_attempts_correct,
-              summary.num_first_attempts
-            ), sum(summary.num_first_attempts)}
+           fragment(
+             """
+             (
+               (1 * NULLIF(CAST(SUM(?) as float), 0.0001)) +
+               (0.2 * (NULLIF(CAST(SUM(?) as float), 0.0001) - NULLIF(CAST(SUM(?) as float), 0.0001)))
+             ) /
+             NULLIF(CAST(SUM(?) as float), 0.0001)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), sum(summary.num_first_attempts)}
       )
 
     Repo.all(query)
@@ -989,7 +1005,8 @@ defmodule Oli.Delivery.Metrics do
             NULLIF(CAST(? as float), 0.0001)
             """,
             summary.num_first_attempts_correct,
-            summary.num_first_attempts, summary.num_first_attempts_correct,
+            summary.num_first_attempts,
+            summary.num_first_attempts_correct,
             summary.num_first_attempts
           ),
           summary.num_first_attempts
@@ -1030,18 +1047,19 @@ defmodule Oli.Delivery.Metrics do
             summary.resource_type_id == ^page_type_id,
         select:
           {summary.user_id,
-          fragment(
-            """
-            (
-              (1 * NULLIF(CAST(? as float), 0.0001)) +
-              (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
-            ) /
-            NULLIF(CAST(? as float), 0.0001)
-            """,
-            summary.num_first_attempts_correct,
-            summary.num_first_attempts, summary.num_first_attempts_correct,
-            summary.num_first_attempts
-          ), summary.num_first_attempts}
+           fragment(
+             """
+             (
+               (1 * NULLIF(CAST(? as float), 0.0001)) +
+               (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
+             ) /
+             NULLIF(CAST(? as float), 0.0001)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), summary.num_first_attempts}
       )
 
     Repo.all(query)
@@ -1075,18 +1093,19 @@ defmodule Oli.Delivery.Metrics do
             summary.resource_type_id == ^page_type_id,
         select:
           {summary.resource_id,
-          fragment(
-            """
-            (
-              (1 * NULLIF(CAST(? as float), 0.0001)) +
-              (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
-            ) /
-            NULLIF(CAST(? as float), 0.0001)
-            """,
-            summary.num_first_attempts_correct,
-            summary.num_first_attempts, summary.num_first_attempts_correct,
-            summary.num_first_attempts
-          ), summary.num_first_attempts}
+           fragment(
+             """
+             (
+               (1 * NULLIF(CAST(? as float), 0.0001)) +
+               (0.2 * (NULLIF(CAST(? as float), 0.0001) - NULLIF(CAST(? as float), 0.0001)))
+             ) /
+             NULLIF(CAST(? as float), 0.0001)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), summary.num_first_attempts}
       )
 
     Repo.all(query)
@@ -1254,7 +1273,9 @@ defmodule Oli.Delivery.Metrics do
     inverted_cp_index = page_to_parent_containers_map(contained_pages)
     container_totals = init_container_totals(contained_pages)
 
-    Enum.reduce(page_totals, container_totals, fn {page_id, first_correct, first_total, correct, total}, map ->
+    Enum.reduce(page_totals, container_totals, fn {page_id, first_correct, first_total, correct,
+                                                   total},
+                                                  map ->
       container_ids = Map.get(inverted_cp_index, page_id)
 
       case container_ids do
@@ -1263,8 +1284,10 @@ defmodule Oli.Delivery.Metrics do
 
         _ ->
           Enum.reduce(container_ids, map, fn container_id, map ->
-            update_in(map, [container_id], fn {current_first_correct, current_first_total, current_correct, current_total} ->
-              {current_first_correct + first_correct, current_first_total + first_total, current_correct + correct, current_total + total}
+            update_in(map, [container_id], fn {current_first_correct, current_first_total,
+                                               current_correct, current_total} ->
+              {current_first_correct + first_correct, current_first_total + first_total,
+               current_correct + correct, current_total + total}
             end)
           end)
       end
@@ -1272,9 +1295,11 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{}, fn {container_id, {first_correct, first_total, _correct, total}} ->
       proficiency =
         case total do
-          total when total in [+0.0, -0.0] -> nil
+          total when total in [+0.0, -0.0] ->
+            nil
+
           _ ->
-            ((1 * first_correct)+(0.2 * (first_total - first_correct))) / first_total
+            (1 * first_correct + 0.2 * (first_total - first_correct)) / first_total
         end
 
       {container_id, proficiency_range(proficiency, total)}
