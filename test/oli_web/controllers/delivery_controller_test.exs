@@ -231,7 +231,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "delivery_controller" do
+  describe "delivery_controller - show_enroll" do
     setup [:setup_lti_session]
 
     test "blocks LMS users from manually enrollment", %{conn: conn, section: section} do
@@ -241,6 +241,24 @@ defmodule OliWeb.DeliveryControllerTest do
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
       conn = get(conn, enrollment_path)
       assert response(conn, 302) =~ "You are being <a href=\"/course\">redirected</a>"
+    end
+
+    test "redirect to requested path after login", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+      conn = Map.update!(conn, :assigns, &Map.drop(&1, [:current_author, :current_user]))
+
+      enrollment_path = ~p"/sections/#{section.slug}/enroll"
+      # Visit enrollment page
+      conn = get(conn, enrollment_path)
+
+      redirected_path =
+        ~p"/?#{[section: section.slug, from_invitation_link?: true, request_path: enrollment_path]}"
+
+      {:safe, link} =
+        Phoenix.HTML.Link.link("redirected", to: redirected_path) |> Phoenix.HTML.raw()
+
+      # Assert user is redirected to the login page with the requested path as a query param
+      assert response(conn, 302) =~ "You are being #{link}."
     end
   end
 
