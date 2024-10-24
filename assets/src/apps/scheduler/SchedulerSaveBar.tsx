@@ -159,29 +159,29 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     setAvailableDateInputValue(parsedAvailableDate);
   }, [selectedItem]);
 
-  const debouncedEndUpdate = useRef(
-    debounce((parsedNewValue, currentSelectedItem) => {
+  const debouncedDateUpdate = useRef(
+    debounce((parsedNewValue, currentSelectedItem, dateType) => {
+      // dateType can be "startDate" or "endDate", since we may have two date fields (depending on the page type)
+      // Graded pages can set a date (endDate) and an available-from date (startDate)
+      // Non-graded pages can only set a date (endDate)
+
       if (!currentSelectedItem) return;
+
+      const startDate =
+        dateType === 'startDate'
+          ? parsedNewValue
+          : currentSelectedItem.startDateTime || currentSelectedItem.startDate;
+
+      const endDate =
+        dateType === 'endDate'
+          ? parsedNewValue
+          : currentSelectedItem.endDateTime || currentSelectedItem.endDate;
 
       dispatch(
         moveScheduleItem({
           itemId: currentSelectedItem.id,
-          startDate: currentSelectedItem.startDateTime || currentSelectedItem.startDate,
-          endDate: parsedNewValue,
-        }),
-      );
-    }, 700),
-  ).current;
-
-  const debouncedAvailableFromUpdate = useRef(
-    debounce((parsedNewAvailableValue, currentSelectedItem) => {
-      if (!currentSelectedItem) return;
-
-      dispatch(
-        moveScheduleItem({
-          itemId: currentSelectedItem.id,
-          startDate: parsedNewAvailableValue,
-          endDate: currentSelectedItem.endDateTime || currentSelectedItem.endDate,
+          startDate: startDate,
+          endDate: endDate,
         }),
       );
     }, 700),
@@ -189,10 +189,9 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
 
   useEffect(() => {
     return () => {
-      debouncedEndUpdate.cancel();
-      debouncedAvailableFromUpdate.cancel();
+      debouncedDateUpdate.cancel();
     };
-  }, [debouncedEndUpdate, debouncedAvailableFromUpdate]);
+  }, [debouncedDateUpdate]);
 
   const onChangeAvailableFromHandler = (e: ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -203,7 +202,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     const parsedNewAvailableValue =
       selectedItem && newValue ? stringToDateWithTime(newValue) : null;
 
-    debouncedAvailableFromUpdate(parsedNewAvailableValue, currentSelectedItem);
+    debouncedDateUpdate(parsedNewAvailableValue, currentSelectedItem, 'startDate');
   };
 
   const onChangeEndHandler = (e: ChangeEvent<HTMLInputElement>) => {
@@ -219,7 +218,7 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
           : stringToDateWithoutTime(newValue)
         : null;
 
-    debouncedEndUpdate(parsedNewValue, currentSelectedItem);
+    debouncedDateUpdate(parsedNewValue, currentSelectedItem, 'endDate');
   };
 
   const onChangeTypeHandler = useCallback(
