@@ -8,10 +8,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   @decorate transaction_event("IndexLive")
   def mount(_params, _session, socket) do
@@ -164,7 +166,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     >
       <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
         <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-          <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
           <.assignments
             upcoming_assignments={@upcoming_assignments}
             latest_assignments={@latest_assignments}
@@ -173,6 +174,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             containers_per_page={@containers_per_page}
             ctx={@ctx}
           />
+          <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
         </div>
 
         <div
@@ -377,17 +379,44 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="flex-col justify-start items-start gap-5 inline-flex grow">
-        <div class="justify-start items-start gap-2.5 inline-flex">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+        <div class="flex items-baseline gap-2.5 relative">
+          <div class="text-2xl font-bold leading-loose">
             Course Progress
           </div>
+          <div
+            id="course_progress_tooltip"
+            class="hidden absolute z-50 -top-[89px] -right-[316px] p-4"
+          >
+            <div class="w-[320px] h-[88px] px-4 py-2 bg-[#0d0c0f] rounded-md shadow border border-[#3a3740]">
+              <div class="grow shrink basis-0">
+                <span class="text-[#eeebf5] text-sm font-normal leading-normal">
+                  Course progress is calculated based on the pages you visit and the percentage of activities you complete.
+                </span>
+                <span class="text-[#eeebf5] text-sm font-bold underline leading-normal">
+                  Learn more.
+                </span>
+              </div>
+            </div>
+          </div>
+          <Icons.info on_mouse_over={JS.show(to: "#course_progress_tooltip")} />
         </div>
         <%= if @has_visited_section do %>
           <div class="flex-col justify-start items-start flex">
             <div>
-              <span class="text-6xl font-bold tracking-wide"><%= @progress %></span>
-              <span class="text-3xl font-bold tracking-tight">%</span>
+              <span class="text-6xl font-bold leading-[76px]"><%= @progress %></span>
+              <span class="text-3xl font-bold leading-[44px]">%</span>
             </div>
+          </div>
+          <Common.progress_bar
+            percent={@progress}
+            on_going_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
+            completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
+            not_completed_colour="bg-gray-600/20 dark:bg-[#385581]"
+            role="course progress bar"
+            show_percent={false}
+          />
+          <div class="text-[#4ca6ff] text-base font-bold ml-auto">
+            123/300 Pages Completed
           </div>
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
