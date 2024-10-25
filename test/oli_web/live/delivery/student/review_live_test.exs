@@ -10,6 +10,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Pow.PowHelpers
 
   @default_selected_view :gallery
 
@@ -99,6 +100,23 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         graded: true
       )
 
+    graded_adaptive_page_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        graded: true,
+        max_attempts: 5,
+        title: "Graded Adaptive Page",
+        # purpose: :foundation,
+        content: %{
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false,
+          "additionalStylesheets" => [
+            "/css/delivery_adaptive_themes_default_light.css"
+          ]
+        }
+      )
+
     ## modules...
     module_1_revision =
       insert(:revision, %{
@@ -123,7 +141,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
     module_2_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_3_revision.resource_id],
+        children: [page_3_revision.resource_id, graded_adaptive_page_revision.resource_id],
         title: "The second module is awesome!",
         poster_image: "module_2_custom_image_url",
         intro_content: %{
@@ -167,6 +185,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         page_1_revision,
         page_2_revision,
         page_3_revision,
+        graded_adaptive_page_revision,
         module_1_revision,
         module_2_revision,
         unit_1_revision,
@@ -228,6 +247,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       page_1: page_1_revision,
       page_2: page_2_revision,
       page_3: page_3_revision,
+      graded_adaptive_page_revision: graded_adaptive_page_revision,
       module_1: module_1_revision,
       module_2: module_2_revision,
       unit_1: unit_1_revision
@@ -588,6 +608,89 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         view,
         request_path
       )
+    end
+  end
+
+  describe "instructor" do
+    setup [:instructor_conn, :create_elixir_project]
+
+    test "can access to adaptive page review", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision
+    } do
+      user = insert(:user)
+
+      Sections.mark_section_visited_for_student(section, user)
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      initial_path =
+        Utils.review_live_path(
+          section.slug,
+          graded_adaptive_page_revision.slug,
+          attempt.attempt_guid
+        )
+
+      conn = get(conn, initial_path)
+
+      assert redirected_to(conn, 302) =~
+               "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(instructor, PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      assert html_response(conn, 200) =~ "Graded Adaptive Page"
+    end
+  end
+
+  describe "admin" do
+    setup [:admin_conn, :create_elixir_project]
+
+    test "can access to adaptive page review", %{
+      conn: conn,
+      section: section,
+      graded_adaptive_page_revision: graded_adaptive_page_revision,
+      admin: admin
+    } do
+      user = insert(:user)
+
+      Sections.mark_section_visited_for_student(section, user)
+
+      attempt = create_attempt(user, section, graded_adaptive_page_revision)
+
+      initial_path =
+        Utils.review_live_path(
+          section.slug,
+          graded_adaptive_page_revision.slug,
+          attempt.attempt_guid
+        )
+
+      conn = get(conn, initial_path)
+
+      assert redirected_to(conn, 302) =~
+               "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(admin, PowHelpers.get_pow_config(:author))
+
+      conn =
+        get(
+          conn,
+          "/sections/#{section.slug}/adaptive_lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review"
+        )
+
+      assert html_response(conn, 200) =~ "Graded Adaptive Page"
     end
   end
 
