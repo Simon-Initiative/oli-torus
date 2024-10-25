@@ -7468,6 +7468,10 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(21 128 61 / var(--tw-bg-opacity));
 }
 
+.bg-inherit {
+  background-color: inherit;
+}
+
 .bg-light {
   --tw-bg-opacity: 1;
   background-color: rgb(212 212 212 / var(--tw-bg-opacity));
