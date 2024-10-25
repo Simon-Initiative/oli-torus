@@ -396,9 +396,13 @@ defmodule OliWeb.DeliveryController do
 
       # guest user cannot access courses that require enrollment
       {:redirect, nil} ->
-        redirect(conn,
-          to: ~p"/?#{[section: section.slug, from_invitation_link?: true]}"
-        )
+        params = [
+          section: section.slug,
+          from_invitation_link?: true,
+          request_path: ~p"/sections/#{section.slug}/enroll"
+        ]
+
+        redirect(conn, to: ~p"/?#{params}")
 
       # redirect to course index when user is not an independent learner (LTI user)
       {:redirect, :non_independent_learner} ->

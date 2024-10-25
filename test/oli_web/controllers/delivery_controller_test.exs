@@ -231,7 +231,7 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "delivery_controller" do
+  describe "delivery_controller - show_enroll" do
     setup [:setup_lti_session]
 
     test "blocks LMS users from manually enrollment", %{conn: conn, section: section} do
@@ -241,6 +241,17 @@ defmodule OliWeb.DeliveryControllerTest do
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
       conn = get(conn, enrollment_path)
       assert response(conn, 302) =~ "You are being <a href=\"/course\">redirected</a>"
+    end
+
+    test "redirect to requested path after login", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
+      conn = Map.update!(conn, :assigns, &Map.drop(&1, [:current_author, :current_user]))
+
+      enrollment_path = ~p"/sections/#{section.slug}/enroll"
+
+      conn = get(conn, enrollment_path)
+
+      assert_redirect_to_login(conn, section.slug)
     end
   end
 
@@ -628,8 +639,7 @@ defmodule OliWeb.DeliveryControllerTest do
           )
         )
 
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/?section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected"
+      assert_redirect_to_login(conn, section.slug)
     end
 
     test "shows enroll view and Sign In link", %{conn: conn} do
@@ -706,8 +716,7 @@ defmodule OliWeb.DeliveryControllerTest do
       section = insert(:section, requires_enrollment: true)
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 302) =~
-               "<html><body>You are being <a href=\"/?section=#{section.slug}&amp;from_invitation_link%3F=true\">redirected</a>.</body></html>"
+      assert_redirect_to_login(conn, section.slug)
 
       conn = mock_captcha(conn, section)
 
@@ -960,5 +969,17 @@ defmodule OliWeb.DeliveryControllerTest do
     map = Seeder.base_project_with_resource4()
 
     Map.merge(%{conn: conn, user: user}, map)
+  end
+
+  defp assert_redirect_to_login(conn, section_slug) do
+    enrollment_path = ~p"/sections/#{section_slug}/enroll"
+
+    redirected_path =
+      ~p"/?#{[section: section_slug, from_invitation_link?: true, request_path: enrollment_path]}"
+
+    {:safe, link} =
+      Phoenix.HTML.Link.link("redirected", to: redirected_path) |> Phoenix.HTML.raw()
+
+    assert html_response(conn, 302) =~ "You are being #{link}."
   end
 end
