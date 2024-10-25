@@ -113,4 +113,29 @@ defmodule Oli.Delivery.Depot do
     |> :ets.select([match_spec])
     |> Serializer.unserialize(depot_desc)
   end
+
+  @doc """
+  Returns the count of entries that match the given conditions.
+
+  Full details on the supported conditions can be found in the MatchSpecTranslator
+  module, but the basic idea is that you can pass a list of conditions to match on.
+
+  The list can be a simple keyword list of field values to match on as an AND:
+
+  [resource_type_id: 3, graded: false]
+
+  or a list of tuples with the field name, operator, and value (all of which are
+  ANDed together):
+
+  [{:duration, {:between, 5, 10}}, {:graded, {:=, true}}]
+  """
+  def count(%DepotDesc{} = depot_desc, table_id, conditions) do
+    {match_head, guards, _return_fields} =
+      MatchSpecTranslator.translate(depot_desc, conditions)
+
+    match_spec = {match_head, guards, [true]}
+
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.select_count([match_spec])
+  end
 end

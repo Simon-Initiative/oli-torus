@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections.SectionCache
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Common
@@ -107,7 +108,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          latest_assignments: combine_settings(latest_assignments, combined_settings),
          containers_per_page: containers_per_page,
          section_progress: section_progress(section.id, current_user_id),
-         assignments_tab: :upcoming
+         assignments_tab: :upcoming,
+         pages_count:
+           SectionResourceDepot.pages_count(section.id) |> IO.inspect(label: "pages count!!!")
        )}
     else
       {:ok, assign(socket, active_tab: :index, loaded: false)}
@@ -174,7 +177,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             containers_per_page={@containers_per_page}
             ctx={@ctx}
           />
-          <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
+          <.course_progress
+            has_visited_section={@has_visited_section}
+            progress={@section_progress}
+            page_completed_target_path={
+              ~p"/sections/#{@section_slug}/learn?sidebar_expanded=#{@sidebar_expanded}"
+            }
+            pages_count={@pages_count}
+          />
         </div>
 
         <div
@@ -374,6 +384,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   attr(:has_visited_section, :boolean, required: true)
   attr(:progress, :integer, required: true)
+  attr(:page_completed_target_path, :string, required: true)
+  attr(:pages_count, :integer, required: true)
 
   defp course_progress(assigns) do
     ~H"""
@@ -421,9 +433,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             role="course progress bar"
             show_percent={false}
           />
-          <div class="text-[#4ca6ff] text-base font-bold ml-auto">
-            123/300 Pages Completed
-          </div>
+          <.link
+            navigate={@page_completed_target_path}
+            class="text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+          >
+            123/<%= @pages_count %> Pages Completed
+          </.link>
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
             <div class="text-base font-normal tracking-tight grow">
