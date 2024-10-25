@@ -28,6 +28,8 @@ defmodule Oli.Analytics.XAPI do
         |> Enum.random()
 
       GenStage.cast(producer, {:insert, bundle})
+    else
+      :ok
     end
   end
 

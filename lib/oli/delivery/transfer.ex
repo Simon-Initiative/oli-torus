@@ -9,7 +9,6 @@ defmodule Oli.Delivery.Transfer do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications}
-  alias Oli.Delivery.Snapshots
   alias Oli.Repo
 
   @doc """
@@ -113,16 +112,7 @@ defmodule Oli.Delivery.Transfer do
            {:ok, _} <-
              maybe_transfer_payment(current_enrollment, target_enrollment, target_section.id),
            {changes_count, nil} when is_integer(changes_count) <-
-             Snapshots.delete_snapshots_by_section_and_user(target_section.id, target_student_id),
-           {changes_count, nil} when is_integer(changes_count) <-
              Core.delete_resource_accesses_by_section_and_user(
-               target_section.id,
-               target_student_id
-             ),
-           {changes_count, nil} when is_integer(changes_count) <-
-             Snapshots.update_snapshots_by_section_and_user(
-               current_section.id,
-               current_student_id,
                target_section.id,
                target_student_id
              ),
