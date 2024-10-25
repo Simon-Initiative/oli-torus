@@ -385,6 +385,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           </div>
           <div
             id="course_progress_tooltip"
+            phx-hook="AutoHideTooltip"
             class="hidden absolute z-50 -top-[89px] -right-[316px] p-4"
           >
             <div class="w-[320px] h-[88px] px-4 py-2 bg-[#0d0c0f] rounded-md shadow border border-[#3a3740]">
@@ -392,13 +393,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                 <span class="text-[#eeebf5] text-sm font-normal leading-normal">
                   Course progress is calculated based on the pages you visit and the percentage of activities you complete.
                 </span>
-                <span class="text-[#eeebf5] text-sm font-bold underline leading-normal">
+                <button class="text-[#eeebf5] text-sm font-bold underline leading-normal">
                   Learn more.
-                </span>
+                </button>
               </div>
             </div>
           </div>
-          <Icons.info on_mouse_over={JS.show(to: "#course_progress_tooltip")} />
+          <span
+            xphx-mouseover={JS.show(to: "#course_progress_tooltip")}
+            class="size-5 hover:cursor-pointer"
+          >
+            <Icons.info />
+          </span>
         </div>
         <%= if @has_visited_section do %>
           <div class="flex-col justify-start items-start flex">

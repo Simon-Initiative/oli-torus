@@ -37,7 +37,7 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { ToggleReadMore } from './toggle_read_more';
-import { TooltipInit, TooltipWithTarget } from './tooltip';
+import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 
@@ -59,6 +59,7 @@ export const Hooks = {
   MonacoEditor,
   TooltipInit,
   TooltipWithTarget,
+  AutoHideTooltip,
   BeforeUnloadListener,
   ThemeToggle,
   LtiConnectInstructions,
