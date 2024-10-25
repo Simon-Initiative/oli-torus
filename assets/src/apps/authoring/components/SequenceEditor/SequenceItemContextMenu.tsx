@@ -1,8 +1,9 @@
 /* eslint-disable react/no-unescaped-entities */
 import React, { useEffect, useRef, useState } from 'react';
 import { ListGroup, Toast } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectIsAdmin, selectProjectSlug } from 'apps/authoring/store/app/slice';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import {
   SequenceEntry,
   SequenceEntryChild,
@@ -31,7 +32,7 @@ const SequenceItemContextMenu = (props: any) => {
   const [isParentQB, setIsParentQB] = useState();
   const projectSlug = useSelector(selectProjectSlug);
   const [showMenu, setShowMenu] = useState(false);
-
+  const dispatch = useDispatch();
   function useOutsideAlerter(ref: any) {
     useEffect(() => {
       /**
@@ -92,6 +93,7 @@ const SequenceItemContextMenu = (props: any) => {
     props.contextMenuClicked(false);
   };
   const handleRenameItem = async (item: any) => {
+    dispatch(setCurrentPartPropertyFocus({ focus: false }));
     const details = { event: 'setItemToRename', item };
     props.onMenuItemClick(details);
     props.contextMenuClicked(false);
