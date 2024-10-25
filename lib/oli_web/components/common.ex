@@ -111,6 +111,9 @@ defmodule OliWeb.Components.Common do
       :tertiary ->
         "rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline"
 
+      :outline ->
+        "rounded text-body-color hover:text-body-color bg-transparent border border-body-color dark:border-body-color-dark hover:bg-gray-200 active:text-white active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 dark:focus:ring-primary-700 hover:no-underline"
+
       :light ->
         "rounded text-body-color hover:text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800 hover:no-underline"
 
@@ -175,6 +178,7 @@ defmodule OliWeb.Components.Common do
       :primary,
       :secondary,
       :tertiary,
+      :outline,
       :light,
       :dark,
       :info,
@@ -205,7 +209,7 @@ defmodule OliWeb.Components.Common do
         <button
           type={@type}
           class={[
-            "whitespace-nowrap overflow-hidden text-ellipsis",
+            "text-center whitespace-nowrap overflow-hidden text-ellipsis",
             button_variant_classes(@variant, disabled: @rest[:disabled]),
             button_size_classes(@size),
             @class
@@ -218,7 +222,7 @@ defmodule OliWeb.Components.Common do
         <a
           href={@href}
           class={[
-            "whitespace-nowrap overflow-hidden text-ellipsis",
+            "text-center whitespace-nowrap overflow-hidden text-ellipsis",
             button_variant_classes(@variant, disabled: @rest[:disabled]),
             button_size_classes(@size),
             @class
@@ -281,7 +285,8 @@ defmodule OliWeb.Components.Common do
 
   attr(:errors, :list, default: [])
   attr(:class, :string, default: nil)
-  attr(:class_label, :string, default: "")
+
+  attr(:label_class, :string, default: "")
   attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
   attr(:ctx, :map, default: nil)
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
@@ -293,6 +298,7 @@ defmodule OliWeb.Components.Common do
                 multiple pattern placeholder readonly required rows size step)
   )
 
+  attr(:label_position, :atom, default: :top, values: [:top, :bottom])
   attr(:error_position, :atom, default: :bottom, values: [:top, :bottom])
 
   slot(:inner_block)
@@ -313,7 +319,7 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class="contents" phx-feedback-for={@name}>
-      <label class={"flex gap-2 items-center #{@class_label}"}>
+      <label class={"flex gap-2 items-center #{@label_class}"}>
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -473,6 +479,9 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class={@group_class} phx-feedback-for={@name}>
+      <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
+        <%= @label %>
+      </.label>
       <.error :for={msg <- @errors} :if={@error_position == :top}><%= msg %></.error>
       <input
         type={@type}
@@ -483,7 +492,9 @@ defmodule OliWeb.Components.Common do
         placeholder={@placeholder}
         {@rest}
       />
-      <.label :if={@label} class={@label_class} for={@id}><%= @label %></.label>
+      <.label :if={@label && @label_position == :bottom} class={@label_class} for={@id}>
+        <%= @label %>
+      </.label>
       <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
     </div>
     """
@@ -510,7 +521,7 @@ defmodule OliWeb.Components.Common do
       if assigns[:variant] == "outlined" do
         {"form-label-group", "control-label pointer-events-none", ["form-control" | input_class]}
       else
-        {"flex flex-col-reverse", "", input_class}
+        {"flex flex-col", "", input_class}
       end
 
     assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
@@ -1110,7 +1121,7 @@ defmodule OliWeb.Components.Common do
         field={@form[@field_name]}
         label={@field_label}
         type="hidden"
-        class_label="control-label"
+        label_class="control-label"
         error_position={:top}
         errors={@form.errors}
       />

@@ -194,8 +194,11 @@ defmodule OliWeb.UserAuth do
 
   defp ensure_user_platform_roles_loaded(socket) do
     case socket.assigns.current_user do
-      nil -> socket
-      user -> Phoenix.Component.assign(socket, :current_user, Accounts.preload_platform_roles(user))
+      nil ->
+        socket
+
+      user ->
+        Phoenix.Component.assign(socket, :current_user, Accounts.preload_platform_roles(user))
     end
   end
 
@@ -229,7 +232,7 @@ defmodule OliWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns[:current_user] || conn.assigns[:is_system_admin] do
       conn
     else
       conn

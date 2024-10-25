@@ -85,7 +85,7 @@ defmodule OliWeb.AuthorAuth do
     |> delete_author_cache_entry()
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/")
+    |> redirect(to: ~p"/authors/log_in")
   end
 
   @doc """

@@ -108,9 +108,21 @@ defmodule Oli.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [
+      :email,
+      :password,
+      :given_name,
+      :family_name,
+      :picture,
+      # MER-3835 TODO: remove these fields and set them implicitly
+      :independent_learner,
+      :guest
+    ])
+    |> validate_confirmation(:password, message: "does not match password")
     |> validate_email(opts)
     |> validate_password(opts)
+    |> maybe_create_unique_sub()
+    |> maybe_name_from_given_and_family()
   end
 
   defp validate_email(changeset, opts) do
@@ -245,8 +257,6 @@ defmodule Oli.Accounts.User do
       :profile,
       :picture,
       :website,
-      :email,
-      :email_verified,
       :gender,
       :birthdate,
       :zoneinfo,
@@ -259,16 +269,44 @@ defmodule Oli.Accounts.User do
       :independent_learner,
       :research_opt_out,
       :state,
-      :locked_at,
-      :email_confirmed_at,
-      :email_confirmation_token,
       :can_create_sections,
       :age_verified
     ])
     |> cast_embed(:preferences)
-    |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
+    |> validate_required([:given_name, :family_name])
     |> maybe_create_unique_sub()
-    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
+  Creates a changeset used by LTI launch to update user information.
+  """
+  def lti_changeset(user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [
+      :sub,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :email,
+      :email_verified,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address,
+      :institution_id
+    ])
+    |> cast_embed(:preferences)
+    |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
 
@@ -277,7 +315,6 @@ defmodule Oli.Accounts.User do
     |> cast(attrs, [:given_name, :family_name, :independent_learner, :can_create_sections, :email])
     |> validate_required([:given_name, :family_name])
     |> maybe_name_from_given_and_family()
-    |> lowercase_email()
     |> unique_constraint(:email,
       name: :users_email_independent_learner_index,
       message: "Email has already been taken by another independent learner"
@@ -332,7 +369,6 @@ defmodule Oli.Accounts.User do
     )
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
-    |> lowercase_email()
     |> validate_email_confirmation()
     |> maybe_name_from_given_and_family()
   end

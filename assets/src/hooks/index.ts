@@ -26,6 +26,7 @@ import { MonacoEditor } from './monaco_editor';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
+import { Recaptcha } from './recaptcha';
 import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { Scroller } from './scroller';
@@ -87,4 +88,5 @@ export const Hooks = {
   EvaluateMathJaxExpressions,
   ReactToLiveView,
   DisableSubmitted,
+  Recaptcha,
 };

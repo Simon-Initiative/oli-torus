@@ -68,9 +68,19 @@ defmodule Oli.Accounts.Author do
   """
   def registration_changeset(author, attrs, opts \\ []) do
     author
-    |> cast(attrs, [:email, :password])
+    |> cast(attrs, [
+      :email,
+      :password,
+      :name,
+      :given_name,
+      :family_name,
+      :picture
+    ])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_required([:given_name, :family_name])
+    |> default_system_role()
+    |> maybe_name_from_given_and_family()
   end
 
   defp validate_email(changeset, opts) do
@@ -195,18 +205,13 @@ defmodule Oli.Accounts.Author do
   def noauth_changeset(author, attrs \\ %{}) do
     author
     |> cast(attrs, [
-      :email,
-      :name,
       :given_name,
       :family_name,
-      :picture,
-      :system_role_id,
-      :locked_at,
-      :confirmed_at,
+      :picture
     ])
     |> cast_embed(:preferences)
+    |> validate_required([:given_name, :family_name])
     |> default_system_role()
-    |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
 
@@ -218,7 +223,6 @@ defmodule Oli.Accounts.Author do
     author
     |> cast(attrs, [:name, :email])
     |> default_system_role()
-    |> lowercase_email()
     |> put_email_confirmed_at()
   end
 

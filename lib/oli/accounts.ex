@@ -17,6 +17,7 @@ defmodule Oli.Accounts do
     AuthorPreferences,
     UserPreferences
   }
+
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
   alias Oli.Repo
@@ -96,8 +97,8 @@ defmodule Oli.Accounts do
       [%User{id: 3}, %User{id: 4}]
   """
   def bulk_invite_users(user_emails, inviter_user) do
-    #MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    # MER-3835 TODO
+    throw("NOT IMPLEMENTED")
   end
 
   def browse_authors(
@@ -330,7 +331,7 @@ defmodule Oli.Accounts do
         nil -> %User{sub: sub, independent_learner: false}
         user -> user
       end
-      |> User.noauth_changeset(changes)
+      |> User.lti_changeset(changes)
       |> Repo.insert_or_update()
 
     case res do
@@ -859,7 +860,7 @@ defmodule Oli.Accounts do
   """
   def user_confirmation_pending?(user) do
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
   end
 
   @doc """
@@ -1046,6 +1047,19 @@ defmodule Oli.Accounts do
   end
 
   ## Settings
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user details.
+
+  ## Examples
+
+      iex> change_user(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_details(user, attrs \\ %{}) do
+    User.noauth_changeset(user, attrs)
+  end
 
   @doc """
   Returns an `%Ecto.Changeset{}` for changing the user email.
@@ -1378,6 +1392,19 @@ defmodule Oli.Accounts do
   ## Settings
 
   @doc """
+  Returns an `%Ecto.Changeset{}` for changing the author details.
+
+  ## Examples
+
+      iex> change_author_details(author)
+      %Ecto.Changeset{data: %Author{}}
+
+  """
+  def change_author_details(author, attrs \\ %{}) do
+    Author.noauth_changeset(author, attrs)
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for changing the author email.
 
   ## Examples
@@ -1448,9 +1475,14 @@ defmodule Oli.Accounts do
       {:ok, %{to: ..., body: ...}}
 
   """
-  def deliver_author_update_email_instructions(%Author{} = author, current_email, update_email_url_fun)
+  def deliver_author_update_email_instructions(
+        %Author{} = author,
+        current_email,
+        update_email_url_fun
+      )
       when is_function(update_email_url_fun, 1) do
-    {encoded_token, author_token} = AuthorToken.build_email_token(author, "change:#{current_email}")
+    {encoded_token, author_token} =
+      AuthorToken.build_email_token(author, "change:#{current_email}")
 
     Repo.insert!(author_token)
     AuthorNotifier.deliver_confirmation_instructions(author, update_email_url_fun.(encoded_token))
@@ -1547,7 +1579,11 @@ defmodule Oli.Accounts do
     else
       {encoded_token, author_token} = AuthorToken.build_email_token(author, "confirm")
       Repo.insert!(author_token)
-      AuthorNotifier.deliver_confirmation_instructions(author, confirmation_url_fun.(encoded_token))
+
+      AuthorNotifier.deliver_confirmation_instructions(
+        author,
+        confirmation_url_fun.(encoded_token)
+      )
     end
   end
 
@@ -1588,7 +1624,11 @@ defmodule Oli.Accounts do
       when is_function(reset_password_url_fun, 1) do
     {encoded_token, author_token} = AuthorToken.build_email_token(author, "reset_password")
     Repo.insert!(author_token)
-    AuthorNotifier.deliver_reset_password_instructions(author, reset_password_url_fun.(encoded_token))
+
+    AuthorNotifier.deliver_reset_password_instructions(
+      author,
+      reset_password_url_fun.(encoded_token)
+    )
   end
 
   @doc """

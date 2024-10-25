@@ -186,15 +186,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def author_menu_items(assigns) do
     ~H"""
     <.maybe_menu_item_open_admin_panel is_system_admin={@is_system_admin} />
-    <.menu_item_edit_author_account author={@ctx.author} />
+    <.menu_item_edit_account href={~p"/authors/settings"} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
-    <.menu_item_link
-      href={~p"/authors/log_out"}
-      method={:delete}
-    >
+    <.menu_item_link href={~p"/authors/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
     """
@@ -206,7 +203,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def user_menu_items(assigns) do
     ~H"""
-    <.maybe_menu_item_edit_user_account user={@ctx.user} />
+    <.menu_item_edit_account :if={is_independent_learner?(@ctx.user)} href={~p"/users/settings"} />
     <.maybe_my_courses_menu_item_link user={@ctx.user} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
@@ -333,15 +330,15 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       Sections.is_institution_admin?(user)
   end
 
-  attr(:user, User, required: true)
+  attr(:href, :string, required: true)
 
-  def maybe_menu_item_edit_user_account(assigns) do
+  def menu_item_edit_account(assigns) do
     ~H"""
-    <.menu_item_link :if={is_independent_learner?(@user)} href={~p"/users/settings"}>
+    <.menu_item_link href={@href}>
       Edit Account
     </.menu_item_link>
 
-    <.menu_divider :if={is_independent_learner?(@user)} />
+    <.menu_divider />
     """
   end
 
@@ -356,18 +353,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
       <.menu_divider />
     <% end %>
-    """
-  end
-
-  attr(:author, Author, required: true)
-
-  def menu_item_edit_author_account(assigns) do
-    ~H"""
-    <.menu_item_link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.AccountDetailsLive)}>
-      Edit Account
-    </.menu_item_link>
-
-    <.menu_divider />
     """
   end
 

@@ -41,9 +41,10 @@ defmodule OliWeb.AuthorLoginLive do
         <div class="w-full lg:w-1/2 flex items-center justify-center dark">
           <Components.Auth.log_in_form
             title="Course Author Sign In"
-            form={to_form(%{}, as: "author")}
+            form={@form}
             action={~p"/authors/log_in"}
             registration_link={~p"/authors/register"}
+            reset_password_link={~p"/authors/reset_password"}
             provider_links={[]}
           />
         </div>

@@ -5,11 +5,9 @@ defmodule OliWeb.UserLoginLive do
   import OliWeb.Backgrounds
   import Oli.VendorProperties
 
-  @doc """
-  Renders the instructor sign in page if the user is not signing in from an invitation link.
-  """
+  # Renders the instructor-specific sign in page.
   @impl Phoenix.LiveView
-  def render(%{from_invitation_link?: false} = assigns) do
+  def render(%{live_action: :instructor_new} = assigns) do
     ~H"""
     <div class="relative h-[calc(100vh-112px)] flex justify-center items-center">
       <div class="absolute h-[calc(100vh-112px)] w-full top-0 left-0">
@@ -45,9 +43,10 @@ defmodule OliWeb.UserLoginLive do
         <div class="w-full lg:w-1/2 flex items-center justify-center dark">
           <Components.Auth.log_in_form
             title="Instructor Sign In"
-            form={to_form(%{}, as: "user")}
+            form={@form}
             action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
-            register_link={~p"/users/register"}
+            registration_link={~p"/users/register"}
+            reset_password_link={~p"/users/reset_password"}
             provider_links={[]}
           />
         </div>
@@ -56,9 +55,7 @@ defmodule OliWeb.UserLoginLive do
     """
   end
 
-  @doc """
-  Renders the fallback sign in page and when the user is signing in from an invitation link.
-  """
+  # Renders the default sign in page.
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
@@ -70,9 +67,10 @@ defmodule OliWeb.UserLoginLive do
         <div class="w-full flex items-center justify-center dark">
           <Components.Auth.log_in_form
             title="Sign In"
-            form={to_form(%{}, as: "user")}
+            form={@form}
             action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
             registration_link={~p"/users/register"}
+            reset_password_link={~p"/users/reset_password"}
             provider_links={[]}
           />
         </div>
@@ -82,7 +80,7 @@ defmodule OliWeb.UserLoginLive do
   end
 
   @impl Phoenix.LiveView
-  def mount(_params, session, socket) do
+  def mount(_, session, socket) do
     provider_links = []
 
     title = session["title"] || "Sign in"

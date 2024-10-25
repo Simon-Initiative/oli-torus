@@ -195,6 +195,7 @@ defmodule OliWeb.Router do
       on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated}] do
       live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
+      live "/instructors/log_in", UserLoginLive, :instructor_new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
     end
@@ -242,7 +243,17 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :require_authenticated_author]
 
     live_session :require_authenticated_author,
-      on_mount: [{OliWeb.AuthorAuth, :ensure_authenticated}] do
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        # OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+        # OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        # OliWeb.LiveSessionPlugs.AuthorizeProject
+      ] do
       live "/authors/settings", AuthorSettingsLive, :edit
       live "/authors/settings/confirm_email/:token", AuthorSettingsLive, :confirm_email
     end
@@ -349,10 +360,6 @@ defmodule OliWeb.Router do
     )
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
-
-    live("/account", Workspaces.AccountDetailsLive)
-
-    put("/account", WorkspaceController, :update_author)
 
     scope "/communities" do
       pipe_through([:community_admin, :reject_content_admin])
