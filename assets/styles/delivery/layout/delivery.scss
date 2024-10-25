@@ -53,4 +53,20 @@ html.delivery {
       border: 1px solid #007bff;
     }
   }
+
+  .collab-space-config {
+    background-color: var(--color-body);
+    border-color: #9fbce9;
+  }
+}
+
+html.dark {
+  .collab-space-config {
+    background-color: var(--color-body-dark);
+    border-color: #173667;
+
+    .badge-info {
+      background-color: #173667;
+    }
+  }
 }
