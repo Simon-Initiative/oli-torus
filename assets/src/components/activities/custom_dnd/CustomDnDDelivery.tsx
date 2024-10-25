@@ -6,7 +6,7 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
-import { Manifest } from 'components/activities/types';
+import { Manifest, PartState } from 'components/activities/types';
 import {
   ActivityDeliveryState,
   activityDeliverySlice,
@@ -171,6 +171,7 @@ export const CustomDnDComponent: React.FC = () => {
           initialState={initialState}
           editMode={editMode && !working}
           activityAttemptGuid={uiState.attemptState.attemptGuid}
+          partAttemptGuids={uiState.attemptState.parts.map((p: PartState) => p.attemptGuid)}
           onRegisterResetCallback={(listener) => {
             setResetListener(() => listener);
           }}
