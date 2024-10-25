@@ -57,6 +57,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
+  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 
@@ -5348,5 +5349,35 @@ defmodule Oli.Delivery.Sections do
       where: ecr.context_role_id in ^context_role_ids
     )
     |> Repo.all()
+  end
+
+  def get_section_prompt_info(section_id) do
+    section_slug = Repo.get(Section, section_id).slug
+
+    instructors =
+      section_slug
+      |> fetch_instructors()
+      |> Enum.map(&%{name: &1.name, email: &1.email})
+
+    layout =
+      section_slug
+      |> fetch_ordered_container_labels()
+      |> Enum.map(&elem(&1, 1))
+
+    content =
+      section_slug
+      |> fetch_all_pages()
+      |> Enum.map(
+        &%{
+          title: &1.title,
+          url: Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, &1.slug)
+        }
+      )
+
+    %{
+      instructors: instructors,
+      layout: layout,
+      content: content
+    }
   end
 end
