@@ -6915,11 +6915,6 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(0 0 0 / 0.7);
 }
 
-.border-blue-200 {
-  --tw-border-opacity: 1;
-  border-color: rgb(159 188 233 / var(--tw-border-opacity));
-}
-
 .border-blue-400 {
   --tw-border-opacity: 1;
   border-color: rgb(93 141 219 / var(--tw-border-opacity));
@@ -14315,11 +14310,6 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:border-black {
   --tw-border-opacity: 1;
   border-color: rgb(0 0 0 / var(--tw-border-opacity));
-}
-
-.dark .dark\:border-blue-700 {
-  --tw-border-opacity: 1;
-  border-color: rgb(29 68 129 / var(--tw-border-opacity));
 }
 
 .dark .dark\:border-delivery-primary-dark {
