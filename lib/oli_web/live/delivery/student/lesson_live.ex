@@ -90,6 +90,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         Settings.determine_effective_deadline(resource_attempt, page_context.effective_settings)
         |> to_epoch()
 
+      auto_submit = page_context.effective_settings.late_submit == :disallow
+
+      now = DateTime.utc_now() |> to_epoch
+      attempt_expired_auto_submit =
+        now > effective_end_time and auto_submit and !page_context.review_mode
+
       socket =
         socket
         |> emit_page_viewed_event()
@@ -100,13 +106,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           revision_slug: page_context.page.slug,
           attempt_guid: hd(page_context.resource_attempts).attempt_guid,
           effective_end_time: effective_end_time,
-          auto_submit: page_context.effective_settings.late_submit == :disallow,
+          auto_submit: auto_submit,
           time_limit: page_context.effective_settings.time_limit,
           grace_period: page_context.effective_settings.grace_period,
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
           review_mode: page_context.review_mode
         )
         |> slim_assigns()
+        |> assign(attempt_expired_auto_submit: attempt_expired_auto_submit)
 
       script_sources =
         Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
@@ -172,62 +179,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign(socket, scripts_loaded: true)}
   end
 
-  def handle_event(
-        "finalize_attempt",
-        _params,
-        %{
-          assigns: %{
-            section: section,
-            datashop_session_id: datashop_session_id,
-            request_path: request_path,
-            revision_slug: revision_slug,
-            attempt_guid: attempt_guid
-          }
-        } = socket
-      ) do
-    case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
-      {:ok,
-       %FinalizationSummary{
-         graded: true,
-         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
-         effective_settings: effective_settings
-       }} ->
-        # graded resource finalization success
-        section = Sections.get_section_by(slug: section.slug)
-
-        if section.grade_passback_enabled,
-          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        redirect_to =
-          case effective_settings.review_submission do
-            :allow ->
-              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
-                request_path: request_path
-              )
-
-            _ ->
-              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-          end
-
-        {:noreply, redirect(socket, to: redirect_to)}
-
-      {:ok, %FinalizationSummary{graded: false}} ->
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-         )}
-
-      {:error, {reason}}
-      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-
-      e ->
-        error_msg = Kernel.inspect(e)
-        Logger.error("Page finalization error encountered: #{error_msg}")
-        Oli.Utils.Appsignal.capture_error(error_msg)
-
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-    end
+  def handle_event("finalize_attempt", _params, socket) do
+    finalize_attempt(socket)
   end
 
   def handle_event("update_point_markers", %{"point_markers" => point_markers}, socket) do
@@ -687,6 +640,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, socket}
   end
 
+  def handle_params(_params, _url, socket) do
+    if Map.has_key?(socket.assigns, :attempt_expired_auto_submit) and
+         socket.assigns.attempt_expired_auto_submit do
+      finalize_attempt(socket)
+    else
+      {:noreply, socket}
+    end
+  end
+
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
@@ -963,6 +925,62 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       <% end %>
     <% end %>
     """
+  end
+
+  defp finalize_attempt(
+         %{
+           assigns: %{
+             section: section,
+             datashop_session_id: datashop_session_id,
+             request_path: request_path,
+             revision_slug: revision_slug,
+             attempt_guid: attempt_guid
+           }
+         } = socket
+       ) do
+    case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
+      {:ok,
+       %FinalizationSummary{
+         graded: true,
+         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
+         effective_settings: effective_settings
+       }} ->
+        # graded resource finalization success
+        section = Sections.get_section_by(slug: section.slug)
+
+        if section.grade_passback_enabled,
+          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+
+        redirect_to =
+          case effective_settings.review_submission do
+            :allow ->
+              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
+                request_path: request_path
+              )
+
+            _ ->
+              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+          end
+
+        {:noreply, redirect(socket, to: redirect_to)}
+
+      {:ok, %FinalizationSummary{graded: false}} ->
+        {:noreply,
+         redirect(socket,
+           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+         )}
+
+      {:error, {reason}}
+      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
+        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
+
+      e ->
+        error_msg = Kernel.inspect(e)
+        Logger.error("Page finalization error encountered: #{error_msg}")
+        Oli.Utils.Appsignal.capture_error(error_msg)
+
+        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
+    end
   end
 
   attr :show_sidebar, :boolean, default: false
