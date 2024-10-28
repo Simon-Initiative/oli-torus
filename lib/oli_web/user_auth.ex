@@ -35,6 +35,9 @@ defmodule OliWeb.UserAuth do
     conn
     |> renew_session()
     |> put_token_in_session(token)
+    # Unfortunately, a lot of existing code depends on the current_user_id being in the session.
+    # We eventually want to remove this, but for now, we will add it to appease the existing code.
+    |> put_user_id_in_session(user.id)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
   end
@@ -250,6 +253,11 @@ defmodule OliWeb.UserAuth do
     conn
     |> put_session(:user_token, token)
     |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+  end
+
+  defp put_user_id_in_session(conn, user_id) do
+    conn
+    |> put_session(:current_user_id, user_id)
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

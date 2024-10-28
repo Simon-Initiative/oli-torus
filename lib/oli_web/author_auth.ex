@@ -35,6 +35,9 @@ defmodule OliWeb.AuthorAuth do
     conn
     |> renew_session()
     |> put_token_in_session(token)
+    # Unfortunately, a lot of existing code depends on the current_author_id being in the session.
+    # We eventually want to remove this, but for now, we will add it to appease the existing code.
+    |> put_author_id_in_session(author.id)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: author_return_to)
   end
@@ -234,6 +237,11 @@ defmodule OliWeb.AuthorAuth do
     conn
     |> put_session(:author_token, token)
     |> put_session(:live_socket_id, "authors_sessions:#{Base.url_encode64(token)}")
+  end
+
+  defp put_author_id_in_session(conn, author_id) do
+    conn
+    |> put_session(:current_author_id, author_id)
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do
