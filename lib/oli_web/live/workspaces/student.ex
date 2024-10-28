@@ -4,7 +4,6 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
-  alias Oli.Accounts.{User}
   alias OliWeb.Common.{Params, SearchInput}
 
   import Ecto.Query, warn: false

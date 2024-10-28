@@ -225,6 +225,158 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
+  attr(:ctx, SessionContext)
+  attr :section, Section, default: nil
+  attr :flash, :map
+  attr :active_workspace, :atom
+  attr :hide_footer, :boolean, default: false
+  attr :license, :string
+  attr(:is_system_admin, :boolean, required: true)
+  attr(:sidebar_expanded, :boolean, default: true)
+  attr(:preview_mode, :boolean)
+
+  slot :nav, required: true
+  slot :mobile_nav, default: nil
+
+  def header_with_sidebar_nav(assigns) do
+    ~H"""
+    <div class="absolute top-0 bottom-0 left-0 right-0 flex flex-col min-h-0 overflow-hidden">
+      <.header
+        ctx={@ctx}
+        include_logo
+        section={@section}
+        is_system_admin={@is_system_admin}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+      />
+
+      <div class="flex-1 flex flex-row min-h-0">
+        <nav
+          :if={@active_workspace}
+          id="desktop-workspace-nav-menu"
+          class={["
+            transition-all
+            duration-100
+            z-50
+            hidden
+            md:flex
+            flex-col
+            justify-between
+            md:w-[200px]
+            shadow-sm
+            bg-delivery-navbar
+            dark:bg-delivery-navbar-dark
+          ", if(!@sidebar_expanded, do: "md:!w-[60px]", else: "overflow-y-scroll")]}
+          aria-expanded={"#{@sidebar_expanded}"}
+        >
+          <%= render_slot(@nav) %>
+        </nav>
+        <nav
+          :if={@mobile_nav}
+          id="mobile-workspace-nav-menu"
+          class="
+            mt-14
+            hidden
+            md:hidden
+            flex-col
+            shadow-sm
+            bg-delivery-navbar
+            dark:bg-delivery-navbar-dark
+          "
+          phx-click-away={JS.hide()}
+        >
+          <%= render_slot(@mobile_nav) %>
+        </nav>
+        <div class={["flex-1 flex flex-col relative overflow-auto"]}>
+          <%= if Phoenix.Flash.get(@flash, :info) do %>
+            <div class="alert alert-info flex flex-row" role="alert">
+              <div class="flex-1">
+                <%= Phoenix.Flash.get(@flash, :info) %>
+              </div>
+
+              <button
+                type="button"
+                class="close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+                phx-click="lv:clear-flash"
+                phx-value-key="info"
+              >
+                <i class="fa-solid fa-xmark fa-lg"></i>
+              </button>
+            </div>
+          <% end %>
+          <%= if Phoenix.Flash.get(@flash, :error) do %>
+            <div class="alert alert-danger flex flex-row" role="alert">
+              <div class="flex-1">
+                <%= Phoenix.Flash.get(@flash, :error) %>
+              </div>
+
+              <button
+                type="button"
+                class="close"
+                data-bs-dismiss="alert"
+                aria-label="Close"
+                phx-click="lv:clear-flash"
+                phx-value-key="danger"
+              >
+                <i class="fa-solid fa-xmark fa-lg"></i>
+              </button>
+            </div>
+          <% end %>
+
+          <main class="flex-1 flex flex-col">
+            <%= render_slot(@inner_block) %>
+          </main>
+
+          <OliWeb.Components.Footer.delivery_footer :if={!@hide_footer} license={@license} />
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :ctx, SessionContext, required: true
+  slot :inner_block, required: true
+
+  def maybe_masquerading_as(assigns) do
+    if assigns[:ctx] && assigns[:ctx].masquerading_as do
+      ~H"""
+      <div class="flex flex-col fixed top-0 bottom-0 left-0 right-0 border-4 border-solid border-fuchsia-500">
+        <div class="bg-fuchsia-500 text-white px-6 py-2">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="text-white text-lg font-bold">
+                Acting as <%= OliWeb.Components.Delivery.Utils.user_name(@ctx.user) %>
+              </p>
+            </div>
+            <div>
+              <%= form_for %{}, ~p"/admin/unmasquerade", fn _f -> %>
+                <.button
+                  type="submit"
+                  class="rounded bg-transparent border border-white hover:bg-fuchsia-200 active:text-white active:bg-fuchsia-700 focus:ring-2 focus:ring-fuchsia-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-fuchsia-400 focus:outline-none dark:focus:ring-fuchsia-700 hover:no-underline"
+                >
+                  Stop Acting as User
+                </.button>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-1 relative overflow-auto">
+          <%= render_slot(@inner_block) %>
+        </div>
+      </div>
+      """
+    else
+      ~H"""
+      <div class="flex flex-col fixed top-0 bottom-0 left-0 right-0">
+        <%= render_slot(@inner_block) %>
+      </div>
+      """
+    end
+  end
+
   attr(:section, Section, default: nil)
   attr(:active, :atom, required: true, doc: "The current selected menu link")
   attr(:preview_mode, :boolean)
