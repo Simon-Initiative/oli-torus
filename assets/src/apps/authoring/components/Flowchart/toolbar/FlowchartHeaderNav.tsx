@@ -257,8 +257,6 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
-            defaultHeight: defaultNewPartHeight,
-            defaultWidth: defaultNewPartWidth,
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };

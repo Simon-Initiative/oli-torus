@@ -94,9 +94,7 @@ const AddComponentToolbar: React.FC<{
             y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             z: 0,
             width: defaultNewPartWidth,
-            height: defaultNewPartHeight,
-            defaultHeight: defaultNewPartHeight,
-            defaultWidth: defaultNewPartWidth,
+            height: defaultNewPartHeight
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };
