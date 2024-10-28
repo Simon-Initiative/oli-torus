@@ -158,7 +158,9 @@
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
 
-    <%= Map.get(assigns, :inner_layout) || @inner_content %>
+    <Components.Delivery.Layouts.maybe_masquerading_as ctx={assigns[:ctx]}>
+      <%= Map.get(assigns, :inner_layout) || @inner_content %>
+    </Components.Delivery.Layouts.maybe_masquerading_as>
 
     <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
   </body>

@@ -19,6 +19,7 @@ defmodule OliWeb do
 
   def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
 
+  # deprecated controller macro
   def controller do
     quote do
       use Phoenix.Controller, layouts: [html: {OliWeb.LayoutView, :app}], namespace: OliWeb
@@ -29,6 +30,21 @@ defmodule OliWeb do
       import Phoenix.LiveView.Controller
 
       alias OliWeb.Router.Helpers, as: Routes
+
+      unquote(verified_routes())
+    end
+  end
+
+  # Latest Phoenix 1.7+ controller macro. We eventually want to migrate all controllers to this
+  # and remove the deprecated controller macro
+  def new_controller do
+    quote do
+      use Phoenix.Controller,
+        formats: [:html, :json],
+        layouts: [html: OliWeb.Layouts]
+
+      import Plug.Conn
+      import OliWeb.Gettext
 
       unquote(verified_routes())
     end

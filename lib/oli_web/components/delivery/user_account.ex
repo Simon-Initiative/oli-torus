@@ -48,7 +48,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <.user_picture_icon user={@ctx.author} />
+        <.user_picture_icon picture={@ctx.author.picture} initials={to_initials(@ctx.author)} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label label="Admin" class="text-[#F68E2E]" />
@@ -71,7 +71,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <.user_picture_icon user={@ctx.author} />
+        <.user_picture_icon picture={@ctx.author.picture} initials={to_initials(@ctx.author)} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label label="Author" class="text-[#EC8CFF]" />
@@ -95,7 +95,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <.user_picture_icon user={@ctx.user} />
+        <.user_picture_icon picture={@ctx.user.picture} initials={to_initials(@ctx.user)} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label
@@ -139,7 +139,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div class="relative">
       <button
         id={@id}
-        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
+        class={[
+          "flex flex-row items-center justify-center rounded-full",
+          @class,
+          user_icon_outline_classes(@ctx)
+        ]}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
         <.user_icon ctx={@ctx} />
@@ -167,6 +171,16 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </.dropdown_menu>
     </div>
     """
+  end
+
+  defp user_icon_outline_classes(ctx) do
+    case ctx.masquerading_as do
+      nil ->
+        "outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600"
+
+      _user_id ->
+        "outline outline-2 outline-fuchsia-500 dark:outline-fuchsia-500 hover:outline-4 hover:dark:outline-fuchsia-500 focus:outline-4 focus:outline-fuchsia-500 dark:focus:outline-fuchsia-500"
+    end
   end
 
   def toggle_menu(id, js \\ %JS{}) do
@@ -465,23 +479,24 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     ~H"""
     <%= case @ctx do %>
       <% %SessionContext{user: user} when user != nil -> %>
-        <.user_picture_icon user={user} />
+        <.user_picture_icon picture={user.picture} initials={to_initials(user)} />
       <% %SessionContext{author: author} when author != nil -> %>
-        <.user_picture_icon user={author} />
+        <.user_picture_icon picture={author.picture} initials={to_initials(author)} />
       <% _ -> %>
         <.default_user_icon />
     <% end %>
     """
   end
 
-  attr(:user, :map)
+  attr :picture, :string
+  attr :initials, :string
 
   def user_picture_icon(assigns) do
     ~H"""
-    <%= case @user.picture do %>
+    <%= case @picture do %>
       <% nil -> %>
         <div class="w-8 h-8 bg-delivery-primary-700 dark:bg-zinc-800 rounded-full flex justify-center items-center text-white text-sm font-semibold leading-[14px]">
-          <%= to_initials(@user) %>
+          <%= @initials %>
         </div>
       <% picture -> %>
         <div class="flex justify-center items-center">
@@ -500,6 +515,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </div>
     """
   end
+
+  attr(:ctx, SessionContext, required: true)
 
   def preview_user_menu(assigns) do
     ~H"""

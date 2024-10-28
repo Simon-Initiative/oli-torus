@@ -554,6 +554,18 @@ defmodule Oli.Accounts do
   def has_admin_role?(_), do: false
 
   @doc """
+  Returns true if an author is an admin that can masquerade as another user.
+  """
+  def can_masquerade?(%Author{system_role_id: system_role_id}) do
+    system_role_id in [
+      SystemRole.role_id().system_admin,
+      SystemRole.role_id().account_admin
+    ]
+  end
+
+  def can_masquerade?(_), do: false
+
+  @doc """
   Returns an author if one matches given email, or creates and returns a new author
 
   ## Examples

@@ -4,8 +4,8 @@ defmodule OliWeb.Components.Footer do
 
   def delivery_footer(assigns) do
     ~H"""
-    <footer class={"#{if Map.get(assigns, :is_page), do: "", else: "absolute bottom-0 left-0 right-0"} pb-4 w-full md:container md:mx-auto lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark"}>
-      <div class="flex flex-col ">
+    <footer class="w-full py-4 md:container md:mx-auto lg:px-10 text-xs bg-delivery-footer dark:bg-delivery-footer-dark">
+      <div class="flex flex-col">
         <div class="flex flex-row gap-2">
           <.cookie_preferences />
           <.footer_part_1 />

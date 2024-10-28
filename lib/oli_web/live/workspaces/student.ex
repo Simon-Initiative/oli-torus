@@ -4,6 +4,7 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
+  alias Oli.Accounts.{User}
   alias OliWeb.Common.{Params, SearchInput}
 
   import Ecto.Query, warn: false
@@ -88,7 +89,7 @@ defmodule OliWeb.Workspaces.Student do
 
   @impl Phoenix.LiveView
 
-  def render(%{has_admin_role: true} = assigns) do
+  def render(%{current_user: nil, has_admin_role: true} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
@@ -112,7 +113,7 @@ defmodule OliWeb.Workspaces.Student do
 
   def render(%{current_user: nil} = assigns) do
     ~H"""
-    <div class="flex justify-center items-center min-h-screen">
+    <div class="flex-1 flex justify-center items-center">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.student_workspace_sign_in />
       </div>
