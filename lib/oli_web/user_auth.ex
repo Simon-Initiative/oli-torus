@@ -190,6 +190,9 @@ defmodule OliWeb.UserAuth do
     end)
     |> ensure_user_platform_roles_loaded()
     |> assign_datashop_session_id(session)
+    # MER-3835 TODO these should be set using AuthorAuth
+    |> Phoenix.Component.assign(:is_system_admin, false)
+    |> Phoenix.Component.assign(:has_admin_role, false)
   end
 
   defp ensure_user_platform_roles_loaded(socket) do

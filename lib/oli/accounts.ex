@@ -346,6 +346,14 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Preloads the user's LTI params.
+  """
+  def load_lti_params(user) do
+    user
+    |> Repo.preload(:lti_params)
+  end
+
+  @doc """
   Updates the platform roles associated with a user
   ## Examples
       iex> update_user_platform_roles(user, roles)

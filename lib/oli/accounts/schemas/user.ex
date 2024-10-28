@@ -43,6 +43,8 @@ defmodule Oli.Accounts.User do
              on_delete: :delete_all,
              foreign_key: :user_id
 
+    has_one :lti_params, Oli.Lti.LtiParams, on_delete: :delete_all, on_replace: :delete
+
     # A user may optionally be linked to an author account
     belongs_to :author, Oli.Accounts.Author
 
@@ -302,8 +304,7 @@ defmodule Oli.Accounts.User do
       :locale,
       :phone_number,
       :phone_number_verified,
-      :address,
-      :institution_id
+      :address
     ])
     |> cast_embed(:preferences)
     |> maybe_create_unique_sub()

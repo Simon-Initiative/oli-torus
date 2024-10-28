@@ -90,14 +90,6 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.MaybeGatedResource)
   end
 
-  pipeline :maybe_load_lti_params do
-    plug(Oli.Plugs.MaybeLoadLtiParams)
-  end
-
-  pipeline :require_lti_params do
-    plug(Oli.Plugs.RequireLtiParams)
-  end
-
   pipeline :require_section do
     plug(Oli.Plugs.RequireSection)
   end
@@ -248,11 +240,8 @@ defmodule OliWeb.Router do
       on_mount: [
         {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
-        # OliWeb.LiveSessionPlugs.AssignActiveMenu,
         OliWeb.LiveSessionPlugs.SetSidebar,
         OliWeb.LiveSessionPlugs.SetPreviewMode
-        # OliWeb.LiveSessionPlugs.SetProjectOrSection,
-        # OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       live "/authors/settings", AuthorSettingsLive, :edit
       live "/authors/settings/confirm_email/:token", AuthorSettingsLive, :confirm_email
@@ -1216,7 +1205,6 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.SetSection,
         OliWeb.LiveSessionPlugs.SetBrand,
         OliWeb.LiveSessionPlugs.SetPreviewMode,
-        # OliWeb.LiveSessionPlugs.RequireInstructor
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
@@ -1318,7 +1306,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :maybe_load_lti_params])
+    pipe_through([:browser, :delivery_protected])
 
     get("/", DeliveryController, :index)
 
@@ -1327,7 +1315,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :require_lti_params])
+    pipe_through([:browser, :delivery_protected])
 
     live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end

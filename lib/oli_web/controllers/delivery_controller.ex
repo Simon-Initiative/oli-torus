@@ -57,7 +57,8 @@ defmodule OliWeb.DeliveryController do
     if user.independent_learner do
       redirect(conn, to: ~p"/workspaces/student")
     else
-      lti_params = conn.assigns.lti_params
+      user = Accounts.load_lti_params(user)
+      lti_params = user.lti_params.params
 
       lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
       context_roles = ContextRoles.get_roles_by_uris(lti_roles)
@@ -200,7 +201,7 @@ defmodule OliWeb.DeliveryController do
 
   def link_account(conn, _params) do
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
   end
 
   def show_enroll(conn, params) do
