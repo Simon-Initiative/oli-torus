@@ -104,18 +104,6 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
-  Returns the number of not hidden pages in a section.
-  """
-  def pages_count(section_id) do
-    init_if_necessary(section_id)
-
-    page_type_id =
-      Oli.Resources.ResourceType.id_for_page()
-
-    Depot.count(@depot_desc, section_id, resource_type_id: page_type_id, hidden: false)
-  end
-
-  @doc """
   Returns a list of SectionResource pages (graded + ungraded) for a given section.
   An optional parameter `graded_only` can be passed to filter only graded pages.
   """

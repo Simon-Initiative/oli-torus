@@ -6,7 +6,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections.SectionCache
-  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Components.Common
@@ -108,8 +107,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          latest_assignments: combine_settings(latest_assignments, combined_settings),
          containers_per_page: containers_per_page,
          assignments_tab: :upcoming,
-         pages_count:
-           SectionResourceDepot.pages_count(section.id) |> IO.inspect(label: "pages count!!!"),
          raw_completed_pages: Metrics.raw_completed_pages_for(section.id, current_user_id)
        )}
     else
