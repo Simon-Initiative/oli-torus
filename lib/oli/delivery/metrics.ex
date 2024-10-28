@@ -117,6 +117,58 @@ defmodule Oli.Delivery.Metrics do
   def progress_for(section_id, user_id, container_id),
     do: progress_for(section_id, [user_id], container_id) |> Map.get(user_id, 0.0)
 
+  @doc """
+  Calculates the completed pages and the total pages of a course for a specific student (or a list of students).
+  The last parameter gives flexibility for scoping the calculation to a specific container.
+
+  Note that this metric is "acid" in the sense that will not count as `completed` pages whose progress < 1.0.
+  This may sound obvios, but it is important to keep in mind that this metric is not the same as the progress metric
+  of `progress_for/3` (where we may have a progress of 0.5 for a page, for example).
+
+  Returns a map:
+  %{user_id => %{completed_pages: completed_pages, total_pages: total_pages}}
+  """
+  def raw_completed_pages_for(section_id, user_ids, container_id \\ nil)
+
+  def raw_completed_pages_for(section_id, user_ids, container_id) when is_list(user_ids) do
+    filter_by_container =
+      case container_id do
+        nil ->
+          dynamic([cp, _], is_nil(cp.container_id))
+
+        _ ->
+          dynamic([cp, _], cp.container_id == ^container_id)
+      end
+
+    pages_count =
+      from(cp in ContainedPage)
+      |> where([cp], cp.section_id == ^section_id)
+      |> where(^filter_by_container)
+      |> select([cp], count(cp.id))
+      |> Repo.one()
+
+    query =
+      ContainedPage
+      |> join(:inner, [cp], ra in ResourceAccess,
+        on:
+          cp.page_id == ra.resource_id and cp.section_id == ra.section_id and
+            ra.user_id in ^user_ids
+      )
+      |> where([cp, ra], cp.section_id == ^section_id and ra.progress == 1.0)
+      |> where(^filter_by_container)
+      |> group_by([_cp, ra], ra.user_id)
+      |> select(
+        [cp, ra],
+        {ra.user_id, %{completed_pages: count(), total_pages: type(^pages_count, :integer)}}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{})
+  end
+
+  def raw_completed_pages_for(section_id, user_id, container_id),
+    do: raw_completed_pages_for(section_id, [user_id], container_id) |> Map.get(user_id)
+
   defp do_get_progress_for_page(section_id, user_ids, page_id) do
     filter_by_user =
       case is_list(user_ids) do
