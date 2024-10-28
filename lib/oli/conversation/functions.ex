@@ -75,10 +75,12 @@ defmodule Oli.Conversation.Functions do
     %{
       name: "get_section_information",
       description: """
+      Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
+      Allows the retrieval of general course information based on the student's question.
       For a given course section return the following information:
       - instructors: name and email
       - layout: all modules and units
-      - content: title and url for all the pages
+      - content: titles for all the pages
       """,
       parameters: %{
         type: "object",

@@ -57,7 +57,6 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Paywall
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Branding.CustomLabels
-  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 
@@ -5367,12 +5366,7 @@ defmodule Oli.Delivery.Sections do
     content =
       section_slug
       |> fetch_all_pages()
-      |> Enum.map(
-        &%{
-          title: &1.title,
-          url: Routes.page_delivery_path(OliWeb.Endpoint, :page, section_slug, &1.slug)
-        }
-      )
+      |> Enum.map(& &1.title)
 
     %{
       instructors: instructors,
