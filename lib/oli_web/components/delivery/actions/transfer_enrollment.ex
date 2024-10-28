@@ -155,7 +155,7 @@ defmodule OliWeb.Delivery.Actions.TransferEnrollment do
           transfer_data_step={@transfer_data_step}
         />
       </.live_component>
-      <div class="flex justify-between items-center py-6">
+      <div class="flex justify-between items-center">
         <div class="flex flex-col">
           <span class="dark:text-black">Transfer Enrollment</span>
           <span class="text-xs text-gray-400 dark:text-gray-950">

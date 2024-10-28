@@ -426,7 +426,8 @@ defmodule Oli.Factory do
       amount: Money.new(:USD, 25),
       provider_type: :stripe,
       section: anonymous_build(:section),
-      enrollment: anonymous_build(:enrollment)
+      enrollment: anonymous_build(:enrollment),
+      generation_date: DateTime.utc_now()
     }
   end
 

@@ -11,9 +11,19 @@ defmodule OliWeb.Pow.UserRoutes do
   def after_sign_in_path(conn, after_sign_in_target \\ :instructor_workspace) do
     conn
     |> request_path_or(
-      case conn.params do
-        %{"user" => %{"section" => section_slug}} ->
+      case {conn.params, Plug.Conn.get_session(conn, :enrollment_path)} do
+        {%{"user" => %{"section" => section_slug}}, _enrollment_path} ->
           Routes.delivery_path(conn, :show_enroll, section_slug)
+
+        {_params, enrollment_path} when is_binary(enrollment_path) ->
+          Plug.Conn.delete_session(conn, :enrollment_path)
+          enrollment_path
+
+        {%{"provider" => provider}, _enrollment_path} when provider in ["google", "github"] ->
+          case conn.assigns.current_user do
+            %Oli.Accounts.User{} -> workspace_path(conn, :student_workspace)
+            _ -> workspace_path(conn, after_sign_in_target)
+          end
 
         _ ->
           workspace_path(conn, after_sign_in_target)

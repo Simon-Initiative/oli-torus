@@ -1,6 +1,7 @@
 @import 'common/mixins.scss';
 
 .editors {
+  background-color: var(--color-body);
   flex: 1;
   min-width: 0;
   border: 1px solid var(--color-gray-200);
@@ -85,6 +86,7 @@
 
 html.dark {
   .editors {
+    background-color: var(--color-body-dark);
     border-color: #3e3f44;
   }
 }
