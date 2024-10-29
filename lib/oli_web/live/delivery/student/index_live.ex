@@ -575,8 +575,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
         <div role="assignments" class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
           <%= if Enum.empty?(@lessons) do %>
-            <div role="message" class="w-80 h-16 flex-col justify-start items-start gap-2.5 flex">
-              <div class="w-80 dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
+            <div role="message" class="flex-col justify-start items-start gap-2.5 flex">
+              <div class="dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
                 <%= empty_assignments_message(@assignments_tab) %>
               </div>
             </div>
