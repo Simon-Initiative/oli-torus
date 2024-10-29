@@ -263,7 +263,7 @@ defmodule Oli.AutomationSetup do
         password_confirmation: password,
         age_verified: true,
         email_verified: true,
-        confirmed_at: Timex.now(),
+        email_confirmed_at: Timex.now(),
         research_opt_out: true,
         can_create_sections: true,
         author_id: if(is_nil(author), do: nil, else: author.id)
@@ -287,7 +287,7 @@ defmodule Oli.AutomationSetup do
         password: password,
         password_confirmation: password,
         system_role_id: Oli.Accounts.SystemRole.role_id().author,
-        confirmed_at: Timex.now()
+        email_confirmed_at: Timex.now()
       })
 
     {:ok, {user, password}}
@@ -366,7 +366,7 @@ defmodule Oli.AutomationSetup do
 
   defp validate_user(email, password, user_type, expected_name) do
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
   end
 
   defp generate_email(prefix) do

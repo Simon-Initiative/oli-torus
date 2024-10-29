@@ -44,7 +44,8 @@ defmodule OliWeb.AuthorConfirmationLive do
         # by some automation or by the author themselves, so we redirect without
         # a warning message.
         case socket.assigns do
-          %{current_author: %{confirmed_at: confirmed_at}} when not is_nil(confirmed_at) ->
+          %{current_author: %{email_confirmed_at: email_confirmed_at}}
+          when not is_nil(email_confirmed_at) ->
             {:noreply, redirect(socket, to: ~p"/")}
 
           %{} ->

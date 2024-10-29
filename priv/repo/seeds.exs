@@ -36,8 +36,8 @@ end
 if !Oli.Repo.get_by(Oli.Accounts.Author,
      email: System.get_env("ADMIN_EMAIL", "admin@example.edu")
    ) do
-  {:ok, user} = Accounts.register_author(
-    %{
+  {:ok, user} =
+    Accounts.register_author(%{
       email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
       name: "Administrator",
       given_name: "Administrator",
@@ -45,9 +45,8 @@ if !Oli.Repo.get_by(Oli.Accounts.Author,
       password: System.get_env("ADMIN_PASSWORD", "changeme"),
       password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
       system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
-      confirmed_at: DateTime.utc_now()
-    }
-  )
+      email_confirmed_at: DateTime.utc_now()
+    })
 end
 
 # create project roles
@@ -217,7 +216,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@example.edu",
                 name: name,
                 system_role_id: Accounts.SystemRole.role_id().author,
-                confirmed_at: DateTime.utc_now()
+                email_confirmed_at: DateTime.utc_now()
               }
 
               {:ok, _author} =
@@ -244,7 +243,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 picture:
                   "https://platform.example.edu/#{Oli.Utils.Slug.slugify(name)}_#{index}.jpg",
                 email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@platform.example.edu",
-                confirmed_at: DateTime.utc_now(),
+                email_confirmed_at: DateTime.utc_now(),
                 locale: "en-US"
               }
 

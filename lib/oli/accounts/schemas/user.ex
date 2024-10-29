@@ -7,8 +7,8 @@ defmodule Oli.Accounts.User do
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
-    field :hashed_password, :string, redact: true
-    field :confirmed_at, :naive_datetime
+    field :password_hash, :string, redact: true
+    field :email_confirmed_at, :naive_datetime
 
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
     # see https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims for full descriptions
@@ -155,7 +155,7 @@ defmodule Oli.Accounts.User do
       |> validate_length(:password, max: 72, count: :bytes)
       # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
       # would keep the database transaction open longer and hurt performance.
-      |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
+      |> put_change(:password_hash, Bcrypt.hash_pwd_salt(password))
       |> delete_change(:password)
     else
       changeset
@@ -207,11 +207,11 @@ defmodule Oli.Accounts.User do
   end
 
   @doc """
-  Confirms the account by setting `confirmed_at`.
+  Confirms the account by setting `email_confirmed_at`.
   """
   def confirm_changeset(user) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    change(user, confirmed_at: now)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    change(user, email_confirmed_at: now)
   end
 
   @doc """
@@ -220,9 +220,9 @@ defmodule Oli.Accounts.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
-  def valid_password?(%Oli.Accounts.User{hashed_password: hashed_password}, password)
-      when is_binary(hashed_password) and byte_size(password) > 0 do
-    Bcrypt.verify_pass(password, hashed_password)
+  def valid_password?(%Oli.Accounts.User{password_hash: password_hash}, password)
+      when is_binary(password_hash) and byte_size(password) > 0 do
+    Bcrypt.verify_pass(password, password_hash)
   end
 
   def valid_password?(_, _) do

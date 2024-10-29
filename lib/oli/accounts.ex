@@ -1212,7 +1212,7 @@ defmodule Oli.Accounts do
   """
   def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
-    if user.confirmed_at do
+    if user.email_confirmed_at do
       {:error, :already_confirmed}
     else
       {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
@@ -1560,7 +1560,7 @@ defmodule Oli.Accounts do
   """
   def deliver_author_confirmation_instructions(%Author{} = author, confirmation_url_fun)
       when is_function(confirmation_url_fun, 1) do
-    if author.confirmed_at do
+    if author.email_confirmed_at do
       {:error, :already_confirmed}
     else
       {encoded_token, author_token} = AuthorToken.build_email_token(author, "confirm")

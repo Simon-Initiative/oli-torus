@@ -838,8 +838,8 @@ defmodule Oli.AccountsTest do
       email = unique_user_email()
       {:ok, user} = Accounts.register_independent_user(valid_user_attributes(email: email))
       assert user.email == email
-      assert is_binary(user.hashed_password)
-      assert is_nil(user.confirmed_at)
+      assert is_binary(user.password_hash)
+      assert is_nil(user.email_confirmed_at)
       assert is_nil(user.password)
     end
   end
@@ -863,7 +863,7 @@ defmodule Oli.AccountsTest do
       assert changeset.valid?
       assert get_change(changeset, :email) == email
       assert get_change(changeset, :password) == password
-      assert is_nil(get_change(changeset, :hashed_password))
+      assert is_nil(get_change(changeset, :password_hash))
     end
   end
 
@@ -961,8 +961,8 @@ defmodule Oli.AccountsTest do
       changed_user = Repo.get!(User, user.id)
       assert changed_user.email != user.email
       assert changed_user.email == email
-      assert changed_user.confirmed_at
-      assert changed_user.confirmed_at != user.confirmed_at
+      assert changed_user.email_confirmed_at
+      assert changed_user.email_confirmed_at != user.email_confirmed_at
       refute Repo.get_by(UserToken, user_id: user.id)
     end
 
@@ -1000,7 +1000,7 @@ defmodule Oli.AccountsTest do
 
       assert changeset.valid?
       assert get_change(changeset, :password) == "new valid password"
-      assert is_nil(get_change(changeset, :hashed_password))
+      assert is_nil(get_change(changeset, :password_hash))
     end
   end
 
@@ -1145,22 +1145,22 @@ defmodule Oli.AccountsTest do
 
     test "confirms the email with a valid token", %{user: user, token: token} do
       assert {:ok, confirmed_user} = Accounts.confirm_user(token)
-      assert confirmed_user.confirmed_at
-      assert confirmed_user.confirmed_at != user.confirmed_at
-      assert Repo.get!(User, user.id).confirmed_at
+      assert confirmed_user.email_confirmed_at
+      assert confirmed_user.email_confirmed_at != user.email_confirmed_at
+      assert Repo.get!(User, user.id).email_confirmed_at
       refute Repo.get_by(UserToken, user_id: user.id)
     end
 
     test "does not confirm with invalid token", %{user: user} do
       assert Accounts.confirm_user("oops") == :error
-      refute Repo.get!(User, user.id).confirmed_at
+      refute Repo.get!(User, user.id).email_confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
 
     test "does not confirm email if token expired", %{user: user, token: token} do
       {1, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       assert Accounts.confirm_user(token) == :error
-      refute Repo.get!(User, user.id).confirmed_at
+      refute Repo.get!(User, user.id).email_confirmed_at
       assert Repo.get_by(UserToken, user_id: user.id)
     end
   end

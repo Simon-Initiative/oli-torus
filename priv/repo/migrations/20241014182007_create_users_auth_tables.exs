@@ -9,9 +9,6 @@ defmodule Oli.Repo.Migrations.CreateUsersAuthTables do
       modify :email, :citext
     end
 
-    rename table(:users), :password_hash, to: :hashed_password
-    rename table(:users), :email_confirmed_at, to: :confirmed_at
-
     create unique_index(:users, [:email])
 
     create table(:users_tokens) do
@@ -29,9 +26,6 @@ defmodule Oli.Repo.Migrations.CreateUsersAuthTables do
       # convert existing email column from varchar to citext
       modify :email, :citext
     end
-
-    rename table(:authors), :password_hash, to: :hashed_password
-    rename table(:authors), :email_confirmed_at, to: :confirmed_at
 
     ## unique_index(:authors, [:email]) already exists for authors, so no need to add it here
 
@@ -53,9 +47,6 @@ defmodule Oli.Repo.Migrations.CreateUsersAuthTables do
 
     drop table(:authors_tokens)
 
-    rename table(:authors), :confirmed_at, to: :email_confirmed_at
-    rename table(:authors), :hashed_password, to: :password_hash
-
     alter table(:authors) do
       modify :email, :string
     end
@@ -66,9 +57,6 @@ defmodule Oli.Repo.Migrations.CreateUsersAuthTables do
     drop table(:users_tokens)
 
     drop unique_index(:users, [:email])
-
-    rename table(:users), :confirmed_at, to: :email_confirmed_at
-    rename table(:users), :hashed_password, to: :password_hash
 
     alter table(:users) do
       modify :email, :string
