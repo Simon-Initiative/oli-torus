@@ -22,6 +22,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Delivery.Student.Lesson.Outline
 
   require Logger
 
@@ -59,7 +60,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> annotations_assigns(page_context.collab_space_config, is_instructor)
-        |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
+        |> assign(
+          is_instructor: is_instructor,
+          page_resource_id: page_context.page.resource_id,
+          active_sidebar_panel: nil
+        )
         |> assign_objectives()
         |> slim_assigns()
 
@@ -190,18 +195,29 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign_annotations(socket, point_markers: markers)}
   end
 
-  def handle_event("toggle_sidebar", _params, socket) do
-    %{show_sidebar: show_sidebar, selected_point: selected_point} = socket.assigns.annotations
+  def handle_event("toggle_outline_sidebar", _params, socket) do
+    active_sidebar_panel =
+      if socket.assigns.active_sidebar_panel != :outline, do: :outline, else: nil
+
+    {:noreply, assign(socket, active_sidebar_panel: active_sidebar_panel)}
+  end
+
+  def handle_event("toggle_notes_sidebar", _params, socket) do
+    active_sidebar_panel = if socket.assigns.active_sidebar_panel != :notes, do: :notes, else: nil
+
+    %{selected_point: selected_point} = socket.assigns.annotations
 
     {:noreply,
      socket
-     |> assign_annotations(show_sidebar: !show_sidebar)
+     |> assign(active_sidebar_panel: active_sidebar_panel)
      |> push_event("request_point_markers", %{})
      |> then(fn socket ->
-       if show_sidebar do
-         push_event(socket, "clear_highlighted_point_markers", %{})
-       else
-         push_event(socket, "highlight_point_marker", %{id: selected_point})
+       case active_sidebar_panel do
+         nil ->
+           push_event(socket, "clear_highlighted_point_markers", %{})
+
+         :notes ->
+           push_event(socket, "highlight_point_marker", %{id: selected_point})
        end
      end)}
   end
@@ -655,7 +671,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     ~H"""
     <Annotations.delete_post_modal />
 
-    <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
+    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
       <:header>
         <.page_header
           page_context={@page_context}
@@ -685,7 +701,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <.references ctx={@ctx} bib_app_params={@bib_app_params} />
       </div>
 
-      <:point_markers :if={@annotations.show_sidebar && @annotations.point_markers}>
+      <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
         <Annotations.annotation_bubble
           point_marker={:page}
           selected={@annotations.selected_point == :page}
@@ -703,21 +719,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <Annotations.toggle_notes_button>
           <Annotations.annotations_icon />
         </Annotations.toggle_notes_button>
+
+        <Outline.toggle_outline_button>
+          <Outline.outline_icon />
+        </Outline.toggle_outline_button>
       </:sidebar_toggle>
 
       <:sidebar>
-        <Annotations.panel
-          section_slug={@section.slug}
-          collab_space_config={@collab_space_config}
-          create_new_annotation={@annotations.create_new_annotation}
-          annotations={@annotations.posts}
-          current_user={@current_user}
-          is_instructor={@is_instructor}
-          active_tab={@annotations.active_tab}
-          search_results={@annotations.search_results}
-          search_term={@annotations.search_term}
-          selected_point={@annotations.selected_point}
-        />
+        <%= case @active_sidebar_panel do %>
+          <% :notes -> %>
+            <Annotations.panel
+              section_slug={@section.slug}
+              collab_space_config={@collab_space_config}
+              create_new_annotation={@annotations.create_new_annotation}
+              annotations={@annotations.posts}
+              current_user={@current_user}
+              is_instructor={@is_instructor}
+              active_tab={@annotations.active_tab}
+              search_results={@annotations.search_results}
+              search_term={@annotations.search_term}
+              selected_point={@annotations.selected_point}
+            />
+          <% :outline -> %>
+            <Outline.panel />
+        <% end %>
       </:sidebar>
     </.page_content_with_sidebar_layout>
     """
@@ -928,63 +953,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  defp finalize_attempt(
-         %{
-           assigns: %{
-             section: section,
-             datashop_session_id: datashop_session_id,
-             request_path: request_path,
-             revision_slug: revision_slug,
-             attempt_guid: attempt_guid
-           }
-         } = socket
-       ) do
-    case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
-      {:ok,
-       %FinalizationSummary{
-         graded: true,
-         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
-         effective_settings: effective_settings
-       }} ->
-        # graded resource finalization success
-        section = Sections.get_section_by(slug: section.slug)
-
-        if section.grade_passback_enabled,
-          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        redirect_to =
-          case effective_settings.review_submission do
-            :allow ->
-              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
-                request_path: request_path
-              )
-
-            _ ->
-              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-          end
-
-        {:noreply, redirect(socket, to: redirect_to)}
-
-      {:ok, %FinalizationSummary{graded: false}} ->
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-         )}
-
-      {:error, {reason}}
-      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-
-      e ->
-        error_msg = Kernel.inspect(e)
-        Logger.error("Page finalization error encountered: #{error_msg}")
-        Oli.Utils.Appsignal.capture_error(error_msg)
-
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-    end
-  end
-
   attr :show_sidebar, :boolean, default: false
+  attr :active_sidebar_panel, :atom, default: nil
   slot :header, required: true
   slot :inner_block, required: true
   slot :sidebar, default: nil
@@ -996,11 +966,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex-1 flex flex-col w-full overflow-hidden">
       <div class={[
         "flex-1 flex flex-col overflow-auto",
-        if(@show_sidebar, do: "xl:mr-[520px]")
+        if(@active_sidebar_panel, do: "xl:mr-[520px]")
       ]}>
         <div class={[
           "flex-1 mt-20 px-[80px] relative",
-          if(@show_sidebar, do: "border-r border-gray-300 xl:mr-[80px]")
+          if(@active_sidebar_panel == :notes, do: "border-r border-gray-300 xl:mr-[80px]")
         ]}>
           <div class="container mx-auto max-w-[880px] pb-20">
             <%= render_slot(@header) %>
@@ -1013,13 +983,26 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
     </div>
     <div
-      :if={@sidebar && @show_sidebar}
+      :if={@active_sidebar_panel != :notes}
+      class={["absolute top-20", if(@active_sidebar_panel, do: "right-[520px]", else: "right-0")]}
+    >
+      <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
+        <div class={[
+          "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+          if(@active_sidebar_panel,
+            do: "rounded-t-xl rounded-b-xl",
+            else: "rounded-tl-xl rounded-bl-xl"
+          )
+        ]}>
+          <%= render_slot(@sidebar_toggle) %>
+        </div>
+      </div>
+    </div>
+    <div
+      :if={@sidebar && @active_sidebar_panel}
       class="flex flex-col w-[520px] absolute top-20 right-0 bottom-0"
     >
       <%= render_slot(@sidebar) %>
-    </div>
-    <div :if={@sidebar && !@show_sidebar} class="absolute top-20 right-0">
-      <%= render_slot(@sidebar_toggle) %>
     </div>
     """
   end
@@ -1094,6 +1077,62 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
+  defp finalize_attempt(
+         %{
+           assigns: %{
+             section: section,
+             datashop_session_id: datashop_session_id,
+             request_path: request_path,
+             revision_slug: revision_slug,
+             attempt_guid: attempt_guid
+           }
+         } = socket
+       ) do
+    case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
+      {:ok,
+       %FinalizationSummary{
+         graded: true,
+         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
+         effective_settings: effective_settings
+       }} ->
+        # graded resource finalization success
+        section = Sections.get_section_by(slug: section.slug)
+
+        if section.grade_passback_enabled,
+          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+
+        redirect_to =
+          case effective_settings.review_submission do
+            :allow ->
+              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
+                request_path: request_path
+              )
+
+            _ ->
+              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+          end
+
+        {:noreply, redirect(socket, to: redirect_to)}
+
+      {:ok, %FinalizationSummary{graded: false}} ->
+        {:noreply,
+         redirect(socket,
+           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+         )}
+
+      {:error, {reason}}
+      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
+        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
+
+      e ->
+        error_msg = Kernel.inspect(e)
+        Logger.error("Page finalization error encountered: #{error_msg}")
+        Oli.Utils.Appsignal.capture_error(error_msg)
+
+        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
+    end
+  end
+
   defp get_post(socket, post_id) do
     Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)
   end
@@ -1119,7 +1158,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept} ->
         assign(socket,
           annotations: %{
-            show_sidebar: false,
             point_markers: nil,
             selected_point: nil,
             post_counts: nil,
