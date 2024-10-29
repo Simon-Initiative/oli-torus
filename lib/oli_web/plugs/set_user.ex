@@ -1,5 +1,6 @@
 defmodule Oli.Plugs.SetCurrentUser do
   import Plug.Conn
+
   import Oli.Utils, only: [value_or: 2]
 
   alias Oli.Accounts
@@ -23,9 +24,9 @@ defmodule Oli.Plugs.SetCurrentUser do
       conn
       |> put_session(:current_author_id, current_author.id)
       |> put_session(:is_community_admin, current_author.community_admin_count > 0)
-      |> put_session(:is_system_admin, Accounts.is_system_admin?(current_author))
+      |> put_session(:is_system_admin, Accounts.has_admin_role?(current_author))
       |> assign(:current_author, current_author)
-      |> assign(:is_system_admin, Accounts.is_system_admin?(current_author))
+      |> assign(:is_system_admin, Accounts.has_admin_role?(current_author))
     else
       _ ->
         conn
