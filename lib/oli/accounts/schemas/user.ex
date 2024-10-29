@@ -116,13 +116,12 @@ defmodule Oli.Accounts.User do
       :given_name,
       :family_name,
       :picture,
-      # MER-3835 TODO: remove these fields and set them implicitly
-      :independent_learner,
       :guest
     ])
     |> validate_confirmation(:password, message: "does not match password")
     |> validate_email(opts)
     |> validate_password(opts)
+    |> put_change(:independent_learner, true)
     |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
