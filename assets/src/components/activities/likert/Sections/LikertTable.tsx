@@ -29,7 +29,7 @@ export const LikertTable: React.FC<Props> = ({
   const { choices, items } = model;
 
   return (
-    <div className='overflow-x-auto'>
+    <div className="overflow-x-auto">
       <table className="likert-table">
         <thead>
           <tr>
