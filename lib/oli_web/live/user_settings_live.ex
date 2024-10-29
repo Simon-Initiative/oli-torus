@@ -163,7 +163,9 @@ defmodule OliWeb.UserSettingsLive do
           |> to_form()
 
         {:noreply,
-         socket |> put_flash(:info, "User updated successfully.") |> assign(user_form: user_form)}
+         socket
+         |> put_flash(:info, "Account details successfully updated.")
+         |> assign(user_form: user_form)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, user_form: to_form(changeset))}

@@ -199,7 +199,7 @@ defmodule OliWeb.AuthorSettingsLive do
 
         {:noreply,
          socket
-         |> put_flash(:info, "Author updated successfully.")
+         |> put_flash(:info, "Account details successfully updated.")
          |> assign(author_form: author_form)}
 
       {:error, changeset} ->
