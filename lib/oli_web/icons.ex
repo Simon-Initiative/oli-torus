@@ -1,6 +1,8 @@
 defmodule OliWeb.Icons do
   @moduledoc """
   A collection of icons used in the OliWeb application.
+
+  In dev mode you can see all icons available by visiting /dev/icons
   """
 
   use Phoenix.Component
@@ -527,18 +529,9 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :rest, :global, include: ~w(class)
-
   def trash(assigns) do
     ~H"""
-    <svg
-      class={[@rest[:class]]}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M3 6H5H21"
         stroke="black"
@@ -938,7 +931,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :proficiency, :string
+  attr :proficiency, :string, default: "Not enough data"
 
   def proficiency(%{proficiency: "Not enough data"} = assigns) do
     ~H"""
@@ -1380,7 +1373,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :selected_question_number, :integer
+  attr :selected_question_number, :integer, default: 1
 
   def previous_question_arrow(assigns) do
     ~H"""
