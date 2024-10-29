@@ -10,7 +10,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:breadcrumbs, :list, required: true)
   attr(:socket_or_conn, :any, required: true)
@@ -23,7 +23,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     <div class="flex-1 flex flex-col h-screen">
       <.header
         ctx={@ctx}
-        is_system_admin={@is_system_admin}
+        is_admin={@is_admin}
         view={@view}
         section={@section}
         preview_mode={@preview_mode}
@@ -162,7 +162,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
   defp is_active?(current_view, view), do: current_view == view
 
   attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
   attr(:view, :atom, values: [:manage, :overview, :reports, :discussions])
@@ -217,7 +217,7 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
               ctx={@ctx}
               class="hover:!bg-delivery-instructor-dashboard-header-700"
               dropdown_class="text-body-color dark:text-body-color-dark"
-              is_system_admin={@is_system_admin}
+              is_admin={@is_admin}
             />
           <% end %>
         </div>

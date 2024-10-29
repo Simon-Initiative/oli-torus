@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.Actions do
        user_role_data: @user_role_data,
        has_payment: has_payment,
        current_user: current_user,
-       is_admin: Accounts.has_admin_role?(current_user),
+       is_admin: Accounts.is_admin?(current_user),
        is_suspended?: is_suspended?
      )}
   end

@@ -12,10 +12,9 @@ defmodule OliWeb.Components.Header do
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext, required: true)
+  attr(:is_admin, :boolean, required: true)
 
   def header(assigns) do
-    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
-
     ~H"""
     <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
@@ -75,7 +74,7 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
+              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
             </div>
           <% true -> %>
             <div class="inline-flex items-center">

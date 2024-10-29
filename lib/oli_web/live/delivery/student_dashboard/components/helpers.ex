@@ -139,10 +139,9 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   attr(:student, User)
   attr(:section, Section)
   attr(:preview_mode, :boolean, default: false)
+  attr(:is_admin, :boolean, required: true)
 
   def header(assigns) do
-    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
-
     ~H"""
     <div class="w-full bg-delivery-instructor-dashboard-header text-white border-b border-slate-600">
       <div class="container mx-auto py-2 flex flex-row justify-between">
@@ -157,7 +156,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <%= if @preview_mode do %>
           <UserAccount.preview_user_menu />
         <% else %>
-          <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
+          <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
         <% end %>
         <div class="flex items-center border-l border-slate-300">
           <button

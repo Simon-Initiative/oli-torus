@@ -2,6 +2,7 @@ defmodule OliWeb.Sections.OverviewView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  alias Oli.Accounts
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
@@ -81,7 +82,7 @@ defmodule OliWeb.Sections.OverviewView do
         {:ok,
          assign(socket,
            page_prompt_template: section.page_prompt_template,
-           is_system_admin: type == :admin,
+           is_admin: Accounts.is_admin?(user),
            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
@@ -143,10 +144,10 @@ defmodule OliWeb.Sections.OverviewView do
         <%= unless is_nil(@deployment) do %>
           <ReadOnly.render
             label="Institution"
-            type={if @is_system_admin, do: "link"}
+            type={if @is_admin, do: "link"}
             link_label={@deployment.institution.name}
             value={
-              if @is_system_admin,
+              if @is_admin,
                 do: Routes.institution_path(OliWeb.Endpoint, :show, @deployment.institution_id),
                 else: @deployment.institution.name
             }
@@ -367,7 +368,7 @@ defmodule OliWeb.Sections.OverviewView do
             </a>
           </li>
 
-          <%= if @is_system_admin do %>
+          <%= if @is_admin do %>
             <li>
               <a
                 href={
@@ -437,7 +438,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render
         label="Cover Image"
         description="Manage the cover image for this section. Max file size is 5 MB."
-        is_last={!@is_system_admin}
+        is_last={!@is_admin}
       >
         <section>
           <ImageUpload.render
@@ -451,7 +452,7 @@ defmodule OliWeb.Sections.OverviewView do
         </section>
       </Group.render>
 
-      <div :if={@is_system_admin} class="border-t dark:border-gray-700">
+      <div :if={@is_admin} class="border-t dark:border-gray-700">
         <Group.render
           label="AI Assistant"
           description="View and manage the AI Assistant details"
@@ -608,7 +609,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
-            is_admin = socket.assigns.is_system_admin
+            is_admin = socket.assigns.is_admin
 
             redirect_path =
               if is_admin do

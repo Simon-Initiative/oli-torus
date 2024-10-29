@@ -12,10 +12,10 @@ defmodule Oli.Plugs.EnsureUserSectionVisit do
   def call(conn, _opts) do
     user = conn.assigns[:current_user]
     section = conn.assigns[:section]
-    is_system_admin = conn.assigns[:is_system_admin]
+    is_admin = conn.assigns[:is_admin]
 
     cond do
-      is_system_admin ->
+      is_admin ->
         conn
 
       !has_visited_section_key(conn) ->

@@ -90,18 +90,14 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})])
+  attr(:is_admin, :boolean, required: true)
 
   def render(assigns) do
     ~H"""
     <%= case @live_action do %>
       <% :admin -> %>
       <% _ -> %>
-        <.header
-          ctx={@ctx}
-          section={@section}
-          preview_mode={@preview_mode}
-          is_system_admin={@is_system_admin}
-        />
+        <.header ctx={@ctx} section={@section} preview_mode={@preview_mode} is_admin={@is_admin} />
     <% end %>
     <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component

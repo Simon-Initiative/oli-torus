@@ -178,7 +178,7 @@ defmodule OliWeb.UserAuth do
   def on_mount(:ensure_authenticated, _params, session, socket) do
     socket = mount_current_user(socket, session)
 
-    if socket.assigns.current_user do
+    if socket.assigns.current_user || socket.assigns.is_admin do
       {:cont, socket}
     else
       socket =
@@ -266,7 +266,11 @@ defmodule OliWeb.UserAuth do
   they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] || conn.assigns[:is_system_admin] do
+    # This block assumes that any admin authoring account that may be logged in has already been
+    # loaded into the assigns by the AuthorAuth module. This should be the case since both
+    # :fetch_current_author and :fetch_current_user are called in that exact order in the router
+    # base :browser and :api pipelines.
+    if conn.assigns[:current_user] || conn.assigns[:is_admin] do
       conn
     else
       conn

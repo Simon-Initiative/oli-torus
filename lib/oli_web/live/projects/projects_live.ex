@@ -19,9 +19,11 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   @limit 25
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def mount(_, %{"current_author_id" => _} = session, socket) do
     %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
-    is_admin = Accounts.has_admin_role?(author)
+    is_admin = Accounts.has_admin_role?(author, :content_admin)
 
     show_all =
       if is_admin,

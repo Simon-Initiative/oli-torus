@@ -1,7 +1,7 @@
 <div class="h-screen flex flex-col overscroll-none">
   <Components.Delivery.Layouts.header
     ctx={@ctx}
-    is_system_admin={assigns[:is_system_admin] || false}
+    is_admin={assigns[:is_admin]}
     section={@section}
     preview_mode={@preview_mode}
     sidebar_expanded={@sidebar_expanded}
@@ -11,7 +11,7 @@
     <Components.Delivery.Layouts.sidebar_nav
       :if={@section}
       ctx={@ctx}
-      is_system_admin={assigns[:is_system_admin] || false}
+      is_admin={assigns[:is_admin]}
       section={@section}
       active_tab={assigns[:active_tab]}
       preview_mode={@preview_mode}

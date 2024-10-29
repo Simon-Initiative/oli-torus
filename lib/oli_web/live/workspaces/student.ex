@@ -26,7 +26,7 @@ defmodule OliWeb.Workspaces.Student do
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
 
-  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+  def mount(_params, _session, %{assigns: %{is_admin: true}} = socket) do
     # admin case...
     {:ok, assign(socket, active_workspace: :student)}
   end
@@ -86,7 +86,7 @@ defmodule OliWeb.Workspaces.Student do
 
   @impl Phoenix.LiveView
 
-  def render(%{has_admin_role: true} = assigns) do
+  def render(%{is_admin: true} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div

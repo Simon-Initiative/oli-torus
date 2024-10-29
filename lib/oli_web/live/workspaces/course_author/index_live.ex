@@ -45,7 +45,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   end
 
   def mount(params, _session, %{assigns: %{ctx: %{author: %Author{} = author} = ctx}} = socket) do
-    is_admin = Accounts.has_admin_role?(author)
+    is_admin = Accounts.has_admin_role?(author, :content_admin)
 
     show_all =
       if is_admin,
@@ -402,7 +402,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   def create_authoring_account_link(%{ctx: %{user: %{author_id: author_id}}} = assigns)
       when not is_nil(author_id) do
     ~H"""
-
     """
   end
 
@@ -419,11 +418,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   end
 
   defp create_authoring_account_path(nil),
-    do:
-      ~p"/authors/register?#{[request_path: ~p"/workspaces/course_author"]}"
+    do: ~p"/authors/register?#{[request_path: ~p"/workspaces/course_author"]}"
 
   defp create_authoring_account_path(_user),
-    do: ~p"/authors/register?#{[link_to_user_account?: "true", request_path: ~p"/workspaces/course_author"]}"
+    do:
+      ~p"/authors/register?#{[link_to_user_account?: "true", request_path: ~p"/workspaces/course_author"]}"
 
   def patch_with(socket, changes) do
     %{table_model: table_model, params: params, show_all: show_all, show_deleted: show_deleted} =

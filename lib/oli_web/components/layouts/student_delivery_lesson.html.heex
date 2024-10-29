@@ -46,7 +46,7 @@
       <Components.Delivery.Layouts.header
         :if={@section}
         ctx={@ctx}
-        is_system_admin={assigns[:is_system_admin] || false}
+        is_admin={assigns[:is_admin] || false}
         section={@section}
         preview_mode={@preview_mode}
         force_show_user_menu={true}

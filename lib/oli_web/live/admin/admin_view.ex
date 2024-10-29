@@ -28,7 +28,7 @@ defmodule OliWeb.Admin.AdminView do
         <strong>Note:</strong>
         All administrative actions taken in the system are logged for auditing purposes.
       </div>
-      <%= if Accounts.is_system_admin?(@author) || Accounts.is_account_admin?(@author) do %>
+      <%= if Accounts.is_admin?(@author) || Accounts.is_account_admin?(@author) do %>
         <Group.render label="Account Management" description="Access and manage all users and authors">
           <ul class="link-list">
             <li>
@@ -63,7 +63,7 @@ defmodule OliWeb.Admin.AdminView do
           </ul>
         </Group.render>
       <% end %>
-      <%= if Accounts.has_admin_role?(@author) do %>
+      <%= if Accounts.is_admin?(@author) do %>
         <Group.render label="Content Management" description="Access and manage created content">
           <ul class="link-list">
             <li>
@@ -99,7 +99,7 @@ defmodule OliWeb.Admin.AdminView do
           </ul>
         </Group.render>
       <% end %>
-      <%= if Accounts.is_system_admin?(@author) do %>
+      <%= if Accounts.has_admin_role?(@author, :system_admin) do %>
         <Group.render
           label="System Management"
           description="Manage and support system level functionality"

@@ -89,7 +89,7 @@ defmodule OliWeb.Insights do
        active: :insights,
        sections_by_product_id: sections_by_product_id,
        ctx: ctx,
-       is_admin?: Accounts.is_system_admin?(ctx.author),
+       is_admin?: Accounts.is_admin?(ctx.author),
        project: project,
        parent_pages: parent_pages,
        selected: :by_activity,

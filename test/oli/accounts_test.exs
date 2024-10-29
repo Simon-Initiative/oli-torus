@@ -11,6 +11,7 @@ defmodule Oli.AccountsTest do
   alias Oli.Groups.CommunityAccount
   alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Accounts.SystemRole
 
   def user_fixture(attrs \\ %{}) do
     %User{}
@@ -31,7 +32,7 @@ defmodule Oli.AccountsTest do
         |> Repo.insert()
 
       assert author.system_role_id == Accounts.SystemRole.role_id().author
-      assert Accounts.is_system_admin?(author) == false
+      assert Accounts.is_admin?(author) == false
     end
 
     test "changeset accepts system role change", %{} do
@@ -45,7 +46,8 @@ defmodule Oli.AccountsTest do
         })
         |> Repo.insert()
 
-      assert Accounts.is_system_admin?(author) == false
+      assert Accounts.is_admin?(author) == false
+      assert author.system_role_id == nil
 
       {:ok, author} =
         Accounts.insert_or_update_author(%{
@@ -54,7 +56,71 @@ defmodule Oli.AccountsTest do
         })
 
       assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
-      assert Accounts.is_system_admin?(author) == true
+    end
+
+    test "Accounts.is_admin? returns true when the author has and admin role and has_admin_role?/2 returns true when the author has the matching role or system_admin role" do
+      {:ok, author} =
+        Author.noauth_changeset(%Author{}, %{
+          email: "user#{System.unique_integer([:positive])}@example.com",
+          given_name: "Test",
+          family_name: "User",
+          password: "password123",
+          password_confirmation: "password123"
+        })
+        |> Repo.insert()
+
+      assert Accounts.is_admin?(author) == false
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
+      assert Accounts.has_admin_role?(author, :system_admin) == false
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == false
+      assert Accounts.has_admin_role?(author, :content_admin) == false
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == false
+      assert Accounts.has_admin_role?(author, :account_admin) == false
+
+      {:ok, author} =
+        Accounts.insert_or_update_author(%{
+          email: author.email,
+          system_role_id: Accounts.SystemRole.role_id().system_admin
+        })
+
+      assert author.system_role_id == Accounts.SystemRole.role_id().system_admin
+      assert Accounts.is_admin?(author) == true
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == true
+      assert Accounts.has_admin_role?(author, :system_admin) == true
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == true
+      assert Accounts.has_admin_role?(author, :content_admin) == true
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == true
+      assert Accounts.has_admin_role?(author, :account_admin) == true
+
+      {:ok, author} =
+        Accounts.insert_or_update_author(%{
+          email: author.email,
+          system_role_id: Accounts.SystemRole.role_id().account_admin
+        })
+
+      assert author.system_role_id == Accounts.SystemRole.role_id().account_admin
+      assert Accounts.is_admin?(author) == true
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
+      assert Accounts.has_admin_role?(author, :system_admin) == false
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == false
+      assert Accounts.has_admin_role?(author, :content_admin) == false
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == true
+      assert Accounts.has_admin_role?(author, :account_admin) == true
+
+      {:ok, author} =
+        Accounts.insert_or_update_author(%{
+          email: author.email,
+          system_role_id: Accounts.SystemRole.role_id().content_admin
+        })
+
+      assert author.system_role_id == Accounts.SystemRole.role_id().content_admin
+      assert Accounts.is_admin?(author) == true
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
+      assert Accounts.has_admin_role?(author, :system_admin) == false
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().content_admin) == true
+      assert Accounts.has_admin_role?(author, :content_admin) == true
+      assert Accounts.has_admin_role?(author, SystemRole.role_id().account_admin) == false
+      assert Accounts.has_admin_role?(author, :account_admin) == false
     end
 
     test "search_authors_matching/1 returns authors matching the input exactly" do

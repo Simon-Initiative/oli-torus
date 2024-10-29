@@ -32,7 +32,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         author = socket.assigns.ctx.author
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
-        is_admin = Accounts.has_admin_role?(author)
+        is_admin = Accounts.has_admin_role?(author, :content_admin)
         changeset = Section.changeset(product, %{})
         project = socket.assigns.project
 

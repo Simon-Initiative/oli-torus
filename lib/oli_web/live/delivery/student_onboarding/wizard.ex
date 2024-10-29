@@ -105,7 +105,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     ~H"""
     <.header
       ctx={@ctx}
-      is_system_admin={@is_system_admin}
+      is_admin={@is_admin}
       section={@section}
       preview_mode={@preview_mode}
       include_logo={true}

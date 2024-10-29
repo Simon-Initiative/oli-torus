@@ -78,7 +78,7 @@ defmodule Oli.Authoring.Course do
   end
 
   def get_projects_for_author(author) do
-    if Accounts.has_admin_role?(author),
+    if Accounts.has_admin_role?(author, :content_admin),
       do: Repo.all(Project),
       else: Repo.preload(author, [:projects]).projects
   end
@@ -93,7 +93,7 @@ defmodule Oli.Authoring.Course do
     admin_show_all = Keyword.get(opts, :admin_show_all, true)
     text_search = Keyword.get(opts, :text_search, "")
 
-    if Accounts.has_admin_role?(author) and admin_show_all,
+    if Accounts.has_admin_role?(author, :content_admin) and admin_show_all,
       do: browse_projects_as_admin(paging, sorting, include_deleted, text_search),
       else: browse_projects_as_author(author, paging, sorting, include_deleted, text_search)
   end

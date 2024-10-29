@@ -23,6 +23,13 @@ defmodule OliWeb.UserSettingsLive do
               <.input field={@user_form[:given_name]} type="text" label="First name" />
               <.input field={@user_form[:family_name]} type="text" label="Last name" />
 
+              <.input
+                :if={Accounts.has_admin_role?(@current_author, :account_admin)}
+                type="checkbox"
+                field={@user_form[:independent_learner]}
+                label="Independent learner"
+              />
+
               <div>
                 <.button variant={:primary} phx-disable-with="Saving...">Save</.button>
               </div>

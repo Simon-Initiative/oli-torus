@@ -18,7 +18,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
 
-  attr(:has_admin_role, :boolean,
+  attr(:is_admin, :boolean,
     required: true,
     doc:
       "if the user has an admin role (system, account, or content admin) the admin menu will be shown in the 3 workspaces (course author, instructor, and student)"
@@ -33,14 +33,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     - author form ctx will be assigned to course author workspace menu.
     - user form ctx will be assigned to instructor or student workspace menu.
 
-    There is a special case; when the user has_admin_role, then the author form ctx will be assigned to the menu, regardless of the active workspace.
+    There is a special case; when the user is_admin, then the author form ctx will be assigned to the menu, regardless of the active workspace.
     """
   )
 
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
 
-  def workspace_menu(%{has_admin_role: true} = assigns) do
+  def workspace_menu(%{is_admin: true} = assigns) do
     ~H"""
     <div class="relative">
       <button
@@ -56,7 +56,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           ctx={@ctx}
           id={@id}
           target_signout_path={target_signout_path(@active_workspace)}
-          is_system_admin={true}
+          is_admin={true}
         />
       </.dropdown_menu>
     </div>
@@ -79,7 +79,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
           ctx={@ctx}
           id={@id}
           target_signout_path={target_signout_path(@active_workspace)}
-          is_system_admin={false}
+          is_admin={false}
         />
       </.dropdown_menu>
     </div>
@@ -130,7 +130,9 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:current_user, Accounts.User, default: nil)
+  attr(:current_author, Accounts.Author, default: nil)
+  attr(:is_admin, :boolean, required: true)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
 
@@ -145,24 +147,19 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_icon ctx={@ctx} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <%= case {assigns.ctx, @is_system_admin} do %>
-          <% {%SessionContext{author: %Author{}}, true} -> %>
-            <.author_menu_items
-              id={"#{@id}-menu-items-admin"}
-              ctx={@ctx}
-              is_system_admin={@is_system_admin}
-            />
-          <% {%SessionContext{user: %User{guest: true}}, _} -> %>
-            <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% {%SessionContext{user: %User{}}, _} -> %>
-            <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
-          <% {%SessionContext{author: %Author{}}, _} -> %>
-            <.author_menu_items
-              id={"#{@id}-menu-items-admin"}
-              ctx={@ctx}
-              is_system_admin={@is_system_admin}
-            />
-          <% _ -> %>
+        <%= if @is_admin do %>
+          <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+        <% else %>
+          <%= case assigns.ctx do %>
+            <% {%SessionContext{author: %Author{}}, true} -> %>
+            <% {%SessionContext{user: %User{guest: true}}, _} -> %>
+              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+            <% {%SessionContext{user: %User{}}, _} -> %>
+              <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+            <% {%SessionContext{author: %Author{}}, _} -> %>
+              <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+            <% _ -> %>
+          <% end %>
         <% end %>
       </.dropdown_menu>
     </div>
@@ -180,12 +177,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
   attr(:target_signout_path, :string, default: "")
 
   def author_menu_items(assigns) do
     ~H"""
-    <.maybe_menu_item_open_admin_panel is_system_admin={@is_system_admin} />
+    <.menu_item_open_admin_panel :if={@is_admin} />
     <.menu_item_edit_account href={~p"/authors/settings"} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
@@ -401,17 +398,14 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  attr(:is_system_admin, :boolean, required: true)
-
-  @spec maybe_menu_item_open_admin_panel(map()) :: Phoenix.LiveView.Rendered.t()
-  def maybe_menu_item_open_admin_panel(assigns) do
+  @spec menu_item_open_admin_panel(map()) :: Phoenix.LiveView.Rendered.t()
+  def menu_item_open_admin_panel(assigns) do
     ~H"""
-    <%= if @is_system_admin do %>
-      <.menu_item_link href={~p"/admin"}>
-        <.icon name="fa-solid fa-wrench" class="mr-2" /> Admin Panel
-      </.menu_item_link>
-      <.menu_divider />
-    <% end %>
+    <.menu_item_link href={~p"/admin"}>
+      <.icon name="fa-solid fa-wrench" class="mr-2" /> Admin Panel
+    </.menu_item_link>
+
+    <.menu_divider />
     """
   end
 

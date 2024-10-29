@@ -119,8 +119,7 @@ defmodule OliWeb.AuthorAuth do
 
     conn
     |> assign(:current_author, author)
-    |> assign(:is_system_admin, Accounts.is_system_admin?(author))
-    |> assign(:has_admin_role, Accounts.has_admin_role?(author))
+    |> assign(:is_admin, Accounts.is_admin?(author))
   end
 
   defp ensure_author_token(conn) do
@@ -208,14 +207,9 @@ defmodule OliWeb.AuthorAuth do
         Accounts.get_author_by_session_token(author_token)
       end
     end)
-    |> Phoenix.Component.assign_new(:is_system_admin, fn ->
+    |> Phoenix.Component.assign_new(:is_admin, fn ->
       if author = socket.assigns[:current_author] do
-        Accounts.is_system_admin?(author)
-      end
-    end)
-    |> Phoenix.Component.assign_new(:has_admin_role, fn ->
-      if author = socket.assigns[:current_author] do
-        Accounts.has_admin_role?(author)
+        Accounts.is_admin?(author)
       end
     end)
   end
@@ -246,6 +240,50 @@ defmodule OliWeb.AuthorAuth do
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
+      |> redirect(to: ~p"/authors/log_in")
+      |> halt()
+    end
+  end
+
+  def require_admin(conn, _opts) do
+    if Accounts.is_admin?(conn.assigns[:current_author]) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be an admin to access this page.")
+      |> redirect(to: ~p"/authors/log_in")
+      |> halt()
+    end
+  end
+
+  def require_account_admin(conn, _opts) do
+    if Accounts.has_admin_role?(conn.assigns[:current_author], :account_admin) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be an account admin to access this page.")
+      |> redirect(to: ~p"/authors/log_in")
+      |> halt()
+    end
+  end
+
+  def require_content_admin(conn, _opts) do
+    if Accounts.has_admin_role?(conn.assigns[:current_author], :content_admin) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be a content admin to access this page.")
+      |> redirect(to: ~p"/authors/log_in")
+      |> halt()
+    end
+  end
+
+  def require_system_admin(conn, _opts) do
+    if Accounts.has_admin_role?(conn.assigns[:current_author], :system_admin) do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be a system admin to access this page.")
       |> redirect(to: ~p"/authors/log_in")
       |> halt()
     end

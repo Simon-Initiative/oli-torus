@@ -5,8 +5,6 @@ defmodule OliWeb.Router do
   import OliWeb.UserAuth
   import OliWeb.AuthorAuth
 
-  import Oli.Plugs.EnsureAdmin
-
   ### BASE PIPELINES ###
   # We have five "base" pipelines: :browser, :api, :lti, :skip_csrf_protection, and :sso
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
@@ -124,9 +122,28 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
   end
 
-  # Ensure that the user logged in is an admin user
-  pipeline :admin do
-    plug(Oli.Plugs.RequireAdmin)
+  pipeline :require_authenticated_admin do
+    plug(:require_authenticated_author)
+
+    plug(:require_admin)
+  end
+
+  pipeline :require_authenticated_account_admin do
+    plug(:require_authenticated_author)
+
+    plug(:require_account_admin)
+  end
+
+  pipeline :require_authenticated_content_admin do
+    plug(:require_authenticated_author)
+
+    plug(:require_content_admin)
+  end
+
+  pipeline :require_authenticated_system_admin do
+    plug(:require_authenticated_author)
+
+    plug(:require_system_admin)
   end
 
   # parse url encoded forms
@@ -351,7 +368,7 @@ defmodule OliWeb.Router do
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
     scope "/communities" do
-      pipe_through([:community_admin, :reject_content_admin])
+      pipe_through([:community_admin, :require_authenticated_account_admin])
 
       live("/", CommunityLive.IndexView)
 
@@ -1322,7 +1339,7 @@ defmodule OliWeb.Router do
 
   ### Admin Dashboard / Telemetry
   scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :admin, :reject_content_or_account_admin])
+    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
 
     live_dashboard("/dashboard",
       metrics: {OliWeb.Telemetry, :non_distributed_metrics},
@@ -1340,9 +1357,8 @@ defmodule OliWeb.Router do
   scope "/admin", OliWeb do
     pipe_through([
       :browser,
-      :authoring_protected,
-      :workspace,
-      :admin
+      :require_authenticated_admin,
+      :workspace
     ])
 
     # General
@@ -1393,9 +1409,9 @@ defmodule OliWeb.Router do
     # Branding
     resources("/brands", BrandController)
 
-    # Routes rejected for content admin
+    # Account admin
     scope "/" do
-      pipe_through([:reject_content_admin])
+      pipe_through([:require_authenticated_account_admin])
       live("/users", Users.UsersView)
       live("/users/:user_id", Users.UsersDetailView)
       # Admin Author/User Account Management
@@ -1438,9 +1454,9 @@ defmodule OliWeb.Router do
       end
     end
 
-    # Routes rejected for account and content admin
+    # System admin
     scope "/" do
-      pipe_through([:reject_content_or_account_admin])
+      pipe_through([:require_authenticated_system_admin])
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
       live("/xapi", Admin.UploadPipelineView)
@@ -1479,10 +1495,9 @@ defmodule OliWeb.Router do
   scope "/project", OliWeb do
     pipe_through([
       :browser,
-      :authoring_protected,
+      :require_authenticated_content_admin,
       :workspace,
-      :authorize_project,
-      :admin
+      :authorize_project
     ])
 
     live("/:project_id/history/slug/:slug", RevisionHistory)

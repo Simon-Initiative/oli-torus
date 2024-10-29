@@ -53,7 +53,7 @@ defmodule OliWeb.Products.DetailsView do
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
-           is_admin: Accounts.has_admin_role?(author),
+           is_admin: Accounts.has_admin_role?(author, :content_admin),
            changeset: Section.changeset(product, %{}),
            title: "Edit Product",
            show_confirm: false,

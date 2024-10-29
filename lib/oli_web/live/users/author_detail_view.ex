@@ -127,7 +127,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
                 id="role"
                 class="form-control"
                 name="author[system_role_id]"
-                disabled={@disabled_edit or not Accounts.is_system_admin?(@author)}
+                disabled={@disabled_edit or not Accounts.has_admin_role?(@author, :system_admin)}
               >
                 <%= for {_type, id} <- @authors do %>
                   <option value={id} selected={@user.system_role_id == id}><%= role(id) %></option>
@@ -220,7 +220,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
     author = Accounts.get_author!(id)
 
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
 
     {:noreply,
      socket
@@ -284,7 +284,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
     author = Accounts.get_author!(id)
 
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
 
     {:noreply,
      socket

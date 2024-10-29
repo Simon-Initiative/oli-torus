@@ -38,11 +38,11 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   def mount(
         _,
-        %{"is_system_admin" => is_system_admin, "current_author_id" => author_id} = session,
+        %{"is_admin" => is_admin, "current_author_id" => author_id} = session,
         socket
       ) do
     communities =
-      if is_system_admin do
+      if is_admin do
         Groups.list_communities()
       else
         Accounts.list_admin_communities(author_id)
@@ -58,7 +58,7 @@ defmodule OliWeb.CommunityLive.IndexView do
        communities: communities,
        table_model: table_model,
        total_count: length(communities),
-       is_system_admin: is_system_admin,
+       is_admin: is_admin,
        limit: 20,
        offset: 0,
        filter: %{"status" => "active"},
@@ -71,7 +71,7 @@ defmodule OliWeb.CommunityLive.IndexView do
     <div class="d-flex p-3 justify-content-between">
       <Filter.render change="change_search" reset="reset_search" apply="apply_search" query={@query} />
 
-      <.link :if={@is_system_admin} class="btn btn-primary" href={Routes.live_path(@socket, NewView)}>
+      <.link :if={@is_admin} class="btn btn-primary" href={Routes.live_path(@socket, NewView)}>
         Create Community
       </.link>
     </div>

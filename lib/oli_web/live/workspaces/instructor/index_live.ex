@@ -31,7 +31,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      )}
   end
 
-  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+  def mount(_params, _session, %{assigns: %{is_admin: true}} = socket) do
     # admin case...
 
     {:ok, assign(socket, active_workspace: :instructor)}
@@ -73,7 +73,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   @impl Phoenix.LiveView
 
-  def render(%{has_admin_role: true} = assigns) do
+  def render(%{is_admin: true} = assigns) do
     ~H"""
     <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
       <div class="relative flex items-center h-[247px]">
