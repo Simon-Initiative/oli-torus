@@ -126,12 +126,4 @@ defmodule OliWeb.Users.Actions do
     </div>
     """
   end
-
-  def lti_user_actions(assigns) do
-    ~H"""
-    <div>
-      <div class="text-secondary my-4">LTI users are managed by their LMS</div>
-    </div>
-    """
-  end
 end

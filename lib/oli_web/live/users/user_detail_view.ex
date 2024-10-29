@@ -213,7 +213,8 @@ defmodule OliWeb.Users.UsersDetailView do
               password_reset_link={@password_reset_link}
             />
           <% else %>
-            <Actions.lti_user_actions user={@user} />
+            <div>No actions available</div>
+            <div class="text-secondary">LTI users are managed by their LMS</div>
           <% end %>
         </Group.render>
       </Groups.render>
