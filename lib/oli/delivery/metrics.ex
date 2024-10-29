@@ -126,7 +126,12 @@ defmodule Oli.Delivery.Metrics do
   of `progress_for/3` (where we may have a progress of 0.5 for a page, for example).
 
   Returns a map:
-  %{user_id => %{completed_pages: completed_pages, total_pages: total_pages}}
+  %{user_id_1 => completed_pages_1,
+    user_id_2 => completed_pages_2,
+    ...
+    user_id_n => completed_pages_n,
+    total_pages => total_pages
+  }
   """
   def raw_completed_pages_for(section_id, user_ids, container_id \\ nil)
 
@@ -159,15 +164,16 @@ defmodule Oli.Delivery.Metrics do
       |> group_by([_cp, ra], ra.user_id)
       |> select(
         [cp, ra],
-        {ra.user_id, %{completed_pages: count(), total_pages: type(^pages_count, :integer)}}
+        {ra.user_id, count()}
       )
 
     Repo.all(query)
     |> Enum.into(%{})
+    |> Map.merge(%{total_pages: pages_count})
   end
 
   def raw_completed_pages_for(section_id, user_id, container_id),
-    do: raw_completed_pages_for(section_id, [user_id], container_id) |> Map.get(user_id)
+    do: raw_completed_pages_for(section_id, [user_id], container_id)
 
   defp do_get_progress_for_page(section_id, user_ids, page_id) do
     filter_by_user =

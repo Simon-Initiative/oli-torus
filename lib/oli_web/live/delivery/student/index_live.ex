@@ -108,7 +108,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          latest_assignments: combine_settings(latest_assignments, combined_settings),
          containers_per_page: containers_per_page,
          assignments_tab: :upcoming,
-         raw_completed_pages: Metrics.raw_completed_pages_for(section.id, current_user_id)
+         completed_pages: get_completed_pages(section.id, current_user_id)
        )}
     else
       {:ok, assign(socket, active_tab: :index, loaded: false)}
@@ -176,12 +176,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             ctx={@ctx}
           />
           <.course_progress
-            :if={@raw_completed_pages.total_pages > 0}
+            :if={@completed_pages.total_pages > 0}
             has_visited_section={@has_visited_section}
             page_completed_target_path={
               ~p"/sections/#{@section_slug}/learn?sidebar_expanded=#{@sidebar_expanded}"
             }
-            raw_completed_pages={@raw_completed_pages}
+            completed_pages={@completed_pages}
           />
         </div>
 
@@ -382,7 +382,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   attr(:has_visited_section, :boolean, required: true)
   attr(:page_completed_target_path, :string, required: true)
-  attr(:raw_completed_pages, :map, required: true)
+  attr(:completed_pages, :map, required: true)
 
   defp course_progress(assigns) do
     ~H"""
@@ -498,15 +498,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           <div class="flex-col justify-start items-start flex">
             <div>
               <span class="text-6xl font-bold leading-[76px]">
-                <%= parse_progress(
-                  @raw_completed_pages.completed_pages / @raw_completed_pages.total_pages
-                ) %>
+                <%= parse_progress(@completed_pages.completed_pages / @completed_pages.total_pages) %>
               </span>
               <span class="text-3xl font-bold leading-[44px]">%</span>
             </div>
           </div>
           <Common.progress_bar
-            percent={@raw_completed_pages.completed_pages / @raw_completed_pages.total_pages * 100}
+            percent={@completed_pages.completed_pages / @completed_pages.total_pages * 100}
             on_going_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             not_completed_colour="bg-gray-600/20 dark:bg-[#385581]"
@@ -517,7 +515,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             navigate={@page_completed_target_path}
             class="text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
           >
-            <%= @raw_completed_pages.completed_pages %>/<%= @raw_completed_pages.total_pages %> Pages Completed
+            <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
           </.link>
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
@@ -935,5 +933,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     Enum.map(assignments, fn assignment ->
       Map.put(assignment, :settings, settings[assignment.resource_id])
     end)
+  end
+
+  defp get_completed_pages(section_id, current_user_id) do
+    raw_completed_pages = Metrics.raw_completed_pages_for(section_id, current_user_id)
+
+    %{
+      completed_pages: Map.get(raw_completed_pages, :completed_pages, 0),
+      total_pages: Map.get(raw_completed_pages, :total_pages, 0)
+    }
   end
 end
