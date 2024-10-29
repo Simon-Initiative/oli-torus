@@ -56,12 +56,12 @@ defmodule Oli.Application do
         Oli.Publishing.Publications.DiffAgent,
         Oli.Delivery.Attempts.PartAttemptCleaner,
 
-        # Starts Cachex to store user/author info across requests
-        Oli.AccountLookupCache,
+        # Starts Cachex to store page content info
         {Cachex, name: :page_content_cache},
 
         # Starts Cachex to store datashop export info
         Oli.DatashopCache,
+
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
 

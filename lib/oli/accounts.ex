@@ -22,7 +22,6 @@ defmodule Oli.Accounts do
   alias Oli.Groups.CommunityAccount
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.AccountLookupCache
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.DataProviders.EctoProvider
 
@@ -246,23 +245,6 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
-  def update_user(
-        %User{} = user,
-        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
-      ) do
-    user
-    |> User.password_changeset(attrs)
-    |> Repo.update()
-    |> case do
-      {:ok, %User{id: user_id}} = result ->
-        AccountLookupCache.delete("user_#{user_id}")
-        result
-
-      error ->
-        error
-    end
-  end
-
   @doc """
   Updates a user.
   ## Examples
@@ -272,35 +254,17 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_user(%User{} = user, attrs) do
-    res =
-      user
-      |> User.noauth_changeset(attrs)
-      |> Repo.update()
-
-    case res do
-      {:ok, %User{id: user_id}} ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
+    user
+    |> User.noauth_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
   Updates a user from an admin.
   """
   def update_user_from_admin(changeset) do
-    case Repo.update(changeset) do
-      {:ok, %User{id: user_id}} = res ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
+    changeset
+    |> Repo.update()
   end
 
   @doc """
@@ -326,23 +290,12 @@ defmodule Oli.Accounts do
 
   """
   def insert_or_update_lms_user(%{sub: sub} = changes) do
-    res =
-      case Repo.get_by(User, sub: sub) do
-        nil -> %User{sub: sub, independent_learner: false}
-        user -> user
-      end
-      |> User.lti_changeset(changes)
-      |> Repo.insert_or_update()
-
-    case res do
-      {:ok, %User{id: user_id}} ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
+    case Repo.get_by(User, sub: sub) do
+      nil -> %User{sub: sub, independent_learner: false}
+      user -> user
     end
+    |> User.lti_changeset(changes)
+    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -365,22 +318,11 @@ defmodule Oli.Accounts do
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
 
-    res =
-      user
-      |> Repo.preload([:platform_roles])
-      |> User.noauth_changeset()
-      |> Ecto.Changeset.put_assoc(:platform_roles, roles)
-      |> Repo.update()
-
-    case res do
-      {:ok, %User{id: user_id}} ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
+    user
+    |> Repo.preload([:platform_roles])
+    |> User.noauth_changeset()
+    |> Ecto.Changeset.put_assoc(:platform_roles, roles)
+    |> Repo.update()
   end
 
   @doc """
@@ -514,23 +456,12 @@ defmodule Oli.Accounts do
       {:ok, %Author{}}
   """
   def insert_or_update_author(%{email: email} = changes) do
-    res =
-      case Repo.get_by(Author, email: email) do
-        nil -> %Author{}
-        author -> author
-      end
-      |> Author.noauth_changeset(changes)
-      |> Repo.insert_or_update()
-
-    case res do
-      {:ok, %Author{id: author_id}} ->
-        AccountLookupCache.delete("author_#{author_id}")
-
-        res
-
-      error ->
-        error
+    case Repo.get_by(Author, email: email) do
+      nil -> %Author{}
+      author -> author
     end
+    |> Author.noauth_changeset(changes)
+    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -542,20 +473,9 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_author(%Author{} = author, attrs) do
-    res =
-      author
-      |> Author.noauth_changeset(attrs)
-      |> Repo.update()
-
-    case res do
-      {:ok, %Author{id: author_id}} ->
-        AccountLookupCache.delete("author_#{author_id}")
-
-        res
-
-      error ->
-        error
-    end
+    author
+    |> Author.noauth_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

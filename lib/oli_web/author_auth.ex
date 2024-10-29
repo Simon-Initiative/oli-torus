@@ -5,7 +5,6 @@ defmodule OliWeb.AuthorAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
-  alias Oli.AccountLookupCache
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -105,7 +104,6 @@ defmodule OliWeb.AuthorAuth do
     end
 
     conn
-    |> delete_author_cache_entry()
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
     |> redirect(to: ~p"/authors/log_in")
@@ -271,12 +269,4 @@ defmodule OliWeb.AuthorAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/workspaces/course_author"
-
-  defp delete_author_cache_entry(conn) do
-    author_id = conn.assigns.current_author.id
-
-    AccountLookupCache.delete("author_#{author_id}")
-
-    conn
-  end
 end

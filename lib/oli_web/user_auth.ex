@@ -5,7 +5,6 @@ defmodule OliWeb.UserAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
-  alias Oli.AccountLookupCache
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -104,7 +103,6 @@ defmodule OliWeb.UserAuth do
     end
 
     conn
-    |> delete_user_cache_entry()
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
     |> redirect(to: ~p"/")
@@ -286,12 +284,4 @@ defmodule OliWeb.UserAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/workspaces/student"
-
-  defp delete_user_cache_entry(conn) do
-    user_id = conn.assigns.current_user.id
-
-    AccountLookupCache.delete("user_#{user_id}")
-
-    conn
-  end
 end
