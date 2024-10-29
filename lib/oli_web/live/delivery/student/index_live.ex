@@ -939,7 +939,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     raw_completed_pages = Metrics.raw_completed_pages_for(section_id, current_user_id)
 
     %{
-      completed_pages: Map.get(raw_completed_pages, :completed_pages, 0),
+      completed_pages: Map.get(raw_completed_pages, current_user_id, 0),
       total_pages: Map.get(raw_completed_pages, :total_pages, 0)
     }
   end
