@@ -5,6 +5,7 @@ defmodule OliWeb.UserAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias OliWeb.AuthorAuth
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -209,20 +210,29 @@ defmodule OliWeb.UserAuth do
         Accounts.get_user_by_session_token(user_token)
       end
     end)
-    |> ensure_user_platform_roles_loaded()
+    |> preload_platform_roles()
+    |> preload_linked_author()
     |> assign_datashop_session_id(session)
-    # MER-3835 TODO these should be set using AuthorAuth
-    |> Phoenix.Component.assign(:is_system_admin, false)
-    |> Phoenix.Component.assign(:has_admin_role, false)
+    |> AuthorAuth.mount_current_author(session)
   end
 
-  defp ensure_user_platform_roles_loaded(socket) do
+  defp preload_platform_roles(socket) do
     case socket.assigns.current_user do
       nil ->
         socket
 
       user ->
         Phoenix.Component.assign(socket, :current_user, Accounts.preload_platform_roles(user))
+    end
+  end
+
+  defp preload_linked_author(socket) do
+    case socket.assigns.current_user do
+      nil ->
+        socket
+
+      %Accounts.User{} = user ->
+        Phoenix.Component.assign(socket, :current_user, Accounts.preload_linked_author(user))
     end
   end
 

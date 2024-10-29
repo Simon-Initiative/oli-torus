@@ -201,7 +201,7 @@ defmodule OliWeb.AuthorAuth do
     end
   end
 
-  defp mount_current_author(socket, session) do
+  def mount_current_author(socket, session) do
     socket
     |> Phoenix.Component.assign_new(:current_author, fn ->
       if author_token = session["author_token"] do
