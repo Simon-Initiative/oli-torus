@@ -21,7 +21,7 @@ defmodule OliWeb.UserAuth do
   to avoid fixation attacks. See the renew_session
   function to customize this behaviour.
 
-  It also sets a `:live_socket_id` key in the session,
+  It also sets a `:user_live_socket_id` key in the session,
   so LiveView sessions are identified and automatically
   disconnected on log out. The line can be safely removed
   if you are not using LiveView.
@@ -35,7 +35,7 @@ defmodule OliWeb.UserAuth do
     conn
     |> renew_session()
     |> put_token_in_session(token)
-    # Unfortunately, a lot of existing code depends on the current_user_id being in the session.
+    # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
     |> maybe_write_remember_me_cookie(token, params)
@@ -66,9 +66,28 @@ defmodule OliWeb.UserAuth do
   #     end
   #
   defp renew_session(conn) do
+    # when clearing the session, we want to preserve the following keys
+    # so that the renew doesn't affect an author's session or other data
+    # unrelated to the user session.
+    preserve_session_data =
+      get_session(conn)
+      |> Map.take([
+        "browser_timezone",
+        "author_token",
+        "author_live_socket_id",
+        "current_author_id"
+      ])
+
     conn
     |> configure_session(renew: true)
     |> clear_session()
+    |> restore_preserved_session_data(preserve_session_data)
+  end
+
+  defp restore_preserved_session_data(conn, data) do
+    Enum.reduce(data, conn, fn {key, value}, conn ->
+      put_session(conn, key, value)
+    end)
   end
 
   @doc """
@@ -80,8 +99,8 @@ defmodule OliWeb.UserAuth do
     user_token = get_session(conn, :user_token)
     user_token && Accounts.delete_user_session_token(user_token)
 
-    if live_socket_id = get_session(conn, :live_socket_id) do
-      OliWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
+    if user_live_socket_id = get_session(conn, :user_live_socket_id) do
+      OliWeb.Endpoint.broadcast(user_live_socket_id, "disconnect", %{})
     end
 
     conn
@@ -252,7 +271,7 @@ defmodule OliWeb.UserAuth do
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+    |> put_session(:user_live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
   end
 
   defp put_user_id_in_session(conn, user_id) do

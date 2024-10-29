@@ -21,7 +21,10 @@ defmodule OliWeb.UserAuthTest do
     test "stores the user token in the session", %{conn: conn, user: user} do
       conn = UserAuth.log_in_user(conn, user)
       assert token = get_session(conn, :user_token)
-      assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
+
+      assert get_session(conn, :user_live_socket_id) ==
+               "users_sessions:#{Base.url_encode64(token)}"
+
       assert redirected_to(conn) == ~p"/"
       assert Accounts.get_user_by_session_token(token)
     end
@@ -64,15 +67,15 @@ defmodule OliWeb.UserAuthTest do
       refute Accounts.get_user_by_session_token(user_token)
     end
 
-    test "broadcasts to the given live_socket_id", %{conn: conn} do
-      live_socket_id = "users_sessions:abcdef-token"
-      OliWeb.Endpoint.subscribe(live_socket_id)
+    test "broadcasts to the given user_live_socket_id", %{conn: conn} do
+      user_live_socket_id = "users_sessions:abcdef-token"
+      OliWeb.Endpoint.subscribe(user_live_socket_id)
 
       conn
-      |> put_session(:live_socket_id, live_socket_id)
+      |> put_session(:user_live_socket_id, user_live_socket_id)
       |> UserAuth.log_out_user()
 
-      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect", topic: ^live_socket_id}
+      assert_receive %Phoenix.Socket.Broadcast{event: "disconnect", topic: ^user_live_socket_id}
     end
 
     test "works even if user is already logged out", %{conn: conn} do
@@ -105,7 +108,7 @@ defmodule OliWeb.UserAuthTest do
       assert conn.assigns.current_user.id == user.id
       assert get_session(conn, :user_token) == user_token
 
-      assert get_session(conn, :live_socket_id) ==
+      assert get_session(conn, :user_live_socket_id) ==
                "users_sessions:#{Base.url_encode64(user_token)}"
     end
 
