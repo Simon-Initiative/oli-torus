@@ -88,7 +88,7 @@ defmodule OliWeb.Workspaces.Student do
 
   @impl Phoenix.LiveView
 
-  def render(%{current_user: nil, has_admin_role: true} = assigns) do
+  def render(%{has_admin_role: true} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
