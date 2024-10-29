@@ -37,6 +37,7 @@ defmodule OliWeb.UserAuth do
     # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
+    |> create_datashop_session_id()
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
   end
@@ -275,6 +276,11 @@ defmodule OliWeb.UserAuth do
   defp put_user_id_in_session(conn, user_id) do
     conn
     |> put_session(:current_user_id, user_id)
+  end
+
+  defp create_datashop_session_id(conn) do
+    conn
+    |> put_session(:datashop_session_id, UUID.uuid4())
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do
