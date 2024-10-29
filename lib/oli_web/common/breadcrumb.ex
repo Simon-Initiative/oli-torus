@@ -188,12 +188,7 @@ defmodule OliWeb.Common.Breadcrumb do
       }),
       new(%{
         full_title: "All Pages",
-        link:
-          Routes.live_path(
-            OliWeb.Endpoint,
-            OliWeb.Resources.PagesView,
-            project_slug
-          )
+        link: ~p"/workspaces/course_author/#{project_slug}/pages"
       })
     ]
   end

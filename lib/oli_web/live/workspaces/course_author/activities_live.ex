@@ -9,7 +9,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivitiesLive do
   alias Oli.Resources.{ActivityBrowse, ActivityBrowseOptions}
   alias OliWeb.Common.{FilterBox, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Resources.ActivitiesTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Workspaces.CourseAuthor.Activities.ActivitiesTableModel
 

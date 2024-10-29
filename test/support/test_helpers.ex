@@ -1390,7 +1390,8 @@ defmodule Oli.TestHelpers do
     publication =
       insert(:publication, %{
         project: project,
-        root_resource_id: root_resource.id
+        root_resource_id: root_resource.id,
+        published: nil
       })
 
     # Publish all resources
@@ -1453,7 +1454,11 @@ defmodule Oli.TestHelpers do
         module_resource_1: module_resource_1,
         module_resource_2: module_resource_2,
         unit_resource: unit_resource,
-        root_resource: root_resource
+        root_resource: root_resource,
+        act_revision_w: act_revision_w,
+        act_resource_x: act_resource_x,
+        act_resource_y: act_resource_y,
+        act_resource_z: act_resource_z
       },
       revisions: %{
         obj_revision_a: obj_revision_a,
@@ -1469,7 +1474,11 @@ defmodule Oli.TestHelpers do
         module_revision_1: module_revision_1,
         module_revision_2: module_revision_2,
         unit_revision: unit_revision,
-        root_revision: root_revision
+        root_revision: root_revision,
+        act_revision_w: act_revision_w,
+        act_revision_x: act_revision_x,
+        act_revision_y: act_revision_y,
+        act_revision_z: act_revision_z
       }
     }
   end
