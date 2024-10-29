@@ -7,8 +7,7 @@ defmodule Oli.Conversation.Functions do
   @lookup_table %{
     "avg_score_for" => "Elixir.Oli.Conversation.Functions.avg_score_for",
     "up_next" => "Elixir.Oli.Conversation.Functions.up_next",
-    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content",
-    "get_section_information" => "Elixir.Oli.Conversation.Functions.get_section_information"
+    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content"
   }
 
   @functions [
@@ -54,8 +53,12 @@ defmodule Oli.Conversation.Functions do
       name: "relevant_course_content",
       description: """
       Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
-      Allows the retrieval of relevant course content from other lessons in the course based on the
-      student's question. Returns an array of course lessons with the following keys: title, url, content.
+      Allows the retrieval of relevant course content from other lessons in the course based on the student's question.
+      Returns an object with the following keys:
+        - relevant_pages: Pages that may be relevant regarding to the student's question
+        - instructors: Name and email for the instructors of this course
+        - layout: The name of all modules and units for this course
+        - content: The title of all the pages of this course
       """,
       parameters: %{
         type: "object",
@@ -70,27 +73,6 @@ defmodule Oli.Conversation.Functions do
           }
         },
         required: ["student_input", "section_id"]
-      }
-    },
-    %{
-      name: "get_section_information",
-      description: """
-      Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
-      Allows the retrieval of general course information based on the student's question.
-      For a given course section return the following information:
-      - instructors: name and email
-      - layout: all modules and units
-      - content: titles for all the pages
-      """,
-      parameters: %{
-        type: "object",
-        properties: %{
-          section_id: %{
-            type: "integer",
-            description: "The current course section's id"
-          }
-        },
-        required: ["section_id"]
       }
     }
   ]
@@ -145,27 +127,32 @@ defmodule Oli.Conversation.Functions do
   def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do
     section = Oli.Delivery.Sections.get_section!(section_id)
 
-    case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
-      {:ok, relevant_pages} ->
-        Enum.map(relevant_pages, fn page ->
-          revision = Oli.Resources.get_revision!(page.revision_id)
+    relevant_pages =
+      case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
+        {:ok, relevant_pages} ->
+          Enum.map(relevant_pages, fn page ->
+            revision = Oli.Resources.get_revision!(page.revision_id)
 
-          content =
-            Enum.map(page.chunks, fn chunk ->
-              chunk.content
-            end)
-            |> Enum.join("\n\n")
+            content =
+              Enum.map(page.chunks, fn chunk ->
+                chunk.content
+              end)
+              |> Enum.join("\n\n")
 
-          %{
-            title: page.title,
-            url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
-            content: content
-          }
-        end)
+            %{
+              title: page.title,
+              url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
+              content: content
+            }
+          end)
 
-      e ->
-        e
-    end
+        _e ->
+          []
+      end
+
+    section_id
+    |> Oli.Delivery.Sections.get_section_prompt_info()
+    |> Map.put(:relevant_pages, relevant_pages)
   end
 
   def get_next_activities_for_student(section_id, user_id) do
@@ -198,7 +185,4 @@ defmodule Oli.Conversation.Functions do
       }
     end)
   end
-
-  def get_section_information(%{"section_id" => section_id}),
-    do: Oli.Delivery.Sections.get_section_prompt_info(section_id)
 end
