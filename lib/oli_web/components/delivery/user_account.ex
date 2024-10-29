@@ -173,14 +173,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  defp user_icon_outline_classes(ctx) do
-    case ctx.masquerading_as do
-      nil ->
-        "outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600"
-
-      _user_id ->
-        "outline outline-2 outline-fuchsia-500 dark:outline-fuchsia-500 hover:outline-4 hover:dark:outline-fuchsia-500 focus:outline-4 focus:outline-fuchsia-500 dark:focus:outline-fuchsia-500"
-    end
+  defp user_icon_outline_classes(_ctx) do
+    "outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600"
   end
 
   def toggle_menu(id, js \\ %JS{}) do

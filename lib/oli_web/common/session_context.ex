@@ -32,8 +32,7 @@ defmodule OliWeb.Common.SessionContext do
     :local_tz,
     :author,
     :user,
-    :is_liveview,
-    :masquerading_as
+    :is_liveview
   ]
 
   defstruct [
@@ -41,8 +40,7 @@ defmodule OliWeb.Common.SessionContext do
     :local_tz,
     :author,
     :user,
-    :is_liveview,
-    :masquerading_as
+    :is_liveview
   ]
 
   @type t() :: %__MODULE__{
@@ -50,8 +48,7 @@ defmodule OliWeb.Common.SessionContext do
           local_tz: String.t(),
           author: Author.t(),
           user: User.t(),
-          is_liveview: boolean(),
-          masquerading_as: User.t()
+          is_liveview: boolean()
         }
 
   def init() do
@@ -60,8 +57,7 @@ defmodule OliWeb.Common.SessionContext do
       local_tz: nil,
       author: nil,
       user: nil,
-      is_liveview: false,
-      masquerading_as: nil
+      is_liveview: false
     }
   end
 
@@ -101,8 +97,7 @@ defmodule OliWeb.Common.SessionContext do
       local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
       author: author,
       user: user,
-      is_liveview: false,
-      masquerading_as: nil
+      is_liveview: false
     }
   end
 
@@ -152,15 +147,12 @@ defmodule OliWeb.Common.SessionContext do
         end
       )
 
-    masquerading_as = session["masquerading_as"]
-
     %__MODULE__{
       browser_timezone: browser_timezone,
       local_tz: FormatDateTime.tz_preference_or_default(author, user, browser_timezone),
       author: author,
       user: user,
-      is_liveview: true,
-      masquerading_as: masquerading_as
+      is_liveview: true
     }
   end
 

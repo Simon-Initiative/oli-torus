@@ -114,14 +114,6 @@ defmodule OliWeb.Users.Actions do
         </button>
       <% end %>
 
-      <%= unless @for_author do %>
-        <div class="dropdown-divider"></div>
-
-        <button class="btn btn-warning my-1" phx-click="act_as_user" phx-value-id={@user.id}>
-          Act as User
-        </button>
-      <% end %>
-
       <div class="dropdown-divider"></div>
 
       <button
@@ -139,11 +131,6 @@ defmodule OliWeb.Users.Actions do
     ~H"""
     <div>
       <div class="text-secondary my-4">LTI users are managed by their LMS</div>
-      <div>
-        <button class="btn btn-warning" phx-click="act_as_user" phx-value-id={@user.id}>
-          Act as User
-        </button>
-      </div>
     </div>
     """
   end

@@ -52,30 +52,6 @@ defmodule OliWeb.LiveSessionPlugs.SetUser do
 
   def set_user(socket, session, opts \\ [])
 
-  def set_user(socket, %{"masquerading_as" => user_id} = session, _opts) do
-    with current_author <- Map.get(socket.assigns, :current_author),
-         true <- Accounts.can_masquerade?(current_author),
-         user <- Accounts.get_user(user_id, preload: [:platform_roles, :author]) do
-      socket
-      |> assign(current_user: user)
-      |> assign(masquerading_as: user)
-      |> assign(datashop_session_id: nil)
-      |> set_user_token
-      |> update_ctx(session)
-    else
-      false ->
-        socket
-        |> Phoenix.LiveView.put_flash(
-          :error,
-          "You do not have permission to masquerade as another user."
-        )
-
-      _ ->
-        socket
-        |> Phoenix.LiveView.put_flash(:error, "User not found.")
-    end
-  end
-
   def set_user(socket, %{"current_user_id" => current_user_id} = session, opts)
       when not is_nil(current_user_id) do
     {:ok, current_user} =

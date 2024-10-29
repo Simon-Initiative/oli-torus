@@ -1466,10 +1466,6 @@ defmodule OliWeb.Router do
         PowController,
         :send_author_password_reset_link
       )
-
-      get("/masquerade/:user_id", MasqueradeController, :confirm)
-      post("/masquerade/:user_id", MasqueradeController, :masquerade)
-      post("/unmasquerade", MasqueradeController, :unmasquerade)
     end
 
     # Routes rejected for account and content admin

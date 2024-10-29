@@ -336,47 +336,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
     """
   end
 
-  attr :ctx, SessionContext, required: true
-  slot :inner_block, required: true
-
-  def maybe_masquerading_as(assigns) do
-    if assigns[:ctx] && assigns[:ctx].masquerading_as do
-      ~H"""
-      <div class="flex flex-col fixed top-0 bottom-0 left-0 right-0 border-4 border-solid border-fuchsia-500">
-        <div class="bg-fuchsia-500 text-white px-6 py-2">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="text-white text-lg font-bold">
-                Acting as <%= OliWeb.Components.Delivery.Utils.user_name(@ctx.user) %>
-              </p>
-            </div>
-            <div>
-              <%= form_for %{}, ~p"/admin/unmasquerade", fn _f -> %>
-                <.button
-                  type="submit"
-                  class="rounded bg-transparent border border-white hover:bg-fuchsia-200 active:text-white active:bg-fuchsia-700 focus:ring-2 focus:ring-fuchsia-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-fuchsia-400 focus:outline-none dark:focus:ring-fuchsia-700 hover:no-underline"
-                >
-                  Stop Acting as User
-                </.button>
-              <% end %>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex flex-1 relative overflow-auto">
-          <%= render_slot(@inner_block) %>
-        </div>
-      </div>
-      """
-    else
-      ~H"""
-      <div class="flex flex-col fixed top-0 bottom-0 left-0 right-0">
-        <%= render_slot(@inner_block) %>
-      </div>
-      """
-    end
-  end
-
   attr(:section, Section, default: nil)
   attr(:active, :atom, required: true, doc: "The current selected menu link")
   attr(:preview_mode, :boolean)

@@ -380,10 +380,6 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, socket |> assign(disabled_edit: false)}
   end
 
-  def handle_event("act_as_user", %{"id" => id}, socket) do
-    {:noreply, socket |> redirect(to: ~p"/admin/masquerade/#{id}")}
-  end
-
   defp user_with_platform_roles(id) do
     Accounts.get_user(id, preload: [:platform_roles])
   end
