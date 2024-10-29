@@ -47,8 +47,17 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
     }
     const naturalWidth = imageContainerRef.current.naturalWidth;
     const naturalHeight = imageContainerRef.current.naturalHeight;
-    const ratioWidth = naturalWidth / imageContainerRef.current.width;
-    const ratioHeight = naturalHeight / imageContainerRef.current.height;
+
+    const currentWidth = imageContainerRef.current.width;
+    const currentHeight = imageContainerRef.current.height;
+    if (naturalWidth <= 0 || naturalHeight <= 0 || currentWidth <= 0 || currentHeight <= 0) {
+      return;
+    }
+    const ratioWidth = naturalWidth / currentWidth;
+    const ratioHeight = naturalHeight / currentHeight;
+    if (ratioWidth == ratioHeight) {
+      return;
+    }
     let newAdjustedHeight = imageContainerRef.current.height;
     let newAdjustedWidth = imageContainerRef.current.width;
     if (ratioWidth > ratioHeight) {
