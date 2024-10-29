@@ -110,9 +110,8 @@ defmodule Oli.Delivery.Paywall do
     query =
       from(
         p in Payment,
-        where: p.enrollment_id == ^id,
-        limit: 1,
-        select: p
+        where: p.enrollment_id == ^id and p.type != :invalidated,
+        limit: 1
       )
 
     case Repo.all(query) do
@@ -688,6 +687,30 @@ defmodule Oli.Delivery.Paywall do
   """
   def get_payment_by(clauses) do
     Repo.get_by(Payment, clauses)
+  end
+
+  @doc """
+  Gets the active payment for a given enrollment and section.
+  By active we mean a payment that has not been invalidated by an admin.
+
+  Example:
+  iex> get_active_payment_for(1, 2)
+  {:ok, %Payment{}}
+  iex> get_active_payment_for(1, 3)
+  {:error, :no_active_payment_found}
+  """
+  def get_active_payment_for(enrollment_id, section_id) do
+    from(
+      p in Payment,
+      where:
+        p.enrollment_id == ^enrollment_id and p.section_id == ^section_id and
+          p.type != :invalidated
+    )
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :no_active_payment_found}
+      payment -> {:ok, payment}
+    end
   end
 
   @doc """

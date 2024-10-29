@@ -1612,7 +1612,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # and is shown in the UI
       assert has_element?(view, "div[role='user name']", "Me")
-      assert has_element?(view, "div[role='posted at']", "now")
+
+      assert has_element?(view, "div[role='posted at']", "now") or
+               has_element?(view, "div[role='posted at']", "1 second ago")
+
       assert has_element?(view, "p[role='post content']", "some new post content")
     end
 

@@ -70,7 +70,8 @@ defmodule Oli.Resources.PageContent do
     end
 
     # must process content in certain properties as well as children
-    props = ["children", "caption", "pronunciation", "translations", "content"]
+    # definition meanings has list of meaning elements w/content in children
+    props = ["children", "caption", "pronunciation", "translations", "content", "meanings"]
 
     {item, acc} =
       Enum.reduce(props, {item, acc}, fn prop, {item, acc} ->

@@ -1,5 +1,14 @@
-import React, { ChangeEvent, ChangeEventHandler, ReactNode, useCallback } from 'react';
+import React, {
+  ChangeEvent,
+  ChangeEventHandler,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { debounce } from 'lodash';
 import {
   dateWithTimeLabel,
   dateWithoutTimeLabel,
@@ -21,9 +30,10 @@ interface SaveIndicatorProps {
 
 interface PageDetailEditorProps {
   selectedItem: HierarchyItem | null;
+  dateInputValue: string;
+  availableDateInputValue: string;
   onChangeTypeHandler: ChangeEventHandler<HTMLSelectElement>;
   onChangeEndHandler: ChangeEventHandler<HTMLInputElement>;
-  onChangeDueEndHandler: ChangeEventHandler<HTMLInputElement>;
   onChangeAvailableFromHandler: (event: ChangeEvent<HTMLInputElement> | null) => void;
 }
 
@@ -47,9 +57,10 @@ const DateRangeView: React.FC<{ selectedItem: HierarchyItem | undefined | null }
 
 const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
   selectedItem,
+  dateInputValue,
+  availableDateInputValue,
   onChangeTypeHandler,
   onChangeEndHandler,
-  onChangeDueEndHandler,
   onChangeAvailableFromHandler,
 }) => {
   if (!selectedItem) return null;
@@ -66,8 +77,8 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
               <input
                 className="form-control text-sm"
                 type="datetime-local"
-                onBlur={onChangeAvailableFromHandler}
-                defaultValue={dateWithTimeLabel(selectedItem.startDateTime) || ''}
+                onChange={onChangeAvailableFromHandler}
+                value={availableDateInputValue}
               />
             </InputField>
           </InputRow>
@@ -85,23 +96,12 @@ const PageDetailEditor: React.FC<PageDetailEditorProps> = ({
             </select>
           </InputLabel>
           <InputField>
-            {selectedItem.scheduling_type === 'due_by' || (
-              <input
-                className="form-control text-sm"
-                type="date"
-                onBlur={onChangeEndHandler}
-                defaultValue={dateWithoutTimeLabel(selectedItem.endDate) || ''}
-              />
-            )}
-
-            {selectedItem.scheduling_type === 'due_by' && (
-              <input
-                className="form-control text-sm"
-                type="datetime-local"
-                onBlur={onChangeDueEndHandler}
-                defaultValue={dateWithTimeLabel(selectedItem.endDateTime) || ''}
-              />
-            )}
+            <input
+              className="form-control text-sm"
+              type={selectedItem.scheduling_type === 'due_by' ? 'datetime-local' : 'date'}
+              onChange={onChangeEndHandler}
+              value={dateInputValue}
+            />
           </InputField>
         </InputRow>
       </InputColumn>
@@ -140,6 +140,86 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
   const selectedItem = useSelector(getSelectedItem);
   const saving = useSelector(isSaving);
   const dispatch = useDispatch();
+  const [dateInputValue, setDateInputValue] = useState('');
+  const [availableDateInputValue, setAvailableDateInputValue] = useState('');
+
+  useEffect(() => {
+    const parsedValue = selectedItem
+      ? selectedItem.scheduling_type === 'due_by'
+        ? dateWithTimeLabel(selectedItem.endDateTime) || ''
+        : dateWithoutTimeLabel(selectedItem.endDate) || ''
+      : '';
+
+    const parsedAvailableDate =
+      selectedItem && selectedItem.graded
+        ? dateWithTimeLabel(selectedItem.startDateTime) || ''
+        : '';
+
+    setDateInputValue(parsedValue);
+    setAvailableDateInputValue(parsedAvailableDate);
+  }, [selectedItem]);
+
+  const debouncedDateUpdate = useRef(
+    debounce((parsedNewValue, currentSelectedItem, dateType) => {
+      // dateType can be "startDate" or "endDate", since we may have two date fields (depending on the page type)
+      // Graded pages can set a date (endDate) and an available-from date (startDate)
+      // Non-graded pages can only set a date (endDate)
+
+      if (!currentSelectedItem) return;
+
+      const startDate =
+        dateType === 'startDate'
+          ? parsedNewValue
+          : currentSelectedItem.startDateTime || currentSelectedItem.startDate;
+
+      const endDate =
+        dateType === 'endDate'
+          ? parsedNewValue
+          : currentSelectedItem.endDateTime || currentSelectedItem.endDate;
+
+      dispatch(
+        moveScheduleItem({
+          itemId: currentSelectedItem.id,
+          startDate: startDate,
+          endDate: endDate,
+        }),
+      );
+    }, 700),
+  ).current;
+
+  useEffect(() => {
+    return () => {
+      debouncedDateUpdate.cancel();
+    };
+  }, [debouncedDateUpdate]);
+
+  const onChangeAvailableFromHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setAvailableDateInputValue(newValue);
+
+    const currentSelectedItem = selectedItem;
+
+    const parsedNewAvailableValue =
+      selectedItem && newValue ? stringToDateWithTime(newValue) : null;
+
+    debouncedDateUpdate(parsedNewAvailableValue, currentSelectedItem, 'startDate');
+  };
+
+  const onChangeEndHandler = (e: ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setDateInputValue(newValue);
+
+    const currentSelectedItem = selectedItem;
+
+    const parsedNewValue =
+      selectedItem && newValue
+        ? selectedItem.scheduling_type === 'due_by'
+          ? stringToDateWithTime(newValue)
+          : stringToDateWithoutTime(newValue)
+        : null;
+
+    debouncedDateUpdate(parsedNewValue, currentSelectedItem, 'endDate');
+  };
 
   const onChangeTypeHandler = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -155,55 +235,6 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
     [dispatch, selectedItem],
   );
 
-  const onChangeEndHandler = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newDate = e.target.value;
-      const target = newDate ? stringToDateWithoutTime(newDate) : null;
-      if (!selectedItem) return;
-
-      dispatch(
-        moveScheduleItem({
-          itemId: selectedItem.id,
-          startDate: selectedItem.startDateTime || selectedItem.startDate,
-          endDate: target,
-        }),
-      );
-    },
-    [dispatch, selectedItem],
-  );
-
-  const onChangeAvailableFromHandler = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newDate = e.target.value;
-      const target = newDate ? stringToDateWithTime(newDate) : null;
-      if (!selectedItem) return;
-      dispatch(
-        moveScheduleItem({
-          itemId: selectedItem.id,
-          startDate: target,
-          endDate: selectedItem.endDateTime || selectedItem.endDate,
-        }),
-      );
-    },
-    [dispatch, selectedItem],
-  );
-
-  const onChangeDueEndHandler = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      // End date changing includes time
-      const newDate = e.target.value;
-      const target = newDate ? stringToDateWithTime(newDate) : null;
-      if (!selectedItem) return;
-      dispatch(
-        moveScheduleItem({
-          itemId: selectedItem.id,
-          startDate: selectedItem.startDateTime || selectedItem.startDate,
-          endDate: target,
-        }),
-      );
-    },
-    [dispatch, selectedItem],
-  );
   const pageIsSelected = selectedItem && selectedItem.resource_type_id === ScheduleItemType.Page;
   if (!unsavedChanges && !saving && !pageIsSelected) return null;
   return (
@@ -211,16 +242,15 @@ export const ScheduleSaveBar: React.FC<SaveIndicatorProps> = ({ onSave }) => {
       {pageIsSelected || <DateRangeView selectedItem={selectedItem} />}
       {pageIsSelected && (
         <PageDetailEditor
-          onChangeDueEndHandler={onChangeDueEndHandler}
           onChangeEndHandler={onChangeEndHandler}
           onChangeTypeHandler={onChangeTypeHandler}
           onChangeAvailableFromHandler={onChangeAvailableFromHandler}
           selectedItem={selectedItem}
+          dateInputValue={dateInputValue}
+          availableDateInputValue={availableDateInputValue}
         />
       )}
-
       <div className="flex-grow" />
-
       <div className="flex gap-3 justify-center ">
         {saving && (
           <button
