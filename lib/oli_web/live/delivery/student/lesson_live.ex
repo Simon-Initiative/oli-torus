@@ -93,6 +93,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       auto_submit = page_context.effective_settings.late_submit == :disallow
 
       now = DateTime.utc_now() |> to_epoch
+
       attempt_expired_auto_submit =
         now > effective_end_time and auto_submit and !page_context.review_mode
 
