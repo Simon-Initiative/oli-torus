@@ -9,7 +9,7 @@ defmodule OliWeb.Users.Actions do
   attr(:csrf_token, :any, required: true)
   attr(:password_reset_link, :string, default: "")
 
-  def user_actions(assigns) do
+  def render(assigns) do
     {resend, reset} =
       case assigns.for_author do
         true -> {:resend_author_confirmation_link, :send_author_password_reset_link}

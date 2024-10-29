@@ -207,7 +207,7 @@ defmodule OliWeb.Users.UsersDetailView do
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.independent_learner do %>
-            <Actions.user_actions
+            <Actions.render
               user={@user}
               csrf_token={@csrf_token}
               password_reset_link={@password_reset_link}
