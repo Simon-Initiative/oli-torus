@@ -6,6 +6,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
   alias OliWeb.Common.React
   alias OliWeb.Router.Helpers, as: Routes
 
+  on_mount(OliWeb.LiveSessionPlugs.AssignActiveMenu)
+  on_mount(OliWeb.LiveSessionPlugs.SetUser)
+  on_mount(OliWeb.LiveSessionPlugs.SetSidebar)
+  on_mount(OliWeb.LiveSessionPlugs.SetPreviewMode)
+  on_mount(OliWeb.LiveSessionPlugs.SetProjectOrSection)
+  on_mount(OliWeb.LiveSessionPlugs.AuthorizeProject)
+
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
@@ -23,7 +30,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
            resource_slug: project.slug,
            resource_title: project.title,
            ctx: ctx
-         )}
+         ), layout: {OliWeb.Layouts, :workspace}}
 
       _ ->
         OliWeb.ResourceController.render_not_found(OliWeb.Endpoint, project.slug)
