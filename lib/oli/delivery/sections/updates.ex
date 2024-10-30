@@ -376,10 +376,18 @@ defmodule Oli.Delivery.Sections.Updates do
     unreachable_page_resource_ids =
       case section.required_survey_resource_id do
         nil ->
-          Oli.Delivery.Sections.determine_unreachable_pages([publication.id], hierarchy_ids, all_links)
+          Oli.Delivery.Sections.determine_unreachable_pages(
+            [publication.id],
+            hierarchy_ids,
+            all_links
+          )
 
         id ->
-          Oli.Delivery.Sections.determine_unreachable_pages([publication.id], [id | hierarchy_ids], all_links)
+          Oli.Delivery.Sections.determine_unreachable_pages(
+            [publication.id],
+            [id | hierarchy_ids],
+            all_links
+          )
       end
 
     project_id = publication.project_id
@@ -390,9 +398,10 @@ defmodule Oli.Delivery.Sections.Updates do
 
       _ ->
         from(sr in SectionResource,
-          where: sr.project_id == ^project_id
-            and sr.section_id == ^section_id
-            and sr.resource_id in ^unreachable_page_resource_ids
+          where:
+            sr.project_id == ^project_id and
+              sr.section_id == ^section_id and
+              sr.resource_id in ^unreachable_page_resource_ids
         )
         |> Repo.delete_all()
 

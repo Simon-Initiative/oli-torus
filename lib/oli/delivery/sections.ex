@@ -1263,19 +1263,20 @@ defmodule Oli.Delivery.Sections do
     # We do this because we want to treat these links the same way when we traverse the graph, and
     # we want to be able to handle cases where a page from the hierarchy embeds an activity which
     # links to a page outside the hierarchy.
-    all_links = case all_links do
-      nil ->
-        [
-          get_all_page_links(publication_ids),
-          get_activity_references(publication_ids),
-          get_relates_to(publication_ids)
-        ]
-        |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
-        |> MapSet.to_list()
+    all_links =
+      case all_links do
+        nil ->
+          [
+            get_all_page_links(publication_ids),
+            get_activity_references(publication_ids),
+            get_relates_to(publication_ids)
+          ]
+          |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
+          |> MapSet.to_list()
 
-      _ ->
-        all_links
-    end
+        _ ->
+          all_links
+      end
 
     link_map =
       Enum.reduce(all_links, %{}, fn {source, target}, map ->
