@@ -207,12 +207,14 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "dark:fill-white fill-black/70"
+
   def practice_page(assigns) do
     ~H"""
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 18 20" fill="none">
       <path
         d="M3.34359 15.9558C2.54817 15.1604 1.89985 14.3023 1.39862 13.3816C0.897394 12.4608 0.537819 11.5183 0.319895 10.554C0.107418 9.58968 0.0338689 8.64171 0.0992462 7.71008C0.170072 6.77846 0.382548 5.90131 0.736675 5.07865C1.09625 4.25053 1.59203 3.51776 2.22401 2.88034C2.88323 2.22111 3.63507 1.71989 4.47952 1.37666C5.32943 1.03343 6.22292 0.842744 7.15999 0.804607C8.09707 0.761023 9.03414 0.864537 9.97122 1.11515C10.9083 1.36576 11.7963 1.75258 12.6353 2.2756L11.2216 3.66486C10.6223 3.34342 9.97939 3.10098 9.29293 2.93754C8.61191 2.76865 7.92545 2.69782 7.23354 2.72506C6.54708 2.74686 5.88786 2.88034 5.25588 3.1255C4.62935 3.37067 4.06819 3.74114 3.57241 4.23691C2.93499 4.87434 2.49096 5.62891 2.24035 6.5006C1.99519 7.3723 1.92981 8.2903 2.04422 9.25462C2.15863 10.2189 2.43921 11.1642 2.88595 12.0904C3.33815 13.0165 3.94016 13.8555 4.692 14.6074C5.15509 15.0759 5.63725 15.4709 6.13847 15.7923C6.64515 16.1138 7.1382 16.3753 7.61763 16.5769C8.09707 16.7839 8.54109 16.9446 8.94969 17.059C9.36375 17.1789 9.71243 17.2715 9.99573 17.3369C10.2954 17.4132 10.5187 17.533 10.6658 17.6965C10.8184 17.8654 10.8919 18.0833 10.8865 18.3502C10.8756 18.6608 10.7557 18.8896 10.5269 19.0367C10.2981 19.1892 10.0012 19.2383 9.63616 19.1838C9.33106 19.1402 8.94152 19.0558 8.46754 18.9305C7.999 18.8052 7.47598 18.6199 6.89848 18.3748C6.32643 18.135 5.73531 17.8163 5.12512 17.4186C4.51494 17.0209 3.92109 16.5333 3.34359 15.9558ZM6.63697 13.4061L8.68819 12.6215C9.11859 13.0465 9.60619 13.4006 10.151 13.6839C10.7013 13.9672 11.2706 14.1552 11.859 14.2478C12.4474 14.3404 13.0194 14.3132 13.5751 14.1661C14.1308 14.0135 14.6348 13.7112 15.087 13.259C15.5719 12.7795 15.8715 12.202 15.9859 11.5265C16.1058 10.8455 16.0595 10.1236 15.847 9.36086C15.6345 8.59267 15.2777 7.84084 14.7764 7.10534L16.1575 5.73242C16.7296 6.52784 17.16 7.34233 17.4487 8.17589C17.7429 9.00401 17.9009 9.81305 17.9227 10.603C17.9445 11.393 17.8301 12.1312 17.5795 12.8177C17.3343 13.4987 16.9557 14.098 16.4436 14.6156C15.9423 15.1168 15.3621 15.4873 14.7029 15.727C14.0491 15.9612 13.3572 16.0756 12.6272 16.0702C11.9026 16.0702 11.178 15.964 10.4534 15.7515C9.72877 15.539 9.03686 15.2339 8.37764 14.8362C7.72387 14.4385 7.14365 13.9618 6.63697 13.4061ZM8.35313 11.7716L6.38364 12.5153C6.24199 12.5698 6.10851 12.5398 5.9832 12.4254C5.86334 12.311 5.83338 12.1748 5.89331 12.0168L6.66149 10.0718L14.0982 2.64334L15.7898 4.33498L8.35313 11.7716ZM16.4191 3.7139L14.7274 2.02226L15.5119 1.23773C15.7244 1.0307 15.9696 0.91357 16.2474 0.886329C16.5307 0.859088 16.7623 0.938086 16.9421 1.12332L17.2363 1.40935C17.4487 1.62182 17.5441 1.87244 17.5223 2.16119C17.5059 2.44449 17.3915 2.69782 17.1791 2.9212L16.4191 3.7139Z"
-        fill="white"
+        class={@class}
       />
     </svg>
     """
@@ -232,7 +234,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :string, default: "dark:fill-white fill-black/70"
 
   def right_arrow(assigns) do
     ~H"""
@@ -263,7 +265,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :string, default: "stroke-black dark:stroke-white"
 
   def close(assigns) do
     ~H"""
@@ -273,7 +275,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :string, default: "fill-black dark:fill-white"
 
   def learning_objectives(assigns) do
     ~H"""
@@ -334,7 +336,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :string, default: "fill-black dark:fill-white"
   attr :path_class, :string, default: ""
 
   def video(assigns) do
@@ -348,13 +350,12 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :string, default: "fill-black/70 dark:fill-white"
 
   def play(assigns) do
     ~H"""
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      fill="white"
       width="33"
       height="38"
       viewBox="0 0 16.984 24.8075"
@@ -365,7 +366,8 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :class, :string, default: ""
+  attr :class, :string, default: "w-5 h-5"
+  attr :path_class, :string, default: "dark:stroke-white stroke-black/70"
 
   def plus(assigns) do
     ~H"""
@@ -375,10 +377,14 @@ defmodule OliWeb.Icons do
       fill="none"
       viewBox="0 0 24 24"
       stroke-width="1.5"
-      stroke="currentColor"
       class={@class}
     >
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      <path
+        class={@path_class}
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M12 4.5v15m7.5-7.5h-15"
+      />
     </svg>
     """
   end
@@ -529,37 +535,27 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-black dark:stroke-white"
+
   def trash(assigns) do
     ~H"""
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M3 6H5H21"
-        stroke="black"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
+    <svg
+      class={@class}
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M3 6H5H21" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       <path
         d="M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6"
-        stroke="black"
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
       />
-      <path
-        d="M10 11V17"
-        stroke="black"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M14 11V17"
-        stroke="black"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
+      <path d="M10 11V17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M14 11V17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
     """
   end
@@ -857,9 +853,19 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string,
+    default: "stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+
   def left_chevron(assigns) do
     ~H"""
-    <svg width="6" height="9" viewBox="0 0 6 9" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="6"
+      class={@class}
+      height="9"
+      viewBox="0 0 6 9"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M4.46798 7.96686L0.968018 4.4669L4.46798 0.966943"
         stroke-width="1.5"
@@ -881,9 +887,19 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string,
+    default: "stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+
   def support(assigns) do
     ~H"""
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      class={@class}
+      width="18"
+      height="18"
+      viewBox="0 0 18 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M9 6.5H9.00833M1.5 9C1.5 9.98491 1.69399 10.9602 2.0709 11.8701C2.44781 12.7801 3.00026 13.6069 3.6967 14.3033C4.39314 14.9997 5.21993 15.5522 6.12987 15.9291C7.03982 16.306 8.01509 16.5 9 16.5C9.98491 16.5 10.9602 16.306 11.8701 15.9291C12.7801 15.5522 13.6069 14.9997 14.3033 14.3033C14.9997 13.6069 15.5522 12.7801 15.9291 11.8701C16.306 10.9602 16.5 9.98491 16.5 9C16.5 7.01088 15.7098 5.10322 14.3033 3.6967C12.8968 2.29018 10.9891 1.5 9 1.5C7.01088 1.5 5.10322 2.29018 3.6967 3.6967C2.29018 5.10322 1.5 7.01088 1.5 9Z"
         stroke-width="1.5"
@@ -900,9 +916,19 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string,
+    default: "stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+
   def exit(assigns) do
     ~H"""
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      class={@class}
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         d="M1.5 7.9967L9.83333 7.9967"
         stroke-width="1.5"
@@ -1168,7 +1194,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :is_active, :boolean, default: false
-  attr :stroke, :string, default: "stroke-white"
+  attr :stroke, :string, default: "dark:stroke-white stroke-black/70"
   attr :class, :string, default: "w-[39px] h-[27px]"
 
   def graduation_cap(%{is_active: false} = assigns) do
@@ -1263,7 +1289,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  attr :color, :string, default: "white"
+  attr :class, :string, default: "stroke-black dark:stroke-white"
 
   def pencil_writing(assigns) do
     ~H"""
@@ -1273,18 +1299,20 @@ defmodule OliWeb.Icons do
         stroke-width="2.5"
         stroke-linecap="round"
         stroke-linejoin="round"
-        class={"stroke-#{@color} dark:stroke-white"}
+        class={@class}
       />
     </svg>
     """
   end
+
+  attr :class, :string, default: "stroke-black dark:stroke-white"
 
   def bar_chart(assigns) do
     ~H"""
     <svg width="30" height="28" viewBox="0 0 30 28" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M10.5 24.5V15.5C10.5 15.1022 10.342 14.7206 10.0607 14.4393C9.77936 14.158 9.39782 14 9 14H3C2.60218 14 2.22064 14.158 1.93934 14.4393C1.65804 14.7206 1.5 15.1022 1.5 15.5V24.5C1.5 24.8978 1.65804 25.2794 1.93934 25.5607C2.22064 25.842 2.60218 26 3 26M10.5 24.5C10.5 24.8978 10.342 25.2794 10.0607 25.5607C9.77936 25.842 9.39782 26 9 26H3M10.5 24.5C10.5 24.8978 10.658 25.2794 10.9393 25.5607C11.2206 25.842 11.6022 26 12 26H18C18.3978 26 18.7794 25.842 19.0607 25.5607C19.342 25.2794 19.5 24.8978 19.5 24.5M10.5 24.5V9.5C10.5 9.10218 10.658 8.72064 10.9393 8.43934C11.2206 8.15804 11.6022 8 12 8H18C18.3978 8 18.7794 8.15804 19.0607 8.43934C19.342 8.72064 19.5 9.10218 19.5 9.5V24.5M3 26H24M19.5 24.5C19.5 24.8978 19.658 25.2794 19.9393 25.5607C20.2206 25.842 20.6022 26 21 26H27C27.3978 26 27.7794 25.842 28.0607 25.5607C28.342 25.2794 28.5 24.8978 28.5 24.5V3.5C28.5 3.10218 28.342 2.72064 28.0607 2.43934C27.7794 2.15804 27.3978 2 27 2H21C20.6022 2 20.2206 2.15804 19.9393 2.43934C19.658 2.72064 19.5 3.10218 19.5 3.5V24.5Z"
-        stroke="white"
+        class={@class}
         stroke-width="2.5"
         stroke-linecap="round"
         stroke-linejoin="round"

@@ -130,7 +130,10 @@ defmodule OliWeb.Workspaces.Student do
             <div class="w-48 h-11 justify-start items-center gap-1 inline-flex">
               <div class="justify-start items-center gap-2 lg:gap-px flex">
                 <div class="grow shrink basis-0 self-start px-1 py-2 justify-center items-center flex">
-                  <OliWeb.Icons.graduation_cap class="w-7 h-6 lg:w-[39px] lg:h-[27px]" />
+                  <OliWeb.Icons.graduation_cap
+                    class="w-7 h-6 lg:w-[39px] lg:h-[27px]"
+                    stroke="stroke-white"
+                  />
                 </div>
                 <div class="w-40 lg:text-center text-white lg:text-3xl xl:text-4xl font-bold font-['Open Sans']">
                   Student
