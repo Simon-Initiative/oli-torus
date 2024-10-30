@@ -1471,7 +1471,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="hidden items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
         phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
       >
-        <Icons.learning_objectives class="fill-black dark:fill-white" />
+        <Icons.learning_objectives />
         <h3 class="text-[16px] leading-[22px] font-semibold dark:text-white">
           Introduction and Learning Objectives
         </h3>
@@ -1889,7 +1889,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             role="play_unit_intro_video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
-            <Icons.play class="scale-110 ml-[6px] mt-[9px]" />
+            <Icons.play class="scale-110 ml-[6px] mt-[9px] fill-white" />
           </div>
         </div>
       </div>
@@ -1961,7 +1961,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             role="play_unit_intro_video"
             class="w-full h-full absolute top-0 left-0 flex items-center justify-center"
           >
-            <Icons.play class="scale-110 ml-[6px] mt-[9px]" />
+            <Icons.play class="scale-110 ml-[6px] mt-[9px] fill-white" />
           </div>
         </div>
       </div>

@@ -281,7 +281,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             ]}
           >
             <div class="w-3 h-5 relative">
-              <div class="w-5 h-5 left-[-8px] top-0 absolute text-white"><Icons.plus /></div>
+              <Icons.plus class="w-5 h-5 left-[-8px] top-0 absolute" path_class="stroke-white" />
             </div>
             <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
               Create New Section

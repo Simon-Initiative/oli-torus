@@ -293,7 +293,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
-            <Icons.pencil_writing color="black" />
+            <Icons.pencil_writing class="stroke-black dark:stroke-white" />
             <h1 class="text-[#353740] dark:text-white text-[32px] font-bold leading-normal">
               Course Author
             </h1>
@@ -366,9 +366,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                     ]}
                   >
                     <div class="w-3 h-5 relative">
-                      <div class="w-5 h-5 left-[-8px] top-0 absolute text-white">
-                        <Icons.plus />
-                      </div>
+                      <Icons.plus
+                        class="w-5 h-5 left-[-8px] top-0 absolute"
+                        path_class="stroke-white"
+                      />
                     </div>
                     <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
                       New Project

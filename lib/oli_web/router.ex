@@ -1600,6 +1600,7 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+      live("/icons", Dev.IconsLive)
     end
   end
 end

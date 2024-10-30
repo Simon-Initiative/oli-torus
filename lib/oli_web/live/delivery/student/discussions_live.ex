@@ -870,7 +870,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
           phx-click={Modal.show_modal("new-discussion-modal")}
           class="rounded-[3px] py-[10px] pl-[18px] pr-6 flex justify-center items-center whitespace-nowrap text-[14px] leading-[20px] font-normal text-white bg-[#0F6CF5] hover:bg-blue-600"
         >
-          <Icons.plus class="w-6 h-6 mr-[10px]" /> New Discussion
+          <Icons.plus class="w-6 h-6 mr-[10px]" path_class="stroke-white" /> New Discussion
         </button>
       </div>
     </div>
