@@ -121,6 +121,14 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Depot.query(@depot_desc, section.id, conditions)
   end
 
+  @doc """
+  Returns a list of SectionResource records filtered by type ids for a given section.
+  """
+  def get_section_resources_by_type_ids(section_id, type_ids) do
+    init_if_necessary(section_id)
+    Depot.query(@depot_desc, section_id, [{:resource_type_id, {:in, type_ids}}])
+  end
+
   defp init_if_necessary(section_id) do
     if Depot.table_exists?(@depot_desc, section_id) do
       {:ok, :exists}

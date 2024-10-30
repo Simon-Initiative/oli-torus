@@ -48,7 +48,8 @@ defmodule OliWeb.Dialogue.WindowLive do
       section_id: section.id,
       course_title: project.title,
       course_description: project.description,
-      page_content: ""
+      page_content:
+        "Use only the available functions and their outputs to answer the question. Avoid drawing on external or assumed information."
     }
 
     realize_prompt_template(section.page_prompt_template, bindings)
