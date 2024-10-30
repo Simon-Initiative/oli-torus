@@ -2031,20 +2031,6 @@ defmodule Oli.TestHelpers do
       response: %{files: [], input: "option_2_id"}
     )
 
-    insert(:snapshot, %{
-      section: section_1,
-      resource: page_1_revision.resource,
-      user: user_1,
-      correct: true
-    })
-
-    insert(:snapshot, %{
-      section: section_2,
-      resource: page_1_revision.resource,
-      user: user_2,
-      correct: true
-    })
-
     {:ok, section_1} = Sections.create_section_resources(section_1, publication)
     {:ok, section_2} = Sections.create_section_resources(section_2, publication)
 
