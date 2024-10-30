@@ -779,6 +779,7 @@ defmodule Oli.PublishingTest do
         edition: edition,
         major: major,
         minor: minor,
+        all_links: [],
         changes: diff
       } = Publishing.diff_publications(p1, p2)
 
