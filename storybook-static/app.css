@@ -4992,6 +4992,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 0.625rem;
 }
 
+.h-20 {
+  height: 5rem;
+}
+
 .h-24 {
   height: 6rem;
 }
@@ -5761,6 +5765,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-w-\[300px\] {
   min-width: 300px;
+}
+
+.min-w-\[48px\] {
+  min-width: 48px;
 }
 
 .min-w-\[50\%\] {
