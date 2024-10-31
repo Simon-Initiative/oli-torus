@@ -17,7 +17,6 @@ defmodule Oli.Delivery.Sections do
     SectionCache,
     ContainedPage,
     SectionResource,
-    SectionResourceDepot,
     ContainedObjective,
     SectionsProjectsPublications,
     Enrollment,
@@ -5349,33 +5348,5 @@ defmodule Oli.Delivery.Sections do
       where: ecr.context_role_id in ^context_role_ids
     )
     |> Repo.all()
-  end
-
-  def get_section_prompt_info(section_id) do
-    %Section{customizations: customizations} = section = Repo.get(Section, section_id)
-
-    instructors =
-      section.slug
-      |> fetch_instructors()
-      |> Enum.map(&%{name: &1.name, email: &1.email})
-
-    layout =
-      section_id
-      |> SectionResourceDepot.get_section_resources_by_type_ids([ResourceType.id_for_container()])
-      |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index})
-      |> Enum.map(
-        &label_for(&1.numbering_level, &1.numbering_index, &1.title, false, customizations)
-      )
-
-    content =
-      section_id
-      |> SectionResourceDepot.get_section_resources_by_type_ids([ResourceType.id_for_page()])
-      |> Enum.map(& &1.title)
-
-    %{
-      instructors: instructors,
-      layout: layout,
-      content: content
-    }
   end
 end

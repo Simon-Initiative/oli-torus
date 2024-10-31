@@ -2,6 +2,9 @@ defmodule Oli.Conversation.Functions do
   import Oli.Conversation.Common
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
+  alias Oli.Resources.ResourceType
   alias OliWeb.Router.Helpers, as: Routes
 
   @lookup_table %{
@@ -151,7 +154,7 @@ defmodule Oli.Conversation.Functions do
       end
 
     section_id
-    |> Oli.Delivery.Sections.get_section_prompt_info()
+    |> get_section_prompt_info()
     |> Map.put(:relevant_pages, relevant_pages)
   end
 
@@ -184,5 +187,44 @@ defmodule Oli.Conversation.Functions do
           Map.get(ras, page.resource_id, %{resource_attempts_count: 0}).resource_attempts_count
       }
     end)
+  end
+
+  defp get_section_prompt_info(section_id) do
+    %Section{customizations: customizations} = section = Oli.Repo.get(Section, section_id)
+
+    {containers, pages} =
+      section_id
+      |> SectionResourceDepot.get_section_resources_by_type_ids([
+        ResourceType.id_for_container(),
+        ResourceType.id_for_page()
+      ])
+      |> Enum.split_with(&(&1.resource_type_id == ResourceType.id_for_container()))
+
+    instructors =
+      section.slug
+      |> Sections.fetch_instructors()
+      |> Enum.map(&%{name: &1.name, email: &1.email})
+
+    content = Enum.map(pages, & &1.title)
+
+    layout =
+      containers
+      |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index})
+      |> Enum.map(fn c ->
+        label =
+          Sections.get_container_label_and_numbering(
+            c.numbering_level,
+            c.numbering_index,
+            customizations
+          )
+
+        "#{label}: #{c.title}"
+      end)
+
+    %{
+      instructors: instructors,
+      layout: layout,
+      content: content
+    }
   end
 end
