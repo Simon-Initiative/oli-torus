@@ -373,8 +373,14 @@ defmodule OliWeb.Workspaces.Student do
 
   defp add_sections_progress(sections, user_id) do
     Enum.map(sections, fn section ->
+      # we calculate the progress based on the number of completed pages
+      # to match the logic used in the course progress compenent at OliWeb.Delivery.Student.IndexLive
+      raw_completed_pages = Metrics.raw_completed_pages_for(section.id, user_id)
+      completed_pages = Map.get(raw_completed_pages, user_id, 0)
+      total_pages = Map.get(raw_completed_pages, :total_pages)
+
       progress =
-        Metrics.progress_for(section.id, user_id)
+        (completed_pages / if(total_pages == 0, do: 1, else: total_pages))
         |> Kernel.*(100)
         |> round()
         |> trunc()
