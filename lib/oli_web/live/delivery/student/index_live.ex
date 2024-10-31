@@ -440,7 +440,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   Scored Assignments:
                 </span>
                 <span class="font-medium">
-                  Achieve100% progress on scored assignments if you
+                  Achieve 100% progress on scored assignments if you
                 </span>
                 <span class="font-bold">submit</span><span class="font-medium"> at least one attempt. </span>
               </div>
