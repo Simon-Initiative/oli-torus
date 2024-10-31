@@ -54,12 +54,12 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       results = Metrics.raw_proficiency_per_learning_objective(section)
       assert Map.keys(results) |> Enum.count() == 2
-      assert assert %{^id => {1, 5}, ^id2 => {10, 50}} = results
+      assert assert %{^id => {1, 5, 4, 10}, ^id2 => {10, 50, 40, 100}} = results
 
-      assert %{^id => {0, 1}, ^id2 => {1, 3}} =
+      assert %{^id => {0, 1, 2, 6}, ^id2 => {1, 3, 2, 6}} =
                Metrics.raw_proficiency_for_student_per_learning_objective(section, user1.id)
 
-      assert %{^id => {1, 1}, ^id2 => {2, 4}} =
+      assert %{^id => {1, 1, 2, 4}, ^id2 => {2, 4, 2, 4}} =
                Metrics.raw_proficiency_for_student_per_learning_objective(section, user2.id)
     end
 
@@ -111,7 +111,7 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       results = Metrics.proficiency_per_page(section, [page1_id, page2_id])
       assert Map.keys(results) |> Enum.count() == 2
-      assert %{^page1_id => "Low", ^page2_id => "Low"} = results
+      assert %{^page1_id => "Low", ^page2_id => "Medium"} = results
 
       contained_pages = [
         %ContainedPage{container_id: 3, page_id: page1_id},
@@ -125,11 +125,11 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
 
       results = Metrics.proficiency_per_container(section, contained_pages)
       assert Map.keys(results) |> Enum.count() == 2
-      assert %{2 => "Low", 3 => "Low"} = results
+      assert %{2 => "Low", 3 => "Medium"} = results
 
       results = Metrics.proficiency_per_student_across(section)
       assert Map.keys(results) |> Enum.count() == 2
-      assert %{^user1_id => "High", ^user2_id => "Low"} = results
+      assert %{^user1_id => "High", ^user2_id => "Medium"} = results
     end
 
     test "proficiency_for_student_per_learning_objective/3 shows Not enough data when num first attempts is < 3",
@@ -186,10 +186,10 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       id3 = o3.resource.id
 
       [
-        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 2, 6, 1, 3, 1],
-        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 2, 6, 1, 3, 2],
-        [-1, -1, section.id, user1.id, id3, nil, objective_type_id, 2, 6, 1, 3, 3],
-        [-1, -1, section.id, user2.id, id, nil, objective_type_id, 2, 4, 0, 1, 1],
+        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 1, 6, 1, 3, 0],
+        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 3, 6, 1, 3, 2],
+        [-1, -1, section.id, user1.id, id3, nil, objective_type_id, 6, 6, 1, 3, 3],
+        [-1, -1, section.id, user2.id, id, nil, objective_type_id, 1, 4, 0, 1, 0],
         [-1, -1, section.id, user2.id, id2, nil, objective_type_id, 2, 4, 0, 4, 2]
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)

@@ -152,6 +152,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute has_element?(view, "a", "Edit survey")
     end
 
+    test "edit survey button redirects well to edit survey page", %{
+      conn: conn,
+      author: author
+    } do
+      project = create_project_with_author(author)
+
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      ## Enable required survey
+      element(view, "form[phx-change=\"set-required-survey\"]")
+      |> render_change(%{
+        survey: "on"
+      })
+
+      ## Click on edit survey button
+      element(view, "a", "Edit survey") |> render_click()
+
+      ## Assert redirection to edit survey page
+      assert_redirected(
+        view,
+        ~p{/workspaces/course_author/#{project.slug}/curriculum/course_survey/edit}
+      )
+    end
+
     test "project can enable transfer payment codes", %{conn: conn, author: author} do
       project = create_project_with_author(author)
 

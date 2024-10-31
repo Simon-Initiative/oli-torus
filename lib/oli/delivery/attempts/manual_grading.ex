@@ -253,13 +253,14 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
              finalize_part_attempts(activity_attempt, score_feedbacks_map),
            {:ok, _} <-
              Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid),
-           {:ok, _} <-
+           :ok <-
              to_attempt_guid(finalized_part_attempts)
              |> Oli.Delivery.Snapshots.queue_or_create_snapshot(section_slug),
            {:ok, _} <- maybe_finalize_resource_attempt(section, graded, resource_attempt_guid) do
         finalized_part_attempts
       else
-        e -> Repo.rollback(e)
+        e ->
+          Repo.rollback(e)
       end
     end)
   end

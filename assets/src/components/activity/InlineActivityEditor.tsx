@@ -185,7 +185,7 @@ export class InlineActivityEditor extends React.Component<
             {this.props.revisionHistoryLink && (
               <a
                 className="dropdown-item ml-auto"
-                href={`/project/${this.props.projectSlug}/history/slug/${this.props.activitySlug}`}
+                href={`/workspaces/course_author/${this.props.projectSlug}/curriculum/${this.props.activitySlug}/history`}
               >
                 <i className="fas fa-history mr-1"></i> View revision history
               </a>

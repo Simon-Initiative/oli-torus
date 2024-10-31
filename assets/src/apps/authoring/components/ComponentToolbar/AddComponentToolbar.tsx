@@ -10,7 +10,10 @@ import {
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
 import { addPart } from 'apps/authoring/store/parts/actions/addPart';
-import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import {
+  selectCurrentPartPropertyFocus,
+  setCurrentSelection,
+} from 'apps/authoring/store/parts/slice';
 import {
   selectCurrentActivityTree,
   selectCurrentSequenceId,
@@ -61,7 +64,7 @@ const AddComponentToolbar: React.FC<{
       dispatch(addPart({ activityId: currentActivity.id, newPartData }));
     }
   };
-
+  const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   useEffect(() => {
     setNewPartAddOffset(0);
   }, [currentSequenceId]);
@@ -95,8 +98,6 @@ const AddComponentToolbar: React.FC<{
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
-            defaultHeight: defaultNewPartHeight,
-            defaultWidth: defaultNewPartWidth,
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };
@@ -145,13 +146,13 @@ const AddComponentToolbar: React.FC<{
 
   useKeyDown(
     () => {
-      if (copiedPart) {
+      if (copiedPart && _currentPartPropertyFocus) {
         handlePartPasteClick();
       }
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, currentActivityTree],
+    [copiedPart, currentActivityTree, _currentPartPropertyFocus],
   );
 
   return (

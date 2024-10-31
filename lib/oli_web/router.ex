@@ -1209,7 +1209,6 @@ defmodule OliWeb.Router do
       live("/grades/observe", Grades.ObserveGradeUpdatesView)
       live("/grades/gradebook", Grades.GradebookView)
       live("/scoring", ManualGrading.ManualGradingView)
-      live("/snapshots", Snapshots.SnapshotsView)
       live("/progress/:user_id/:resource_id", Progress.StudentResourceView)
       live("/progress/:user_id", Progress.StudentView)
       live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
@@ -1600,6 +1599,7 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+      live("/icons", Dev.IconsLive)
     end
   end
 end

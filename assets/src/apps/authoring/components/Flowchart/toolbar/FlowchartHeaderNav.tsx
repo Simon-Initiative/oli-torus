@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import {
+  selectCurrentPartPropertyFocus,
+  setCurrentSelection,
+} from 'apps/authoring/store/parts/slice';
 import { useKeyDown } from 'hooks/useKeyDown';
 import useHover from '../../../../../components/hooks/useHover';
 import guid from '../../../../../utils/guid';
@@ -116,7 +119,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const sequence = useSelector(selectSequence);
   const currentSequenceId = useSelector(selectCurrentSequenceId);
   const dispatch = useDispatch();
-
+  const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
   const [invalidScreens, setInvalidScreens] = React.useState<IActivity[]>([]);
@@ -220,13 +223,13 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   );
   useKeyDown(
     () => {
-      if (copiedPart) {
+      if (copiedPart && _currentPartPropertyFocus) {
         handlePartPasteClick();
       }
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, currentActivityTree],
+    [copiedPart, currentActivityTree, _currentPartPropertyFocus],
   );
 
   const handleAddComponent = useCallback(
@@ -257,8 +260,6 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
             z: 0,
             width: defaultNewPartWidth,
             height: defaultNewPartHeight,
-            defaultHeight: defaultNewPartHeight,
-            defaultWidth: defaultNewPartWidth,
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };

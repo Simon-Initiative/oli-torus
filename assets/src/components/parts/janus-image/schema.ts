@@ -6,8 +6,6 @@ export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
   alt: string;
   scaleContent: boolean;
   lockAspectRatio: boolean;
-  defaultHeight?: number;
-  defaultWidth?: number;
   defaultSrc?: string;
 }
 

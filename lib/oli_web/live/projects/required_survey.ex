@@ -1,9 +1,9 @@
 defmodule OliWeb.Projects.RequiredSurvey do
   use Phoenix.LiveComponent
+  use OliWeb, :verified_routes
 
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections
-  alias OliWeb.Router.Helpers, as: Routes
 
   attr :project, :map, required: true
   attr :author_id, :integer, required: false
@@ -32,7 +32,9 @@ defmodule OliWeb.Projects.RequiredSurvey do
         <%= if (!@is_section and @required_survey) do %>
           <a
             class="torus-button primary mt-3"
-            href={Routes.resource_path(OliWeb.Endpoint, :edit, @project.slug, @required_survey.slug)}
+            href={
+              ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@required_survey.slug}/edit"
+            }
           >
             Edit survey
           </a>
