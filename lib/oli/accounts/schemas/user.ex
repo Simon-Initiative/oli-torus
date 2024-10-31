@@ -8,7 +8,8 @@ defmodule Oli.Accounts.User do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
-    field :email_confirmed_at, :naive_datetime
+    field :email_confirmed_at, :utc_datetime
+    field :invitation_accepted_at, :utc_datetime
 
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
     # see https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims for full descriptions
@@ -275,7 +276,50 @@ defmodule Oli.Accounts.User do
     ])
     |> cast_embed(:preferences)
     |> validate_required([:given_name, :family_name])
+    |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
     |> maybe_create_unique_sub()
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
+  Creates a changeset that can be used by an admin to update a user
+  """
+  def admin_changeset(user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [
+      :sub,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :email,
+      :email_verified,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address,
+      :author_id,
+      :guest,
+      :independent_learner,
+      :research_opt_out,
+      :state,
+      :locked_at,
+      :email_confirmed_at,
+      :can_create_sections,
+      :age_verified
+    ])
+    |> cast_embed(:preferences)
+    |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
 
@@ -308,17 +352,6 @@ defmodule Oli.Accounts.User do
     |> cast_embed(:preferences)
     |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
-  end
-
-  def update_changeset_for_admin(%__MODULE__{} = user, attrs \\ %{}) do
-    user
-    |> cast(attrs, [:given_name, :family_name, :independent_learner, :can_create_sections, :email])
-    |> validate_required([:given_name, :family_name])
-    |> maybe_name_from_given_and_family()
-    |> unique_constraint(:email,
-      name: :users_email_independent_learner_index,
-      message: "Email has already been taken by another independent learner"
-    )
   end
 
   @doc """
@@ -373,14 +406,18 @@ defmodule Oli.Accounts.User do
     |> maybe_name_from_given_and_family()
   end
 
-  @spec lock_changeset(Ecto.Schema.t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  def lock_changeset(user_or_changeset) do
+  @doc """
+  Creates a changeset that is used to lock/unlock a user account
+  """
+  def lock_account_changeset(user_or_changeset, locked) do
     changeset = Ecto.Changeset.change(user_or_changeset)
-    locked_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    case Ecto.Changeset.get_field(changeset, :locked_at) do
-      nil -> Ecto.Changeset.change(changeset, locked_at: locked_at)
-      _any -> Ecto.Changeset.add_error(changeset, :locked_at, "already set")
+    if locked do
+      locked_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+      Ecto.Changeset.change(changeset, locked_at: locked_at)
+    else
+      Ecto.Changeset.change(changeset, locked_at: nil)
     end
   end
 

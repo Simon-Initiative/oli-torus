@@ -12,7 +12,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
     UnlockAccountModal,
     DeleteAccountModal,
     GrantAdminModal,
-    RevokeAdminModal,
     ConfirmEmailModal
   }
 
@@ -20,7 +19,9 @@ defmodule OliWeb.Users.AuthorsDetailView do
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
-  alias OliWeb.Common.SessionContext
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   defp set_breadcrumbs(author) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -41,40 +42,40 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def mount(
-        %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token, "current_author_id" => author_id} = session,
+        %{"author_id" => author_id},
+        _session,
         socket
       ) do
-    author = Accounts.get_author(author_id)
-
-    case Accounts.get_author(user_id) do
+    case Accounts.get_author(author_id) do
       nil ->
-        {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+        {:ok,
+         socket
+         |> put_flash(:error, "Author not found")
+         |> redirect(to: ~p"/admin/authors")}
 
-      user ->
+      author ->
         {:ok,
          assign(socket,
-           breadcrumbs: set_breadcrumbs(user),
+           current_author: socket.assigns.current_author,
+           breadcrumbs: set_breadcrumbs(author),
            author: author,
-           user: user,
-           csrf_token: csrf_token,
-           changeset: author_changeset(user),
+           changeset: author_changeset(author),
            disabled_edit: true,
-           ctx: SessionContext.init(socket, session),
-           authors: SystemRole.role_id()
+           author_roles: SystemRole.role_id(),
+           password_reset_link: ""
          )}
     end
   end
 
-  attr(:author, :any)
+  attr(:current_author, Author, required: true)
   attr(:breadcrumbs, :any)
   attr(:title, :string, default: "Author Details")
-  attr(:user, :map, default: nil)
+  attr(:author, Author, required: true)
   attr(:modal, :any, default: nil)
-  attr(:csrf_token, :any)
   attr(:changeset, :map)
   attr(:disabled_edit, :boolean, default: true)
-  attr(:authors, :map, default: %{})
+  attr(:author_roles, :map, default: %{})
+  attr(:password_reset_link, :string)
 
   def render(assigns) do
     ~H"""
@@ -84,13 +85,14 @@ defmodule OliWeb.Users.AuthorsDetailView do
       <Groups.render>
         <Group.render label="Details" description="User details">
           <.form
+            :let={f}
             id="edit_author"
             for={@changeset}
             phx-change="change"
             phx-submit="submit"
             autocomplete="off"
           >
-            <ReadOnly.render label="Name" value={@user.name} />
+            <ReadOnly.render label="Name" value={@author.name} />
             <div class="form-group">
               <label for="given_name">First Name</label>
               <.input
@@ -123,25 +125,38 @@ defmodule OliWeb.Users.AuthorsDetailView do
             </div>
             <div class="form-group">
               <label for="role">Role</label>
-              <select
-                id="role"
+              <.input
+                type="select"
                 class="form-control"
-                name="author[system_role_id]"
-                disabled={@disabled_edit or not Accounts.has_admin_role?(@author, :system_admin)}
-              >
-                <%= for {_type, id} <- @authors do %>
-                  <option value={id} selected={@user.system_role_id == id}><%= role(id) %></option>
-                <% end %>
-              </select>
+                field={f[:system_role_id]}
+                options={
+                  Enum.map(@author_roles, fn {_type, id} ->
+                    {role(id), id}
+                  end)
+                }
+                disabled={
+                  @disabled_edit or not Accounts.has_admin_role?(@current_author, :system_admin)
+                }
+              />
             </div>
             <%= unless @disabled_edit do %>
-              <button type="submit" class="float-right btn btn-md btn-primary mt-2">Save</button>
+              <.button
+                variant={:primary}
+                type="submit"
+                class="float-right btn btn-md btn-primary mt-2"
+              >
+                Save
+              </.button>
             <% end %>
           </.form>
           <%= if @disabled_edit do %>
-            <button class="float-right btn btn-md btn-primary mt-2" phx-click="start_edit">
+            <.button
+              variant={:primary}
+              class="float-right btn btn-md btn-primary mt-2"
+              phx-click="start_edit"
+            >
               Edit
-            </button>
+            </.button>
           <% end %>
         </Group.render>
         <Group.render
@@ -151,13 +166,17 @@ defmodule OliWeb.Users.AuthorsDetailView do
           <.live_component
             module={OliWeb.Users.AuthorProjects}
             id="author_projects"
-            user={@user}
+            user={@author}
             ctx={@ctx}
           />
         </Group.render>
         <Group.render label="Actions" description="Actions that can be taken for this user">
-          <%= if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
-            <Actions.render user={@user} csrf_token={@csrf_token} for_author={true} />
+          <%= if @author.id != @current_author.id and @author.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
+            <Actions.render
+              user={@author}
+              email_confirmation_pending={Accounts.author_confirmation_pending?(@author)}
+              password_reset_link={@password_reset_link}
+            />
           <% end %>
         </Group.render>
       </Groups.render>
@@ -165,14 +184,26 @@ defmodule OliWeb.Users.AuthorsDetailView do
     """
   end
 
+  def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
+    author = Accounts.get_author!(id)
+
+    encoded_token = Accounts.generate_author_reset_password_token(author)
+
+    password_reset_link =
+      url(~p"/authors/reset_password/#{encoded_token}")
+
+    socket = assign(socket, password_reset_link: password_reset_link)
+    {:noreply, socket}
+  end
+
   def handle_event("show_confirm_email_modal", _, socket) do
     modal_assigns = %{
-      user: socket.assigns.user
+      author: socket.assigns.author
     }
 
     modal = fn assigns ->
       ~H"""
-      <ConfirmEmailModal.render id="confirm_email" user={assigns.modal_assigns.user} />
+      <ConfirmEmailModal.render id="confirm_email" user={@author} />
       """
     end
 
@@ -184,13 +215,13 @@ defmodule OliWeb.Users.AuthorsDetailView do
         _,
         socket
       ) do
-    email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+    changeset = Author.confirm_changeset(socket.assigns.author)
 
-    case Accounts.update_author(socket.assigns.user, %{email_confirmed_at: email_confirmed_at}) do
-      {:ok, user} ->
+    case Accounts.admin_update_author(changeset) do
+      {:ok, author} ->
         {:noreply,
          socket
-         |> assign(user: user)
+         |> assign(author: author)
          |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
@@ -198,14 +229,79 @@ defmodule OliWeb.Users.AuthorsDetailView do
     end
   end
 
-  def handle_event("show_unlock_account_modal", _, socket) do
+  def handle_event("resend_confirmation_link", %{"id" => id}, socket) do
+    author = Accounts.get_author!(id)
+
+    case Accounts.deliver_author_confirmation_instructions(
+           author,
+           &url(~p"/authors/confirm/#{&1}")
+         ) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Confirmation link sent.")}
+
+      {:error, :already_confirmed} ->
+        {:noreply, put_flash(socket, :info, "Email is already confirmed.")}
+    end
+  end
+
+  def handle_event("send_reset_password_link", %{"id" => id}, socket) do
+    author = Accounts.get_author!(id)
+
+    case Accounts.deliver_author_reset_password_instructions(
+           author,
+           &url(~p"/authors/reset_password/#{&1}")
+         ) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Password reset link sent.")}
+
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, "Error sending password reset link: #{error}")}
+    end
+  end
+
+  def handle_event("show_lock_account_modal", _, socket) do
     modal_assigns = %{
-      user: socket.assigns.user
+      author: socket.assigns.author
     }
 
     modal = fn assigns ->
       ~H"""
-      <UnlockAccountModal.render id="unlock_account" user={assigns.modal_assigns.user} />
+      <LockAccountModal.render id="lock_account" user={@author} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
+  end
+
+  def handle_event(
+        "lock_account",
+        %{"id" => id},
+        socket
+      ) do
+    author = Accounts.get_author!(id)
+
+    case Accounts.lock_author(author) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(author: Accounts.get_author!(id))
+         |> hide_modal(modal_assigns: nil)}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(socket, :error, "Failed to lock author account.")
+         |> hide_modal(modal_assigns: nil)}
+    end
+  end
+
+  def handle_event("show_unlock_account_modal", _, socket) do
+    modal_assigns = %{
+      author: socket.assigns.author
+    }
+
+    modal = fn assigns ->
+      ~H"""
+      <UnlockAccountModal.render id="unlock_account" user={@author} />
       """
     end
 
@@ -219,23 +315,28 @@ defmodule OliWeb.Users.AuthorsDetailView do
       ) do
     author = Accounts.get_author!(id)
 
-    # MER-3835 TODO
-    throw("NOT IMPLEMENTED")
+    case Accounts.unlock_author(author) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(author: Accounts.get_author!(id))
+         |> hide_modal(modal_assigns: nil)}
 
-    {:noreply,
-     socket
-     |> assign(user: Accounts.get_author!(id))
-     |> hide_modal(modal_assigns: nil)}
+      {:error, _error} ->
+        {:noreply,
+         put_flash(socket, :error, "Failed to unlock author account.")
+         |> hide_modal(modal_assigns: nil)}
+    end
   end
 
   def handle_event("show_delete_account_modal", _, socket) do
     modal_assigns = %{
-      user: socket.assigns.user
+      author: socket.assigns.author
     }
 
     modal = fn assigns ->
       ~H"""
-      <DeleteAccountModal.render id="delete_account" user={assigns.modal_assigns.user} />
+      <DeleteAccountModal.render id="delete_account" user={@author} />
       """
     end
 
@@ -262,95 +363,21 @@ defmodule OliWeb.Users.AuthorsDetailView do
     end
   end
 
-  def handle_event("show_lock_account_modal", _, socket) do
-    modal_assigns = %{
-      user: socket.assigns.user
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <LockAccountModal.render id="lock_account" user={assigns.modal_assigns.user} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
-  end
-
-  def handle_event(
-        "lock_account",
-        %{"id" => id},
-        socket
-      ) do
-    author = Accounts.get_author!(id)
-
-    # MER-3835 TODO
-    throw("NOT IMPLEMENTED")
-
-    {:noreply,
-     socket
-     |> assign(user: Accounts.get_author!(id))
-     |> hide_modal(modal_assigns: nil)}
-  end
-
-  def handle_event("show_grant_admin_modal", _, socket) do
-    modal_assigns = %{
-      user: socket.assigns.user
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <GrantAdminModal.render id="grant_admin" user={assigns.modal_assigns.user} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
-  end
-
-  def handle_event("grant_admin", %{"id" => id}, socket) do
-    admin_role_id = SystemRole.role_id().system_admin
-    author = Accounts.get_author!(id)
-
-    {:noreply,
-     socket
-     |> change_system_role(author, admin_role_id)
-     |> hide_modal(modal_assigns: nil)}
-  end
-
-  def handle_event("show_revoke_admin_modal", _, socket) do
-    modal_assigns = %{
-      user: socket.assigns.user
-    }
-
-    modal = fn assigns ->
-      ~H"""
-      <RevokeAdminModal.render id="revoke_admin" user={assigns.modal_assigns.user} />
-      """
-    end
-
-    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
-  end
-
-  def handle_event("revoke_admin", %{"id" => id}, socket) do
-    author_role_id = SystemRole.role_id().author
-    author = Accounts.get_author!(id)
-
-    {:noreply,
-     socket
-     |> change_system_role(author, author_role_id)
-     |> hide_modal(modal_assigns: nil)}
-  end
-
   def handle_event("change", %{"author" => params}, socket) do
-    {:noreply, assign(socket, changeset: author_changeset(socket.assigns.user, params))}
+    {:noreply, assign(socket, changeset: author_changeset(socket.assigns.author, params))}
   end
 
   def handle_event("submit", %{"author" => params}, socket) do
-    case Accounts.update_author(socket.assigns.user, params) do
-      {:ok, user} ->
+    case Accounts.admin_update_author(socket.assigns.author, params) do
+      {:ok, author} ->
         {:noreply,
          socket
          |> put_flash(:info, "Author successfully updated.")
-         |> assign(user: user, changeset: author_changeset(user, params), disabled_edit: true)}
+         |> assign(
+           author: author,
+           changeset: author_changeset(author, params),
+           disabled_edit: true
+         )}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Author couldn't be updated.")}
@@ -362,18 +389,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   defp author_changeset(author, attrs \\ %{}) do
-    Author.noauth_changeset(author, attrs)
+    Author.admin_changeset(author, attrs)
     |> Map.put(:action, :update)
-  end
-
-  defp change_system_role(socket, author, role_id) do
-    case Accounts.update_author(author, %{system_role_id: role_id}) do
-      {:ok, author} ->
-        assign(socket, user: author)
-
-      {:error, _} ->
-        put_flash(socket, :error, "Could not edit author")
-    end
   end
 
   defp role(system_role_id) do

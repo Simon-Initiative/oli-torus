@@ -11,6 +11,7 @@ defmodule Oli.Accounts.Author do
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
+    field :invitation_accepted_at, :utc_datetime
 
     field :name, :string
     field :given_name, :string
@@ -216,6 +217,27 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc """
+  Creates a changeset that can be used by an admin to update an author
+  """
+  def admin_changeset(author, attrs \\ %{}) do
+    author
+    |> cast(attrs, [
+      :email,
+      :name,
+      :given_name,
+      :family_name,
+      :picture,
+      :system_role_id,
+      :locked_at,
+      :email_confirmed_at
+    ])
+    |> cast_embed(:preferences)
+    |> default_system_role()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
   Creates a changeset that is used in the SSO context
   """
 
@@ -226,14 +248,18 @@ defmodule Oli.Accounts.Author do
     |> put_email_confirmed_at()
   end
 
-  @spec lock_changeset(Ecto.Schema.t() | Ecto.Changeset.t()) :: Ecto.Changeset.t()
-  def lock_changeset(user_or_changeset) do
+  @doc """
+  Creates a changeset that is used to lock/unlock an author account
+  """
+  def lock_account_changeset(user_or_changeset, locked) do
     changeset = Ecto.Changeset.change(user_or_changeset)
-    locked_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    case Ecto.Changeset.get_field(changeset, :locked_at) do
-      nil -> Ecto.Changeset.change(changeset, locked_at: locked_at)
-      _any -> Ecto.Changeset.add_error(changeset, :locked_at, "already set")
+    if locked do
+      locked_at = DateTime.truncate(DateTime.utc_now(), :second)
+
+      Ecto.Changeset.change(changeset, locked_at: locked_at)
+    else
+      Ecto.Changeset.change(changeset, locked_at: nil)
     end
   end
 

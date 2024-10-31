@@ -262,8 +262,9 @@ defmodule Oli.Accounts do
   @doc """
   Updates a user from an admin.
   """
-  def update_user_from_admin(changeset) do
-    changeset
+  def admin_update_user(user, attrs \\ %{}) do
+    user
+    |> User.admin_changeset(attrs)
     |> Repo.update()
   end
 
@@ -402,6 +403,8 @@ defmodule Oli.Accounts do
     Repo.exists?(query)
   end
 
+  # MER-3835 TODO: reconcile with new functions below
+
   def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().content_admin == system_role_id or
       SystemRole.role_id().account_admin == system_role_id or
@@ -416,34 +419,6 @@ defmodule Oli.Accounts do
   end
 
   def at_least_account_admin?(_), do: false
-
-  # MER-3835 TODO: REMOVE
-  # @doc """
-  # Returns true if an author is a content admin.
-  # """
-  # def is_content_admin?(%Author{system_role_id: system_role_id}) do
-  #   SystemRole.role_id().content_admin == system_role_id
-  # end
-
-  # def is_content_admin?(_), do: false
-
-  # @doc """
-  # Returns true if an author is an account admin.
-  # """
-  # def is_account_admin?(%Author{system_role_id: system_role_id}) do
-  #   SystemRole.role_id().account_admin == system_role_id
-  # end
-
-  # def is_account_admin?(_), do: false
-
-  # @doc """
-  # Returns true if an author is a system admin.
-  # """
-  # def is_system_admin?(%Author{system_role_id: system_role_id}) do
-  #   SystemRole.role_id().system_admin == system_role_id
-  # end
-
-  # def is_system_admin?(_), do: false
 
   @doc """
   Returns true if an author has some role admin.
@@ -831,22 +806,6 @@ defmodule Oli.Accounts do
         select: community
       )
     )
-  end
-
-  @doc """
-  Returns whether the user account is waiting for confirmation or not.
-
-  ## Examples
-
-      iex> user_confirmation_pending?(%{email_confirmation_token: "token", email_confirmed_at: nil})
-      true
-
-      iex> user_confirmation_pending?(%{email_confirmation_token: nil, email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
-      false
-  """
-  def user_confirmation_pending?(user) do
-    # MER-3835 TODO
-    throw("NOT IMPLEMENTED")
   end
 
   @doc """
@@ -1262,6 +1221,16 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Generates a reset password token for the given user which can be used to generate a reset password URL.
+  """
+  def generate_user_reset_password_token(user) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    Repo.insert!(user_token)
+
+    encoded_token
+  end
+
+  @doc """
   Gets the user by reset password token.
 
   ## Examples
@@ -1304,6 +1273,39 @@ defmodule Oli.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+  @doc """
+  Locks a user account preventing them from logging in.
+  """
+  def lock_user(user) do
+    user
+    |> User.lock_account_changeset(true)
+    |> Repo.update()
+  end
+
+  @doc """
+  Unlocks a user account.
+  """
+  def unlock_user(user) do
+    user
+    |> User.lock_account_changeset(false)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns whether the user account is waiting for confirmation or not.
+
+  ## Examples
+
+      iex> user_confirmation_pending?(%{email_confirmed_at: nil})
+      true
+
+      iex> user_confirmation_pending?(%{email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
+      false
+  """
+  def user_confirmation_pending?(%{email_confirmed_at: nil}), do: true
+
+  def user_confirmation_pending?(_user), do: false
 
   @doc """
   Gets an author by email.
@@ -1515,6 +1517,15 @@ defmodule Oli.Accounts do
     end
   end
 
+  @doc """
+  Updates an author as an admin.
+  """
+  def admin_update_author(author, attrs \\ %{}) do
+    author
+    |> Author.admin_changeset(attrs)
+    |> Repo.update()
+  end
+
   ## Session
 
   @doc """
@@ -1618,6 +1629,16 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Generates a reset password token for the given user which can be used to generate a reset password URL.
+  """
+  def generate_author_reset_password_token(user) do
+    {encoded_token, author_token} = AuthorToken.build_email_token(user, "reset_password")
+    Repo.insert!(author_token)
+
+    encoded_token
+  end
+
+  @doc """
   Gets the author by reset password token.
 
   ## Examples
@@ -1660,4 +1681,37 @@ defmodule Oli.Accounts do
       {:error, :author, changeset, _} -> {:error, changeset}
     end
   end
+
+  @doc """
+  Locks an author account preventing them from logging in.
+  """
+  def lock_author(author) do
+    author
+    |> Author.lock_account_changeset(true)
+    |> Repo.update()
+  end
+
+  @doc """
+  Unlocks an author account.
+  """
+  def unlock_author(author) do
+    author
+    |> Author.lock_account_changeset(false)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns whether the author account is waiting for confirmation or not.
+
+  ## Examples
+
+      iex> author_confirmation_pending?(%{email_confirmed_at: nil})
+      true
+
+      iex> author_confirmation_pending?(%{email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
+      false
+  """
+  def author_confirmation_pending?(%{email_confirmed_at: nil}), do: true
+
+  def author_confirmation_pending?(_user), do: false
 end

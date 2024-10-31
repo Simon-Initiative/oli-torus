@@ -161,6 +161,7 @@ defmodule OliWeb.AuthorSettingsLive do
 
     socket =
       socket
+      |> assign(:active_workspace, :course_author)
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, author.email)

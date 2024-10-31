@@ -79,6 +79,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
     end
   end
 
+  # MER-3835 TODO: move these functions to a separate annotations plug
   defp assign_notes_and_discussions_enabled(socket, nil),
     do: assign(socket, notes_enabled: false, discussions_enabled: false)
 

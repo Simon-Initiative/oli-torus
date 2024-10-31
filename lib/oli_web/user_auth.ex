@@ -272,12 +272,53 @@ defmodule OliWeb.UserAuth do
     # base :browser and :api pipelines.
     if conn.assigns[:current_user] || conn.assigns[:is_admin] do
       conn
+      |> require_confirmed_email()
+      |> check_account_lock()
     else
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
       |> halt()
+    end
+  end
+
+  defp require_confirmed_email(conn) do
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+
+      %Accounts.User{independent_learner: true, email_confirmed_at: nil} ->
+        conn
+        |> renew_session()
+        |> delete_resp_cookie(@remember_me_cookie)
+        |> put_flash(:info, "You must confirm your email to continue.")
+        |> redirect(to: ~p"/users/confirm")
+        |> halt()
+
+      _ ->
+        conn
+    end
+  end
+
+  defp check_account_lock(conn) do
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+
+      %Accounts.User{locked_at: nil} ->
+        conn
+
+      _ ->
+        conn
+        |> renew_session()
+        |> delete_resp_cookie(@remember_me_cookie)
+        |> put_flash(
+          :error,
+          "Your account has been locked. Please contact support for assistance."
+        )
+        |> redirect(to: ~p"/users/log_in")
+        |> halt()
     end
   end
 

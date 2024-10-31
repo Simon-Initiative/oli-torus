@@ -35,7 +35,7 @@ defmodule OliWeb.UserConfirmationLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "User confirmed successfully.")
+         |> put_flash(:info, "Email successfully confirmed.")
          |> redirect(to: ~p"/")}
 
       :error ->

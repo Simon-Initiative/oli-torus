@@ -35,7 +35,7 @@ defmodule OliWeb.AuthorConfirmationLive do
       {:ok, _} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Author confirmed successfully.")
+         |> put_flash(:info, "Email successfully confirmed.")
          |> redirect(to: ~p"/")}
 
       :error ->

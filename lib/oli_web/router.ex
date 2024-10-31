@@ -216,7 +216,14 @@ defmodule OliWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{OliWeb.UserAuth, :ensure_authenticated}] do
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode
+      ] do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
     end
@@ -1412,11 +1419,12 @@ defmodule OliWeb.Router do
     # Account admin
     scope "/" do
       pipe_through([:require_authenticated_account_admin])
+      # Admin Author/User Account Management
       live("/users", Users.UsersView)
       live("/users/:user_id", Users.UsersDetailView)
-      # Admin Author/User Account Management
+
       live("/authors", Users.AuthorsView)
-      live("/authors/:user_id", Users.AuthorsDetailView)
+      live("/authors/:author_id", Users.AuthorsDetailView)
 
       # Institutions, LTI Registrations and Deployments
       resources("/institutions", InstitutionController, except: [:index])

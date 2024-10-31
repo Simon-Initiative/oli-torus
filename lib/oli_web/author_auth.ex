@@ -236,12 +236,53 @@ defmodule OliWeb.AuthorAuth do
   def require_authenticated_author(conn, _opts) do
     if conn.assigns[:current_author] do
       conn
+      |> require_confirmed_email()
+      |> check_account_lock()
     else
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/authors/log_in")
       |> halt()
+    end
+  end
+
+  defp require_confirmed_email(conn) do
+    case conn.assigns[:current_author] do
+      nil ->
+        conn
+
+      %Accounts.Author{email_confirmed_at: nil} ->
+        conn
+        |> renew_session()
+        |> delete_resp_cookie(@remember_me_cookie)
+        |> put_flash(:info, "You must confirm your email to continue.")
+        |> redirect(to: ~p"/authors/confirm")
+        |> halt()
+
+      _ ->
+        conn
+    end
+  end
+
+  defp check_account_lock(conn) do
+    case conn.assigns[:current_author] do
+      nil ->
+        conn
+
+      %Accounts.Author{locked_at: nil} ->
+        conn
+
+      _ ->
+        conn
+        |> renew_session()
+        |> delete_resp_cookie(@remember_me_cookie)
+        |> put_flash(
+          :error,
+          "Your account has been locked. Please contact support for assistance."
+        )
+        |> redirect(to: ~p"/authors/log_in")
+        |> halt()
     end
   end
 
