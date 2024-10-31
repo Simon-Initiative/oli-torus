@@ -14,15 +14,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
-  alias Oli.Delivery.Metrics
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Settings
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
-  alias OliWeb.Delivery.Student.Lesson.Outline
+  alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
+  alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
+  alias Oli.Delivery.Sections.SectionCache
 
   require Logger
 
@@ -36,11 +35,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     current_user: {[:id, :name, :email], %User{}}
   }
 
+  defp get_or_compute_full_hierarchy(section) do
+    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
+      Hierarchy.full_hierarchy(section)
+    end)
+  end
+
   @decorate transaction_event()
   def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
+      thin_hierarchy =
+        socket.assigns.section
+        |> get_or_compute_full_hierarchy()
+        |> Hierarchy.thin_hierarchy(
+          [
+            "id",
+            "slug",
+            "title",
+            "numbering",
+            "resource_id",
+            "resource_type_id",
+            "children"
+          ],
+          # only include units, modules, sections or pages until level 3
+          fn node -> node["numbering"]["level"] <= 3 end
+        )
+
       %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
       is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
@@ -71,7 +93,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       script_sources =
         Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
+      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
+       temporary_assigns: [hierarchy: thin_hierarchy]}
+
       # These temp assigns were disabled in MER-3672
       #  temporary_assigns: [scripts: [], html: [], page_context: %{}]}
     else
@@ -720,9 +744,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <Annotations.annotations_icon />
         </Annotations.toggle_notes_button>
 
-        <Outline.toggle_outline_button>
-          <Outline.outline_icon />
-        </Outline.toggle_outline_button>
+        <OutlineComponent.toggle_outline_button>
+          <OutlineComponent.outline_icon />
+        </OutlineComponent.toggle_outline_button>
       </:sidebar_toggle>
 
       <:sidebar>
@@ -741,7 +765,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               selected_point={@annotations.selected_point}
             />
           <% :outline -> %>
-            <Outline.panel />
+            <.live_component module={OutlineComponent} id="outline_component" hierarchy={@hierarchy} />
         <% end %>
       </:sidebar>
     </.page_content_with_sidebar_layout>
@@ -966,7 +990,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex-1 flex flex-col w-full overflow-hidden">
       <div class={[
         "flex-1 flex flex-col overflow-auto",
-        if(@active_sidebar_panel, do: "xl:mr-[520px]")
+        if(@active_sidebar_panel == :notes, do: "xl:mr-[520px]"),
+        if(@active_sidebar_panel == :outline, do: "xl:mr-[360px]")
       ]}>
         <div class={[
           "flex-1 mt-20 px-[80px] relative",
@@ -984,7 +1009,10 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     </div>
     <div
       :if={@active_sidebar_panel != :notes}
-      class={["absolute top-20", if(@active_sidebar_panel, do: "right-[520px]", else: "right-0")]}
+      class={[
+        "absolute top-20",
+        if(@active_sidebar_panel == :outline, do: "right-[378px]", else: "right-0")
+      ]}
     >
       <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
         <div class={[
@@ -1000,7 +1028,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     </div>
     <div
       :if={@sidebar && @active_sidebar_panel}
-      class="flex flex-col w-[520px] absolute top-20 right-0 bottom-0"
+      class={[
+        "flex flex-col absolute",
+        if(@active_sidebar_panel == :notes,
+          do: "w-[520px] top-20 right-0 bottom-0",
+          else: "w-[360px] top-4 right-[18px] bottom-[18px]"
+        )
+      ]}
     >
       <%= render_slot(@sidebar) %>
     </div>

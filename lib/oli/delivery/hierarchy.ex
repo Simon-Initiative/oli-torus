@@ -786,6 +786,26 @@ defmodule Oli.Delivery.Hierarchy do
     contained_scheduling_types(full_hierarchy["children"], [], full_hierarchy["resource_id"], %{})
   end
 
+  def thin_hierarchy(hierarchy, fields_to_keep, filter_fn \\ fn _ -> true end)
+
+  def thin_hierarchy(hierarchy, fields_to_keep, filter_fn)
+      when is_map(hierarchy) do
+    if filter_fn.(hierarchy) do
+      hierarchy
+      |> Map.take(fields_to_keep)
+      |> Map.replace("children", thin_hierarchy(hierarchy["children"], fields_to_keep, filter_fn))
+    else
+      nil
+    end
+  end
+
+  def thin_hierarchy(hierarchy, fields_to_keep, filter_fn)
+      when is_list(hierarchy) do
+    hierarchy
+    |> Enum.map(fn node -> thin_hierarchy(node, fields_to_keep, filter_fn) end)
+    |> Enum.reject(&is_nil/1)
+  end
+
   @container_resource_type_id Oli.Resources.ResourceType.id_for_container()
   defp contained_scheduling_types([] = _children, acum_list, current_container_id, result_map),
     do:
