@@ -11,7 +11,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
     LockAccountModal,
     UnlockAccountModal,
     DeleteAccountModal,
-    GrantAdminModal,
     ConfirmEmailModal
   }
 
@@ -173,7 +172,8 @@ defmodule OliWeb.Users.AuthorsDetailView do
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @author.id != @current_author.id and @author.email != System.get_env("ADMIN_EMAIL", "admin@example.edu") do %>
             <Actions.render
-              user={@author}
+              user_id={@author.id}
+              account_locked={!is_nil(@author.locked_at)}
               email_confirmation_pending={Accounts.author_confirmation_pending?(@author)}
               password_reset_link={@password_reset_link}
             />

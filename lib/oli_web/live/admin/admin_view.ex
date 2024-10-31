@@ -28,7 +28,7 @@ defmodule OliWeb.Admin.AdminView do
         <strong>Note:</strong>
         All administrative actions taken in the system are logged for auditing purposes.
       </div>
-      <%= if Accounts.is_admin?(@author) || Accounts.is_account_admin?(@author) do %>
+      <%= if Accounts.has_admin_role?(@author, :account_admin) do %>
         <Group.render label="Account Management" description="Access and manage all users and authors">
           <ul class="link-list">
             <li>

@@ -3,7 +3,8 @@ defmodule OliWeb.Users.Actions do
 
   alias OliWeb.Common.Properties.ReadOnly
 
-  attr(:user, :any, required: true)
+  attr(:user_id, :integer, required: true)
+  attr(:account_locked, :boolean, required: true)
   attr(:email_confirmation_pending, :boolean, required: true)
   attr(:password_reset_link, :string, default: "")
 
@@ -11,7 +12,7 @@ defmodule OliWeb.Users.Actions do
     ~H"""
     <div>
       <div class="form-group">
-        <.button variant={:link} phx-click="generate_reset_password_link" phx-value-id={@user.id}>
+        <.button variant={:link} phx-click="generate_reset_password_link" phx-value-id={@user_id}>
           <i class="fa-solid fa-key"></i> Generate Reset Password Link
         </.button>
 
@@ -27,7 +28,7 @@ defmodule OliWeb.Users.Actions do
           variant={:primary}
           class="mt-2"
           phx-click="resend_confirmation_link"
-          phx-value-id={@user.id}
+          phx-value-id={@user_id}
         >
           Resend confirmation link
         </.button>
@@ -35,7 +36,7 @@ defmodule OliWeb.Users.Actions do
           variant={:primary}
           class=""
           phx-click="show_confirm_email_modal"
-          phx-value-id={@user.id}
+          phx-value-id={@user_id}
         >
           Confirm email
         </.button>
@@ -46,7 +47,7 @@ defmodule OliWeb.Users.Actions do
           variant={:primary}
           class="mt-2"
           phx-click="send_reset_password_link"
-          phx-value-id={@user.id}
+          phx-value-id={@user_id}
         >
           Send password reset link
         </.button>
@@ -54,12 +55,12 @@ defmodule OliWeb.Users.Actions do
         <div class="dropdown-divider"></div>
       <% end %>
 
-      <%= if !is_nil(@user.locked_at) do %>
+      <%= if @account_locked do %>
         <.button
           variant={:warning}
           class="mt-2"
           phx-click="show_unlock_account_modal"
-          phx-value-id={@user.id}
+          phx-value-id={@user_id}
         >
           Unlock Account
         </.button>
@@ -68,7 +69,7 @@ defmodule OliWeb.Users.Actions do
           variant={:warning}
           class="mt-2"
           phx-click="show_lock_account_modal"
-          phx-value-id={@user.id}
+          phx-value-id={@user_id}
         >
           Lock Account
         </.button>
@@ -80,7 +81,7 @@ defmodule OliWeb.Users.Actions do
         variant={:danger}
         class="mt-6"
         phx-click="show_delete_account_modal"
-        phx-value-id={@user.id}
+        phx-value-id={@user_id}
       >
         Delete Account
       </.button>

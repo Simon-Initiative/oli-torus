@@ -21,7 +21,13 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
   def main_layout(assigns) do
     ~H"""
     <div class="flex-1 flex flex-col h-screen">
-      <.header ctx={@ctx} student={@student} section={@section} preview_mode={@preview_mode} />
+      <.header
+        ctx={@ctx}
+        student={@student}
+        section={@section}
+        preview_mode={@preview_mode}
+        is_admin={@is_admin}
+      />
       <Header.delivery_breadcrumb {assigns} />
 
       <div class="flex-1 flex flex-col">

@@ -209,7 +209,8 @@ defmodule OliWeb.Users.UsersDetailView do
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.independent_learner do %>
             <Actions.render
-              user={@user}
+              user_id={@user.id}
+              account_locked={!is_nil(@user.locked_at)}
               email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
               password_reset_link={@password_reset_link}
             />

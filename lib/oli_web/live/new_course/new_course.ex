@@ -1,14 +1,13 @@
 defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
-  on_mount({OliWeb.UserAuth, :ensure_authenticated})
-  on_mount(OliWeb.LiveSessionPlugs.SetSection)
-  on_mount(OliWeb.LiveSessionPlugs.SetBrand)
-  on_mount(OliWeb.LiveSessionPlugs.SetPreviewMode)
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetSection
+  on_mount OliWeb.LiveSessionPlugs.SetBrand
+  on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
   alias Oli.Accounts
   alias Oli.Delivery
-  alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
