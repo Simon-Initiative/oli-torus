@@ -42,7 +42,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   end
 
   @decorate transaction_event()
-  def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
+  def mount(params, _session, %{assigns: %{view: :practice_page}} = socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
@@ -57,7 +57,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             "numbering",
             "resource_id",
             "resource_type_id",
-            "children"
+            "children",
+            "graded",
+            "section_resource"
           ],
           # only include units, modules, sections or pages until level 3
           fn node -> node["numbering"]["level"] <= 3 end
@@ -85,7 +87,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> assign(
           is_instructor: is_instructor,
           page_resource_id: page_context.page.resource_id,
-          active_sidebar_panel: nil
+          active_sidebar_panel: nil,
+          selected_view: String.to_existing_atom(params["selected_view"])
         )
         |> assign_objectives()
         |> slim_assigns()
@@ -765,7 +768,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               selected_point={@annotations.selected_point}
             />
           <% :outline -> %>
-            <.live_component module={OutlineComponent} id="outline_component" hierarchy={@hierarchy} />
+            <.live_component
+              module={OutlineComponent}
+              id="outline_component"
+              hierarchy={@hierarchy}
+              section_slug={@section.slug}
+              selected_view={@selected_view}
+            />
         <% end %>
       </:sidebar>
     </.page_content_with_sidebar_layout>
