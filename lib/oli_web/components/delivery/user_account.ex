@@ -139,7 +139,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <div class="relative">
       <button
         id={@id}
-        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
+        class={[
+          "flex flex-row items-center justify-center rounded-full",
+          @class,
+          "outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600"
+        ]}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
         <.user_icon ctx={@ctx} />
@@ -500,6 +504,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </div>
     """
   end
+
+  attr(:ctx, SessionContext, required: true)
 
   def preview_user_menu(assigns) do
     ~H"""
