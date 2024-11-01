@@ -5321,6 +5321,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 100vh;
 }
 
+.min-h-0 {
+  min-height: 0px;
+}
+
 .min-h-\[300px\] {
   min-height: 300px;
 }
@@ -15691,10 +15695,6 @@ https://tailwindcss.com/docs/utility-first
     margin-left: 1rem;
   }
 
-  .md\:ml-\[190px\] {
-    margin-left: 190px;
-  }
-
   .md\:ml-\[200px\] {
     margin-left: 200px;
   }
@@ -15789,10 +15789,6 @@ https://tailwindcss.com/docs/utility-first
 
   .md\:w-\[200px\] {
     width: 200px;
-  }
-
-  .md\:w-\[calc\(100\%-190px\)\] {
-    width: calc(100% - 190px);
   }
 
   .md\:w-\[calc\(100\%-200px\)\] {
