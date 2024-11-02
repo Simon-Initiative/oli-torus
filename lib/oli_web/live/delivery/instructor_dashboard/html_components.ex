@@ -191,7 +191,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
 
   defp view_example_container(assigns) do
     ~H"""
-    <div class="mb-2">
+    <div class="mb-2 w-full">
       <div
         id={"view_example_outter_button_#{@id}"}
         phx-click={JS.show(to: "#view_example_container_#{@id}") |> JS.hide()}
@@ -204,7 +204,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
       </div>
       <div
         id={"view_example_container_#{@id}"}
-        class="hidden w-[715px] px-3 py-1.5 bg-[#ced9f2]/30 rounded-xl shadow flex-col justify-start items-start inline-flex"
+        class="hidden px-3 py-1.5 bg-[#ced9f2]/30 rounded-xl shadow flex-col justify-start items-start inline-flex"
       >
         <div
           id={"view_example_inner_button_#{@id}"}
