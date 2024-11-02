@@ -21,7 +21,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
           <li>
             <div class="mb-4">
               <.view_example_bullet_entry entry="Practice Pages with Activities">
-                Students achieve 100% progress if they have attempted every activity on that page at least once.
+                Students achieve 100% progress if they have <span class="font-bold">attempted</span>
+                every activity on that page at least once.
               </.view_example_bullet_entry>
             </div>
             <.view_example_container id="1">
@@ -39,7 +40,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
           </li>
           <li>
             <.view_example_bullet_entry entry="Practice Pages without Activities">
-              Students achieve 100% progress if they have visited the page at least once.
+              Students achieve 100% progress if they have <span class="font-bold">visited</span>
+              the page at least once.
             </.view_example_bullet_entry>
           </li>
           <li>
@@ -47,7 +49,17 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
               Scored Assignments:
             </span>
             <span class="font-medium">
-              Students achieve 100% progress on scored assignments if they submit at least one attempt.
+              Students achieve 100% progress on scored assignments if they
+              <span class="font-bold">submit</span>
+              at least one attempt.
+            </span>
+          </li>
+          <li>
+            <span class="font-bold">
+              Surveys:
+            </span>
+            <span class="font-medium">
+              Survey questions <span class="font-bold">do not contribute</span> to student progress.
             </span>
           </li>
         </ul>
@@ -61,7 +73,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             </div>
             <ul class="list-disc list-inside ml-[15px] flex gap-[31px] flex-col">
               <li class="self-stretch font-medium">
-                Each page is either fully complete (1), partially complete (e.g., 0.5), or not complete (0).
+                Each page is either <span class="font-bold">fully complete (1), partially complete (e.g., 0.5)</span>, or <span class="font-bold">not complete (0)</span>.
               </li>
               <li>
                 <div class="self-stretch flex-col justify-start items-start flex gap-[14px]">
