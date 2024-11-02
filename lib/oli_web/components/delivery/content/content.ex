@@ -192,7 +192,7 @@ defmodule OliWeb.Components.Delivery.Content do
           <% end %>
         </div>
 
-        <div class="flex gap-2 mx-9 my-4 ">
+        <div class="flex gap-2 mx-9 mt-4 mb-10">
           <.form for={%{}} phx-target={@myself} phx-change="search_container" class="w-56">
             <SearchInput.render
               id="content_search_input"
