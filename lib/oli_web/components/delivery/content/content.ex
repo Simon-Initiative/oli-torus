@@ -1,6 +1,8 @@
 defmodule OliWeb.Components.Delivery.Content do
   use OliWeb, :live_component
 
+  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
+
   alias Phoenix.LiveView.JS
 
   alias Oli.Delivery.Metrics
@@ -281,14 +283,7 @@ defmodule OliWeb.Components.Delivery.Content do
             Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
           </span>
         </div>
-        <div>
-          <div id={"#{@id}-down-icon"}>
-            <Icons.chevron_down />
-          </div>
-          <div class="hidden" id={"#{@id}-up-icon"}>
-            <Icons.chevron_down class="fill-blue-400 rotate-180" />
-          </div>
-        </div>
+        <.instructor_dasboard_toggle_chevron id={@id} map_values={@selected_values} />
       </div>
       <div class="relative">
         <div
