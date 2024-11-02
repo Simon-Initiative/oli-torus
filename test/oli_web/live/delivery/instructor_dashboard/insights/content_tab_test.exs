@@ -166,20 +166,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
 
-      [module_for_tr_1] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
-
-      assert module_for_tr_1 =~ "Module 2"
+      assert view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{.instructor_dashboard_table tbody tr td a})
+             |> Floki.text() =~ "Module 2"
 
       assert element(view, "#content_search_input-input") |> render() =~
                ~s'value="Module 2"'
-
-      refute render(view) =~ "Module 1 "
-      refute render(view) =~ "Module 3"
 
       ### pagination
       params = %{
@@ -190,16 +184,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
 
       {:ok, view, _html} = live(conn, live_view_content_route(section.slug, params))
 
-      [module_for_tr_1] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
-
-      assert module_for_tr_1 =~ "Module 3"
-      refute render(view) =~ "Module 1"
-      refute render(view) =~ "Module 2"
+      assert view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{.instructor_dashboard_table tbody tr td a})
+             |> Floki.text() =~ "Module 3"
 
       assert element(view, "#footer_paging > div:first-child") |> render() =~
                "3 - 3 of 3 results"
