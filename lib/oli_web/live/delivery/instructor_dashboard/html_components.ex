@@ -31,8 +31,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
                   <span class="font-medium">If a page has</span>
                   <span class="font-bold">5 activities</span>
                   <span class="font-medium">, and a</span>
-                  <span class="font-bold">student completes only 1</span>
-                  <span class="font-medium">, the</span>
+                  <span class="font-bold">student completes only 1,</span>
+                  <span class="font-medium">the</span>
                   <span class="font-bold">progress for that page is 20%.</span>
                 </div>
               </div>
