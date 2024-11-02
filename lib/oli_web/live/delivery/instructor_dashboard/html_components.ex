@@ -14,12 +14,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
     >
       <:title>Student Progress Calculation</:title>
       <div class="dark:text-white text-base">
-        <div class="w-[797px] font-bold mb-9">
+        <div class="w-[797px] font-bold mb-5">
           Lesson Page Progress
         </div>
-        <ul class="flex-col justify-start items-start gap-[31px] inline-flex list-disc list-inside ml-[15px]">
+        <ul class="flex-col justify-start items-start gap-[16px] inline-flex list-disc list-inside ml-[15px]">
           <li>
-            <div class="mb-4">
+            <div class="mb-2">
               <.view_example_bullet_entry entry="Practice Pages with Activities">
                 Students achieve 100% progress if they have <span class="font-bold">attempted</span>
                 every activity on that page at least once.
@@ -63,15 +63,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
             </span>
           </li>
         </ul>
-        <div class="mt-12">
-          <div class="self-stretch font-bold mb-6">
+        <div class="mt-8">
+          <div class="self-stretch font-bold mb-5">
             Average Progress
           </div>
-          <div class="self-stretch flex-col justify-start items-end flex gap-[31px]">
+          <div class="self-stretch flex-col justify-start items-end flex gap-[16px]">
             <div class="self-stretch font-medium">
               The calculation logic for course progress is based on averaging the completion percentages of individual lesson pages within a container (like a module or unit).
             </div>
-            <ul class="list-disc list-inside ml-[15px] flex gap-[31px] flex-col">
+            <ul class="list-disc list-inside ml-[15px] flex gap-[16px] flex-col">
               <li class="self-stretch font-medium">
                 Each page is either <span class="font-bold">fully complete (1), partially complete (e.g., 0.5)</span>, or <span class="font-bold">not complete (0)</span>.
               </li>
@@ -85,7 +85,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
                   <%!-- Blue Container 2 --%>
                   <.view_example_container id="2">
                     <div class="inset-0 flex justify-center items-center pt-5 pb-10">
-                      <div class="ml-20 mr-16 flex flex-col items-start gap-[31px]">
+                      <div class="ml-20 mr-16 flex flex-col items-start gap-[16px]">
                         <%!-- Start Unit 1 --%>
                         <div class="flex-col justify-start gap-3 inline-flex">
                           <.view_example_blue_item content="Unit 1 - 83.3%" />
@@ -101,7 +101,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
                               </.view_example_bullet_entry>
                             </li>
                             <%!-- Start Module 1 --%>
-                            <li class="flex flex-col gap-[31px] list-disc list-inside ml-[15px]">
+                            <li class="flex flex-col gap-[16px] list-disc list-inside ml-[15px]">
                               <div class="h-[90px] flex-col justify-start gap-3 inline-flex">
                                 <.view_example_blue_item content="Module 1 - 100%" />
                                 <ul class="inline-flex flex-col gap-3">
@@ -191,7 +191,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
 
   defp view_example_container(assigns) do
     ~H"""
-    <div>
+    <div class="mb-2">
       <div
         id={"view_example_outter_button_#{@id}"}
         phx-click={JS.show(to: "#view_example_container_#{@id}") |> JS.hide()}
