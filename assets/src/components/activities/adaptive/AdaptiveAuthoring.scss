@@ -1,11 +1,19 @@
 .advanced-authoring {
   .part-property-editor.janus-popup .aa-properties-editor .color-picker-widget-pop-up {
     top: 1133px !important;
+    padding-left: 14px;
   }
   .part-property-editor.janus-navigation-button .aa-properties-editor .color-picker-widget-pop-up {
     top: 559px !important;
+    padding-left: 14px;
   }
   .part-property-editor.janus-text-flow .aa-properties-editor .color-picker-widget-pop-up {
     top: 506px !important;
+    padding-left: 14px;
+  }
+  //Simple Authoring
+  .part-property-editor.janus-popup .color-picker-widget-pop-up {
+    top: 583px !important;
+    padding-left: 14px;
   }
 }
