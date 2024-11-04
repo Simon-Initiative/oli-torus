@@ -51,7 +51,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       id="header"
-      class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
       <.link
         :if={@include_logo}
@@ -120,11 +120,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_nav(assigns) do
     ~H"""
-    <div>
+    <div class="sticky top-0">
       <nav id="desktop-nav-menu" class={["
         transition-all
         duration-100
-        fixed
         z-50
         w-full
         hidden
