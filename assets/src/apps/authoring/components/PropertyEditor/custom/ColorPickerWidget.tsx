@@ -58,7 +58,7 @@ const ColorPickerWidget: React.FC<ColorPickerProps> = (props) => {
       <div>
         <div style={colorDiv} onClick={handleColorBoxClick}></div>
         {displayPicker ? (
-          <div style={popup} ref={pickerRef}>
+          <div style={popup} className="color-picker-widget-pop-up" ref={pickerRef}>
             <SketchPicker
               color={color}
               onChangeComplete={(color) => {
