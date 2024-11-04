@@ -179,7 +179,7 @@ const getExpertComponentUISchema = (instance: any) => {
     };
     return newUiSchema;
   }
-  return partUiSchema; // default ui schema for components that don't specify.
+  return partUiSchema; // default ui schema  for components that don't specify.
 };
 
 export const PartPropertyEditor: React.FC<Props> = ({
