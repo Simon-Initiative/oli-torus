@@ -176,7 +176,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
 
   def render(%{current_author: nil} = assigns) do
     ~H"""
-    <div class="flex-1 flex justify-center items-center">
+    <div class="flex-1 flex justify-center items-center min-h-screen">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.course_author_workspace_sign_in />
       </div>
