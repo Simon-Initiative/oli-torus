@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
   use Phoenix.Component
 
   alias Phoenix.LiveView.JS
+  alias OliWeb.Icons
 
   attr(:type, :string, default: "button")
   attr(:disabled, :boolean, default: false)
@@ -134,6 +135,22 @@ defmodule OliWeb.Components.Delivery.Buttons do
       <span class="hidden sm:inline">Tech Support</span>
       <span class="inline sm:hidden"><i class="fa-solid fa-circle-question"></i></span>
     </button>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :map_values, :map, default: %{}
+
+  def instructor_dasboard_toggle_chevron(assigns) do
+    ~H"""
+    <div>
+      <div id={"#{@id}-down-icon"}>
+        <Icons.chevron_down class={"dark:fill-white " <> if @map_values != %{}, do: "fill-blue-400 dark:fill-blue-400", else: ""} />
+      </div>
+      <div class="hidden" id={"#{@id}-up-icon"}>
+        <Icons.chevron_down class={"rotate-180 dark:fill-white " <> if(@map_values != %{}, do: "fill-blue-400 dark:fill-blue-400", else: "")} />
+      </div>
+    </div>
     """
   end
 end

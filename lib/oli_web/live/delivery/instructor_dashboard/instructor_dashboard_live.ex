@@ -2,6 +2,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
+  import OliWeb.Delivery.InstructorDashboard.HTMLComponents
+
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
@@ -532,6 +534,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         patch_url_type={:instructor_dashboard}
       />
     </div>
+    <.view_example_student_progress_modal />
     """
   end
 

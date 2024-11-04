@@ -607,7 +607,7 @@ defmodule OliWeb.Components.Common do
 
   def progress_bar(assigns) do
     ~H"""
-    <div class="flex flex-row items-center gap-3 mx-auto" role={@role}>
+    <div class="flex flex-row items-center gap-3 mx-auto w-full" role={@role}>
       <div class="flex justify-center w-full">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div

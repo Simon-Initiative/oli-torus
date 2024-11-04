@@ -1,18 +1,20 @@
 defmodule OliWeb.Delivery.Content.Progress do
   use OliWeb, :html
 
-  alias OliWeb.Icons
+  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
 
   attr(:progress_percentage, :string, default: "100")
   attr(:params_from_url, :map, default: %{})
   attr(:target, :any)
 
   attr(:progress_selector, :atom,
-    default: :is_less_than_or_equal,
     values: [:is_equal_to, :is_less_than_or_equal, :is_greather_than_or_equal]
   )
 
   def render(assigns) do
+    progress_selector = assigns.progress_selector || :is_less_than_or_equal
+    assigns = assign(assigns, :progress_selector, progress_selector)
+
     ~H"""
     <div class="relative z-10">
       <div
@@ -34,12 +36,7 @@ defmodule OliWeb.Delivery.Content.Progress do
             @progress_percentage
           ) %>
           <div class="ml-3">
-            <div id="progress-down-icon">
-              <Icons.chevron_down />
-            </div>
-            <div class="hidden" id="progress-up-icon">
-              <Icons.chevron_down class="fill-blue-400 rotate-180" />
-            </div>
+            <.instructor_dasboard_toggle_chevron id="progress" map_values={@progress_selector} />
           </div>
         </button>
       </div>
