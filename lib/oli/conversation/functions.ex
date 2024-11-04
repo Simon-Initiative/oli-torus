@@ -2,6 +2,9 @@ defmodule Oli.Conversation.Functions do
   import Oli.Conversation.Common
   import Ecto.Query, warn: false
 
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.{Section, SectionResourceDepot}
+  alias Oli.Resources.ResourceType
   alias OliWeb.Router.Helpers, as: Routes
 
   @lookup_table %{
@@ -53,8 +56,12 @@ defmodule Oli.Conversation.Functions do
       name: "relevant_course_content",
       description: """
       Useful when a question asked by a student cannot be adequately answered by the context of the current lesson.
-      Allows the retrieval of relevant course content from other lessons in the course based on the
-      student's question. Returns an array of course lessons with the following keys: title, url, content.
+      Allows the retrieval of relevant course content from other lessons in the course based on the student's question.
+      Returns an object with the following keys:
+        - relevant_pages: Pages that may be relevant regarding to the student's question
+        - instructors: Name and email for the instructors of this course
+        - layout: The name of all modules and units for this course
+        - content: The title of all the pages of this course
       """,
       parameters: %{
         type: "object",
@@ -123,27 +130,32 @@ defmodule Oli.Conversation.Functions do
   def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do
     section = Oli.Delivery.Sections.get_section!(section_id)
 
-    case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
-      {:ok, relevant_pages} ->
-        Enum.map(relevant_pages, fn page ->
-          revision = Oli.Resources.get_revision!(page.revision_id)
+    relevant_pages =
+      case Oli.Search.Embeddings.most_relevant_pages(input, section_id) do
+        {:ok, relevant_pages} ->
+          Enum.map(relevant_pages, fn page ->
+            revision = Oli.Resources.get_revision!(page.revision_id)
 
-          content =
-            Enum.map(page.chunks, fn chunk ->
-              chunk.content
-            end)
-            |> Enum.join("\n\n")
+            content =
+              Enum.map(page.chunks, fn chunk ->
+                chunk.content
+              end)
+              |> Enum.join("\n\n")
 
-          %{
-            title: page.title,
-            url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
-            content: content
-          }
-        end)
+            %{
+              title: page.title,
+              url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, revision.slug),
+              content: content
+            }
+          end)
 
-      e ->
-        e
-    end
+        _e ->
+          []
+      end
+
+    section_id
+    |> get_section_prompt_info()
+    |> Map.put(:relevant_pages, relevant_pages)
   end
 
   def get_next_activities_for_student(section_id, user_id) do
@@ -175,5 +187,44 @@ defmodule Oli.Conversation.Functions do
           Map.get(ras, page.resource_id, %{resource_attempts_count: 0}).resource_attempts_count
       }
     end)
+  end
+
+  defp get_section_prompt_info(section_id) do
+    %Section{customizations: customizations} = section = Oli.Repo.get(Section, section_id)
+
+    {containers, pages} =
+      section_id
+      |> SectionResourceDepot.get_section_resources_by_type_ids([
+        ResourceType.id_for_container(),
+        ResourceType.id_for_page()
+      ])
+      |> Enum.split_with(&(&1.resource_type_id == ResourceType.id_for_container()))
+
+    instructors =
+      section.slug
+      |> Sections.fetch_instructors()
+      |> Enum.map(&%{name: &1.name, email: &1.email})
+
+    content = Enum.map(pages, & &1.title)
+
+    layout =
+      containers
+      |> Enum.sort_by(&{&1.numbering_level, &1.numbering_index})
+      |> Enum.map(fn c ->
+        label =
+          Sections.get_container_label_and_numbering(
+            c.numbering_level,
+            c.numbering_index,
+            customizations
+          )
+
+        "#{label}: #{c.title}"
+      end)
+
+    %{
+      instructors: instructors,
+      layout: layout,
+      content: content
+    }
   end
 end

@@ -201,3 +201,5 @@ declare global {
     keepAlive: () => void;
   }
 }
+
+export { liveSocket };

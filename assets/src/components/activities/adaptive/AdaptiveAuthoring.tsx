@@ -14,6 +14,7 @@ import { clone } from 'utils/common';
 import { ModalContainer } from '../../../apps/authoring/components/AdvancedAuthoringModal';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
+import './AdaptiveAuthoring.scss';
 import LayoutEditor from './components/authoring/LayoutEditor';
 import { AdaptiveModelSchema } from './schema';
 

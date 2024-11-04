@@ -23,7 +23,7 @@ defmodule OliWeb.Common.InstructorDashboardPagedTable do
 
   def render(assigns) do
     ~H"""
-    <div class={if @scrollable, do: "overflow-x-scroll"}>
+    <div class={if @scrollable, do: "overflow-x-scroll inline"}>
       <%= if @filter != "" and @render_top_info do %>
         <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
       <% end %>

@@ -114,7 +114,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
 
   def render(%{current_user: nil} = assigns) do
     ~H"""
-    <div class="flex justify-center items-center min-h-screen">
+    <div class="flex-1 flex justify-center items-center">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.instructor_workspace_sign_in />
       </div>
@@ -281,7 +281,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             ]}
           >
             <div class="w-3 h-5 relative">
-              <div class="w-5 h-5 left-[-8px] top-0 absolute text-white"><Icons.plus /></div>
+              <Icons.plus class="w-5 h-5 left-[-8px] top-0 absolute" path_class="stroke-white" />
             </div>
             <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
               Create New Section

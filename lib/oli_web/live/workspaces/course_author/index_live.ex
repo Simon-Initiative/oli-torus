@@ -176,7 +176,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
 
   def render(%{current_author: nil} = assigns) do
     ~H"""
-    <div class="flex justify-center items-center min-h-screen">
+    <div class="flex-1 flex justify-center items-center">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.course_author_workspace_sign_in />
       </div>
@@ -286,14 +286,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
   def render(assigns) do
     ~H"""
     <%= render_modal(assigns) %>
-    <div class="dark:bg-[#0F0D0F] bg-[#F3F4F8]">
+    <div class="flex-1 flex flex-col">
       <div class="relative flex items-center h-[247px]">
         <div class="absolute top-0 h-full w-full">
           <Backgrounds.course_author_header />
         </div>
         <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
-            <Icons.pencil_writing color="black" />
+            <Icons.pencil_writing class="stroke-black dark:stroke-white" />
             <h1 class="text-[#353740] dark:text-white text-[32px] font-bold leading-normal">
               Course Author
             </h1>
@@ -366,9 +366,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
                     ]}
                   >
                     <div class="w-3 h-5 relative">
-                      <div class="w-5 h-5 left-[-8px] top-0 absolute text-white">
-                        <Icons.plus />
-                      </div>
+                      <Icons.plus
+                        class="w-5 h-5 left-[-8px] top-0 absolute"
+                        path_class="stroke-white"
+                      />
                     </div>
                     <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
                       New Project

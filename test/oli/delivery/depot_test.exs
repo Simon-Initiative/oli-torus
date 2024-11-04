@@ -147,4 +147,23 @@ defmodule Oli.Delivery.DepotTest do
              %R{id: 2, title: "2", graded: false}
            ] = Depot.query(@desc, 1, graded: false, title: "2")
   end
+
+  test "count" do
+    # Create a table with a few records
+    Depot.create_table(@desc, 1)
+
+    # r({id, section_id, title, graded, created}),
+    Depot.update_all(@desc, [
+      r({1, 1, "1", true, DateTime.utc_now()}),
+      r({2, 1, "2", false, DateTime.utc_now()}),
+      r({3, 1, "3", true, DateTime.utc_now()}),
+      r({4, 1, "Some repeated title", false, DateTime.utc_now()}),
+      r({5, 1, "Some repeated title", true, DateTime.utc_now()})
+    ])
+
+    assert 5 = Depot.count(@desc, 1, [])
+    assert 3 = Depot.count(@desc, 1, graded: true)
+    assert 2 = Depot.count(@desc, 1, graded: false)
+    assert 2 = Depot.count(@desc, 1, title: "Some repeated title")
+  end
 end

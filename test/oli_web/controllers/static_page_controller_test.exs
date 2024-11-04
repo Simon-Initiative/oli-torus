@@ -165,7 +165,7 @@ defmodule OliWeb.StaticPageControllerTest do
       conn = get(conn, Routes.static_page_path(conn, :index))
 
       assert response(conn, 200) =~
-               "Navigate to your institution’s LMS to access your online course."
+               "Navigate to your institution’s Learning Management System to access your online course."
     end
   end
 

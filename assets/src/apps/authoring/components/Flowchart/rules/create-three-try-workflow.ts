@@ -8,6 +8,7 @@ import {
 import {
   DEFAULT_BLANK_FEEDBACK,
   DEFAULT_FILLED_IN_FEEDBACK,
+  DEFAULT_INCORRECT_FEEDBACK,
   IConditionWithFeedback,
   generateRule,
   newId,
@@ -122,7 +123,9 @@ export const generateMaxTryWorkflow = (
         incorrect.destinationId,
         false,
         40,
-        options.threeTimesFeedback,
+        extraOptions.maxAttempt == '1' && incorrect.feedback != DEFAULT_INCORRECT_FEEDBACK
+          ? incorrect.feedback
+          : options.threeTimesFeedback,
         [...setCorrectAction],
       ),
     );

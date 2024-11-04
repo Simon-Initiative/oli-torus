@@ -240,7 +240,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -266,7 +266,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -748,7 +748,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     >
       <div class="justify-start items-end gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center">
-          <Icons.support />
+          <Icons.support class="" />
         </div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">Support</div>
       </div>
@@ -764,7 +764,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id="exit_course_button"
       navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
-      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white"
     >
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
