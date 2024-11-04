@@ -10,33 +10,6 @@
   @apply font-bold text-gray-800 dark:text-white;
 }
 
-.instructor_dashboard_table th i {
-  @apply hidden;
-}
-
-.instructor_dashboard_table th[data-sortable='true'][data-sort-order='desc']::after {
-  content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-}
-
-.instructor_dashboard_table th[data-sortable='true'][data-sort-order='asc']::after {
-  content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%235B1EEA' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.0' d='M6 12 L10 8 L14 12'/%3e%3c/svg%3e");
-}
-
-.instructor_dashboard_table th[data-sortable='true'][data-sort-column='true']::after {
-  height: 20px;
-  width: 20px;
-  display: inline-block;
-  transform: translateY(6px);
-}
-
-.instructor_dashboard_table th[data-sortable='true'][data-sort-column='false']::after {
-  height: 20px;
-  width: 20px;
-  display: inline-block;
-  transform: translateY(6px);
-  filter: grayscale(100%);
-}
-
 .instructor_dashboard_table_link {
   @apply h-14 text-gray-500 dark:text-white font-semibold text-xs sm:text-sm;
 }

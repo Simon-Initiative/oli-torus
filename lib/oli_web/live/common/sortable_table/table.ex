@@ -57,7 +57,11 @@ defmodule OliWeb.Common.SortableTable.Table do
       <% end %>
 
       <%= if @column_spec.sortable do %>
-        <i class={"fas fa-sort-" <> @sort_direction_cls} />
+        <OliWeb.Icons.chevron_down
+          width="20"
+          height="20"
+          class={"inline fill-black dark:fill-white " <> if @sort_direction_cls == "up", do: "", else: "rotate-180 "}
+        />
       <% end %>
     </th>
     """

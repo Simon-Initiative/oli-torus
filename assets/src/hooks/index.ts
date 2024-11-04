@@ -3,6 +3,7 @@ import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
+import { ClickExecJS } from './click_variations';
 import { CopyListener } from './copy_listener';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
@@ -60,6 +61,7 @@ export const Hooks = {
   TooltipInit,
   TooltipWithTarget,
   AutoHideTooltip,
+  ClickExecJS,
   BeforeUnloadListener,
   ThemeToggle,
   LtiConnectInstructions,
