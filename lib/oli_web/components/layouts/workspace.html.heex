@@ -1,44 +1,48 @@
 <main role="main" class="relative flex flex-col">
-  <div
-    :if={assigns[:header_enabled?] && !@disable_sidebar? && assigns[:active_workspace]}
-    class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
-  >
-    <div class={"mr-3 my-auto #{if assigns[:resource_title], do: "flex items-center justify-between w-full", else: "ml-auto"}"}>
-      <div
-        :if={assigns[:resource_title]}
-        class={"text-[#757682] dark:text-[#FFF] font-medium #{if @sidebar_expanded, do: "ml-60", else: "ml-20"}"}
-      >
-        <%= @resource_title %>
+  <div class="sticky top-0 z-50">
+    <div
+      :if={assigns[:header_enabled?] && !@disable_sidebar? && assigns[:active_workspace]}
+      class="w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+    >
+      <div class={"mr-3 my-auto #{if assigns[:resource_title], do: "flex items-center justify-between w-full", else: "ml-auto"}"}>
+        <div
+          :if={assigns[:resource_title]}
+          class={"text-[#757682] dark:text-[#FFF] font-medium #{if @sidebar_expanded, do: "ml-60", else: "ml-20"}"}
+        >
+          <%= @resource_title %>
+        </div>
+        <Components.Delivery.UserAccount.workspace_menu
+          id="workspace-user-menu"
+          ctx={@ctx}
+          has_admin_role={@has_admin_role}
+          active_workspace={@active_workspace}
+        />
       </div>
-      <Components.Delivery.UserAccount.workspace_menu
-        id="workspace-user-menu"
+    </div>
+    <div class="absolute top-0">
+      <Components.Delivery.Layouts.workspace_sidebar_nav
+        :if={!@disable_sidebar?}
         ctx={@ctx}
-        has_admin_role={@has_admin_role}
-        active_workspace={@active_workspace}
+        is_system_admin={assigns[:is_system_admin] || false}
+        active_workspace={assigns[:active_workspace] || :student}
+        active_view={assigns[:active_view]}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
+        resource_title={assigns[:resource_title]}
+        resource_slug={assigns[:resource_slug]}
+        active_tab={assigns[:active_tab]}
+        uri={assigns[:uri] || ""}
+      />
+      <Components.Delivery.Layouts.header
+        :if={@disable_sidebar?}
+        ctx={@ctx}
+        include_logo
+        is_system_admin={assigns[:is_system_admin] || false}
+        preview_mode={@preview_mode}
+        sidebar_expanded={@sidebar_expanded}
       />
     </div>
   </div>
-  <Components.Delivery.Layouts.workspace_sidebar_nav
-    :if={!@disable_sidebar?}
-    ctx={@ctx}
-    is_system_admin={assigns[:is_system_admin] || false}
-    active_workspace={assigns[:active_workspace] || :student}
-    active_view={assigns[:active_view]}
-    preview_mode={@preview_mode}
-    sidebar_expanded={@sidebar_expanded}
-    resource_title={assigns[:resource_title]}
-    resource_slug={assigns[:resource_slug]}
-    active_tab={assigns[:active_tab]}
-    uri={assigns[:uri] || ""}
-  />
-  <Components.Delivery.Layouts.header
-    :if={@disable_sidebar?}
-    ctx={@ctx}
-    include_logo
-    is_system_admin={assigns[:is_system_admin] || false}
-    preview_mode={@preview_mode}
-    sidebar_expanded={@sidebar_expanded}
-  />
   <div
     id="content"
     class={[
@@ -47,7 +51,6 @@
         do: "md:w-[calc(100%-200px)] md:ml-[200px]",
         else: "md:w-[calc(100%-60px)] md:ml-[60px]"
       ),
-      if(assigns[:header_enabled?] && true, do: "mt-14"),
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >

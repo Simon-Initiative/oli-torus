@@ -288,16 +288,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
-    <div>
+    <div class="sticky top-0">
       <nav
         id="desktop-workspace-nav-menu"
         style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
         class={["
         transition-all
         duration-100
-        fixed
         z-50
-        top-0
         w-full
         hidden
         h-[100vh]
