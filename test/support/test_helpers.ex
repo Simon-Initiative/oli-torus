@@ -66,9 +66,8 @@ defmodule Oli.TestHelpers do
     Mox.stub(Oli.Test.DateMock, :utc_today, fn -> DateTime.to_date(utc_now) end)
   end
 
-  def yesterday() do
-    {:ok, datetime} = DateTime.now("Etc/UTC")
-    DateTime.add(datetime, -(60 * 60 * 24), :second)
+  def yesterday(now \\ DateTime.now!("Etc/UTC")) do
+    DateTime.add(now, -(60 * 60 * 24), :second)
   end
 
   def tomorrow() do
