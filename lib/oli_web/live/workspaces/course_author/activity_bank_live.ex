@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
         scripts = Oli.Activities.get_activity_scripts() |> Enum.map(&"/js/#{&1}")
 
         assign(socket,
-          scripts_loaded: false,
+          maybe_scripts_loaded: false,
           scripts: scripts,
           error: false,
           active: :bank,
@@ -39,7 +39,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
     ~H"""
     <div id="eventIntercept" phx-hook="LoadSurveyScripts">
       <h2 id="header_id" class="pb-2">Activity Bank</h2>
-      <%= if connected?(@socket) and assigns[:scripts_loaded] do %>
+      <%= if connected?(@socket) and assigns[:maybe_scripts_loaded] do %>
         <.maybe_show_error error={@error} />
         <div id="editor">
           <%= React.component(
@@ -59,11 +59,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
 
   @impl true
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
-    {:noreply, assign(socket, error: true, scripts_loaded: true)}
+    {:noreply, assign(socket, error: true, maybe_scripts_loaded: true)}
   end
 
   def handle_event("survey_scripts_loaded", _params, socket) do
-    {:noreply, assign(socket, scripts_loaded: true)}
+    {:noreply, assign(socket, maybe_scripts_loaded: true)}
   end
 
   attr :error, :boolean, required: true
