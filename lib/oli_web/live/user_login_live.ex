@@ -47,7 +47,7 @@ defmodule OliWeb.UserLoginLive do
             action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
             registration_link={~p"/users/register"}
             reset_password_link={~p"/users/reset_password"}
-            provider_links={[]}
+            authentication_providers={@authentication_providers}
           />
         </div>
       </div>
@@ -71,7 +71,7 @@ defmodule OliWeb.UserLoginLive do
             action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
             registration_link={~p"/users/register"}
             reset_password_link={~p"/users/reset_password"}
-            provider_links={[]}
+            authentication_providers={@authentication_providers}
           />
         </div>
       </div>
@@ -81,18 +81,18 @@ defmodule OliWeb.UserLoginLive do
 
   @impl Phoenix.LiveView
   def mount(_, session, socket) do
-    provider_links = []
-
     title = session["title"] || "Sign in"
 
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
 
+    authentication_providers = OliWeb.UserAuth.authentication_providers()
+
     {:ok,
      assign(socket,
        title: title,
        form: form,
-       provider_links: provider_links,
+       authentication_providers: authentication_providers,
        from_invitation_link?: false,
        section: nil
      ), temporary_assigns: [form: form]}

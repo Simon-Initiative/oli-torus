@@ -1,6 +1,8 @@
 defmodule Oli.UserIdentities.UserIdentity do
   use Ecto.Schema
 
+  import Ecto.Changeset
+
   schema "user_identities" do
     # MER-3835 TODO
     field :provider, :string
@@ -16,9 +18,9 @@ defmodule Oli.UserIdentities.UserIdentity do
   """
   def changeset(user_identity_or_changeset, attrs) do
     user_identity_or_changeset
-    |> Changeset.cast(attrs, [:provider, :uid, :user_id])
-    |> Changeset.validate_required([:provider, :uid])
-    |> Changeset.assoc_constraint(:user)
-    |> Changeset.unique_constraint(:uid_provider, name: :user_identities_uid_provider_index)
+    |> cast(attrs, [:provider, :uid, :user_id])
+    |> validate_required([:provider, :uid])
+    |> assoc_constraint(:user)
+    |> unique_constraint(:uid_provider, name: :user_identities_uid_provider_index)
   end
 end

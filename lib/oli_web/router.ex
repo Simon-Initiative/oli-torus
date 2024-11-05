@@ -239,6 +239,13 @@ defmodule OliWeb.Router do
       live "/users/confirm/:token", UserConfirmationLive, :edit
       live "/users/confirm", UserConfirmationInstructionsLive, :new
     end
+
+    # OAuth social login provider routes
+    resources "/auth/:provider", UserAuthorizationController,
+      singleton: true,
+      only: [:new, :delete]
+
+    get "/auth/:provider/callback", UserAuthorizationController, :callback
   end
 
   scope "/", OliWeb do

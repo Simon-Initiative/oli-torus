@@ -243,7 +243,49 @@ defmodule Oli.Accounts.User do
   end
 
   @doc """
-  Creates a changeset that doesnt require a current password, used for lower risk changes to user
+  Changeset for creating or updating users with a user identity.
+  """
+  def user_identity_changeset(user_or_changeset, user_identity, attrs) do
+    user_or_changeset
+    |> cast(attrs, [
+      :sub,
+      :email,
+      :email_verified,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address
+    ])
+    |> cast(%{user_identities: [user_identity]}, [])
+    |> cast_assoc(:user_identities)
+    |> put_change(:independent_learner, true)
+    |> put_change(:guest, false)
+    |> confirm_email_if_verified()
+  end
+
+  defp confirm_email_if_verified(changeset) do
+    if get_change(changeset, :email_verified) do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      change(changeset, email_confirmed_at: now)
+    else
+      changeset
+    end
+  end
+
+  @doc """
+  Creates a changeset that doesn't require a current password, used for lower risk changes to user
   (as opposed to higher risk, like password changes)
   """
   def noauth_changeset(user, attrs \\ %{}) do

@@ -106,13 +106,4 @@ config :logger, truncate: truncate
 
 config :appsignal, :config, active: false
 
-config :oli, :auth_providers,
-  google_client_id: System.get_env("GOOGLE_CLIENT_ID", "client_id"),
-  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", "client_secret"),
-  author_github_client_id: System.get_env("AUTHOR_GITHUB_CLIENT_ID", "author_client_id"),
-  author_github_client_secret:
-    System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", "author_client_secret"),
-  user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", "user_client_id"),
-  user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "user_client_secret")
-
 config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher

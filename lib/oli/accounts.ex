@@ -1126,6 +1126,34 @@ defmodule Oli.Accounts do
     end
   end
 
+  @doc """
+  Adds a user password. Used for accounts initially created by a login provider. This function
+  should only run when the user has no password set.
+
+  ## Examples
+
+      iex> create_user_password(user, %{password: ...})
+      {:ok, %User{}}
+
+      iex> create_user_password(user, %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_user_password(%{password_hash: nil} = user, attrs) do
+    changeset =
+      user
+      |> User.password_changeset(attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
   ## Session
 
   @doc """
@@ -1306,6 +1334,8 @@ defmodule Oli.Accounts do
   def user_confirmation_pending?(%{email_confirmed_at: nil}), do: true
 
   def user_confirmation_pending?(_user), do: false
+
+  ## Author
 
   @doc """
   Gets an author by email.

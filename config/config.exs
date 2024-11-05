@@ -263,14 +263,6 @@ config :ex_json_schema,
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
 
-config :oli, :auth_providers,
-  google_client_id: System.get_env("GOOGLE_CLIENT_ID", ""),
-  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", ""),
-  author_github_client_id: System.get_env("AUTHOR_GITHUB_CLIENT_ID", ""),
-  author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
-  user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
-  user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
-
 # Configure libcluster for horizontal scaling
 # Take into account that different strategies could use different config options
 config :libcluster,

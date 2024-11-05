@@ -20,7 +20,7 @@ defmodule OliWeb.UserRegistrationLive do
             form={@form}
             action={~p"/users/log_in?_action=registered"}
             log_in_link={~p"/users/log_in"}
-            provider_links={[]}
+            authentication_providers={@authentication_providers}
             trigger_submit={@trigger_submit}
             check_errors={@check_errors}
             recaptcha_error={@recaptcha_error}
@@ -34,12 +34,15 @@ defmodule OliWeb.UserRegistrationLive do
   def mount(_params, _session, socket) do
     changeset = Accounts.change_user_registration(%User{})
 
+    authentication_providers = OliWeb.UserAuth.authentication_providers()
+
     socket =
       socket
       |> assign(
         trigger_submit: false,
         check_errors: false,
-        recaptcha_error: false
+        recaptcha_error: false,
+        authentication_providers: authentication_providers
       )
       |> assign_form(changeset)
 

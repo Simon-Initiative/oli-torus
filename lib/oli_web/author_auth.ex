@@ -330,6 +330,12 @@ defmodule OliWeb.AuthorAuth do
     end
   end
 
+  def provider_links() do
+    Application.get_env(:oli, :author_auth_providers)
+    |> Keyword.keys()
+    |> Enum.map(&{&1, ~p"/author/auth/#{&1}/new"})
+  end
+
   defp put_token_in_session(conn, token) do
     conn
     |> put_session(:author_token, token)

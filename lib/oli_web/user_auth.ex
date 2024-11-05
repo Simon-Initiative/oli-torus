@@ -283,6 +283,11 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  def authentication_providers() do
+    Application.get_env(:oli, :user_auth_providers)
+    |> Keyword.keys()
+  end
+
   defp require_confirmed_email(conn) do
     case conn.assigns[:current_user] do
       nil ->

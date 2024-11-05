@@ -3,7 +3,9 @@ defmodule OliWeb.UserSettingsLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias OliWeb.AuthAssent
   alias OliWeb.Common.Properties.{Groups, Group}
+  alias OliWeb.Components.Auth
 
   def render(assigns) do
     ~H"""
@@ -27,13 +29,6 @@ defmodule OliWeb.UserSettingsLive do
                 <.button variant={:primary} phx-disable-with="Saving...">Save</.button>
               </div>
             </.form>
-
-            <div :if={!Enum.empty?(providers_for(@current_user))} class="col-span-12 mb-10">
-              <h4 class="mt-3">Credentials Managed By</h4>
-              <div :for={provider <- providers_for(@current_user)} class="my-2">
-                <% # MER-3835 TODO %>
-              </div>
-            </div>
 
             <.form
               for={@email_form}
@@ -75,6 +70,7 @@ defmodule OliWeb.UserSettingsLive do
                 value={@current_email}
               />
               <.input
+                :if={@has_password}
                 field={@password_form[:current_password]}
                 name="current_password"
                 type="password"
@@ -95,6 +91,18 @@ defmodule OliWeb.UserSettingsLive do
                 <.button variant={:primary} phx-disable-with="Changing...">Change Password</.button>
               </div>
             </.form>
+
+            <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-2 mb-10">
+              <h4 class="mt-3">Credentials Managed By</h4>
+
+              <%= for {provider, managed?} <- @login_providers do %>
+                <%= if managed? do %>
+                  <Auth.deauthorization_link provider={provider} />
+                <% else %>
+                  <Auth.authorization_link provider={provider} />
+                <% end %>
+              <% end %>
+            </div>
           </div>
         </div>
       </Group.render>
@@ -136,6 +144,8 @@ defmodule OliWeb.UserSettingsLive do
       |> assign(:editor, editor)
       |> assign(:show_relative_dates, show_relative_dates)
       |> assign(:trigger_submit, false)
+      |> assign(:login_providers, login_providers_and_statuses(user))
+      |> assign(:has_password, AuthAssent.has_password?(user))
 
     {:ok, socket}
   end
@@ -206,7 +216,7 @@ defmodule OliWeb.UserSettingsLive do
   end
 
   def handle_event("validate_password", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
+    %{"user" => user_params} = params
 
     password_form =
       socket.assigns.current_user
@@ -214,11 +224,15 @@ defmodule OliWeb.UserSettingsLive do
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, password_form: password_form, current_password: password)}
+    {:noreply,
+     assign(socket, password_form: password_form, current_password: params["current_password"])}
   end
 
-  def handle_event("update_password", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
+  def handle_event(
+        "update_password",
+        %{"current_password" => password, "user" => user_params},
+        socket
+      ) do
     user = socket.assigns.current_user
 
     case Accounts.update_user_password(user, password, user_params) do
@@ -235,8 +249,34 @@ defmodule OliWeb.UserSettingsLive do
     end
   end
 
-  defp providers_for(%User{} = user) do
-    # MER-3835 TODO
-    []
+  def handle_event("update_password", %{"user" => user_params}, socket) do
+    user = socket.assigns.current_user
+
+    case Accounts.create_user_password(user, user_params) do
+      {:ok, user} ->
+        password_form =
+          user
+          |> Accounts.change_user_password(user_params)
+          |> to_form()
+
+        {:noreply,
+         assign(socket, trigger_submit: true, password_form: password_form, has_password: true)}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  defp login_providers_and_statuses(%User{} = user) do
+    user_identity_providers_map =
+      AuthAssent.list_user_identities(user)
+      |> Enum.reduce(%{}, fn identity, acc ->
+        Map.put(acc, String.to_existing_atom(identity.provider), true)
+      end)
+
+    Application.get_env(:oli, :user_auth_providers)
+    |> Keyword.keys()
+    |> Enum.map(&{&1, Map.has_key?(user_identity_providers_map, &1)})
+    |> Enum.sort_by(&elem(&1, 1))
   end
 end

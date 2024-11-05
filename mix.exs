@@ -129,6 +129,7 @@ defmodule Oli.MixProject do
   defp deps do
     [
       {:appsignal_phoenix, "~> 2.3"},
+      {:assent, "~> 0.2.9"},
       {:bamboo, "~> 2.2"},
       {:bamboo_ses, "~> 0.3.0"},
       {:bamboo_phoenix, "~> 1.0"},
