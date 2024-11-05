@@ -177,17 +177,29 @@ defmodule OliWeb.ProductsLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_all_products)
 
+      view
+      |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> render_click()
+
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~ product.title
 
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~ product_2.title
+
       view
-      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
-      |> render_click(%{sort_by: "inserted_at"})
+      |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"inserted_at\"]")
+      |> render_click()
 
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~ product_2.title
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~ product.title
     end
 
     test "include archived products", %{conn: conn, product: product} do

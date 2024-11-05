@@ -1,12 +1,14 @@
 defmodule OliWeb.Components.Delivery.Students do
-  alias OliWeb.Common.InstructorDashboardPagedTable
   use OliWeb, :live_component
+
+  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
 
   alias Phoenix.LiveView.JS
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.{SearchInput, Params, Utils}
+  alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -618,14 +620,7 @@ defmodule OliWeb.Components.Delivery.Students do
             Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
           </span>
         </div>
-        <div>
-          <div id={"#{@id}-down-icon"}>
-            <Icons.chevron_down />
-          </div>
-          <div class="hidden" id={"#{@id}-up-icon"}>
-            <Icons.chevron_down class="fill-blue-400 rotate-180" />
-          </div>
-        </div>
+        <.instructor_dasboard_toggle_chevron id={@id} map_values={@selected_values} />
       </div>
       <div class="relative">
         <div

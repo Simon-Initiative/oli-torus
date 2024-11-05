@@ -351,7 +351,14 @@ defmodule Oli.AccountsTest do
 
     test "setup_sso_author/2 creates author and user if do not exist and associates user to the given community" do
       community = insert(:community)
-      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+
+      fields = %{
+        "sub" => "sub",
+        "cognito:username" => "ea06d74d-a1f6-4fdc-a8b3-b4550f9625f1",
+        "email" => "email",
+        "name" => "username"
+      }
+
       {:ok, author} = Accounts.setup_sso_author(fields, community.id)
 
       assert author.name == "username"
@@ -359,7 +366,7 @@ defmodule Oli.AccountsTest do
 
       user = Accounts.get_user_by(%{email: "email"})
       assert user.sub == "sub"
-      assert user.preferred_username == "username"
+      assert user.preferred_username == "ea06d74d-a1f6-4fdc-a8b3-b4550f9625f1"
       assert user.email == "email"
       assert user.can_create_sections
 
@@ -640,7 +647,13 @@ defmodule Oli.AccountsTest do
     test "creates both a user and an author, and links them together" do
       user_email = "user@email.com"
       community = insert(:community)
-      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => user_email}
+
+      fields = %{
+        "sub" => "sub",
+        "name" => "username",
+        "email" => user_email,
+        "cognito:username" => "ea06d74d-a1f6-4fdc-a8b3-b4550f9625f1"
+      }
 
       {:ok, user, author} = Accounts.setup_sso_user(fields, community.id)
 
@@ -648,7 +661,7 @@ defmodule Oli.AccountsTest do
       author_id = author.id
 
       assert user.sub == "sub"
-      assert user.preferred_username == "username"
+      assert user.preferred_username == "ea06d74d-a1f6-4fdc-a8b3-b4550f9625f1"
       assert user.email == user_email
       assert user.can_create_sections
 
@@ -671,7 +684,7 @@ defmodule Oli.AccountsTest do
       existing_user = insert(:user, email: user_email, author: existing_author, sub: "sub")
 
       community = insert(:community)
-      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => user_email}
+      fields = %{"sub" => "sub", "name" => "username", "email" => user_email}
 
       {:ok, user, author} = Accounts.setup_sso_user(fields, community.id)
 

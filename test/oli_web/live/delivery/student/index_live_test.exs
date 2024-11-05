@@ -1028,15 +1028,19 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
     end
 
-    test "can see the course progress", %{
+    test "can see the course progress details and navigate to the learn page", %{
       conn: conn,
       user: user,
       section: section,
       page_4: page_4,
+      page_5: page_5,
       mcq_1: mcq_1,
       project: project,
       publication: publication
     } do
+      # the progress for the course progress component is calculated in an "acid" way,
+      # where only 100% completed pages are considered for the progress calculation
+
       stub_current_time(~U[2024-05-01 20:00:00Z])
 
       set_activity_attempt(
@@ -1052,12 +1056,34 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
 
       set_progress(section.id, page_4.resource_id, user.id, 1.0, page_4)
 
+      # this page should not be considered for the progress calculation,
+      # since it's progress is 50%
+      set_progress(section.id, page_5.resource_id, user.id, 0.5, page_5)
+
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
-      # Shows course progress initial message
       assert has_element?(view, "div", "Course Progress")
+      assert has_element?(view, "a", "1/6 Pages Completed")
+      # 1/6 = 0.166666 => rounded to 17%
+      assert has_element?(view, "span", "17")
 
-      assert has_element?(view, "div", "17%")
+      # navigate to the learn page
+      assert view
+             |> element("a", "1/6 Pages Completed")
+             |> render_click() ==
+               {:error,
+                {:live_redirect,
+                 %{kind: :push, to: "/sections/#{section.slug}/learn?sidebar_expanded=true"}}}
+
+      # the student now completes page_5
+      # so we should see that page considered for the progress calculation
+      set_progress(section.id, page_5.resource_id, user.id, 1.0, page_5)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "a", "2/6 Pages Completed")
+      # 2/6 = 0.333333 => rounded to 33%
+      assert has_element?(view, "span", "33")
     end
 
     test "can see upcoming agenda if this option is enabled", %{

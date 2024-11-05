@@ -1026,10 +1026,10 @@ defmodule Oli.Accounts do
 
   defp get_or_create_author(_repo, %{user: %{author_id: nil} = user}, fields) do
     email = Map.get(fields, "email")
-    username = Map.get(fields, "cognito:username")
+    name = Map.get(fields, "name")
 
     %Author{}
-    |> Author.sso_changeset(%{name: username, email: email})
+    |> Author.sso_changeset(%{name: name, email: email})
     |> Repo.insert()
     |> case do
       {:ok, author} = result ->
@@ -1047,12 +1047,12 @@ defmodule Oli.Accounts do
 
   defp create_sso_author(_repo, _changes, fields) do
     email = Map.get(fields, "email")
-    username = Map.get(fields, "cognito:username")
+    name = Map.get(fields, "name")
 
     case get_author_by_email(email) do
       nil ->
         %Author{}
-        |> Author.noauth_changeset(%{name: username, email: email})
+        |> Author.noauth_changeset(%{name: name, email: email})
         |> Repo.insert()
 
       author ->

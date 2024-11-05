@@ -3,6 +3,7 @@ import { AutoSelect } from './auto_select';
 import { BeforeUnloadListener } from './before_unload';
 import { CheckboxListener } from './checkbox_listener';
 import { ClickOutside } from './click_outside';
+import { ClickExecJS } from './click_variations';
 import { CopyListener } from './copy_listener';
 import { Countdown } from './countdown';
 import { CountdownTimer } from './countdown_timer';
@@ -37,7 +38,7 @@ import { TextInputListener } from './text_input_listener';
 import { TextareaListener } from './textarea_listener';
 import { ThemeToggle } from './theme_toggle';
 import { ToggleReadMore } from './toggle_read_more';
-import { TooltipInit, TooltipWithTarget } from './tooltip';
+import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 
@@ -59,6 +60,8 @@ export const Hooks = {
   MonacoEditor,
   TooltipInit,
   TooltipWithTarget,
+  AutoHideTooltip,
+  ClickExecJS,
   BeforeUnloadListener,
   ThemeToggle,
   LtiConnectInstructions,
