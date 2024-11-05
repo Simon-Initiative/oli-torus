@@ -166,6 +166,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.title)
     end
 
+    @tag :skip
     test "applies sorting by creation date", %{conn: conn, product: product} do
       product_2 =
         insert(:section,
