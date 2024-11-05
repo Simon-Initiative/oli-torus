@@ -87,7 +87,7 @@ defmodule OliWeb.Common.Stepper do
                 <%= @selected_step.next_button_label || "Next step" %>
 
                 <div :if={@show_spinner} class="ml-1" role="status">
-                  <.spinner />
+                  <.loader />
                 </div>
               </button>
             </div>
