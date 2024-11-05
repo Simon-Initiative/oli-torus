@@ -17,6 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
         assign(socket,
           scripts_loaded: false,
           scripts: scripts,
+          error: false,
           active: :bank,
           context: context,
           is_admin?: is_admin?,
@@ -39,6 +40,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
     <div id="eventIntercept" phx-hook="LoadSurveyScripts">
       <h2 id="header_id" class="pb-2">Activity Bank</h2>
       <%= if connected?(@socket) and assigns[:scripts_loaded] do %>
+        <.maybe_show_error error={@error} />
         <div id="editor">
           <%= React.component(
             @ctx,
@@ -57,10 +59,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
 
   @impl true
   def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
-    {:noreply, assign(socket, error: true)}
+    {:noreply, assign(socket, error: true, scripts_loaded: true)}
   end
 
   def handle_event("survey_scripts_loaded", _params, socket) do
     {:noreply, assign(socket, scripts_loaded: true)}
+  end
+
+  attr :error, :boolean, required: true
+
+  defp maybe_show_error(assigns) do
+    ~H"""
+    <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+      Something went wrong when loading the activity bank
+    </div>
+    """
   end
 end

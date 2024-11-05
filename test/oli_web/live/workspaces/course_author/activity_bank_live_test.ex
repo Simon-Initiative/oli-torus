@@ -64,6 +64,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
       assert has_element?(view, ~s(div[data-live-react-class='Components.ModalDisplay']))
     end
+
+    test "renders error message when failed to load scripts", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "#eventIntercept [role='status']")
+
+      render_hook(view, "survey_scripts_loaded", %{"error" => "error_from_promises"})
+
+      assert has_element?(view, "div[role='alert']")
+    end
   end
 
   ##### HELPER FUNCTIONS #####
