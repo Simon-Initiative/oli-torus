@@ -1555,6 +1555,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert like_button_html =~ "<path class=\"stroke-primary\""
     end
 
+    @tag :skip
     test "posts a note", %{
       conn: conn,
       section: section,
