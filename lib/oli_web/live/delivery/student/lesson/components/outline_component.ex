@@ -4,11 +4,44 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   alias Oli.Resources.ResourceType
   alias OliWeb.Icons
   alias OliWeb.Delivery.Student.Utils
+  alias Oli.Delivery.{Hierarchy, Metrics}
+  alias OliWeb.Components.Common
 
   def mount(socket) do
     {:ok,
      socket
      |> assign(expanded_items: [])}
+  end
+
+  def update(assigns, socket) do
+    item_with_progress =
+      case Hierarchy.find_top_level_ancestor(assigns.hierarchy, assigns.page_resource_id) do
+        nil ->
+          # It is a top level page
+          page_progress =
+            Metrics.progress_for_page(
+              assigns.section_id,
+              assigns.user_id,
+              assigns.page_resource_id
+            )
+            |> parse_progress()
+
+          %{progress: page_progress, resource_id: assigns.page_resource_id}
+
+        container ->
+          container_progress =
+            Metrics.progress_for(assigns.section_id, assigns.user_id, container["resource_id"])
+            |> parse_progress()
+
+          %{progress: container_progress, resource_id: container["resource_id"]}
+      end
+
+    {:ok,
+     socket
+     |> assign(:hierarchy, assigns.hierarchy)
+     |> assign(:section_slug, assigns.section_slug)
+     |> assign(:selected_view, assigns.selected_view)
+     |> assign(:item_with_progress, item_with_progress)}
   end
 
   def handle_event("expand_item", %{"item_id" => item_id}, socket) do
@@ -25,6 +58,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :hierarchy, :map, required: true
   attr :section_slug, :string, required: true
   attr :selected_view, :atom, required: true
+  attr :item_with_progress, :map, required: true
   attr :expanded_items, :list, default: []
 
   def render(assigns) do
@@ -55,6 +89,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             target={@myself}
             section_slug={@section_slug}
             selected_view={@selected_view}
+            progress={
+              if @item_with_progress.resource_id == node["resource_id"],
+                do: @item_with_progress.progress
+            }
           />
         </div>
       </div>
@@ -68,6 +106,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :target, :any, required: true
   attr :section_slug, :string, required: true
   attr :selected_view, :atom, required: true
+  attr :progress, :float, default: nil
 
   def outline_item(%{item: %{"numbering" => %{"level" => level}}}) when level > 3, do: nil
 
@@ -88,7 +127,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     >
       <div class={[
         "justify-start items-start flex py-1 rounded-lg hover:bg-[#f2f8ff]",
-        left_indentation(@item["numbering"]["level"])
+        left_indentation(@item["numbering"]["level"]),
+        if(@progress, do: "bg-[#f3f4f8]")
       ]}>
         <div class="grow p-2 justify-start items-start gap-5 flex">
           <div class="py-0.5 justify-start items-center gap-5 flex">
@@ -114,6 +154,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
                 </div>
               </div>
             </div>
+            <Common.progress_bar
+              :if={@progress}
+              percent={@progress}
+              width="200px"
+              on_going_colour="bg-[#0CAF61]"
+              completed_colour="bg-[#0CAF61]"
+            />
           </div>
         </div>
       </div>
@@ -132,7 +179,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         phx-click="expand_item"
         phx-value-item_id={@item["id"]}
         phx-target={@target}
-        class="w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] hover:cursor-pointer"
+        class={[
+          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] hover:cursor-pointer",
+          if(@progress, do: "bg-[#f3f4f8]")
+        ]}
       >
         <div class="self-stretch justify-start items-start gap-1 inline-flex">
           <div>
@@ -148,6 +198,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <%= @item["title"] %>
           </div>
         </div>
+        <Common.progress_bar
+          :if={@progress}
+          percent={@progress}
+          width="200px"
+          on_going_colour="bg-[#0CAF61]"
+          completed_colour="bg-[#0CAF61]"
+        />
       </div>
       <div
         :if={expanded?}
@@ -261,5 +318,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       <% end %>
     </div>
     """
+  end
+
+  defp parse_progress(progress) do
+    progress
+    |> Kernel.*(100)
+    |> round()
+    |> trunc()
   end
 end

@@ -88,7 +88,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           is_instructor: is_instructor,
           page_resource_id: page_context.page.resource_id,
           active_sidebar_panel: nil,
-          selected_view: String.to_existing_atom(params["selected_view"])
+          selected_view: String.to_existing_atom(params["selected_view"]),
+          page_resource_id: page_context.page.resource_id
         )
         |> assign_objectives()
         |> slim_assigns()
@@ -773,6 +774,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               id="outline_component"
               hierarchy={@hierarchy}
               section_slug={@section.slug}
+              section_id={@section.id}
+              user_id={@current_user.id}
+              page_resource_id={@page_resource_id}
               selected_view={@selected_view}
             />
         <% end %>

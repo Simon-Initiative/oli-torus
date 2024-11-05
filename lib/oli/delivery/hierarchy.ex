@@ -294,6 +294,29 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
+  def find_top_level_ancestor(
+        node,
+        resource_id,
+        upper_most_level_ancestor \\ nil
+      )
+
+  def find_top_level_ancestor(
+        %{"resource_id" => node_resource_id},
+        resource_id,
+        upper_most_level_ancestor
+      )
+      when node_resource_id == resource_id,
+      do: upper_most_level_ancestor
+
+  def find_top_level_ancestor(node, resource_id, upper_most_level_ancestor) do
+    Enum.find(
+      node["children"],
+      fn child ->
+        find_top_level_ancestor(child, resource_id, upper_most_level_ancestor || node)
+      end
+    )
+  end
+
   @doc """
   Generates the full hierarchy of a given section, including all the attributrs required for student delivery views.
   """
