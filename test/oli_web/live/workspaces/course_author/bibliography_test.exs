@@ -53,7 +53,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
   describe "bibliography" do
     setup [:admin_conn, :create_project]
 
-    test "renders React component", %{conn: conn, project: project} do
+    test "includes reference to React component", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
       assert has_element?(view, ~s(div[data-live-react-class='Components.Bibliography']))
