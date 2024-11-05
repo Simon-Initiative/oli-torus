@@ -38,7 +38,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
     ~H"""
     <div id="eventIntercept" phx-hook="LoadSurveyScripts">
       <h2 id="header_id" class="pb-2">Activity Bank</h2>
-      <div :if={connected?(@socket) and assigns[:scripts_loaded]}>
+      <%= if connected?(@socket) and assigns[:scripts_loaded] do %>
         <div id="editor">
           <%= React.component(
             @ctx,
@@ -48,7 +48,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
           ) %>
         </div>
         <%= React.component(@ctx, "Components.ModalDisplay", %{}, id: "modal-display") %>
-      </div>
+      <% else %>
+        <.spinner />
+      <% end %>
     </div>
     """
   end
