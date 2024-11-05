@@ -577,17 +577,6 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(view, "button", "Create new Objective")
     end
 
-    test "activity bank menu is shown correctly", %{
-      conn: conn,
-      project: project
-    } do
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author/#{project.slug}/activity_bank")
-
-      # Since the Activity Bank liveview renders a React component, we can only check for the presence of the div that contains the React component
-      assert has_element?(view, ~s(#activity-bank))
-      assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
-    end
-
     test "experiments menu is shown correctly", %{
       conn: conn,
       project: project

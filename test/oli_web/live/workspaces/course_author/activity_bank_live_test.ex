@@ -1,18 +1,17 @@
-defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
+defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
   use OliWeb.ConnCase
 
   import Oli.Factory
   import Phoenix.LiveViewTest
-
   alias Oli.Resources.ResourceType
 
   defp live_view_route(project_slug, params \\ %{}),
-    do: ~p"/workspaces/course_author/#{project_slug}/bibliography?#{params}"
+    do: ~p"/workspaces/course_author/#{project_slug}/activity_bank?#{params}"
 
   describe "user cannot access when is not logged in" do
     setup [:create_project]
 
-    test "redirects to new session when accessing the bibliography view", %{
+    test "redirects to new session when accessing the activity bank view", %{
       conn: conn,
       project: project
     } do
@@ -32,7 +31,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
   describe "user cannot access when is logged in as an author but is not an author of the project" do
     setup [:author_conn, :create_project]
 
-    test "redirects to projects view when accessing the bibliography view", %{
+    test "redirects to projects view when accessing the activity bank view", %{
       conn: conn,
       project: project
     } do
@@ -50,13 +49,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLiveTest do
     end
   end
 
-  describe "bibliography" do
+  describe "activity bank" do
     setup [:admin_conn, :create_project]
 
-    test "includes reference to React component", %{conn: conn, project: project} do
+    test "includes reference to React component(s)", %{conn: conn, project: project} do
       {:ok, view, _html} = live(conn, live_view_route(project.slug))
 
-      assert has_element?(view, ~s(div[data-live-react-class='Components.Bibliography']))
+      assert has_element?(view, "#eventIntercept [role='status']")
+
+      render_hook(view, "survey_scripts_loaded", %{"success" => "success"})
+
+      refute has_element?(view, "#eventIntercept [role='status']")
+
+      assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
+      assert has_element?(view, ~s(div[data-live-react-class='Components.ModalDisplay']))
+    end
+
+    test "renders error message when failed to load scripts", %{conn: conn, project: project} do
+      {:ok, view, _html} = live(conn, live_view_route(project.slug))
+
+      assert has_element?(view, "#eventIntercept [role='status']")
+
+      render_hook(view, "survey_scripts_loaded", %{"error" => "error_from_promises"})
+
+      assert has_element?(view, "div[role='alert']")
     end
   end
 
