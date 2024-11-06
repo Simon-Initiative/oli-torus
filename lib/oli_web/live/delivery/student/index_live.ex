@@ -391,7 +391,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         id="course_progress_calculation_modal"
         class="mx-52"
         header_class="flex items-start justify-between px-[35px] pt-[27px] pb-4"
-        body_class="border-t border-[#3e3f44] px-[35px] pb-[50px] pt-[30px]"
+        body_class="border-t border-[#d4d4d4] dark:border-[#3e3f44] px-[35px] pb-[50px] pt-[30px]"
       >
         <:title>Course Progress Calculation</:title>
         <div class="dark:text-white text-base">
@@ -400,8 +400,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           </div>
           <div class="flex-col justify-start items-start gap-[31px] inline-flex">
             <div class="self-stretch justify-start items-start gap-3 inline-flex">
-              <div class="px-3 py-1 bg-[#363b59] rounded-[999px] justify-start items-center gap-1.5 flex">
-                <div class="w-5 h-5 relative text-[#99ccff]"><Icons.clipboard /></div>
+              <div class="px-3 py-1 bg-[#deecff] dark:bg-[#363b59] rounded-[999px] justify-start items-center gap-1.5 flex">
+                <div class="w-5 h-5 relative text-[#1b67b2] dark:text-[#99ccff]">
+                  <Icons.clipboard />
+                </div>
               </div>
               <div class="pb-[3px] justify-end items-center flex">
                 <div class="self-stretch pr-[13px] justify-start items-center inline-flex">
@@ -418,8 +420,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               </div>
             </div>
             <div class="justify-start items-center gap-3 inline-flex">
-              <div class="px-3 py-1 bg-[#364147] rounded-[999px] justify-start items-center gap-1.5 flex">
-                <div class="w-5 h-5 relative text-[#87d7e0]"><Icons.book /></div>
+              <div class="px-3 py-1 bg-[#dcf3f5] dark:bg-[#364147] rounded-[999px] justify-start items-center gap-1.5 flex">
+                <div class="w-5 h-5 relative text-[#00808f] dark:text-[#87d7e0]"><Icons.book /></div>
               </div>
               <div class="">
                 <span class="font-bold">
@@ -432,8 +434,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               </div>
             </div>
             <div class="justify-start items-center gap-3 inline-flex">
-              <div class="px-3 py-1 bg-[#4c3f39] rounded-[999px] justify-start items-center gap-1.5 flex">
-                <div class="w-5 h-5 relative text-[#ffb387]"><Icons.transparent_flag /></div>
+              <div class="px-3 py-1 bg-[#ffecde] dark:bg-[#4c3f39] rounded-[999px] justify-start items-center gap-1.5 flex">
+                <div class="w-5 h-5 relative text-[#bf5b13] dark:text-[#ffb387]">
+                  <Icons.transparent_flag />
+                </div>
               </div>
               <div>
                 <span class="font-bold">
@@ -470,9 +474,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             phx-hook="AutoHideTooltip"
             class="hidden absolute z-50 -top-[89px] -right-[316px] p-4"
           >
-            <div class="w-[320px] h-[88px] px-4 py-2 bg-[#0d0c0f] rounded-md shadow border border-[#3a3740]">
+            <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
               <div class="grow shrink basis-0">
-                <span class="text-[#eeebf5] text-sm font-normal leading-normal">
+                <span class="text-[#353740] dark:text-[#eeebf5] text-sm font-normal leading-normal">
                   Course progress is calculated based on the pages you visit and the percentage of activities you complete.
                 </span>
                 <button
@@ -480,7 +484,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                     Modal.show_modal("course_progress_calculation_modal")
                     |> JS.hide(to: "#course_progress_tooltip")
                   }
-                  class="text-[#eeebf5] text-sm font-bold underline leading-normal"
+                  class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
                 >
                   Learn more.
                 </button>
@@ -507,14 +511,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             percent={@completed_pages.completed_pages / @completed_pages.total_pages * 100}
             on_going_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
             completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
-            not_completed_colour="bg-gray-600/20 dark:bg-[#385581]"
+            not_completed_colour="bg-[#385581]"
             role="course progress bar"
             show_percent={false}
             show_halo={true}
           />
           <.link
             navigate={@page_completed_target_path}
-            class="text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+            class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
           >
             <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
           </.link>
