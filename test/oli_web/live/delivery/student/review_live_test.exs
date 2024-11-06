@@ -493,7 +493,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       attempt = create_attempt(user, section, page_1)
 
       # when the request path is not the learn view, it keeps it when navigating between pages
-      request_path = ~p"/sections/#{section.slug}/assignments"
+      request_path = ~p"/sections/#{section.slug}/schedule"
 
       {:ok, view, _html} =
         live(

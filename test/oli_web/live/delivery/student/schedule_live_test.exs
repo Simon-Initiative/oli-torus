@@ -567,10 +567,10 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:error, {:redirect, %{to: redirect_path}}} =
-        live(conn, ~p"/sections/#{section.slug}/assignments")
+        live(conn, ~p"/sections/#{section.slug}/schedule")
 
       assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Fassignments&section=#{section.slug}"
+               "/?request_path=%2Fsections%2F#{section.slug}%2Fschedule&section=#{section.slug}"
     end
   end
 
@@ -579,7 +579,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
 
     test "can not access when not enrolled to course", %{conn: conn, section: section} do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
-        live(conn, ~p"/sections/#{section.slug}/assignments")
+        live(conn, ~p"/sections/#{section.slug}/schedule")
 
       assert redirect_path == "/unauthorized"
     end
@@ -588,7 +588,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/assignments")
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/schedule")
 
       assert has_element?(view, "h1", "Course Schedule")
     end
@@ -620,7 +620,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
         false
       )
 
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/assignments")
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/schedule")
 
       # open attempts summary for page 3
       view
@@ -709,7 +709,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
         false
       )
 
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/assignments")
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/schedule")
 
       # open attempts summary for page 4
       view
@@ -780,7 +780,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
 
-      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/assignments")
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/schedule")
 
       assert has_element?(view, "h1", "Course Schedule")
 
