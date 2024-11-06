@@ -38,12 +38,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   @default_selected_view :gallery
 
-  defp get_or_compute_full_hierarchy(section) do
-    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
-      Hierarchy.full_hierarchy(section)
-    end)
-  end
-
   @decorate transaction_event()
   def mount(params, _session, %{assigns: %{view: :practice_page}} = socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
@@ -1562,5 +1556,11 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       view when view not in ~w(gallery outline) -> @default_selected_view
       view -> String.to_existing_atom(view)
     end
+  end
+
+  defp get_or_compute_full_hierarchy(section) do
+    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
+      Hierarchy.full_hierarchy(section)
+    end)
   end
 end
