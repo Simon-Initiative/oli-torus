@@ -510,6 +510,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             not_completed_colour="bg-gray-600/20 dark:bg-[#385581]"
             role="course progress bar"
             show_percent={false}
+            show_halo={true}
           />
           <.link
             navigate={@page_completed_target_path}
