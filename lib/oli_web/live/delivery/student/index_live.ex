@@ -459,7 +459,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </Modal.modal>
     </div>
-    <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="flex-col justify-start items-start gap-5 inline-flex grow">
         <div class="flex items-baseline gap-2.5 relative">
           <div class="text-2xl font-bold leading-loose">
@@ -547,7 +547,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     assigns = Map.put(assigns, :lessons, lessons)
 
     ~H"""
-    <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
           <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -827,7 +827,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp agenda(assigns) do
     ~H"""
-    <div class="w-full h-fit overflow-y-auto p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">
         <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
           <div class="text-2xl font-bold leading-loose tracking-tight">
