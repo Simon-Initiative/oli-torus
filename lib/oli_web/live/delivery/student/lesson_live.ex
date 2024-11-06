@@ -11,6 +11,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       emit_page_viewed_event: 1
     ]
 
+  alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
@@ -88,7 +89,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> annotations_assigns(page_context.collab_space_config, is_instructor)
         |> assign(
           is_instructor: is_instructor,
-          active_sidebar_panel: nil,
+          active_sidebar_panel:
+            if(
+              Accounts.get_user_preference(
+                current_user.id,
+                :page_outline_panel_active?,
+                false
+              ),
+              do: :outline,
+              else: nil
+            ),
           selected_view: get_selected_view(params),
           page_resource_id: page_context.page.resource_id
         )
@@ -249,6 +259,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def handle_event("toggle_outline_sidebar", _params, socket) do
     active_sidebar_panel =
       if socket.assigns.active_sidebar_panel != :outline, do: :outline, else: nil
+
+    Accounts.set_user_preference(
+      socket.assigns.current_user,
+      :page_outline_panel_active?,
+      active_sidebar_panel == :outline
+    )
 
     {:noreply, assign(socket, active_sidebar_panel: active_sidebar_panel)}
   end
