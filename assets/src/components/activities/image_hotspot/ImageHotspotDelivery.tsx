@@ -10,7 +10,9 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
   resetAction,
+  resetAndSubmitActivity,
   setSelection,
+  submit,
 } from 'data/activities/DeliveryState';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { configureStore } from 'state/store';
@@ -26,6 +28,14 @@ import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { Hotspot, ImageHotspotModelSchema, getShape } from './schema';
 import { HS_COLOR, drawHotspotShape } from './utils';
+
+// Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
+// about to submit that state with a submission. This saves a network call that isn't necessary and avoids
+// perhaps a weird race condition (where the submit request could arrive before the save)
+const noOpSave = (
+  _guid: string,
+  _partResponses: ActivityTypes.PartResponse[],
+): Promise<ActivityTypes.Success> => Promise.resolve({ type: 'success' });
 
 const ImageHotspotComponent: React.FC = () => {
   const {
@@ -101,15 +111,33 @@ const ImageHotspotComponent: React.FC = () => {
   }
 
   const onSelect = (partId: string, choiceId: string) => {
-    dispatch(
-      setSelection(partId, choiceId, onSaveActivity, model.multiple ? 'multiple' : 'single'),
-    );
+    // CATA type or non-submit context: just save selection
+    if (model.multiple || context.graded || context.surveyId !== null) {
+      dispatch(
+        setSelection(partId, choiceId, onSaveActivity, model.multiple ? 'multiple' : 'single'),
+      );
+    } else {
+      // single select: update selection locally and autosubmit as for MCQ
+      dispatch(setSelection(partId, choiceId, noOpSave, 'single'));
+
+      if (isEvaluated(uiState)) {
+        dispatch(
+          resetAndSubmitActivity(
+            uiState.attemptState.attemptGuid,
+            [{ input: choiceId }],
+            onResetActivity,
+            onSubmitActivity,
+          ),
+        );
+      } else {
+        dispatch(submit(onSubmitActivity));
+      }
+    }
   };
 
   const onClickHotspot = (hs: Hotspot) => {
-    if (!isEvaluated(uiState)) {
-      onSelect(partId, hs.id);
-    }
+    const disabled = context.graded && isEvaluated(uiState);
+    if (!disabled) onSelect(partId, hs.id);
   };
 
   return (
@@ -158,9 +186,12 @@ const ImageHotspotComponent: React.FC = () => {
 
         <GradedPointsConnected />
 
-        <SubmitResetConnected
-          onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))}
-        />
+        {/* single selection like MCQ: no submit button. multiple like CATA */}
+        {model.multiple && (
+          <SubmitResetConnected
+            onReset={() => dispatch(resetAction(onResetActivity, { [partId]: [] }))}
+          />
+        )}
 
         <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
