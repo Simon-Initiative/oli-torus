@@ -524,6 +524,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
+        id="assignments_nav_link"
+        href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :assignments}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.assignments is_active={@active_tab == :assignments} /></:icon>
+        <:text>Assignments</:text>
+      </.nav_link>
+
+      <.nav_link
         :if={@section.contains_explorations}
         id="explorations_nav_link"
         href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
@@ -611,6 +621,18 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   defp path_for(:discussions, _section, _preview_mode, _sidebar_expanded) do
+    "#"
+  end
+
+  defp path_for(:assignments, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/assignments"
+    else
+      ~p"/sections/#{section_slug}/assignments?#{%{sidebar_expanded: sidebar_expanded}}"
+    end
+  end
+
+  defp path_for(:assignments, _section, _preview_mode, _sidebar_expanded) do
     "#"
   end
 

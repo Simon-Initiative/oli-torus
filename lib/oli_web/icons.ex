@@ -819,6 +819,63 @@ defmodule OliWeb.Icons do
 
   attr :is_active, :boolean, default: false
 
+  def assignments(%{is_active: true} = assigns) do
+    ~H"""
+    <svg
+      role="active assignments icon"
+      class="dark:fill-white fill-black/70 dark:stroke-white stroke-black/70"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  def assignments(%{is_active: false} = assigns) do
+    ~H"""
+    <svg
+      role="assignments icon"
+      class="dark:stroke-[#B8B4BF] stroke-black/70"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  attr :is_active, :boolean, default: false
+
   def practice(%{is_active: true} = assigns) do
     ~H"""
     <svg
