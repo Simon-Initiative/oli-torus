@@ -236,11 +236,15 @@ defmodule OliWeb.Components.Auth do
   attr :provider, :atom, required: true
   attr :rest, :global, include: ~w(csrf_token download hreflang referrerpolicy rel target type)
   attr :navigate, :string, default: nil
+  attr :user_return_to, :string, default: nil
 
   slot :inner_block
 
   def authorization_link(%{navigate: nil, provider: provider} = assigns) do
-    assigns = assign(assigns, navigate: ~p"/auth/#{provider}/new")
+    assigns =
+      assign(assigns,
+        navigate: maybe_user_return_to(~p"/auth/#{provider}/new", assigns.user_return_to)
+      )
 
     authorization_link(assigns)
   end
@@ -333,12 +337,16 @@ defmodule OliWeb.Components.Auth do
       <.deauthorization_link provider="github">Remove Github authentication</.deauthorization_link>
   """
   attr :provider, :atom, required: true
+  attr :user_return_to, :string, default: nil
   attr :rest, :global, include: ~w(csrf_token download hreflang referrerpolicy rel target type)
 
   slot :inner_block
 
   def deauthorization_link(%{provider: provider} = assigns) do
-    assigns = assign(assigns, navigate: ~p"/auth/#{provider}")
+    assigns =
+      assign(assigns,
+        navigate: maybe_user_return_to(~p"/auth/#{provider}", assigns.user_return_to)
+      )
 
     ~H"""
     <.link href={@navigate} method="delete" {@rest}>
@@ -346,6 +354,9 @@ defmodule OliWeb.Components.Auth do
     </.link>
     """
   end
+
+  defp maybe_user_return_to(path, nil), do: path
+  defp maybe_user_return_to(path, user_return_to), do: "#{path}?user_return_to=#{user_return_to}"
 
   def provider_title(provider) do
     provider

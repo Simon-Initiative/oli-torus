@@ -1,10 +1,9 @@
-defmodule Oli.UserIdentities.UserIdentity do
+defmodule Oli.AssentAuth.UserIdentity do
   use Ecto.Schema
 
   import Ecto.Changeset
 
   schema "user_identities" do
-    # MER-3835 TODO
     field :provider, :string
     field :uid, :string
 

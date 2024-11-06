@@ -3,16 +3,25 @@ defmodule OliWeb.UserAuthorizationController do
   use OliWeb, :controller
 
   import Ecto.Query, warn: false
+  import OliWeb.UserAuth, only: [require_authenticated_user: 2]
 
-  alias Ecto.Changeset
   alias Plug.Conn
   alias Assent.Config
-  alias Oli.UserIdentities.UserIdentity
+  alias Oli.AssentAuth
   alias Oli.Accounts
-  alias Oli.Accounts.User
-  alias Oli.Repo
+  alias OliWeb.UserAuth
 
   require Logger
+
+  @private_session_key :assent_session
+
+  plug :require_authenticated_user when action in [:delete]
+  plug :assign_callback_url when action in [:new, :callback]
+  plug :init_session when action in [:new, :callback]
+  plug :maybe_assign_user_return_to when action in [:callback]
+  plug :load_session_params when action in [:callback]
+  plug :set_registration_option when action in [:callback]
+  # plug :load_user_by_invitation_token when action in [:callback]
 
   def new(conn, %{"provider" => provider}) do
     provider
@@ -21,12 +30,11 @@ defmodule OliWeb.UserAuthorizationController do
       {:ok, %{url: url, session_params: session_params}} ->
         # Session params (used for OAuth 2.0 and OIDC strategies) will be
         # retrieved when user returns for the callback phase
-        conn = put_session(conn, :session_params, session_params)
-
-        # Redirect end-user to provider to authorize access to their account
         conn
-        |> put_resp_header("location", url)
-        |> send_resp(302, "")
+        |> store_session_params(session_params)
+        |> maybe_store_user_return_to()
+        # Redirect end-user to provider to authorize access to their account
+        |> redirect(external: url)
 
       {:error, error} ->
         # Something went wrong generating the request authorization url
@@ -38,7 +46,9 @@ defmodule OliWeb.UserAuthorizationController do
     end
   end
 
-  def delete(conn, %{"provider" => provider}) do
+  def delete(conn, %{"provider" => provider} = params) do
+    user_return_to = params["user_return_to"] || ~p"/users/settings"
+
     case delete_user_identity_provider(conn.assigns.current_user, provider) do
       {:ok, _} ->
         conn
@@ -46,7 +56,7 @@ defmodule OliWeb.UserAuthorizationController do
           :info,
           "Successfully removed #{String.capitalize(provider)} authentication provider."
         )
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: user_return_to)
 
       {:error, {:no_password, _changeset}} ->
         conn
@@ -54,22 +64,18 @@ defmodule OliWeb.UserAuthorizationController do
           :error,
           "You must have a password or another provider set up to remove this authentication provider."
         )
-        |> redirect(to: ~p"/users/settings")
-
-      {:error, _} ->
-        conn
-        |> put_flash(:error, "Something went wrong. Please try again or contact support.")
-        |> redirect(to: ~p"/users/settings")
+        |> redirect(to: user_return_to)
     end
   end
 
   def callback(conn, %{"provider" => provider} = params) do
     # The session params (used for OAuth 2.0 and OIDC strategies) stored in the
     # request phase will be used in the callback phase
-    session_params = get_session(conn, :session_params)
+
+    redirect_to = conn.assigns[:user_return_to] || ~p"/users/log_in"
 
     provider
-    |> provider_callback(params, session_params)
+    |> provider_callback(params, conn.assigns.session_params)
     |> case do
       {:ok, %{user: user} = response} ->
         # Authorization successful
@@ -87,7 +93,7 @@ defmodule OliWeb.UserAuthorizationController do
 
             conn
             |> put_flash(:error, "Something went wrong. Please try again or contact support.")
-            |> redirect(to: ~p"/users/log_in")
+            |> redirect(to: redirect_to)
         end
 
       {:error, error} ->
@@ -96,38 +102,75 @@ defmodule OliWeb.UserAuthorizationController do
 
         conn
         |> put_flash(:error, "Something went wrong. Please try again or contact support.")
-        |> redirect(to: ~p"/users/log_in")
+        |> redirect(to: redirect_to)
     end
   end
 
-  def authorize_url(provider) do
+  ## Plugs
+
+  defp assign_callback_url(conn, _opts) do
+    url = ~p"/auth/#{conn.params["provider"]}/callback"
+
+    assign(conn, :callback_url, url)
+  end
+
+  defp init_session(conn, _opts) do
+    value = Map.get(conn.private, @private_session_key, default_value(conn))
+
+    conn
+    |> Conn.put_private(@private_session_key, value)
+  end
+
+  defp default_value(%{private: %{@private_session_key => session}}), do: session
+  defp default_value(_conn), do: %{}
+
+  defp maybe_assign_user_return_to(conn, _opts) do
+    case get_session(conn, :user_return_to) do
+      nil ->
+        conn
+
+      user_return_to ->
+        conn
+        |> delete_session(:user_return_to)
+        |> Conn.assign(:user_return_to, user_return_to)
+    end
+  end
+
+  defp load_session_params(conn, _opts) do
+    session_params = get_session(conn, :session_params)
+
+    conn
+    |> delete_session(:session_params)
+    |> Conn.assign(:session_params, session_params)
+  end
+
+  defp set_registration_option(%{private: %{assent_registration: _any}} = conn, _opts), do: conn
+
+  defp set_registration_option(conn, _opts),
+    do: Conn.put_private(conn, :assent_registration, ~p"/users/register")
+
+  defp store_session_params(conn, session_params),
+    do: put_session(conn, :session_params, session_params)
+
+  defp maybe_store_user_return_to(%{params: %{"user_return_to" => user_return_to}} = conn),
+    do: put_session(conn, :user_return_to, user_return_to)
+
+  defp maybe_store_user_return_to(conn), do: conn
+
+  ## Functions
+
+  defp authorize_url(provider) do
     config = config!(provider)
 
     config[:strategy].authorize_url(config)
   end
 
-  def provider_callback(provider, params, session_params) do
+  defp provider_callback(provider, params, session_params) do
     config = config!(provider)
 
     config
     |> Assent.Config.put(:session_params, session_params)
     |> config[:strategy].callback(params)
-  end
-
-  defp config!(provider) do
-    provider_config_key =
-      provider
-      |> String.to_existing_atom()
-
-    config =
-      Application.get_env(:oli, :user_auth_providers)[provider_config_key] ||
-        raise "No provider configuration for #{provider}"
-
-    Config.put(
-      config,
-      :redirect_uri,
-      url(OliWeb.Endpoint, ~p"/auth/#{provider}/callback")
-    )
   end
 
   defp handle_authorization_success(conn, provider, user, other_params) do
@@ -210,13 +253,9 @@ defmodule OliWeb.UserAuthorizationController do
 
   defp maybe_authenticate(conn), do: conn
 
-  @doc """
-  Authenticates a user with provider and provider user params.
-
-  If successful, a new session will be created.
-  """
-  def authenticate(conn, %{"provider" => provider, "uid" => uid}) do
-    case get_user_by_provider_uid(provider, uid) do
+  ## Authenticates a user with provider and provider user params. If successful, a new session will be created.
+  defp authenticate(conn, %{"provider" => provider, "uid" => uid}) do
+    case AssentAuth.get_user_by_provider_uid(provider, uid) do
       nil -> {:error, conn}
       user -> {:ok, UserAuth.log_in_user(conn, user)}
     end
@@ -247,16 +286,15 @@ defmodule OliWeb.UserAuthorizationController do
     end
   end
 
-  @doc """
-  Will upsert identity for the current user.
-
-  If successful, a new session will be created.
-  """
-  def upsert_identity(conn, user_identity_params) do
+  ## Will upsert identity for the current user. If successful, a new session will be created.
+  defp upsert_identity(conn, user_identity_params) do
     user = conn.assigns[:current_user]
 
+    user_identity_params = convert_params(user_identity_params)
+
     user
-    |> upsert(user_identity_params)
+    |> AssentAuth.upsert(user_identity_params)
+    |> user_identity_bound_different_user_error()
     |> case do
       {:ok, user_identity} ->
         {:ok, user_identity, UserAuth.log_in_user(conn, user)}
@@ -264,47 +302,6 @@ defmodule OliWeb.UserAuthorizationController do
       {:error, error} ->
         {:error, error, conn}
     end
-  end
-
-  @doc """
-  Upserts a user identity.
-
-  If a matching user identity already exists for the user, the identity will be updated,
-  otherwise a new identity is inserted.
-  """
-  def upsert(user, user_identity_params) do
-    params = convert_params(user_identity_params)
-    {uid_provider_params, additional_params} = Map.split(params, ["uid", "provider"])
-
-    get_user_identity(uid_provider_params["provider"], uid_provider_params["uid"])
-    |> case do
-      nil -> insert_identity(user, params)
-      identity -> update_identity(identity, additional_params)
-    end
-    |> user_identity_bound_different_user_error()
-  end
-
-  defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
-    case unique_constraint_error?(errors, :uid_provider) do
-      true -> {:error, {:bound_to_different_user, changeset}}
-      false -> {:error, changeset}
-    end
-  end
-
-  defp user_identity_bound_different_user_error(any), do: any
-
-  defp insert_identity(user, user_identity_params) do
-    user_identity = Ecto.build_assoc(user, :user_identities)
-
-    user_identity
-    |> user_identity.__struct__.changeset(user_identity_params)
-    |> Repo.insert()
-  end
-
-  defp update_identity(user_identity, additional_params) do
-    user_identity
-    |> user_identity.__struct__.changeset(additional_params)
-    |> Repo.insert()
   end
 
   defp maybe_create_user(conn), do: maybe_create_user(conn.assigns[:current_user], conn)
@@ -338,100 +335,28 @@ defmodule OliWeb.UserAuthorizationController do
 
   defp maybe_create_user(_user, conn), do: conn
 
-  @doc """
-  Create a user with the provider and provider user params.
-
-  If successful, a new session will be created. After session has been created
-  the callbacks stored with `put_create_session_callback/2` will run.
-  """
-  def create_user(conn, user_identity_params, user_params) do
+  ## Create a user with the provider and provider user params.
+  defp create_user(conn, user_identity_params, user_params) do
     user_identity_params
-    |> create_user_with_identity(user_params)
+    |> convert_params()
+    |> AssentAuth.create_user_with_identity(user_params)
+    |> user_user_identity_bound_different_user_error()
     |> case do
       {:ok, user} -> {:ok, user, UserAuth.log_in_user(conn, user)}
       {:error, error} -> {:error, error, conn}
     end
   end
 
-  @doc """
-  Creates a user with user identity.
-
-  User schema module and repo module will be fetched from config.
-  """
-  def create_user_with_identity(user_identity_params, user_params) do
-    params = convert_params(user_identity_params)
-
-    %User{}
-    |> User.user_identity_changeset(params, user_params)
-    |> Repo.insert()
-    |> user_user_identity_bound_different_user_error()
-  end
-
-  @doc """
-  Gets a user by identity provider and uid.
-  """
-  def get_user_by_provider_uid(provider, uid) do
-    from(user in User,
-      join: user_identity in assoc(user, :user_identities),
-      where: user_identity.provider == ^provider and user_identity.uid == ^uid
-    )
-    |> Repo.one()
-  end
-
-  @doc """
-  Gets a user identity by provider and uid.
-  """
-  def get_user_identity(provider, uid) do
-    from(u in UserIdentity,
-      where: u.provider == ^provider and u.uid == ^uid
-    )
-    |> Repo.one()
-  end
-
-  def get_user_with_identities(user_id) do
-    from(user in User,
-      where: user.id == ^user_id,
-      preload: [:user_identities]
-    )
-    |> Repo.one()
-  end
-
-  @doc """
-  Deletes a user identity for the provider and user.
-  """
-  def delete_user_identity_provider(user, provider) do
-    user = get_user_with_identities(user.id)
+  defp delete_user_identity_provider(user, provider) do
+    user = AssentAuth.get_user_with_identities(user.id)
 
     user.user_identities
     |> Enum.split_with(&(&1.provider == provider))
-    |> maybe_delete_identity_providers(user)
-  end
-
-  defp maybe_delete_identity_providers(
-         {user_identities, rest},
-         %{password_hash: password_hash}
-       )
-       when length(rest) > 0 or not is_nil(password_hash) do
-    results =
-      from(uid in UserIdentity,
-        where: uid.id in ^Enum.map(user_identities, & &1.id)
-      )
-      |> Repo.delete_all()
-
-    {:ok, results}
-  end
-
-  defp maybe_delete_identity_providers(_any, user) do
-    changeset =
-      user
-      |> Changeset.change()
-      |> Changeset.validate_required(:password_hash)
-
-    {:error, {:no_password, changeset}}
+    |> AssentAuth.delete_identity_providers(user)
   end
 
   defp maybe_trigger_registration_email_confirmation(conn) do
-    %{user: user} = conn.private[:pow_assent_callback_params]
+    %{user: user} = conn.private[:assent_callback_params]
 
     if email_verified?(user) do
       conn
@@ -445,7 +370,26 @@ defmodule OliWeb.UserAuthorizationController do
     end
   end
 
+  defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
+    case unique_constraint_error?(errors, :uid_provider) do
+      true -> {:error, {:bound_to_different_user, changeset}}
+      false -> {:error, changeset}
+    end
+  end
+
+  defp user_identity_bound_different_user_error(any), do: any
+
   ### Utility functions
+
+  defp config!(provider) do
+    provider
+    |> String.to_existing_atom()
+    |> AssentAuth.provider_config!()
+    |> Config.put(
+      :redirect_uri,
+      url(OliWeb.Endpoint, ~p"/auth/#{provider}/callback")
+    )
+  end
 
   defp convert_params(params) when is_map(params) do
     params

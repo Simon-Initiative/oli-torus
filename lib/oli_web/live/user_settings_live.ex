@@ -3,9 +3,8 @@ defmodule OliWeb.UserSettingsLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
-  alias OliWeb.AuthAssent
+  alias Oli.AssentAuth
   alias OliWeb.Common.Properties.{Groups, Group}
-  alias OliWeb.Components.Auth
 
   def render(assigns) do
     ~H"""
@@ -93,13 +92,19 @@ defmodule OliWeb.UserSettingsLive do
             </.form>
 
             <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-2 mb-10">
-              <h4 class="mt-3">Credentials Managed By</h4>
+              <h4 class="mt-3">Credential Managers</h4>
 
               <%= for {provider, managed?} <- @login_providers do %>
                 <%= if managed? do %>
-                  <Auth.deauthorization_link provider={provider} />
+                  <Components.Auth.deauthorization_link
+                    provider={provider}
+                    user_return_to={~p"/users/settings"}
+                  />
                 <% else %>
-                  <Auth.authorization_link provider={provider} />
+                  <Components.Auth.authorization_link
+                    provider={provider}
+                    user_return_to={~p"/users/settings"}
+                  />
                 <% end %>
               <% end %>
             </div>
@@ -145,7 +150,7 @@ defmodule OliWeb.UserSettingsLive do
       |> assign(:show_relative_dates, show_relative_dates)
       |> assign(:trigger_submit, false)
       |> assign(:login_providers, login_providers_and_statuses(user))
-      |> assign(:has_password, AuthAssent.has_password?(user))
+      |> assign(:has_password, AssentAuth.has_password?(user))
 
     {:ok, socket}
   end
@@ -269,13 +274,12 @@ defmodule OliWeb.UserSettingsLive do
 
   defp login_providers_and_statuses(%User{} = user) do
     user_identity_providers_map =
-      AuthAssent.list_user_identities(user)
+      AssentAuth.list_user_identities(user)
       |> Enum.reduce(%{}, fn identity, acc ->
         Map.put(acc, String.to_existing_atom(identity.provider), true)
       end)
 
-    Application.get_env(:oli, :user_auth_providers)
-    |> Keyword.keys()
+    AssentAuth.authentication_providers()
     |> Enum.map(&{&1, Map.has_key?(user_identity_providers_map, &1)})
     |> Enum.sort_by(&elem(&1, 1))
   end

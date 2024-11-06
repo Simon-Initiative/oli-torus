@@ -20,7 +20,7 @@ defmodule Oli.Accounts.Author do
     field :locked_at, :utc_datetime
 
     has_many :user_identities,
-             Oli.UserIdentities.AuthorIdentity,
+             Oli.AssentAuth.AuthorIdentity,
              on_delete: :delete_all,
              foreign_key: :user_id
 

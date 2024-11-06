@@ -40,7 +40,7 @@ defmodule Oli.Accounts.User do
     field :age_verified, :boolean
 
     has_many :user_identities,
-             Oli.UserIdentities.UserIdentity,
+             Oli.AssentAuth.UserIdentity,
              on_delete: :delete_all,
              foreign_key: :user_id
 
