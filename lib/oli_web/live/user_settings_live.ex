@@ -92,7 +92,7 @@ defmodule OliWeb.UserSettingsLive do
             </.form>
 
             <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-2 mb-10">
-              <h4 class="mt-3">Credential Managers</h4>
+              <h4 class="mt-3">Third Party Login Providers</h4>
 
               <%= for {provider, managed?} <- @login_providers do %>
                 <%= if managed? do %>
