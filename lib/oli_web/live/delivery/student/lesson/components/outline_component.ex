@@ -63,7 +63,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="h-full max-h-screen w-[360px] px-2 py-4 bg-white mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex">
+    <div class="h-full max-h-screen w-[360px] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex">
       <div
         phx-click="toggle_outline_sidebar"
         class="self-stretch px-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       </div>
       <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
         <div class="self-stretch py-2 justify-start items-center inline-flex">
-          <div class="text-[#353740] text-base font-bold leading-none">
+          <div class="text-base font-bold leading-none">
             Course Content
           </div>
         </div>
@@ -123,12 +123,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       ) %>
     <.link
       href={resource_path}
-      class="w-full text-black dark:text-white hover:text-black dark:hover:text-white hover:cursor-pointer hover:no-underline"
+      class="w-full text-[#353740] dark:text-[#eeebf5] hover:text-[#353740] dark:hover:text-[#eeebf5] hover:cursor-pointer hover:no-underline"
     >
       <div class={[
-        "justify-start items-start flex py-1 rounded-lg hover:bg-[#f2f8ff]",
+        "justify-start items-start flex py-1 rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33]",
         left_indentation(@item["numbering"]["level"]),
-        if(@progress, do: "bg-[#f3f4f8]")
+        if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
       ]}>
         <div class="grow p-2 justify-start items-start gap-5 flex">
           <div class="py-0.5 justify-start items-center gap-5 flex">
@@ -180,8 +180,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         phx-value-item_id={@item["id"]}
         phx-target={@target}
         class={[
-          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] hover:cursor-pointer",
-          if(@progress, do: "bg-[#f3f4f8]")
+          "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer",
+          if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
         ]}
       >
         <div class="self-stretch justify-start items-start gap-1 inline-flex">
@@ -193,7 +193,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <% end %>
           </div>
 
-          <div class="grow shrink basis-0 text-[#353740] text-base font-bold leading-normal">
+          <div class="grow shrink basis-0 text-base font-bold leading-normal">
             <%= resource_label(@item) %>
             <%= @item["title"] %>
           </div>
@@ -224,10 +224,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     """
   end
 
+  attr :is_active, :boolean, required: true
+  slot :inner_block, required: true
+
   def toggle_outline_button(assigns) do
     ~H"""
     <button
-      class="flex flex-col items-center rounded-l-lg bg-white dark:bg-black text-xl group"
+      class={[
+        "flex flex-col items-center rounded-lg bg-white dark:bg-black hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
+        if(@is_active,
+          do:
+            "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"
+        )
+      ]}
       phx-click="toggle_outline_sidebar"
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
@@ -243,14 +252,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       width="32"
       height="32"
       viewBox="0 0 32 32"
-      fill="none"
+      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
-      class="group-hover:scale-110"
     >
       <g clip-path="url(#clip0_2001_36964)">
         <path
           d="M13.0833 11H22.25M13.0833 15.9958H22.25M13.0833 20.9917H22.25M9.75 11V11.0083M9.75 15.9958V16.0042M9.75 20.9917V21"
-          stroke="#0D70FF"
+          stroke="currentColor"
           stroke-width="1.5"
           stroke-linecap="round"
           stroke-linejoin="round"

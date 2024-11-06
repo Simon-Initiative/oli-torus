@@ -35,6 +35,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     current_user: {[:id, :name, :email], %User{}}
   }
 
+  @default_selected_view :gallery
+
   defp get_or_compute_full_hierarchy(section) do
     SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
       Hierarchy.full_hierarchy(section)
@@ -769,7 +771,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <Annotations.annotations_icon />
         </Annotations.toggle_notes_button>
 
-        <OutlineComponent.toggle_outline_button>
+        <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
           <OutlineComponent.outline_icon />
         </OutlineComponent.toggle_outline_button>
       </:sidebar_toggle>
@@ -834,7 +836,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       </div>
 
       <:sidebar_toggle>
-        <OutlineComponent.toggle_outline_button>
+        <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
           <OutlineComponent.outline_icon />
         </OutlineComponent.toggle_outline_button>
       </:sidebar_toggle>
@@ -903,7 +905,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             </div>
           </div>
           <:sidebar_toggle>
-            <OutlineComponent.toggle_outline_button>
+            <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
               <OutlineComponent.outline_icon />
             </OutlineComponent.toggle_outline_button>
           </:sidebar_toggle>
@@ -984,7 +986,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
           <:sidebar_toggle>
-            <OutlineComponent.toggle_outline_button>
+            <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
               <OutlineComponent.outline_icon />
             </OutlineComponent.toggle_outline_button>
           </:sidebar_toggle>

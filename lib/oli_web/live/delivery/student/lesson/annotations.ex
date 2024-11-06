@@ -22,9 +22,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
     ~H"""
     <div id="annotations_panel" class="flex-1 flex flex-row overflow-hidden">
       <div class="justify-start">
-        <.toggle_notes_button>
-          <i class="fa-solid fa-xmark group-hover:scale-110"></i>
-        </.toggle_notes_button>
+        <button
+          class="flex flex-col items-center rounded-l-lg bg-white dark:bg-black text-xl group"
+          phx-click="toggle_notes_sidebar"
+        >
+          <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
+            <i class="fa-solid fa-xmark group-hover:scale-110"></i>
+          </div>
+        </button>
       </div>
       <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
         <.tab_group class="py-3">
@@ -201,7 +206,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def toggle_notes_button(assigns) do
     ~H"""
     <button
-      class="flex flex-col items-center rounded-l-lg bg-white dark:bg-black text-xl group"
+      class="flex flex-col items-center rounded-lg bg-white dark:bg-black hover:bg-[#deecff] dark:hover:bg-white/10 text-xl group"
       phx-click="toggle_notes_sidebar"
     >
       <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
@@ -213,21 +218,60 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def annotations_icon(assigns) do
     ~H"""
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      class="group-hover:scale-110"
-    >
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g filter="url(#filter0_d_2057_37664)">
+        <path
+          stroke="#0d70ff"
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M12.8903 17.8698C12.3247 17.7741 11.7824 17.6087 11.2729 17.3825L7.43704 18.6194C7.17977 18.7023 6.89772 18.6335 6.70753 18.4415C6.51734 18.2494 6.45133 17.9667 6.53681 17.7102L7.80397 13.9089C7.43151 13.0668 7.22488 12.1354 7.22488 11.1575C7.22488 7.3976 10.2729 4.34961 14.0327 4.34961C17.7926 4.34961 20.8406 7.3976 20.8406 11.1575C20.8406 11.2264 20.8396 11.2951 20.8376 11.3636C23.1801 12.1853 24.8597 14.4161 24.8597 17.0393C24.8597 17.9031 24.6772 18.7257 24.3482 19.4695L25.4675 22.8272C25.543 23.0537 25.4847 23.3034 25.3167 23.473C25.1487 23.6427 24.8996 23.7034 24.6723 23.6302L21.2843 22.5377C20.5385 22.8688 19.7132 23.0525 18.8466 23.0525C15.8073 23.0525 13.2947 20.7978 12.8903 17.8698ZM8.65885 11.1575C8.65885 8.18955 11.0648 5.78358 14.0327 5.78358C16.9654 5.78358 19.3493 8.13265 19.4056 11.0518C19.2215 11.0348 19.0351 11.0261 18.8466 11.0261C15.7399 11.0261 13.1836 13.382 12.8665 16.4046C12.4362 16.3095 12.0257 16.1628 11.6414 15.9715C11.4738 15.888 11.2801 15.8735 11.1019 15.931L8.34515 16.8199L9.2549 14.0907C9.31483 13.9109 9.30114 13.7147 9.21681 13.545C8.85988 12.8265 8.65885 12.0165 8.65885 11.1575Z"
+          fill="#0075EB"
+        />
+      </g>
+      <defs>
+        <filter
+          id="filter0_d_2057_37664"
+          x="0.5"
+          y="0.349609"
+          width="31"
+          height="31.3105"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feColorMatrix
+            in="SourceAlpha"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+            result="hardAlpha"
+          />
+          <feOffset dy="2" />
+          <feGaussianBlur stdDeviation="3" />
+          <feComposite in2="hardAlpha" operator="out" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0.203922 0 0 0 0 0.388235 0 0 0 0.15 0"
+          />
+          <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2057_37664" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="effect1_dropShadow_2057_37664"
+            result="shape"
+          />
+        </filter>
+      </defs>
+    </svg>
+
+    <%!-- <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
+        stroke="#0d70ff"
         fill-rule="evenodd"
         clip-rule="evenodd"
         d="M6.89025 13.8698C6.32467 13.7741 5.78239 13.6087 5.27288 13.3825L1.43704 14.6194C1.17977 14.7023 0.897724 14.6335 0.707531 14.4415C0.517339 14.2494 0.451334 13.9667 0.536814 13.7102L1.80397 9.90888C1.43151 9.06678 1.22488 8.13542 1.22488 7.15748C1.22488 3.3976 4.27287 0.349609 8.03275 0.349609C11.7926 0.349609 14.8406 3.3976 14.8406 7.15748C14.8406 7.22643 14.8396 7.29513 14.8376 7.36359C17.1801 8.18528 18.8597 10.4161 18.8597 13.0393C18.8597 13.9031 18.6772 14.7257 18.3482 15.4695L19.4675 18.8272C19.543 19.0537 19.4847 19.3034 19.3167 19.473C19.1487 19.6427 18.8996 19.7034 18.6723 19.6302L15.2843 18.5377C14.5385 18.8688 13.7132 19.0525 12.8466 19.0525C9.80733 19.0525 7.29474 16.7978 6.89025 13.8698ZM2.65885 7.15748C2.65885 4.18955 5.06482 1.78358 8.03275 1.78358C10.9654 1.78358 13.3493 4.13265 13.4056 7.05179C13.2215 7.03482 13.0351 7.02614 12.8466 7.02614C9.73994 7.02614 7.18356 9.38199 6.86647 12.4046C6.43623 12.3095 6.0257 12.1628 5.64144 11.9715C5.47378 11.888 5.28012 11.8735 5.10187 11.931L2.34515 12.8199L3.2549 10.0907C3.31483 9.91091 3.30114 9.71469 3.21681 9.54496C2.85988 8.82654 2.65885 8.01651 2.65885 7.15748Z"
         fill="#0D70FF"
       />
-    </svg>
+    </svg> --%>
     """
   end
 
