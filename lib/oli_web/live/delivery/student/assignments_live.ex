@@ -2,18 +2,18 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Delivery.Settings
+  alias Oli.Delivery.{Metrics, Settings}
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
   def mount(_params, _session, socket) do
-    %{section: %{id: section_id}, current_user: %{id: current_user_id}} = socket.assigns
+    %{section: section, current_user: %{id: current_user_id}} = socket.assigns
 
     {:ok,
      assign(socket,
        active_tab: :assignments,
-       assignments: get_assignments(section_id, current_user_id)
+       assignments: get_assignments(section, current_user_id)
      )}
   end
 
@@ -54,7 +54,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       >
         <div class="justify-end items-center gap-2 flex">
           <div class="w-5 h-5 relative"><Icons.check /></div>
-          <span>7 of <%= Enum.count(@assignments) %> Assignments</span>
+          <span>
+            <%= Enum.count(@assignments, &(!is_nil(&1.raw_avg_score))) %> of <%= Enum.count(
+              @assignments
+            ) %> Assignments
+          </span>
         </div>
         <div class="self-stretch justify-center items-center gap-2 flex">
           <div class="w-4 h-4"><Icons.visible /></div>
@@ -92,16 +96,23 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
           ) %>
         </span>
       </div>
-      <div class="ml-auto h-12 flex flex-col justify-between">
+      <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
         <span class="h-6 ml-auto text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
-          Attempt 3 of 5
+          Attempt <%= @assignment.attempts %> of <%= max_attempts(@assignment.max_attempts) %>
         </span>
         <div class="flex ml-auto gap-1.5 text-[#39e581]">
           <div class="w-4 h-4"><Icons.star /></div>
           <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
-            15 / 20
+            <%= Utils.parse_score(@assignment.raw_avg_score.score) %> / <%= Utils.parse_score(
+              @assignment.raw_avg_score.out_of
+            ) %>
           </span>
         </div>
+      </div>
+      <div :if={is_nil(@assignment.raw_avg_score)} class="ml-auto h-12 flex flex-col justify-between">
+        <span class="h-6 ml-auto text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+          --
+        </span>
       </div>
     </div>
     """
@@ -109,17 +120,26 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   _docp = """
   Returns a list of assignments by querying the section resources form the SectionResourceDepot
-  and merging the results with the combined settings for the current user.
+  and merging the results with the combined settings and metrics for the current user.
 
   Only required fields needed for render/1 are returned (to reduce memory usage).
   """
 
-  defp get_assignments(section_id, current_user_id) do
-    raw_assignments = SectionResourceDepot.graded_pages(section_id, hidden: false)
+  defp get_assignments(section, current_user_id) do
+    raw_assignments = SectionResourceDepot.graded_pages(section.id, hidden: false)
     resource_ids = Enum.map(raw_assignments, & &1.resource_id)
 
     combined_settings =
-      Settings.get_combined_settings_for_all_resources(section_id, current_user_id, resource_ids)
+      Settings.get_combined_settings_for_all_resources(section.id, current_user_id, resource_ids)
+
+    progress_per_page_id =
+      Metrics.progress_across_for_pages(section.id, resource_ids, [current_user_id])
+
+    raw_avg_score_per_page_id =
+      Metrics.raw_avg_score_across_for_pages(section, resource_ids, [current_user_id])
+
+    user_resource_attempt_counts =
+      Metrics.get_all_user_resource_attempt_counts(section, current_user_id)
 
     Enum.map(raw_assignments, fn assignment ->
       effective_settings = Map.get(combined_settings, assignment.resource_id, %{})
@@ -129,8 +149,16 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         numbering_index: assignment.numbering_index,
         scheduling_type: effective_settings.scheduling_type,
         end_date: effective_settings.end_date,
-        purpose: assignment.purpose
+        purpose: assignment.purpose,
+        progress: progress_per_page_id[assignment.resource_id],
+        raw_avg_score:
+          raw_avg_score_per_page_id[assignment.resource_id] |> IO.inspect(label: "raw avg score"),
+        max_attempts: effective_settings.max_attempts,
+        attempts: user_resource_attempt_counts[assignment.resource_id] || 0
       }
     end)
   end
+
+  defp max_attempts(0), do: "∞"
+  defp max_attempts(max_attempts), do: max_attempts
 end
