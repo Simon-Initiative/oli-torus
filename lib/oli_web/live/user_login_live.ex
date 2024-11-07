@@ -86,7 +86,8 @@ defmodule OliWeb.UserLoginLive do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "user")
 
-    authentication_providers = OliWeb.UserAuth.authentication_providers()
+    authentication_providers =
+      Oli.AssentAuth.UserAssentAuth.authentication_providers() |> Keyword.keys()
 
     {:ok,
      assign(socket,

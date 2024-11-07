@@ -34,7 +34,8 @@ defmodule OliWeb.UserRegistrationLive do
   def mount(_params, _session, socket) do
     changeset = Accounts.change_user_registration(%User{})
 
-    authentication_providers = OliWeb.UserAuth.authentication_providers()
+    authentication_providers =
+      Oli.AssentAuth.UserAssentAuth.authentication_providers() |> Keyword.keys()
 
     socket =
       socket

@@ -272,6 +272,9 @@ defmodule Oli.Accounts.User do
     |> cast_assoc(:user_identities)
     |> put_change(:independent_learner, true)
     |> put_change(:guest, false)
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
+    |> maybe_create_unique_sub()
+    |> maybe_name_from_given_and_family()
     |> confirm_email_if_verified()
   end
 

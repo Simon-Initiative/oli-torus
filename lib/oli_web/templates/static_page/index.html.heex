@@ -41,7 +41,9 @@
         form={to_form(%{}, as: "user")}
         action={~p"/users/log_in"}
         reset_password_link={~p"/users/reset_password"}
-        authentication_providers={OliWeb.UserAuth.authentication_providers()}
+        authentication_providers={
+          Keyword.keys(Oli.AssentAuth.UserAssentAuth.authentication_providers())
+        }
       />
     </div>
   </div>

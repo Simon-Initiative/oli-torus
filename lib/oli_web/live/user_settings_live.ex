@@ -3,7 +3,7 @@ defmodule OliWeb.UserSettingsLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
-  alias Oli.AssentAuth
+  alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.Common.Properties.{Groups, Group}
 
   def render(assigns) do
@@ -150,7 +150,7 @@ defmodule OliWeb.UserSettingsLive do
       |> assign(:show_relative_dates, show_relative_dates)
       |> assign(:trigger_submit, false)
       |> assign(:login_providers, login_providers_and_statuses(user))
-      |> assign(:has_password, AssentAuth.has_password?(user))
+      |> assign(:has_password, UserAssentAuth.has_password?(user))
 
     {:ok, socket}
   end
@@ -274,12 +274,13 @@ defmodule OliWeb.UserSettingsLive do
 
   defp login_providers_and_statuses(%User{} = user) do
     user_identity_providers_map =
-      AssentAuth.list_user_identities(user)
+      UserAssentAuth.list_user_identities(user)
       |> Enum.reduce(%{}, fn identity, acc ->
         Map.put(acc, String.to_existing_atom(identity.provider), true)
       end)
 
-    AssentAuth.authentication_providers()
+    UserAssentAuth.authentication_providers()
+    |> Keyword.keys()
     |> Enum.map(&{&1, Map.has_key?(user_identity_providers_map, &1)})
     |> Enum.sort_by(&elem(&1, 1))
   end
