@@ -2,16 +2,18 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   use OliWeb, :live_view
 
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias OliWeb.Common.FormatDateTime
-  alias OliWeb.Common.SessionContext
+  alias Oli.Delivery.Settings
+  alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
 
   def mount(_params, _session, socket) do
+    %{section: %{id: section_id}, current_user: %{id: current_user_id}} = socket.assigns
+
     {:ok,
      assign(socket,
        active_tab: :assignments,
-       assignments: SectionResourceDepot.graded_pages(socket.assigns.section.id, hidden: false)
+       assignments: get_assignments(section_id, current_user_id)
      )}
   end
 
@@ -70,8 +72,6 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   attr :ctx, SessionContext, required: true
 
   def assignment(assigns) do
-    # TODO use effective settings...
-
     ~H"""
     <div class="h-12 flex">
       <div class="w-6 h-6 flex justify-center items-center">
@@ -105,5 +105,32 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       </div>
     </div>
     """
+  end
+
+  _docp = """
+  Returns a list of assignments by querying the section resources form the SectionResourceDepot
+  and merging the results with the combined settings for the current user.
+
+  Only required fields needed for render/1 are returned (to reduce memory usage).
+  """
+
+  defp get_assignments(section_id, current_user_id) do
+    raw_assignments = SectionResourceDepot.graded_pages(section_id, hidden: false)
+    resource_ids = Enum.map(raw_assignments, & &1.resource_id)
+
+    combined_settings =
+      Settings.get_combined_settings_for_all_resources(section_id, current_user_id, resource_ids)
+
+    Enum.map(raw_assignments, fn assignment ->
+      effective_settings = Map.get(combined_settings, assignment.resource_id, %{})
+
+      %{
+        title: assignment.title,
+        numbering_index: assignment.numbering_index,
+        scheduling_type: effective_settings.scheduling_type,
+        end_date: effective_settings.end_date,
+        purpose: assignment.purpose
+      }
+    end)
   end
 end
