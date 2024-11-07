@@ -95,11 +95,11 @@ defmodule OliWeb.Delivery.Student.Utils do
           </div>
           <div
             :if={@page_context.effective_settings.start_date}
-            role="page schedule"
+            role="page start schedule"
             class="justify-start items-start gap-1 flex"
           >
             <div class="opacity-50 dark:text-white text-xs font-normal">
-              Available from:
+              Available by:
             </div>
             <div class="dark:text-white text-xs font-normal">
               <%= FormatDateTime.to_formatted_datetime(

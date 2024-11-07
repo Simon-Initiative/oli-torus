@@ -1052,6 +1052,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Read by:")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+      assert has_element?(view, ~s{div[role="page start schedule"]}, "Available by:")
+      assert has_element?(view, ~s{div[role="page start schedule"]}, "Fri Nov 10, 2023")
     end
 
     test "can not see page duration time when it is not set", %{
