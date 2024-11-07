@@ -130,6 +130,67 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
 
       assert html =~ ~s(#{student.name} information)
     end
+
+    test "renders student progress calculation modal in the student overview view", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, ~p"/sections/#{section.slug}/instructor_dashboard/overview/students")
+
+      # Button that triggers a tooltip
+      assert has_element?(
+               view,
+               "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]']"
+             )
+
+      # Column title should be a sibling of the button with the xphx-mouseover attribute
+      assert has_element?(
+               view,
+               "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]'] + span",
+               "COURSE PROGRESS"
+             )
+
+      # Link that triggers the opening of the modal
+      assert view |> has_element?("button#student_progress_tooltip_link", "Learn more")
+
+      # Modal component for rendering the student progress calculation modal dialog
+      assert view |> has_element?("div#student_progress_calculation_modal")
+    end
+
+    test "renders student progress calculation modal in the student reports view", %{
+      instructor: instructor,
+      student: student,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} =
+        live(conn, live_view_students_dashboard_route(section.slug, student.id))
+
+      # Button that triggers a tooltip
+      assert has_element?(
+               view,
+               "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]']"
+             )
+
+      # Column title should be a sibling of the button with the xphx-mouseover attribute
+      assert has_element?(
+               view,
+               "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]'] + span",
+               "STUDENT PROGRESS"
+             )
+
+      # Link that triggers the opening of the modal
+      assert view |> has_element?("button#student_progress_tooltip_link", "Learn more")
+
+      # Modal component for rendering the student progress calculation modal dialog
+      assert view |> has_element?("div#student_progress_calculation_modal")
+    end
   end
 
   def section_with_survey() do
