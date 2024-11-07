@@ -999,7 +999,7 @@ defmodule OliWeb.Router do
         live("/learn", Delivery.Student.LearnLive)
         live("/discussions", Delivery.Student.DiscussionsLive)
         live("/assignments", Delivery.Student.AssignmentsLive)
-        live("/schedule", Delivery.Student.ScheduleLive)
+        live("/student_schedule", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
       end
@@ -1023,7 +1023,7 @@ defmodule OliWeb.Router do
         live("/learn", Delivery.Student.LearnLive, :preview)
         live("/discussions", Delivery.Student.DiscussionsLive, :preview)
         live("/assignments", Delivery.Student.AssignmentsLive, :preview)
-        live("/schedule", Delivery.Student.ScheduleLive, :preview)
+        live("/student_schedule", Delivery.Student.ScheduleLive, :preview)
         live("/explorations", Delivery.Student.ExplorationsLive, :preview)
         live("/practice", Delivery.Student.PracticeLive, :preview)
       end

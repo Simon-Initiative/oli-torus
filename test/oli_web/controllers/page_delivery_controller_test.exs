@@ -2426,7 +2426,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> get(~p"/sections/#{section.slug}/schedule")
+        |> get(~p"/sections/#{section.slug}/student_schedule")
 
       assert html_response(conn, 200) =~ section.title
 

@@ -98,7 +98,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
             non_scheduled_container_groups={@schedule}
             section_slug={@section_slug}
             historical_graded_attempt_summary={@historical_graded_attempt_summary}
-            request_path={~p"/sections/#{@section_slug}/schedule"}
+            request_path={~p"/sections/#{@section_slug}/student_schedule"}
           />
         </div>
       </div>
@@ -146,7 +146,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
                   schedule_ranges={schedule_ranges}
                   section_slug={@section_slug}
                   historical_graded_attempt_summary={@historical_graded_attempt_summary}
-                  request_path={~p"/sections/#{@section_slug}/schedule"}
+                  request_path={~p"/sections/#{@section_slug}/student_schedule"}
                 />
               <% end %>
             </div>

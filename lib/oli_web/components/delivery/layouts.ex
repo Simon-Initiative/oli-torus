@@ -638,9 +638,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
-      ~p"/sections/#{section_slug}/preview/schedule"
+      ~p"/sections/#{section_slug}/preview/student_schedule"
     else
-      ~p"/sections/#{section_slug}/schedule?#{%{sidebar_expanded: sidebar_expanded}}"
+      ~p"/sections/#{section_slug}/student_schedule?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 

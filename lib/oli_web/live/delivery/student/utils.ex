@@ -372,16 +372,16 @@ defmodule OliWeb.Delivery.Student.Utils do
     - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
 
   ## Examples
-    - `schedule_live_path("math")` returns `"/sections/math/schedule"`.
-    - `schedule_live_path("math", request_path: "some/previous/url")` returns `"/sections/math/schedule?request_path=some/previous/url"`.
+    - `schedule_live_path("math")` returns `"/sections/math/student_schedule"`.
+    - `schedule_live_path("math", request_path: "some/previous/url")` returns `"/sections/math/student_schedule?request_path=some/previous/url"`.
   """
   def schedule_live_path(section_slug, params \\ [])
 
   def schedule_live_path(section_slug, []),
-    do: ~p"/sections/#{section_slug}/schedule"
+    do: ~p"/sections/#{section_slug}/student_schedule"
 
   def schedule_live_path(section_slug, params),
-    do: ~p"/sections/#{section_slug}/schedule?#{params}"
+    do: ~p"/sections/#{section_slug}/student_schedule?#{params}"
 
   # nil case arises for linked loose pages not in in hierarchy index
   def get_container_label(nil, section), do: section.title
