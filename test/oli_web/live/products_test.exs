@@ -184,11 +184,11 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert view
              |> element("tr:first-child > td:first-child")
-             |> render() =~ product.title
+             |> render() =~ product_2.title
 
       assert view
              |> element("tr:last-child > td:first-child")
-             |> render() =~ product_2.title
+             |> render() =~ product.title
 
       view
       |> element("th[phx-click=\"paged_table_sort\"][phx-value-sort_by=\"inserted_at\"]")
@@ -196,11 +196,11 @@ defmodule OliWeb.ProductsLiveTest do
 
       assert view
              |> element("tr:first-child > td:first-child")
-             |> render() =~ product_2.title
+             |> render() =~ product.title
 
       assert view
              |> element("tr:last-child > td:first-child")
-             |> render() =~ product.title
+             |> render() =~ product_2.title
     end
 
     test "include archived products", %{conn: conn, product: product} do
