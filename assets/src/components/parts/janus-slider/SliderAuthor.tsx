@@ -1,10 +1,11 @@
 import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import { clone } from 'utils/common';
 import './Slider.scss';
 import { SliderModel } from './schema';
 
 const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) => {
-  const { id, model } = props;
+  const { id, model, onSaveConfigure } = props;
 
   const {
     z,
@@ -71,6 +72,18 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     if (snapInterval) {
       const options = [];
       const numberOfTicks = (maximum - minimum) / snapInterval;
+      const numberOfTricksThreshold = 100;
+      if (numberOfTicks > numberOfTricksThreshold) {
+        const modelClone = clone(model);
+        const snapIntervalThreshold = (maximum - minimum) / numberOfTricksThreshold;
+        // As per the requirement, Users cannot enter a value that divides the slider into more than 100 equal sections.
+        // if it goes beyond that, we need to calculate the snapIntervalThreshold between the min and max values
+        // and set the interval
+        modelClone.snapInterval = +snapIntervalThreshold.toFixed(2);
+        //we need to save the snapInterval so that the custom property is updated with adjusted values
+        onSaveConfigure({ id, snapshot: modelClone });
+        return;
+      }
       for (let i = 0; i <= numberOfTicks; i++) {
         options.push(<option value={i * snapInterval}></option>);
       }
