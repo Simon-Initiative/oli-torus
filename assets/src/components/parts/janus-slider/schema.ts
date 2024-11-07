@@ -72,7 +72,7 @@ export const simpleUISchema = {
     classNames: 'col-span-6',
   },
   snapInterval: {
-    classNames: 'col-span-6',
+    classNames: 'col-span-12',
   },
   advancedFeedback: numericAdvancedFeedback.uiSchema,
 };
