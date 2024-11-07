@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   def mount(_params, _session, socket) do
     %{section: section, current_user: %{id: current_user_id}} = socket.assigns
@@ -60,10 +61,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             ) %> Assignments
           </span>
         </div>
-        <div class="self-stretch justify-center items-center gap-2 flex">
-          <div class="w-4 h-4"><Icons.visible /></div>
-          <span>Hide Completed</span>
-        </div>
+        <.toggle_completed_visibility />
       </div>
       <div role="assignments details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
         <.assignment :for={assignment <- @assignments} assignment={assignment} ctx={@ctx} />
@@ -77,7 +75,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def assignment(assigns) do
     ~H"""
-    <div class="h-12 flex">
+    <div
+      role="assignment detail"
+      data-completed={"#{!is_nil(@assignment.raw_avg_score)}"}
+      class="h-12 flex"
+    >
       <div class="w-6 h-6 flex justify-center items-center">
         <Icons.flag />
       </div>
@@ -116,6 +118,39 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       </div>
     </div>
     """
+  end
+
+  def toggle_completed_visibility(assigns) do
+    ~H"""
+    <button
+      id="hide_completed_button"
+      phx-click={hide_completed()}
+      class="self-stretch justify-center items-center gap-2 flex"
+    >
+      <div class="w-4 h-4"><Icons.hidden /></div>
+      <span>Hide Completed</span>
+    </button>
+    <button
+      id="show_completed_button"
+      phx-click={show_completed()}
+      class="hidden self-stretch justify-center items-center gap-2"
+    >
+      <div class="w-4 h-4"><Icons.visible /></div>
+      <span>Show Completed</span>
+    </button>
+    """
+  end
+
+  def hide_completed() do
+    JS.hide()
+    |> JS.hide(to: ~s{div[role="assignment detail"][data-completed="true"]})
+    |> JS.show(to: "#show_completed_button", display: "flex")
+  end
+
+  def show_completed() do
+    JS.hide()
+    |> JS.show(to: ~s{div[role="assignment detail"][data-completed="true"]}, display: "flex")
+    |> JS.show(to: "#hide_completed_button", display: "flex")
   end
 
   _docp = """
