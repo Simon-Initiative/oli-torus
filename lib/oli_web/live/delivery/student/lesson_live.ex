@@ -135,25 +135,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       attempt_expired_auto_submit =
         now > effective_end_time and auto_submit and !page_context.review_mode
 
-      thin_hierarchy =
-        socket.assigns.section
-        |> get_or_compute_full_hierarchy()
-        |> Hierarchy.thin_hierarchy(
-          [
-            "id",
-            "slug",
-            "title",
-            "numbering",
-            "resource_id",
-            "resource_type_id",
-            "children",
-            "graded",
-            "section_resource"
-          ],
-          # only include units, modules, sections or pages until level 3
-          fn node -> node["numbering"]["level"] <= 3 end
-        )
-
       socket =
         socket
         |> emit_page_viewed_event()
