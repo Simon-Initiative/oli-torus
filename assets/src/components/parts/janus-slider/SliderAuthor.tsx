@@ -72,10 +72,10 @@ const SliderAuthor: React.FC<AuthorPartComponentProps<SliderModel>> = (props) =>
     if (snapInterval) {
       const options = [];
       const numberOfTicks = (maximum - minimum) / snapInterval;
-      const numberOfTricksThreshold = 100;
-      if (numberOfTicks > numberOfTricksThreshold) {
+      const numberOfTicksThreshold = 100;
+      if (numberOfTicks > numberOfTicksThreshold) {
         const modelClone = clone(model);
-        const snapIntervalThreshold = (maximum - minimum) / numberOfTricksThreshold;
+        const snapIntervalThreshold = (maximum - minimum) / numberOfTicksThreshold;
         // As per the requirement, Users cannot enter a value that divides the slider into more than 100 equal sections.
         // if it goes beyond that, we need to calculate the snapIntervalThreshold between the min and max values
         // and set the interval
