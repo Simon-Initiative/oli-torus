@@ -63,7 +63,10 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="h-full max-h-screen w-[360px] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex">
+    <div
+      id="outline_panel"
+      class="h-full max-h-screen w-[360px] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex"
+    >
       <div
         phx-click="toggle_outline_sidebar"
         class="self-stretch px-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
@@ -113,7 +116,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def outline_item(%{is_container?: false} = assigns) do
     ~H"""
     <% resource_path =
-      Utils.lesson_live_path(@section_slug, @item["section_resource"].revision_slug,
+      Utils.lesson_live_path(@section_slug, @item["slug"],
         request_path:
           Utils.learn_live_path(@section_slug,
             target_resource_id: @item["resource_id"],
@@ -122,6 +125,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         selected_view: @selected_view
       ) %>
     <.link
+      id={"outline_item_#{@item["id"]}"}
       href={resource_path}
       class="w-full text-[#353740] dark:text-[#eeebf5] hover:text-[#353740] dark:hover:text-[#eeebf5] hover:cursor-pointer hover:no-underline"
     >
@@ -132,19 +136,19 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       ]}>
         <div class="grow p-2 justify-start items-start gap-5 flex">
           <div class="py-0.5 justify-start items-center gap-5 flex">
-            <div class="justify-start items-center flex">
+            <div class="justify-start items-center flex" role="page icon">
               <div class="w-5 h-5 relative">
                 <.page_icon graded={@item["graded"]} purpose={@item["section_resource"].purpose} />
               </div>
             </div>
-            <div class="justify-start items-center flex">
+            <div class="justify-start items-center flex" role="index">
               <div class="grow shrink basis-0 text-right text-sm leading-none">
                 <%= @item["numbering"]["index"] %>
               </div>
             </div>
           </div>
           <div class="grow flex-col justify-start items-start gap-2 flex">
-            <div class="justify-start items-start gap-5 flex">
+            <div class="justify-start items-start gap-5 flex" role="title">
               <div class="grow justify-start items-center flex">
                 <div class={[
                   "grow text-base leading-normal",
@@ -160,6 +164,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
               width="200px"
               on_going_colour="bg-[#0CAF61]"
               completed_colour="bg-[#0CAF61]"
+              role="progress bar"
             />
           </div>
         </div>
@@ -171,10 +176,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   def outline_item(assigns) do
     ~H"""
     <% expanded? = Integer.to_string(@item["id"]) in @expanded_items %>
-    <div class={[
-      "self-stretch flex-col justify-start items-start gap-2 inline-flex",
-      left_indentation(@item["numbering"]["level"])
-    ]}>
+    <div
+      id={"outline_item_#{@item["id"]}"}
+      class={[
+        "self-stretch flex-col justify-start items-start gap-2 inline-flex",
+        left_indentation(@item["numbering"]["level"])
+      ]}
+    >
       <div
         phx-click="expand_item"
         phx-value-item_id={@item["id"]}
@@ -193,7 +201,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <% end %>
           </div>
 
-          <div class="grow shrink basis-0 text-base font-bold leading-normal">
+          <div class="grow shrink basis-0 text-base font-bold leading-normal" role="title">
             <%= resource_label(@item) %>
             <%= @item["title"] %>
           </div>
@@ -204,6 +212,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           width="200px"
           on_going_colour="bg-[#0CAF61]"
           completed_colour="bg-[#0CAF61]"
+          role="progress bar"
         />
       </div>
       <div

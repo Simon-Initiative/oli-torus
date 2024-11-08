@@ -295,7 +295,7 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
-  Finds the top-level ancestor of a specified node within a hierarchical structure.
+  Finds the top-level ancestor of a specified node within a hierarchical structure (ignoring the Root Container).
 
   This function performs a depth-first search (DFS) to locate the highest ancestor of a given node identified by `resource_id`. It traverses recursively through the structure, checking each node's children until it finds a match for `resource_id`. If a match is found, it returns the top-most ancestor node; otherwise, it continues searching deeper in the hierarchy.
 
@@ -321,7 +321,7 @@ defmodule Oli.Delivery.Hierarchy do
   }
 
   iex> find_top_level_ancestor(hierarchy, "3")
-  # => Returns the node with `resource_id` "1" as it is the top-level ancestor of "3"
+  # => Returns the node with `resource_id` "2" as it is the top-level ancestor of "3" if we ignore the Root Container (resource_id = 1).
   """
   @spec find_top_level_ancestor(
           map(),
@@ -344,7 +344,7 @@ defmodule Oli.Delivery.Hierarchy do
 
   def find_top_level_ancestor(node, resource_id, upper_most_level_ancestor) do
     Enum.find(
-      node["children"],
+      node["children"] || [],
       fn child ->
         find_top_level_ancestor(child, resource_id, upper_most_level_ancestor || node)
       end
@@ -885,6 +885,8 @@ defmodule Oli.Delivery.Hierarchy do
         ) :: map() | list() | nil
 
   def thin_hierarchy(hierarchy, fields_to_keep, filter_fn \\ fn _ -> true end)
+
+  def thin_hierarchy(nil, _, _), do: nil
 
   def thin_hierarchy(hierarchy, fields_to_keep, filter_fn)
       when is_map(hierarchy) do

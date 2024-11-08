@@ -310,6 +310,198 @@ defmodule Oli.Delivery.HierarchyTest do
     end
   end
 
+  describe "find_top_level_ancestor/3" do
+    test "finds the top-level ancestor of a node in a simple hierarchy" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "name" => "Root Container",
+        "children" => [
+          %{"resource_id" => "2", "children" => [%{"resource_id" => "3"}]},
+          %{"resource_id" => "4"}
+        ]
+      }
+
+      # Ignores the Root Container
+      assert Hierarchy.find_top_level_ancestor(hierarchy, "3") == %{
+               "resource_id" => "2",
+               "children" => [%{"resource_id" => "3"}]
+             }
+    end
+
+    test "returns itself if it is a top level node" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "name" => "Root Container",
+        "children" => [
+          %{"resource_id" => "2", "children" => [%{"resource_id" => "3"}]},
+          %{"resource_id" => "4"}
+        ]
+      }
+
+      assert Hierarchy.find_top_level_ancestor(hierarchy, "2") == %{
+               "resource_id" => "2",
+               "children" => [%{"resource_id" => "3"}]
+             }
+    end
+
+    test "returns nil if the resource_id is not found" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "children" => [
+          %{"resource_id" => "2", "children" => [%{"resource_id" => "3"}]},
+          %{"resource_id" => "4"}
+        ]
+      }
+
+      refute Hierarchy.find_top_level_ancestor(hierarchy, "5")
+    end
+
+    test "returns the top-level ancestor when multiple levels deep" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "children" => [
+          %{
+            "resource_id" => "2",
+            "children" => [
+              %{"resource_id" => "3", "children" => [%{"resource_id" => "4"}]}
+            ]
+          }
+        ]
+      }
+
+      assert Hierarchy.find_top_level_ancestor(hierarchy, "4") == %{
+               "resource_id" => "2",
+               "children" => [
+                 %{"resource_id" => "3", "children" => [%{"resource_id" => "4"}]}
+               ]
+             }
+    end
+  end
+
+  describe "thin_hierarchy/3" do
+    test "retains only specified fields in a simple hierarchy" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "name" => "Root",
+        "description" => "Root node",
+        "children" => [
+          %{"resource_id" => "2", "name" => "Child 1", "description" => "Child node 1"},
+          %{"resource_id" => "3", "name" => "Child 2", "description" => "Child node 2"}
+        ]
+      }
+
+      fields_to_keep = ["resource_id", "name", "children"]
+
+      expected = %{
+        "resource_id" => "1",
+        "name" => "Root",
+        "children" => [
+          %{"resource_id" => "2", "name" => "Child 1"},
+          %{"resource_id" => "3", "name" => "Child 2"}
+        ]
+      }
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep) == expected
+    end
+
+    test "filters out nodes based on a custom filter function" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "name" => "Root",
+        "children" => [
+          %{"resource_id" => "2", "name" => "Child 1"},
+          %{"resource_id" => "3", "name" => "Child 2"}
+        ]
+      }
+
+      fields_to_keep = ["resource_id", "name", "children"]
+      filter_fn = fn node -> node["resource_id"] != "2" end
+
+      expected = %{
+        "resource_id" => "1",
+        "name" => "Root",
+        "children" => [
+          %{"resource_id" => "3", "name" => "Child 2"}
+        ]
+      }
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep, filter_fn) == expected
+    end
+
+    test "returns nil if the root node does not satisfy the filter function" do
+      hierarchy = %{
+        "resource_id" => "1",
+        "name" => "Root",
+        "description" => "Root node",
+        "children" => [
+          %{"resource_id" => "2", "name" => "Child 1"},
+          %{"resource_id" => "3", "name" => "Child 2"}
+        ]
+      }
+
+      fields_to_keep = ["resource_id", "name"]
+      filter_fn = fn node -> node["resource_id"] != "1" end
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep, filter_fn) == nil
+    end
+
+    test "handles a list of nodes as the root of the hierarchy" do
+      hierarchy = [
+        %{
+          "resource_id" => "1",
+          "name" => "Node 1",
+          "children" => [%{"resource_id" => "2", "name" => "Child 1"}]
+        },
+        %{
+          "resource_id" => "3",
+          "name" => "Node 2",
+          "children" => [%{"resource_id" => "4", "name" => "Child 2"}]
+        }
+      ]
+
+      fields_to_keep = ["name", "children"]
+
+      expected = [
+        %{
+          "name" => "Node 1",
+          "children" => [%{"name" => "Child 1"}]
+        },
+        %{
+          "name" => "Node 2",
+          "children" => [%{"name" => "Child 2"}]
+        }
+      ]
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep) == expected
+    end
+
+    test "returns an empty list if all nodes are filtered out" do
+      hierarchy = [
+        %{"resource_id" => "1", "name" => "Node 1"},
+        %{"resource_id" => "2", "name" => "Node 2"}
+      ]
+
+      fields_to_keep = ["resource_id", "name"]
+      filter_fn = fn _ -> false end
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep, filter_fn) == []
+    end
+
+    test "handles an empty hierarchy gracefully" do
+      hierarchy = %{}
+      fields_to_keep = ["resource_id", "name"]
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep) == %{}
+    end
+
+    test "handles an empty list of nodes gracefully" do
+      hierarchy = []
+      fields_to_keep = ["resource_id", "name"]
+
+      assert Hierarchy.thin_hierarchy(hierarchy, fields_to_keep) == []
+    end
+  end
+
   defp create_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
