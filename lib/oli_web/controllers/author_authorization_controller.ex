@@ -1,24 +1,24 @@
-defmodule OliWeb.UserAuthorizationController do
+defmodule OliWeb.AuthorAuthorizationController do
   use OliWeb, :controller
 
   import Ecto.Query, warn: false
-  import OliWeb.UserAuth, only: [require_authenticated_user: 2]
+  import OliWeb.AuthorAuth, only: [require_authenticated_author: 2]
 
   alias Phoenix.Naming
   alias Oli.Accounts
-  alias Oli.AssentAuth.UserAssentAuth
-  alias OliWeb.UserAuth
+  alias Oli.AssentAuth.AuthorAssentAuth
+  alias OliWeb.AuthorAuth
   alias OliWeb.Common.AssentAuthWeb
   alias OliWeb.Common.AssentAuthWeb.AssentAuthWebConfig
 
   require Logger
 
-  plug :require_authenticated_user when action in [:delete]
+  plug :require_authenticated_author when action in [:delete]
   plug :load_assent_auth_config
   plug :assign_callback_url when action in [:new, :callback]
   plug :maybe_assign_user_return_to when action in [:callback]
   plug :load_session_params when action in [:callback]
-  # plug :load_user_by_invitation_token when action in [:callback]
+  # plug :load_author_by_invitation_token when action in [:callback]
 
   def new(conn, %{"provider" => provider}) do
     config = conn.assigns.assent_auth_config
@@ -28,7 +28,7 @@ defmodule OliWeb.UserAuthorizationController do
     |> case do
       {:ok, %{url: url, session_params: session_params}} ->
         # Session params (used for OAuth 2.0 and OIDC strategies) will be
-        # retrieved when user returns for the callback phase
+        # retrieved when author returns for the callback phase
         conn
         |> store_session_params(session_params)
         |> maybe_store_user_return_to()
@@ -41,13 +41,13 @@ defmodule OliWeb.UserAuthorizationController do
 
         conn
         |> put_flash(:error, "Something went wrong. Please try again or contact support.")
-        |> redirect(to: ~p"/users/log_in")
+        |> redirect(to: ~p"/authors/log_in")
     end
   end
 
   def delete(conn, %{"provider" => provider} = params) do
     config = conn.assigns.assent_auth_config
-    user_return_to = params["user_return_to"] || ~p"/users/settings"
+    user_return_to = params["user_return_to"] || ~p"/authors/settings"
 
     case AssentAuthWeb.delete_user_identity_provider(conn, provider, config) do
       {:ok, _} ->
@@ -74,7 +74,7 @@ defmodule OliWeb.UserAuthorizationController do
     # The session params (used for OAuth 2.0 and OIDC strategies) stored in the
     # request phase will be used in the callback phase
 
-    redirect_to = conn.assigns[:user_return_to] || ~p"/users/log_in"
+    redirect_to = conn.assigns[:user_return_to] || ~p"/authors/log_in"
 
     provider
     |> AssentAuthWeb.provider_callback(params, conn.assigns.session_params, config)
@@ -141,21 +141,24 @@ defmodule OliWeb.UserAuthorizationController do
     |> Plug.Conn.assign(
       :assent_auth_config,
       %AssentAuthWebConfig{
-        authentication_providers: UserAssentAuth.authentication_providers(),
-        redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
-        current_user_assigns_key: :current_user,
-        get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
-        create_session: &UserAuth.create_session(&1, &2),
+        authentication_providers: AuthorAssentAuth.authentication_providers(),
+        redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
+        current_user_assigns_key: :current_author,
+        get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
+        create_session: &AuthorAuth.create_session(&1, &2),
         deliver_user_confirmation_instructions: fn user ->
-          Accounts.deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+          Accounts.deliver_author_confirmation_instructions(
+            user,
+            &url(~p"/authors/confirm/#{&1}")
+          )
         end,
-        assent_auth_module: UserAssentAuth
+        assent_auth_module: AuthorAssentAuth
       }
     )
   end
 
   defp assign_callback_url(conn, _opts) do
-    url = ~p"/users/auth/#{conn.params["provider"]}/callback"
+    url = ~p"/authors/auth/#{conn.params["provider"]}/callback"
 
     assign(conn, :callback_url, url)
   end

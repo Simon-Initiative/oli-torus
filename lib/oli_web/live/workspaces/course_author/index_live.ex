@@ -210,6 +210,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
             registration_link={~p"/authors/register"}
             reset_password_link={~p"/authors/reset_password"}
             authentication_providers={@authentication_providers}
+            auth_provider_path_fn={&~p"/authors/auth/#{&1}/new"}
           />
         </div>
       </div>

@@ -21,6 +21,7 @@ defmodule OliWeb.UserRegistrationLive do
             action={~p"/users/log_in?_action=registered"}
             log_in_link={~p"/users/log_in"}
             authentication_providers={@authentication_providers}
+            auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
             trigger_submit={@trigger_submit}
             check_errors={@check_errors}
             recaptcha_error={@recaptcha_error}

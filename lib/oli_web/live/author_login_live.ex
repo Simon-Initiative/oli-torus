@@ -46,6 +46,7 @@ defmodule OliWeb.AuthorLoginLive do
             registration_link={~p"/authors/register"}
             reset_password_link={~p"/authors/reset_password"}
             authentication_providers={@authentication_providers}
+            auth_provider_path_fn={&~p"/authors/auth/#{&1}/new"}
           />
         </div>
       </div>
@@ -57,8 +58,8 @@ defmodule OliWeb.AuthorLoginLive do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
     form = to_form(%{"email" => email}, as: "author")
 
-    # MER-3835 TODO
-    authentication_providers = []
+    authentication_providers =
+      Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
 
     {:ok, assign(socket, form: form, authentication_providers: authentication_providers),
      temporary_assigns: [form: form]}

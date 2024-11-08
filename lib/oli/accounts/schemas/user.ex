@@ -278,15 +278,6 @@ defmodule Oli.Accounts.User do
     |> confirm_email_if_verified()
   end
 
-  defp confirm_email_if_verified(changeset) do
-    if get_change(changeset, :email_verified) do
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      change(changeset, email_confirmed_at: now)
-    else
-      changeset
-    end
-  end
-
   @doc """
   Creates a changeset that doesn't require a current password, used for lower risk changes to user
   (as opposed to higher risk, like password changes)

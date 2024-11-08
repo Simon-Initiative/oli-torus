@@ -21,6 +21,7 @@ defmodule OliWeb.AuthorRegistrationLive do
             action={~p"/authors/log_in?_action=registered"}
             log_in_link={~p"/authors/log_in"}
             authentication_providers={@authentication_providers}
+            auth_provider_path_fn={&~p"/authors/auth/#{&1}/new"}
             trigger_submit={@trigger_submit}
             check_errors={@check_errors}
             recaptcha_error={@recaptcha_error}

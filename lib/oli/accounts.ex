@@ -1556,6 +1556,34 @@ defmodule Oli.Accounts do
     |> Repo.update()
   end
 
+  @doc """
+  Adds an author password. Used for accounts initially created by a login provider. This function
+  should only run when the author has no password set.
+
+  ## Examples
+
+      iex> create_author_password(author, %{password: ...})
+      {:ok, %Author{}}
+
+      iex> create_author_password(author, %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_author_password(%{password_hash: nil} = author, attrs) do
+    changeset =
+      author
+      |> Author.password_changeset(attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, changeset)
+    |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{author: author}} -> {:ok, author}
+      {:error, :author, changeset, _} -> {:error, changeset}
+    end
+  end
+
   ## Session
 
   @doc """

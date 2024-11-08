@@ -3,11 +3,12 @@ defmodule OliWeb.AuthorSettingsLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias Oli.AssentAuth.AuthorAssentAuth
   alias OliWeb.Common.Properties.{Groups, Group}
 
   def render(assigns) do
     ~H"""
-    <h2 class="text-3xl mb-8">Account Settings</h2>
+    <h2 class="text-3xl mb-8">Author Account Settings</h2>
 
     <Groups.render>
       <Group.render label="Details" description="View and change your authoring account details">
@@ -20,6 +21,7 @@ defmodule OliWeb.AuthorSettingsLive do
               phx-submit="update_author"
               phx-change="validate_author"
             >
+              <.input field={@author_form[:name]} type="text" label="Full name" readonly />
               <.input field={@author_form[:given_name]} type="text" label="First name" />
               <.input field={@author_form[:family_name]} type="text" label="Last name" />
 
@@ -28,13 +30,6 @@ defmodule OliWeb.AuthorSettingsLive do
               </div>
             </.form>
 
-            <div :if={!Enum.empty?(providers_for(@current_author))} class="col-span-12 mb-10">
-              <h4 class="mt-3">Credentials Managed By</h4>
-              <div :for={provider <- providers_for(@current_author)} class="my-2">
-                <% # MER-3835 TODO %>
-              </div>
-            </div>
-
             <.form
               for={@email_form}
               id="email_form"
@@ -42,8 +37,15 @@ defmodule OliWeb.AuthorSettingsLive do
               phx-submit="update_email"
               phx-change="validate_email"
             >
-              <.input field={@email_form[:email]} type="email" label="Email" required />
               <.input
+                field={@email_form[:email]}
+                type="email"
+                label="Email"
+                required
+                readonly={!@has_password}
+              />
+              <.input
+                :if={@has_password}
                 field={@email_form[:current_password]}
                 name="current_password"
                 id="current_password_for_email"
@@ -53,7 +55,7 @@ defmodule OliWeb.AuthorSettingsLive do
                 required
               />
 
-              <div>
+              <div :if={@has_password}>
                 <.button variant={:primary} phx-disable-with="Changing...">Change Email</.button>
               </div>
             </.form>
@@ -75,6 +77,7 @@ defmodule OliWeb.AuthorSettingsLive do
                 value={@current_email}
               />
               <.input
+                :if={@has_password}
                 field={@password_form[:current_password]}
                 name="current_password"
                 type="password"
@@ -92,9 +95,34 @@ defmodule OliWeb.AuthorSettingsLive do
               />
 
               <div>
-                <.button variant={:primary} phx-disable-with="Changing...">Change Password</.button>
+                <.button :if={@has_password} variant={:primary} phx-disable-with="Changing...">
+                  Change Password
+                </.button>
+                <.button :if={!@has_password} variant={:primary} phx-disable-with="Creating...">
+                  Create Password
+                </.button>
               </div>
             </.form>
+
+            <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-3 mb-10">
+              <h4 class="mt-3">Third Party Login Providers</h4>
+
+              <%= for {provider, managed?} <- @login_providers do %>
+                <%= if managed? do %>
+                  <Components.Auth.deauthorization_link
+                    provider={provider}
+                    href={~p"/authors/auth/#{provider}"}
+                    user_return_to={~p"/authors/settings"}
+                  />
+                <% else %>
+                  <Components.Auth.authorization_link
+                    provider={provider}
+                    user_return_to={~p"/authors/settings"}
+                    href={~p"/authors/auth/#{provider}/new"}
+                  />
+                <% end %>
+              <% end %>
+            </div>
           </div>
         </div>
       </Group.render>
@@ -171,6 +199,8 @@ defmodule OliWeb.AuthorSettingsLive do
       |> assign(:editor, editor)
       |> assign(:show_relative_dates, show_relative_dates)
       |> assign(:trigger_submit, false)
+      |> assign(:login_providers, login_providers_and_statuses(author))
+      |> assign(:has_password, AuthorAssentAuth.has_password?(author))
 
     {:ok, socket}
   end
@@ -241,7 +271,7 @@ defmodule OliWeb.AuthorSettingsLive do
   end
 
   def handle_event("validate_password", params, socket) do
-    %{"current_password" => password, "author" => author_params} = params
+    %{"author" => author_params} = params
 
     password_form =
       socket.assigns.current_author
@@ -249,11 +279,15 @@ defmodule OliWeb.AuthorSettingsLive do
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, password_form: password_form, current_password: password)}
+    {:noreply,
+     assign(socket, password_form: password_form, current_password: params["current_password"])}
   end
 
-  def handle_event("update_password", params, socket) do
-    %{"current_password" => password, "author" => author_params} = params
+  def handle_event(
+        "update_password",
+        %{"current_password" => password, "author" => author_params},
+        socket
+      ) do
     author = socket.assigns.current_author
 
     case Accounts.update_author_password(author, password, author_params) do
@@ -264,6 +298,24 @@ defmodule OliWeb.AuthorSettingsLive do
           |> to_form()
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("update_password", %{"author" => author_params}, socket) do
+    author = socket.assigns.current_author
+
+    case Accounts.create_author_password(author, author_params) do
+      {:ok, author} ->
+        password_form =
+          author
+          |> Accounts.change_author_password(author_params)
+          |> to_form()
+
+        {:noreply,
+         assign(socket, trigger_submit: true, password_form: password_form, has_password: true)}
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
@@ -291,8 +343,16 @@ defmodule OliWeb.AuthorSettingsLive do
     {:noreply, assign(socket, current_author: updated_author, editor: value)}
   end
 
-  defp providers_for(%Author{} = author) do
-    # MER-3835 TODO
-    []
+  defp login_providers_and_statuses(%Author{} = author) do
+    author_identity_providers_map =
+      AuthorAssentAuth.list_user_identities(author)
+      |> Enum.reduce(%{}, fn identity, acc ->
+        Map.put(acc, String.to_existing_atom(identity.provider), true)
+      end)
+
+    AuthorAssentAuth.authentication_providers()
+    |> Keyword.keys()
+    |> Enum.map(&{&1, Map.has_key?(author_identity_providers_map, &1)})
+    |> Enum.sort_by(&elem(&1, 1), :desc)
   end
 end

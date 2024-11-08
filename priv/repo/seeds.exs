@@ -37,16 +37,15 @@ if !Oli.Repo.get_by(Oli.Accounts.Author,
      email: System.get_env("ADMIN_EMAIL", "admin@example.edu")
    ) do
   {:ok, user} =
-    Accounts.register_author(%{
+    %Author{}
+    |> Author.seed_changeset(%{
       email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
       name: "Administrator",
-      given_name: "Administrator",
-      family_name: "",
       password: System.get_env("ADMIN_PASSWORD", "changeme"),
-      password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
       system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
       email_confirmed_at: DateTime.utc_now()
     })
+    |> Repo.insert()
 end
 
 # create project roles

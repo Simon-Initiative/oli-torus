@@ -39,9 +39,30 @@ defmodule Oli.Repo.Migrations.CreateUsersAuthTables do
 
     create index(:authors_tokens, [:author_id])
     create unique_index(:authors_tokens, [:context, :token])
+
+    # # In 20210902185726_delete_authors_users migration, we added on_delete: :delete_all for user
+    # # identities but forgot to add it for author identities. This fixes that.
+    drop_if_exists(constraint(:author_identities, "user_identities_user_id_fkey"))
+
+    alter table(:author_identities) do
+      modify(:user_id, references(:authors, on_delete: :delete_all))
+    end
+
+    execute "alter table author_identities rename constraint user_identities_pkey to author_identities_pkey;"
   end
 
   def down do
+    execute "alter table author_identities rename constraint author_identities_pkey to user_identities_pkey;"
+
+    drop(constraint(:author_identities, "author_identities_user_id_fkey"))
+
+    alter table(:author_identities) do
+      modify(:user_id, references(:authors, on_delete: :nothing))
+    end
+
+    # this is required in order to be able to run the up() migration again
+    execute "alter table author_identities rename constraint author_identities_user_id_fkey to user_identities_user_id_fkey;"
+
     drop unique_index(:authors_tokens, [:context, :token])
     drop index(:authors_tokens, [:author_id])
 

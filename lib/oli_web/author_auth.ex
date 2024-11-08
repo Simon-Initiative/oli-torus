@@ -15,15 +15,6 @@ defmodule OliWeb.AuthorAuth do
 
   @doc """
   Logs the author in.
-
-  It renews the session ID and clears the whole session
-  to avoid fixation attacks. See the renew_session
-  function to customize this behaviour.
-
-  It also sets a `:author_live_socket_id` key in the session,
-  so LiveView sessions are identified and automatically
-  disconnected on log out. The line can be safely removed
-  if you are not using LiveView.
   """
   def log_in_author(conn, author, params \\ %{}) do
     token = Accounts.generate_author_session_token(author)
@@ -32,11 +23,7 @@ defmodule OliWeb.AuthorAuth do
       params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
 
     conn
-    |> renew_session()
-    |> put_token_in_session(token)
-    # A lot of existing liveviews depends on the current_author_id being in the session.
-    # We eventually want to remove this, but for now, we will add it to appease the existing code.
-    |> put_author_id_in_session(author.id)
+    |> create_session(author)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: author_return_to)
   end
@@ -47,6 +34,33 @@ defmodule OliWeb.AuthorAuth do
 
   defp maybe_write_remember_me_cookie(conn, _token, _params) do
     conn
+  end
+
+  @doc """
+  Creates a new session for the author.
+
+  This is a lower-level function that is used by log_in_author and
+  other LTI/OIDC authorization functions to create a new session for
+  the author.
+
+  It renews the session ID and clears the whole session
+  to avoid fixation attacks. See the renew_session
+  function to customize this behaviour.
+
+  It also sets a `:author_live_socket_id` key in the session,
+  so LiveView sessions are identified and automatically
+  disconnected on log out. The line can be safely removed
+  if you are not using LiveView.
+  """
+  def create_session(conn, author) do
+    token = Accounts.generate_author_session_token(author)
+
+    conn
+    |> renew_session()
+    |> put_token_in_session(token)
+    # A lot of existing liveviews depends on the current_author_id being in the session.
+    # We eventually want to remove this, but for now, we will add it to appease the existing code.
+    |> put_author_id_in_session(author.id)
   end
 
   # This function renews the session ID and erases the whole
@@ -328,12 +342,6 @@ defmodule OliWeb.AuthorAuth do
       |> redirect(to: ~p"/authors/log_in")
       |> halt()
     end
-  end
-
-  def provider_links() do
-    Application.get_env(:oli, :author_auth_providers)
-    |> Keyword.keys()
-    |> Enum.map(&{&1, ~p"/author/auth/#{&1}/new"})
   end
 
   defp put_token_in_session(conn, token) do

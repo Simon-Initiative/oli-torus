@@ -1,11 +1,11 @@
-defmodule Oli.AssentAuth.UserAssentAuth do
+defmodule Oli.AssentAuth.AuthorAssentAuth do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
   alias Ecto.Changeset
   alias Oli.AssentAuth
-  alias Oli.AssentAuth.UserIdentity
-  alias Oli.Accounts.User
+  alias Oli.AssentAuth.AuthorIdentity
+  alias Oli.Accounts.Author
 
   @behaviour AssentAuth
 
@@ -13,14 +13,14 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   Returns a list of configured authentication providers.
   """
   def authentication_providers() do
-    Application.get_env(:oli, :user_auth_providers)
+    Application.get_env(:oli, :author_auth_providers)
   end
 
   @doc """
   Fetches the configuration for the given provider.
   """
   def provider_config!(provider) do
-    Application.get_env(:oli, :user_auth_providers)[provider] ||
+    Application.get_env(:oli, :author_auth_providers)[provider] ||
       raise "No provider configuration for #{provider}"
   end
 
@@ -28,7 +28,7 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   Fetches all user identities for user.
   """
   def list_user_identities(user) do
-    from(uid in UserIdentity,
+    from(uid in AuthorIdentity,
       where: uid.user_id == ^user.id
     )
     |> Repo.all()
@@ -47,13 +47,13 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   If a matching user identity already exists for the user, the identity will be updated,
   otherwise a new identity is inserted.
   """
-  def upsert(user, user_identity_params) do
+  def upsert(user, author_identity_params) do
     {uid_provider_params, additional_params} =
-      Map.split(user_identity_params, ["uid", "provider"])
+      Map.split(author_identity_params, ["uid", "provider"])
 
     get_for_user(user, uid_provider_params)
     |> case do
-      nil -> insert_identity(user, user_identity_params)
+      nil -> insert_identity(user, author_identity_params)
       identity -> update_identity(identity, additional_params)
     end
   end
@@ -61,20 +61,20 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   @doc """
   Inserts a user identity for the user.
   """
-  def insert_identity(user, user_identity_params) do
-    user_identity = Ecto.build_assoc(user, :user_identities)
+  def insert_identity(user, author_identity_params) do
+    author_identity = Ecto.build_assoc(user, :user_identities)
 
-    user_identity
-    |> user_identity.__struct__.changeset(user_identity_params)
+    author_identity
+    |> author_identity.__struct__.changeset(author_identity_params)
     |> Repo.insert()
   end
 
   @doc """
   Updates a user identity.
   """
-  def update_identity(user_identity, additional_params) do
-    user_identity
-    |> user_identity.__struct__.changeset(additional_params)
+  def update_identity(author_identity, additional_params) do
+    author_identity
+    |> author_identity.__struct__.changeset(additional_params)
     |> Repo.update()
   end
 
@@ -83,9 +83,9 @@ defmodule Oli.AssentAuth.UserAssentAuth do
 
   User schema module and repo module will be fetched from config.
   """
-  def create_user_with_identity(user_identity_params, user_params) do
-    %User{}
-    |> User.user_identity_changeset(user_identity_params, user_params)
+  def create_user_with_identity(author_identity_params, user_params) do
+    %Author{}
+    |> Author.author_identity_changeset(author_identity_params, user_params)
     |> Repo.insert()
   end
 
@@ -93,9 +93,9 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   Gets a user by identity provider and uid.
   """
   def get_user_by_provider_uid(provider, uid) do
-    from(user in User,
-      join: user_identity in assoc(user, :user_identities),
-      where: user_identity.provider == ^provider and user_identity.uid == ^uid
+    from(user in Author,
+      join: author_identity in assoc(user, :user_identities),
+      where: author_identity.provider == ^provider and author_identity.uid == ^uid
     )
     |> Repo.one()
   end
@@ -107,7 +107,7 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   end
 
   def get_user_with_identities(user_id) do
-    from(user in User,
+    from(user in Author,
       where: user.id == ^user_id,
       preload: [:user_identities]
     )
@@ -123,7 +123,7 @@ defmodule Oli.AssentAuth.UserAssentAuth do
       )
       when length(rest) > 0 or not is_nil(password_hash) do
     results =
-      from(uid in UserIdentity,
+      from(uid in AuthorIdentity,
         where: uid.id in ^Enum.map(user_identities, & &1.id)
       )
       |> Repo.delete_all()

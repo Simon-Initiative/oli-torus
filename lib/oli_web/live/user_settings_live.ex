@@ -21,6 +21,7 @@ defmodule OliWeb.UserSettingsLive do
               phx-submit="update_user"
               phx-change="validate_user"
             >
+              <.input field={@user_form[:name]} type="text" label="Full name" readonly />
               <.input field={@user_form[:given_name]} type="text" label="First name" />
               <.input field={@user_form[:family_name]} type="text" label="Last name" />
 
@@ -36,8 +37,15 @@ defmodule OliWeb.UserSettingsLive do
               phx-submit="update_email"
               phx-change="validate_email"
             >
-              <.input field={@email_form[:email]} type="email" label="Email" required />
               <.input
+                field={@email_form[:email]}
+                type="email"
+                label="Email"
+                required
+                readonly={!@has_password}
+              />
+              <.input
+                :if={@has_password}
                 field={@email_form[:current_password]}
                 name="current_password"
                 id="current_password_for_email"
@@ -47,7 +55,7 @@ defmodule OliWeb.UserSettingsLive do
                 required
               />
 
-              <div>
+              <div :if={@has_password}>
                 <.button variant={:primary} phx-disable-with="Changing...">Change Email</.button>
               </div>
             </.form>
@@ -87,23 +95,30 @@ defmodule OliWeb.UserSettingsLive do
               />
 
               <div>
-                <.button variant={:primary} phx-disable-with="Changing...">Change Password</.button>
+                <.button :if={@has_password} variant={:primary} phx-disable-with="Changing...">
+                  Change Password
+                </.button>
+                <.button :if={!@has_password} variant={:primary} phx-disable-with="Creating...">
+                  Create Password
+                </.button>
               </div>
             </.form>
 
-            <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-2 mb-10">
+            <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-3 mb-10">
               <h4 class="mt-3">Third Party Login Providers</h4>
 
               <%= for {provider, managed?} <- @login_providers do %>
                 <%= if managed? do %>
                   <Components.Auth.deauthorization_link
                     provider={provider}
+                    href={~p"/users/auth/#{provider}"}
                     user_return_to={~p"/users/settings"}
                   />
                 <% else %>
                   <Components.Auth.authorization_link
                     provider={provider}
                     user_return_to={~p"/users/settings"}
+                    href={~p"/users/auth/#{provider}/new"}
                   />
                 <% end %>
               <% end %>
@@ -282,6 +297,6 @@ defmodule OliWeb.UserSettingsLive do
     UserAssentAuth.authentication_providers()
     |> Keyword.keys()
     |> Enum.map(&{&1, Map.has_key?(user_identity_providers_map, &1)})
-    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.sort_by(&elem(&1, 1), :desc)
   end
 end

@@ -44,6 +44,7 @@
         authentication_providers={
           Keyword.keys(Oli.AssentAuth.UserAssentAuth.authentication_providers())
         }
+        auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
       />
     </div>
   </div>

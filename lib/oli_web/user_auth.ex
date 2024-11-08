@@ -16,15 +16,6 @@ defmodule OliWeb.UserAuth do
 
   @doc """
   Logs the user in.
-
-  It renews the session ID and clears the whole session
-  to avoid fixation attacks. See the renew_session
-  function to customize this behaviour.
-
-  It also sets a `:user_live_socket_id` key in the session,
-  so LiveView sessions are identified and automatically
-  disconnected on log out. The line can be safely removed
-  if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
@@ -49,6 +40,33 @@ defmodule OliWeb.UserAuth do
 
   defp maybe_write_remember_me_cookie(conn, _token, _params) do
     conn
+  end
+
+  @doc """
+  Creates a new session for the user.
+
+  This is a lower-level function that is used by log_in_user and
+  other LTI/OIDC authorization functions to create a new session for
+  the user.
+
+  It renews the session ID and clears the whole session
+  to avoid fixation attacks. See the renew_session
+  function to customize this behaviour.
+
+  It also sets a `:user_live_socket_id` key in the session,
+  so LiveView sessions are identified and automatically
+  disconnected on log out. The line can be safely removed
+  if you are not using LiveView.
+  """
+  def create_session(conn, user) do
+    token = Accounts.generate_user_session_token(user)
+
+    conn
+    |> renew_session()
+    |> put_token_in_session(token)
+    # A lot of existing liveviews depends on the current_user_id being in the session.
+    # We eventually want to remove this, but for now, we will add it to appease the existing code.
+    |> put_user_id_in_session(user.id)
   end
 
   # This function renews the session ID and erases the whole

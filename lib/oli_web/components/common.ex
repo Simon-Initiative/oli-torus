@@ -514,7 +514,8 @@ defmodule OliWeb.Components.Common do
   defp set_input_classes(assigns) do
     input_class = [
       assigns.class,
-      assigns.errors != [] && "border-red-400 focus:border-red-400"
+      assigns.errors != [] && "border-red-400 focus:border-red-400",
+      assigns.rest[:readonly] && "bg-gray-200 dark:bg-gray-600"
     ]
 
     {group_class, label_class, input_class} =

@@ -10,7 +10,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     @enforce_keys [
       :authentication_providers,
       :redirect_uri,
-      :log_in_user,
+      :create_session,
       :deliver_user_confirmation_instructions,
       :get_user_by_provider_uid,
       :assent_auth_module
@@ -20,7 +20,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
       :authentication_providers,
       :redirect_uri,
       :current_user_assigns_key,
-      :log_in_user,
+      :create_session,
       :deliver_user_confirmation_instructions,
       :get_user_by_provider_uid,
       :assent_auth_module
@@ -29,8 +29,8 @@ defmodule OliWeb.Common.AssentAuthWeb do
     @type t() :: %__MODULE__{
             authentication_providers: Keyword.t(),
             redirect_uri: (atom -> String.t()),
-            current_user_assigns_key: Atom.t() | nil,
-            log_in_user: (Plug.Conn.t(), any() -> Plug.Conn.t()),
+            current_user_assigns_key: atom() | nil,
+            create_session: (Plug.Conn.t(), any() -> Plug.Conn.t()),
             deliver_user_confirmation_instructions: (any() -> any()),
             get_user_by_provider_uid: (String.t(), String.t() -> any()),
             assent_auth_module: module()
@@ -150,11 +150,18 @@ defmodule OliWeb.Common.AssentAuthWeb do
 
   defp maybe_authenticate(conn, _config), do: conn
 
-  ## Authenticates a user with provider and provider user params. If successful, a new session will be created.
+  ## Authenticates a user with provider and provider user params. If successful, a new
+  ## session will be created and the current user will be put in the connection assigns.
   defp authenticate(conn, %{"provider" => provider, "uid" => uid}, config) do
     case get_user_by_provider_uid(provider, uid, config) do
-      nil -> {:error, conn}
-      user -> {:ok, log_in_user(conn, user, config)}
+      nil ->
+        {:error, conn}
+
+      user ->
+        {:ok,
+         conn
+         |> create_session(user, config)
+         |> assign_current_user(user, config)}
     end
   end
 
@@ -199,7 +206,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> user_identity_bound_different_user_error()
     |> case do
       {:ok, user_identity} ->
-        {:ok, user_identity, log_in_user(conn, user, config)}
+        {:ok, user_identity, create_session(conn, user, config)}
 
       {:error, error} ->
         {:error, error, conn}
@@ -241,7 +248,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> user_identity_bound_different_user_error()
     |> user_with_email_already_exists_error()
     |> case do
-      {:ok, user} -> {:ok, user, log_in_user(conn, user, config)}
+      {:ok, user} -> {:ok, user, create_session(conn, user, config)}
       {:error, error} -> {:error, error, conn}
     end
   end
@@ -275,15 +282,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
     end
   end
 
-  defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
-    case unique_constraint_error?(errors, :uid_provider) do
-      true -> {:error, {:bound_to_different_user, changeset}}
-      false -> {:error, changeset}
-    end
-  end
-
-  defp user_identity_bound_different_user_error(any), do: any
-
   ### Utility functions
 
   defp provider_config!(provider, config) do
@@ -310,7 +308,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     Map.get(assigns, key)
   end
 
-  def assign_current_user(conn, user, config) do
+  defp assign_current_user(conn, user, config) do
     key = current_user_assigns_key(config)
 
     Plug.Conn.assign(conn, key, user)
@@ -320,10 +318,10 @@ defmodule OliWeb.Common.AssentAuthWeb do
     Map.get(config, :current_user_assigns_key, :current_user)
   end
 
-  defp log_in_user(conn, user, %AssentAuthWebConfig{
-         log_in_user: log_in_user
+  defp create_session(conn, user, %AssentAuthWebConfig{
+         create_session: create_session
        }) do
-    log_in_user.(conn, user)
+    create_session.(conn, user)
   end
 
   defp deliver_user_confirmation_instructions(user, config) do
@@ -331,8 +329,11 @@ defmodule OliWeb.Common.AssentAuthWeb do
   end
 
   defp get_user_by_provider_uid(provider, uid, config) do
-    config.get_user_by_provider_uid.(provider, uid)
+    config.get_user_by_provider_uid.(provider, ensure_string(uid))
   end
+
+  defp ensure_string(value) when is_binary(value), do: value
+  defp ensure_string(value) when is_integer(value), do: Integer.to_string(value)
 
   defp assent_auth_module(config) do
     config.assent_auth_module
@@ -352,9 +353,11 @@ defmodule OliWeb.Common.AssentAuthWeb do
   defp convert_param({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
   defp convert_param({key, value}) when is_binary(key), do: {key, value}
 
-  defp user_identity_bound_different_user_error(
-         {:error, %{changes: %{user_identities: [%{errors: errors}]}} = changeset}
-       ) do
+  defp email_verified?(%{"email_verified" => true}), do: true
+  defp email_verified?(%{email_verified: true}), do: true
+  defp email_verified?(_params), do: false
+
+  defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
     case unique_constraint_error?(errors, :uid_provider) do
       true -> {:error, {:bound_to_different_user, changeset}}
       false -> {:error, changeset}
@@ -378,8 +381,4 @@ defmodule OliWeb.Common.AssentAuthWeb do
       _any -> false
     end)
   end
-
-  defp email_verified?(%{"email_verified" => true}), do: true
-  defp email_verified?(%{email_verified: true}), do: true
-  defp email_verified?(_params), do: false
 end

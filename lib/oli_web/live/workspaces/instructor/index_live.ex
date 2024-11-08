@@ -148,6 +148,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             registration_link={~p"/users/register"}
             reset_password_link={~p"/users/reset_password"}
             authentication_providers={@authentication_providers}
+            auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
           />
         </div>
       </div>

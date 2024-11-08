@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Auth do
   attr :from_invitation_link?, :boolean, default: false
   attr :class, :string, default: ""
   attr :authentication_providers, :list, required: true
+  attr :auth_provider_path_fn, :any, required: true
   attr :registration_link, :string, default: nil
   attr :reset_password_link, :string, required: true
 
@@ -22,7 +23,11 @@ defmodule OliWeb.Components.Auth do
         :if={not Enum.empty?(@authentication_providers)}
         class="w-80 mx-auto flex flex-col gap-2 py-8"
       >
-        <.authorization_link :for={provider <- @authentication_providers} provider={provider} />
+        <.authorization_link
+          :for={provider <- @authentication_providers}
+          provider={provider}
+          href={@auth_provider_path_fn.(provider)}
+        />
       </div>
 
       <.form :let={f} id="log_in_form" for={@form} action={@action} phx-update="ignore">
@@ -95,6 +100,7 @@ defmodule OliWeb.Components.Auth do
   attr :action, :string, required: true
   attr :class, :string, default: ""
   attr :authentication_providers, :list, required: true
+  attr :auth_provider_path_fn, :any, required: true
   attr :log_in_link, :string, default: nil
   attr :link_account, :boolean, default: false
   attr :trigger_submit, :boolean, required: true
@@ -115,7 +121,11 @@ defmodule OliWeb.Components.Auth do
         :if={not Enum.empty?(@authentication_providers)}
         class="w-80 mx-auto flex flex-col gap-2 py-8"
       >
-        <.authorization_link :for={provider <- @authentication_providers} provider={provider} />
+        <.authorization_link
+          :for={provider <- @authentication_providers}
+          provider={provider}
+          href={@auth_provider_path_fn.(provider)}
+        />
       </div>
 
       <.form
@@ -234,16 +244,19 @@ defmodule OliWeb.Components.Auth do
       <.authorization_link provider="github">Sign in with Github</.authorization_link>
   """
   attr :provider, :atom, required: true
-  attr :rest, :global, include: ~w(csrf_token download hreflang referrerpolicy rel target type)
+  attr :href, :string, required: true
   attr :navigate, :string, default: nil
   attr :user_return_to, :string, default: nil
 
+  attr :rest, :global,
+    include: ~w(csrf_token download hreflang method referrerpolicy rel target type)
+
   slot :inner_block
 
-  def authorization_link(%{navigate: nil, provider: provider} = assigns) do
+  def authorization_link(%{navigate: nil, href: href} = assigns) do
     assigns =
       assign(assigns,
-        navigate: maybe_user_return_to(~p"/auth/#{provider}/new", assigns.user_return_to)
+        navigate: maybe_user_return_to(href, assigns.user_return_to)
       )
 
     authorization_link(assigns)
@@ -251,10 +264,110 @@ defmodule OliWeb.Components.Auth do
 
   def authorization_link(%{provider: :google} = assigns) do
     ~H"""
+    <.sign_in_with_google navigate={@navigate} {@rest}>
+      <%= render_slot(@inner_block) || "Sign in with Google" %>
+    </.sign_in_with_google>
+    """
+  end
+
+  def authorization_link(%{provider: :github} = assigns) do
+    ~H"""
+    <.sign_in_with_github navigate={@navigate} {@rest}>
+      <%= render_slot(@inner_block) || "Sign in with GitHub" %>
+    </.sign_in_with_github>
+    """
+  end
+
+  def authorization_link(assigns) do
+    ~H"""
     <.link
       navigate={@navigate}
+      aria-label={"Sign in with #{provider_title(@provider)}"}
+      class="bg-white border border-gray-400 rounded-md p-2 text-body dark:text-body-dark text-center hover:no-underline"
+      {@rest}
+    >
+      <%= render_slot(@inner_block) || "Sign in with #{provider_title(@provider)}" %>
+    </.link>
+    """
+  end
+
+  @doc """
+  Renders a deauthorization link for a provider.
+
+  The link is used to remove authorization with the provider.
+
+  ## Examples
+
+      <.deauthorization_link provider="github" href={~p"/users/auth/github"}>
+
+      <.deauthorization_link provider="github" href={~p"/users/auth/github"}>Remove Github authentication</.deauthorization_link>
+  """
+  attr :provider, :atom, required: true
+  attr :href, :string, required: true
+  attr :navigate, :string, default: nil
+  attr :user_return_to, :string, default: nil
+
+  attr :rest, :global,
+    include: ~w(csrf_token download hreflang method referrerpolicy rel target type)
+
+  slot :inner_block
+
+  def deauthorization_link(%{navigate: nil, href: href} = assigns) do
+    assigns =
+      assign(assigns,
+        navigate: maybe_user_return_to(href, assigns.user_return_to)
+      )
+
+    deauthorization_link(assigns)
+  end
+
+  def deauthorization_link(%{provider: :google} = assigns) do
+    ~H"""
+    <.sign_in_with_google navigate={@navigate} method="delete" {@rest}>
+      Remove Google credentials
+    </.sign_in_with_google>
+    """
+  end
+
+  def deauthorization_link(%{provider: :github} = assigns) do
+    ~H"""
+    <.sign_in_with_github navigate={@navigate} method="delete" {@rest}>
+      Remove Github credentials
+    </.sign_in_with_github>
+    """
+  end
+
+  def deauthorization_link(assigns) do
+    ~H"""
+    <.link href={@navigate} method="delete" {@rest}>
+      Remove <%= provider_title(@provider) %> credentials
+    </.link>
+    """
+  end
+
+  defp maybe_user_return_to(path, nil), do: path
+  defp maybe_user_return_to(path, user_return_to), do: "#{path}?user_return_to=#{user_return_to}"
+
+  def provider_title(provider) do
+    provider
+    |> Atom.to_string()
+    |> String.capitalize()
+  end
+
+  attr :navigate, :string, required: true
+
+  attr :rest, :global,
+    include: ~w(csrf_token download hreflang method referrerpolicy rel target type)
+
+  slot :inner_block, required: true
+
+  defp sign_in_with_google(assigns) do
+    ~H"""
+    <.link
+      href={@navigate}
       aria-label="Sign in with Google"
-      class="flex items-center bg-white border border-button-border-light rounded-md p-0.5 pr-3 hover:no-underline"
+      class="flex items-center bg-white hover:bg-gray-100 border border-button-border-light rounded-md p-0.5 pr-3 hover:no-underline"
+      {@rest}
     >
       <div class="flex items-center justify-center bg-white w-9 h-9 rounded-l mr-[10px]">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5">
@@ -283,18 +396,26 @@ defmodule OliWeb.Components.Auth do
         </svg>
       </div>
       <div class="flex-1 text-sm text-google-text-gray text-center tracking-wider mr-[36px]">
-        <%= render_slot(@inner_block) || "Sign in with Google" %>
+        <%= render_slot(@inner_block) %>
       </div>
     </.link>
     """
   end
 
-  def authorization_link(%{provider: :github} = assigns) do
+  attr :navigate, :string, required: true
+
+  attr :rest, :global,
+    include: ~w(csrf_token download hreflang method referrerpolicy rel target type)
+
+  slot :inner_block
+
+  defp sign_in_with_github(assigns) do
     ~H"""
     <.link
-      navigate={@navigate}
+      href={@navigate}
       aria-label="Sign in with Github"
-      class="py-2 px-4 max-w-md flex justify-center items-center bg-gray-600 hover:bg-gray-700 focus:ring-gray-500 focus:ring-offset-gray-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg hover:no-underline"
+      class="py-2 px-4 max-w-md flex justify-center items-center bg-gray-600 hover:bg-gray-700 focus:ring-gray-500 focus:ring-offset-gray-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 rounded-lg hover:no-underline hover:text-white"
+      {@rest}
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -307,60 +428,8 @@ defmodule OliWeb.Components.Auth do
         <path d="M896 128q209 0 385.5 103t279.5 279.5 103 385.5q0 251-146.5 451.5t-378.5 277.5q-27 5-40-7t-13-30q0-3 .5-76.5t.5-134.5q0-97-52-142 57-6 102.5-18t94-39 81-66.5 53-105 20.5-150.5q0-119-79-206 37-91-8-204-28-9-81 11t-92 44l-38 24q-93-26-192-26t-192 26q-16-11-42.5-27t-83.5-38.5-85-13.5q-45 113-8 204-79 87-79 206 0 85 20.5 150t52.5 105 80.5 67 94 39 102.5 18q-39 36-49 103-21 10-45 15t-57 5-65.5-21.5-55.5-62.5q-19-32-48.5-52t-49.5-24l-20-3q-21 0-29 4.5t-5 11.5 9 14 13 12l7 5q22 10 43.5 38t31.5 51l10 23q13 38 44 61.5t67 30 69.5 7 55.5-3.5l23-4q0 38 .5 88.5t.5 54.5q0 18-13 30t-40 7q-232-77-378.5-277.5t-146.5-451.5q0-209 103-385.5t279.5-279.5 385.5-103zm-477 1103q3-7-7-12-10-3-13 2-3 7 7 12 9 6 13-2zm31 34q7-5-2-16-10-9-16-3-7 5 2 16 10 10 16 3zm30 45q9-7 0-19-8-13-17-6-9 5 0 18t17 7zm42 42q8-8-4-19-12-12-20-3-9 8 4 19 12 12 20 3zm57 25q3-11-13-16-15-4-19 7t13 15q15 6 19-6zm63 5q0-13-17-11-16 0-16 11 0 13 17 11 16 0 16-11zm58-10q-2-11-18-9-16 3-14 15t18 8 14-14z">
         </path>
       </svg>
-      <%= render_slot(@inner_block) || "Sign in with GitHub" %>
+      <%= render_slot(@inner_block) %>
     </.link>
     """
-  end
-
-  def authorization_link(assigns) do
-    ~H"""
-    <.link
-      navigate={@navigate}
-      aria-label={"Sign in with #{provider_title(@provider)}"}
-      class="bg-white border border-gray-400 rounded-md p-2 text-body dark:text-body-dark text-center hover:no-underline"
-      {@rest}
-    >
-      <%= render_slot(@inner_block) || "Sign in with #{provider_title(@provider)}" %>
-    </.link>
-    """
-  end
-
-  @doc """
-  Renders a deauthorization link for a provider.
-
-  The link is used to remove authorization with the provider.
-
-  ## Examples
-
-      <.deauthorization_link provider="github">
-
-      <.deauthorization_link provider="github">Remove Github authentication</.deauthorization_link>
-  """
-  attr :provider, :atom, required: true
-  attr :user_return_to, :string, default: nil
-  attr :rest, :global, include: ~w(csrf_token download hreflang referrerpolicy rel target type)
-
-  slot :inner_block
-
-  def deauthorization_link(%{provider: provider} = assigns) do
-    assigns =
-      assign(assigns,
-        navigate: maybe_user_return_to(~p"/auth/#{provider}", assigns.user_return_to)
-      )
-
-    ~H"""
-    <.link href={@navigate} method="delete" {@rest}>
-      <%= render_slot(@inner_block) || "Remove #{provider_title(@provider)} credentials" %>
-    </.link>
-    """
-  end
-
-  defp maybe_user_return_to(path, nil), do: path
-  defp maybe_user_return_to(path, user_return_to), do: "#{path}?user_return_to=#{user_return_to}"
-
-  def provider_title(provider) do
-    provider
-    |> Atom.to_string()
-    |> String.capitalize()
   end
 end

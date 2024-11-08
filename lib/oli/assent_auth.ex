@@ -54,11 +54,6 @@ defmodule Oli.AssentAuth do
   @callback get_user_by_provider_uid(String.t(), String.t()) :: any()
 
   @doc """
-  Gets a user identity by provider and uid.
-  """
-  @callback get_user_identity(String.t(), String.t()) :: any()
-
-  @doc """
   Gets a user with identities.
   """
   @callback get_user_with_identities(integer()) :: any()
