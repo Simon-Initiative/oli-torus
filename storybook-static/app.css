@@ -4246,6 +4246,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 1.5rem;
 }
 
+.top-8 {
+  top: 2rem;
+}
+
 .top-\[16px\] {
   top: 16px;
 }
@@ -4316,6 +4320,14 @@ table.table-striped tbody tr:nth-child(even) {
 
 .z-\[2000\] {
   z-index: 2000;
+}
+
+.z-\[999\] {
+  z-index: 999;
+}
+
+.z-\[99\] {
+  z-index: 99;
 }
 
 .order-1 {
@@ -5249,6 +5261,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 70px;
 }
 
+.h-\[70vh\] {
+  height: 70vh;
+}
+
 .h-\[72px\] {
   height: 72px;
 }
@@ -5271,6 +5287,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[calc\(100vh-112px\)\] {
   height: calc(100vh - 112px);
+}
+
+.h-\[calc\(100vh-170px\)\] {
+  height: calc(100vh - 170px);
 }
 
 .h-\[calc\(100vh-180px\)\] {
@@ -5712,10 +5732,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[500px\] {
   width: 500px;
-}
-
-.w-\[520px\] {
-  width: 520px;
 }
 
 .w-\[56px\] {
@@ -6637,10 +6653,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .overflow-y-scroll {
   overflow-y: scroll;
-}
-
-.overscroll-contain {
-  overscroll-behavior: contain;
 }
 
 .overscroll-none {
