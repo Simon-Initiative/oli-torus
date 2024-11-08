@@ -22,7 +22,7 @@ defmodule OliWeb.Components.Delivery.ContentTableModel do
       },
       %ColumnSpec{
         name: :student_completion,
-        th_class: "flex items-center gap-1 ",
+        th_class: "flex items-center gap-1 border-b-0",
         label: HTMLComponents.student_progress_label(%{title: "STUDENT PROGRESS"}),
         render_fn: &__MODULE__.render_student_completion/3
       },
