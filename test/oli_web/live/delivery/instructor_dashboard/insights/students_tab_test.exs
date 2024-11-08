@@ -74,10 +74,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
                "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]']"
              )
 
-      # Column title should be a sibling of the button with the xphx-mouseover attribute
+      # Renders correct column title
       assert has_element?(
                view,
-               "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]'] + span",
+               "th[phx-value-sort_by=\"student_completion\"]",
                "STUDENT PROGRESS"
              )
 
