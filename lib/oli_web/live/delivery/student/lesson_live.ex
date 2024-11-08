@@ -654,6 +654,27 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <Annotations.delete_post_modal />
+    <div id="sticky_annotations_panel" class="absolute top-8 right-0 z-50 h-full">
+      <div class="sticky ml-auto top-20 right-0">
+        <Annotations.toggle_notes_button :if={!@annotations.show_sidebar}>
+          <Annotations.annotations_icon />
+        </Annotations.toggle_notes_button>
+
+        <Annotations.panel
+          :if={@annotations.show_sidebar}
+          section_slug={@section.slug}
+          collab_space_config={@collab_space_config}
+          create_new_annotation={@annotations.create_new_annotation}
+          annotations={@annotations.posts}
+          current_user={@current_user}
+          is_instructor={@is_instructor}
+          active_tab={@annotations.active_tab}
+          search_results={@annotations.search_results}
+          search_term={@annotations.search_term}
+          selected_point={@annotations.selected_point}
+        />
+      </div>
+    </div>
 
     <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
       <:header>
@@ -698,27 +719,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           count={@annotations.post_counts && @annotations.post_counts[point_marker.id]}
         />
       </:point_markers>
-
-      <:sidebar_toggle>
-        <Annotations.toggle_notes_button>
-          <Annotations.annotations_icon />
-        </Annotations.toggle_notes_button>
-      </:sidebar_toggle>
-
-      <:sidebar>
-        <Annotations.panel
-          section_slug={@section.slug}
-          collab_space_config={@collab_space_config}
-          create_new_annotation={@annotations.create_new_annotation}
-          annotations={@annotations.posts}
-          current_user={@current_user}
-          is_instructor={@is_instructor}
-          active_tab={@annotations.active_tab}
-          search_results={@annotations.search_results}
-          search_term={@annotations.search_term}
-          selected_point={@annotations.selected_point}
-        />
-      </:sidebar>
     </.page_content_with_sidebar_layout>
     """
   end
@@ -726,7 +726,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
-    <div class="flex-1 flex flex-col w-full overflow-auto">
+    <div class="flex-1 flex flex-col w-full">
       <div class="flex-1 mt-20 px-[80px] relative">
         <div class="container mx-auto max-w-[880px] pb-20">
           <.page_header
@@ -993,9 +993,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
   defp page_content_with_sidebar_layout(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-col w-full overflow-hidden">
+    <div class="flex-1 flex flex-col w-full">
       <div class={[
-        "flex-1 flex flex-col overflow-auto",
+        "flex-1 flex flex-col",
         if(@show_sidebar, do: "xl:mr-[520px]")
       ]}>
         <div class={[
@@ -1011,15 +1011,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           <%= render_slot(@point_markers) %>
         </div>
       </div>
-    </div>
-    <div
-      :if={@sidebar && @show_sidebar}
-      class="flex flex-col w-[520px] absolute top-20 right-0 bottom-0"
-    >
-      <%= render_slot(@sidebar) %>
-    </div>
-    <div :if={@sidebar && !@show_sidebar} class="absolute top-20 right-0">
-      <%= render_slot(@sidebar_toggle) %>
     </div>
     """
   end

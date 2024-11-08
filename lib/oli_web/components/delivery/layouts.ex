@@ -51,7 +51,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       id="header"
-      class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
       <.link
         :if={@include_logo}
@@ -120,11 +120,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_nav(assigns) do
     ~H"""
-    <div>
+    <div class="sticky top-0">
       <nav id="desktop-nav-menu" class={["
         transition-all
         duration-100
-        fixed
         z-50
         w-full
         hidden
@@ -288,16 +287,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
-    <div>
+    <div class="sticky top-0">
       <nav
         id="desktop-workspace-nav-menu"
         style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
         class={["
         transition-all
         duration-100
-        fixed
         z-50
-        top-0
         w-full
         hidden
         h-[100vh]
@@ -951,7 +948,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       class={[
-        "flex justify-center items-center absolute top-12 left-2 p-4 z-50",
+        "flex items-center absolute top-2 left-2 p-4 z-50",
         if(!@show_sidebar, do: "2xl:top-12 2xl:left-8")
       ]}
       role="back_link"
