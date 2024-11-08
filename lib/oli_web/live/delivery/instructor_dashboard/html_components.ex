@@ -209,7 +209,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
               This is an estimate of student progress.<br />
               <button
                 phx-hook="ClickExecJS"
-                data-show-modal={
+                click-exec-js={
                   Modal.show_modal("student_progress_calculation_modal")
                   |> JS.hide(to: "#student_progress_tooltip")
                 }
