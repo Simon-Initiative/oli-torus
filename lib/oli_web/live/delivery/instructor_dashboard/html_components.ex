@@ -226,7 +226,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
         xphx-mouseover={JS.show(to: "#student_progress_tooltip")}
         class="max-w-min border border-transparent"
       >
-        <Icons.info_circle />
+        <Icons.info />
       </button>
     </div>
     <%= @title %>
