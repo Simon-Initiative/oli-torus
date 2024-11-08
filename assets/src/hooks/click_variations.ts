@@ -16,3 +16,14 @@ export const ClickExecJS = {
     });
   },
 };
+
+export const HoverAway = {
+  mounted() {
+    this.el.addEventListener('mouseleave', () => {
+      liveSocket.execJS(this.el, this.el.getAttribute('mouse-leave-js'));
+    });
+  },
+  destroyed() {
+    this.el.removeEventListener('mouseleave');
+  },
+};

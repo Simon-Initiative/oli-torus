@@ -1,8 +1,6 @@
 defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   use Phoenix.Component
 
-  import OliWeb.Components.Common, only: [button: 1]
-
   alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
@@ -190,15 +188,20 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   end
 
   attr :title, :string, required: true
+  attr :show, :boolean, default: false
 
   def student_progress_label(assigns) do
     ~H"""
     <div class="inline-flex gap-2 items-center relative cursor-auto" onclick="event.stopPropagation()">
       <div
         onclick="event.stopPropagation()"
-        phx-hook="AutoHideTooltip"
         id="student_progress_tooltip"
         class="absolute -translate-y-[34px] -translate-x-[140px] min-w-max w-full pb-[27px] z-10 hidden"
+        phx-click-away={JS.hide()}
+        phx-hook="HoverAway"
+        mouse-leave-js={
+          JS.hide(transition: {"ease-out duration-300", "opacity-100", "opacity-0"}, time: 300)
+        }
       >
         <div class="px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#3a3740] justify-start items-center inline-flex font-normal z-10">
           <div class="grow shrink basis-0">
@@ -219,11 +222,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
           </div>
         </div>
       </div>
-      <.button xphx-mouseover={JS.show(to: "#student_progress_tooltip")} size={nil} class="p-[1px]">
+      <button
+        xphx-mouseover={JS.show(to: "#student_progress_tooltip")}
+        class="max-w-min border border-transparent"
+      >
         <Icons.info_circle />
-      </.button>
-      <span><%= @title %></span>
+      </button>
     </div>
+    <%= @title %>
     """
   end
 
