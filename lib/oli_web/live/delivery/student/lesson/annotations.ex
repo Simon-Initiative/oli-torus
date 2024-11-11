@@ -20,13 +20,13 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div id="annotations_panel" class="flex-1 flex flex-row overflow-hidden">
+    <div id="annotations_panel" class="flex-1 flex flex-row h-[calc(100vh-170px)] overflow-hidden">
       <div class="justify-start">
         <.toggle_notes_button>
           <i class="fa-solid fa-xmark group-hover:scale-110"></i>
         </.toggle_notes_button>
       </div>
-      <div class="flex-1 flex flex-col bg-white dark:bg-black p-5">
+      <div class="flex-1 flex flex-col bg-white dark:bg-black p-5 rounded-bl-lg">
         <.tab_group class="py-3">
           <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
             <.user_icon class="mr-2" /> My Notes
@@ -37,24 +37,26 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </.tab_group>
         <.search_box class="mt-2" search_term={@search_term} />
         <hr class="m-6 border-b border-b-gray-200" />
-        <%= case @search_results do %>
-          <% nil -> %>
-            <.annotations
-              active_tab={@active_tab}
-              annotations={@annotations}
-              current_user={@current_user}
-              create_new_annotation={@create_new_annotation}
-              selected_point={@selected_point}
-              collab_space_config={@collab_space_config}
-            />
-          <% _ -> %>
-            <.search_results
-              section_slug={@section_slug}
-              search_results={@search_results}
-              current_user={@current_user}
-              on_reveal_post="reveal_post"
-            />
-        <% end %>
+        <div class="h-[70vh] overflow-y-scroll">
+          <%= case @search_results do %>
+            <% nil -> %>
+              <.annotations
+                active_tab={@active_tab}
+                annotations={@annotations}
+                current_user={@current_user}
+                create_new_annotation={@create_new_annotation}
+                selected_point={@selected_point}
+                collab_space_config={@collab_space_config}
+              />
+            <% _ -> %>
+              <.search_results
+                section_slug={@section_slug}
+                search_results={@search_results}
+                current_user={@current_user}
+                on_reveal_post="reveal_post"
+              />
+          <% end %>
+        </div>
       </div>
     </div>
     """
