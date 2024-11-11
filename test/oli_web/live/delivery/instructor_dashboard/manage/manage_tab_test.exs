@@ -9,12 +9,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
   alias Oli.Delivery.Sections
 
   defp live_view_manage_route(section_slug) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-      section_slug,
-      :manage
-    )
+    ~p"/sections/#{section_slug}/manage"
   end
 
   describe "user" do

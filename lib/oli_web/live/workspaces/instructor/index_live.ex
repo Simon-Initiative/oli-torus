@@ -340,7 +340,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   end
 
   defp get_course_url(%{slug: slug}, sidebar_expanded),
-    do: ~p"/sections/#{slug}/instructor_dashboard/manage?#{%{sidebar_expanded: sidebar_expanded}}"
+    do: ~p"/sections/#{slug}/manage?#{%{sidebar_expanded: sidebar_expanded}}"
 
   defp decode_params(params) do
     %{

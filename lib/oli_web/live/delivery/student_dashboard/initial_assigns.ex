@@ -5,7 +5,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
   use OliWeb, :verified_routes
 
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts
@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
       {:error, error} ->
         {:halt, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
-      {_user_type, current_user, section} ->
+      {_user_type, user, section} ->
         section =
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -40,9 +40,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
 
         {:cont,
          assign(socket,
-           ctx: SessionContext.init(socket, session, user: current_user),
            browser_timezone: Map.get(session, "browser_timezone"),
-           current_user: current_user,
            student: student,
            preview_mode: socket.assigns[:live_action] == :preview,
            section: section

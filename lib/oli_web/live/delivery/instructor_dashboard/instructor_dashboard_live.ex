@@ -310,7 +310,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"insights", "practice_activities"},
       {"insights", "surveys"},
       {"insights", "course_discussion"},
-      {"manage", nil},
       {"discussions", nil}
     ]
 
@@ -334,11 +333,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
          active_tab: active_tab
        )}
     else
-      {:noreply,
-       assign(socket,
-         params: params,
-         view: :not_found
-       )}
+      if params["view"] == "manage" do
+        # redirect to the manage page new route
+        {:noreply, redirect(socket, to: "/sections/#{params["section_slug"]}/manage")}
+      else
+        {:noreply,
+         assign(socket,
+           params: params,
+           view: :not_found
+         )}
+      end
     end
   end
 
@@ -615,19 +619,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         ctx={@ctx}
       />
-    </div>
-    """
-  end
-
-  def render(%{view: :manage} = assigns) do
-    ~H"""
-    <div class="container mx-auto">
-      <div class="bg-white dark:bg-gray-800 p-8">
-        <%= live_render(@socket, OliWeb.Sections.OverviewView,
-          id: "overview",
-          session: %{"section_slug" => @section_slug}
-        ) %>
-      </div>
     </div>
     """
   end

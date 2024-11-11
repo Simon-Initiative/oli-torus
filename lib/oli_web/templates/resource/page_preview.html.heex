@@ -3,7 +3,7 @@
   <div class="h-screen flex flex-col overscroll-none overflow-hidden">
     <Components.Delivery.Layouts.header
       ctx={@ctx}
-      is_admin={assigns[:is_admin]}
+      is_admin={@is_admin}
       preview_mode={@preview_mode}
     />
     <div class="container mx-auto max-w-[880px] py-20">
@@ -27,7 +27,7 @@
   <div class="h-screen flex flex-col overscroll-none overflow-hidden">
     <Components.Delivery.Layouts.header
       ctx={@ctx}
-      is_admin={assigns[:is_admin]}
+      is_admin={@is_admin}
       preview_mode={@preview_mode}
     />
 

@@ -1,7 +1,7 @@
 <div class="flex flex-col">
   <Components.Delivery.Layouts.header
     ctx={@ctx}
-    is_admin={assigns[:is_admin] || false}
+    is_admin={@is_admin}
     section={@section}
     preview_mode={@preview_mode}
   />
@@ -10,7 +10,7 @@
     <Components.Delivery.Layouts.sidebar_nav
       :if={@section}
       ctx={@ctx}
-      is_admin={assigns[:is_admin] || false}
+      is_admin={@is_admin}
       section={@section}
       active_tab={:content}
       preview_mode={@preview_mode}

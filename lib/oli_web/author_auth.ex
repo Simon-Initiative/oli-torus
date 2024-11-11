@@ -221,11 +221,15 @@ defmodule OliWeb.AuthorAuth do
         Accounts.get_author_by_session_token(author_token)
       end
     end)
-    |> Phoenix.Component.assign_new(:is_admin, fn ->
-      if author = socket.assigns[:current_author] do
-        Accounts.is_admin?(author)
-      end
-    end)
+    |> maybe_is_admin()
+  end
+
+  defp maybe_is_admin(socket) do
+    if author = socket.assigns[:current_author] do
+      Phoenix.Component.assign(socket, is_admin: Accounts.is_admin?(author))
+    else
+      Phoenix.Component.assign(socket, is_admin: false)
+    end
   end
 
   @doc """

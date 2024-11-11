@@ -2,7 +2,6 @@ defmodule OliWeb.Sections.OverviewView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.Accounts
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
@@ -34,13 +33,7 @@ defmodule OliWeb.Sections.OverviewView do
       [
         Breadcrumb.new(%{
           full_title: section.title,
-          link:
-            Routes.live_path(
-              OliWeb.Endpoint,
-              OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-              section.slug,
-              :manage
-            )
+          link: ~p"/sections/#{section.slug}/manage"
         })
       ]
   end
@@ -82,7 +75,6 @@ defmodule OliWeb.Sections.OverviewView do
         {:ok,
          assign(socket,
            page_prompt_template: section.page_prompt_template,
-           is_admin: Accounts.is_admin?(user),
            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
@@ -135,379 +127,402 @@ defmodule OliWeb.Sections.OverviewView do
     ~H"""
     <%= render_modal(assigns) %>
     <div class="ml-auto"><.flash_message flash={@flash} /></div>
-    <Groups.render>
-      <Group.render label="Details" description="Overview of course section details">
-        <ReadOnly.render label="Course Section ID" value={@section.slug} />
-        <ReadOnly.render label="Title" value={@section.title} />
-        <ReadOnly.render label="Course Section Type" value={type_to_string(@section)} />
-        <ReadOnly.render label="URL" show_copy_btn={true} value={url(~p"/sections/#{@section.slug}")} />
-        <%= unless is_nil(@deployment) do %>
-          <ReadOnly.render
-            label="Institution"
-            type={if @is_admin, do: "link"}
-            link_label={@deployment.institution.name}
-            value={
-              if @is_admin,
-                do: Routes.institution_path(OliWeb.Endpoint, :show, @deployment.institution_id),
-                else: @deployment.institution.name
-            }
-          />
-        <% end %>
-        <div class="flex flex-col form-group">
-          <label>Base Project</label>
-          <a
-            href={~p"/workspaces/course_author/#{@base_project.slug}/overview"}
-            class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-          >
-            <%= @base_project.title %>
-          </a>
-        </div>
-        <%= unless is_nil(@section.blueprint_id) do %>
-          <div class="flex flex-col form-group">
-            <label>Product</label>
-            <a
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Products.DetailsView,
-                  @section.blueprint.slug
-                )
-              }
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              <%= @section.blueprint.title %>
-            </a>
-          </div>
-        <% end %>
-      </Group.render>
-      <Group.render label="Instructors" description="Manage users with instructor level access">
-        <Instructors.render users={@instructors} />
-      </Group.render>
-      <Group.render label="Curriculum" description="Manage content delivered to students">
-        <ul class="link-list">
-          <li>
-            <a
-              target="_blank"
-              href={~p"/sections/#{@section.slug}/preview"}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              <span>Preview Course as Student</span>
-              <i class="fas fa-external-link-alt self-center ml-1" />
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Customize Content
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Scheduling
-            </a>
-          </li>
-          <li>
-            <a
-              disabled={@updates_count == 0}
-              href={
-                Routes.source_materials_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Delivery.ManageSourceMaterials,
-                  @section.slug
-                )
-              }
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Manage Source Materials
-              <%= if @updates_count > 0 do %>
-                <span class="badge badge-primary"><%= @updates_count %> available</span>
-              <% end %>
-            </a>
-          </li>
-        </ul>
-      </Group.render>
-      <Group.render label="Manage" description="Manage all aspects of course delivery">
-        <ul class="link-list">
-          <%= if @section.open_and_free do %>
-            <li>
-              <a
-                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-              >
-                Invite Students
-              </a>
-            </li>
-          <% end %>
-          <li>
-            <a
-              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Edit Section Details
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Browse Collaborative Spaces
-            </a>
-          </li>
-          <li>
-            <a
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Sections.AssessmentSettings.SettingsLive,
-                  @section.slug,
-                  :settings,
-                  :all
-                )
-              }
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Assessment Settings
-            </a>
-          </li>
-          <li>
-            <button
-              type="button"
-              class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
-              phx-click="show_delete_modal"
-            >
-              Delete Section
-            </button>
-          </li>
-        </ul>
-      </Group.render>
-      <Group.render
-        label="Required Survey"
-        description="Show a required to students who access the course for the first time"
-      >
-        <%= if @show_required_section_config do %>
-          <.live_component
-            module={RequiredSurvey}
-            project={@section}
-            enabled={@section.required_survey_resource_id}
-            is_section={true}
-            id="section-required-survey-section"
-          />
-        <% else %>
-          <div class="flex items-center h-full ml-8">
-            <p class="m-0">
-              You are not allowed to have student surveys in this resource.<br />Please contact the admin to be granted with that permission.
-            </p>
-          </div>
-        <% end %>
-      </Group.render>
 
-      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-        id: "collab_space_config",
-        session: %{
-          "collab_space_config" => @collab_space_config,
-          "section_slug" => @section.slug,
-          "resource_slug" => @resource_slug,
-          "is_overview_render" => true,
-          "is_delivery" => true
-        }
-      ) %>
-
-      <Group.render label="Agenda" description="Include Schedule on Home Screen">
-        <section>
-          <div class="inline-flex py-2 mb-2">
-            <span>Enable Agenda</span>
-            <.toggle_switch
-              class="ml-4"
-              checked={@section.agenda}
-              on_toggle="toggle_agenda"
-              name="toggle_agenda"
+    <div class="container mx-auto">
+      <div class="bg-white dark:bg-gray-800 p-8">
+        <Groups.render>
+          <Group.render label="Details" description="Overview of course section details">
+            <ReadOnly.render label="Course Section ID" value={@section.slug} />
+            <ReadOnly.render label="Title" value={@section.title} />
+            <ReadOnly.render label="Course Section Type" value={type_to_string(@section)} />
+            <ReadOnly.render
+              label="URL"
+              show_copy_btn={true}
+              value={url(~p"/sections/#{@section.slug}")}
             />
-          </div>
-        </section>
-      </Group.render>
-
-      <Group.render label="Scoring" description="View and manage student scores and progress">
-        <ul class="link-list">
-          <li>
-            <a
-              href={
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.ManualGrading.ManualGradingView,
-                  @section.slug
-                )
-              }
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Score Manually Graded Activities
-              <%= if @has_submitted_attempts do %>
-                <span class="badge badge-primary">*</span>
-              <% end %>
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              View all Scores
-            </a>
-          </li>
-          <li>
-            <a
-              href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
-              class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-            >
-              Download Gradebook as <code>.csv</code> file
-            </a>
-          </li>
-
-          <%= if !@section.open_and_free do %>
-            <li>
-              <a
-                href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-              >
-                Manage LMS Gradebook
-              </a>
-            </li>
-            <li>
-              <a
-                href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)
+            <%= unless is_nil(@deployment) do %>
+              <ReadOnly.render
+                label="Institution"
+                type={if @is_admin, do: "link"}
+                link_label={@deployment.institution.name}
+                value={
+                  if @is_admin,
+                    do: Routes.institution_path(OliWeb.Endpoint, :show, @deployment.institution_id),
+                    else: @deployment.institution.name
                 }
+              />
+            <% end %>
+            <div class="flex flex-col form-group">
+              <label>Base Project</label>
+              <a
+                href={~p"/workspaces/course_author/#{@base_project.slug}/overview"}
                 class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
-                View scores that failed to sync
+                <%= @base_project.title %>
               </a>
-            </li>
-            <%= if @is_lms_or_system_admin do %>
-              <li>
+            </div>
+            <%= unless is_nil(@section.blueprint_id) do %>
+              <div class="flex flex-col form-group">
+                <label>Product</label>
                 <a
                   href={
                     Routes.live_path(
                       OliWeb.Endpoint,
-                      OliWeb.Grades.ObserveGradeUpdatesView,
+                      OliWeb.Products.DetailsView,
+                      @section.blueprint.slug
+                    )
+                  }
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  <%= @section.blueprint.title %>
+                </a>
+              </div>
+            <% end %>
+          </Group.render>
+          <Group.render label="Instructors" description="Manage users with instructor level access">
+            <Instructors.render users={@instructors} />
+          </Group.render>
+          <Group.render label="Curriculum" description="Manage content delivered to students">
+            <ul class="link-list">
+              <li>
+                <a
+                  target="_blank"
+                  href={~p"/sections/#{@section.slug}/preview"}
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  <span>Preview Course as Student</span>
+                  <i class="fas fa-external-link-alt self-center ml-1" />
+                </a>
+              </li>
+              <li>
+                <a
+                  href={
+                    Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)
+                  }
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Customize Content
+                </a>
+              </li>
+              <li>
+                <a
+                  href={
+                    Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.ScheduleView, @section.slug)
+                  }
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Scheduling
+                </a>
+              </li>
+              <li>
+                <a
+                  disabled={@updates_count == 0}
+                  href={
+                    Routes.source_materials_path(
+                      OliWeb.Endpoint,
+                      OliWeb.Delivery.ManageSourceMaterials,
                       @section.slug
                     )
                   }
                   class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
                 >
-                  Observe score updates in real-time
+                  Manage Source Materials
+                  <%= if @updates_count > 0 do %>
+                    <span class="badge badge-primary"><%= @updates_count %> available</span>
+                  <% end %>
                 </a>
               </li>
-            <% end %>
-            <li>
-              <a
-                href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)
-                }
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
-              >
-                Browse LMS Score Update Log
-              </a>
-            </li>
-          <% end %>
-        </ul>
-      </Group.render>
-
-      <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render label="LMS Admin" description="Administrator LMS Connection">
-          <UnlinkSection.render unlink="unlink" section={@section} />
-        </Group.render>
-      <% end %>
-
-      <Group.render
-        label="Cover Image"
-        description="Manage the cover image for this section. Max file size is 5 MB."
-        is_last={!@is_admin}
-      >
-        <section>
-          <ImageUpload.render
-            section={@section}
-            uploads={@uploads}
-            changeset={to_form(@changeset)}
-            upload_event="update_image"
-            change="change"
-            cancel_upload="cancel_upload"
-          />
-        </section>
-      </Group.render>
-
-      <div :if={@is_admin} class="border-t dark:border-gray-700">
-        <Group.render
-          label="AI Assistant"
-          description="View and manage the AI Assistant details"
-          is_last={true}
-        >
-          <div :if={Sections.assistant_enabled?(@section)}>
-            <section class="flex flex-col space-y-4">
-              <ul class="link-list">
+            </ul>
+          </Group.render>
+          <Group.render label="Manage" description="Manage all aspects of course delivery">
+            <ul class="link-list">
+              <%= if @section.open_and_free do %>
                 <li>
                   <a
-                    href={~p"/sections/#{@section.slug}/assistant/conversations"}
-                    class="btn btn-link"
+                    href={
+                      Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)
+                    }
+                    class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
                   >
-                    Browse Student Conversations
+                    Invite Students
                   </a>
                 </li>
-              </ul>
-            </section>
-
-            <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
-              <h5>Prompt Templates</h5>
-
-              <MonacoEditor.render
-                id="attribute-monaco-editor"
-                height="200px"
-                language="text"
-                on_change="monaco_editor_on_change"
-                set_options="monaco_editor_set_options"
-                set_value="monaco_editor_set_value"
-                get_value="monaco_editor_get_value"
-                validate_schema_uri=""
-                default_value={
-                  if is_nil(@section.page_prompt_template) do
-                    ""
-                  else
-                    @section.page_prompt_template
-                  end
-                }
-                default_options={
-                  %{
-                    "readOnly" => false,
-                    "selectOnLineNumbers" => true,
-                    "minimap" => %{"enabled" => false},
-                    "scrollBeyondLastLine" => false,
-                    "tabSize" => 2
+              <% end %>
+              <li>
+                <a
+                  href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Edit Section Details
+                </a>
+              </li>
+              <li>
+                <a
+                  href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Browse Collaborative Spaces
+                </a>
+              </li>
+              <li>
+                <a
+                  href={
+                    Routes.live_path(
+                      OliWeb.Endpoint,
+                      OliWeb.Sections.AssessmentSettings.SettingsLive,
+                      @section.slug,
+                      :settings,
+                      :all
+                    )
                   }
-                }
-                use_code_lenses={[]}
-              />
-
-              <div>
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Assessment Settings
+                </a>
+              </li>
+              <li>
                 <button
                   type="button"
-                  class="btn btn-primary action-button mt-4"
-                  phx-click="save_prompt"
+                  class="text-[#ef4444] hover:text-[#dc2626] dark:text-[#dc2626] dark:hover:text-[#ef4444] hover:underline pr-3 py-2"
+                  phx-click="show_delete_modal"
                 >
-                  Save
+                  Delete Section
                 </button>
+              </li>
+            </ul>
+          </Group.render>
+          <Group.render
+            label="Required Survey"
+            description="Show a required to students who access the course for the first time"
+          >
+            <%= if @show_required_section_config do %>
+              <.live_component
+                module={RequiredSurvey}
+                project={@section}
+                enabled={@section.required_survey_resource_id}
+                is_section={true}
+                id="section-required-survey-section"
+              />
+            <% else %>
+              <div class="flex items-center h-full ml-8">
+                <p class="m-0">
+                  You are not allowed to have student surveys in this resource.<br />Please contact the admin to be granted with that permission.
+                </p>
+              </div>
+            <% end %>
+          </Group.render>
+
+          <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+            id: "collab_space_config",
+            session: %{
+              "collab_space_config" => @collab_space_config,
+              "section_slug" => @section.slug,
+              "resource_slug" => @resource_slug,
+              "is_overview_render" => true,
+              "is_delivery" => true
+            }
+          ) %>
+
+          <Group.render label="Agenda" description="Include Schedule on Home Screen">
+            <section>
+              <div class="inline-flex py-2 mb-2">
+                <span>Enable Agenda</span>
+                <.toggle_switch
+                  class="ml-4"
+                  checked={@section.agenda}
+                  on_toggle="toggle_agenda"
+                  name="toggle_agenda"
+                />
               </div>
             </section>
+          </Group.render>
+
+          <Group.render label="Scoring" description="View and manage student scores and progress">
+            <ul class="link-list">
+              <li>
+                <a
+                  href={
+                    Routes.live_path(
+                      OliWeb.Endpoint,
+                      OliWeb.ManualGrading.ManualGradingView,
+                      @section.slug
+                    )
+                  }
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Score Manually Graded Activities
+                  <%= if @has_submitted_attempts do %>
+                    <span class="badge badge-primary">*</span>
+                  <% end %>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  View all Scores
+                </a>
+              </li>
+              <li>
+                <a
+                  href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}
+                  class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                >
+                  Download Gradebook as <code>.csv</code> file
+                </a>
+              </li>
+
+              <%= if !@section.open_and_free do %>
+                <li>
+                  <a
+                    href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}
+                    class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                  >
+                    Manage LMS Gradebook
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={
+                      Routes.live_path(
+                        OliWeb.Endpoint,
+                        OliWeb.Grades.FailedGradeSyncLive,
+                        @section.slug
+                      )
+                    }
+                    class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                  >
+                    View scores that failed to sync
+                  </a>
+                </li>
+                <%= if @is_lms_or_system_admin do %>
+                  <li>
+                    <a
+                      href={
+                        Routes.live_path(
+                          OliWeb.Endpoint,
+                          OliWeb.Grades.ObserveGradeUpdatesView,
+                          @section.slug
+                        )
+                      }
+                      class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                    >
+                      Observe score updates in real-time
+                    </a>
+                  </li>
+                <% end %>
+                <li>
+                  <a
+                    href={
+                      Routes.live_path(
+                        OliWeb.Endpoint,
+                        OliWeb.Grades.BrowseUpdatesView,
+                        @section.slug
+                      )
+                    }
+                    class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
+                  >
+                    Browse LMS Score Update Log
+                  </a>
+                </li>
+              <% end %>
+            </ul>
+          </Group.render>
+
+          <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
+            <Group.render label="LMS Admin" description="Administrator LMS Connection">
+              <UnlinkSection.render unlink="unlink" section={@section} />
+            </Group.render>
+          <% end %>
+
+          <Group.render
+            label="Cover Image"
+            description="Manage the cover image for this section. Max file size is 5 MB."
+            is_last={!@is_admin}
+          >
+            <section>
+              <ImageUpload.render
+                section={@section}
+                uploads={@uploads}
+                changeset={to_form(@changeset)}
+                upload_event="update_image"
+                change="change"
+                cancel_upload="cancel_upload"
+              />
+            </section>
+          </Group.render>
+
+          <div :if={@is_admin} class="border-t dark:border-gray-700">
+            <Group.render
+              label="AI Assistant"
+              description="View and manage the AI Assistant details"
+              is_last={true}
+            >
+              <div :if={Sections.assistant_enabled?(@section)}>
+                <section class="flex flex-col space-y-4">
+                  <ul class="link-list">
+                    <li>
+                      <a
+                        href={~p"/sections/#{@section.slug}/assistant/conversations"}
+                        class="btn btn-link"
+                      >
+                        Browse Student Conversations
+                      </a>
+                    </li>
+                  </ul>
+                </section>
+
+                <section class="flex flex-col space-y-4 mt-8 pt-6 border-t border-gray-200">
+                  <h5>Prompt Templates</h5>
+
+                  <MonacoEditor.render
+                    id="attribute-monaco-editor"
+                    height="200px"
+                    language="text"
+                    on_change="monaco_editor_on_change"
+                    set_options="monaco_editor_set_options"
+                    set_value="monaco_editor_set_value"
+                    get_value="monaco_editor_get_value"
+                    validate_schema_uri=""
+                    default_value={
+                      if is_nil(@section.page_prompt_template) do
+                        ""
+                      else
+                        @section.page_prompt_template
+                      end
+                    }
+                    default_options={
+                      %{
+                        "readOnly" => false,
+                        "selectOnLineNumbers" => true,
+                        "minimap" => %{"enabled" => false},
+                        "scrollBeyondLastLine" => false,
+                        "tabSize" => 2
+                      }
+                    }
+                    use_code_lenses={[]}
+                  />
+
+                  <div>
+                    <button
+                      type="button"
+                      class="btn btn-primary action-button mt-4"
+                      phx-click="save_prompt"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </section>
+              </div>
+              <div class="my-2">
+                <.assistant_toggle_button section={@section} />
+              </div>
+            </Group.render>
           </div>
-          <div class="my-2">
-            <.assistant_toggle_button section={@section} />
-          </div>
-        </Group.render>
+        </Groups.render>
       </div>
-    </Groups.render>
+    </div>
     """
   end
 

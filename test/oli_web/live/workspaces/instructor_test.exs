@@ -109,7 +109,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/instructor_dashboard/manage?sidebar_expanded=true"]}
+               ~s{a[href="/sections/#{section.slug}/manage?sidebar_expanded=true"]}
              )
     end
 

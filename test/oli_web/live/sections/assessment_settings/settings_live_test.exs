@@ -610,7 +610,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
     end
 
     test "student_exceptions view loads correctly", %{

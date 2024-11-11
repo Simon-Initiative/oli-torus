@@ -94,7 +94,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/instructor_dashboard/manage\">redirected"
+               "You are being <a href=\"/sections/#{section.slug}/manage\">redirected"
     end
   end
 

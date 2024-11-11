@@ -146,12 +146,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       assert_redirected(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :manage
-        )
+        ~p"/sections/#{section.slug}/manage"
       )
 
       assert Enrollment

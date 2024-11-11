@@ -45,15 +45,7 @@ defmodule OliWeb.PageDeliveryController do
 
           if user_roles.is_instructor? do
             conn
-            |> redirect(
-              to:
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                  section_slug,
-                  :manage
-                )
-            )
+            |> redirect(to: ~p"/sections/#{section_slug}/manage")
           else
             revision = DeliveryResolver.root_container(section_slug)
 

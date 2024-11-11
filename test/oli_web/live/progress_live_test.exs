@@ -261,7 +261,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+               "<a href=\"#{~p"/sections/#{section.slug}/manage"}\""
 
       assert html =~ "Manual Scoring"
     end
@@ -281,7 +281,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+               "<a href=\"#{~p"/sections/#{section.slug}/manage"}\""
 
       assert html =~ "Student Progress"
     end
@@ -299,7 +299,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+               "<a href=\"#{~p"/sections/#{section.slug}/manage"}\""
 
       assert html =~
                "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""

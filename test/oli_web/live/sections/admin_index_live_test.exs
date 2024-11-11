@@ -279,7 +279,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\"]",
+               "a[href=\"#{~p"/sections/#{section.slug}/manage"}\"]",
                section.title
              )
     end

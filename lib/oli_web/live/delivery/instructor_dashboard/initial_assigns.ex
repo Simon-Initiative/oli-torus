@@ -3,7 +3,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InitialAssigns do
   Ensure common assigns are applied to all InstructorDashboard LiveViews attaching this hook.
   """
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Router.Helpers, as: Routes
 
   import Phoenix.LiveView
@@ -18,16 +17,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.InitialAssigns do
       {:error, error} ->
         {:halt, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
-      {_user_type, current_user, section} ->
+      {_user_type, user, section} ->
         section =
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
 
         {:cont,
          assign(socket,
-           ctx: SessionContext.init(socket, session, user: current_user),
            browser_timezone: Map.get(session, "browser_timezone"),
-           current_user: current_user,
            title: section.title,
            description: section.description,
            section_slug: section_slug,

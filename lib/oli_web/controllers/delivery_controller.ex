@@ -14,7 +14,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.{UserAuth, AuthorAuth}
+  alias OliWeb.UserAuth
   alias OliWeb.Common.Params
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
@@ -26,19 +26,6 @@ defmodule OliWeb.DeliveryController do
     ContextRoles.get_role(:context_administrator),
     ContextRoles.get_role(:context_instructor)
   ]
-
-  def instructor_dashboard(conn, %{"section_slug" => section_slug}) do
-    # redirect to live view
-    redirect(conn,
-      to:
-        Routes.live_path(
-          conn,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section_slug,
-          "overview"
-        )
-    )
-  end
 
   @doc """
   This is the default entry point for delivery users. It will redirect to the appropriate page based
@@ -158,7 +145,7 @@ defmodule OliWeb.DeliveryController do
 
   defp redirect_to_instructor_dashboard(conn, section) do
     redirect(conn,
-      to: ~p"/sections/#{section.slug}/instructor_dashboard/manage"
+      to: ~p"/sections/#{section.slug}/manage"
     )
   end
 

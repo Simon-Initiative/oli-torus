@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
-  use Phoenix.LiveView
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   import Ecto.Query
@@ -41,13 +41,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            breadcrumbs: [
              Breadcrumb.new(%{
                full_title: "Manage Section",
-               link:
-                 Routes.live_path(
-                   OliWeb.Endpoint,
-                   OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                   section.slug,
-                   :manage
-                 )
+               link: ~p"/sections/#{section.slug}/manage"
              }),
              Breadcrumb.new(%{
                full_title: "Assessments settings"

@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.Actions do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
   use OliWeb.Common.Modal
 
   alias Lti_1p3.Tool.ContextRoles
@@ -7,7 +7,6 @@ defmodule OliWeb.Components.Delivery.Actions do
   alias OliWeb.Common.Confirm
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Paywall
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Modal
 
   @user_role_data [
@@ -211,13 +210,7 @@ defmodule OliWeb.Components.Delivery.Actions do
       {:ok, _} ->
         {:noreply,
          redirect(socket,
-           to:
-             Routes.live_path(
-               OliWeb.Endpoint,
-               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-               socket.assigns.section.slug,
-               :manage
-             )
+           to: ~p"/sections/#{socket.assigns.section.slug}/manage"
          )}
 
       _ ->
@@ -232,13 +225,7 @@ defmodule OliWeb.Components.Delivery.Actions do
       {:ok, _} ->
         {:noreply,
          redirect(socket,
-           to:
-             Routes.live_path(
-               OliWeb.Endpoint,
-               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-               socket.assigns.section.slug,
-               :manage
-             )
+           to: ~p"/sections/#{section.slug}/manage"
          )}
 
       {:error, :not_found} ->
