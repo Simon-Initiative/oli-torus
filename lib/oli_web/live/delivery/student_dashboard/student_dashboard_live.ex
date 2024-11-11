@@ -5,6 +5,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   import OliWeb.Common.Utils
 
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
@@ -141,6 +142,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       preview_mode={@preview_mode}
     />
     <%= render_tab(assigns) %>
+    <HTMLComponents.view_example_student_progress_modal />
     """
   end
 

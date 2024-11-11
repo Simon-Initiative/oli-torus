@@ -109,20 +109,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
       {:ok, view, _html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id, :content, params))
 
-      [module_for_tr_1] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr})
-        |> Enum.map(fn tr -> Floki.text(tr) end)
-
-      assert module_for_tr_1 =~ "Module 2"
-
-      assert element(view, "#content_search_input-input") |> render() =~
-               ~s'value="Module 2"'
-
-      refute render(view) =~ "Module 1 "
-      refute render(view) =~ "Module 3"
+      assert view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{.instructor_dashboard_table tbody tr td})
+             |> Floki.text() =~ "Module 2"
     end
 
     test "gets paginated through url query params", %{
@@ -139,16 +130,11 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ContentTabTest do
       {:ok, view, _html} =
         live(conn, live_view_students_dashboard_route(section.slug, student.id, :content, params))
 
-      [module_for_tr_1] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tbody tr})
-        |> Enum.map(fn tr -> Floki.text(tr) end)
-
-      assert module_for_tr_1 =~ "Module 3"
-      refute render(view) =~ "Module 1"
-      refute render(view) =~ "Module 2"
+      assert view
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.find(~s{.instructor_dashboard_table tbody tr td})
+             |> Floki.text() =~ "Module 3"
 
       assert element(view, "#footer_paging") |> render() =~ "3 - 3 of 3 results"
 

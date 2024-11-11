@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
   use Phoenix.Component
 
+  alias OliWeb.Components.Modal
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
 
@@ -67,7 +68,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
           <div class="self-stretch font-bold mb-5">
             Average Progress
           </div>
-          <div class="self-stretch flex-col justify-start items-end flex gap-[16px]">
+          <div class="flex-col justify-start items-start gap-[16px] inline-flex list-disc list-inside">
             <div class="self-stretch font-medium">
               The calculation logic for course progress is based on averaging the completion percentages of individual lesson pages within a container (like a module or unit).
             </div>
@@ -183,6 +184,52 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
         </div>
       </div>
     </OliWeb.Components.Modal.modal>
+    """
+  end
+
+  attr :title, :string, required: true
+  attr :show, :boolean, default: false
+
+  def student_progress_label(assigns) do
+    ~H"""
+    <div class="inline-flex gap-2 items-center relative cursor-auto" onclick="event.stopPropagation()">
+      <div
+        onclick="event.stopPropagation()"
+        id="student_progress_tooltip"
+        class="absolute -translate-y-[34px] -translate-x-[140px] min-w-max w-full pb-[27px] z-10 hidden"
+        phx-click-away={JS.hide()}
+        phx-hook="HoverAway"
+        mouse-leave-js={
+          JS.hide(transition: {"ease-out duration-300", "opacity-100", "opacity-0"}, time: 300)
+        }
+      >
+        <div class="px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#3a3740] justify-start items-center inline-flex font-normal z-10">
+          <div class="grow shrink basis-0">
+            <span style="text-[#353740] dark:text-[#eeebf5] text-sm leading-normal">
+              This is an estimate of student progress.<br />
+              <button
+                phx-hook="ClickExecJS"
+                click-exec-js={
+                  Modal.show_modal("student_progress_calculation_modal")
+                  |> JS.hide(to: "#student_progress_tooltip")
+                }
+                id="student_progress_tooltip_link"
+                class="text-[#0165da] text-sm dark:text-white underline font-bold"
+              >
+                Learn more.
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+      <button
+        xphx-mouseover={JS.show(to: "#student_progress_tooltip")}
+        class="max-w-min border border-transparent"
+      >
+        <Icons.info />
+      </button>
+    </div>
+    <%= @title %>
     """
   end
 
