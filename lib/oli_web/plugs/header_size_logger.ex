@@ -8,8 +8,6 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
   their HTTP Header sizes are growing beyond the max configured size.
   """
 
-  alias OliWeb.Pow.SessionUtils
-
   import Plug.Conn
   require Logger
 

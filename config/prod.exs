@@ -20,8 +20,6 @@ config :logger, level: :info
 # Configure email for production
 config :oli, Oli.Mailer, adapter: Bamboo.SesAdapter
 
-config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.SesAdapter
-
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key

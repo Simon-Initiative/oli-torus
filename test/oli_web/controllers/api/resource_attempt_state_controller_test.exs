@@ -7,10 +7,7 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
 
   defp again(conn, user) do
     recycle(conn)
-    |> Pow.Plug.assign_current_user(
-      user,
-      OliWeb.Pow.PowHelpers.get_pow_config(:user)
-    )
+    |> assign_current_user(user)
   end
 
   describe "attempt extrinsic endpoints" do
@@ -32,7 +29,7 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
         )
 
       assert keys = json_response(conn, 200)
-      assert length(Map.keys(keys)) == 0
+      assert Enum.empty?(Map.keys(keys))
 
       conn = again(conn, user)
 
@@ -104,16 +101,14 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
         open_and_free: false
       })
 
-    lti_params_id =
-      Oli.Lti.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
-      |> cache_lti_params(user.id)
+    Oli.Lti.TestHelpers.all_default_claims()
+    |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
+    |> cache_lti_params(user.id)
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+      |> assign_current_author(map.author)
+      |> assign_current_user(user)
 
     map = Map.put(map, :the_page, %{resource: map.page1, revision: map.revision1})
     map = Map.put(map, :section, section)

@@ -2,7 +2,6 @@ defmodule OliWeb.UserForgotPasswordLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import Oli.AccountsFixtures
 
   alias Oli.Accounts
   alias Oli.Repo
@@ -19,7 +18,7 @@ defmodule OliWeb.UserForgotPasswordLiveTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_user(user_fixture())
+        |> log_in_user(Oli.AccountsFixtures.user_fixture())
         |> live(~p"/users/reset_password")
         |> follow_redirect(conn, ~p"/")
 
@@ -29,7 +28,7 @@ defmodule OliWeb.UserForgotPasswordLiveTest do
 
   describe "Reset link" do
     setup do
-      %{user: user_fixture()}
+      %{user: Oli.AccountsFixtures.user_fixture()}
     end
 
     test "sends a new reset password token", %{conn: conn, user: user} do

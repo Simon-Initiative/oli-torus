@@ -135,8 +135,7 @@ defmodule OliWeb.PageLifecycleTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+      |> assign_current_user(user)
 
     {:ok, conn: conn, map: map}
   end

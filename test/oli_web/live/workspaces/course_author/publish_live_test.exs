@@ -226,7 +226,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
     } do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(author)
         |> get(live_view_publish_route(project.slug))
 
       assert html_response(conn, 200) =~ "Publication Details"

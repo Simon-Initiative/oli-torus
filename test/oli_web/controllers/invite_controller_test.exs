@@ -146,7 +146,7 @@ defmodule OliWeb.InviteControllerTest do
       |> Repo.insert()
 
     conn =
-      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      assign_current_author(conn, author)
 
     {:ok, conn: conn, author: author}
   end

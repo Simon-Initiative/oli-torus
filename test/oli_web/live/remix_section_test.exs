@@ -959,7 +959,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, %{})
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> assign_current_author(admin)
 
     # Add an orphan page to the section
     orphan_revision =
@@ -1115,7 +1115,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil, section_slug: map.section_1.slug)
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> assign_current_user(instructor)
 
     # Add an orphan page to the section
     orphan_revision =
@@ -1271,10 +1271,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, %{})
-      |> Pow.Plug.assign_current_user(
-        product_author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
-      )
+      |> assign_current_author(product_author)
 
     {:ok,
      conn: conn,

@@ -10,7 +10,6 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Pow.PowHelpers
 
   @default_selected_view :gallery
 
@@ -641,7 +640,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(instructor, PowHelpers.get_pow_config(:user))
+        |> assign_current_user(instructor)
 
       conn =
         get(
@@ -682,7 +681,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(admin, PowHelpers.get_pow_config(:author))
+        |> assign_current_author(admin)
 
       conn =
         get(

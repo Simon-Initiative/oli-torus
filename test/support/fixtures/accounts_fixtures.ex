@@ -28,4 +28,23 @@ defmodule Oli.AccountsFixtures do
     [_, token | _] = String.split(captured_email.text_body, "[TOKEN]")
     token
   end
+
+  def unique_author_email, do: "author#{System.unique_integer()}@example.com"
+  def valid_author_password, do: "hello world!"
+
+  def valid_author_attributes(attrs \\ %{}) do
+    Enum.into(attrs, %{
+      email: unique_author_email(),
+      password: valid_author_password()
+    })
+  end
+
+  def author_fixture(attrs \\ %{}) do
+    {:ok, author} =
+      attrs
+      |> valid_author_attributes()
+      |> Oli.Accounts.register_author()
+
+    author
+  end
 end

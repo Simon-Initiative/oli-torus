@@ -137,9 +137,8 @@ defmodule OliWeb.CookieConsentControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+      |> assign_current_author(map.author)
+      |> assign_current_user(user)
 
     {:ok,
      conn: conn,

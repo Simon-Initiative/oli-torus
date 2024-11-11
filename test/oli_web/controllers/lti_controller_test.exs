@@ -89,7 +89,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> assign_current_user(user)
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
@@ -124,7 +124,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> assign_current_user(user)
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
@@ -434,7 +434,7 @@ defmodule OliWeb.LtiControllerTest do
         "state" => state
       }
 
-      conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = assign_current_user(conn, user)
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 
@@ -476,8 +476,7 @@ defmodule OliWeb.LtiControllerTest do
         "state" => state
       }
 
-      conn =
-        Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      conn = assign_current_author(conn, author)
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 

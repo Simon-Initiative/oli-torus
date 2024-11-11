@@ -5,7 +5,7 @@ defmodule OliWeb.TagControllerTest do
 
   defp again(conn, user) do
     recycle(conn)
-    |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    |> assign_current_user(user)
   end
 
   describe "tag endpoint" do
@@ -73,7 +73,7 @@ defmodule OliWeb.TagControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> assign_current_author(map.author)
 
     {:ok, conn: conn, map: map, author: map.author, project: map.project}
   end

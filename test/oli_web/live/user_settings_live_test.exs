@@ -3,7 +3,6 @@ defmodule OliWeb.UserSettingsLiveTest do
 
   alias Oli.Accounts
   import Phoenix.LiveViewTest
-  import Oli.AccountsFixtures
 
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do

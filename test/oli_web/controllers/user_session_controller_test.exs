@@ -1,8 +1,6 @@
 defmodule OliWeb.UserSessionControllerTest do
   use OliWeb.ConnCase, async: true
 
-  import Oli.AccountsFixtures
-
   setup do
     %{user: user_fixture()}
   end

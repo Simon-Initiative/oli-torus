@@ -202,7 +202,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
       author = insert(:author)
 
       conn =
-        Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        assign_current_author(conn, author)
 
       {:error, {:redirect, %{flash: %{"info" => flash_message}, to: redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
@@ -218,10 +218,9 @@ defmodule OliWeb.History.RevisionHistoryTest do
       author: author_project_creator
     } do
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_author(
           conn,
-          author_project_creator,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+          author_project_creator
         )
         |> get(revision_history_route(project.slug, container_revision.slug))
 
@@ -236,12 +235,8 @@ defmodule OliWeb.History.RevisionHistoryTest do
       user = insert(:user)
 
       conn =
-        Pow.Plug.assign_current_user(
-          conn,
-          user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
-        )
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        conn
+        |> assign_current_user(user)
         |> get(revision_history_route(project.slug, container_revision.slug))
 
       assert response(conn, 302)

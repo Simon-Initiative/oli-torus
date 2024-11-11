@@ -2,7 +2,6 @@ defmodule OliWeb.UserConfirmationLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import Oli.AccountsFixtures
 
   alias Oli.Accounts
   alias Oli.Repo

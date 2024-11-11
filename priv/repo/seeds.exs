@@ -36,7 +36,7 @@ end
 if !Oli.Repo.get_by(Oli.Accounts.Author,
      email: System.get_env("ADMIN_EMAIL", "admin@example.edu")
    ) do
-  {:ok, user} =
+  {:ok, _admin} =
     %Author{}
     |> Author.seed_changeset(%{
       email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),

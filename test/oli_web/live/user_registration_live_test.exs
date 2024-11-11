@@ -2,7 +2,6 @@ defmodule OliWeb.UserRegistrationLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import Oli.AccountsFixtures
 
   describe "Registration page" do
     test "renders registration page", %{conn: conn} do

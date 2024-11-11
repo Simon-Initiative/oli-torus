@@ -99,7 +99,7 @@ defmodule OliWeb.ProjectVisibilityTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> assign_current_author(map.author)
 
     {:ok, conn: conn, author: map.author, institution: map.institution, project: map.project}
   end

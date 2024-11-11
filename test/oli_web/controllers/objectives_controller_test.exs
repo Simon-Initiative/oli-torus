@@ -174,10 +174,9 @@ defmodule OliWeb.ObjectivesControllerTest do
       |> Oli.Seeder.add_objective_with_children("parent2", [:child4], :parent2)
 
     conn =
-      Pow.Plug.assign_current_user(
+      assign_current_author(
         conn,
-        seeds.author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        seeds.author
       )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}

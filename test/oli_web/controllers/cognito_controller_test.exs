@@ -145,10 +145,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
 
       new_author = Accounts.get_author_by_email(email)
       new_user = Accounts.get_user_by(%{email: email})

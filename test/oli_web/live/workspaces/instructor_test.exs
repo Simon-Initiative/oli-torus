@@ -381,10 +381,9 @@ defmodule OliWeb.Workspaces.InstructorTest do
       author = insert(:author, email: "author_account@test.com")
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_author(
           conn,
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+          author
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
@@ -459,10 +458,9 @@ defmodule OliWeb.Workspaces.InstructorTest do
       author = insert(:author, email: "author_account@test.com")
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_author(
           conn,
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+          author
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")

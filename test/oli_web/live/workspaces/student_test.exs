@@ -8,7 +8,6 @@ defmodule OliWeb.Workspaces.StudentTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Accounts
-  alias OliWeb.Pow.UserContext
 
   describe "user not signed in" do
     test "can access page", %{conn: conn} do
@@ -90,7 +89,7 @@ defmodule OliWeb.Workspaces.StudentTest do
     end
 
     test "cannot access student workspace when locked", %{conn: conn, user: user} do
-      UserContext.lock(user)
+      Accounts.lock_user(user)
 
       {:error,
        {:redirect,
@@ -109,7 +108,7 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, user} = Accounts.update_user(user, %{locked_at: date})
 
       # Unlock the user
-      UserContext.unlock(user)
+      Accounts.unlock_user(user)
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
@@ -301,10 +300,9 @@ defmodule OliWeb.Workspaces.StudentTest do
       author = insert(:author, email: "author_account@test.com")
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_author(
           conn,
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+          author
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")

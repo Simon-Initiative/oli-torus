@@ -2,7 +2,6 @@ defmodule OliWeb.UserLoginLiveTest do
   use OliWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import Oli.AccountsFixtures
 
   describe "Log in page" do
     test "renders log in page", %{conn: conn} do
@@ -16,7 +15,7 @@ defmodule OliWeb.UserLoginLiveTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_user(user_fixture())
+        |> log_in_user(Oli.AccountsFixtures.user_fixture())
         |> live(~p"/users/log_in")
         |> follow_redirect(conn, "/")
 
@@ -27,7 +26,7 @@ defmodule OliWeb.UserLoginLiveTest do
   describe "user login" do
     test "redirects if user login with valid credentials", %{conn: conn} do
       password = "123456789abcd"
-      user = user_fixture(%{password: password})
+      user = Oli.AccountsFixtures.user_fixture(%{password: password})
 
       {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 

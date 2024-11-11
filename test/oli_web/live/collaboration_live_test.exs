@@ -311,7 +311,7 @@ defmodule OliWeb.CollaborationLiveTest do
     } do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(author)
         |> get(live_view_author_edit(project.slug, page_revision.slug))
 
       assert html_response(conn, 200) =~

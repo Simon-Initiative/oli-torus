@@ -1222,8 +1222,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> assign_current_author(admin)
+      |> assign_current_user(user)
 
     map
     |> Map.merge(%{

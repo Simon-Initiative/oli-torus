@@ -68,10 +68,9 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user_with_account_linked = insert(:user, author: author)
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          user_with_account_linked,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          user_with_account_linked
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
@@ -84,10 +83,9 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user_with_no_account_linked = insert(:user, author: nil)
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          user_with_no_account_linked,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          user_with_no_account_linked
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
@@ -100,10 +98,9 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user_with_no_account_linked = insert(:user, email: "some_user@test.com", author: nil)
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          user_with_no_account_linked,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          user_with_no_account_linked
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
@@ -121,10 +118,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
       conn =
         Phoenix.ConnTest.build_conn()
-        |> Pow.Plug.assign_current_user(
-          user_with_no_account_linked,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
-        )
+        |> assign_current_user(user_with_no_account_linked)
         |> post(
           Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create,
             link_to_user_account?: "true",
@@ -267,10 +261,9 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user = insert(:user, email: "user_not_author@test.com")
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          user
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
@@ -408,10 +401,9 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user = insert(:user)
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          user
         )
 
       [
@@ -431,10 +423,9 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user = insert(:user, email: "user_not_author@test.com")
 
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          user
         )
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")

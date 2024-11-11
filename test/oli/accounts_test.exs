@@ -2,7 +2,6 @@ defmodule Oli.AccountsTest do
   use Oli.DataCase
 
   import Oli.Factory
-  import Oli.AccountsFixtures
 
   alias Oli.Accounts
   alias Oli.Accounts.{User, UserToken}
@@ -13,11 +12,11 @@ defmodule Oli.AccountsTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.SystemRole
 
-  def user_fixture(attrs \\ %{}) do
-    %User{}
-    |> User.noauth_changeset(attrs)
-    |> Repo.insert()
-  end
+  # def user_fixture(attrs \\ %{}) do
+  #   %User{}
+  #   |> User.noauth_changeset(attrs)
+  #   |> Repo.insert()
+  # end
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -282,7 +281,7 @@ defmodule Oli.AccountsTest do
     @invalid_attrs %{email: nil, given_name: nil, family_name: nil, sub: nil, picture: nil}
 
     setup do
-      author = author_fixture()
+      author = Oli.AccountsFixtures.author_fixture()
 
       valid_attrs =
         @valid_attrs

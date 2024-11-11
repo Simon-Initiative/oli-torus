@@ -11,7 +11,6 @@ defmodule OliWeb.Users.UsersDetailViewTest do
   alias Oli.Delivery.Sections
 
   @role_institution_instructor Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
-  @author_pow_config OliWeb.Pow.PowHelpers.get_pow_config(:author)
 
   describe "user details live test" do
     setup [:setup_session]
@@ -24,7 +23,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(admin)
 
       conn =
         get(
@@ -54,7 +53,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(admin)
 
       conn =
         get(
@@ -77,7 +76,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(admin)
 
       conn =
         get(
@@ -94,7 +93,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     test "admin fails to update with an invalid user data", ctx do
       {:ok, view, _html} =
         Plug.Test.init_test_session(ctx.conn, [])
-        |> Pow.Plug.assign_current_user(ctx.admin, @author_pow_config)
+        |> assign_current_author(ctx.admin)
         |> live(~p"/admin/users/#{ctx.independent_student.id}")
 
       view
@@ -174,7 +173,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(admin)
 
       conn =
         get(
@@ -629,7 +628,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil, section_slug: map.section_1.slug)
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> assign_current_user(instructor)
 
     {:ok,
      conn: conn,

@@ -25,10 +25,9 @@ defmodule OliWeb.DeliveryRetrieveTest do
       instructor: instructor
     } do
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          instructor,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          instructor
         )
 
       conn =
@@ -84,10 +83,9 @@ defmodule OliWeb.DeliveryRetrieveTest do
       instructor: instructor
     } do
       conn =
-        Pow.Plug.assign_current_user(
+        assign_current_user(
           conn,
-          instructor,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+          instructor
         )
 
       conn =
@@ -219,9 +217,8 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+      |> assign_current_author(map.author)
+      |> assign_current_user(user)
 
     {:ok,
      instructor: instructor,

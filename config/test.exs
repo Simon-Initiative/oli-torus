@@ -60,8 +60,6 @@ config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
 # Configure Email
 config :oli, Oli.Mailer, adapter: Bamboo.TestAdapter
 
-config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.TestAdapter
-
 # speed up tests by lowering the hash iterations
 config :bcrypt_elixir, log_rounds: 4
 

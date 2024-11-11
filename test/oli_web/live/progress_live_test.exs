@@ -360,7 +360,7 @@ defmodule OliWeb.ProgressLiveTest do
     conn =
       conn
       |> Plug.Test.init_test_session(lti_session: nil)
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> assign_current_user(instructor)
 
     {:ok, %{conn: conn, instructor: instructor, section: section}}
   end

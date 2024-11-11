@@ -226,7 +226,7 @@ defmodule OliWeb.PublishLiveTest do
     } do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> assign_current_author(author)
         |> get(live_view_publish_route(project.slug))
 
       assert html_response(conn, 200) =~ "Publication Details"
@@ -716,7 +716,7 @@ defmodule OliWeb.PublishLiveTest do
 
       enqueued_jobs = all_enqueued(worker: Oli.Search.EmbeddingWorker)
 
-      assert length(enqueued_jobs) == 0
+      assert Enum.empty?(enqueued_jobs)
     end
   end
 end

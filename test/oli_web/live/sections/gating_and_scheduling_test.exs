@@ -733,7 +733,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> assign_current_author(admin)
 
     {:ok, Map.merge(map, %{conn: conn, admin: admin})}
   end
@@ -753,7 +753,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> assign_current_user(instructor)
 
     {:ok, Map.merge(map, %{conn: conn, instructor: instructor})}
   end

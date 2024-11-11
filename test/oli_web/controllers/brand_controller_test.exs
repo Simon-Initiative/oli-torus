@@ -163,7 +163,7 @@ defmodule OliWeb.BrandControllerTest do
 
     conn =
       conn
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> assign_current_author(admin)
 
     %{conn: conn, admin: admin}
   end

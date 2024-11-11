@@ -54,8 +54,6 @@ config :oli, Oli.Repo,
 # Configure email for development
 config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
 
-config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.LocalAdapter
-
 config :oli,
   ecl_username: System.get_env("ECL_USERNAME", ""),
   ecl_password: System.get_env("ECL_PASSWORD", "")

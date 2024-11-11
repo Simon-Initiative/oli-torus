@@ -63,10 +63,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
 
       conn = get(conn, redir_path)
 
@@ -114,10 +111,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -146,10 +140,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -171,10 +162,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -240,10 +228,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
          } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -275,10 +260,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -312,10 +294,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> assign_current_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum")
         |> Map.put(
           :request_path,
@@ -810,10 +789,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(
-        map.author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
-      )
+      |> assign_current_author(map.author)
 
     {:ok,
      conn: conn,
