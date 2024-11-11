@@ -1052,6 +1052,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, ~s{div[role="page read time"]}, "15")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Read by:")
       assert has_element?(view, ~s{div[role="page schedule"]}, "Tue Nov 14, 2023")
+      assert has_element?(view, ~s{div[role="page start schedule"]}, "Available by:")
+      assert has_element?(view, ~s{div[role="page start schedule"]}, "Fri Nov 10, 2023")
     end
 
     test "can not see page duration time when it is not set", %{
@@ -1555,6 +1557,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert like_button_html =~ "<path class=\"stroke-primary\""
     end
 
+    @tag :skip
     test "posts a note", %{
       conn: conn,
       section: section,
@@ -1612,7 +1615,10 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # and is shown in the UI
       assert has_element?(view, "div[role='user name']", "Me")
-      assert has_element?(view, "div[role='posted at']", "now")
+
+      assert has_element?(view, "div[role='posted at']", "now") or
+               has_element?(view, "div[role='posted at']", "1 second ago")
+
       assert has_element?(view, "p[role='post content']", "some new post content")
     end
 

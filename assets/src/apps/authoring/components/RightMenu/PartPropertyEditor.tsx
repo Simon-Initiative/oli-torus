@@ -179,7 +179,7 @@ const getExpertComponentUISchema = (instance: any) => {
     };
     return newUiSchema;
   }
-  return partUiSchema; // default ui schema for components that don't specify.
+  return partUiSchema; // default ui schema  for components that don't specify.
 };
 
 export const PartPropertyEditor: React.FC<Props> = ({
@@ -333,7 +333,9 @@ export const PartPropertyEditor: React.FC<Props> = ({
   if (!partDef) return null;
 
   return (
-    <div className="component-tab p-3 overflow-hidden part-property-editor">
+    <div
+      className={`component-tab p-3 overflow-hidden part-property-editor ${selectedPartDef.type}`}
+    >
       {selectedPartDef && partEditMode === 'expert' && (
         <ButtonToolbar aria-label="Component Tools">
           <ButtonGroup className="me-2" aria-label="First group">

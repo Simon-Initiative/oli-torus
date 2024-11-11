@@ -62,12 +62,6 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     description: 'placeholder for the input field',
   },
-  fontSize: {
-    title: 'Font Size',
-    type: 'number',
-    default: 12,
-  },
-
   minimumLength: {
     title: 'Minimum Length',
     type: 'number',

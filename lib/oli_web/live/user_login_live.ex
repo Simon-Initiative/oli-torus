@@ -27,7 +27,7 @@ defmodule OliWeb.UserLoginLive do
             <div class="w-48 h-11 justify-start items-end gap-1 inline-flex">
               <div class="justify-start items-end gap-px flex">
                 <div class="grow shrink basis-0 self-start px-1 py-2 justify-center items-center flex">
-                  <.bar_chart />
+                  <.bar_chart class="stroke-white" />
                 </div>
                 <div class="w-40 h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
                   Student

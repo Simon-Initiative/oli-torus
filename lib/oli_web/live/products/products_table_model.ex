@@ -17,7 +17,8 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :requires_payment,
           label: "Requires Payment",
-          render_fn: &__MODULE__.render_payment_column/3
+          render_fn: &__MODULE__.render_payment_column/3,
+          sort_fn: &sort_payment_column/2
         },
         %ColumnSpec{
           name: :base_project_id,
@@ -37,14 +38,12 @@ defmodule OliWeb.Products.ProductsTableModel do
     )
   end
 
-  def render_payment_column(_, %{requires_payment: requires_payment, amount: amount}, _) do
-    if requires_payment do
-      case Money.to_string(amount) do
-        {:ok, m} -> m
-        _ -> "Yes"
-      end
-    else
-      "None"
+  def render_payment_column(_, %{requires_payment: false}, _), do: "None"
+
+  def render_payment_column(_, %{amount: amount}, _) do
+    case Money.to_string(amount) do
+      {:ok, m} -> m
+      _ -> "Yes"
     end
   end
 
@@ -61,10 +60,18 @@ defmodule OliWeb.Products.ProductsTableModel do
   def render_project_column(assigns, %{base_project: base_project}, _) do
     route_path =
       case Map.get(assigns, :project_slug) do
-        "" -> Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, base_project.slug)
+        "" -> ~p"/workspaces/course_author/#{base_project.slug}/overview"
         _project_slug -> ~p"/workspaces/course_author/#{base_project}/overview"
       end
 
     SortableTableModel.render_link_column(assigns, base_project.title, route_path)
+  end
+
+  defp sort_payment_column(order, _spec) do
+    {fn
+       %{requires_payment: false} -> Decimal.new(-1)
+       %{amount: %Money{amount: amount}} -> amount
+       _ -> Decimal.new(0)
+     end, {order, Decimal}}
   end
 end

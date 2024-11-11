@@ -166,9 +166,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
         }
       )
 
-    graded_pages =
-      Oli.Publishing.DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
-      |> Enum.map(fn {rev, _sr} -> rev end)
+    graded_pages = Oli.Delivery.Sections.SectionResourceDepot.graded_pages(section.id)
 
     resource_accesses = fetch_resource_accesses(enrollments, section)
 

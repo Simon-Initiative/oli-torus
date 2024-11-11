@@ -202,6 +202,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
           else: assessment
       end)
 
+    sr =
+      Oli.Delivery.Sections.get_section_resource(
+        socket.assigns.section.id,
+        updated_assessment.resource_id
+      )
+
+    Oli.Delivery.DepotCoordinator.update_all(
+      Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
+      [sr]
+    )
+
     {:noreply,
      socket
      |> assign(

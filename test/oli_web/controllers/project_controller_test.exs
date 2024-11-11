@@ -38,8 +38,7 @@ defmodule OliWeb.ProjectControllerTest do
       })
       |> Repo.insert()
 
-      conn =
-        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug))
+      conn = get(conn, ~p"/workspaces/course_author/#{project.slug}/overview")
 
       response = html_response(conn, 200)
       assert response =~ "Overview"

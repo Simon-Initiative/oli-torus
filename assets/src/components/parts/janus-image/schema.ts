@@ -6,6 +6,7 @@ export interface ImageModel extends JanusAbsolutePositioned, JanusCustomCss {
   alt: string;
   scaleContent: boolean;
   lockAspectRatio: boolean;
+  defaultSrc?: string;
 }
 
 export const schema: JSONSchema7Object = {
@@ -77,5 +78,6 @@ export const createSchema = (context?: CreationContext): Partial<ImageModel> => 
     alt: 'an image',
     scaleContent: true,
     lockAspectRatio: true,
+    defaultSrc: src,
   };
 };

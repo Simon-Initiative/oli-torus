@@ -17,7 +17,6 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Inventories
   alias Oli.Qa.Reviews
   alias Oli.Activities
@@ -1835,11 +1834,6 @@ defmodule Oli.Seeder do
       |> Repo.insert()
 
     Map.put(map, atom, author)
-  end
-
-  def add_activity_snapshot(map, attrs, tag) do
-    {:ok, snapshot} = Snapshot.changeset(%Snapshot{}, attrs) |> Repo.insert()
-    Map.put(map, tag, snapshot)
   end
 
   def add_review(map, type, tag) do

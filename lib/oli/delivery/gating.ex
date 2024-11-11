@@ -65,7 +65,8 @@ defmodule Oli.Delivery.Gating do
         select: gc,
         select_merge: %{
           total_count: fragment("count(*) OVER()"),
-          revision: rev
+          revision: rev,
+          user: u
         }
       )
 

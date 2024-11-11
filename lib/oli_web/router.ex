@@ -23,6 +23,7 @@ defmodule OliWeb.Router do
     plug(:protect_from_forgery)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
     plug(OliWeb.Plugs.SessionContext)
+    plug(OliWeb.Plugs.HeaderSizeLogger)
   end
 
   # pipline for REST api endpoint routes
@@ -170,10 +171,6 @@ defmodule OliWeb.Router do
 
   pipeline :ensure_user_section_visit do
     plug(Oli.Plugs.EnsureUserSectionVisit)
-  end
-
-  pipeline :set_sidebar do
-    plug(Oli.Plugs.SetSidebar)
   end
 
   pipeline :delivery_preview do
@@ -806,8 +803,8 @@ defmodule OliWeb.Router do
   end
 
   ### Workspaces
-  scope "/workspaces/", OliWeb.Workspaces do
-    pipe_through([:browser, :authoring_protected, :set_sidebar])
+  scope "/workspaces", OliWeb.Workspaces do
+    pipe_through([:browser, :authoring_protected])
 
     live_session :authoring_workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -848,8 +845,8 @@ defmodule OliWeb.Router do
     end
   end
 
-  scope "/workspaces/", OliWeb.Workspaces do
-    pipe_through([:browser, :delivery_protected, :set_sidebar])
+  scope "/workspaces", OliWeb.Workspaces do
+    pipe_through([:browser, :delivery_protected])
 
     live_session :delivery_workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -998,7 +995,6 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
-      :set_sidebar,
       :require_section,
       :delivery,
       :student,
@@ -1134,29 +1130,6 @@ defmodule OliWeb.Router do
       end
     end
 
-    scope "/adaptive_lesson/:revision_slug" do
-      get("/", PageDeliveryController, :page_fullscreen)
-
-      get(
-        "/attempt/:attempt_guid/review",
-        PageDeliveryController,
-        :review_attempt
-      )
-    end
-  end
-
-  scope "/sections/:section_slug", OliWeb do
-    pipe_through([
-      :browser,
-      :require_section,
-      :delivery,
-      :delivery_protected,
-      :maybe_gated_resource,
-      :enforce_enroll_and_paywall,
-      :ensure_user_section_visit,
-      :force_required_survey
-    ])
-
     scope "/lesson/:revision_slug/attempt/:attempt_guid/review" do
       live_session :delivery_lesson_review,
         root_layout: {OliWeb.LayoutView, :delivery},
@@ -1172,6 +1145,16 @@ defmodule OliWeb.Router do
         ] do
         live("/", Delivery.Student.ReviewLive)
       end
+    end
+
+    scope "/adaptive_lesson/:revision_slug" do
+      get("/", PageDeliveryController, :page_fullscreen)
+
+      get(
+        "/attempt/:attempt_guid/review",
+        PageDeliveryController,
+        :review_attempt
+      )
     end
   end
 
@@ -1253,7 +1236,6 @@ defmodule OliWeb.Router do
       live("/grades/observe", Grades.ObserveGradeUpdatesView)
       live("/grades/gradebook", Grades.GradebookView)
       live("/scoring", ManualGrading.ManualGradingView)
-      live("/snapshots", Snapshots.SnapshotsView)
       live("/progress/:user_id/:resource_id", Progress.StudentResourceView)
       live("/progress/:user_id", Progress.StudentView)
       live("/source_materials", Delivery.ManageSourceMaterials, as: :source_materials)
@@ -1607,6 +1589,7 @@ defmodule OliWeb.Router do
       pipe_through([:browser])
 
       get("/flame_graphs", DevController, :flame_graphs)
+      live("/icons", Dev.IconsLive)
     end
   end
 end

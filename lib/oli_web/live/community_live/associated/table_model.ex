@@ -1,5 +1,6 @@
 defmodule OliWeb.CommunityLive.Associated.TableModel do
   use Phoenix.Component
+  use OliWeb, :verified_routes
 
   alias Oli.Groups.CommunityVisibility
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
@@ -62,8 +63,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
 
       "project" ->
-        route_path =
-          Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, get_field(:slug, item))
+        route_path = ~p"/workspaces/course_author/#{get_field(:slug, item)}/overview"
 
         SortableTableModel.render_link_column(assigns, get_field(:title, item), route_path)
     end

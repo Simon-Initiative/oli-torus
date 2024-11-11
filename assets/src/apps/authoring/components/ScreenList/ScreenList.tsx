@@ -2,6 +2,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { useClickOutside } from '../../../../components/hooks/useClickOutside';
 import { useToggle } from '../../../../components/hooks/useToggle';
 import {
@@ -97,12 +98,14 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
   );
 
   const onAddNewScreen = useCallback(() => {
+    dispatch(setCurrentPartPropertyFocus({ focus: false }));
     openNewScreenModal();
   }, [openNewScreenModal]);
 
   const onCreate = useCallback(
     (title: string, screenType: ScreenTypes) => {
       closeNewScreenModal();
+      dispatch(setCurrentPartPropertyFocus({ focus: true }));
       dispatch(
         addFlowchartScreen({
           title,

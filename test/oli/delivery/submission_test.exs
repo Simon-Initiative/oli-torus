@@ -9,7 +9,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt, PartAttempt, StudentInput}
-  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
@@ -272,7 +271,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
         |> Seeder.add_objective("objective one", :o1)
-        |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :activity)
+        |> Seeder.add_activity(%{title: "one", content: content}, :activity)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
 
@@ -290,7 +289,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
               }
             ]
           },
-          objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
+          objectives: %{"attached" => [Map.get(map, :o1).resource.id]},
+          max_attempts: 2
         },
         :ungraded_page
       )
@@ -633,9 +633,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
     end
 
     test "processing a submission", %{
-      activity: %{revision: activity_revision},
-      ungraded_page: %{revision: page_revision},
-      user1: user,
       ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt,
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
@@ -691,22 +688,6 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
                  attempt_state.attemptGuid,
                  datashop_session_id
                )
-
-      # verify that a snapshot record was created properly
-      [%Snapshot{} = snapshot] = Oli.Repo.all(Snapshot)
-
-      assert snapshot.score == 10
-      assert snapshot.out_of == 10
-      assert snapshot.graded == false
-      assert snapshot.part_attempt_id == part_attempt.id
-      assert snapshot.part_attempt_number == 1
-      assert snapshot.attempt_number == 1
-      assert snapshot.resource_attempt_number == 1
-      assert snapshot.section_id == section.id
-      assert snapshot.user_id == user.id
-      assert snapshot.activity_id == updated_attempt.resource_id
-      assert snapshot.resource_id == page_revision.resource_id
-      assert snapshot.revision_id == activity_revision.id
 
       # verify that the submitted part attempt has the latest datashop session id
       updated_part_attempt = Core.get_part_attempt_by(id: part_attempt.id)

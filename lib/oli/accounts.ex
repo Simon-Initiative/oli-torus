@@ -20,9 +20,11 @@ defmodule Oli.Accounts do
 
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
+  alias Oli.Institutions.Institution
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.Enrollment
+  alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Lti_1p3.DataProviders.EctoProvider
 
   def browse_users(
@@ -281,19 +283,71 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Updates user details if a record matches the given `sub` and `institution_id`. If no user is found, creates a new user.
+
+  The function checks for a user who is enrolled in an active section, where the section and enrollment belong to the specified institution.
+
+  ## Examples
+
+      iex> insert_or_update_lms_user(%{sub: "123", field: value}, institution_id)
+      {:ok, %User{}}    -> # Inserted or updated with success
+      {:error, changeset} -> # Something went wrong
+
+  ## Parameters
+  - `changes`: A map containing the user details to be updated or inserted.
+  - `institution_id`: The ID of the institution to match the user's enrollment.
+  """
+
+  def insert_or_update_lms_user(%{sub: sub} = changes, institution_id) do
+    # using enrollment records, we can infer the user's institution. This is because
+    # an LTI user can be enrolled in multiple sections, but all sections must be from
+    # the same institution.
+    from(e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      join: u in User,
+      on: e.user_id == u.id,
+      join: institution in Institution,
+      on: s.institution_id == institution.id,
+      where:
+        u.sub == ^sub and institution.id == ^institution_id and s.status == :active and
+          e.status == :enrolled,
+      limit: 1,
+      select: u
+    )
+    |> Repo.one()
+    |> insert_or_update_external_user(changes)
+  end
+
+  @doc """
   Updates user details if a record matches sub, otherwise creates a new user
 
   ## Examples
 
-      iex> insert_or_update_lms_user(%{sub, "123", field: value})
+      iex> insert_or_update_sso_user(%{sub, "123", field: value})
       {:ok, %User{}}    -> # Inserted or updated with success
       {:error, changeset}         -> # Something went wrong
 
   """
-  def insert_or_update_lms_user(%{sub: sub} = changes) do
-    case Repo.get_by(User, sub: sub) do
+  def insert_or_update_sso_user(%{sub: sub} = changes) do
+    # TODO: fix collision of user subs along different institutions that use SSO.
+    Repo.get_by(User, sub: sub)
+    |> insert_or_update_external_user(changes)
+  end
+
+  defp insert_or_update_external_user(user, %{sub: sub} = changes) do
+    case user do
       nil -> %User{sub: sub, independent_learner: false}
       user -> user
+    end
+    |> User.noauth_changeset(changes)
+    |> Repo.insert_or_update()
+    |> case do
+      {:ok, %User{id: user_id}} = res ->
+        res
+
+      error ->
+        error
     end
     |> User.lti_changeset(changes)
     |> Repo.insert_or_update()
@@ -867,7 +921,7 @@ defmodule Oli.Accounts do
   end
 
   defp create_sso_user(_repo, _changes, fields) do
-    insert_or_update_lms_user(%{
+    insert_or_update_sso_user(%{
       sub: Map.get(fields, "sub"),
       preferred_username: Map.get(fields, "cognito:username"),
       email: Map.get(fields, "email"),
@@ -878,10 +932,10 @@ defmodule Oli.Accounts do
 
   defp get_or_create_author(_repo, %{user: %{author_id: nil} = user}, fields) do
     email = Map.get(fields, "email")
-    username = Map.get(fields, "cognito:username")
+    name = Map.get(fields, "name")
 
     %Author{}
-    |> Author.sso_changeset(%{name: username, email: email})
+    |> Author.sso_changeset(%{name: name, email: email})
     |> Repo.insert()
     |> case do
       {:ok, author} = result ->
@@ -899,12 +953,12 @@ defmodule Oli.Accounts do
 
   defp create_sso_author(_repo, _changes, fields) do
     email = Map.get(fields, "email")
-    username = Map.get(fields, "cognito:username")
+    name = Map.get(fields, "name")
 
     case get_author_by_email(email) do
       nil ->
         %Author{}
-        |> Author.noauth_changeset(%{name: username, email: email})
+        |> Author.noauth_changeset(%{name: name, email: email})
         |> Repo.insert()
 
       author ->

@@ -19,7 +19,7 @@ defmodule OliWeb.Users.Actions do
         <ReadOnly.render label="" show_copy_btn={true} value={@password_reset_link} />
 
         <p :if={@password_reset_link not in [nil, ""]} class="mb-1">
-          This link will expired in 24 hours.
+          This link will expire in 24 hours.
         </p>
       </div>
 

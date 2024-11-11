@@ -28,7 +28,6 @@ defmodule Oli.Factory do
 
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Gating.GatingCondition
-  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Lti.LtiParams
 
   alias Oli.Delivery.Sections.{
@@ -426,7 +425,8 @@ defmodule Oli.Factory do
       amount: Money.new(:USD, 25),
       provider_type: :stripe,
       section: anonymous_build(:section),
-      enrollment: anonymous_build(:enrollment)
+      enrollment: anonymous_build(:enrollment),
+      generation_date: DateTime.utc_now()
     }
   end
 
@@ -462,28 +462,6 @@ defmodule Oli.Factory do
       section: anonymous_build(:section),
       slug: sequence("exampleinvite"),
       date_expires: date_expires
-    }
-  end
-
-  def snapshot_factory() do
-    revision = insert(:revision)
-
-    %Snapshot{
-      resource: revision.resource,
-      activity: revision.resource,
-      user: anonymous_build(:user),
-      section: anonymous_build(:section),
-      part_attempt: anonymous_build(:part_attempt),
-      revision: revision,
-      part_id: sequence("part_id"),
-      score: Enum.random(0..100),
-      out_of: 100,
-      correct: true,
-      hints: 0,
-      attempt_number: 1,
-      part_attempt_number: 1,
-      resource_attempt_number: 1,
-      activity_type_id: 1
     }
   end
 

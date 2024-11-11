@@ -1,61 +1,62 @@
-<div class="h-screen flex flex-col overscroll-none">
-  <Components.Delivery.Layouts.header
-    ctx={@ctx}
-    is_admin={assigns[:is_admin]}
-    section={@section}
-    preview_mode={@preview_mode}
-    sidebar_expanded={@sidebar_expanded}
-  />
-
-  <main role="main" class="flex-1 flex flex-col md:flex-row overscroll-contain">
-    <Components.Delivery.Layouts.sidebar_nav
-      :if={@section}
+<main role="main" class="relative flex flex-col">
+  <div class="sticky top-0 z-50">
+    <Components.Delivery.Layouts.header
       ctx={@ctx}
       is_admin={assigns[:is_admin]}
       section={@section}
-      active_tab={assigns[:active_tab]}
       preview_mode={@preview_mode}
-      notification_badges={assigns[:notification_badges] || %{}}
       sidebar_expanded={@sidebar_expanded}
-      notes_enabled={@notes_enabled}
-      discussions_enabled={@discussions_enabled}
     />
-    <div class={[
-      "flex-1 flex flex-col mt-14 relative",
-      if(@sidebar_expanded,
-        do: "md:w-[calc(100%-200px)] md:ml-[200px]",
-        else: "md:w-[calc(100%-60px)] md:ml-[60px]"
-      )
-    ]}>
-      <div class="container mx-auto sticky top-[60px] z-50">
-        <.flash_group flash={@flash} />
-      </div>
-      <%= if @section do %>
-        <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
-          session: %{"section_slug" => @section.slug},
-          id: "dialogue-window"
-        ) %>
-      <% end %>
-      <div
-        :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
-        id="pay_early_message"
-        class="absolute z-50 system-banner flex flex-row alert alert-warning m-6"
-        role="alert"
-      >
-        <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
-        <div class="flex whitespace-nowrap items-center">
-          <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
-            Pay Now
-          </.link>
-          <button
-            class="ml-10 stroke-gray-500 hover:stroke-gray-400"
-            phx-click={JS.hide(to: "#pay_early_message")}
-          >
-            <OliWeb.Icons.close />
-          </button>
-        </div>
-      </div>
-      <%= @inner_content %>
+    <div class="absolute top-0 z-50">
+      <Components.Delivery.Layouts.sidebar_nav
+        :if={@section}
+        ctx={@ctx}
+        is_admin={@is_admin}
+        section={@section}
+        active_tab={assigns[:active_tab]}
+        preview_mode={@preview_mode}
+        notification_badges={assigns[:notification_badges] || %{}}
+        sidebar_expanded={@sidebar_expanded}
+        notes_enabled={@notes_enabled}
+        discussions_enabled={@discussions_enabled}
+      />
     </div>
-  </main>
-</div>
+  </div>
+  <div class={[
+    "flex-1 flex flex-col min-h-screen dark:bg-[#0F0D0F] bg-[#F3F4F8]",
+    if(@sidebar_expanded,
+      do: "md:w-[calc(100%-200px)] md:ml-[200px]",
+      else: "md:w-[calc(100%-60px)] md:ml-[60px]"
+    )
+  ]}>
+    <div class="container mx-auto sticky top-[60px] z-50">
+      <.flash_group flash={@flash} />
+    </div>
+    <%= if @section do %>
+      <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
+        session: %{"section_slug" => @section.slug},
+        id: "dialogue-window"
+      ) %>
+    <% end %>
+    <div
+      :if={assigns[:paywall_summary] && OliWeb.LayoutView.show_pay_early(@paywall_summary)}
+      id="pay_early_message"
+      class="absolute z-50 system-banner flex flex-row alert alert-warning m-6"
+      role="alert"
+    >
+      <%= OliWeb.LayoutView.pay_early_message(@paywall_summary) %>
+      <div class="flex whitespace-nowrap items-center">
+        <.link class="ml-8" href={Routes.payment_path(@socket, :guard, @section.slug)}>
+          Pay Now
+        </.link>
+        <button
+          class="ml-10 stroke-gray-500 hover:stroke-gray-400"
+          phx-click={JS.hide(to: "#pay_early_message")}
+        >
+          <OliWeb.Icons.close />
+        </button>
+      </div>
+    </div>
+    <%= @inner_content %>
+  </div>
+</main>

@@ -5,6 +5,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
+  alias Oli.Authoring.Course
+  alias Oli.Resources
   alias OliWeb.Workspaces.CourseAuthor.PagesLive
 
   defp live_view_all_pages_route(project_slug) do
@@ -484,6 +486,60 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                  project.slug,
                  nested_page_revision.slug
                )
+    end
+
+    test "create a page and back to the all pages view works correctly", %{
+      conn: conn,
+      project: project,
+      admin: admin
+    } do
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      ## Create a new page
+      view
+      |> element(
+        "button[phx-click=\"create_page\"][phx-value-type=\"Unscored\"]",
+        "Practice Page"
+      )
+      |> render_click()
+
+      ## Get created page
+      new_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      conn = recycle_author_session(conn, admin)
+
+      ## Go to the new page edit view
+      {:ok, view, _html} =
+        live(conn, "/workspaces/course_author/#{project.slug}/curriculum/#{new_page.slug}/edit")
+
+      assert view
+             |> element("li[aria-current=\"page\"]")
+             |> render() =~ new_page.title
+
+      ## Go back to the all pages
+      view
+      |> element("a[href=\"/workspaces/course_author/#{project.slug}/pages\"]", "All Pages")
+      |> render_click()
+
+      conn = recycle_author_session(conn, admin)
+
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      ## Check the new page is in the list
+      assert view
+             |> element(
+               "a[href=\"/workspaces/course_author/#{project.slug}/curriculum/#{new_page.slug}/edit\"]"
+             )
+             |> render() =~
+               new_page.title
     end
   end
 end

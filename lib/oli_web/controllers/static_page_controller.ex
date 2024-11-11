@@ -10,8 +10,16 @@ defmodule OliWeb.StaticPageController do
   def index(conn, _params) do
     if conn.assigns.current_user,
       do: render(conn, "index_logged_in.html"),
-      else: render(conn, "index.html")
+      else:
+        conn
+        |> maybe_put_request_path()
+        |> render("index.html")
   end
+
+  defp maybe_put_request_path(%{params: %{"request_path" => enrollment_path}} = conn),
+    do: Plug.Conn.put_session(conn, :enrollment_path, enrollment_path)
+
+  defp maybe_put_request_path(conn), do: conn
 
   def unauthorized(conn, _params) do
     render(conn, "unauthorized.html")

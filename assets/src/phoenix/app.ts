@@ -200,3 +200,5 @@ declare global {
     };
   }
 }
+
+export { liveSocket };

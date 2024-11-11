@@ -79,6 +79,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
           handleItemClone(item);
           break;
         case 'setItemToRename':
+          dispatch(setCurrentPartPropertyFocus({ focus: false }));
           setItemToRename(item);
           break;
         default:

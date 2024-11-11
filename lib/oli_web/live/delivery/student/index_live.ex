@@ -8,10 +8,13 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Components.Common
   alias OliWeb.Components.Delivery.Student
+  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Home.Components.ScheduleComponent
   alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
 
   @decorate transaction_event("IndexLive")
   def mount(_params, _session, socket) do
@@ -77,7 +80,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                   section
                   |> get_or_compute_full_hierarchy()
                   |> Hierarchy.find_module_ancestor(
-                    page[:resource_id],
+                    Map.get(page, :resource_id),
                     Oli.Resources.ResourceType.get_id_by_type("container")
                   )
                   |> get_in(["numbering", "index"])
@@ -104,8 +107,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
          upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
          latest_assignments: combine_settings(latest_assignments, combined_settings),
          containers_per_page: containers_per_page,
-         section_progress: section_progress(section.id, current_user_id),
-         assignments_tab: :upcoming
+         assignments_tab: :upcoming,
+         completed_pages: get_completed_pages(section.id, current_user_id)
        )}
     else
       {:ok, assign(socket, active_tab: :index, loaded: false)}
@@ -157,14 +160,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
     />
-    <div
-      id="schedule-view"
-      class="w-full h-full relative bg-stone-950 dark:text-white"
-      phx-hook="Countdown"
-    >
-      <div class="w-full absolute p-8 justify-start items-start gap-6 inline-flex">
+    <div id="home-view" class="w-full h-full bg-stone-950 dark:text-white" phx-hook="Countdown">
+      <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
         <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
-          <.course_progress has_visited_section={@has_visited_section} progress={@section_progress} />
           <.assignments
             upcoming_assignments={@upcoming_assignments}
             latest_assignments={@latest_assignments}
@@ -172,6 +170,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             assignments_tab={@assignments_tab}
             containers_per_page={@containers_per_page}
             ctx={@ctx}
+          />
+          <.course_progress
+            :if={@completed_pages.total_pages > 0}
+            has_visited_section={@has_visited_section}
+            page_completed_target_path={
+              ~p"/sections/#{@section_slug}/learn?sidebar_expanded=#{@sidebar_expanded}"
+            }
+            completed_pages={@completed_pages}
           />
         </div>
 
@@ -200,107 +206,109 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
-    <div class="w-full h-72 relative flex items-center">
-      <div class="inset-0 absolute">
-        <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
-        <img
-          src="/images/gradients/home-bg.png"
-          alt="Background Image"
-          class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
-        />
-        <div class="absolute inset-0 opacity-60">
-          <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
+    <div class="relative">
+      <div class="w-full h-72 relative flex items-center">
+        <div class="inset-0 absolute">
+          <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
+          <img
+            src="/images/gradients/home-bg.png"
+            alt="Background Image"
+            class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
+          />
+          <div class="absolute inset-0 opacity-60">
+            <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
           </div>
-          <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
         </div>
-      </div>
 
-      <div
-        :if={!is_nil(@suggested_page)}
-        class="w-full px-9 absolute flex-col justify-center items-start gap-6 inline-flex"
-      >
-        <div class="text-white text-2xl font-bold leading-loose tracking-tight">
-          Continue Learning
-        </div>
-        <div class="self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between items-end inline-flex">
-          <div class="flex-col justify-center items-start gap-3.5 inline-flex">
-            <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
-              <div
-                :if={show_page_module?(@suggested_page)}
-                class="justify-start items-start gap-1 flex"
-              >
-                <div class="opacity-50 text-white text-sm font-bold uppercase tracking-tight">
-                  Module <%= @suggested_page.module_index %>
-                </div>
-              </div>
-              <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
-                <div class="text-right text-white text-sm font-bold">Due:</div>
-                <div class="text-right text-white text-sm font-bold">
-                  <%= format_date(
-                    @suggested_page.end_date,
-                    @ctx,
-                    "{WDshort} {Mshort} {D}, {YYYY}"
-                  ) %>
-                </div>
-              </div>
-            </div>
-            <div class="justify-start items-center gap-10 inline-flex">
-              <div class="justify-start items-center gap-5 flex">
-                <div class="py-0.5 justify-start items-start gap-2.5 flex">
-                  <div class="text-white text-xs font-semibold">
-                    <%= @suggested_page.numbering_index %>
-                  </div>
-                </div>
-                <div class="flex-col justify-center items-start gap-1 inline-flex">
-                  <div class="text-white text-lg font-semibold">
-                    <%= @suggested_page.title %>
-                  </div>
-                </div>
-              </div>
-              <div
-                :if={@suggested_page.duration_minutes}
-                class="w-36 self-stretch justify-end items-center gap-1.5 flex"
-              >
-                <div class="h-6 px-2 py-1 bg-white bg-opacity-10 rounded-xl shadow justify-end items-center gap-1 flex">
-                  <div class="text-white text-xs font-semibold">
-                    Estimated time <%= @suggested_page.duration_minutes %> m
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div
+          :if={!is_nil(@suggested_page)}
+          class="w-full px-9 absolute flex-col justify-center items-start gap-6 inline-flex"
+        >
+          <div class="text-white text-2xl font-bold leading-loose tracking-tight">
+            Continue Learning
           </div>
-          <div class="justify-start items-start gap-3.5 flex">
-            <.link
-              href={
-                Utils.lesson_live_path(
-                  @section_slug,
-                  @suggested_page.slug,
-                  request_path: ~p"/sections/#{@section_slug}"
-                )
-              }
-              class="hover:no-underline"
-            >
-              <div class="w-full h-10 px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
-                <div class="text-white text-sm font-bold leading-tight">
-                  <%= lesson_button_label(@unfinished_lesson, @suggested_page) %>
+          <div class="self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between items-end inline-flex">
+            <div class="flex-col justify-center items-start gap-3.5 inline-flex">
+              <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
+                <div
+                  :if={show_page_module?(@suggested_page)}
+                  class="justify-start items-start gap-1 flex"
+                >
+                  <div class="opacity-50 text-white text-sm font-bold uppercase tracking-tight">
+                    Module <%= @suggested_page.module_index %>
+                  </div>
+                </div>
+                <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
+                  <div class="text-right text-white text-sm font-bold">Due:</div>
+                  <div class="text-right text-white text-sm font-bold">
+                    <%= format_date(
+                      @suggested_page.end_date,
+                      @ctx,
+                      "{WDshort} {Mshort} {D}, {YYYY}"
+                    ) %>
+                  </div>
                 </div>
               </div>
-            </.link>
-            <.link
-              href={
-                Utils.learn_live_path(@section_slug,
-                  target_resource_id: @suggested_page.resource_id,
-                  request_path: ~p"/sections/#{@section_slug}"
-                )
-              }
-              class="hover:no-underline"
-            >
-              <div class="w-44 h-10 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
-                <div class="text-white text-sm font-semibold leading-tight">
-                  Show in course
+              <div class="justify-start items-center gap-10 inline-flex">
+                <div class="justify-start items-center gap-5 flex">
+                  <div class="py-0.5 justify-start items-start gap-2.5 flex">
+                    <div class="text-white text-xs font-semibold">
+                      <%= @suggested_page.numbering_index %>
+                    </div>
+                  </div>
+                  <div class="flex-col justify-center items-start gap-1 inline-flex">
+                    <div class="text-white text-lg font-semibold">
+                      <%= @suggested_page.title %>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  :if={@suggested_page.duration_minutes}
+                  class="w-36 self-stretch justify-end items-center gap-1.5 flex"
+                >
+                  <div class="h-6 px-2 py-1 bg-white bg-opacity-10 rounded-xl shadow justify-end items-center gap-1 flex">
+                    <div class="text-white text-xs font-semibold">
+                      Estimated time <%= @suggested_page.duration_minutes %> m
+                    </div>
+                  </div>
                 </div>
               </div>
-            </.link>
+            </div>
+            <div class="justify-start items-start gap-3.5 flex">
+              <.link
+                href={
+                  Utils.lesson_live_path(
+                    @section_slug,
+                    @suggested_page.slug,
+                    request_path: ~p"/sections/#{@section_slug}"
+                  )
+                }
+                class="hover:no-underline"
+              >
+                <div class="w-full h-10 px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
+                  <div class="text-white text-sm font-bold leading-tight">
+                    <%= lesson_button_label(@unfinished_lesson, @suggested_page) %>
+                  </div>
+                </div>
+              </.link>
+              <.link
+                href={
+                  Utils.learn_live_path(@section_slug,
+                    target_resource_id: @suggested_page.resource_id,
+                    request_path: ~p"/sections/#{@section_slug}"
+                  )
+                }
+                class="hover:no-underline"
+              >
+                <div class="w-44 h-10 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
+                  <div class="text-white text-sm font-semibold leading-tight">
+                    Show in course
+                  </div>
+                </div>
+              </.link>
+            </div>
           </div>
         </div>
       </div>
@@ -310,60 +318,62 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(assigns) do
     ~H"""
-    <div class="w-full h-1/2 relative flex items-center">
-      <div class="inset-0 absolute">
-        <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
-        <img
-          src="/images/gradients/home-bg.png"
-          alt="Background Image"
-          class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
-        />
-        <div class="absolute inset-0 opacity-60">
-          <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
+    <div class="relative">
+      <div class="w-full h-1/2 relative flex items-center">
+        <div class="inset-0 absolute">
+          <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
+          <img
+            src="/images/gradients/home-bg.png"
+            alt="Background Image"
+            class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
+          />
+          <div class="absolute inset-0 opacity-60">
+            <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
           </div>
-          <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
         </div>
-      </div>
 
-      <div class="w-full pl-14 pr-5 absolute flex flex-col justify-center items-start gap-6">
-        <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
-          Hi, <%= user_given_name(@ctx) %> !
-        </div>
-        <div class="w-full flex flex-col items-start gap-2.5">
-          <div class="w-full whitespace-nowrap overflow-hidden">
-            <span class="text-3xl text-white font-medium">
-              <%= build_welcome_title(@section.welcome_title) %>
-            </span>
+        <div class="w-full pl-14 pr-5 absolute flex flex-col justify-center items-start gap-6">
+          <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
+            Hi, <%= user_given_name(@ctx) %> !
           </div>
-          <div class="w-96 text-white/60 text-lg font-semibold">
-            <%= @section.encouraging_subtitle ||
-              "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
+          <div class="w-full flex flex-col items-start gap-2.5">
+            <div class="w-full whitespace-nowrap overflow-hidden">
+              <span class="text-3xl text-white font-medium">
+                <%= build_welcome_title(@section.welcome_title) %>
+              </span>
+            </div>
+            <div class="w-96 text-white/60 text-lg font-semibold">
+              <%= @section.encouraging_subtitle ||
+                "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
+            </div>
           </div>
-        </div>
-        <div class="pt-5 flex items-start gap-6">
-          <.link
-            href={
-              Utils.lesson_live_path(
-                @section_slug,
-                DeliveryResolver.get_first_page_slug(@section_slug),
-                request_path: ~p"/sections/#{@section_slug}"
-              )
-            }
-            class="hover:no-underline"
-          >
-            <div class="w-52 h-11 px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
-              <div class="text-white text-base font-bold leading-tight">
-                Start course
+          <div class="pt-5 flex items-start gap-6">
+            <.link
+              href={
+                Utils.lesson_live_path(
+                  @section_slug,
+                  DeliveryResolver.get_first_page_slug(@section_slug),
+                  request_path: ~p"/sections/#{@section_slug}"
+                )
+              }
+              class="hover:no-underline"
+            >
+              <div class="w-52 h-11 px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
+                <div class="text-white text-base font-bold leading-tight">
+                  Start course
+                </div>
               </div>
-            </div>
-          </.link>
-          <.link href={Utils.learn_live_path(@section_slug)} class="hover:no-underline">
-            <div class="w-52 h-11 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
-              <div class="text-white text-base font-semibold leading-tight">
-                Discover content
+            </.link>
+            <.link href={Utils.learn_live_path(@section_slug)} class="hover:no-underline">
+              <div class="w-52 h-11 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
+                <div class="text-white text-base font-semibold leading-tight">
+                  Discover content
+                </div>
               </div>
-            </div>
-          </.link>
+            </.link>
+          </div>
         </div>
       </div>
     </div>
@@ -371,24 +381,147 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   end
 
   attr(:has_visited_section, :boolean, required: true)
-  attr(:progress, :integer, required: true)
+  attr(:page_completed_target_path, :string, required: true)
+  attr(:completed_pages, :map, required: true)
 
   defp course_progress(assigns) do
     ~H"""
-    <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="absolute">
+      <Modal.modal
+        id="course_progress_calculation_modal"
+        class="mx-52"
+        header_class="flex items-start justify-between px-[35px] pt-[27px] pb-4"
+        body_class="border-t border-[#d4d4d4] dark:border-[#3e3f44] px-[35px] pb-[50px] pt-[30px]"
+      >
+        <:title>Course Progress Calculation</:title>
+        <div class="dark:text-white text-base">
+          <div class="w-[797px] font-bold mb-9">
+            Lesson Page Progress
+          </div>
+          <div class="flex-col justify-start items-start gap-[31px] inline-flex">
+            <div class="self-stretch justify-start items-start gap-3 inline-flex">
+              <div class="px-3 py-1 bg-[#deecff] dark:bg-[#363b59] rounded-[999px] justify-start items-center gap-1.5 flex">
+                <div class="w-5 h-5 relative text-[#1b67b2] dark:text-[#99ccff]">
+                  <Icons.clipboard />
+                </div>
+              </div>
+              <div class="pb-[3px] justify-end items-center flex">
+                <div class="self-stretch pr-[13px] justify-start items-center inline-flex">
+                  <div class="">
+                    <span class="font-bold">
+                      Practice Pages with Activities:
+                    </span>
+                    <span class="font-medium">
+                      Achieve 100% progress if you have
+                    </span>
+                    <span class="font-bold">attempted</span><span class="font-medium"> </span><span class="font-bold">every activity</span><span class="font-medium"> on that page at least once. Surveys do not count towards progress.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="justify-start items-center gap-3 inline-flex">
+              <div class="px-3 py-1 bg-[#dcf3f5] dark:bg-[#364147] rounded-[999px] justify-start items-center gap-1.5 flex">
+                <div class="w-5 h-5 relative text-[#00808f] dark:text-[#87d7e0]"><Icons.book /></div>
+              </div>
+              <div class="">
+                <span class="font-bold">
+                  Practice Pages without Activities:
+                </span>
+                <span class="font-medium">
+                  Achieve 100% progress if you have
+                </span>
+                <span class="font-bold">visited</span><span class="font-medium"> the page at least once.</span>
+              </div>
+            </div>
+            <div class="justify-start items-center gap-3 inline-flex">
+              <div class="px-3 py-1 bg-[#ffecde] dark:bg-[#4c3f39] rounded-[999px] justify-start items-center gap-1.5 flex">
+                <div class="w-5 h-5 relative text-[#bf5b13] dark:text-[#ffb387]">
+                  <Icons.transparent_flag />
+                </div>
+              </div>
+              <div>
+                <span class="font-bold">
+                  Scored Assignments:
+                </span>
+                <span class="font-medium">
+                  Achieve 100% progress on scored assignments if you
+                </span>
+                <span class="font-bold">submit</span><span class="font-medium"> at least one attempt. </span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-12">
+            <div class="self-stretch font-bold mb-6">
+              Average Progress
+            </div>
+            <div class="self-stretch flex-col justify-start items-end flex">
+              <div class="self-stretch font-medium">
+                The calculation logic for course progress is based on averaging the completion percentages of individual lesson pages within a container (like a module or unit).
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal.modal>
+    </div>
+    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="flex-col justify-start items-start gap-5 inline-flex grow">
-        <div class="justify-start items-start gap-2.5 inline-flex">
-          <div class="text-2xl font-bold leading-loose tracking-tight">
+        <div class="flex items-baseline gap-2.5 relative">
+          <div class="text-2xl font-bold leading-loose">
             Course Progress
           </div>
+          <div
+            id="course_progress_tooltip"
+            phx-hook="AutoHideTooltip"
+            class="hidden absolute z-50 -top-[89px] -right-[316px] p-4"
+          >
+            <div class="w-[320px] h-[88px] px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#ced1d9] dark:border-[#3a3740]">
+              <div class="grow shrink basis-0">
+                <span class="text-[#353740] dark:text-[#eeebf5] text-sm font-normal leading-normal">
+                  Course progress is calculated based on the pages you visit and the percentage of activities you complete.
+                </span>
+                <button
+                  phx-click={
+                    Modal.show_modal("course_progress_calculation_modal")
+                    |> JS.hide(to: "#course_progress_tooltip")
+                  }
+                  class="text-[#353740] dark:text-[#eeebf5] text-sm font-bold underline leading-normal"
+                >
+                  Learn more.
+                </button>
+              </div>
+            </div>
+          </div>
+          <span
+            xphx-mouseover={JS.show(to: "#course_progress_tooltip")}
+            class="size-5 hover:cursor-pointer"
+          >
+            <Icons.info />
+          </span>
         </div>
         <%= if @has_visited_section do %>
           <div class="flex-col justify-start items-start flex">
             <div>
-              <span class="text-6xl font-bold tracking-wide"><%= @progress %></span>
-              <span class="text-3xl font-bold tracking-tight">%</span>
+              <span class="text-6xl font-bold leading-[76px]">
+                <%= parse_progress(@completed_pages.completed_pages / @completed_pages.total_pages) %>
+              </span>
+              <span class="text-3xl font-bold leading-[44px]">%</span>
             </div>
           </div>
+          <Common.progress_bar
+            percent={@completed_pages.completed_pages / @completed_pages.total_pages * 100}
+            on_going_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
+            completed_colour="bg-[#0CAF61] dark:bg-[#0fb863]"
+            not_completed_colour="bg-[#385581]"
+            role="course progress bar"
+            show_percent={false}
+            show_halo={true}
+          />
+          <.link
+            navigate={@page_completed_target_path}
+            class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+          >
+            <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
+          </.link>
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
             <div class="text-base font-normal tracking-tight grow">
@@ -418,7 +551,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     assigns = Map.put(assigns, :lessons, lessons)
 
     ~H"""
-    <div class="w-full h-fit p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
           <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -445,8 +578,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
         <div role="assignments" class="w-full h-fit flex-col justify-start items-start gap-2.5 flex">
           <%= if Enum.empty?(@lessons) do %>
-            <div role="message" class="w-80 h-16 flex-col justify-start items-start gap-2.5 flex">
-              <div class="w-80 dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
+            <div role="message" class="flex-col justify-start items-start gap-2.5 flex">
+              <div class="dark:text-white text-base font-normal font-sans tracking-[0.32px] break-words">
                 <%= empty_assignments_message(@assignments_tab) %>
               </div>
             </div>
@@ -698,7 +831,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp agenda(assigns) do
     ~H"""
-    <div class="w-full h-fit overflow-y-auto p-6 bg-[#1C1A20] bg-opacity-20 dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div class="w-full h-fit overflow-y-auto p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
       <div class="flex-col justify-start items-start gap-7 inline-flex grow">
         <div class="self-stretch justify-between items-baseline inline-flex gap-2.5">
           <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -760,8 +893,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       end
   end
 
-  defp section_progress(section_id, user_id) do
-    Metrics.progress_for(section_id, user_id)
+  defp parse_progress(progress) do
+    progress
     |> Kernel.*(100)
     |> round()
     |> trunc()
@@ -805,5 +938,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     Enum.map(assignments, fn assignment ->
       Map.put(assignment, :settings, settings[assignment.resource_id])
     end)
+  end
+
+  defp get_completed_pages(section_id, current_user_id) do
+    raw_completed_pages = Metrics.raw_completed_pages_for(section_id, current_user_id)
+
+    %{
+      completed_pages: Map.get(raw_completed_pages, current_user_id, 0),
+      total_pages: Map.get(raw_completed_pages, :total_pages, 0)
+    }
   end
 end

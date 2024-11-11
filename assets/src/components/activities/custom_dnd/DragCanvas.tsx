@@ -6,12 +6,13 @@ export type ResetListener = () => void;
 
 export type DragCanvasProps = {
   model: CustomDnDSchema;
-  onSubmitPart: (targetId: string, draggableId: string) => void;
+  onDrop: (targetId: string, draggableId: string) => void;
   onFocusChange: (targetId: string | null, draggableId: string | null) => void;
   onDetach: (targetId: string, draggableId: string) => Promise<void>;
   initialState: Record<string, string>;
   editMode: boolean;
   activityAttemptGuid: string;
+  partAttemptGuids: string[];
   onRegisterResetCallback: (listener: ResetListener) => void;
 };
 
@@ -26,11 +27,11 @@ export const DragCanvas: React.FC<DragCanvasProps> = (props: DragCanvasProps) =>
   // get another attempt.  We must reset the drop handlers on all drop targets so that
   // these functions close over the most up to date 'onSubmitPart` handler, which allows
   // the parent CustomDnDDelivery component to issue part submissions with the correct
-  // part attempt guids.
+  // part attempt guids. Applies also after reset of individual partAttempts
   useEffect(() => {
     updateDropHandler(id, props);
     updateRootDropHandler(id, props);
-  }, [props.activityAttemptGuid]);
+  }, [props.activityAttemptGuid, props.partAttemptGuids]);
 
   useEffect(() => {
     setEditMode(props.editMode, id);
@@ -151,7 +152,7 @@ function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
         if (prevTargetId) {
           await props.onDetach(prevTargetId, inputVal);
         }
-        props.onSubmitPart(targetId, inputVal);
+        props.onDrop(targetId, inputVal);
       }
     } catch (e) {
       console.error('customDND target drop handler failed', e);

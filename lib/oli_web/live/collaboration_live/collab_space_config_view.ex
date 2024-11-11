@@ -156,7 +156,7 @@ defmodule OliWeb.CollaborationLive.CollabSpaceConfigView do
     ~H"""
     <.notes_modals form={@form} />
 
-    <div class="border border-blue-200 dark:border-blue-700 rounded-lg p-6">
+    <div class="collab-space-config border rounded-lg p-6">
       <div class="flex flex-col md:flex-row md:items-center card-body justify-between">
         <div class="flex flex-col justify-start md:flex-row md:items-center gap-2">
           <%= unless @is_overview_render do %>

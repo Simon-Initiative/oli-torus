@@ -74,7 +74,7 @@ defmodule OliWeb.Delivery.Student.Utils do
             </div>
           </div>
         </div>
-        <div class="justify-start items-center gap-3 inline-flex">
+        <div class="justify-start items-center gap-3 flex-col">
           <div
             :if={@page_context.page.duration_minutes}
             class="opacity-50 justify-start items-center gap-1.5 flex"
@@ -93,11 +93,28 @@ defmodule OliWeb.Delivery.Student.Utils do
               </div>
             </div>
           </div>
-          <div role="page schedule" class="justify-start items-start gap-1 flex">
-            <div
-              :if={@page_context.effective_settings.end_date}
-              class="opacity-50 dark:text-white text-xs font-normal"
-            >
+          <div
+            :if={@page_context.effective_settings.start_date}
+            role="page start schedule"
+            class="justify-start items-start gap-1 flex"
+          >
+            <div class="opacity-50 dark:text-white text-xs font-normal">
+              Available by:
+            </div>
+            <div class="dark:text-white text-xs font-normal">
+              <%= FormatDateTime.to_formatted_datetime(
+                @page_context.effective_settings.start_date,
+                @ctx,
+                "{WDshort} {Mshort} {D}, {YYYY}"
+              ) %>
+            </div>
+          </div>
+          <div
+            :if={@page_context.effective_settings.end_date}
+            role="page schedule"
+            class="justify-start items-start gap-1 flex"
+          >
+            <div class="opacity-50 dark:text-white text-xs font-normal">
               <%= label_for_scheduling_type(@page_context.effective_settings.scheduling_type) %>
             </div>
             <div class="dark:text-white text-xs font-normal">
@@ -274,7 +291,7 @@ defmodule OliWeb.Delivery.Student.Utils do
   def reset_attempts_button(assigns) do
     ~H"""
     <button
-      :if={@page_context.review_mode == false && not @advanced_delivery}
+      :if={@page_context.review_mode == false && not @advanced_delivery && @activity_count > 0}
       id="reset_answers"
       class="btn btn-link btn-sm text-center mb-10"
       onClick={"window.OLI.finalize('#{@section_slug}', '#{@page_context.page.slug}', '#{hd(@page_context.resource_attempts).attempt_guid}', false, 'reset_answers')"}

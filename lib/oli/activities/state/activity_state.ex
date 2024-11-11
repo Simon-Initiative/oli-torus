@@ -34,11 +34,12 @@ defmodule Oli.Activities.State.ActivityState do
   ]
 
   @spec from_attempt(
-          Oli.Delivery.Attempts.Core.ActivityAttempt.t(),
-          [Oli.Delivery.Attempts.Core.PartAttempt.t()],
-          Oli.Activities.Model.t(),
-          Oli.Delivery.Attempts.Core.ResourceAttempt.t(),
-          Oli.Resources.Revision.t()
+          %Oli.Delivery.Attempts.Core.ActivityAttempt{},
+          [%Oli.Delivery.Attempts.Core.PartAttempt{}],
+          %Oli.Activities.Model{},
+          %Oli.Delivery.Attempts.Core.ResourceAttempt{} | nil,
+          %Oli.Resources.Revision{} | nil,
+          %Oli.Delivery.Settings.Combined{}
         ) ::
           %Oli.Activities.State.ActivityState{}
   def from_attempt(
@@ -46,7 +47,8 @@ defmodule Oli.Activities.State.ActivityState do
         part_attempts,
         %Model{} = model,
         resource_attempt,
-        page_revision
+        page_revision,
+        effective_settings
       ) do
     # Create the part states, and where we encounter parts from the model
     # that do not have an attempt we create the default state
@@ -63,7 +65,8 @@ defmodule Oli.Activities.State.ActivityState do
             part_attempt: part_attempt,
             activity_attempt: attempt,
             resource_attempt: resource_attempt,
-            resource_revision: page_revision
+            resource_revision: page_revision,
+            effective_settings: effective_settings
           })
       end
     end
@@ -74,7 +77,7 @@ defmodule Oli.Activities.State.ActivityState do
       end)
 
     has_more_attempts =
-      case attempt.revision.max_attempts do
+      case effective_settings.max_attempts do
         0 -> true
         max -> attempt.attempt_number < max
       end

@@ -13,7 +13,7 @@ defmodule OliWeb.CognitoControllerTest do
     community = insert(:community, name: "Infiniscope")
     section = insert(:section, %{slug: "open_section", open_and_free: true})
     email = build(:user).email
-    author = insert(:author)
+    author = insert(:author, system_role_id: Accounts.SystemRole.role_id().system_admin)
     project = insert(:project, allow_duplication: true)
     resource = insert(:resource)
     revision = insert(:revision, resource: resource)
@@ -35,7 +35,7 @@ defmodule OliWeb.CognitoControllerTest do
       email: email
     } do
       {:ok, _user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -65,7 +65,7 @@ defmodule OliWeb.CognitoControllerTest do
       {:ok, author} = Accounts.insert_or_update_author(%{email: author_email})
 
       {:ok, _user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -102,7 +102,7 @@ defmodule OliWeb.CognitoControllerTest do
       email: email
     } do
       {:ok, user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -125,6 +125,43 @@ defmodule OliWeb.CognitoControllerTest do
                ~s(#workspace-user-menu-dropdown div[role="linked authoring account email"])
              )
              |> render() =~ user.email
+    end
+
+    test "data is correctly taken when creating an author account", %{
+      conn: conn,
+      community: community,
+      email: email,
+      author: author
+    } do
+      {id_token, jwk, issuer} = generate_token(email)
+
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params = valid_index_params(community.id, id_token)
+
+      conn = get(conn, ~p"/cognito/launch?#{params}")
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
+
+      new_author = Accounts.get_author_by_email(email)
+      new_user = Accounts.get_user_by(%{email: email})
+
+      {:ok, view, _html} = live(conn, ~p"/admin/authors/#{new_author.id}")
+
+      assert view |> element("input[value=\"#{new_author.name}\"]") |> render() =~ new_author.name
+      assert view |> element("input[id=\"email\"]") |> render() =~ new_author.email
+
+      {:ok, view, _html} = live(conn, ~p"/admin/users/#{new_user.id}")
+
+      assert view |> element("input[value=\"#{new_user.name}\"]") |> render() =~ new_user.name
+      assert view |> element("input[id=\"user_email\"]") |> render() =~ new_user.email
     end
 
     test "redirects to provided error_url with missing params", %{
@@ -260,7 +297,7 @@ defmodule OliWeb.CognitoControllerTest do
            email: email
          } do
       {:ok, user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -295,7 +332,7 @@ defmodule OliWeb.CognitoControllerTest do
            email: email
          } do
       {:ok, user} =
-        Accounts.insert_or_update_lms_user(%{
+        Accounts.insert_or_update_sso_user(%{
           sub: "user999",
           preferred_username: "user999",
           email: email,
@@ -484,7 +521,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/authoring/project"
+               "<html><body>You are being <a href=\"/workspaces/course_author"
 
       # creates new author and links it with user
       author = Accounts.get_author_by_email(email)
@@ -633,7 +670,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :clone, project.slug))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/authoring/project"
+               "<html><body>You are being <a href=\"/workspaces/course_author"
     end
 
     test "fails if the project does not allow duplication",
@@ -686,7 +723,7 @@ defmodule OliWeb.CognitoControllerTest do
                "Would you like to\n<a href=\"/cognito/clone/#{project.slug}\">create another copy</a>"
 
       assert html =~
-               "<a href=\"/authoring/project/#{duplicated.slug}\">#{duplicated.title}</a>"
+               "<a href=\"/workspaces/course_author/#{duplicated.slug}/overview\">#{duplicated.title}</a>"
     end
   end
 
@@ -755,7 +792,6 @@ defmodule OliWeb.CognitoControllerTest do
 
   defp build_claims(email) do
     %{
-      "at_hash" => UUID.uuid4(),
       "sub" => "user999",
       "email_verified" => true,
       "iss" => "issuer",
@@ -765,6 +801,7 @@ defmodule OliWeb.CognitoControllerTest do
       "event_id" => UUID.uuid4(),
       "token_use" => "id",
       "auth_time" => 1_642_608_077,
+      "name" => "name_user999",
       "exp" => 1_642_611_677,
       "iat" => 1_642_608_077,
       "jti" => UUID.uuid4(),

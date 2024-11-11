@@ -1,7 +1,8 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Activities.ActivitiesTableModel do
+  use OliWeb, :verified_routes
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
-  alias OliWeb.Router.Helpers, as: Routes
 
   use Phoenix.Component
 
@@ -16,21 +17,27 @@ defmodule OliWeb.Workspaces.CourseAuthor.Activities.ActivitiesTableModel do
       %ColumnSpec{
         name: :activity_type_id,
         label: "Type",
-        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_type_column/3
+        render_fn: &render_type_column/3
+      },
+      %ColumnSpec{
+        name: :title,
+        label: "Title"
       },
       %ColumnSpec{
         name: :scope,
         label: "Scope"
       },
       %ColumnSpec{
-        name: :content,
+        name: :stem,
         label: "Stem",
-        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_content_column/3
+        render_fn: &render_content_column/3,
+        sortable: false
       },
       %ColumnSpec{
         name: :resource_id,
         label: "Page",
-        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_page_column/3
+        render_fn: &render_page_column/3,
+        sortable: false
       },
       %ColumnSpec{
         name: :updated_at,
@@ -68,7 +75,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Activities.ActivitiesTableModel do
         assigns = Map.merge(assigns, %{slug: slug, title: title})
 
         ~H"""
-        <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, @slug)}><%= @title %></a>
+        <.link href={~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@slug}/edit"}>
+          <%= @title %>
+        </.link>
         """
     end
   end

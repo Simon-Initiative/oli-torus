@@ -160,7 +160,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
           </a>
         </div>
         <%= if @preview_mode do %>
-          <UserAccount.preview_user_menu />
+          <UserAccount.preview_user_menu ctx={@ctx} />
         <% else %>
           <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
         <% end %>

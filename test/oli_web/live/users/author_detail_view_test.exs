@@ -337,8 +337,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert view
              |> element("#author_projects table tr[id='#{project.id}']")
-             |> render() =~
-               Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, project.slug)
+             |> render() =~ ~p"/workspaces/course_author/#{project.slug}/overview"
     end
 
     test "system admin can edit author role", %{conn: conn} do
@@ -369,6 +368,25 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
                "Account Admin"
 
       assert has_element?(view, "div.alert-info", "Author successfully updated.")
+    end
+
+    test "system admin can create a reset password link for an author", %{conn: conn} do
+      author = insert(:author)
+
+      {:ok, view, _html} = live(conn, authors_detail_view(author.id))
+
+      view
+      |> element(~s{button[phx-click="generate_reset_password_link"]})
+      |> render_click()
+
+      assert has_element?(view, "p", "This link will expire in 24 hours.")
+
+      assert view
+             |> element(~s{input[id="password-reset-link-1"]})
+             |> render()
+             |> Floki.parse_fragment!()
+             |> Floki.attribute("value")
+             |> hd() =~ "https://localhost/authoring/reset-password/"
     end
   end
 

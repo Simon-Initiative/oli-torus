@@ -244,10 +244,11 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   def handle_event("add_admin", %{"email" => email}, socket) do
     socket = clear_flash(socket)
+    current_author = socket.assigns.current_author
 
     attrs = %{
       community_id: socket.assigns.community.id,
-      is_admin: Accounts.has_admin_role?(@current_author, :account_admin)
+      is_admin: Accounts.has_admin_role?(current_author, :account_admin)
     }
 
     emails =

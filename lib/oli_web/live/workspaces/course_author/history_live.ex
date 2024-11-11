@@ -565,7 +565,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
        upload_errors: [],
        edited_json: nil,
        details_modal_assigns: nil,
-       resource_schema: resource_schema
+       resource_schema: resource_schema,
+       resource_title: project.title,
+       resource_slug: project.slug,
+       active_view: :curriculum
      )
      |> assign_new(:revision_root_slug, fn _ -> Resources.get_revision_root_slug(revision.id) end)
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}

@@ -107,7 +107,7 @@ defmodule OliWeb.Workspaces.Student do
 
   def render(%{current_user: nil} = assigns) do
     ~H"""
-    <div class="flex justify-center items-center min-h-screen">
+    <div class="flex-1 flex justify-center items-center min-h-screen">
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.student_workspace_sign_in />
       </div>
@@ -125,7 +125,10 @@ defmodule OliWeb.Workspaces.Student do
             <div class="w-48 h-11 justify-start items-center gap-1 inline-flex">
               <div class="justify-start items-center gap-2 lg:gap-px flex">
                 <div class="grow shrink basis-0 self-start px-1 py-2 justify-center items-center flex">
-                  <OliWeb.Icons.graduation_cap class="w-7 h-6 lg:w-[39px] lg:h-[27px]" />
+                  <OliWeb.Icons.graduation_cap
+                    class="w-7 h-6 lg:w-[39px] lg:h-[27px]"
+                    stroke="stroke-white"
+                  />
                 </div>
                 <div class="w-40 lg:text-center text-white lg:text-3xl xl:text-4xl font-bold font-['Open Sans']">
                   Student
@@ -310,8 +313,14 @@ defmodule OliWeb.Workspaces.Student do
 
   defp add_sections_progress(sections, user_id) do
     Enum.map(sections, fn section ->
+      # we calculate the progress based on the number of completed pages
+      # to match the logic used in the course progress compenent at OliWeb.Delivery.Student.IndexLive
+      raw_completed_pages = Metrics.raw_completed_pages_for(section.id, user_id)
+      completed_pages = Map.get(raw_completed_pages, user_id, 0)
+      total_pages = Map.get(raw_completed_pages, :total_pages)
+
       progress =
-        Metrics.progress_for(section.id, user_id)
+        (completed_pages / if(total_pages == 0, do: 1, else: total_pages))
         |> Kernel.*(100)
         |> round()
         |> trunc()

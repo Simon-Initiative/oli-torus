@@ -132,6 +132,40 @@ defmodule OliWeb.PublisherLiveTest do
                "Z Publisher"
     end
 
+    test "applies sorting by created at", %{conn: conn} do
+      Oli.Inventories.Publisher
+      |> Oli.Repo.get_by!(email: "publisher@cmu.edu")
+      |> Oli.Repo.delete()
+
+      now = DateTime.utc_now()
+      two_months_later = DateTime.add(now, 60, :day)
+
+      insert(:publisher, %{name: "A Publisher", inserted_at: now})
+      insert(:publisher, %{name: "Z Publisher", inserted_at: two_months_later})
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "inserted_at"})
+
+      assert view |> element("tr:first-child > td:first-child") |> render() =~
+               "A Publisher"
+
+      assert view |> element("tr:last-child > td:first-child") |> render() =~
+               "Z Publisher"
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "inserted_at"})
+
+      assert view |> element("tr:first-child > td:first-child") |> render() =~
+               "Z Publisher"
+
+      assert view |> element("tr:last-child > td:first-child") |> render() =~
+               "A Publisher"
+    end
+
     test "applies paging", %{conn: conn} do
       [first_p | tail] = insert_list(21, :publisher) |> Enum.sort_by(& &1.name)
       last_p = List.last(tail)

@@ -17,14 +17,18 @@ defmodule OliWeb.SystemMessageLive.ShowView do
       Notifications.list_active_system_messages()
       |> filter_dismissed_messages(dismissed_messages)
 
-    {:ok, assign(socket, messages: messages)}
+    {:ok, assign(socket, messages: messages), layout: false}
   end
 
   attr(:messages, :list, default: [])
 
   def render(assigns) do
     ~H"""
-    <div :for={active_message <- @messages} class="system-banner alert alert-warning" role="alert">
+    <div
+      :for={active_message <- @messages}
+      class="system-banner alert alert-warning flex justify-between"
+      role="alert"
+    >
       <%= active_message.message |> Oli.Utils.find_and_linkify_urls_in_string() |> raw() %>
       <button
         id={"system-message-close-#{active_message.id}"}

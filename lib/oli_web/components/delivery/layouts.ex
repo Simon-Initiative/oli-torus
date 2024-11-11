@@ -51,7 +51,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       id="header"
-      class="fixed z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
       <.link
         :if={@include_logo}
@@ -118,11 +118,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def sidebar_nav(assigns) do
     ~H"""
-    <div>
+    <div class="sticky top-0">
       <nav id="desktop-nav-menu" class={["
         transition-all
         duration-100
-        fixed
         z-50
         w-full
         hidden
@@ -238,7 +237,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -264,7 +263,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         |> JS.dispatch("click", to: "button[role='update sidebar state on React']")
       }
       title={if @sidebar_expanded, do: "Minimize", else: "Expand"}
-      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px] stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="flex items-center justify-center ml-auto w-6 h-6 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-tl-[52px] rounded-bl-[52px]"
     >
       <div class={if !@sidebar_expanded, do: "rotate-180"}>
         <Icons.left_chevron />
@@ -286,16 +285,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   def workspace_sidebar_nav(assigns) do
     ~H"""
-    <div>
+    <div class="sticky top-0">
       <nav
         id="desktop-workspace-nav-menu"
         style="--header-height: 56px; --toggler-button-height: 24px; --main-links-height: 190px; --footer-buttons-height: 110px; "
         class={["
         transition-all
         duration-100
-        fixed
         z-50
-        top-0
         w-full
         hidden
         h-[100vh]
@@ -427,7 +424,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
         is_active={@active_workspace == :course_author}
         sidebar_expanded={@sidebar_expanded}
         on_active_bg="bg-[#F4CFFF] hover:!bg-[#F4CFFF] dark:bg-[#7E2899] dark:hover:!bg-[#7E2899]"
-        navigation_type="href"
       >
         <:icon>
           <Icons.writing_pencil is_active={@active_workspace == :course_author} />
@@ -745,7 +741,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     >
       <div class="justify-start items-end gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center">
-          <Icons.support />
+          <Icons.support class="" />
         </div>
         <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">Support</div>
       </div>
@@ -761,7 +757,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     <.link
       id="exit_course_button"
       navigate={~p"/workspaces/student?#{%{sidebar_expanded: @sidebar_expanded}}"}
-      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
+      class="w-full h-11 flex-col justify-center items-center flex hover:no-underline text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white"
     >
       <div class="w-full h-9 px-3 py-3 bg-zinc-400 bg-opacity-20 hover:bg-opacity-40 rounded-lg justify-start items-center gap-3 inline-flex">
         <div class="w-5 h-5 flex items-center justify-center"><Icons.exit /></div>
@@ -912,14 +908,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
          selected_view
        ) do
     case {type, Integer.parse(level)} do
-      # If the given resource is a module (level == 2), we navigate to learn page.
-      {"container", {2, _}} ->
+      # If the given resource is a unit or module (level <= 2), we navigate to learn page.
+      {"container", {level, _}} when level <= 2 ->
         Utils.learn_live_path(section_slug,
           target_resource_id: resource_id,
           selected_view: selected_view
         )
 
-      # If the given resource is other than a module (page, section/sub-section, unit), we navigate to lesson page.
+      # If the given resource is other than a unit or module (page, section/sub-section), we navigate to lesson page.
       _ ->
         # If the request_path is the Learn page and we navigate to a different lesson,
         # we need to update the request_path to include the new target resource.
@@ -948,7 +944,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       class={[
-        "flex justify-center items-center absolute top-12 left-2 p-4 z-50",
+        "flex items-center absolute top-2 left-2 p-4 z-50",
         if(!@show_sidebar, do: "2xl:top-12 2xl:left-8")
       ]}
       role="back_link"

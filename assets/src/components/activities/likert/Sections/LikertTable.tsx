@@ -29,57 +29,59 @@ export const LikertTable: React.FC<Props> = ({
   const { choices, items } = model;
 
   return (
-    <table className="likert-table">
-      <thead>
-        <tr>
-          {needItemColumn(items) && <th></th>}
-          {choices.map((choice) => (
-            <th key={choice.id}>
-              <HtmlContentModelRenderer
-                direction={choice.textDirection}
-                content={choice.content}
-                context={context}
-              />
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {items.map((item) => (
-          <tr key={item.id} className="even:bg-gray-100 dark:even:bg-gray-700">
-            {needItemColumn(items) && (
-              <td>
+    <div className="overflow-x-auto">
+      <table className="likert-table">
+        <thead>
+          <tr>
+            {needItemColumn(items) && <th></th>}
+            {choices.map((choice) => (
+              <th key={choice.id}>
                 <HtmlContentModelRenderer
-                  direction={item.textDirection}
-                  content={item.content}
+                  direction={choice.textDirection}
+                  content={choice.content}
                   context={context}
                 />
-              </td>
-            )}
-            {choices.map((choice) => (
-              <td align="center" key={item.id + '-' + choice.id}>
-                <input
-                  type="radio"
-                  checked={isSelected(item.id, choice.id)}
-                  disabled={disabled}
-                  onChange={() => onSelect(item.id, choice.id)}
-                />
-              </td>
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-      {/* footer row with choice values. Use th cells to match header style */}
-      <tfoot>
-        <tr>
-          {needItemColumn(items) && <th />}
-          {choices.map((choice, i) => (
-            <th key={'foot-' + i}>
-              <p>{getChoiceValue(model, i).toString()}</p>
-            </th>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id} className="even:bg-gray-100 dark:even:bg-gray-700">
+              {needItemColumn(items) && (
+                <td>
+                  <HtmlContentModelRenderer
+                    direction={item.textDirection}
+                    content={item.content}
+                    context={context}
+                  />
+                </td>
+              )}
+              {choices.map((choice) => (
+                <td align="center" key={item.id + '-' + choice.id}>
+                  <input
+                    type="radio"
+                    checked={isSelected(item.id, choice.id)}
+                    disabled={disabled}
+                    onChange={() => onSelect(item.id, choice.id)}
+                  />
+                </td>
+              ))}
+            </tr>
           ))}
-        </tr>
-      </tfoot>
-    </table>
+        </tbody>
+        {/* footer row with choice values. Use th cells to match header style */}
+        <tfoot>
+          <tr>
+            {needItemColumn(items) && <th />}
+            {choices.map((choice, i) => (
+              <th key={'foot-' + i}>
+                <p>{getChoiceValue(model, i).toString()}</p>
+              </th>
+            ))}
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   );
 };

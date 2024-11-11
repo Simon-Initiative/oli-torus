@@ -1,4 +1,5 @@
 defmodule Oli.Authoring.Collaborators do
+  use OliWeb, :verified_routes
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Repo
   alias Oli.Accounts
@@ -58,7 +59,7 @@ defmodule Oli.Authoring.Collaborators do
     |> case do
       nil ->
         # MER-3835 TODO
-        throw "NOT IMPLEMENTED"
+        throw("NOT IMPLEMENTED")
 
       author ->
         if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
@@ -134,6 +135,6 @@ defmodule Oli.Authoring.Collaborators do
 
   defp deliver_invitation_email(conn, user, project, status) do
     # MER-3835 TODO
-    throw "NOT IMPLEMENTED"
+    throw("NOT IMPLEMENTED")
   end
 end

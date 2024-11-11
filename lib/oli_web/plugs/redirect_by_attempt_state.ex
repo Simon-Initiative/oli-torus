@@ -96,6 +96,11 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
   defp user_already_authenticated?(%{assigns: %{current_user: %{id: current_user_id}}} = _conn),
     do: {true, current_user_id}
 
+  defp user_already_authenticated?(
+         %{assigns: %{current_author: %{id: current_author_id}}} = _conn
+       ),
+       do: {true, current_author_id}
+
   defp user_already_authenticated?(_conn), do: {false, nil}
 
   defp classify_request(conn) do

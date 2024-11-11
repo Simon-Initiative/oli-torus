@@ -57,6 +57,7 @@ defmodule Oli.Application do
         Oli.Delivery.Attempts.PartAttemptCleaner,
 
         # Starts Cachex to store page content info
+        Oli.Delivery.DistributedDepotCoordinator,
         {Cachex, name: :page_content_cache},
 
         # Starts Cachex to store datashop export info

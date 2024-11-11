@@ -10,7 +10,10 @@ import {
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
 import { addPart } from 'apps/authoring/store/parts/actions/addPart';
-import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
+import {
+  selectCurrentPartPropertyFocus,
+  setCurrentSelection,
+} from 'apps/authoring/store/parts/slice';
 import {
   selectCurrentActivityTree,
   selectCurrentSequenceId,
@@ -61,7 +64,7 @@ const AddComponentToolbar: React.FC<{
       dispatch(addPart({ activityId: currentActivity.id, newPartData }));
     }
   };
-
+  const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
   useEffect(() => {
     setNewPartAddOffset(0);
   }, [currentSequenceId]);
@@ -81,6 +84,8 @@ const AddComponentToolbar: React.FC<{
       }
       const PartClass = customElements.get(partComponent.authoring_element);
       if (PartClass) {
+        const defaultNewPartWidth = 100;
+        const defaultNewPartHeight = 100;
         // only ever add to the current  activity, not a layer
         setNewPartAddOffset(newPartAddOffset + 1);
         const part = new PartClass() as any;
@@ -91,8 +96,8 @@ const AddComponentToolbar: React.FC<{
             x: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             y: 10 * newPartAddOffset, // when new components are added, offset the location placed by 10 px
             z: 0,
-            width: 100,
-            height: 100,
+            width: defaultNewPartWidth,
+            height: defaultNewPartHeight,
           },
         };
         const creationContext = { transform: { ...newPartData.custom } };
@@ -141,13 +146,13 @@ const AddComponentToolbar: React.FC<{
 
   useKeyDown(
     () => {
-      if (copiedPart) {
+      if (copiedPart && _currentPartPropertyFocus) {
         handlePartPasteClick();
       }
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, currentActivityTree],
+    [copiedPart, currentActivityTree, _currentPartPropertyFocus],
   );
 
   return (
