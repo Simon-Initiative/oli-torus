@@ -1252,7 +1252,7 @@ defmodule Oli.Delivery.Sections do
   # determine and return the list of page resource ids that are not reachable from that
   # hierarchy, taking into account links from pages to other pages and the 'relates_to'
   # relationship between pages.
-  def determine_unreachable_pages(publication_ids, hierarchy_ids) do
+  def determine_unreachable_pages(publication_ids, hierarchy_ids, all_links \\ nil) do
     # Start with all pages
     unreachable =
       Oli.Publishing.all_page_resource_ids(publication_ids)
@@ -1264,13 +1264,19 @@ defmodule Oli.Delivery.Sections do
     # we want to be able to handle cases where a page from the hierarchy embeds an activity which
     # links to a page outside the hierarchy.
     all_links =
-      [
-        get_all_page_links(publication_ids),
-        get_activity_references(publication_ids),
-        get_relates_to(publication_ids)
-      ]
-      |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
-      |> MapSet.to_list()
+      case all_links do
+        nil ->
+          [
+            get_all_page_links(publication_ids),
+            get_activity_references(publication_ids),
+            get_relates_to(publication_ids)
+          ]
+          |> Enum.reduce(MapSet.new(), fn links, acc -> MapSet.union(links, acc) end)
+          |> MapSet.to_list()
+
+        _ ->
+          all_links
+      end
 
     link_map =
       Enum.reduce(all_links, %{}, fn {source, target}, map ->
@@ -1313,7 +1319,7 @@ defmodule Oli.Delivery.Sections do
 
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
   # representing all of the links between pages in the section
-  defp get_all_page_links(publication_ids) do
+  def get_all_page_links(publication_ids) do
     joined_publication_ids = Enum.join(publication_ids, ",")
 
     item_types =
@@ -1353,7 +1359,7 @@ defmodule Oli.Delivery.Sections do
 
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
   # representing the links of pages to activities
-  defp get_activity_references(publication_ids) do
+  def get_activity_references(publication_ids) do
     joined_publication_ids = Enum.join(publication_ids, ",")
 
     sql = """
@@ -1375,7 +1381,7 @@ defmodule Oli.Delivery.Sections do
 
   # Returns a mapset of two element tuples of the form {source_resource_id, target_resource_id}
   # representing the relates_to relationship between pages.
-  defp get_relates_to(publication_ids) do
+  def get_relates_to(publication_ids) do
     joined_publication_ids = Enum.join(publication_ids, ",")
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
