@@ -5911,6 +5911,11 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 28rem;
 }
 
+.max-w-min {
+  max-width: -moz-min-content;
+  max-width: min-content;
+}
+
 .max-w-sm {
   max-width: 24rem;
 }
@@ -5994,8 +5999,8 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.-translate-y-\[50px\] {
-  --tw-translate-y: -50px;
+.-translate-y-\[34px\] {
+  --tw-translate-y: -34px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -8115,10 +8120,6 @@ table.table-striped tbody tr:nth-child(even) {
   padding: 2rem;
 }
 
-.p-\[1px\] {
-  padding: 1px;
-}
-
 .p-\[25px\] {
   padding: 25px;
 }
@@ -8475,6 +8476,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-8 {
   padding-bottom: 2rem;
+}
+
+.pb-\[27px\] {
+  padding-bottom: 27px;
 }
 
 .pb-\[3px\] {
