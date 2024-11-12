@@ -1,12 +1,30 @@
 defmodule OliWeb.Delivery.Student.AssignmentsLive do
   use OliWeb, :live_view
 
+  alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Delivery.{Metrics, Settings}
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Icons
+
+  # this is an optimization to reduce the memory footprint of the liveview process
+  @required_keys_per_assign %{
+    section:
+      {[
+         :id,
+         :slug,
+         :customizations,
+         :title,
+         :brand,
+         :contains_discussions,
+         :contains_explorations,
+         :contains_deliberate_practice
+       ], %Section{}},
+    current_user: {[:id, :name, :email], %User{}}
+  }
 
   def mount(_params, _session, socket) do
     %{section: section, current_user: %{id: current_user_id}} = socket.assigns
@@ -17,7 +35,22 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
      assign(socket,
        active_tab: :assignments,
        assignments: get_assignments(section, current_user_id)
-     ), temporary_assigns: [assignments: []]}
+     )
+     |> slim_assigns(), temporary_assigns: [assignments: []]}
+  end
+
+  defp slim_assigns(socket) do
+    Enum.reduce(@required_keys_per_assign, socket, fn {assign_name, {required_keys, struct}},
+                                                      socket ->
+      assign(
+        socket,
+        assign_name,
+        Map.merge(
+          struct,
+          Map.filter(socket.assigns[assign_name], fn {k, _v} -> k in required_keys end)
+        )
+      )
+    end)
   end
 
   def handle_info(:gc, socket) do
