@@ -11,11 +11,20 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def mount(_params, _session, socket) do
     %{section: section, current_user: %{id: current_user_id}} = socket.assigns
 
+    send(self(), :gc)
+
     {:ok,
      assign(socket,
        active_tab: :assignments,
        assignments: get_assignments(section, current_user_id)
-     )}
+     ), temporary_assigns: [assignments: [], section: %{}]}
+  end
+
+  def handle_info(:gc, socket) do
+    # manually garbage collect to reduce memory usage after mount/3
+    :erlang.garbage_collect(socket.transport_pid)
+    :erlang.garbage_collect(self())
+    {:noreply, socket}
   end
 
   def render(assigns) do
