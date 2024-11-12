@@ -1,11 +1,9 @@
 import React, { Fragment, useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
 import Form from '@rjsf/bootstrap-4';
 import { UiSchema } from '@rjsf/core';
 import { diff } from 'deep-object-diff';
 import { JSONSchema7 } from 'json-schema';
 import { at } from 'lodash';
-import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import ColorPickerWidget from './custom/ColorPickerWidget';
 import CustomCheckbox from './custom/CustomCheckbox';
 import { DropdownOptionsEditor } from './custom/DropdownOptionsEditor';
@@ -53,7 +51,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
   onfocusHandler,
 }) => {
   const [formData, setFormData] = useState<any>(value);
-  const dispatch = useDispatch();
   const findDiffType = (changedProp: any): string => {
     const diffType: Record<string, unknown>[] = Object.values(changedProp);
     if (typeof diffType[0] === 'object') {
@@ -101,10 +98,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         if (onfocusHandler) {
           onfocusHandler(false);
         }
-        dispatch(setCurrentPartPropertyFocus({ focus: false }));
       }}
       onBlur={(key, changed) => {
-        dispatch(setCurrentPartPropertyFocus({ focus: true }));
         // key will look like root_Position_x
         // changed will be the new value
         // formData will be the current state of the form
@@ -118,7 +113,8 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
           // console.log('ONBLUR TRIGGER SAVE');
 
           onChangeHandler(formData);
-        } else if (onfocusHandler) {
+        }
+        if (onfocusHandler) {
           onfocusHandler(true);
         }
       }}
