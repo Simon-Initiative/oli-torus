@@ -91,10 +91,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def assignments_agenda(assigns) do
     ~H"""
-    <div class="w-full px-2 bg-[#1b191f]/50 rounded-xl border border-[#2a282d] flex-col justify-start items-start inline-flex">
+    <div class="w-full px-2 bg-white dark:bg-[#1b191f]/50 rounded-xl border border-[#ced1d9] dark:border-[#2a282d] flex-col justify-start items-start inline-flex">
       <div
         role="assignments header"
-        class="w-full h-11 py-3 border-b border-[#3a3740] justify-between items-center inline-flex text-[#bab8bf] text-sm font-medium leading-none"
+        class="w-full h-11 py-3 border-b border-[#ced1d9] dark:border-[#3a3740] justify-between items-center inline-flex text-[#757682] dark:text-[#bab8bf] text-sm font-medium leading-none"
       >
         <div class="justify-end items-center gap-2 flex">
           <div class="w-5 h-5 relative"><Icons.check /></div>
@@ -138,17 +138,17 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       <div class="w-6 h-6 flex justify-center items-center">
         <.page_icon purpose={@assignment.purpose} completed={!is_nil(@assignment.raw_avg_score)} />
       </div>
-      <div class="ml-2 mt-0.5 h-6 w-10 flex items-center text-left text-[#eeebf5]/75 text-sm font-semibold leading-none">
+      <div class="ml-2 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
         <%= @assignment.numbering_index %>
       </div>
       <div class="h-12 flex flex-col justify-between mr-6 flex-1 min-w-0">
         <.link
           navigate={@target}
-          class="h-6 mt-0.5 text-[#eeebf5] text-base font-semibold leading-normal whitespace-nowrap truncate"
+          class="h-6 mt-0.5 text-[#353740] dark:text-[#eeebf5] text-base font-semibold leading-normal whitespace-nowrap truncate"
         >
           <%= @assignment.title %>
         </.link>
-        <span class="text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate">
+        <span class="text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate">
           <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %> <%= FormatDateTime.to_formatted_datetime(
             @assignment.end_date,
             @ctx,
@@ -157,10 +157,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         </span>
       </div>
       <div :if={@assignment.raw_avg_score} class="ml-auto h-12 flex flex-col justify-between">
-        <span class="h-6 ml-auto text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
+        <span class="h-6 ml-auto text-[#757682] dark:text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap">
           Attempt <%= @assignment.attempts %> of <%= max_attempts(@assignment.max_attempts) %>
         </span>
-        <div class="flex ml-auto gap-1.5 text-[#39e581]">
+        <div class="flex ml-auto gap-1.5 text-[#218358] dark:text-[#39e581]">
           <div class="w-4 h-4"><Icons.star /></div>
           <span class="flex gap-1 text-base font-bold leading-none whitespace-nowrap">
             <%= Utils.parse_score(@assignment.raw_avg_score.score) %> / <%= Utils.parse_score(
@@ -229,11 +229,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <%= cond do %>
       <% @purpose == :application -> %>
-        <Icons.exploration />
+        <span class="text-[#9a40a8] dark:text-[#ebaaf2]"><Icons.world /></span>
       <% @completed -> %>
-        <Icons.square_checked />
+        <Icons.square_checked class="fill-[#218358] dark:fill-[#39e581]" />
       <% true -> %>
-        <Icons.flag />
+        <Icons.flag fill_class="fill-[#fa8d3e] dark:fill-[#ff9040]" />
     <% end %>
     """
   end
