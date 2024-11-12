@@ -66,12 +66,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         _,
         socket
       ) do
-    objectives = Sections.get_objectives_and_subobjectives(socket.assigns.section)
-
-    objectives
-    |> Enum.find(fn o -> o.student_proficiency_obj == "Medium" end)
-    |> IO.inspect(label: "\n\n\n\n\nOBJJJJJJ")
-
     socket =
       socket
       |> assign(
@@ -82,7 +76,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
       |> assign_new(:objectives_tab, fn ->
         %{
-          objectives: objectives,
+          objectives: Sections.get_objectives_and_subobjectives(socket.assigns.section),
           filter_options:
             Sections.get_units_and_modules_from_a_section(socket.assigns.section.slug)
         }
