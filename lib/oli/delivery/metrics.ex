@@ -747,7 +747,7 @@ defmodule Oli.Delivery.Metrics do
       |> Enum.uniq()
 
     raw_proficiency_per_learning_objective =
-      raw_proficiency_by_learning_objective(
+      raw_proficiency_per_learning_objective(
         section.id,
         student_id: student_id,
         objective_ids: unique_objective_and_subobjective_ids
@@ -807,16 +807,16 @@ defmodule Oli.Delivery.Metrics do
 
   ## Examples
 
-      iex> raw_proficiency_by_learning_objective(123, objective_ids: [1, 2, 3], student_id: 42)
+      iex> raw_proficiency_per_learning_objective(123, objective_ids: [1, 2, 3], student_id: 42)
       # Query result with raw proficiency data for section 123, filtered by objectives [1, 2, 3] and student ID 42
 
-      iex> raw_proficiency_by_learning_objective(123)
+      iex> raw_proficiency_per_learning_objective(123)
       # Query result with raw proficiency data for all objectives in section 123
   """
-  @spec raw_proficiency_by_learning_objective(section_id :: integer, opts :: Keyword.t()) :: %{
+  @spec raw_proficiency_per_learning_objective(section_id :: integer, opts :: Keyword.t()) :: %{
           integer => tuple
         }
-  def raw_proficiency_by_learning_objective(section_id, opts \\ []) do
+  def raw_proficiency_per_learning_objective(section_id, opts \\ []) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
     maybe_filter_by_objective_id =
@@ -904,6 +904,7 @@ defmodule Oli.Delivery.Metrics do
   """
   def proficiency_per_student_across(section, container_id \\ nil)
 
+  # TODO: Use this
   def proficiency_per_student_across(
         %Section{analytics_version: _both, id: section_id} = section,
         container_id

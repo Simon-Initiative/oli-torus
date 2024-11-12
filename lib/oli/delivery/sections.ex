@@ -4774,10 +4774,10 @@ defmodule Oli.Delivery.Sections do
     proficiency_per_learning_objective =
       case student_id do
         nil ->
-          Metrics.raw_proficiency_by_learning_objective(section.id)
+          Metrics.raw_proficiency_per_learning_objective(section.id)
 
         student_id ->
-          Metrics.raw_proficiency_by_learning_objective(section.id, student_id: student_id)
+          Metrics.raw_proficiency_per_learning_objective(section.id, student_id: student_id)
       end
 
     # get the minimal fields for all objectives from the database

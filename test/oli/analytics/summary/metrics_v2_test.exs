@@ -52,15 +52,15 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
-      results = Metrics.raw_proficiency_by_learning_objective(section.id)
+      results = Metrics.raw_proficiency_per_learning_objective(section.id)
       assert Map.keys(results) |> Enum.count() == 2
       assert assert %{^id => {1, 5, 4, 10}, ^id2 => {10, 50, 40, 100}} = results
 
       assert %{^id => {0, 1, 2, 6}, ^id2 => {1, 3, 2, 6}} =
-               Metrics.raw_proficiency_by_learning_objective(section.id, student_id: user1.id)
+               Metrics.raw_proficiency_per_learning_objective(section.id, student_id: user1.id)
 
       assert %{^id => {1, 1, 2, 4}, ^id2 => {2, 4, 2, 4}} =
-               Metrics.raw_proficiency_by_learning_objective(section.id, student_id: user2.id)
+               Metrics.raw_proficiency_per_learning_objective(section.id, student_id: user2.id)
     end
 
     test "proficiency for page", %{
