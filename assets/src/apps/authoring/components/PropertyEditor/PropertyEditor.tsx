@@ -110,8 +110,6 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         // specifically using != instead of !== because `changed` is always a string
         // and the stakes here are not that high, we are just trying to avoid saving so many times
         if (newValue != changed) {
-          // console.log('ONBLUR TRIGGER SAVE');
-
           onChangeHandler(formData);
         }
         if (onfocusHandler) {
