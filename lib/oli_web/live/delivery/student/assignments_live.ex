@@ -136,7 +136,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       class="h-12 flex"
     >
       <div class="w-6 h-6 flex justify-center items-center">
-        <Icons.flag />
+        <.page_icon purpose={@assignment.purpose} completed={!is_nil(@assignment.raw_avg_score)} />
       </div>
       <div class="ml-2 mt-0.5 h-6 w-10 flex items-center text-left text-[#eeebf5]/75 text-sm font-semibold leading-none">
         <%= @assignment.numbering_index %>
@@ -211,8 +211,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         end_date: effective_settings.end_date,
         purpose: assignment.purpose,
         progress: progress_per_page_id[assignment.resource_id],
-        raw_avg_score:
-          raw_avg_score_per_page_id[assignment.resource_id] |> IO.inspect(label: "raw avg score"),
+        raw_avg_score: raw_avg_score_per_page_id[assignment.resource_id],
         max_attempts: effective_settings.max_attempts,
         attempts: user_resource_attempt_counts[assignment.resource_id] || 0,
         slug: assignment.revision_slug
@@ -222,4 +221,20 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   defp max_attempts(0), do: "∞"
   defp max_attempts(max_attempts), do: max_attempts
+
+  attr :completed, :boolean, required: true
+  attr :purpose, :atom, required: true
+
+  defp page_icon(assigns) do
+    ~H"""
+    <%= cond do %>
+      <% @purpose == :application -> %>
+        <Icons.exploration />
+      <% @completed -> %>
+        <Icons.square_checked />
+      <% true -> %>
+        <Icons.flag />
+    <% end %>
+    """
+  end
 end
