@@ -59,7 +59,7 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
 
       conn =
         conn
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
         |> recycle_author_session(admin)
 
       conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
@@ -170,7 +170,7 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
     )
 
     conn =
-      assign_current_author(
+      log_in_author(
         conn,
         map.author
       )

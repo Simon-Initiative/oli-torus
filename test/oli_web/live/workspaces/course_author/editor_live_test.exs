@@ -84,7 +84,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLiveTest do
       Seeder.base_project_with_resource2()
 
     conn =
-      assign_current_author(conn, author)
+      log_in_author(conn, author)
 
     %{project: project, author: author, revision: revision, conn: conn}
   end

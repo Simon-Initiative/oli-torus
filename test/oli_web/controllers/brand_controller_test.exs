@@ -163,7 +163,7 @@ defmodule OliWeb.BrandControllerTest do
 
     conn =
       conn
-      |> assign_current_author(admin)
+      |> log_in_author(admin)
 
     %{conn: conn, admin: admin}
   end

@@ -959,7 +959,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, %{})
-      |> assign_current_author(admin)
+      |> log_in_author(admin)
 
     # Add an orphan page to the section
     orphan_revision =
@@ -1115,7 +1115,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil, section_slug: map.section_1.slug)
-      |> assign_current_user(instructor)
+      |> log_in_user(instructor)
 
     # Add an orphan page to the section
     orphan_revision =
@@ -1271,7 +1271,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, %{})
-      |> assign_current_author(product_author)
+      |> log_in_author(product_author)
 
     {:ok,
      conn: conn,

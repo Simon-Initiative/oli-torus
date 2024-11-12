@@ -96,7 +96,7 @@ defmodule OliWeb.RegistrationControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.registration_path(conn, :show, registration.id))
       assert html_response(conn, 200) =~ "some updated auth_login_url"
@@ -136,7 +136,7 @@ defmodule OliWeb.RegistrationControllerTest do
 
       assert_raise Ecto.NoResultsError, fn ->
         recycle(conn)
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
         Institutions.get_registration!(registration.id)
       end
@@ -161,7 +161,7 @@ defmodule OliWeb.RegistrationControllerTest do
     # sign admin author in
     conn =
       recycle(conn)
-      |> assign_current_user(admin)
+      |> log_in_user(admin)
 
     %{conn: conn, registration: registration, institution: institution, admin: admin}
   end

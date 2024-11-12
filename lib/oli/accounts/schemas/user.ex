@@ -279,13 +279,44 @@ defmodule Oli.Accounts.User do
   end
 
   @doc """
+  Changeset for updating user details that are not related to authentication.
+  """
+  def details_changeset(user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :address,
+      :research_opt_out
+    ])
+    |> cast_embed(:preferences)
+    |> validate_required([:given_name, :family_name])
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
   Creates a changeset that doesn't require a current password, used for lower risk changes to user
   (as opposed to higher risk, like password changes)
   """
-  def noauth_changeset(user, attrs \\ %{}) do
+  def seed_changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [
       :sub,
+      :email,
+      :email_verified,
+      :email_confirmed_at,
       :name,
       :given_name,
       :family_name,
@@ -316,6 +347,9 @@ defmodule Oli.Accounts.User do
     |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
+
+  @deprecated "Use `details_changeset/2` instead"
+  def noauth_changeset(user, attrs \\ %{}), do: seed_changeset(user, attrs)
 
   @doc """
   Creates a changeset that can be used by an admin to update a user

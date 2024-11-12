@@ -25,7 +25,6 @@ defmodule OliWeb.ConnCase do
 
       import Oli.TestHelpers
       import Oli.AccountsFixtures
-      import OliWeb.ConnCase
 
       # The default endpoint for testing
       @endpoint OliWeb.Endpoint
@@ -40,57 +39,5 @@ defmodule OliWeb.ConnCase do
     end
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}
-  end
-
-  @doc """
-  Setup helper that registers and logs in users.
-
-      setup :register_and_log_in_user
-
-  It stores an updated connection and a registered user in the
-  test context.
-  """
-  def register_and_log_in_user(%{conn: conn}) do
-    user = Oli.AccountsFixtures.user_fixture()
-    %{conn: log_in_user(conn, user), user: user}
-  end
-
-  @doc """
-  Logs the given `user` into the `conn`.
-
-  It returns an updated `conn`.
-  """
-  def log_in_user(conn, user) do
-    token = Oli.Accounts.generate_user_session_token(user)
-
-    conn
-    |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:user_token, token)
-  end
-
-  @doc """
-  Setup helper that registers and logs in authors.
-
-      setup :register_and_log_in_author
-
-  It stores an updated connection and a registered author in the
-  test context.
-  """
-  def register_and_log_in_author(%{conn: conn}) do
-    author = Oli.AccountsFixtures.author_fixture()
-    %{conn: log_in_author(conn, author), author: author}
-  end
-
-  @doc """
-  Logs the given `author` into the `conn`.
-
-  It returns an updated `conn`.
-  """
-  def log_in_author(conn, author) do
-    token = Oli.Accounts.generate_author_session_token(author)
-
-    conn
-    |> Phoenix.ConnTest.init_test_session(%{})
-    |> Plug.Conn.put_session(:author_token, token)
   end
 end

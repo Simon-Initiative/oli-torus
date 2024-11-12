@@ -640,7 +640,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(instructor)
+        |> log_in_user(instructor)
 
       conn =
         get(
@@ -681,7 +681,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
 
       conn =
         recycle(conn)
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn =
         get(

@@ -44,7 +44,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         get(conn, Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
@@ -53,7 +53,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -72,7 +72,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -91,7 +91,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -110,7 +110,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -129,7 +129,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -160,7 +160,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -182,7 +182,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -203,7 +203,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -222,7 +222,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn =
         post(
@@ -342,8 +342,8 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
-      |> assign_current_user(user)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     {
       :ok,

@@ -98,42 +98,6 @@ defmodule Oli.TestHelpers do
     section
   end
 
-  # def user_fixture(attrs \\ %{}) do
-  #   params =
-  #     attrs
-  #     |> Enum.into(%{
-  #       sub: UUID.uuid4(),
-  #       name: "Ms Jane Marie Doe",
-  #       given_name: "Jane",
-  #       family_name: "Doe",
-  #       middle_name: "Marie",
-  #       picture: "https://platform.example.edu/jane.jpg",
-  #       email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
-  #       locale: "en-US"
-  #     })
-
-  #   {:ok, user} =
-  #     Oli.AccountsFixtures.user_fixture(params)
-
-  #   user
-  # end
-
-  # def author_fixture(attrs \\ %{}) do
-  #   params =
-  #     attrs
-  #     |> Enum.into(%{
-  #       email: "author#{System.unique_integer([:positive])}@example.edu",
-  #       given_name: "Test",
-  #       family_name: "Author",
-  #       system_role_id: Accounts.SystemRole.role_id().author
-  #     })
-
-  #   {:ok, author} =
-  #     Oli.AccountsFixtures.author_fixture(params)
-
-  #   author
-  # end
-
   def institution_fixture(attrs \\ %{}) do
     params =
       attrs
@@ -274,41 +238,88 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
+  @doc """
+  Setup helper that registers and logs in users.
+
+      setup :register_and_log_in_user
+
+  It stores an updated connection and a registered user in the
+  test context.
+  """
+  def register_and_log_in_user(%{conn: conn}, attrs \\ %{}) do
+    user = Oli.AccountsFixtures.user_fixture(attrs)
+    %{conn: log_in_user(conn, user), user: user}
+  end
+
+  @doc """
+  Logs the given `user` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_user(conn, user) do
+    token = Oli.Accounts.generate_user_session_token(user)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:user_token, token)
+    |> Plug.Conn.put_session(:current_user_id, user.id)
+  end
+
+  @doc """
+  Setup helper that registers and logs in authors.
+
+      setup :register_and_log_in_author
+
+  It stores an updated connection and a registered author in the
+  test context.
+  """
+  def register_and_log_in_author(%{conn: conn}, attrs \\ %{}) do
+    author = Oli.AccountsFixtures.author_fixture(attrs)
+    %{conn: log_in_author(conn, author), author: author}
+  end
+
+  @doc """
+  Logs the given `author` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_author(conn, author) do
+    token = Oli.Accounts.generate_author_session_token(author)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:author_token, token)
+    |> Plug.Conn.put_session(:current_author_id, author.id)
+  end
+
   def independent_instructor_conn(context), do: user_conn(context, %{can_create_sections: true})
-
-  def assign_current_user(conn, user) do
-    Plug.Conn.assign(conn, :current_user, user)
-  end
-
-  def assign_current_author(conn, author) do
-    Plug.Conn.assign(conn, :current_author, author)
-  end
 
   def user_conn(%{conn: conn}, attrs \\ %{}) do
     user = user_fixture(attrs)
-    conn = assign_current_user(conn, user)
+    conn = log_in_user(conn, user)
 
     {:ok, conn: conn, user: user}
   end
 
   def guest_conn(%{conn: conn}) do
     guest = user_fixture(%{guest: true})
-    conn = assign_current_user(conn, guest)
+    conn = log_in_user(conn, guest)
 
     {:ok, conn: conn, guest: guest}
   end
 
   def instructor_conn(%{conn: conn}) do
+    instructor = user_fixture(%{can_create_sections: true})
+
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
-        insert(:user, %{can_create_sections: true, independent_learner: true}),
+        instructor,
         [Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)]
       )
 
     conn =
       conn
-      |> Plug.Test.init_test_session(lti_session: nil)
-      |> assign_current_user(instructor)
+      |> log_in_user(instructor)
 
     {:ok, conn: conn, instructor: instructor}
   end
@@ -318,7 +329,7 @@ defmodule Oli.TestHelpers do
     tool_jwk = jwk_fixture()
     registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
     deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
-    instructor = insert(:user)
+    instructor = user_fixture(%{can_create_sections: true})
 
     cache_lti_params(
       %{
@@ -340,8 +351,7 @@ defmodule Oli.TestHelpers do
 
     conn =
       conn
-      |> Plug.Test.init_test_session(lti_session: nil)
-      |> assign_current_user(instructor)
+      |> log_in_user(instructor)
 
     {:ok, conn: conn, instructor: instructor}
   end
@@ -350,7 +360,7 @@ defmodule Oli.TestHelpers do
     author = author_fixture()
 
     conn =
-      assign_current_author(conn, author)
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author}
   end
@@ -360,7 +370,7 @@ defmodule Oli.TestHelpers do
     [project | _rest] = make_n_projects(1, author)
 
     conn =
-      assign_current_author(conn, author)
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author, project: project}
   end
@@ -373,7 +383,7 @@ defmodule Oli.TestHelpers do
       })
 
     conn =
-      assign_current_author(conn, admin)
+      log_in_author(conn, admin)
 
     {:ok, conn: conn, admin: admin}
   end
@@ -386,7 +396,7 @@ defmodule Oli.TestHelpers do
       })
 
     conn =
-      assign_current_author(
+      log_in_author(
         conn,
         account_admin
       )
@@ -402,7 +412,7 @@ defmodule Oli.TestHelpers do
       })
 
     conn =
-      assign_current_author(
+      log_in_author(
         conn,
         content_admin
       )
@@ -412,12 +422,12 @@ defmodule Oli.TestHelpers do
 
   def recycle_author_session(conn, author) do
     Phoenix.ConnTest.recycle(conn)
-    |> assign_current_author(author)
+    |> log_in_author(author)
   end
 
   def recycle_user_session(conn, user) do
     Phoenix.ConnTest.recycle(conn)
-    |> assign_current_user(user)
+    |> log_in_user(user)
   end
 
   def author_project_fixture(), do: author_project_fixture(nil)
@@ -435,7 +445,7 @@ defmodule Oli.TestHelpers do
     objective_revision = objective.objective_revision
 
     conn =
-      assign_current_author(conn, author)
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end

@@ -5,7 +5,7 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
 
   defp again(conn, user) do
     recycle(conn)
-    |> assign_current_user(user)
+    |> log_in_user(user)
   end
 
   describe "global extrinsic endpoints" do
@@ -82,8 +82,8 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
-      |> assign_current_user(user)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     {:ok,
      conn: conn,

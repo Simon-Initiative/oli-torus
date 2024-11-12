@@ -226,7 +226,7 @@ defmodule OliWeb.PublishLiveTest do
     } do
       conn =
         conn
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get(live_view_publish_route(project.slug))
 
       assert html_response(conn, 200) =~ "Publication Details"

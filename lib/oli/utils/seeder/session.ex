@@ -1,6 +1,7 @@
 defmodule Oli.Utils.Seeder.Session do
   import Oli.Utils.Seeder.Utils
 
+  alias Oli.TestHelpers
   alias OliWeb.{AuthorAuth, UserAuth}
 
   @doc """
@@ -9,9 +10,7 @@ defmodule Oli.Utils.Seeder.Session do
   def login_as_author(%{conn: conn} = seeds, author, _tags \\ []) do
     [author] = unpack(seeds, [author])
 
-    conn =
-      Plug.Test.init_test_session(conn, %{})
-      |> AuthorAuth.log_in_author(author)
+    conn = TestHelpers.log_in_author(conn, author)
 
     %{seeds | conn: conn}
   end
@@ -22,9 +21,7 @@ defmodule Oli.Utils.Seeder.Session do
   def login_as_user(%{conn: conn} = seeds, user, _tags \\ []) do
     [user] = unpack(seeds, [user])
 
-    conn =
-      Plug.Test.init_test_session(conn, %{})
-      |> UserAuth.log_in_user(user)
+    conn = TestHelpers.log_in_user(conn, user)
 
     %{seeds | conn: conn}
   end

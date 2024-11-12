@@ -381,7 +381,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       author = insert(:author, email: "author_account@test.com")
 
       conn =
-        assign_current_author(
+        log_in_author(
           conn,
           author
         )
@@ -458,7 +458,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
       author = insert(:author, email: "author_account@test.com")
 
       conn =
-        assign_current_author(
+        log_in_author(
           conn,
           author
         )

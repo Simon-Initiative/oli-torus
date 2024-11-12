@@ -145,7 +145,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
 
       new_author = Accounts.get_author_by_email(email)
       new_user = Accounts.get_user_by(%{email: email})

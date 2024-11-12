@@ -68,7 +68,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user_with_account_linked = insert(:user, author: author)
 
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           user_with_account_linked
         )
@@ -83,7 +83,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user_with_no_account_linked = insert(:user, author: nil)
 
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           user_with_no_account_linked
         )
@@ -98,7 +98,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user_with_no_account_linked = insert(:user, email: "some_user@test.com", author: nil)
 
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           user_with_no_account_linked
         )
@@ -118,7 +118,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
       conn =
         Phoenix.ConnTest.build_conn()
-        |> assign_current_user(user_with_no_account_linked)
+        |> log_in_user(user_with_no_account_linked)
         |> post(
           Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create,
             link_to_user_account?: "true",
@@ -261,7 +261,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user = insert(:user, email: "user_not_author@test.com")
 
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           user
         )
@@ -401,7 +401,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user = insert(:user)
 
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           user
         )
@@ -423,7 +423,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       user = insert(:user, email: "user_not_author@test.com")
 
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           user
         )

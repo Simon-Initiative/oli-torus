@@ -23,7 +23,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn =
         get(
@@ -53,7 +53,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn =
         get(
@@ -76,7 +76,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn =
         get(
@@ -93,7 +93,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     test "admin fails to update with an invalid user data", ctx do
       {:ok, view, _html} =
         Plug.Test.init_test_session(ctx.conn, [])
-        |> assign_current_author(ctx.admin)
+        |> log_in_author(ctx.admin)
         |> live(~p"/admin/users/#{ctx.independent_student.id}")
 
       view
@@ -173,7 +173,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
       conn =
         Plug.Test.init_test_session(conn, %{})
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn =
         get(
@@ -628,7 +628,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil, section_slug: map.section_1.slug)
-      |> assign_current_user(instructor)
+      |> log_in_user(instructor)
 
     {:ok,
      conn: conn,

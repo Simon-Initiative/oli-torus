@@ -174,7 +174,7 @@ defmodule OliWeb.ObjectivesControllerTest do
       |> Oli.Seeder.add_objective_with_children("parent2", [:child4], :parent2)
 
     conn =
-      assign_current_author(
+      log_in_author(
         conn,
         seeds.author
       )

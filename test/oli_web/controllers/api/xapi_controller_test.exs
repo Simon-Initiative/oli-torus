@@ -39,7 +39,7 @@ defmodule OliWeb.XAPIControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> assign_current_user(map.user2)
+        |> log_in_user(map.user2)
 
       conn = post(conn, Routes.xapi_path(conn, :emit), %{"event" => event, "key" => key})
       assert %{"result" => "failure"} = json_response(conn, 200)
@@ -287,7 +287,7 @@ defmodule OliWeb.XAPIControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       {:ok, conn: conn, map: map}
     end

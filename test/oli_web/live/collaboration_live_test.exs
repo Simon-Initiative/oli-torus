@@ -311,7 +311,7 @@ defmodule OliWeb.CollaborationLiveTest do
     } do
       conn =
         conn
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get(live_view_author_edit(project.slug, page_revision.slug))
 
       assert html_response(conn, 200) =~

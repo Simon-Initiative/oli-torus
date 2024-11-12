@@ -243,7 +243,7 @@ defmodule Oli.Accounts do
       sub: UUID.uuid4(),
       guest: true
     }
-    |> User.noauth_changeset(attrs)
+    |> User.registration_changeset(attrs)
     |> Repo.insert()
   end
 
@@ -340,10 +340,10 @@ defmodule Oli.Accounts do
       nil -> %User{sub: sub, independent_learner: false}
       user -> user
     end
-    |> User.noauth_changeset(changes)
+    |> User.lti_changeset(changes)
     |> Repo.insert_or_update()
     |> case do
-      {:ok, %User{id: user_id}} = res ->
+      {:ok, %User{}} = res ->
         res
 
       error ->
@@ -1057,7 +1057,7 @@ defmodule Oli.Accounts do
 
   """
   def change_user_details(user, attrs \\ %{}) do
-    User.noauth_changeset(user, attrs)
+    User.details_changeset(user, attrs)
   end
 
   @doc """

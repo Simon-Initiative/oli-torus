@@ -310,7 +310,7 @@ defmodule OliWeb.AuthorAuth do
     else
       conn
       |> put_flash(:error, "You must be an admin to access this page.")
-      |> redirect(to: ~p"/authors/log_in")
+      |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
   end
@@ -321,7 +321,7 @@ defmodule OliWeb.AuthorAuth do
     else
       conn
       |> put_flash(:error, "You must be an account admin to access this page.")
-      |> redirect(to: ~p"/authors/log_in")
+      |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
   end
@@ -332,7 +332,7 @@ defmodule OliWeb.AuthorAuth do
     else
       conn
       |> put_flash(:error, "You must be a content admin to access this page.")
-      |> redirect(to: ~p"/authors/log_in")
+      |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
   end
@@ -343,7 +343,7 @@ defmodule OliWeb.AuthorAuth do
     else
       conn
       |> put_flash(:error, "You must be a system admin to access this page.")
-      |> redirect(to: ~p"/authors/log_in")
+      |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     end
   end

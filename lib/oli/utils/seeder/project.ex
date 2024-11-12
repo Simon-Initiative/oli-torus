@@ -58,9 +58,9 @@ defmodule Oli.Utils.Seeder.Project do
     name = "Administrator"
 
     {:ok, admin} =
-      Author.noauth_changeset(%Author{}, %{
+      Author.seed_changeset(%Author{}, %{
         email: "#{Slug.slugify(name)}@test.com",
-        given_name: name,
+        name: name,
         system_role_id: SystemRole.role_id().system_admin
       })
       |> Repo.insert()

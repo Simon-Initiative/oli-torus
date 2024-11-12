@@ -89,7 +89,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
@@ -124,7 +124,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(user)
+        |> log_in_user(user)
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
@@ -434,7 +434,7 @@ defmodule OliWeb.LtiControllerTest do
         "state" => state
       }
 
-      conn = assign_current_user(conn, user)
+      conn = log_in_user(conn, user)
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 
@@ -476,7 +476,7 @@ defmodule OliWeb.LtiControllerTest do
         "state" => state
       }
 
-      conn = assign_current_author(conn, author)
+      conn = log_in_author(conn, author)
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 

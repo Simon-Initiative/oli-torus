@@ -63,7 +63,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
 
       conn = get(conn, redir_path)
 
@@ -111,7 +111,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -140,7 +140,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -162,7 +162,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -228,7 +228,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
          } do
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -260,7 +260,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum/")
 
       {:ok, view, _html} = live(conn)
@@ -294,7 +294,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
     } do
       conn =
         recycle(conn)
-        |> assign_current_author(author)
+        |> log_in_author(author)
         |> get("/authoring/project/#{project.slug}/curriculum")
         |> Map.put(
           :request_path,
@@ -789,7 +789,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
+      |> log_in_author(map.author)
 
     {:ok,
      conn: conn,

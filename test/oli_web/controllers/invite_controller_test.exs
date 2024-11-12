@@ -146,7 +146,7 @@ defmodule OliWeb.InviteControllerTest do
       |> Repo.insert()
 
     conn =
-      assign_current_author(conn, author)
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author}
   end

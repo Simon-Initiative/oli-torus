@@ -1222,8 +1222,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> assign_current_author(admin)
-      |> assign_current_user(user)
+      |> log_in_author(admin)
+      |> log_in_user(user)
 
     map
     |> Map.merge(%{

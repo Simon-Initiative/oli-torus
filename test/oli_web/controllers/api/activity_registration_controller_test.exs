@@ -51,7 +51,7 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
+      |> log_in_author(map.author)
 
     {:ok, conn: conn, map: map}
   end

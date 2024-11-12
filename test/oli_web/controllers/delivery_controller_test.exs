@@ -179,7 +179,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> assign_current_user(other_user)
+        |> log_in_user(other_user)
 
       {:ok, section} =
         Sections.update_section(section, %{
@@ -203,7 +203,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> assign_current_user(other_user)
+        |> log_in_user(other_user)
 
       {:ok, section} = Sections.update_section(section, %{registration_open: false})
 
@@ -427,7 +427,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> assign_current_user(other_user)
+        |> log_in_user(other_user)
 
       {:ok, section} =
         Sections.update_section(section, %{
@@ -903,8 +903,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
     conn =
       conn
-      |> assign_current_user(user)
-      |> assign_current_author(author)
+      |> log_in_user(user)
+      |> log_in_author(author)
 
     {:ok,
      conn: conn,
@@ -927,7 +927,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> assign_current_user(user)
+      |> log_in_user(user)
 
     map = Seeder.base_project_with_resource4()
 

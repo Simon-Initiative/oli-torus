@@ -408,7 +408,7 @@ defmodule OliWeb.ActivityControllerTest do
     assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
 
     conn =
-      assign_current_author(
+      log_in_author(
         conn,
         seeds.author
       )

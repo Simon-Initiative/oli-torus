@@ -25,7 +25,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
       instructor: instructor
     } do
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           instructor
         )
@@ -83,7 +83,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
       instructor: instructor
     } do
       conn =
-        assign_current_user(
+        log_in_user(
           conn,
           instructor
         )
@@ -217,8 +217,8 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
-      |> assign_current_user(user)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     {:ok,
      instructor: instructor,

@@ -8,7 +8,7 @@ defmodule Oli.Accounts.Author do
 
   schema "authors" do
     field :email, :string
-    field :email_verified, :boolean, virtual: true, default: false
+    field :email_verified, :boolean, virtual: true
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
@@ -222,12 +222,14 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc """
-  Creates a changeset that doesnt require a current password, used for lower risk changes to author
-  (as opposed to higher risk, like password changes)
+  Changeset for updating authors details that are not related to authentication.
   """
-  def noauth_changeset(author, attrs \\ %{}) do
+  def details_changeset(author, attrs \\ %{}) do
     author
     |> cast(attrs, [
+      :email,
+      :email_verified,
+      :name,
       :given_name,
       :family_name,
       :picture
@@ -237,6 +239,9 @@ defmodule Oli.Accounts.Author do
     |> default_system_role()
     |> maybe_name_from_given_and_family()
   end
+
+  @deprecated "Use `details_changeset/2` instead"
+  def noauth_changeset(author, attrs \\ %{}), do: details_changeset(author, attrs)
 
   @doc """
   Creates a changeset that can be used by an admin to update an author
@@ -261,7 +266,7 @@ defmodule Oli.Accounts.Author do
 
   @doc """
   Creates a changeset that can be used by the seed script to bootstrap the admin user.
-  This changeset should not be used in any other context.
+  This changeset should only be used in seed scripts or tests.
   """
   def seed_changeset(author, attrs \\ %{}) do
     author
@@ -277,6 +282,7 @@ defmodule Oli.Accounts.Author do
       :email_confirmed_at
     ])
     |> maybe_hash_password([])
+    |> maybe_name_from_given_and_family()
   end
 
   @doc """

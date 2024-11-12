@@ -733,7 +733,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> assign_current_author(admin)
+      |> log_in_author(admin)
 
     {:ok, Map.merge(map, %{conn: conn, admin: admin})}
   end
@@ -753,7 +753,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> assign_current_user(instructor)
+      |> log_in_user(instructor)
 
     {:ok, Map.merge(map, %{conn: conn, instructor: instructor})}
   end

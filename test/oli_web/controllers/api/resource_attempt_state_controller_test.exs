@@ -7,7 +7,7 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
 
   defp again(conn, user) do
     recycle(conn)
-    |> assign_current_user(user)
+    |> log_in_user(user)
   end
 
   describe "attempt extrinsic endpoints" do
@@ -107,8 +107,8 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
-      |> assign_current_user(user)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     map = Map.put(map, :the_page, %{resource: map.page1, revision: map.revision1})
     map = Map.put(map, :section, section)

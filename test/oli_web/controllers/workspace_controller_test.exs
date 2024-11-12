@@ -49,7 +49,7 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, _} = Oli.Accounts.delete_author(author)
 
       conn =
-        assign_current_author(conn, author2)
+        log_in_author(conn, author2)
 
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert html_response(conn, 200) =~ "Projects"

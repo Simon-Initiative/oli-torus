@@ -53,7 +53,7 @@ defmodule OliWeb.DeploymentControllerTest do
       # validate the new deployment exists on the institution details page
       conn =
         recycle(conn)
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
       assert html_response(conn, 200) =~ "some deployment_id"
@@ -127,7 +127,7 @@ defmodule OliWeb.DeploymentControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_author(admin)
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
       assert html_response(conn, 200) =~ "some updated deployment_id"
@@ -202,7 +202,7 @@ defmodule OliWeb.DeploymentControllerTest do
     # sign admin author in
     conn =
       conn
-      |> assign_current_author(admin)
+      |> log_in_author(admin)
 
     %{
       conn: conn,

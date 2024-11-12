@@ -202,7 +202,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       author = insert(:author)
 
       conn =
-        assign_current_author(conn, author)
+        log_in_author(conn, author)
 
       {:error, {:redirect, %{flash: %{"error" => flash_message}, to: redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
@@ -218,7 +218,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       author: author_project_creator
     } do
       conn =
-        assign_current_author(
+        log_in_author(
           conn,
           author_project_creator
         )
@@ -239,7 +239,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
 
       conn =
         conn
-        |> assign_current_user(user)
+        |> log_in_user(user)
         |> get(revision_history_route(project.slug, container_revision.slug))
 
       assert response(conn, 302)

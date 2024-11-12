@@ -135,7 +135,7 @@ defmodule OliWeb.PageLifecycleTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_user(user)
+      |> log_in_user(user)
 
     {:ok, conn: conn, map: map}
   end

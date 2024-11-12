@@ -195,7 +195,7 @@ defmodule OliWeb.ResourceControllerTest do
       |> Oli.Seeder.add_adaptive_page()
 
     conn =
-      assign_current_author(
+      log_in_author(
         conn,
         seeds.author
       )

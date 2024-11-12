@@ -5,7 +5,7 @@ defmodule OliWeb.TagControllerTest do
 
   defp again(conn, user) do
     recycle(conn)
-    |> assign_current_user(user)
+    |> log_in_user(user)
   end
 
   describe "tag endpoint" do
@@ -73,7 +73,7 @@ defmodule OliWeb.TagControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> assign_current_author(map.author)
+      |> log_in_author(map.author)
 
     {:ok, conn: conn, map: map, author: map.author, project: map.project}
   end

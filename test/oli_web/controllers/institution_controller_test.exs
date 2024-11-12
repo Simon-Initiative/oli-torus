@@ -95,7 +95,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
       conn =
         recycle(conn)
-        |> assign_current_user(author)
+        |> log_in_user(author)
 
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some updated country_code"
@@ -138,7 +138,7 @@ defmodule OliWeb.InstitutionControllerTest do
     {:ok, institution} = create_attrs |> Institutions.create_institution()
 
     conn =
-      assign_current_author(conn, author)
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author, institution: institution}
   end

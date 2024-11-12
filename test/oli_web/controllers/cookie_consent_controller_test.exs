@@ -137,8 +137,8 @@ defmodule OliWeb.CookieConsentControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> assign_current_author(map.author)
-      |> assign_current_user(user)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     {:ok,
      conn: conn,
