@@ -3,18 +3,18 @@ defmodule OliWeb.Components.Delivery.Students do
 
   import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
 
-  alias Phoenix.LiveView.JS
-
+  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.{SearchInput, Params, Utils}
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Components.Delivery.CardHighlights
-  alias OliWeb.Delivery.Sections.EnrollmentsTableModel
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Icons
-  alias Lti_1p3.Tool.ContextRoles
   alias OliWeb.Delivery.Content.Progress
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
+  alias OliWeb.Delivery.Sections.EnrollmentsTableModel
+  alias OliWeb.Icons
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView.JS
 
   @default_params %{
     offset: 0,
@@ -532,7 +532,7 @@ defmodule OliWeb.Components.Delivery.Students do
           <% end %>
         </div>
 
-        <div class="flex gap-2 mx-9 my-4 ">
+        <div class="flex gap-2 mx-9 mt-4 mb-10 ">
           <form for="search" phx-target={@myself} phx-change="search_student" class="w-56">
             <SearchInput.render
               id="students_search_input"
@@ -578,6 +578,7 @@ defmodule OliWeb.Components.Delivery.Students do
           limit_change={JS.push("paged_table_limit_change", target: @myself)}
           show_limit_change={true}
         />
+        <HTMLComponents.view_example_student_progress_modal />
       </div>
     </div>
     """

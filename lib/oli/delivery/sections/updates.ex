@@ -166,7 +166,7 @@ defmodule Oli.Delivery.Sections.Updates do
 
         Sections.update_section_project_publication(section, project_id, new_publication.id)
 
-        cull_unreachable_pages(section)
+        cull_unreachable_pages(section, diff)
 
         Logger.info(
           "perform_update.MINOR: section[#{section.slug}] #{Oli.Timing.elapsed(mark) / 1000 / 1000}ms"
@@ -276,7 +276,7 @@ defmodule Oli.Delivery.Sections.Updates do
     Sections.update_section_project_publication(section, project_id, new_publication.id)
 
     with {:ok, _} <- update_container_children(section, prev_publication, new_publication),
-         {:ok, _} <- cull_unreachable_pages(section),
+         {:ok, _} <- cull_unreachable_pages(section, diff),
          {:ok, _} <- Oli.Delivery.PreviousNextIndex.rebuild(section),
          {:ok, _} <- Sections.rebuild_contained_pages(section),
          {:ok, _} <- Sections.rebuild_contained_objectives(section) do
@@ -353,7 +353,7 @@ defmodule Oli.Delivery.Sections.Updates do
     [section_resource | section_resources]
   end
 
-  defp cull_unreachable_pages(section) do
+  defp cull_unreachable_pages(section, %PublicationDiff{to_pub: publication, all_links: all_links}) do
     section_id = section.id
 
     map =
@@ -373,18 +373,24 @@ defmodule Oli.Delivery.Sections.Updates do
       end)
       |> List.flatten()
 
-    publication_ids =
-      Oli.Repo.all(Oli.Delivery.Sections.SectionsProjectsPublications, section_id: section.id)
-      |> Enum.map(fn spp -> spp.publication_id end)
-
     unreachable_page_resource_ids =
       case section.required_survey_resource_id do
         nil ->
-          Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, hierarchy_ids)
+          Oli.Delivery.Sections.determine_unreachable_pages(
+            [publication.id],
+            hierarchy_ids,
+            all_links
+          )
 
         id ->
-          Oli.Delivery.Sections.determine_unreachable_pages(publication_ids, [id | hierarchy_ids])
+          Oli.Delivery.Sections.determine_unreachable_pages(
+            [publication.id],
+            [id | hierarchy_ids],
+            all_links
+          )
       end
+
+    project_id = publication.project_id
 
     case unreachable_page_resource_ids do
       [] ->
@@ -392,7 +398,10 @@ defmodule Oli.Delivery.Sections.Updates do
 
       _ ->
         from(sr in SectionResource,
-          where: sr.section_id == ^section_id and sr.resource_id in ^unreachable_page_resource_ids
+          where:
+            sr.project_id == ^project_id and
+              sr.section_id == ^section_id and
+              sr.resource_id in ^unreachable_page_resource_ids
         )
         |> Repo.delete_all()
 
