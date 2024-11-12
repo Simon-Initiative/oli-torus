@@ -825,7 +825,9 @@ defmodule Oli.Delivery.Metrics do
         else: true
 
     maybe_filter_by_student_id =
-      if opts[:student_id], do: dynamic([s], s.resource_id == ^opts[:student_id]), else: true
+      if opts[:student_id],
+        do: dynamic([s], s.user_id == ^opts[:student_id]),
+        else: dynamic([s], s.user_id == -1)
 
     from(summary in Oli.Analytics.Summary.ResourceSummary,
       where:
