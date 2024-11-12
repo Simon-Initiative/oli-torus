@@ -17,7 +17,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
      assign(socket,
        active_tab: :assignments,
        assignments: get_assignments(section, current_user_id)
-     ), temporary_assigns: [assignments: [], section: %{}]}
+     ), temporary_assigns: [assignments: []]}
   end
 
   def handle_info(:gc, socket) do
@@ -31,7 +31,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <.top_hero_banner />
     <div class="flex justify-center py-9 px-20 w-full">
-      <.assignments_agenda assignments={@assignments} ctx={@ctx} />
+      <.assignments_agenda assignments={@assignments} ctx={@ctx} section_slug={@section.slug} />
     </div>
     """
   end
@@ -54,6 +54,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   attr :assignments, :list, required: true
   attr :ctx, SessionContext, required: true
+  attr :section_slug, :string, required: true
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -75,7 +76,16 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         } />
       </div>
       <div role="assignments details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
-        <.assignment :for={assignment <- @assignments} assignment={assignment} ctx={@ctx} />
+        <.assignment
+          :for={assignment <- @assignments}
+          assignment={assignment}
+          ctx={@ctx}
+          target={
+            Utils.lesson_live_path(@section_slug, assignment.slug,
+              request_path: ~p"/sections/#{@section_slug}/assignments"
+            )
+          }
+        />
       </div>
     </div>
     """
@@ -83,6 +93,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   attr :assignment, :map, required: true
   attr :ctx, SessionContext, required: true
+  attr :target, :string, required: true, doc: "The target URL for the assignment"
 
   def assignment(assigns) do
     ~H"""
@@ -98,9 +109,12 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <%= @assignment.numbering_index %>
       </div>
       <div class="h-12 flex flex-col justify-between mr-6 flex-1 min-w-0">
-        <div class="h-6 mt-0.5 text-[#eeebf5] text-base font-semibold leading-normal whitespace-nowrap truncate">
+        <.link
+          navigate={@target}
+          class="h-6 mt-0.5 text-[#eeebf5] text-base font-semibold leading-normal whitespace-nowrap truncate"
+        >
           <%= @assignment.title %>
-        </div>
+        </.link>
         <span class="text-[#eeebf5]/75 text-xs font-semibold leading-3 whitespace-nowrap truncate">
           <%= Utils.label_for_scheduling_type(@assignment.scheduling_type) %> <%= FormatDateTime.to_formatted_datetime(
             @assignment.end_date,
@@ -167,7 +181,8 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         raw_avg_score:
           raw_avg_score_per_page_id[assignment.resource_id] |> IO.inspect(label: "raw avg score"),
         max_attempts: effective_settings.max_attempts,
-        attempts: user_resource_attempt_counts[assignment.resource_id] || 0
+        attempts: user_resource_attempt_counts[assignment.resource_id] || 0,
+        slug: assignment.revision_slug
       }
     end)
   end
