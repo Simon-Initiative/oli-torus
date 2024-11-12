@@ -9,6 +9,7 @@ defmodule Oli.Publishing.Publications.PublicationDiff do
     :changes,
     :from_pub,
     :to_pub,
+    :all_links,
     :created_at
   ]
 
@@ -20,6 +21,7 @@ defmodule Oli.Publishing.Publications.PublicationDiff do
     :changes,
     :from_pub,
     :to_pub,
+    :all_links,
     :created_at
   ]
 
@@ -31,6 +33,7 @@ defmodule Oli.Publishing.Publications.PublicationDiff do
           changes: Map.t(),
           from_pub: Publication.t(),
           to_pub: Publication.t(),
+          all_links: List.t(),
           created_at: DateTime.t()
         }
 end

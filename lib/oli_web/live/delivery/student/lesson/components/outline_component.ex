@@ -65,7 +65,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     ~H"""
     <div
       id="outline_panel"
-      class="h-full max-h-screen w-[360px] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex"
+      class="h-[calc(100vh-170px)] max-h-screen w-[360px] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex"
     >
       <div
         phx-click="toggle_outline_sidebar"

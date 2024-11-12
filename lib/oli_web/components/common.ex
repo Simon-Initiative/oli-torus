@@ -586,6 +586,12 @@ defmodule OliWeb.Components.Common do
   attr(:percent, :integer, required: true)
   attr(:width, :string, default: "100%")
   attr(:show_percent, :boolean, default: true)
+
+  attr(:show_halo, :boolean,
+    default: false,
+    doc: "shows a blurry halo at the end of the progress bar"
+  )
+
   attr(:role, :string, default: "progress_bar")
   attr(:height, :string, default: "h-1")
   attr(:rounded, :string, default: "rounded-[60px]")
@@ -608,7 +614,7 @@ defmodule OliWeb.Components.Common do
   def progress_bar(assigns) do
     ~H"""
     <div class="flex flex-row items-center gap-3 mx-auto w-full" role={@role}>
-      <div class="flex justify-center w-full">
+      <div class="flex justify-center w-full relative">
         <div class={"#{@rounded} #{@height} #{@not_completed_colour}"} style={"width: #{@width}"}>
           <div
             role="progress"
@@ -619,6 +625,14 @@ defmodule OliWeb.Components.Common do
             style={"width: #{if @percent == 0, do: 1, else: @percent}%"}
           >
           </div>
+        </div>
+
+        <div
+          :if={@show_halo}
+          role="halo"
+          class="absolute -top-[5px] z-50 w-6 h-3.5 bg-[#39e581]/40 rounded-[47px] blur-[8px]"
+          style={"left: #{@percent}%; transform: translateX(-12px);"}
+        >
         </div>
       </div>
       <div
