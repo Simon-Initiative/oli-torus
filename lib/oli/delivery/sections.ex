@@ -4774,10 +4774,10 @@ defmodule Oli.Delivery.Sections do
     proficiency_per_learning_objective =
       case student_id do
         nil ->
-          Metrics.raw_proficiency_per_learning_objective(section)
+          Metrics.raw_proficiency_by_learning_objective(section.id)
 
         student_id ->
-          Metrics.raw_proficiency_for_student_per_learning_objective(section, student_id)
+          Metrics.raw_proficiency_by_learning_objective(section.id, student_id: student_id)
       end
 
     # get the minimal fields for all objectives from the database
@@ -4833,8 +4833,8 @@ defmodule Oli.Delivery.Sections do
       Enum.reduce(top_level_objectives, %{}, fn obj, map ->
         aggregation =
           Enum.reduce(obj.children, {0, 0}, fn child, {correct, total} ->
-            {child_correct, child_total} =
-              Map.get(proficiency_per_learning_objective, child, {0, 0})
+            {child_attempts_correct, child_first_attempts, child_correct, child_total} =
+              Map.get(proficiency_per_learning_objective, child, {0, 0, 0, 0})
 
             {correct + child_correct, total + child_total}
           end)
@@ -4849,8 +4849,8 @@ defmodule Oli.Delivery.Sections do
       case Map.has_key?(parent_map, objective.resource_id) do
         # this is a top-level objective
         false ->
-          {correct, total} =
-            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0})
+          {_, _, correct, total} =
+            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0, 0, 0})
 
           objective =
             Map.merge(objective, %{
@@ -4869,8 +4869,12 @@ defmodule Oli.Delivery.Sections do
             Enum.map(objective.children, fn child ->
               sub_objective = Map.get(lookup_map, child)
 
-              {correct, total} =
-                Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
+              {_, _, correct, total} =
+                Map.get(
+                  proficiency_per_learning_objective,
+                  sub_objective.resource_id,
+                  {0, 0, 0, 0}
+                )
 
               Map.merge(sub_objective, %{
                 objective: objective.title,

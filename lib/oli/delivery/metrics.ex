@@ -747,10 +747,10 @@ defmodule Oli.Delivery.Metrics do
       |> Enum.uniq()
 
     raw_proficiency_per_learning_objective =
-      raw_proficiency_for_student_per_learning_objective(
-        section,
-        student_id,
-        unique_objective_and_subobjective_ids
+      raw_proficiency_by_learning_objective(
+        section.id,
+        student_id: student_id,
+        objective_ids: unique_objective_and_subobjective_ids
       )
 
     Enum.into(learning_objectives, %{}, fn rev ->
@@ -796,88 +796,57 @@ defmodule Oli.Delivery.Metrics do
     proficiency_range(proficiency_value, first_count)
   end
 
-  def raw_proficiency_per_learning_objective(%Section{id: section_id}) do
+  @doc """
+  Retrieves raw proficiency data for a specific section and set of learning objectives,
+  optionally filtering by a list of objective IDs or a specific student ID.
+
+  ## Options
+
+    * `:objective_ids` - (optional) a list of objective IDs to filter the data by specific objectives.
+    * `:student_id` - (optional) an ID of a student to filter data by a specific student.
+
+  ## Examples
+
+      iex> raw_proficiency_by_learning_objective(123, objective_ids: [1, 2, 3], student_id: 42)
+      # Query result with raw proficiency data for section 123, filtered by objectives [1, 2, 3] and student ID 42
+
+      iex> raw_proficiency_by_learning_objective(123)
+      # Query result with raw proficiency data for all objectives in section 123
+  """
+  @spec raw_proficiency_by_learning_objective(section_id :: integer, opts :: Keyword.t()) :: %{
+          integer => tuple
+        }
+  def raw_proficiency_by_learning_objective(section_id, opts \\ []) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
-    query =
-      from(summary in Oli.Analytics.Summary.ResourceSummary,
-        where:
-          summary.section_id == ^section_id and
-            summary.project_id == -1 and
-            summary.publication_id == -1 and
-            summary.user_id == -1 and
-            summary.resource_type_id == ^objective_type_id,
-        select: {
-          summary.resource_id,
+    maybe_filter_by_objective_id =
+      if opts[:objective_ids],
+        do: dynamic([s], s.resource_id in ^opts[:objective_ids]),
+        else: true
+
+    maybe_filter_by_student_id =
+      if opts[:student_id], do: dynamic([s], s.resource_id == ^opts[:student_id]), else: true
+
+    from(summary in Oli.Analytics.Summary.ResourceSummary,
+      where:
+        summary.section_id == ^section_id and
+          summary.project_id == -1 and
+          summary.publication_id == -1 and
+          summary.resource_type_id == ^objective_type_id,
+      where: ^maybe_filter_by_objective_id,
+      where: ^maybe_filter_by_student_id,
+      select: {
+        summary.resource_id,
+        {
           summary.num_first_attempts_correct,
           summary.num_first_attempts,
           summary.num_correct,
           summary.num_attempts
         }
-      )
-
-    Repo.all(query)
-    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts,
-                            num_correct, num_total},
-                           acc ->
-      Map.put(
-        acc,
-        objective_id,
-        {num_first_attempts_correct, num_first_attempts, num_correct, num_total}
-      )
-    end)
-  end
-
-  def raw_proficiency_for_student_per_learning_objective(
-        section,
-        studend_id,
-        objective_ids \\ nil
-      )
-
-  def raw_proficiency_for_student_per_learning_objective(
-        %Section{analytics_version: _both, id: section_id},
-        student_id,
-        objective_ids
-      ) do
-    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
-
-    filter_by_objective_id =
-      case objective_ids do
-        nil ->
-          true
-
-        _ ->
-          dynamic([summary], summary.resource_id in ^objective_ids)
-      end
-
-    query =
-      from(summary in Oli.Analytics.Summary.ResourceSummary,
-        where:
-          summary.section_id == ^section_id and
-            summary.project_id == -1 and
-            summary.publication_id == -1 and
-            summary.user_id == ^student_id and
-            summary.resource_type_id == ^objective_type_id,
-        where: ^filter_by_objective_id,
-        select: {
-          summary.resource_id,
-          summary.num_first_attempts_correct,
-          summary.num_first_attempts,
-          summary.num_correct,
-          summary.num_attempts
-        }
-      )
-
-    Repo.all(query)
-    |> Enum.reduce(%{}, fn {objective_id, num_first_attempts_correct, num_first_attempts,
-                            num_correct, num_total},
-                           acc ->
-      Map.put(
-        acc,
-        objective_id,
-        {num_first_attempts_correct, num_first_attempts, num_correct, num_total}
-      )
-    end)
+      }
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   @doc """
