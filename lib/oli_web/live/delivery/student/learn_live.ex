@@ -1376,7 +1376,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         phx-click="toggle_completed_pages"
         phx-value-module_resource_id={@module["resource_id"]}
       >
-        <div class="w-8 h-8 flex justify-center items-center">
+        <div class="w-8 h-8 flex justify-center items-center dark:stroke-white stroke-black/70 dark:fill-white fill-black/70">
           <Icons.visible :if={!@show_completed_pages} />
           <Icons.hidden :if={@show_completed_pages} />
         </div>

@@ -1199,7 +1199,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 19 18"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      class="dark:stroke-white stroke-black/70"
+      stroke="currentColor"
     >
       <g clip-path="url(#clip0_2850_70040)">
         <path
@@ -1217,7 +1217,7 @@ defmodule OliWeb.Icons do
       </g>
       <defs>
         <clipPath id="clip0_2850_70040">
-          <rect width="18" height="18" fill="white" transform="translate(0.5)" />
+          <rect width="18" height="18" fill="currentColor" transform="translate(0.5)" />
         </clipPath>
       </defs>
     </svg>
@@ -1227,12 +1227,12 @@ defmodule OliWeb.Icons do
   def hidden(assigns) do
     ~H"""
     <svg
-      class="dark:stroke-white stroke-black/70"
       role="hidden icon"
       width="19"
+      fill="none"
+      stroke="currentColor"
       height="18"
       viewBox="0 0 19 18"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <g clip-path="url(#clip0_2850_70060)">
@@ -1257,12 +1257,7 @@ defmodule OliWeb.Icons do
       </g>
       <defs>
         <clipPath id="clip0_2850_70060">
-          <rect
-            width="18"
-            height="18"
-            class="dark:fill-white fill-black/70"
-            transform="translate(0.5)"
-          />
+          <rect width="18" fill="currentColor" height="18" transform="translate(0.5)" />
         </clipPath>
       </defs>
     </svg>
