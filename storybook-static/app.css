@@ -4190,6 +4190,14 @@ table.table-striped tbody tr:nth-child(even) {
   right: 1px;
 }
 
+.right-\[380px\] {
+  right: 380px;
+}
+
+.right-\[505px\] {
+  right: 505px;
+}
+
 .top-0 {
   top: 0px;
 }
@@ -4230,6 +4238,10 @@ table.table-striped tbody tr:nth-child(even) {
   top: 5rem;
 }
 
+.top-24 {
+  top: 6rem;
+}
+
 .top-3 {
   top: 0.75rem;
 }
@@ -4248,10 +4260,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-6 {
   top: 1.5rem;
-}
-
-.top-8 {
-  top: 2rem;
 }
 
 .top-\[16px\] {
@@ -5049,6 +5057,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 60%;
 }
 
+.h-32 {
+  height: 8rem;
+}
+
 .h-4 {
   height: 1rem;
 }
@@ -5265,10 +5277,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 70px;
 }
 
-.h-\[70vh\] {
-  height: 70vh;
-}
-
 .h-\[72px\] {
   height: 72px;
 }
@@ -5291,10 +5299,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-\[calc\(100vh-112px\)\] {
   height: calc(100vh - 112px);
-}
-
-.h-\[calc\(100vh-170px\)\] {
-  height: calc(100vh - 170px);
 }
 
 .h-\[calc\(100vh-180px\)\] {
@@ -5368,6 +5372,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-h-\[80vh\] {
   max-height: 80vh;
+}
+
+.max-h-\[calc\(100vh-96px\)\] {
+  max-height: calc(100vh - 96px);
 }
 
 .max-h-screen {
@@ -5730,6 +5738,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 40%;
 }
 
+.w-\[485px\] {
+  width: 485px;
+}
+
 .w-\[48px\] {
   width: 48px;
 }
@@ -5814,10 +5826,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-px {
   width: 1px;
-}
-
-.w-screen {
-  width: 100vw;
 }
 
 .min-w-\[2rem\] {
@@ -6776,14 +6784,14 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-left-radius: 0.375rem;
 }
 
+.rounded-b-xl {
+  border-bottom-right-radius: 0.75rem;
+  border-bottom-left-radius: 0.75rem;
+}
+
 .rounded-l {
   border-top-left-radius: 0.25rem;
   border-bottom-left-radius: 0.25rem;
-}
-
-.rounded-l-lg {
-  border-top-left-radius: 0.5rem;
-  border-bottom-left-radius: 0.5rem;
 }
 
 .rounded-l-sm {
@@ -6816,6 +6824,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-top-right-radius: 0.375rem;
 }
 
+.rounded-t-xl {
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+
 .rounded-bl-\[52px\] {
   border-bottom-left-radius: 52px;
 }
@@ -6838,6 +6851,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .rounded-tl-lg {
   border-top-left-radius: 0.5rem;
+}
+
+.rounded-tl-xl {
+  border-top-left-radius: 0.75rem;
 }
 
 .rounded-tr-lg {
@@ -7019,6 +7036,10 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#B0B0B0\] {
   --tw-border-opacity: 1;
   border-color: rgb(176 176 176 / var(--tw-border-opacity));
+}
+
+.border-\[\#D9D9D9\]\/75 {
+  border-color: rgb(217 217 217 / 0.75);
 }
 
 .border-\[\#E8E8E8\] {
@@ -7271,6 +7292,11 @@ table.table-striped tbody tr:nth-child(even) {
   background-color: rgb(0 128 255 / var(--tw-bg-opacity));
 }
 
+.bg-\[\#0080ff\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 128 255 / var(--tw-bg-opacity));
+}
+
 .bg-\[\#0CAF61\] {
   --tw-bg-opacity: 1;
   background-color: rgb(12 175 97 / var(--tw-bg-opacity));
@@ -7391,6 +7417,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#edeef7\] {
   --tw-bg-opacity: 1;
   background-color: rgb(237 238 247 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#f3f4f8\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(243 244 248 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#ffecde\] {
@@ -8088,6 +8119,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding: 0.25rem;
 }
 
+.p-1\.5 {
+  padding: 0.375rem;
+}
+
 .p-10 {
   padding: 2.5rem;
 }
@@ -8492,10 +8527,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-\[60px\] {
   padding-bottom: 60px;
-}
-
-.pb-\[80px\] {
-  padding-bottom: 80px;
 }
 
 .pl-0 {
@@ -9158,6 +9189,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(231 76 60 / var(--tw-text-opacity)) !important;
 }
 
+.\!text-white {
+  --tw-text-opacity: 1 !important;
+  color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
+}
+
 .\!text-zinc-300 {
   --tw-text-opacity: 1 !important;
   color: rgb(212 212 216 / var(--tw-text-opacity)) !important;
@@ -9191,6 +9227,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#0CAF61\] {
   --tw-text-opacity: 1;
   color: rgb(12 175 97 / var(--tw-text-opacity));
+}
+
+.text-\[\#0d70ff\] {
+  --tw-text-opacity: 1;
+  color: rgb(13 112 255 / var(--tw-text-opacity));
 }
 
 .text-\[\#1b67b2\] {
@@ -13429,6 +13470,12 @@ https://tailwindcss.com/docs/utility-first
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.hover\:scale-110:hover {
+  --tw-scale-x: 1.1;
+  --tw-scale-y: 1.1;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .hover\:scale-\[1\.02\]:hover {
   --tw-scale-x: 1.02;
   --tw-scale-y: 1.02;
@@ -13533,9 +13580,23 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(0 117 235 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-\[\#0080ff\]\/75:hover {
+  background-color: rgb(0 128 255 / 0.75);
+}
+
 .hover\:bg-\[\#F5F5F6\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 246 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-\[\#deecff\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(222 236 255 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-\[\#f2f8ff\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(242 248 255 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-black\/\[\.1\]:hover {
@@ -13700,6 +13761,11 @@ https://tailwindcss.com/docs/utility-first
 .hover\:text-\[\#1B67B2\]:hover {
   --tw-text-opacity: 1;
   color: rgb(27 103 178 / var(--tw-text-opacity));
+}
+
+.hover\:text-\[\#353740\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(53 55 64 / var(--tw-text-opacity));
 }
 
 .hover\:text-\[\#4CA6FF\]:hover {
@@ -14582,6 +14648,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(0 98 242 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-\[\#0062f2\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 98 242 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#030105\]\/\[\.15\] {
   background-color: rgb(3 1 5 / .15);
 }
@@ -14629,6 +14700,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:bg-\[\#1C1A20\] {
   --tw-bg-opacity: 1;
   background-color: rgb(28 26 32 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-\[\#1b191f\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(27 25 31 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#222126\] {
@@ -15347,6 +15423,11 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(20 20 22 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:hover\:bg-\[\#2e2b33\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(46 43 51 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:hover\:bg-\[\#33181A\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(51 24 26 / var(--tw-bg-opacity));
@@ -15401,6 +15482,10 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(239 68 68 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:hover\:bg-white\/10:hover {
+  background-color: rgb(255 255 255 / 0.1);
+}
+
 .dark .dark\:hover\:bg-white\/5:hover {
   background-color: rgb(255 255 255 / 0.05);
 }
@@ -15423,6 +15508,10 @@ https://tailwindcss.com/docs/utility-first
   background-color: rgb(34 33 38 / var(--tw-bg-opacity)) !important;
 }
 
+.dark .hover\:dark\:bg-\[\#0062f2\]\/75:hover {
+  background-color: rgb(0 98 242 / 0.75);
+}
+
 .dark .hover\:dark\:bg-\[\#262626\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(38 38 38 / var(--tw-bg-opacity));
@@ -15439,6 +15528,11 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:hover\:text-\[\#99CCFF\]:hover {
   --tw-text-opacity: 1;
   color: rgb(153 204 255 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-\[\#eeebf5\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(238 235 245 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:text-\[\#ef4444\]:hover {
@@ -16568,8 +16662,12 @@ https://tailwindcss.com/docs/utility-first
 }
 
 @media (min-width: 1280px) {
-  .xl\:mr-\[520px\] {
-    margin-right: 520px;
+  .xl\:mr-\[360px\] {
+    margin-right: 360px;
+  }
+
+  .xl\:mr-\[550px\] {
+    margin-right: 550px;
   }
 
   .xl\:mr-\[80px\] {
