@@ -75,7 +75,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
           </div>
         </:custom_footer>
       </Modal.modal>
-      <div class="w-screen flex flex-col items-center">
+      <div class="flex flex-col items-center">
         <div role="questions header" class="w-[1170px] pl-[189px]">
           <div class="flex w-full justify-between items-center mb-1">
             <div class="text-[#757682] text-xs font-normal leading-[18px] dark:text-white/80">

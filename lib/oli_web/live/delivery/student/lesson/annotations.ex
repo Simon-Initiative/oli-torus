@@ -20,24 +20,28 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def panel(assigns) do
     ~H"""
-    <div id="annotations_panel" class="flex-1 flex flex-row h-[calc(100vh-170px)] overflow-hidden">
-      <div class="justify-start">
-        <.toggle_notes_button>
-          <i class="fa-solid fa-xmark group-hover:scale-110"></i>
-        </.toggle_notes_button>
-      </div>
-      <div class="flex-1 flex flex-col bg-white dark:bg-black p-5 rounded-bl-lg">
-        <.tab_group class="py-3">
-          <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
-            <.user_icon class="mr-2" /> My Notes
-          </.tab>
-          <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
-            <.users_icon class="mr-2" /> Class Notes
-          </.tab>
-        </.tab_group>
-        <.search_box class="mt-2" search_term={@search_term} />
-        <hr class="m-6 border-b border-b-gray-200" />
-        <div class="h-[70vh] overflow-y-scroll">
+    <div
+      id="annotations_panel"
+      class="flex w-[485px] h-full max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl"
+    >
+      <div class="flex flex-col flex-1 bg-white dark:bg-black pb-5 rounded-bl-lg">
+        <button
+          phx-click="toggle_notes_sidebar"
+          class="self-stretch px-2 pb-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
+        >
+          <i class="fa-solid fa-xmark hover:scale-110"></i>
+        </button>
+        <div class="flex flex-col flex-1 overflow-hidden px-5">
+          <.tab_group class="py-3">
+            <.tab :if={not @is_instructor} name={:my_notes} selected={@active_tab == :my_notes}>
+              <.user_icon class="mr-2" /> My Notes
+            </.tab>
+            <.tab name={:class_notes} selected={@active_tab == :class_notes || @is_instructor}>
+              <.users_icon class="mr-2" /> Class Notes
+            </.tab>
+          </.tab_group>
+          <.search_box class="mt-2" search_term={@search_term} />
+          <hr class="m-6 border-b border-b-gray-200" />
           <%= case @search_results do %>
             <% nil -> %>
               <.annotations
@@ -71,7 +75,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp annotations(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
+    <div class="flex-1 flex flex-col gap-3 pb-2 overflow-y-scroll">
       <.add_new_annotation_input
         :if={@selected_point}
         class="my-2"
@@ -115,7 +119,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def search_results(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-col gap-3 overflow-y-auto pb-[80px]">
+    <div class="flex-1 flex flex-col gap-3 pb-2 overflow-y-scroll">
       <%= case @search_results do %>
         <% :loading -> %>
           <Common.loading_spinner />
@@ -198,15 +202,24 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   defp empty_label(:my_notes), do: "There are no notes yet"
   defp empty_label(_), do: "There are no posts yet"
 
+  attr :is_active, :boolean, required: true
   slot :inner_block, required: true
 
   def toggle_notes_button(assigns) do
     ~H"""
     <button
-      class="flex flex-col items-center rounded-l-lg bg-white dark:bg-black px-6 py-12 text-xl group"
-      phx-click="toggle_sidebar"
+      class={[
+        "flex flex-col items-center rounded-lg bg-white dark:bg-black hover:bg-[#deecff] dark:hover:bg-white/10 text-[#0d70ff] text-xl group",
+        if(@is_active,
+          do:
+            "!text-white bg-[#0080ff] dark:bg-[#0062f2] hover:bg-[#0080ff]/75 hover:dark:bg-[#0062f2]/75"
+        )
+      ]}
+      phx-click="toggle_notes_sidebar"
     >
-      <%= render_slot(@inner_block) %>
+      <div class="p-1.5 rounded justify-start items-center gap-2.5 inline-flex">
+        <%= render_slot(@inner_block) %>
+      </div>
     </button>
     """
   end
@@ -214,26 +227,52 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   def annotations_icon(assigns) do
     ~H"""
     <svg
-      width="24"
-      height="25"
-      viewBox="0 0 24 25"
+      width="32"
+      height="32"
+      viewBox="0 0 32 32"
+      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
-      class="group-hover:scale-110"
     >
-      <path
-        id="Path"
-        fill="#0064ed"
-        fill-rule="evenodd"
-        stroke="none"
-        d="M 9.51568 1.826046 C 5.766479 1.826046 2.727119 4.889919 2.727119 8.669355 C 2.727119 9.763306 2.98112 10.79484 3.432001 11.709678 C 3.53856 11.925805 3.55584 12.175646 3.48008 12.404678 L 2.330881 15.88008 L 5.81328 14.748066 C 6.03848 14.674919 6.283121 14.693466 6.494881 14.799678 C 7.40368 15.255725 8.42864 15.51266 9.51568 15.51266 C 13.264959 15.51266 16.304239 12.448791 16.304239 8.669355 C 16.304239 4.889919 13.264959 1.826046 9.51568 1.826046 Z M 0.91568 8.669355 C 0.91568 3.881369 4.76608 0 9.51568 0 C 14.26536 0 18.115759 3.881369 18.115759 8.669355 C 18.115759 13.457338 14.26536 17.338711 9.51568 17.338711 C 8.276159 17.338711 7.09592 17.073872 6.02928 16.596533 L 1.183681 18.171612 C 0.85872 18.277258 0.5024 18.189596 0.26216 17.945 C 0.021919 17.700485 -0.06144 17.340405 0.04648 17.01387 L 1.6472 12.173065 C 1.17672 11.100726 0.91568 9.914679 0.91568 8.669355 Z"
-      />
-      <path
-        id="path1"
-        fill="#0064ed"
-        fill-rule="evenodd"
-        stroke="none"
-        d="M 23.192719 16.158226 C 23.192719 11.929112 19.79184 8.500807 15.59664 8.500807 C 11.401441 8.500807 8.000481 11.929112 8.000481 16.158226 C 8.000481 20.387257 11.401441 23.815567 15.59664 23.815567 C 16.691441 23.815567 17.733999 23.581615 18.676081 23.16 L 22.955999 24.551207 C 23.243038 24.644514 23.55776 24.567179 23.77 24.351126 C 23.982239 24.135078 24.055841 23.817099 23.96048 23.528627 L 22.54664 19.252899 C 22.962162 18.305725 23.192719 17.258146 23.192719 16.158226 Z"
-      />
+      <g filter="url(#filter0_d_2057_37664)">
+        <path
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M12.8903 17.8698C12.3247 17.7741 11.7824 17.6087 11.2729 17.3825L7.43704 18.6194C7.17977 18.7023 6.89772 18.6335 6.70753 18.4415C6.51734 18.2494 6.45133 17.9667 6.53681 17.7102L7.80397 13.9089C7.43151 13.0668 7.22488 12.1354 7.22488 11.1575C7.22488 7.3976 10.2729 4.34961 14.0327 4.34961C17.7926 4.34961 20.8406 7.3976 20.8406 11.1575C20.8406 11.2264 20.8396 11.2951 20.8376 11.3636C23.1801 12.1853 24.8597 14.4161 24.8597 17.0393C24.8597 17.9031 24.6772 18.7257 24.3482 19.4695L25.4675 22.8272C25.543 23.0537 25.4847 23.3034 25.3167 23.473C25.1487 23.6427 24.8996 23.7034 24.6723 23.6302L21.2843 22.5377C20.5385 22.8688 19.7132 23.0525 18.8466 23.0525C15.8073 23.0525 13.2947 20.7978 12.8903 17.8698ZM8.65885 11.1575C8.65885 8.18955 11.0648 5.78358 14.0327 5.78358C16.9654 5.78358 19.3493 8.13265 19.4056 11.0518C19.2215 11.0348 19.0351 11.0261 18.8466 11.0261C15.7399 11.0261 13.1836 13.382 12.8665 16.4046C12.4362 16.3095 12.0257 16.1628 11.6414 15.9715C11.4738 15.888 11.2801 15.8735 11.1019 15.931L8.34515 16.8199L9.2549 14.0907C9.31483 13.9109 9.30114 13.7147 9.21681 13.545C8.85988 12.8265 8.65885 12.0165 8.65885 11.1575Z"
+        />
+      </g>
+      <defs>
+        <filter
+          id="filter0_d_2057_37664"
+          x="0.5"
+          y="0.349609"
+          width="31"
+          height="31.3105"
+          filterUnits="userSpaceOnUse"
+          color-interpolation-filters="sRGB"
+        >
+          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feColorMatrix
+            in="SourceAlpha"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
+            result="hardAlpha"
+          />
+          <feOffset dy="2" />
+          <feGaussianBlur stdDeviation="3" />
+          <feComposite in2="hardAlpha" operator="out" />
+          <feColorMatrix
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0.203922 0 0 0 0 0.388235 0 0 0 0.15 0"
+          />
+          <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_2057_37664" />
+          <feBlend
+            mode="normal"
+            in="SourceGraphic"
+            in2="effect1_dropShadow_2057_37664"
+            result="shape"
+          />
+        </filter>
+      </defs>
     </svg>
     """
   end
