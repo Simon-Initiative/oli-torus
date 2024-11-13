@@ -216,6 +216,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
 
   useEffect(() => {
     if (showPopup) {
+      //When the student opens the popup, userOpened changes to true and stays true even if the popup is closed.
       props.onSave({
         id,
         responses: [
