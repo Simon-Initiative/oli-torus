@@ -65,14 +65,14 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     ~H"""
     <div
       id="outline_panel"
-      class="h-[calc(100vh-170px)] max-h-screen w-[360px] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl shadow flex-col justify-start items-start gap-6 inline-flex"
+      class="flex flex-col w-[360px] h-full max-h-[calc(100vh-96px)] px-2 py-4 bg-white dark:bg-black text-[#353740] dark:text-[#eeebf5] mx-2 rounded-2xl gap-6"
     >
-      <div
+      <button
         phx-click="toggle_outline_sidebar"
         class="self-stretch px-2 justify-end items-center gap-2.5 inline-flex hover:cursor-pointer"
       >
         <i class="fa-solid fa-xmark hover:scale-110"></i>
-      </div>
+      </button>
       <div class="self-stretch h-12 px-2 flex-col justify-start items-start gap-4 flex">
         <div class="self-stretch py-2 justify-start items-center inline-flex">
           <div class="text-base font-bold leading-none">
@@ -82,8 +82,8 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         <div class="self-stretch h-0 flex-col justify-center items-center flex border-b border-[#D9D9D9]/75">
         </div>
       </div>
-      <div class="h-fit max-h-screen pl-2 overflow-y-auto pl-2 justify-start items-start gap-2 inline-flex">
-        <div class="grow shrink basis-0 self-stretch px-2 flex-col justify-start items-center gap-4 inline-flex">
+      <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
+        <div class="flex flex-1 flex-col overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex">
           <.outline_item
             :for={node <- @hierarchy["children"]}
             item={node}
@@ -192,7 +192,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
         ]}
       >
-        <div class="self-stretch justify-start items-start gap-1 inline-flex">
+        <div class="text-[#353740] dark:text-[#eeebf5] self-stretch justify-start items-start gap-1 inline-flex">
           <div>
             <%= if expanded? do %>
               <Icons.chevron_down width="20" height="20" />
@@ -282,12 +282,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
     """
   end
 
-  defp no_icon(assigns) do
-    ~H"""
-    <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
-    """
-  end
-
   defp resource_label(%{"resource_type_id" => resource_type_id} = resource) do
     container_id = ResourceType.id_for_container()
 
@@ -331,7 +325,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             <Icons.flag />
           </div>
         <% true -> %>
-          <.no_icon />
+          <Icons.no_icon />
       <% end %>
     </div>
     """

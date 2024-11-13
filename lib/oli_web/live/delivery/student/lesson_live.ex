@@ -709,15 +709,14 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <Annotations.delete_post_modal />
-    <div id="sticky_annotations_panel" class="absolute top-4 right-0 z-50 h-full">
-      <div class="sticky ml-auto top-20 right-0">
-        <div
-          :if={@active_sidebar_panel != :notes}
-          class={[
-            "absolute top-24",
-            if(@active_sidebar_panel == :outline, do: "right-[365px]", else: "right-0")
-          ]}
-        >
+    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+      <div class="sticky top-20 right-0">
+        <div class={[
+          "absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "right-[380px]"),
+          if(@active_sidebar_panel == :notes, do: "right-[505px]"),
+          if(@active_sidebar_panel == nil, do: "right-0")
+        ]}>
           <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
             <div class={[
               "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
@@ -726,7 +725,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
                 else: "rounded-tl-xl rounded-bl-xl"
               )
             ]}>
-              <Annotations.toggle_notes_button :if={@active_sidebar_panel != :notes}>
+              <Annotations.toggle_notes_button is_active={@active_sidebar_panel == :notes}>
                 <Annotations.annotations_icon />
               </Annotations.toggle_notes_button>
 
@@ -737,45 +736,34 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           </div>
         </div>
 
-        <div
-          :if={@active_sidebar_panel}
-          class={[
-            "flex flex-col",
-            if(@active_sidebar_panel == :notes,
-              do: "w-[520px]",
-              else: "w-[360px]"
-            )
-          ]}
-        >
-          <%= case @active_sidebar_panel do %>
-            <% :notes -> %>
-              <Annotations.panel
-                section_slug={@section.slug}
-                collab_space_config={@collab_space_config}
-                create_new_annotation={@annotations.create_new_annotation}
-                annotations={@annotations.posts}
-                current_user={@current_user}
-                is_instructor={@is_instructor}
-                active_tab={@annotations.active_tab}
-                search_results={@annotations.search_results}
-                search_term={@annotations.search_term}
-                selected_point={@annotations.selected_point}
-              />
-            <% :outline -> %>
-              <.live_component
-                module={OutlineComponent}
-                id="outline_component"
-                hierarchy={@hierarchy}
-                section_slug={@section.slug}
-                section_id={@section.id}
-                user_id={@current_user.id}
-                page_resource_id={@page_resource_id}
-                selected_view={@selected_view}
-              />
-            <% nil -> %>
-              <div></div>
-          <% end %>
-        </div>
+        <%= case @active_sidebar_panel do %>
+          <% :notes -> %>
+            <Annotations.panel
+              section_slug={@section.slug}
+              collab_space_config={@collab_space_config}
+              create_new_annotation={@annotations.create_new_annotation}
+              annotations={@annotations.posts}
+              current_user={@current_user}
+              is_instructor={@is_instructor}
+              active_tab={@annotations.active_tab}
+              search_results={@annotations.search_results}
+              search_term={@annotations.search_term}
+              selected_point={@annotations.selected_point}
+            />
+          <% :outline -> %>
+            <.live_component
+              module={OutlineComponent}
+              id="outline_component"
+              hierarchy={@hierarchy}
+              section_slug={@section.slug}
+              section_id={@section.id}
+              user_id={@current_user.id}
+              page_resource_id={@page_resource_id}
+              selected_view={@selected_view}
+            />
+          <% nil -> %>
+            <div></div>
+        <% end %>
       </div>
     </div>
 
@@ -829,6 +817,40 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+      <div class="sticky ml-auto top-20 right-0">
+        <div class={[
+          "absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "right-[380px]", else: "right-0")
+        ]}>
+          <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
+            <div class={[
+              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              if(@active_sidebar_panel,
+                do: "rounded-t-xl rounded-b-xl",
+                else: "rounded-tl-xl rounded-bl-xl"
+              )
+            ]}>
+              <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
+                <OutlineComponent.outline_icon />
+              </OutlineComponent.toggle_outline_button>
+            </div>
+          </div>
+        </div>
+
+        <.live_component
+          :if={@active_sidebar_panel == :outline}
+          module={OutlineComponent}
+          id="outline_component"
+          hierarchy={@hierarchy}
+          section_slug={@section.slug}
+          section_id={@section.id}
+          user_id={@current_user.id}
+          page_resource_id={@page_resource_id}
+          selected_view={@selected_view}
+        />
+      </div>
+    </div>
     <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
       <:header>
         <.page_header
@@ -852,26 +874,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
         <.references ctx={@ctx} bib_app_params={@bib_app_params} />
       </div>
-
-      <:sidebar_toggle>
-        <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
-          <OutlineComponent.outline_icon />
-        </OutlineComponent.toggle_outline_button>
-      </:sidebar_toggle>
-
-      <:sidebar>
-        <.live_component
-          :if={@active_sidebar_panel == :outline}
-          module={OutlineComponent}
-          id="outline_component"
-          hierarchy={@hierarchy}
-          section_slug={@section.slug}
-          section_id={@section.id}
-          user_id={@current_user.id}
-          page_resource_id={@page_resource_id}
-          selected_view={@selected_view}
-        />
-      </:sidebar>
     </.page_content_with_sidebar_layout>
     """
   end
@@ -1050,8 +1052,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   attr :active_sidebar_panel, :atom, default: nil
   slot :header, required: true
   slot :inner_block, required: true
-  slot :sidebar, default: nil
-  slot :sidebar_toggle, default: nil
   slot :point_markers, default: nil
 
   defp page_content_with_sidebar_layout(assigns) do
@@ -1059,7 +1059,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     <div class="flex-1 flex flex-col w-full">
       <div class={[
         "flex-1 flex flex-col overflow-auto",
-        if(@active_sidebar_panel == :notes, do: "xl:mr-[520px]"),
+        if(@active_sidebar_panel == :notes, do: "xl:mr-[550px]"),
         if(@active_sidebar_panel == :outline, do: "xl:mr-[360px]")
       ]}>
         <div class={[
@@ -1076,37 +1076,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         </div>
       </div>
     </div>
-    <%!-- <div
-      :if={@active_sidebar_panel != :notes}
-      class={[
-        "absolute top-20",
-        if(@active_sidebar_panel == :outline, do: "right-[378px]", else: "right-0")
-      ]}
-    >
-      <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
-        <div class={[
-          "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
-          if(@active_sidebar_panel,
-            do: "rounded-t-xl rounded-b-xl",
-            else: "rounded-tl-xl rounded-bl-xl"
-          )
-        ]}>
-          <%= render_slot(@sidebar_toggle) %>
-        </div>
-      </div>
-    </div>
-    <div
-      :if={@sidebar && @active_sidebar_panel}
-      class={[
-        "flex flex-col absolute",
-        if(@active_sidebar_panel == :notes,
-          do: "w-[520px] top-20 right-0 bottom-0",
-          else: "w-[360px] top-4 right-[18px] bottom-[18px]"
-        )
-      ]}
-    >
-      <%= render_slot(@sidebar) %>
-    </div> --%>
     """
   end
 

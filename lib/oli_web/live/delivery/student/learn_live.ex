@@ -1234,7 +1234,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id={"#{@type}_#{@row["resource_id"]}"}>
       <div class="w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex">
         <div class="justify-start items-start gap-5 flex">
-          <.no_icon />
+          <Icons.no_icon />
           <div class="w-[26px] justify-start items-center">
             <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
               <.numbering_index type={Atom.to_string(@type)} />
@@ -1595,7 +1595,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-module_resource_id={@module_resource_id}
     >
       <div class="justify-start items-start gap-5 flex">
-        <.no_icon />
+        <Icons.no_icon />
         <div class="w-[26px] justify-start items-center">
           <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
@@ -2198,12 +2198,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
       <%= if @type == "page", do: "#{@index}", else: " " %>
     </span>
-    """
-  end
-
-  defp no_icon(assigns) do
-    ~H"""
-    <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
     """
   end
 
