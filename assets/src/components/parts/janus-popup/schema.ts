@@ -434,4 +434,5 @@ export const adaptivitySchema = {
   isOpen: CapiVariableTypes.BOOLEAN,
   openByDefault: CapiVariableTypes.BOOLEAN,
   visible: CapiVariableTypes.BOOLEAN,
+  userOpened: CapiVariableTypes.BOOLEAN,
 };

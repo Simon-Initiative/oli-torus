@@ -55,6 +55,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
+        {
+          key: 'userOpened',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
       ],
     });
 
@@ -209,6 +214,20 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     };
   }, [props.notify]);
 
+  useEffect(() => {
+    if (showPopup) {
+      props.onSave({
+        id,
+        responses: [
+          {
+            key: 'userOpened',
+            type: CapiVariableTypes.BOOLEAN,
+            value: true,
+          },
+        ],
+      });
+    }
+  }, [showPopup]);
   const iconTriggerStyle: CSSProperties = {
     width,
     height,
