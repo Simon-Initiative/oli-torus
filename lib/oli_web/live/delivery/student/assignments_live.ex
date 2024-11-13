@@ -104,13 +104,15 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             ) %> Assignments
           </span>
         </div>
-        <DeliveryUtils.toggle_visibility_button target_selector={
-          ~s{div[role="assignment detail"][data-completed="true"]}
-        } />
+        <DeliveryUtils.toggle_visibility_button
+          :if={@assignments != []}
+          target_selector={~s{div[role="assignment detail"][data-completed="true"]}}
+        />
       </div>
       <div role="assignments details" class="mt-12 px-5 pb-5 flex flex-col gap-12 w-full">
         <.assignment
           :for={assignment <- @assignments}
+          :if={@assignments != []}
           assignment={assignment}
           ctx={@ctx}
           target={
@@ -119,6 +121,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             )
           }
         />
+        <span :if={@assignments == []}>There are no assignments</span>
       </div>
     </div>
     """
@@ -132,10 +135,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <div
       role="assignment detail"
+      id={"assignment_#{@assignment.id}"}
       data-completed={"#{!is_nil(@assignment.raw_avg_score)}"}
       class="h-12 flex"
     >
-      <div class="w-6 h-6 flex justify-center items-center">
+      <div role="page icon" class="w-6 h-6 flex justify-center items-center">
         <.page_icon purpose={@assignment.purpose} completed={!is_nil(@assignment.raw_avg_score)} />
       </div>
       <div class="ml-2 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
@@ -205,6 +209,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       effective_settings = Map.get(combined_settings, assignment.resource_id, %{})
 
       %{
+        id: assignment.resource_id,
         title: assignment.title,
         numbering_index: assignment.numbering_index,
         scheduling_type: effective_settings.scheduling_type,

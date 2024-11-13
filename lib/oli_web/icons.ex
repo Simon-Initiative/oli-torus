@@ -14,6 +14,7 @@ defmodule OliWeb.Icons do
   def flag(assigns) do
     ~H"""
     <svg
+      role="flag icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -96,7 +97,14 @@ defmodule OliWeb.Icons do
 
   def square_checked(assigns) do
     ~H"""
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg
+      role="square checked icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
       <path
         d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z"
         class={@class}
@@ -450,6 +458,7 @@ defmodule OliWeb.Icons do
   def world(assigns) do
     ~H"""
     <svg
+      role="world icon"
       width="20"
       height="20"
       viewBox="0 0 20 20"
