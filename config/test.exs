@@ -58,7 +58,7 @@ config :oli, :recaptcha,
 config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
 
 # Configure Email
-config :oli, Oli.Mailer, adapter: Bamboo.TestAdapter
+config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Test
 
 # speed up tests by lowering the hash iterations
 config :bcrypt_elixir, log_rounds: 4

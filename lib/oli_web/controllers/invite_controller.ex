@@ -67,7 +67,7 @@ defmodule OliWeb.InviteController do
           section_title: section.title,
           button_label: button_label
         })
-        |> Oli.Mailer.deliver_now()
+        |> Oli.Mailer.deliver()
       end)
     end)
 

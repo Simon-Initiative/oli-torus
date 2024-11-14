@@ -511,7 +511,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                 %{institution: institution, registration: registration}
               )
 
-            Oli.Mailer.deliver_now(registration_approved_email)
+            Oli.Mailer.deliver(registration_approved_email)
 
             # send a Slack notification regarding the new registration approval
             approving_admin = socket.assigns[:current_author]

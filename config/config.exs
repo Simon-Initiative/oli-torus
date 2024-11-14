@@ -173,7 +173,8 @@ config :oli, Oban,
     project_export: 3,
     analytics_export: 3,
     datashop_export: 3,
-    objectives: 3
+    objectives: 3,
+    mailer: 10
   ]
 
 config :ex_money,
@@ -215,7 +216,9 @@ config :lti_1p3,
   ags_line_item_prefix: "oli-torus-"
 
 config :ex_aws,
-  region: {:system, "AWS_REGION"}
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
+  region: [{:system, "AWS_REGION"}, :instance_role]
 
 # Configures Elixir's Logger
 config :logger, :console,

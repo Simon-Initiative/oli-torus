@@ -406,16 +406,20 @@ defmodule Oli.Accounts do
   @doc """
   Preloads the user's platform roles.
   """
-  def preload_platform_roles(user) do
+  def preload_platform_roles(%User{} = user) do
     Repo.preload(user, :platform_roles)
   end
+
+  def preload_platform_roles(nil), do: nil
 
   @doc """
   Preloads the user's linked authoring account.
   """
-  def preload_linked_author(user) do
+  def preload_linked_author(%User{} = user) do
     Repo.preload(user, :author)
   end
+
+  def preload_linked_author(nil), do: nil
 
   @doc """
   Links a User to Author account

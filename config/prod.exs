@@ -18,7 +18,7 @@ config :oli, OliWeb.Endpoint, cache_static_manifest: "priv/static/cache_manifest
 config :logger, level: :info
 
 # Configure email for production
-config :oli, Oli.Mailer, adapter: Bamboo.SesAdapter
+config :oli, Oli.Mailer, adapter: Swoosh.Adapters.ExAwsAmazonSES
 
 # ## SSL Support
 #

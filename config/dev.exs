@@ -52,7 +52,7 @@ config :oli, Oli.Repo,
   log: String.to_existing_atom(System.get_env("DEV_DB_LOG_LEVEL", "debug"))
 
 # Configure email for development
-config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
+config :oli, Oli.Mailer, adapter: Swoosh.Adapters.Local
 
 config :oli,
   ecl_username: System.get_env("ECL_USERNAME", ""),

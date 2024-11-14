@@ -1577,7 +1577,7 @@ defmodule OliWeb.Router do
   # routes only accessible to developers
   if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
-    forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
+    forward "/dev/mailbox", Plug.Swoosh.MailboxPreview
 
     scope "/api/v1/testing", OliWeb do
       pipe_through([:api])

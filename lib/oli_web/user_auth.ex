@@ -136,8 +136,10 @@ defmodule OliWeb.UserAuth do
     {user_token, conn} = ensure_user_token(conn)
     user = user_token && Accounts.get_user_by_session_token(user_token)
 
+    # TODO: PERFORMANCE this is making an extra query to the database to preload the user's roles.
+    # Ideally, we should preload the user's roles in the same query that fetches the user.
     conn
-    |> assign(:current_user, user)
+    |> assign(:current_user, Accounts.preload_platform_roles(user))
   end
 
   defp ensure_user_token(conn) do
