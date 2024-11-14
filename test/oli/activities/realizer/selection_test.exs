@@ -16,12 +16,12 @@ defmodule Oli.Activities.SelectionTest do
     }
   end
 
-  def selection(count, expressions) do
+  def selection(count, expressions, operator \\ :all) do
     %Selection{
       count: count,
       logic: %Logic{
         conditions: %Clause{
-          operator: :all,
+          operator: operator,
           children: expressions
         }
       },
@@ -271,6 +271,43 @@ defmodule Oli.Activities.SelectionTest do
     {:partial, result} = Selection.fulfill(selection, source)
 
     assert length(result.rows) == 0
+  end
+
+  test "multiple expressions with ANY operator" do
+    source = %Source{
+      bank: [
+        %BankEntry{
+          resource_id: 1,
+          objectives: MapSet.new([1, 2]),
+          tags: MapSet.new([3]),
+          activity_type_id: 1
+        },
+        %BankEntry{
+          resource_id: 2,
+          objectives: MapSet.new([2]),
+          tags: MapSet.new([4]),
+          activity_type_id: 1
+        }
+      ],
+      blacklisted_activity_ids: [],
+      publication_id: 1,
+      section_slug: ""
+    }
+
+    # Testing this with ALL should only return 1 item, thus partial fulfillment
+    selection =
+      selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])], :all)
+
+    {:partial, result} = Selection.fulfill(selection, source)
+    assert length(result.rows) == 1
+
+    # Testing this with ANY now matches both
+    selection =
+      selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])], :any)
+
+    {:ok, result} = Selection.fulfill(selection, source)
+
+    assert length(result.rows) == 2
   end
 
   test "item type contains" do
