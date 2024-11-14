@@ -4849,7 +4849,6 @@ defmodule Oli.Delivery.Sections do
       case Map.has_key?(parent_map, objective.resource_id) do
         # this is a top-level objective
         false ->
-          # {num_first_attempts_correct, num_first_attempts, num_correct, num_total}
           {correct, total, _, _} =
             Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0, 0, 0})
 
