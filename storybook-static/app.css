@@ -4801,6 +4801,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-right: 1.25rem;
 }
 
+.mr-6 {
+  margin-right: 1.5rem;
+}
+
 .mr-9 {
   margin-right: 2.25rem;
 }
@@ -5826,6 +5830,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-px {
   width: 1px;
+}
+
+.min-w-0 {
+  min-width: 0px;
 }
 
 .min-w-\[2rem\] {
@@ -7875,6 +7883,12 @@ table.table-striped tbody tr:nth-child(even) {
   background-image: linear-gradient(to right, var(--tw-gradient-stops));
 }
 
+.from-\[\#e4e4ea\] {
+  --tw-gradient-from: #e4e4ea;
+  --tw-gradient-to: rgb(228 228 234 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .from-blue-700 {
   --tw-gradient-from: #1D4481;
   --tw-gradient-to: rgb(29 68 129 / 0);
@@ -7895,6 +7909,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .to-cyan-500 {
   --tw-gradient-to: #06b6d4;
+}
+
+.to-transparent {
+  --tw-gradient-to: transparent;
 }
 
 .to-white {
@@ -7927,6 +7945,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .fill-\[\#0CAF61\] {
   fill: #0CAF61;
+}
+
+.fill-\[\#218358\] {
+  fill: #218358;
 }
 
 .fill-\[\#333333\] {
@@ -7963,6 +7985,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .fill-\[\#b982ff\] {
   fill: #b982ff;
+}
+
+.fill-\[\#fa8d3e\] {
+  fill: #fa8d3e;
 }
 
 .fill-black {
@@ -8240,6 +8266,11 @@ table.table-striped tbody tr:nth-child(even) {
 .px-2\.5 {
   padding-left: 0.625rem;
   padding-right: 0.625rem;
+}
+
+.px-20 {
+  padding-left: 5rem;
+  padding-right: 5rem;
 }
 
 .px-24 {
@@ -8607,6 +8638,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pl-\[5px\] {
   padding-left: 5px;
+}
+
+.pl-\[76px\] {
+  padding-left: 76px;
 }
 
 .pr-0 {
@@ -9239,6 +9274,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(27 103 178 / var(--tw-text-opacity));
 }
 
+.text-\[\#218358\] {
+  --tw-text-opacity: 1;
+  color: rgb(33 131 88 / var(--tw-text-opacity));
+}
+
 .text-\[\#30DB9E\] {
   --tw-text-opacity: 1;
   color: rgb(48 219 158 / var(--tw-text-opacity));
@@ -9289,6 +9329,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(142 142 142 / var(--tw-text-opacity));
 }
 
+.text-\[\#9a40a8\] {
+  --tw-text-opacity: 1;
+  color: rgb(154 64 168 / var(--tw-text-opacity));
+}
+
 .text-\[\#A3A3A3\] {
   --tw-text-opacity: 1;
   color: rgb(163 163 163 / var(--tw-text-opacity));
@@ -9312,6 +9357,10 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#bf5b13\] {
   --tw-text-opacity: 1;
   color: rgb(191 91 19 / var(--tw-text-opacity));
+}
+
+.text-\[\#eeebf5\]\/75 {
+  color: rgb(238 235 245 / 0.75);
 }
 
 .text-\[\#ef4444\] {
@@ -14540,6 +14589,11 @@ https://tailwindcss.com/docs/utility-first
   border-color: rgb(15 13 15 / var(--tw-border-opacity));
 }
 
+.dark .dark\:border-\[\#2a282d\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(42 40 45 / var(--tw-border-opacity));
+}
+
 .dark .dark\:border-\[\#3a3740\] {
   --tw-border-opacity: 1;
   border-color: rgb(58 55 64 / var(--tw-border-opacity));
@@ -14705,6 +14759,10 @@ https://tailwindcss.com/docs/utility-first
 .dark .dark\:bg-\[\#1b191f\] {
   --tw-bg-opacity: 1;
   background-color: rgb(27 25 31 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-\[\#1b191f\]\/50 {
+  background-color: rgb(27 25 31 / 0.5);
 }
 
 .dark .dark\:bg-\[\#222126\] {
@@ -14956,6 +15014,12 @@ https://tailwindcss.com/docs/utility-first
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.dark .dark\:from-\[\#0a0b11\] {
+  --tw-gradient-from: #0a0b11;
+  --tw-gradient-to: rgb(10 11 17 / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .dark .dark\:fill-\[\#0062F2\] {
   fill: #0062F2;
 }
@@ -14972,6 +15036,10 @@ https://tailwindcss.com/docs/utility-first
   fill: #242533;
 }
 
+.dark .dark\:fill-\[\#39e581\] {
+  fill: #39e581;
+}
+
 .dark .dark\:fill-\[\#651FFF\] {
   fill: #651FFF;
 }
@@ -14982,6 +15050,10 @@ https://tailwindcss.com/docs/utility-first
 
 .dark .dark\:fill-\[\#9B6DFF\] {
   fill: #9B6DFF;
+}
+
+.dark .dark\:fill-\[\#ff9040\] {
+  fill: #ff9040;
 }
 
 .dark .dark\:fill-black {
@@ -15071,6 +15143,11 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(51 153 255 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#39e581\] {
+  --tw-text-opacity: 1;
+  color: rgb(57 229 129 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#4CA6FF\] {
   --tw-text-opacity: 1;
   color: rgb(76 166 255 / var(--tw-text-opacity));
@@ -15116,14 +15193,28 @@ https://tailwindcss.com/docs/utility-first
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#bab8bf\] {
+  --tw-text-opacity: 1;
+  color: rgb(186 184 191 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#dc2626\] {
   --tw-text-opacity: 1;
   color: rgb(220 38 38 / var(--tw-text-opacity));
 }
 
+.dark .dark\:text-\[\#ebaaf2\] {
+  --tw-text-opacity: 1;
+  color: rgb(235 170 242 / var(--tw-text-opacity));
+}
+
 .dark .dark\:text-\[\#eeebf5\] {
   --tw-text-opacity: 1;
   color: rgb(238 235 245 / var(--tw-text-opacity));
+}
+
+.dark .dark\:text-\[\#eeebf5\]\/75 {
+  color: rgb(238 235 245 / 0.75);
 }
 
 .dark .dark\:text-\[\#ffb387\] {
