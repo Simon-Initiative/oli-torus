@@ -4833,8 +4833,8 @@ defmodule Oli.Delivery.Sections do
       Enum.reduce(top_level_objectives, %{}, fn obj, map ->
         aggregation =
           Enum.reduce(obj.children, {0, 0}, fn child, {correct, total} ->
-            {child_correct, child_total} =
-              Map.get(proficiency_per_learning_objective, child, {0, 0})
+            {child_correct, child_total, _, _} =
+              Map.get(proficiency_per_learning_objective, child, {0, 0, 0, 0})
 
             {correct + child_correct, total + child_total}
           end)
@@ -4849,8 +4849,9 @@ defmodule Oli.Delivery.Sections do
       case Map.has_key?(parent_map, objective.resource_id) do
         # this is a top-level objective
         false ->
-          {correct, total} =
-            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0})
+          # {num_first_attempts_correct, num_first_attempts, num_correct, num_total}
+          {correct, total, _, _} =
+            Map.get(proficiency_per_learning_objective, objective.resource_id, {0, 0, 0, 0})
 
           objective =
             Map.merge(objective, %{
@@ -4869,8 +4870,12 @@ defmodule Oli.Delivery.Sections do
             Enum.map(objective.children, fn child ->
               sub_objective = Map.get(lookup_map, child)
 
-              {correct, total} =
-                Map.get(proficiency_per_learning_objective, sub_objective.resource_id, {0, 0})
+              {correct, total, _, _} =
+                Map.get(
+                  proficiency_per_learning_objective,
+                  sub_objective.resource_id,
+                  {0, 0, 0, 0}
+                )
 
               Map.merge(sub_objective, %{
                 objective: objective.title,
