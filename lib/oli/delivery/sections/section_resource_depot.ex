@@ -70,7 +70,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   @doc """
   Returns a list of SectionResource records for all graded pages for a given section.
 
-  An optional keyword list can be passed to extend the filtering conditions:alarm_handler
+  An optional keyword list can be passed to extend the filtering conditions.
 
   Example:
     SectionResourceDepot.graded_pages(some_section_id, [hidden: false])
