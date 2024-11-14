@@ -295,6 +295,63 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
+  Finds the top-level ancestor of a specified node within a hierarchical structure (ignoring the Root Container).
+
+  This function performs a depth-first search (DFS) to locate the highest ancestor of a given node identified by `resource_id`. It traverses recursively through the structure, checking each node's children until it finds a match for `resource_id`. If a match is found, it returns the top-most ancestor node; otherwise, it continues searching deeper in the hierarchy.
+
+  ## Parameters
+
+  - `node`: The current node in the hierarchy, represented as a map with a `"resource_id"` and possibly a `"children"` key containing a list of child nodes.
+  - `resource_id`: The identifier for the resource being searched for within the hierarchy.
+  - `upper_most_level_ancestor`: (Optional) Keeps track of the highest ancestor encountered during the recursive traversal. Defaults to `nil`.
+
+  ## Returns
+
+  - The top-level ancestor node if `resource_id` is found within the structure.
+  - Returns `nil` if the specified `resource_id` is not found within the hierarchy.
+
+  ## Example
+
+  iex> hierarchy = %{
+    "resource_id" => "1",
+    "children" => [
+      %{"resource_id" => "2", "children" => [%{"resource_id" => "3"}]},
+      %{"resource_id" => "4"}
+    ]
+  }
+
+  iex> find_top_level_ancestor(hierarchy, "3")
+  # => Returns the node with `resource_id` "2" as it is the top-level ancestor of "3" if we ignore the Root Container (resource_id = 1).
+  """
+  @spec find_top_level_ancestor(
+          map(),
+          any(),
+          map() | nil
+        ) :: map() | nil
+  def find_top_level_ancestor(
+        node,
+        resource_id,
+        upper_most_level_ancestor \\ nil
+      )
+
+  def find_top_level_ancestor(
+        %{"resource_id" => node_resource_id},
+        resource_id,
+        upper_most_level_ancestor
+      )
+      when node_resource_id == resource_id,
+      do: upper_most_level_ancestor
+
+  def find_top_level_ancestor(node, resource_id, upper_most_level_ancestor) do
+    Enum.find(
+      node["children"] || [],
+      fn child ->
+        find_top_level_ancestor(child, resource_id, upper_most_level_ancestor || node)
+      end
+    )
+  end
+
+  @doc """
   Generates the full hierarchy of a given section, including all the attributrs required for student delivery views.
   """
   def full_hierarchy(section, section_resources) when is_list(section_resources) do
@@ -784,6 +841,69 @@ defmodule Oli.Delivery.Hierarchy do
 
   def contained_scheduling_types(full_hierarchy) do
     contained_scheduling_types(full_hierarchy["children"], [], full_hierarchy["resource_id"], %{})
+  end
+
+  @doc """
+  Reduces a hierarchical structure by retaining only specified fields and filtering nodes based on a given condition.
+
+  This function recursively traverses a hierarchy, selecting only the fields specified in `fields_to_keep` for each node that satisfies the `filter_fn` predicate. The result is a streamlined hierarchy where unnecessary fields are removed, and nodes that don’t meet the filter condition are excluded.
+
+  ## Parameters
+
+    - `hierarchy`: A map or list representing the hierarchy to be thinned.
+    - `fields_to_keep`: A list of keys to retain in each node. All other fields are removed from nodes in the output.
+    - `filter_fn`: (Optional) A function that accepts a node and returns a boolean, determining if the node should be retained. Defaults to `fn _ -> true end`, which keeps all nodes.
+
+  ## Returns
+
+    - A thinned version of the hierarchy, where each node contains only the specified fields and only those nodes that satisfy `filter_fn`.
+
+  ## Examples
+
+    iex> hierarchy = %{
+      "resource_id" => "1",
+      "name" => "Root",
+      "description" => "Root node",
+      "children" => [
+        %{"resource_id" => "2", "name" => "Child 1", "description" => "Child node 1"},
+        %{"resource_id" => "3", "name" => "Child 2", "description" => "Child node 2"}
+      ]
+    }
+
+    iex> fields_to_keep = ["resource_id", "name"]
+
+    iex> thin_hierarchy(hierarchy, fields_to_keep)
+    # => Returns a hierarchy with only `resource_id` and `name` fields in each node.
+
+    iex> thin_hierarchy(hierarchy, fields_to_keep, fn node -> node["resource_id"] != "2" end)
+    # => Filters out the node with `resource_id` "2" while keeping only specified fields.
+  """
+  @spec thin_hierarchy(
+          map() | list(),
+          list(),
+          (map() -> boolean())
+        ) :: map() | list() | nil
+
+  def thin_hierarchy(hierarchy, fields_to_keep, filter_fn \\ fn _ -> true end)
+
+  def thin_hierarchy(nil, _, _), do: nil
+
+  def thin_hierarchy(hierarchy, fields_to_keep, filter_fn)
+      when is_map(hierarchy) do
+    if filter_fn.(hierarchy) do
+      hierarchy
+      |> Map.take(fields_to_keep)
+      |> Map.replace("children", thin_hierarchy(hierarchy["children"], fields_to_keep, filter_fn))
+    else
+      nil
+    end
+  end
+
+  def thin_hierarchy(hierarchy, fields_to_keep, filter_fn)
+      when is_list(hierarchy) do
+    hierarchy
+    |> Enum.map(fn node -> thin_hierarchy(node, fields_to_keep, filter_fn) end)
+    |> Enum.reject(&is_nil/1)
   end
 
   @container_resource_type_id Oli.Resources.ResourceType.id_for_container()

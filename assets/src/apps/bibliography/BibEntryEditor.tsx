@@ -215,15 +215,9 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
         <Tooltip title="Delete this field">
           <button
             onClick={() => {
-              let m: CitationModel = { id: '', type: '' };
-              m = Object.entries(model).reduce(function (obj, entry) {
-                if (entry[0] != key1) {
-                  obj = { ...obj, [entry[0]]: entry[1] };
-                }
-                return obj;
-              }, m);
-
-              setModel(m);
+              const { [key1]: _deleted, ...newModel } = model as any;
+              setModel(newModel);
+              props.onEdit(newModel);
             }}
             type="button"
             className="btn btn-link text-body-color"
