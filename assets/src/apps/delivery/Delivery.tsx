@@ -112,6 +112,7 @@ const Delivery: React.FC<DeliveryProps> = ({
 
   const handleUserThemePreferende = () => {
     const isDarkModeThemeEnabled = content?.custom?.darkModeSetting;
+    // If dark mode is disabled, do not apply the dark theme to the lesson.
     // If dark mode is enabled, apply the theme based on the student's selected theme (default current behavior).
     if (!isDarkModeThemeEnabled) {
       setCurrentTheme('light');
