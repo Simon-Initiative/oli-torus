@@ -11,6 +11,8 @@ defmodule OliWeb.Components.Delivery.Utils do
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author, SystemRole}
+  alias OliWeb.Icons
+  alias Phoenix.LiveView.JS
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
 
@@ -297,6 +299,41 @@ defmodule OliWeb.Components.Delivery.Utils do
       </div>
     </div>
     """
+  end
+
+  attr :target_selector, :string, required: true, doc: "CSS Selector of the elements to hide/show"
+
+  def toggle_visibility_button(assigns) do
+    ~H"""
+    <button
+      id="hide_completed_button"
+      phx-click={hide_completed(@target_selector)}
+      class="self-stretch justify-center items-center gap-2 flex"
+    >
+      <div class="w-4 h-4"><Icons.hidden /></div>
+      <span>Hide Completed</span>
+    </button>
+    <button
+      id="show_completed_button"
+      phx-click={show_completed(@target_selector)}
+      class="hidden self-stretch justify-center items-center gap-2"
+    >
+      <div class="w-4 h-4"><Icons.visible /></div>
+      <span>Show Completed</span>
+    </button>
+    """
+  end
+
+  def hide_completed(target_selector) do
+    JS.hide()
+    |> JS.hide(to: target_selector)
+    |> JS.show(to: "#show_completed_button", display: "flex")
+  end
+
+  def show_completed(target_selector) do
+    JS.hide()
+    |> JS.show(to: target_selector, display: "flex")
+    |> JS.show(to: "#hide_completed_button", display: "flex")
   end
 
   @doc """
