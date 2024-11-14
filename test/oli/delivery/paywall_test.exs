@@ -894,8 +894,8 @@ defmodule Oli.Delivery.PaywallTest do
     end
 
     test "browse_payments/4 applies paging", %{product: product} do
-      payment_1_id = insert(:payment, section: product, code: 123_456_789).id
-      _payment_2_id = insert(:payment, section: product, code: 987_654_321).id
+      payment_1_id = insert(:payment, section: product, code: 123_456_789, type: :bypass).id
+      _payment_2_id = insert(:payment, section: product, code: 987_654_321, type: :direct).id
 
       [%{payment: %Payment{id: ^payment_1_id}}] =
         Paywall.browse_payments(product.slug, %Paging{limit: 1, offset: 0}, %Sorting{
