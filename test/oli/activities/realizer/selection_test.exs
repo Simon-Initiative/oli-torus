@@ -296,14 +296,22 @@ defmodule Oli.Activities.SelectionTest do
 
     # Testing this with ALL should only return 1 item, thus partial fulfillment
     selection =
-      selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])], :all)
+      selection(
+        2,
+        [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])],
+        :all
+      )
 
     {:partial, result} = Selection.fulfill(selection, source)
     assert length(result.rows) == 1
 
     # Testing this with ANY now matches both
     selection =
-      selection(2, [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])], :any)
+      selection(
+        2,
+        [expression(:objectives, :contains, [2]), expression(:tags, :contains, [4])],
+        :any
+      )
 
     {:ok, result} = Selection.fulfill(selection, source)
 
