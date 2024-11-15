@@ -59,26 +59,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
   @impl Phoenix.LiveView
   def handle_params(%{"active_tab" => "settings"} = params, _, socket) do
-    socket =
-      socket
-      |> assign(
-        params: params,
-        active_tab: :settings,
-        update_sort_order: true
-      )
-
+    socket = assign(socket, params: params, active_tab: :settings, update_sort_order: true)
     {:noreply, socket}
   end
 
   @impl true
   def handle_params(%{"active_tab" => "student_exceptions"} = params, _, socket) do
     socket =
-      socket
-      |> assign(
-        params: params,
-        active_tab: :student_exceptions,
-        update_sort_order: true
-      )
+      assign(socket, params: params, active_tab: :student_exceptions, update_sort_order: true)
 
     {:noreply, socket}
   end
