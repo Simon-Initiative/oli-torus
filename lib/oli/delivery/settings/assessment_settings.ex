@@ -42,7 +42,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         |> update_section_resource(changes, section.id, asmt_set_id)
         |> updated_section_resource_depot()
     end
-    |> Oli.Repo.transaction()
+    |> Repo.transaction()
   end
 
   def do_update(key, asmt_set_id, new_value, resources) do
@@ -54,7 +54,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     |> get_section_resource(section.id, asmt_set_id)
     |> update_section_resource(changes, section.id, asmt_set_id)
     |> updated_section_resource_depot()
-    |> Oli.Repo.transaction()
+    |> Repo.transaction()
   end
 
   defp updated_section_resource_depot(multi) do
