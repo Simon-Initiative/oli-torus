@@ -709,7 +709,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <Annotations.delete_post_modal />
-    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+    <div id="sticky_panel" class="absolute top-4 right-0 z-40 h-full">
       <div class="sticky top-20 right-0">
         <div class={[
           "absolute top-24",

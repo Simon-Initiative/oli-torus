@@ -83,7 +83,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
         </div>
       </div>
       <div class="flex flex-1 flex-col overflow-hidden pl-2 justify-start items-start gap-2 inline-flex">
-        <div class="flex flex-1 flex-col overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex">
+        <div class="flex flex-1 flex-col scrollbar overflow-y-scroll px-2 justify-start items-center gap-4 inline-flex">
           <.outline_item
             :for={node <- @hierarchy["children"]}
             item={node}
