@@ -206,5 +206,44 @@ defmodule Oli.Analytics.Summary.MetricsV2Test do
       assert Map.get(results, id2) == "Medium"
       assert Map.get(results, id3) == "High"
     end
+
+    test "proficiency_per_student_for_objective/2", %{
+      user1: user1,
+      user2: user2,
+      section: section,
+      o1: o1,
+      o2: o2,
+      o3: o3
+    } do
+      objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
+
+      id = o1.resource.id
+      id2 = o2.resource.id
+      id3 = o3.resource.id
+
+      # project_id, publication_id, section_id, user_id, resource_id,
+      # part_id, resource_type_id, num_correct, num_attempts, num_hints,
+      # num_first_attempts, num_first_attempts_correct
+      [
+        [-1, -1, section.id, user1.id, id, nil, objective_type_id, 1, 6, 1, 3, 0],
+        [-1, -1, section.id, user1.id, id2, nil, objective_type_id, 3, 6, 1, 3, 2],
+        [-1, -1, section.id, user1.id, id3, nil, objective_type_id, 6, 6, 1, 3, 3],
+        [-1, -1, section.id, user2.id, id, nil, objective_type_id, 1, 4, 0, 1, 0],
+        [-1, -1, section.id, user2.id, id2, nil, objective_type_id, 2, 4, 0, 4, 2]
+      ]
+      |> Enum.each(fn v -> add_resource_summary(v) end)
+
+      proficiencies_objective1 = Metrics.proficiency_per_student_for_objective(section.id, id)
+      proficiencies_objective2 = Metrics.proficiency_per_student_for_objective(section.id, id2)
+      proficiencies_objective3 = Metrics.proficiency_per_student_for_objective(section.id, id3)
+
+      assert proficiencies_objective1[user1.id] == "Low"
+      assert proficiencies_objective1[user2.id] == "Not enough data"
+      assert proficiencies_objective2[user1.id] == "Medium"
+      assert proficiencies_objective2[user2.id] == "Medium"
+      assert proficiencies_objective3[user1.id] == "High"
+      refute proficiencies_objective3[user2.id]
+    end
   end
 end
