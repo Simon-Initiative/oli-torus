@@ -28,10 +28,7 @@ defmodule OliWeb.ProgressLiveTest do
       resource: resource,
       student: student
     } do
-      redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{student.id}%2F#{resource.id}&section=#{section.slug}"
-
-      {:error, {:redirect, %{to: ^redirect_path}}} =
+      {:error, {:redirect, %{to: "/users/log_in"}}} =
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
     end
   end
@@ -47,13 +44,10 @@ defmodule OliWeb.ProgressLiveTest do
     } do
       conn = get(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
-      redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{student.id}%2F#{resource.id}&amp;section=#{section.slug}"
-
       assert conn
              |> get(live_view_student_resource_route(section.slug, student.id, resource.id))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"#{redirect_path}\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/users/log_in\">redirected</a>.</body></html>"
     end
   end
 
@@ -338,7 +332,7 @@ defmodule OliWeb.ProgressLiveTest do
       author: instructor.author
     })
 
-    student = insert(:user)
+    student = user_fixture()
 
     {:ok,
      section: section,

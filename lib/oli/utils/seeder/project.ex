@@ -58,7 +58,8 @@ defmodule Oli.Utils.Seeder.Project do
     name = "Administrator"
 
     {:ok, admin} =
-      Author.seed_changeset(%Author{}, %{
+      %Author{}
+      |> Author.noauth_changeset(%{
         email: "#{Slug.slugify(name)}@test.com",
         name: name,
         system_role_id: SystemRole.role_id().system_admin

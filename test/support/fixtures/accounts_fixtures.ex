@@ -25,9 +25,12 @@ defmodule Oli.AccountsFixtures do
   end
 
   def user_fixture(attrs \\ %{}) do
+    attrs = valid_user_attributes(attrs)
+
     {:ok, user} =
       %User{}
-      |> User.seed_changeset(valid_user_attributes(attrs))
+      |> User.registration_changeset(attrs)
+      |> User.noauth_changeset(attrs)
       |> Repo.insert()
 
     user
@@ -56,9 +59,12 @@ defmodule Oli.AccountsFixtures do
   end
 
   def author_fixture(attrs \\ %{}) do
+    attrs = valid_author_attributes(attrs)
+
     {:ok, author} =
       %Author{}
-      |> Author.seed_changeset(valid_author_attributes(attrs))
+      |> Author.registration_changeset(attrs)
+      |> Author.noauth_changeset(attrs)
       |> Repo.insert()
 
     author

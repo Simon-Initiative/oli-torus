@@ -262,7 +262,7 @@ defmodule OliWeb.Users.UsersDetailView do
   def handle_event("confirm_email", _, socket) do
     changeset = User.confirm_changeset(socket.assigns.user)
 
-    case Accounts.admin_update_user(changeset) do
+    case Accounts.update_user(changeset) do
       {:ok, user} ->
         {:noreply,
          socket
@@ -408,7 +408,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.admin_update_user(socket.assigns.user, params) do
+    case Accounts.update_user(socket.assigns.user, params) do
       {:ok, user} ->
         {:noreply,
          socket
@@ -438,7 +438,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
   defp user_form(user, attrs \\ %{}) do
     user
-    |> User.admin_changeset(attrs)
+    |> User.noauth_changeset(attrs)
     |> Map.put(:action, :update)
     |> to_form()
   end

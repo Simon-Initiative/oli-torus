@@ -1,6 +1,6 @@
 defmodule OliWeb.InviteControllerTest do
   use OliWeb.ConnCase
-  use Bamboo.Test
+  import Swoosh.TestAssertions
 
   import Oli.Factory
 
@@ -59,10 +59,7 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as an instructor to the following"
-      assert text_body =~ "Join now"
-      assert text_body =~ "/registration/new?section=#{section.slug}&from_invitation_link%3F=true"
+      assert_email_sent(%{to: @invite_email, subject: "You've been added to a course"})
     end
 
     test "deliver new student invitation", %{conn: conn} do
@@ -81,10 +78,10 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as a student to the following"
-      assert text_body =~ "Join now"
-      assert text_body =~ "/registration/new?section=#{section.slug}&from_invitation_link%3F=true"
+      assert_email_sent(%{
+        to: @invite_email,
+        subject: "You were invited as a student to \"#{section.title}\""
+      })
     end
 
     test "deliver existing instructor invitation", %{conn: conn} do
@@ -104,10 +101,10 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as an instructor to the following"
-      assert text_body =~ "Go to the course"
-      assert text_body =~ "/sections/#{section.slug}?from_invitation_link%3F=true)"
+      assert_email_sent(%{
+        to: @invite_email,
+        subject: "You were invited as a instructor to \"#{section.title}\""
+      })
     end
 
     test "deliver existing student invitation", %{conn: conn} do
@@ -127,10 +124,10 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as a student to the following"
-      assert text_body =~ "Go to the course"
-      assert text_body =~ "/sections/#{section.slug}?from_invitation_link%3F=true)"
+      assert_email_sent(%{
+        to: @invite_email,
+        subject: "You were invited as a student to \"#{section.title}\""
+      })
     end
   end
 

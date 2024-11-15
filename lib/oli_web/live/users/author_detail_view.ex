@@ -396,7 +396,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   defp author_changeset(author, attrs \\ %{}) do
-    Author.admin_changeset(author, attrs)
+    Author.noauth_changeset(author, attrs)
     |> Map.put(:action, :update)
   end
 

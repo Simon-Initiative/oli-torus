@@ -240,13 +240,11 @@ defmodule Oli.Accounts.Author do
     |> maybe_name_from_given_and_family()
   end
 
-  @deprecated "Use `details_changeset/2` instead"
-  def noauth_changeset(author, attrs \\ %{}), do: details_changeset(author, attrs)
-
   @doc """
-  Creates a changeset that can be used by an admin to update an author
+  Creates a changeset that doesn't require a current password, used for any changes to user
+  that are not authentication related.
   """
-  def admin_changeset(author, attrs \\ %{}) do
+  def noauth_changeset(author, attrs \\ %{}) do
     author
     |> cast(attrs, [
       :email,
@@ -258,9 +256,7 @@ defmodule Oli.Accounts.Author do
       :locked_at,
       :email_confirmed_at
     ])
-    |> cast_embed(:preferences)
-    |> default_system_role()
-    |> lowercase_email()
+    |> maybe_hash_password([])
     |> maybe_name_from_given_and_family()
   end
 
@@ -268,7 +264,7 @@ defmodule Oli.Accounts.Author do
   Creates a changeset that can be used by the seed script to bootstrap the admin user.
   This changeset should only be used in seed scripts or tests.
   """
-  def seed_changeset(author, attrs \\ %{}) do
+  def bootstrap_admin_changeset(author, attrs \\ %{}) do
     author
     |> cast(attrs, [
       :email,

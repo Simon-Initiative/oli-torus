@@ -307,10 +307,10 @@ defmodule Oli.Accounts.User do
   end
 
   @doc """
-  Creates a changeset that doesn't require a current password, used for lower risk changes to user
-  (as opposed to higher risk, like password changes)
+  Creates a changeset that doesn't require a current password, used for any changes to user
+  that are not authentication related.
   """
-  def seed_changeset(user, attrs \\ %{}) do
+  def noauth_changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [
       :sub,
@@ -342,19 +342,15 @@ defmodule Oli.Accounts.User do
       :age_verified
     ])
     |> cast_embed(:preferences)
-    |> validate_required([:given_name, :family_name])
     |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
     |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
 
-  @deprecated "Use `details_changeset/2` instead"
-  def noauth_changeset(user, attrs \\ %{}), do: seed_changeset(user, attrs)
-
   @doc """
-  Creates a changeset that can be used by an admin to update a user
+  Creates a changeset used by LTI launch to update user information.
   """
-  def admin_changeset(user, attrs \\ %{}) do
+  def external_user_changeset(user, attrs \\ %{}) do
     user
     |> cast(attrs, [
       :sub,
@@ -385,39 +381,6 @@ defmodule Oli.Accounts.User do
       :email_confirmed_at,
       :can_create_sections,
       :age_verified
-    ])
-    |> cast_embed(:preferences)
-    |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
-    |> maybe_create_unique_sub()
-    |> lowercase_email()
-    |> maybe_name_from_given_and_family()
-  end
-
-  @doc """
-  Creates a changeset used by LTI launch to update user information.
-  """
-  def lti_changeset(user, attrs \\ %{}) do
-    user
-    |> cast(attrs, [
-      :sub,
-      :name,
-      :given_name,
-      :family_name,
-      :middle_name,
-      :nickname,
-      :preferred_username,
-      :profile,
-      :picture,
-      :website,
-      :email,
-      :email_verified,
-      :gender,
-      :birthdate,
-      :zoneinfo,
-      :locale,
-      :phone_number,
-      :phone_number_verified,
-      :address
     ])
     |> cast_embed(:preferences)
     |> maybe_create_unique_sub()

@@ -262,15 +262,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Updates a user from an admin.
-  """
-  def admin_update_user(user, attrs \\ %{}) do
-    user
-    |> User.admin_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
   Deletes a user.
   ## Examples
       iex> delete_user(user)
@@ -340,7 +331,7 @@ defmodule Oli.Accounts do
       nil -> %User{sub: sub, independent_learner: false}
       user -> user
     end
-    |> User.lti_changeset(changes)
+    |> User.external_user_changeset(changes)
     |> Repo.insert_or_update()
     |> case do
       {:ok, %User{}} = res ->
@@ -349,8 +340,6 @@ defmodule Oli.Accounts do
       error ->
         error
     end
-    |> User.lti_changeset(changes)
-    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -943,8 +932,13 @@ defmodule Oli.Accounts do
     |> Repo.insert()
     |> case do
       {:ok, author} = result ->
-        link_user_author_account(user, author)
-        result
+        case link_user_author_account(user, author) do
+          {:ok, _user} ->
+            result
+
+          error ->
+            error
+        end
 
       error ->
         error
@@ -1610,7 +1604,7 @@ defmodule Oli.Accounts do
   """
   def admin_update_author(author, attrs \\ %{}) do
     author
-    |> Author.admin_changeset(attrs)
+    |> Author.noauth_changeset(attrs)
     |> Repo.update()
   end
 
