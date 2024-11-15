@@ -3,7 +3,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
   import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
 
-  alias OliWeb.Common.InstructorDashboardPagedTable
+  alias OliWeb.Common.InstructorDashboardLearningObjectivesTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
   alias OliWeb.Components.Delivery.CardHighlights
@@ -204,7 +204,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
         <%= if @total_count > 0 do %>
           <div id="objectives-table">
-            <InstructorDashboardPagedTable.render
+            <InstructorDashboardLearningObjectivesTable.render
               table_model={@table_model}
               page_change={JS.push("paged_table_page_change", target: @myself)}
               sort={JS.push("paged_table_sort", target: @myself)}
