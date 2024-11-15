@@ -878,8 +878,12 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   defp update_assessments(socket, assessment_setting_id, key_value_list, update_sort_order) do
+    %{assigns: %{section: section, table_model: table_model}} = socket
+    student_exceptions = AssessmentSettings.get_student_exceptions(section.id)
+    assessments = AssessmentSettings.get_assessments(section.slug, student_exceptions)
+
     {updated_assessment, updated_assessments} =
-      Enum.reduce(socket.assigns.assessments, {nil, []}, fn assessment, acc ->
+      Enum.reduce(assessments, {nil, []}, fn assessment, acc ->
         {current_assesment, current_assessments} = acc
 
         if assessment.resource_id == assessment_setting_id do
@@ -892,7 +896,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       end)
 
     updated_rows =
-      Enum.reduce(socket.assigns.table_model.rows, [], fn row, acc ->
+      Enum.reduce(table_model.rows, [], fn row, acc ->
         if row.resource_id == assessment_setting_id do
           [updated_assessment | acc]
         else
@@ -901,7 +905,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
       end)
       |> Enum.reverse()
 
-    updated_table_model = Map.merge(socket.assigns.table_model, %{rows: updated_rows})
+    updated_table_model = Map.merge(table_model, %{rows: updated_rows})
 
     send(self(), {:assessment_updated, updated_assessment, update_sort_order})
 

@@ -1,10 +1,15 @@
 defmodule Oli.Delivery.Settings.AssessmentSettings do
+  import Ecto.Query
+
   alias Ecto.Multi
   alias Oli.Accounts.Author
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.AutoSubmitCustodian
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Settings.StudentException
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Repo
 
   def do_update(:late_policy, asmt_set_id, new_value, resources) do
     %{section: section, user: user, assessments: asmts} = resources
@@ -102,6 +107,29 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         key: Atom.to_string(key),
         new_value: Kernel.to_string(new_value),
         old_value: Kernel.to_string(old_value)
+      })
+    end)
+  end
+
+  def get_student_exceptions(section_id) do
+    StudentException
+    |> where(section_id: ^section_id)
+    |> preload(:user)
+    |> Repo.all()
+  end
+
+  def get_assessments(section_slug, student_exceptions) do
+    DeliveryResolver.graded_pages_revisions_and_section_resources(section_slug)
+    |> Enum.with_index()
+    |> Enum.map(fn {{rev, sr}, index} ->
+      Settings.combine(rev, sr, nil)
+      |> Map.merge(%{
+        index: index + 1,
+        name: rev.title,
+        scheduling_type: sr.scheduling_type,
+        password: sr.password,
+        exceptions_count:
+          Enum.count(student_exceptions, fn se -> se.resource_id == rev.resource_id end)
       })
     end)
   end
