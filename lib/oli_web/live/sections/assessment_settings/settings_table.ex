@@ -915,7 +915,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     value =
       case {key, Map.get(params, target_str)} do
         {key, value}
-        when key in ~w(late_policy late_submit late_start retake_mode assessment_mode feedback_mode review_submission) ->
+        when key in ~w(late_policy retake_mode assessment_mode feedback_mode review_submission) ->
           String.to_existing_atom(value)
 
         {key, value}
@@ -954,8 +954,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             :max_attempts,
             :time_limit,
             :late_policy,
-            :late_start,
-            :late_submit,
             :scoring,
             :grace_period,
             :retake_mode,

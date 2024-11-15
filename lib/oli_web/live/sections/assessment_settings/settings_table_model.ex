@@ -68,20 +68,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         tooltip: Tooltips.for(:late_policy)
       },
       %ColumnSpec{
-        name: :late_submit,
-        label: "LATE SUBMIT",
-        render_fn: &__MODULE__.render_late_submit_column/3,
-        th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:late_submit)
-      },
-      %ColumnSpec{
-        name: :late_start,
-        label: "LATE START",
-        render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:late_start)
-      },
-      %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
         render_fn: &__MODULE__.render_scoring_column/3,
@@ -280,29 +266,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       >
         Disallow late start and late submit
       </option>
-    </select>
-    """
-  end
-
-  def render_late_submit_column(assigns, assessment, _) do
-    assigns =
-      Map.merge(assigns, %{late_submit: assessment.late_submit, id: assessment.resource_id})
-
-    ~H"""
-    <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
-      <option selected={@late_submit == :allow} value={:allow}>Allow</option>
-      <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
-    </select>
-    """
-  end
-
-  def render_late_start_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{late_start: assessment.late_start, id: assessment.resource_id})
-
-    ~H"""
-    <select class="torus-select pr-32" name={"late_start-#{@id}"}>
-      <option selected={@late_start == :allow} value={:allow}>Allow</option>
-      <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
     </select>
     """
   end
