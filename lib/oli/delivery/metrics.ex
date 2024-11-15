@@ -1350,6 +1350,20 @@ defmodule Oli.Delivery.Metrics do
     |> Enum.into(%{})
   end
 
+  @doc """
+  Retrieves proficiency data for a specific learning objective, aggregated by user.
+  Returns a map with each key being a student_id and the value being the proficiency.
+
+  ## Examples
+
+      iex> proficiency_per_student_for_objective(1, 42)
+      # Query result with raw proficiency data for objective 42 in section 1
+      # => %{123 => "Low", 456 => "Medium", "789" => "Not enough data"}
+  """
+  @spec proficiency_per_student_for_objective(section_id :: integer, objective_id :: integer) ::
+          %{
+            integer => String.t()
+          }
   def proficiency_per_student_for_objective(section_id, objective_id) do
     objective_type_id = Oli.Resources.ResourceType.id_for_objective()
 
