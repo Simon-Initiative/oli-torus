@@ -16,6 +16,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.{Repo, Utils}
   alias Oli.Accounts.Author
+  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.Settings.AssessmentSettings
 
   @default_params %{
     offset: 0,
@@ -474,10 +476,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     # Instruct the DepotCoordinator to update the SRS for these assessments
     srs = get_assessment_srs(socket.assigns.section.id, Enum.map(assessments, & &1.resource_id))
 
-    Oli.Delivery.DepotCoordinator.update_all(
-      Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
-      srs
-    )
+    Oli.Delivery.DepotCoordinator.update_all(SectionResourceDepot.depot_desc(), srs)
 
     settings_changes =
       assessments
@@ -565,23 +564,19 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   def handle_event("update_setting", params, socket) do
-    case decode_target(params, socket.assigns.ctx) do
+    %{section: section, ctx: %{user: user} = ctx, assessments: assessments} = socket.assigns
+    resources = %{section: section, user: user, assessments: assessments}
+
+    case decode_target(params, ctx) do
       {:feedback_mode, assessment_setting_id, :scheduled} ->
         assessment_for_scheduled =
-          Sections.get_section_resource(
-            socket.assigns.section.id,
-            assessment_setting_id
-          )
-          |> Map.update(
-            :feedback_scheduled_date,
-            nil,
-            fn scheduled_date -> value_from_datetime(scheduled_date, socket.assigns.ctx) end
-          )
+          Sections.get_section_resource(section.id, assessment_setting_id)
+          |> Map.update(:feedback_scheduled_date, nil, fn scheduled_date ->
+            value_from_datetime(scheduled_date, ctx)
+          end)
 
         changeset =
-          SectionResource.changeset(assessment_for_scheduled, %{
-            feedback_mode: :scheduled
-          })
+          SectionResource.changeset(assessment_for_scheduled, %{feedback_mode: :scheduled})
 
         {:noreply,
          assign(socket,
@@ -593,34 +588,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            }
          )}
 
-      {:password, assessment_setting_id, new_value} ->
-        do_update(:password, assessment_setting_id, new_value, socket)
-
-      {:late_submit, assessment_setting_id, :allow} ->
-        result =
-          Repo.transaction(fn ->
-            AutoSubmitCustodian.cancel(
-              socket.assigns.section.id,
-              assessment_setting_id,
-              nil
-            )
-
-            do_update(:late_submit, assessment_setting_id, :allow, socket)
-          end)
-
-        case result do
-          {:ok, return} ->
-            return
-
-          {:error, _} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Student Exception could not be updated")
-             |> assign(modal_assigns: %{show: false})}
-        end
+      {:late_policy = key, assessment_setting_id, new_value} ->
+        AssessmentSettings.do_update(:late_policy, assessment_setting_id, new_value, resources)
+        |> process_updated_result(socket, assessment_setting_id, key, new_value)
 
       {key, assessment_setting_id, new_value} when new_value != "" ->
-        do_update(key, assessment_setting_id, new_value, socket)
+        AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
+        |> process_updated_result(socket, assessment_setting_id, key, new_value)
 
       _ ->
         {:noreply, socket}
@@ -723,6 +697,24 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
              |> flash_to_liveview(:error, "ERROR: Setting change not be inserted")}
         end
     end
+  end
+
+  defp process_updated_result({:ok, _result}, socket, assessment_setting_id, key, new_value) do
+    {:noreply,
+     update_assessments(socket, assessment_setting_id, [{key, new_value}], false)
+     |> flash_to_liveview(:info, "Setting updated!")}
+  end
+
+  defp process_updated_result({:error, :update_section_resource, _, _}, socket, _, _, _) do
+    {:noreply, flash_to_liveview(socket, :error, "ERROR: Setting could not be updated")}
+  end
+
+  defp process_updated_result({:error, :get_section_resource, message, _}, socket, _, _, _) do
+    {:noreply, flash_to_liveview(socket, :error, message)}
+  end
+
+  defp process_updated_result({:error, {:insert_settings_change, _}, _, _}, socket, _, _, _) do
+    {:noreply, flash_to_liveview(socket, :error, "ERROR: Setting change not be inserted")}
   end
 
   defp generate_setting_changes(assessment, values, section_id, user) do
@@ -876,48 +868,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   defp maybe_add_scheduling_type(:start_date, _section_resource), do: []
 
-  defp do_update(key, assessment_setting_id, new_value, socket) do
-    %{section: section, ctx: %{user: user}} = socket.assigns
-
-    Sections.get_section_resource(
-      socket.assigns.section.id,
-      assessment_setting_id
-    )
-    |> Sections.update_section_resource(Map.new([{key, new_value}]))
-    |> case do
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> flash_to_liveview(:error, "ERROR: Setting could not be updated")}
-
-      {:ok, _section_resource} ->
-        old_value = get_old_value(socket.assigns.assessments, assessment_setting_id, key)
-
-        case Settings.insert_settings_change(%{
-               resource_id: assessment_setting_id,
-               section_id: section.id,
-               user_id: user.id,
-               user_type: get_user_type(user),
-               key: Atom.to_string(key),
-               new_value: Kernel.to_string(new_value),
-               old_value: Kernel.to_string(old_value)
-             }) do
-          {:ok, _} ->
-            {
-              :noreply,
-              socket
-              |> update_assessments(assessment_setting_id, [{key, new_value}], false)
-              |> flash_to_liveview(:info, "Setting updated!")
-            }
-
-          {:error, _} ->
-            {:noreply,
-             socket
-             |> flash_to_liveview(:error, "ERROR: Setting change not be inserted")}
-        end
-    end
-  end
-
   def get_old_value(assessments_list, resource_id, key) do
     assessments_list
     |> Enum.find(fn assessment -> assessment.resource_id == resource_id end)
@@ -965,22 +915,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     value =
       case {key, Map.get(params, target_str)} do
         {key, value}
-        when key in [
-               "late_submit",
-               "late_start",
-               "retake_mode",
-               "assessment_mode",
-               "feedback_mode",
-               "review_submission"
-             ] ->
+        when key in ~w(late_policy late_submit late_start retake_mode assessment_mode feedback_mode review_submission) ->
           String.to_existing_atom(value)
 
         {key, value}
-        when key in ["scoring_strategy_id", "time_limit", "max_attempts"] and
-               value != "" ->
+        when key in ~w(scoring_strategy_id time_limit max_attempts) and value != "" ->
           abs(String.to_integer(value))
 
-        {key, value} when key in ["start_date", "end_date"] ->
+        {key, value} when key in ~w(start_date end_date) ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
         {_, value} ->
@@ -1011,8 +953,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             :due_date,
             :max_attempts,
             :time_limit,
-            :late_submit,
+            :late_policy,
             :late_start,
+            :late_submit,
             :scoring,
             :grace_period,
             :retake_mode,
@@ -1051,6 +994,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   defp sort_by(assessments, sort_by, sort_order) do
     case sort_by do
+      :late_policy ->
+        Enum.sort_by(
+          assessments,
+          fn
+            %{late_start: :allow, late_submit: :allow} -> 1
+            %{late_start: :disallow, late_submit: :allow} -> 2
+            %{late_start: :disallow, late_submit: :disallow} -> 3
+          end,
+          sort_order
+        )
+
       :available_date ->
         Enum.sort_by(assessments, fn a -> a.start_date end, sort_order)
 
