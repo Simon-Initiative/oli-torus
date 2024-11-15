@@ -904,7 +904,6 @@ defmodule Oli.Delivery.Metrics do
   """
   def proficiency_per_student_across(section, container_id \\ nil)
 
-  # TODO: Use this
   def proficiency_per_student_across(
         %Section{analytics_version: _both, id: section_id} = section,
         container_id
@@ -1349,5 +1348,41 @@ defmodule Oli.Delivery.Metrics do
     )
     |> Repo.all()
     |> Enum.into(%{})
+  end
+
+  def proficiency_per_student_for_objective(section_id, objective_id) do
+    objective_type_id = Oli.Resources.ResourceType.id_for_objective()
+
+    query =
+      from(summary in Oli.Analytics.Summary.ResourceSummary,
+        where:
+          summary.section_id == ^section_id and
+            summary.project_id == -1 and
+            summary.publication_id == -1 and
+            summary.user_id != -1 and
+            summary.resource_type_id == ^objective_type_id and
+            summary.resource_id == ^objective_id,
+        group_by: summary.user_id,
+        select:
+          {summary.user_id,
+           fragment(
+             """
+             (
+               (1 * NULLIF(CAST(SUM(?) as float), 0.0001)) +
+               (0.2 * (NULLIF(CAST(SUM(?) as float), 0.0001) - NULLIF(CAST(SUM(?) as float), 0.0001)))
+             ) /
+             NULLIF(CAST(SUM(?) as float), 0.0001)
+             """,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts,
+             summary.num_first_attempts_correct,
+             summary.num_first_attempts
+           ), sum(summary.num_first_attempts)}
+      )
+
+    Repo.all(query)
+    |> Enum.into(%{}, fn {student_id, proficiency, num_first_attempts} ->
+      {student_id, proficiency_range(proficiency, num_first_attempts)}
+    end)
   end
 end
