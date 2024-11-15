@@ -61,6 +61,13 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         tooltip: Tooltips.for(:time_limit)
       },
       %ColumnSpec{
+        name: :late_policy,
+        label: "LATE POLICY",
+        render_fn: &__MODULE__.render_late_policy_column/3,
+        th_class: "whitespace-nowrap",
+        tooltip: Tooltips.for(:late_policy)
+      },
+      %ColumnSpec{
         name: :late_submit,
         label: "LATE SUBMIT",
         render_fn: &__MODULE__.render_late_submit_column/3,
@@ -242,6 +249,38 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         <span class="text-[10px] absolute -ml-24 mt-3">(Unlimited)</span>
       <% end %>
     </div>
+    """
+  end
+
+  def render_late_policy_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        late_start: assessment.late_start,
+        late_submit: assessment.late_submit,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <select class="torus-select pr-32" name={"late_policy-#{@id}"}>
+      <option
+        selected={@late_start == :allow && @late_submit == :allow}
+        value={:allow_late_start_and_late_submit}
+      >
+        Allow late start and late submit
+      </option>
+      <option
+        selected={@late_start == :disallow && @late_submit == :allow}
+        value={:allow_late_submit_but_not_late_start}
+      >
+        Allow late submit but not late start
+      </option>
+      <option
+        selected={@late_start == :disallow && @late_submit == :disallow}
+        value={:disallow_late_start_and_late_submit}
+      >
+        Disallow late start and late submit
+      </option>
+    </select>
     """
   end
 
