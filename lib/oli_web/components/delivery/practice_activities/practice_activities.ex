@@ -155,7 +155,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       <%= unless is_nil(@activities) do %>
         <%= if @activities == [] do %>
           <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-10 my-5 mx-10">
-            <p class="py-5">No attempt registered for this question</p>
+            <p class="py-5">No attempt registered for this assessment</p>
           </div>
         <% else %>
           <div class="mt-9">
@@ -213,10 +213,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if activity.preview_rendered != nil do %>
-                  <RenderedActivity.render
-                    id={"activity_#{activity.id}"}
-                    rendered_activity={activity.preview_rendered}
-                  />
+                  <.rendered_activity activity={activity} />
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
@@ -226,6 +223,23 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         <% end %>
       <% end %>
     </div>
+    """
+  end
+
+  def rendered_activity(
+        %{activity: %{preview_rendered: ["<oli-likert-authoring" <> _rest]}} = assigns
+      ) do
+    ~H"""
+    I'm a likert activity. A custom rendering will be implemented here.
+    """
+  end
+
+  def rendered_activity(assigns) do
+    ~H"""
+    <RenderedActivity.render
+      id={"activity_#{@activity.id}"}
+      rendered_activity={@activity.preview_rendered}
+    />
     """
   end
 
@@ -852,57 +866,24 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   defp add_likert_details(activity_attempt, response_summaries) do
-    responses =
+    responses_count_mapper =
       Enum.filter(response_summaries, fn response_summary ->
         response_summary.activity_id == activity_attempt.resource_id
       end)
-
-    choices =
-      activity_attempt.revision.content["choices"]
-      |> Enum.map(
-        &Map.merge(&1, %{
-          "frequency" =>
-            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
-        })
-      )
-      |> then(fn choices ->
-        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
-
-        if blank_reponses[:response] do
-          [
-            %{
-              "content" => [
-                %{
-                  "children" => [
-                    %{
-                      "text" =>
-                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
-                    }
-                  ],
-                  "type" => "p"
-                }
-              ],
-              "frequency" => blank_reponses.count
-            }
-            | choices
-          ]
-        else
-          choices
-        end
+      |> Enum.reduce(%{}, fn response, acc ->
+        Map.put(acc, response.response, Map.get(acc, response.response, 0) + 1)
       end)
 
-    update_in(
-      activity_attempt,
-      [Access.key!(:revision), Access.key!(:content)],
-      &Map.put(&1, "choices", choices)
-    )
-    |> update_in(
-      [
-        Access.key!(:revision),
-        Access.key!(:content)
-      ],
-      &Map.put(&1, "activityTitle", activity_attempt.revision.title)
-    )
+    questions_summary =
+      activity_attempt.revision.content["choices"]
+      |> Enum.map(fn q ->
+        %{
+          title: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
+          count: Map.get(responses_count_mapper, q["id"], 0)
+        }
+      end)
+
+    Map.merge(activity_attempt, %{questions_summary: questions_summary})
   end
 
   defp build_units_and_modules(container_count, modules_and_units) do
