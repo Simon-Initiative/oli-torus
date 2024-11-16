@@ -9,9 +9,17 @@ interface InputProps {
   inline?: boolean;
   size?: MultiInputSize;
   onChange: (value: string) => void;
+  onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 
-export const MathInput: React.FC<InputProps> = ({ value, inline, disabled, size, onChange }) => {
+export const MathInput: React.FC<InputProps> = ({
+  value,
+  inline,
+  disabled,
+  size,
+  onChange,
+  onKeyUp,
+}) => {
   return (
     <MathLive
       className={classNames('math-input', size && `input-size-${size}`)}
@@ -21,6 +29,7 @@ export const MathInput: React.FC<InputProps> = ({ value, inline, disabled, size,
         readOnly: disabled,
       }}
       onChange={onChange}
+      onKeyUp={onKeyUp}
     />
   );
 };

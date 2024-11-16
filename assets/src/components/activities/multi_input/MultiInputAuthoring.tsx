@@ -47,11 +47,9 @@ export const MultiInputComponent = () => {
   const input = model.inputs.find((input) => input.id === selectedInputRef?.id);
   const index = model.inputs.findIndex((input) => input.id === selectedInputRef?.id);
 
-  // submitPerPart setting incompatible with use of math keyboard
-  const usesMathKeyboard = model.inputs.some((input: MultiInput) => input.inputType === 'math');
   const settings = [
     shuffleAnswerChoiceSetting(model, dispatch, input),
-    !usesMathKeyboard && changePerPartSubmission(model, dispatch),
+    changePerPartSubmission(model, dispatch),
   ];
 
   return (
