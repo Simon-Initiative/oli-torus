@@ -8,7 +8,7 @@ import {
   changePerPartSubmission,
   shuffleAnswerChoiceSetting,
 } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
+import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
 import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
