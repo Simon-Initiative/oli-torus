@@ -28,6 +28,7 @@ export interface MathLiveProps {
   inline?: boolean;
   onChange?: (value: string) => void;
   onKeyUp?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onBlur?: () => void;
 }
 
 export const MathLive = ({
@@ -38,6 +39,7 @@ export const MathLive = ({
   inline,
   onChange,
   onKeyUp,
+  onBlur,
 }: MathLiveProps) => {
   const divRef = useRef<HTMLDivElement>(null);
   const mfe = useRef<MathfieldElement | null>(null);
@@ -90,16 +92,21 @@ export const MathLive = ({
       };
     }
 
+    if (onBlur !== undefined) {
+      mathFieldOptions.onBlur = (mf: Mathfield) => onBlur();
+    }
+
     if (onKeyUp !== undefined) {
       // Mathfield fires onCommit on hitting Enter OR losing focus w/change.
-      // Just treat both as Enter keypress for purpose of auto-submitting
+      // Ignore if we don't have focus; onBlur will be sent instead
       mathFieldOptions.onCommit = (mf: Mathfield) => {
-        onKeyUp({ key: 'Enter' } as React.KeyboardEvent<HTMLInputElement>);
+        if (mfe.current?.hasFocus())
+          onKeyUp({ key: 'Enter' } as React.KeyboardEvent<HTMLInputElement>);
       };
     }
 
     mfe.current?.setOptions(mathFieldOptions);
-  }, [optionString, onChange, onKeyUp]);
+  }, [optionString, onChange, onKeyUp, onBlur]);
 
   useEffect(() => {
     // firing onChange handler in middle of activity reset process led to errors

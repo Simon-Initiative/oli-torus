@@ -10,6 +10,7 @@ interface InputProps {
   size?: MultiInputSize;
   onChange: (value: string) => void;
   onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onBlur?: () => void;
 }
 
 export const MathInput: React.FC<InputProps> = ({
@@ -19,6 +20,7 @@ export const MathInput: React.FC<InputProps> = ({
   size,
   onChange,
   onKeyUp,
+  onBlur,
 }) => {
   return (
     <MathLive
@@ -30,6 +32,7 @@ export const MathInput: React.FC<InputProps> = ({
       }}
       onChange={onChange}
       onKeyUp={onKeyUp}
+      onBlur={onBlur}
     />
   );
 };
