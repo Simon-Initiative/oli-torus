@@ -105,7 +105,6 @@ export const MathLive = ({
     // firing onChange handler in middle of activity reset process led to errors
     // so suppress change notifications when programmatically setting value
     if (value !== undefined) {
-      console.log('setting mathfield value to' + value);
       mfe.current?.setValue(value, { suppressChangeNotifications: true });
     }
   }, [value]);
