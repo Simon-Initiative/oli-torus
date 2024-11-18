@@ -225,9 +225,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
-    <.menu_item_link href={
-      Routes.delivery_path(OliWeb.Endpoint, :signin, section: maybe_section_slug(assigns))
-    }>
+    <.menu_item_link href={~p"/users/log_in?#{[section: maybe_section_slug(assigns)]}"}>
       Create account or sign in
     </.menu_item_link>
     <.menu_divider />

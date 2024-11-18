@@ -243,7 +243,7 @@ defmodule Oli.Accounts do
       sub: UUID.uuid4(),
       guest: true
     }
-    |> User.registration_changeset(attrs)
+    |> User.noauth_changeset(attrs)
     |> Repo.insert()
   end
 

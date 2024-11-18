@@ -2,7 +2,6 @@ defmodule Oli.Utils.Seeder.Session do
   import Oli.Utils.Seeder.Utils
 
   alias Oli.TestHelpers
-  alias OliWeb.{AuthorAuth, UserAuth}
 
   @doc """
   Creates an author session

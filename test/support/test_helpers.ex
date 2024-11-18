@@ -265,6 +265,13 @@ defmodule Oli.TestHelpers do
     |> Plug.Conn.put_session(:current_user_id, user.id)
   end
 
+  def log_out_user(conn) do
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.delete_session(:user_token)
+    |> Plug.Conn.delete_session(:current_user_id)
+  end
+
   @doc """
   Setup helper that registers and logs in authors.
 

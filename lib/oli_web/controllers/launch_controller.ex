@@ -56,7 +56,7 @@ defmodule OliWeb.LaunchController do
           )
 
           conn
-          |> UserAuth.log_in_user(user)
+          |> UserAuth.create_session(user)
           |> redirect(to: first_page_url)
         end
       else

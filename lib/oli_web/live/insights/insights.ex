@@ -28,6 +28,9 @@ defmodule OliWeb.Insights do
 
   @limit 25
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(%{"project_id" => project_slug}, session, socket) do
     ctx = SessionContext.init(socket, session)
 

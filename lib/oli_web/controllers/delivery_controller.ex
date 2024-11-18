@@ -252,7 +252,7 @@ defmodule OliWeb.DeliveryController do
           )
 
           conn
-          |> UserAuth.log_in_user(user)
+          |> UserAuth.create_session(user)
           |> redirect(to: ~p"/sections/#{section.slug}")
         end
       else

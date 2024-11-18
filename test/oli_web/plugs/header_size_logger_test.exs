@@ -103,7 +103,7 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
         |> send_resp(200, "OK")
       end)
 
-    expected_size = SessionUtils.calculate_headers_size(conn.resp_headers)
+    expected_size = HeaderSizeLogger.calculate_headers_size(conn.resp_headers)
 
     assert log =~
              "Response headers size (#{expected_size} bytes) exceeds the threshold of #{threshold} bytes."

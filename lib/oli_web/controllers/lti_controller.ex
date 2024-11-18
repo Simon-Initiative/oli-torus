@@ -409,7 +409,8 @@ defmodule OliWeb.LtiController do
 
                 # sign current user in and redirect to home page
                 conn
-                |> UserAuth.log_in_user(user, %{"request_path" => "/course"})
+                |> UserAuth.create_session(user)
+                |> redirect(to: "/course")
             end
 
           {:error, changeset} ->

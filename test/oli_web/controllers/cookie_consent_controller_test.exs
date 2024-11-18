@@ -130,7 +130,7 @@ defmodule OliWeb.CookieConsentControllerTest do
         open_and_free: false
       })
 
-    lti_params_id =
+    _lti_params_id =
       Oli.Lti.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
       |> cache_lti_params(user.id)
