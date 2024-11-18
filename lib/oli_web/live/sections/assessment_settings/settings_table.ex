@@ -588,10 +588,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
            }
          )}
 
-      {:late_policy = key, assessment_setting_id, new_value} ->
-        AssessmentSettings.do_update(:late_policy, assessment_setting_id, new_value, resources)
-        |> process_updated_result(socket, assessment_setting_id, key, new_value)
-
       {key, assessment_setting_id, new_value} when new_value != "" ->
         AssessmentSettings.do_update(key, assessment_setting_id, new_value, resources)
         |> process_updated_result(socket, assessment_setting_id, key, new_value)
