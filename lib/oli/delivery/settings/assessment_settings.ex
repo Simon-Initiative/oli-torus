@@ -104,9 +104,9 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
         section_id: section_id,
         user_id: user.id,
         user_type: get_user_type(user),
-        key: Atom.to_string(key),
-        new_value: Kernel.to_string(new_value),
-        old_value: Kernel.to_string(old_value)
+        key: "#{key}",
+        new_value: "#{new_value}",
+        old_value: "#{old_value}"
       })
     end)
   end
