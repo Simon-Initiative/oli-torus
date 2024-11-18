@@ -804,9 +804,26 @@ defmodule OliWeb.Router do
 
   ### Workspaces
   scope "/workspaces", OliWeb.Workspaces do
-    pipe_through([:browser, :authoring_protected])
+    pipe_through([:browser, :authoring])
 
     live_session :authoring_workspaces,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.AuthorAuth, :mount_current_author},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
+      ] do
+      scope "/course_author", CourseAuthor do
+        live("/", IndexLive)
+      end
+    end
+
+    live_session :protected_authoring_workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
@@ -819,7 +836,6 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.AuthorizeProject
       ] do
       scope "/course_author", CourseAuthor do
-        live("/", IndexLive)
         live("/:project_id/overview", OverviewLive)
         live("/:project_id/alternatives", AlternativesLive)
         live("/:project_id/index_csv", IndexCsvLive)
@@ -918,6 +934,8 @@ defmodule OliWeb.Router do
 
     live_session :student_dashboard,
       on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],

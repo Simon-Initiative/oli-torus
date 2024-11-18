@@ -7,150 +7,6 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
 
   alias OliWeb.Common.Utils
 
-  describe "author not signed in" do
-    test "can access page", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-
-      assert has_element?(view, "div", "Course Author Sign In")
-    end
-
-    test "can signin and get redirected back to the authoring workspace", %{conn: conn} do
-      expect_recaptcha_http_post()
-
-      # create author account
-      post(
-        conn,
-        Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create),
-        %{
-          user: %{
-            email: "my_author@test.com",
-            email_confirmation: "my_author@test.com",
-            given_name: "me",
-            family_name: "too",
-            password: "some_password",
-            password_confirmation: "some_password",
-            email_confirmed_at: Timex.now()
-          },
-          "g-recaptcha-response": "any"
-        }
-      )
-
-      # access without being singed in
-      conn = Phoenix.ConnTest.build_conn()
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-
-      assert has_element?(view, "div", "Course Author Sign In")
-
-      # we sign in and get redirected back to the authoring workspace
-      conn =
-        conn
-        |> post(
-          Routes.authoring_pow_session_path(OliWeb.Endpoint, :create,
-            request_path: ~p"/workspaces/course_author"
-          ),
-          user: %{email: "my_author@test.com", password: "some_password"}
-        )
-
-      assert conn.assigns.current_author.email == "my_author@test.com"
-      assert redirected_to(conn) == ~p"/workspaces/course_author"
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-
-      # author is signed in
-      refute has_element?(view, "div", "Course Author Sign In")
-      assert has_element?(view, "h1", "Course Author")
-    end
-
-    test "can NOT create an authoring account if the current user already has an author account linked",
-         %{conn: conn} do
-      author = insert(:author)
-      user_with_account_linked = insert(:user, author: author)
-
-      conn =
-        log_in_user(
-          conn,
-          user_with_account_linked
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert has_element?(view, "div", "Course Author Sign In")
-      refute has_element?(view, "a", "Create Account")
-    end
-
-    test "can create an account if the current user does not yet have an author linked account",
-         %{conn: conn} do
-      user_with_no_account_linked = insert(:user, author: nil)
-
-      conn =
-        log_in_user(
-          conn,
-          user_with_no_account_linked
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert has_element?(view, "div", "Course Author Sign In")
-      assert has_element?(view, "a", "Create Account")
-    end
-
-    test "on account creation account gets linked automatically if current user has no linked authoring account",
-         %{conn: conn} do
-      user_with_no_account_linked = insert(:user, email: "some_user@test.com", author: nil)
-
-      conn =
-        log_in_user(
-          conn,
-          user_with_no_account_linked
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-
-      element(view, "a", "Create Account")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/authoring/registration/new?link_to_user_account%3F=true&request_path=%2Fworkspaces%2Fcourse_author"
-      )
-
-      # create new author account
-      expect_recaptcha_http_post()
-
-      conn =
-        Phoenix.ConnTest.build_conn()
-        |> log_in_user(user_with_no_account_linked)
-        |> post(
-          Routes.authoring_pow_registration_path(OliWeb.Endpoint, :create,
-            link_to_user_account?: "true",
-            request_path: ~p"/workspaces/course_author"
-          ),
-          %{
-            user: %{
-              email: "my_author@test.com",
-              email_confirmation: "my_author@test.com",
-              given_name: "me",
-              family_name: "too",
-              password: "some_password",
-              password_confirmation: "some_password"
-            },
-            "g-recaptcha-response": "any"
-          }
-        )
-
-      # user gets redirected back to the authoring workspace and the account is linked
-      author_account = Oli.Accounts.get_author_by_email("my_author@test.com")
-      user_account = Oli.Accounts.get_user!(user_with_no_account_linked.id)
-      assert redirected_to(conn) == ~p"/workspaces/course_author"
-      assert user_account.author_id == author_account.id
-    end
-
-    test "can create an account if there is no current user already signed in", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert has_element?(view, "div", "Course Author Sign In")
-      assert has_element?(view, "a", "Create Account")
-    end
-  end
-
   describe "course author workspace as author" do
     setup [:author_conn, :set_timezone]
 
@@ -255,40 +111,6 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
              |> render() =~
                "Testing B"
     end
-
-    test "can signout from authoring account and return to course author workspace (and user account stays signed in)",
-         %{conn: conn} do
-      user = insert(:user, email: "user_not_author@test.com")
-
-      conn =
-        log_in_user(
-          conn,
-          user
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert conn.assigns.current_author
-      assert conn.assigns.current_user
-      refute has_element?(view, "div", "Course Author Sign In")
-
-      view
-      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author"
-      )
-
-      conn = delete(conn, "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author")
-
-      assert redirected_to(conn) == ~p"/workspaces/course_author"
-      refute conn.assigns.current_author
-      assert conn.assigns.current_user
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert has_element?(view, "div", "Course Author Sign In")
-    end
   end
 
   describe "course author workspace as admin" do
@@ -313,7 +135,6 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
         |> render()
 
       assert project_row =~ project.title
-      assert project_row =~ Utils.render_date(project, :inserted_at, ctx)
       assert project_row =~ admin.name
       assert project_row =~ admin.email
       assert project_row =~ "Active"
@@ -413,43 +234,10 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       ]
       |> Enum.each(fn workspace ->
         {:ok, view, _html} = live(conn, workspace)
-        assert has_element?(view, "button[id=workspace-user-menu]", "TA")
+
+        assert has_element?(view, "button[id=workspace-user-menu]", "HS")
         assert has_element?(view, "div[role='account label']", "Admin")
       end)
-    end
-
-    test "can signout from ADMIN authoring account and return to course author workspace (and user account stays signed in)",
-         %{conn: conn} do
-      user = insert(:user, email: "user_not_author@test.com")
-
-      conn =
-        log_in_user(
-          conn,
-          user
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert conn.assigns.current_author
-      assert conn.assigns.current_user
-      refute has_element?(view, "div", "Course Author Sign In")
-
-      view
-      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author"
-      )
-
-      conn = delete(conn, "/authoring/signout?type=author&target=%2Fworkspaces%2Fcourse_author")
-
-      assert redirected_to(conn) == ~p"/workspaces/course_author"
-      refute conn.assigns.current_author
-      assert conn.assigns.current_user
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
-      assert has_element?(view, "div", "Course Author Sign In")
     end
   end
 

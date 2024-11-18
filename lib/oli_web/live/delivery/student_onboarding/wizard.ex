@@ -18,8 +18,9 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   @explorations_label "Let's Begin"
   @course_label "Go to course"
 
-  def mount(_params, %{"datashop_session_id" => datashop_session_id}, socket) do
+  def mount(_params, _session, socket) do
     section = socket.assigns.section
+    datashop_session_id = socket.assigns.datashop_session_id
 
     has_required_survey = has_required_survey(section)
     has_explorations = has_explorations(section)

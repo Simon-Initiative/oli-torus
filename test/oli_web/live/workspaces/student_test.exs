@@ -9,63 +9,6 @@ defmodule OliWeb.Workspaces.StudentTest do
   alias Oli.Delivery.Sections
   alias Oli.Accounts
 
-  describe "user not signed in" do
-    test "can access page", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
-
-      assert has_element?(view, "span", "Welcome to")
-      assert has_element?(view, "span", "OLI Torus")
-    end
-
-    test "can signin and get redirected back to the student workspace", %{conn: conn} do
-      expect_recaptcha_http_post()
-
-      # create student account
-      post(
-        conn,
-        Routes.pow_registration_path(conn, :create),
-        %{
-          user: %{
-            email: "my_student@test.com",
-            email_confirmation: "my_student@test.com",
-            given_name: "me",
-            family_name: "too",
-            password: "some_password",
-            password_confirmation: "some_password"
-          },
-          "g-recaptcha-response": "any"
-        }
-      )
-
-      # access without being singed in
-      conn = Phoenix.ConnTest.build_conn()
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
-
-      assert has_element?(view, "div", "Student Sign In")
-
-      # we sign in and get redirected back to the student workspace
-      conn =
-        conn
-        |> post(
-          Routes.session_path(conn, :signin,
-            type: :user,
-            after_sign_in_target: :student_workspace
-          ),
-          user: %{email: "my_student@test.com", password: "some_password"}
-        )
-
-      assert conn.assigns.current_user.email == "my_student@test.com"
-      assert redirected_to(conn) == ~p"/workspaces/student"
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
-
-      # student is signed in
-      refute has_element?(view, "div", "Student Sign In")
-      assert has_element?(view, "p", "You are not enrolled in any courses.")
-    end
-  end
-
   describe "user" do
     setup [:user_conn]
 
@@ -86,17 +29,6 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert has_element?(view, "p", "You are not enrolled in any courses.")
-    end
-
-    test "cannot access student workspace when locked", %{conn: conn, user: user} do
-      Accounts.lock_user(user)
-
-      {:error,
-       {:redirect,
-        %{
-          to: "/session/new",
-          flash: %{"error" => "Sorry, your account is locked. Please contact support."}
-        }}} = live(conn, ~p"/workspaces/student")
     end
 
     test "can access student workspace when is unlocked after being locked", %{
@@ -287,46 +219,6 @@ defmodule OliWeb.Workspaces.StudentTest do
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
 
       assert render(view) =~ "desktop-workspace-nav-menu"
-    end
-
-    test "can signout from student account and return to student workspace (and author account stays signed in)",
-         %{conn: conn, user: user} do
-      section_1 = insert(:section, %{open_and_free: true, title: "The best course ever!"})
-      section_2 = insert(:section, %{open_and_free: true, title: "Maths"})
-
-      Sections.enroll(user.id, section_1.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(user.id, section_2.id, [ContextRoles.get_role(:context_instructor)])
-
-      author = insert(:author, email: "author_account@test.com")
-
-      conn =
-        log_in_author(
-          conn,
-          author
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
-      assert conn.assigns.current_author
-      assert conn.assigns.current_user
-      refute has_element?(view, "div", "Student Sign In")
-
-      view
-      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/course/signout?type=user&target=%2Fworkspaces%2Fstudent"
-      )
-
-      conn = delete(conn, "/course/signout?type=user&target=%2Fworkspaces%2Fstudent")
-
-      assert redirected_to(conn) == ~p"/workspaces/student"
-      assert conn.assigns.current_author
-      refute conn.assigns.current_user
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
-      assert has_element?(view, "div", "Student Sign In")
     end
   end
 

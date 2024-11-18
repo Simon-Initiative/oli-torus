@@ -2,6 +2,7 @@ defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
   on_mount OliWeb.LiveSessionPlugs.SetSection
   on_mount OliWeb.LiveSessionPlugs.SetBrand
   on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
@@ -58,14 +59,14 @@ defmodule OliWeb.Delivery.NewCourse do
     {current_user, lti_params} =
       case socket.assigns.current_user do
         nil ->
-          nil
+          {nil, nil}
 
         current_user ->
           current_user =
             Accounts.load_lti_params(current_user)
             |> Repo.preload([:author])
 
-          {current_user, current_user.lti_params.params}
+          {current_user, get_in(current_user.lti_params, [:params])}
       end
 
     changeset =

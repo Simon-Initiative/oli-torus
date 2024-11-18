@@ -28,8 +28,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
 
   @impl Phoenix.LiveView
   def mount(_params, _session, %{assigns: %{ctx: %{author: nil}}} = socket) do
-    # MER-3835 TODO
-    authentication_providers = []
+    email = Phoenix.Flash.get(socket.assigns.flash, :email)
+    form = to_form(%{"email" => email}, as: "author")
+
+    authentication_providers =
+      Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
 
     {:ok,
      assign(socket,
@@ -37,6 +40,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
        active_workspace: :course_author,
        header_enabled?: false,
        footer_enabled?: false,
+       form: form,
        authentication_providers: authentication_providers
      )}
   end

@@ -161,6 +161,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
               <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
             <% %SessionContext{author: %Author{}} -> %>
               <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+            <% _ -> %>
           <% end %>
         <% end %>
       </.dropdown_menu>
