@@ -225,7 +225,7 @@ const Step1: React.FC<{
   return (
     <div className="wizard-content">
       <h1 className="wizard-header">1. Write a title for your lesson</h1>
-      <div className="wizard-body">
+      <div className="wizard-body step-1">
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
