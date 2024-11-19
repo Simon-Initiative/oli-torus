@@ -97,7 +97,15 @@ const EditingCanvas: React.FC = () => {
 
   const handlePartCopy = async (part: any) => {
     dispatch(setCopiedPart({ copiedPart: part }));
-    dispatch(setCopiedPartActivityId({ copiedPartActivityId: currentActivityId }));
+    if (currentActivityTree) {
+      // Global 'currentActivityId' was not up to date with the current selected activity if when we select a subscreen from a layer
+      // so we will get the currentActivity from the currentActivityTree and then set the setCopiedPartActivityId
+      const [currentActivity] = currentActivityTree.slice(-1);
+      dispatch(setCopiedPartActivityId({ copiedPartActivityId: currentActivity.id }));
+    } else {
+      // we don't need this. Just for any fail safe I did't remove this but ideally the code will never reach here.
+      dispatch(setCopiedPartActivityId({ copiedPartActivityId: currentActivityId }));
+    }
     return true;
   };
 
