@@ -4832,11 +4832,18 @@ defmodule Oli.Delivery.Sections do
     top_level_aggregation =
       Enum.reduce(top_level_objectives, %{}, fn obj, map ->
         aggregation =
-          Enum.reduce(obj.children, {0, 0}, fn child, {correct, total} ->
-            {child_attempts_correct, child_first_attempts, child_correct, child_total} =
+          Enum.reduce(obj.children, {0, 0, 0, 0}, fn child,
+                                                     {first_attempts_correct, first_attempts,
+                                                      correct, attempts} ->
+            {child_first_attempts_correct, child_first_attempts, child_correct, child_attempts} =
               Map.get(proficiency_per_learning_objective, child, {0, 0, 0, 0})
 
-            {correct + child_correct, total + child_total}
+            {
+              first_attempts_correct + child_first_attempts_correct,
+              first_attempts + child_first_attempts,
+              correct + child_correct,
+              attempts + child_attempts
+            }
           end)
 
         Map.put(map, obj.resource_id, aggregation)
@@ -4862,8 +4869,8 @@ defmodule Oli.Delivery.Sections do
               student_proficiency_subobj: ""
             })
 
-          {parent_correct, parent_total} =
-            Map.get(top_level_aggregation, objective.resource_id, {0, 0})
+          {_, _, parent_correct, parent_total} =
+            Map.get(top_level_aggregation, objective.resource_id, {0, 0, 0, 0})
 
           sub_objectives =
             Enum.map(objective.children, fn child ->
@@ -4879,6 +4886,8 @@ defmodule Oli.Delivery.Sections do
               Map.merge(sub_objective, %{
                 objective: objective.title,
                 objective_resource_id: objective.resource_id,
+                # TODO
+                proficiency_distribution: %{},
                 student_proficiency_obj:
                   Metrics.proficiency_range(calc.(parent_correct, parent_total), parent_total),
                 subobjective: sub_objective.title,

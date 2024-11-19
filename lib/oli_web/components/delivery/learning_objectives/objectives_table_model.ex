@@ -18,21 +18,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         th_class: "pl-10"
       },
       %ColumnSpec{
-        name: :subobjective,
-        label: "SUB LEARNING OBJ.",
-        render_fn: &__MODULE__.custom_render/3
-      },
-      %ColumnSpec{
         name: :student_proficiency_obj,
-        label: "STUDENT PROFICIENCY OBJ.",
+        label: "STUDENT PROFICIENCY",
         tooltip:
           "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
       },
       %ColumnSpec{
-        name: :student_proficiency_subobj,
-        label: "STUDENT PROFICIENCY (SUB OBJ.)",
-        tooltip:
-          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+        name: :student_proficiency_distribution,
+        label: "PROFICIENCY DISTRIBUTION",
+        render_fn: &__MODULE__.custom_render/3
       }
     ]
 
@@ -79,13 +73,56 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  def custom_render(assigns, %{subobjective: subobjective} = _objectives, %ColumnSpec{
-        name: :subobjective
-      }) do
-    assigns = Map.merge(assigns, %{subobjective: subobjective})
+  def custom_render(
+        assigns,
+        %{resource_id: objective_id, proficiency_distribution: proficiency_distribution},
+        %ColumnSpec{
+          name: :student_proficiency_distribution
+        }
+      ) do
+    assigns =
+      Map.merge(assigns, %{
+        objective_id: objective_id,
+        proficiency_distribution: proficiency_distribution
+      })
 
     ~H"""
-    <div><%= if is_nil(@subobjective), do: "-", else: @subobjective %></div>
+    <div><%= render_proficiency_data_chart(@objective_id, @proficiency_distribution) %></div>
     """
+  end
+
+  defp render_proficiency_data_chart(objective_id, data) do
+    # TODO
+    data = [
+      %{type: "Not enough data", perc: 8},
+      %{type: "Low", perc: 25},
+      %{type: "Medium", perc: 21},
+      %{type: "High", perc: 46}
+    ]
+
+    spec = %{
+      mark: "bar",
+      data: %{values: data},
+      encoding: %{
+        x: %{aggregate: "sum", field: "perc"},
+        color: %{field: "type"}
+      },
+      config: %{
+        axis: %{
+          domain: false,
+          ticks: false,
+          labels: false,
+          title: false
+        },
+        legend: %{disable: true}
+      }
+    }
+
+    OliWeb.Common.React.component(
+      %{is_liveview: true},
+      "Components.VegaLiteRenderer",
+      %{spec: spec},
+      id: "proficiency-data-bar-chart-for-objective-#{objective_id}"
+    )
   end
 end

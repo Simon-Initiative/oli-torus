@@ -567,7 +567,14 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
       |> maybe_filter_by_card(params.selected_card_value)
       |> sort_by(params.sort_by, params.sort_order)
 
-    {length(objectives), objectives |> Enum.drop(params.offset) |> Enum.take(params.limit)}
+    total_count = length(objectives)
+
+    rows =
+      objectives
+      |> Enum.drop(params.offset)
+      |> Enum.take(params.limit)
+
+    {total_count, rows}
   end
 
   defp sort_by(objectives, sort_by, sort_order) do
