@@ -5823,6 +5823,11 @@ table.table-striped tbody tr:nth-child(even) {
   width: 100%;
 }
 
+.w-max {
+  width: -moz-max-content;
+  width: max-content;
+}
+
 .w-min {
   width: -moz-min-content;
   width: min-content;
@@ -5927,11 +5932,6 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 28rem;
 }
 
-.max-w-min {
-  max-width: -moz-min-content;
-  max-width: min-content;
-}
-
 .max-w-sm {
   max-width: 24rem;
 }
@@ -6015,8 +6015,8 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.-translate-y-\[34px\] {
-  --tw-translate-y: -34px;
+.-translate-y-\[73px\] {
+  --tw-translate-y: -73px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -8542,10 +8542,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pb-8 {
   padding-bottom: 2rem;
-}
-
-.pb-\[27px\] {
-  padding-bottom: 27px;
 }
 
 .pb-\[3px\] {
