@@ -1,23 +1,30 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   use OliWeb, :live_component
 
-  import Phoenix.HTML.Form
-  import OliWeb.ErrorHelpers
   import Ecto.Query, only: [from: 2]
+  import OliWeb.ErrorHelpers
+  import Phoenix.HTML.Form
 
-  alias OliWeb.Common.{FormatDateTime, PagedTable, SearchInput, Params, Paging}
-  alias OliWeb.Common.Utils, as: CommonUtils
+  alias Oli.Accounts.Author
+  alias Oli.Delivery.DepotCoordinator
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Settings
+  alias Oli.Delivery.Settings.AssessmentSettings
   alias Oli.Delivery.Settings.AutoSubmitCustodian
+  alias Oli.Delivery.Sections.SectionResource
+  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Publishing.DeliveryResolver
+  alias Oli.Repo
+  alias Oli.Utils
+  alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.Paging
+  alias OliWeb.Common.Params
+  alias OliWeb.Common.Utils, as: CommonUtils
+  alias OliWeb.Common.SearchInput
+  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.AssessmentSettings.SettingsTableModel
   alias Phoenix.LiveView.JS
-  alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.{Sections, Settings}
-  alias Oli.Delivery.Sections.SectionResource
-  alias Oli.Publishing.DeliveryResolver
-  alias Oli.{Repo, Utils}
-  alias Oli.Accounts.Author
-  alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Delivery.Settings.AssessmentSettings
 
   @default_params %{
     offset: 0,
@@ -476,7 +483,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
     # Instruct the DepotCoordinator to update the SRS for these assessments
     srs = get_assessment_srs(socket.assigns.section.id, Enum.map(assessments, & &1.resource_id))
 
-    Oli.Delivery.DepotCoordinator.update_all(SectionResourceDepot.depot_desc(), srs)
+    DepotCoordinator.update_all(SectionResourceDepot.depot_desc(), srs)
 
     settings_changes =
       assessments
