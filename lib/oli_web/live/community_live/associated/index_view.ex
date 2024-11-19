@@ -11,6 +11,8 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def filter_rows(socket, query, _filter) do
     Enum.filter(socket.assigns.associations, fn a ->
       String.contains?(String.downcase(TableModel.get_field(:title, a)), String.downcase(query))

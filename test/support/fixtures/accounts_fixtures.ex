@@ -29,7 +29,8 @@ defmodule Oli.AccountsFixtures do
 
     {:ok, user} =
       %User{}
-      |> User.registration_changeset(attrs)
+      |> Ecto.Changeset.cast(attrs, [:password])
+      |> hash_password()
       |> User.noauth_changeset(attrs)
       |> Repo.insert()
 
@@ -68,5 +69,17 @@ defmodule Oli.AccountsFixtures do
       |> Repo.insert()
 
     author
+  end
+
+  defp hash_password(changeset) do
+    password = Ecto.Changeset.get_change(changeset, :password)
+
+    if password && changeset.valid? do
+      changeset
+      |> Ecto.Changeset.put_change(:password_hash, Bcrypt.hash_pwd_salt(password))
+      |> Ecto.Changeset.delete_change(:password)
+    else
+      changeset
+    end
   end
 end

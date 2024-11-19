@@ -40,7 +40,7 @@ defmodule OliWeb.WorkspaceControllerTest do
       {:ok, _} = Oli.Accounts.delete_author(author)
 
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
-      assert html_response(conn, 302) =~ "You are being <a href=\"/authoring/session/new"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/authors/log_in"
     end
 
     test "can still access the projects page if an author is deleted", %{conn: conn} do
@@ -54,23 +54,6 @@ defmodule OliWeb.WorkspaceControllerTest do
       conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
       assert html_response(conn, 200) =~ "Projects"
       assert html_response(conn, 200) =~ "Example Open and Free Course"
-    end
-  end
-
-  describe "account" do
-    setup [:author_conn]
-
-    test "displays the page", %{conn: conn} do
-      conn = get(conn, Routes.live_path(conn, OliWeb.Workspaces.AccountDetailsLive))
-      assert html_response(conn, 200) =~ "Account"
-    end
-
-    test "shows a sign out link", %{conn: conn} do
-      conn =
-        conn
-        |> get(Routes.live_path(conn, OliWeb.Workspaces.AccountDetailsLive))
-
-      assert html_response(conn, 200) =~ "Sign out"
     end
   end
 end

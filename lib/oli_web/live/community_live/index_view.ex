@@ -13,6 +13,8 @@ defmodule OliWeb.CommunityLive.IndexView do
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def filter_rows(socket, query, filter) do
     query_str = String.downcase(query)
     status_list = withelist_filter(filter, "status", ["active", "deleted"])
@@ -38,9 +40,11 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   def mount(
         _,
-        %{"is_admin" => is_admin, "current_author_id" => author_id} = session,
+        %{"current_author_id" => author_id} = session,
         socket
       ) do
+    is_admin = socket.assigns.is_admin
+
     communities =
       if is_admin do
         Groups.list_communities()

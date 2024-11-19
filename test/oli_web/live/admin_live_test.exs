@@ -36,33 +36,33 @@ defmodule OliWeb.AdminLiveTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin index view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_route)
     end
 
     test "redirects to new session when accessing the admin users view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fusers"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_users_route)
     end
 
     test "redirects to new session when accessing the user detail view", %{conn: conn} do
       user_id = insert(:user).id
 
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{user_id}"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_user_detail_route(user_id))
     end
 
     test "redirects to new session when accessing the admin authors view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fauthors"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_authors_route)
     end
 
     test "redirects to new session when accessing the author detail view", %{conn: conn} do
       author_id = insert(:author).id
 
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fauthors%2F#{author_id}"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_author_detail_route(author_id))
@@ -75,19 +75,31 @@ defmodule OliWeb.AdminLiveTest do
     test "returns forbidden when accessing the admin index view", %{conn: conn} do
       conn = get(conn, @live_view_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the admin users view", %{conn: conn} do
       conn = get(conn, @live_view_users_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the admin authors view", %{conn: conn} do
       conn = get(conn, @live_view_authors_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
   end
 
@@ -1022,8 +1034,6 @@ defmodule OliWeb.AdminLiveTest do
 
       %Author{locked_at: date} = Accounts.get_author!(id)
       assert not is_nil(date)
-
-      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "unlocks the author", %{
@@ -1046,8 +1056,6 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click()
 
       assert %Author{locked_at: nil} = Accounts.get_author!(id)
-
-      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "confirms author email", %{

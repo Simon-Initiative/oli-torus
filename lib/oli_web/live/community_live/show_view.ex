@@ -22,6 +22,8 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   @matches_limit 30
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def breadcrumb(community_id) do
     IndexView.breadcrumb() ++
       [

@@ -32,10 +32,9 @@ defmodule OliWeb.XAPIControllerTest do
 
       # Here we are using user2, but the attempt is for user1.  User2 isn't
       # enrolled in the section, so this should fail.
-      lti_params_id =
-        Oli.Lti.TestHelpers.all_default_claims()
-        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
-        |> cache_lti_params(map.user2.id)
+      Oli.Lti.TestHelpers.all_default_claims()
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
+      |> cache_lti_params(map.user2.id)
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
@@ -280,10 +279,9 @@ defmodule OliWeb.XAPIControllerTest do
         Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
       ])
 
-      lti_params_id =
-        Oli.Lti.TestHelpers.all_default_claims()
-        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
-        |> cache_lti_params(user.id)
+      Oli.Lti.TestHelpers.all_default_claims()
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
+      |> cache_lti_params(user.id)
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)

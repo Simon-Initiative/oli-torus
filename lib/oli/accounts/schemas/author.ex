@@ -256,6 +256,8 @@ defmodule Oli.Accounts.Author do
       :locked_at,
       :email_confirmed_at
     ])
+    |> cast_embed(:preferences)
+    |> default_system_role()
     |> maybe_hash_password([])
     |> maybe_name_from_given_and_family()
   end

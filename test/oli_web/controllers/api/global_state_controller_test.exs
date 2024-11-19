@@ -75,10 +75,9 @@ defmodule OliWeb.Api.GlobalStateControllerTest do
         open_and_free: false
       })
 
-    lti_params_id =
-      Oli.Lti.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
-      |> cache_lti_params(user.id)
+    Oli.Lti.TestHelpers.all_default_claims()
+    |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
+    |> cache_lti_params(user.id)
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
