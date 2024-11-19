@@ -1230,7 +1230,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # when the request path is not the learn view, it keeps it when navigating between pages
-      request_path = ~p"/sections/#{section.slug}/assignments"
+      request_path = ~p"/sections/#{section.slug}/student_schedule"
 
       {:ok, view, _html} =
         live(

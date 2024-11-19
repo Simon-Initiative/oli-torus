@@ -791,11 +791,15 @@ defmodule Oli.Delivery.Paywall do
                fragment(
                  """
                    CASE
-                     WHEN ? = 'deferred' THEN 1
-                     WHEN ? = 'direct' THEN 2
-                     ELSE 3
+                     WHEN ? = 'bypass' THEN 1
+                     WHEN ? = 'deferred' THEN 2
+                     WHEN ? = 'direct' THEN 3
+                     WHEN ? = 'invalidated' THEN 4
+                     ELSE 5
                    END
                  """,
+                 p.type,
+                 p.type,
                  p.type,
                  p.type
                )},

@@ -75,7 +75,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   defp annotations(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-col gap-3 pb-2 overflow-y-scroll">
+    <div class="flex-1 flex flex-col gap-3 pb-2 scrollbar overflow-y-scroll">
       <.add_new_annotation_input
         :if={@selected_point}
         class="my-2"
@@ -119,7 +119,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def search_results(assigns) do
     ~H"""
-    <div class="flex-1 flex flex-col gap-3 pb-2 overflow-y-scroll">
+    <div class="flex-1 flex flex-col gap-3 pb-2 scrollbar overflow-y-scroll">
       <%= case @search_results do %>
         <% :loading -> %>
           <Common.loading_spinner />
@@ -770,7 +770,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
 
   def delete_post_modal(assigns) do
     ~H"""
-    <Modal.modal id="delete_post_modal" class="w-1/2">
+    <Modal.modal id="delete_post_modal" class="w-1/2 z-50">
       <:title>Delete Note</:title>
       <.form
         phx-submit={JS.push("delete_post") |> Modal.hide_modal("delete_post_modal")}

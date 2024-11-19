@@ -20,6 +20,7 @@ defmodule OliWeb.Icons do
   def flag(assigns) do
     ~H"""
     <svg
+      role="flag icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -98,16 +99,25 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "fill-[#0CAF61] dark:fill-[#12E56A]"
+
   def square_checked(assigns) do
     ~H"""
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg
+      role="square checked icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
       <path
         d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z"
-        class="fill-[#0CAF61] dark:fill-[#12E56A]"
+        class={@class}
       />
       <path
         d="M11.7 16.025L6 10.325L7.425 8.9L11.7 13.175L20.875 4L22.3 5.425L11.7 16.025Z"
-        class="fill-[#0CAF61] dark:fill-[#12E56A]"
+        class={@class}
       />
     </svg>
     """
@@ -464,6 +474,7 @@ defmodule OliWeb.Icons do
   def world(assigns) do
     ~H"""
     <svg
+      role="world icon"
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -837,6 +848,63 @@ defmodule OliWeb.Icons do
 
   attr :is_active, :boolean, default: false
 
+  def assignments(%{is_active: true} = assigns) do
+    ~H"""
+    <svg
+      role="active assignments icon"
+      class="dark:fill-white fill-black/70 dark:stroke-white stroke-black/70"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  def assignments(%{is_active: false} = assigns) do
+    ~H"""
+    <svg
+      role="assignments icon"
+      class="dark:stroke-[#B8B4BF] stroke-black/70"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  attr :is_active, :boolean, default: false
+
   def practice(%{is_active: true} = assigns) do
     ~H"""
     <svg
@@ -1158,7 +1226,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 19 18"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      class="dark:stroke-white stroke-black/70"
+      stroke="currentColor"
     >
       <g clip-path="url(#clip0_2850_70040)">
         <path
@@ -1176,7 +1244,7 @@ defmodule OliWeb.Icons do
       </g>
       <defs>
         <clipPath id="clip0_2850_70040">
-          <rect width="18" height="18" fill="white" transform="translate(0.5)" />
+          <rect width="18" height="18" fill="currentColor" transform="translate(0.5)" />
         </clipPath>
       </defs>
     </svg>
@@ -1186,12 +1254,12 @@ defmodule OliWeb.Icons do
   def hidden(assigns) do
     ~H"""
     <svg
-      class="dark:stroke-white stroke-black/70"
       role="hidden icon"
       width="19"
+      fill="none"
+      stroke="currentColor"
       height="18"
       viewBox="0 0 19 18"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <g clip-path="url(#clip0_2850_70060)">
@@ -1216,12 +1284,7 @@ defmodule OliWeb.Icons do
       </g>
       <defs>
         <clipPath id="clip0_2850_70060">
-          <rect
-            width="18"
-            height="18"
-            class="dark:fill-white fill-black/70"
-            transform="translate(0.5)"
-          />
+          <rect width="18" fill="currentColor" height="18" transform="translate(0.5)" />
         </clipPath>
       </defs>
     </svg>
