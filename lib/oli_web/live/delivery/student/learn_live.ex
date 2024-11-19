@@ -999,7 +999,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
           >
             <div class="justify-start items-start gap-1 inline-flex">
-              <div class="opacity-60 dark:text-white text-sm font-bold font-['Open Sans'] uppercase tracking-tight">
+              <div class="opacity-60 dark:text-white text-sm font-bold uppercase tracking-tight">
                 <%= container_label_and_numbering(
                   selected_module["numbering"][
                     "level"
@@ -1011,12 +1011,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 ) %>
               </div>
             </div>
-            <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal font-['Open Sans'] leading-loose tracking-tight dark:text-white">
+            <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal leading-loose tracking-tight dark:text-white">
               <%= selected_module[
                 "title"
               ] %>
             </h2>
-            <span class="opacity-50 dark:text-white text-xs font-normal font-['Open Sans']">
+            <span class="opacity-50 dark:text-white text-xs font-normal">
               <%= Utils.container_label_for_scheduling_type(
                 Map.get(@contained_scheduling_types, selected_module["resource_id"])
               ) %><%= format_date(
@@ -1045,7 +1045,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 data-toggle_read_more_button_id={"toggle_read_more_#{selected_module["resource_id"]}"}
                 phx-hook="ToggleReadMore"
                 id={"selected_module_in_unit_#{@unit["resource_id"]}_intro_content"}
-                class="text-sm font-normal font-['Open Sans'] leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
+                class="text-sm font-normal leading-[30px] max-w-[760px] overflow-hidden dark:text-white"
                 style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;"
               >
                 <%= render_intro_content(
@@ -1066,7 +1066,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     |> JS.toggle(to: "#read_less_module_intro_in_unit_#{@unit["resource_id"]}")
                     |> JS.toggle()
                   }
-                  class="text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+                  class="text-blue-500 text-sm font-normal leading-[30px] ml-auto"
                 >
                   Read more
                 </button>
@@ -1081,7 +1081,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     |> JS.toggle(to: "#read_more_module_intro_in_unit_#{@unit["resource_id"]}")
                     |> JS.toggle()
                   }
-                  class="hidden text-blue-500 text-sm font-normal font-['Open Sans'] leading-[30px] ml-auto"
+                  class="hidden text-blue-500 text-sm font-normal leading-[30px] ml-auto"
                 >
                   Read less
                 </button>
@@ -1091,7 +1091,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <button
             :if={@assistant_enabled}
             phx-click={JS.dispatch("click", to: "#ai_bot_collapsed_button")}
-            class="h-[39px] p-2.5 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 dark:bg-blue-700 dark:hover:bg-opacity-60 dark:focus:bg-opacity-60 rounded text-white text-sm font-semibold font-['Open Sans'] tracking-tight"
+            class="h-[39px] p-2.5 bg-blue-500 hover:bg-blue-600 focus:bg-blue-600 dark:bg-blue-700 dark:hover:bg-opacity-60 dark:focus:bg-opacity-60 rounded text-white text-sm font-semibold tracking-tight"
           >
             Let's discuss?
           </button>
@@ -1137,7 +1137,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               role="collapse module button"
               class="pl-5 pr-4 rounded-[82px] border border-white/20 dark:text-white opacity-80 hover:opacity-100 hoverjustify-center items-center gap-3 flex"
             >
-              <div class="text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
+              <div class="text-[13px] font-semibold leading-loose tracking-tight">
                 Collapse Module
               </div>
               <Icons.chevron_down class="w-4 h-4 opacity-90 rotate-180" />
@@ -1155,7 +1155,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id={"unit_#{@row["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
-          <div class="dark:text-white text-xl font-bold font-['Open Sans']">
+          <div class="dark:text-white text-xl font-bold">
             <%= "#{Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations)}: #{@row["title"]}" %>
           </div>
         </div>
@@ -1180,7 +1180,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div id={"top_level_page_#{@row["resource_id"]}"}>
       <div class="md:p-[25px] md:pl-[125px] md:pr-[175px]" role={"row_#{@row["numbering"]["index"]}"}>
         <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
-          <div class="dark:text-white text-xl font-bold font-['Open Sans']">
+          <div class="dark:text-white text-xl font-bold">
             <%= @row["title"] %>
           </div>
         </div>
@@ -1206,19 +1206,19 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         <div class="justify-start items-start gap-5 flex">
           <Icons.no_icon />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold capitalize">
               <.numbering_index type={Atom.to_string(@type)} />
             </div>
           </div>
         </div>
         <div class={[
-          "dark:text-white text-base font-bold font-['Open Sans']",
+          "dark:text-white text-base font-bold",
           left_indentation(@row["numbering"]["level"], :outline)
         ]}>
           <span><%= @row["title"] %></span>
           <div
             :if={@type == :module and @row["intro_content"]["children"] not in ["", nil]}
-            class="mt-3 dark:text-white text-base font-normal font-['Open Sans']"
+            class="mt-3 dark:text-white text-base font-normal"
           >
             <%= render_intro_content(@row["intro_content"]["children"]) %>
           </div>
@@ -1275,7 +1275,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             progress={@row["progress"]}
           />
           <div class="w-[26px] justify-start items-center">
-            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+            <div class="grow shrink basis-0 opacity-60 dark:text-white text-[13px] font-semibold capitalize">
               <.numbering_index type={Atom.to_string(@type)} index={@row["numbering"]["index"]} />
             </div>
           </div>
@@ -1294,7 +1294,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 role="page title"
                 class={
                   [
-                    "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
+                    "text-left dark:text-white opacity-90 text-base",
                     # Opacity is set if the item is visited, but not necessarily completed
                     if(@row["visited"], do: "opacity-60")
                   ]
@@ -1327,7 +1327,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         </div>
         <div class="w-34 h-8 pl-1 flex gap-1.5">
           <div class="flex gap-0.5 items-center">
-            <span class="opacity-80 dark:text-white text-[13px] font-normal font-['Open Sans'] leading-loose">
+            <span class="opacity-80 dark:text-white text-[13px] font-normal leading-loose">
               <%= case @page_metrics do
                 %{total_pages_count: 1, completed_pages_count: 1} ->
                   "1 of 1 Page"
@@ -1383,7 +1383,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         id={"pages_grouped_by_#{grouped_scheduling_type}_#{grouped_due_date}"}
       >
         <div class="h-[19px] mb-5">
-          <span class="dark:text-white text-sm font-bold font-['Open Sans']">
+          <span class="dark:text-white text-sm font-bold">
             <%= "#{Utils.label_for_scheduling_type(grouped_scheduling_type)}#{format_date(grouped_due_date, @ctx, "{WDshort} {Mshort} {D}, {YYYY}")}" %>
           </span>
         </div>
@@ -1489,7 +1489,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="justify-start items-start gap-5 flex">
         <Icons.no_icon />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -1498,7 +1498,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="flex shrink items-center gap-3 w-full dark:text-white">
         <div class="flex flex-col gap-1 w-full">
           <div class={["flex", left_indentation(@numbering_level)]}>
-            <span class="opacity-90 dark:text-white text-base font-semibold font-['Open Sans']">
+            <span class="opacity-90 dark:text-white text-base font-semibold">
               <%= "#{@title}" %>
             </span>
           </div>
@@ -1584,7 +1584,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           progress={@progress}
         />
         <div class="w-[26px] justify-start items-center">
-          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+          <div class="grow shrink basis-0 opacity-60 text-white text-[13px] font-semibold capitalize">
             <.numbering_index type={@type} index={@numbering_index} />
           </div>
         </div>
@@ -1598,7 +1598,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="flex">
             <span class={
               [
-                "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
+                "text-left dark:text-white opacity-90 text-base",
                 # Opacity is set if the item is visited, but not necessarily completed
                 if(@was_visited, do: "opacity-60")
               ]
@@ -1609,7 +1609,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
           </div>
           <div :if={@graded} role="due date and score" class="flex">
-            <span class="opacity-60 text-[13px] font-normal font-['Open Sans'] !font-normal opacity-60 dark:text-white">
+            <span class="opacity-60 text-[13px] font-normal !font-normal opacity-60 dark:text-white">
               <%= Utils.label_for_scheduling_type(@parent_scheduling_type) %><%= format_date(
                 @due_date,
                 @ctx,
@@ -1665,7 +1665,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           <div class="flex">
             <span class={
               [
-                "text-left dark:text-white opacity-90 text-base font-['Open Sans']",
+                "text-left dark:text-white opacity-90 text-base",
                 # Opacity is set if the intro video is viewed, but not necessarily completed
                 if(@intro_video_viewed, do: "opacity-60")
               ]
@@ -2088,7 +2088,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp numbering_index(assigns) do
     ~H"""
-    <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold font-['Open Sans'] capitalize">
+    <span class="opacity-60 text-black dark:text-white text-[13px] font-semibold capitalize">
       <%= if @type == "page", do: "#{@index}", else: " " %>
     </span>
     """
