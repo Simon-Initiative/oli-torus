@@ -9,10 +9,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   alias OliWeb.Common.Utils, as: WebUtils
   alias OliWeb.Components.Delivery.Student
   alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Icons
   alias Phoenix.LiveView.JS
-
-  import Oli.Utils, only: [get_in: 3]
 
   @default_selected_view :gallery
 
@@ -75,7 +74,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             socket.assigns.current_user.id
           ),
         assistant_enabled: Sections.assistant_enabled?(section),
-        display_props_per_module_id: %{},
         selected_view: @default_selected_view
       )
       |> stream_configure(:units, dom_id: &"units-#{&1["uuid"]}")
@@ -382,40 +380,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event("navigate_to_resource", %{"slug" => _} = values, socket),
     do: navigate_to_resource(values, socket)
-
-  def handle_event(
-        "toggle_completed_pages",
-        %{"module_resource_id" => module_resource_id},
-        socket
-      ) do
-    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
-    module_resource_id = String.to_integer(module_resource_id)
-
-    selected_unit =
-      Hierarchy.find_parent_in_hierarchy(
-        full_hierarchy,
-        &(&1["resource_id"] == module_resource_id)
-      )
-
-    show_completed_pages? =
-      not (socket.assigns.display_props_per_module_id
-           |> get_in([module_resource_id, :show_completed_pages], true))
-
-    display_props_per_module_id =
-      Map.update(
-        socket.assigns.display_props_per_module_id,
-        module_resource_id,
-        %{show_completed_pages: show_completed_pages?},
-        fn _ -> %{show_completed_pages: show_completed_pages?} end
-      )
-
-    send(self(), :gc)
-
-    {:noreply,
-     socket
-     |> assign(display_props_per_module_id: display_props_per_module_id)
-     |> stream_insert(:units, selected_unit)}
-  end
 
   ## Tab navigation start ##
 
@@ -774,6 +738,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
+      <div class="md:p-[25px] md:pl-[50px]">
+        <DeliveryUtils.toggle_visibility_button
+          class="text-[#bab8bf] text-sm font-medium"
+          target_selector={
+            ~s{div[role="top level resource"][data-completed="true"], div[role^="card resource"][data-completed="true"]}
+          }
+        />
+      </div>
+
       <div id="all_units_as_gallery" phx-update="stream">
         <.gallery_row
           :for={{_, unit} <- @streams.units}
@@ -802,7 +775,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )
           }
           assistant_enabled={@assistant_enabled}
-          display_props_per_module_id={@display_props_per_module_id}
         />
       </div>
     </div>
@@ -822,13 +794,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :viewed_intro_video_resource_ids, :list
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
-  attr :display_props_per_module_id, :map
   attr :page_metrics_per_module_id, :map
 
   # top level page as a card with title and header
   def gallery_row(%{unit: %{"resource_type_id" => 1}} = assigns) do
     ~H"""
-    <div id={"top_level_page_#{@unit["resource_id"]}"} tabindex="0">
+    <div
+      id={"top_level_page_#{@unit["resource_id"]}"}
+      tabindex="0"
+      data-completed={"#{@progress == 100}"}
+      role="top level resource"
+    >
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
         <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
           <div class="text-[14px] leading-[19px] tracking-[1.4px] uppercase mt-[7px] mb-1 whitespace-nowrap opacity-60">
@@ -889,6 +865,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       tabindex="0"
       phx-keydown={enter_unit(@unit["resource_id"])}
       phx-key="enter"
+      data-completed={"#{@progress == 100}"}
+      role="top level resource"
     >
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
@@ -1130,13 +1108,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 page_metrics={
                   get_module_page_metrics(@page_metrics_per_module_id, module["resource_id"])
                 }
-                show_completed_pages={
-                  get_in(
-                    @display_props_per_module_id,
-                    [module["resource_id"], :show_completed_pages],
-                    true
-                  )
-                }
               />
               <.module_index
                 module={module}
@@ -1151,7 +1122,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 intro_video_viewed={
                   selected_module["resource_id"] in @viewed_intro_video_resource_ids
                 }
-                display_props_per_module_id={@display_props_per_module_id}
               />
             </div>
           </div>
@@ -1346,7 +1316,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   attr :module, :map
-  attr :show_completed_pages, :boolean, default: true
   attr :page_metrics, :map, default: @default_module_page_metrics
 
   def module_content_header(assigns) do
@@ -1370,25 +1339,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
       </div>
-      <button
-        role="toggle completed button"
-        class="flex items-center opacity-80 hover:opacity-100 cursor-pointer pr-2"
-        phx-click="toggle_completed_pages"
-        phx-value-module_resource_id={@module["resource_id"]}
-      >
-        <div class="w-8 h-8 flex justify-center items-center dark:stroke-white stroke-black/70 dark:fill-white fill-black/70">
-          <Icons.visible :if={!@show_completed_pages} />
-          <Icons.hidden :if={@show_completed_pages} />
-        </div>
-
-        <div class="flex gap-1.5">
-          <div class="flex gap-0.5 items-center">
-            <span class="opacity-80 dark:text-white text-[13px] font-semibold font-['Open Sans'] leading-loose tracking-tight">
-              <%= if @show_completed_pages, do: "Hide", else: "Show" %> Completed
-            </span>
-          </div>
-        </div>
-      </button>
     </div>
     <div class="pt-6" />
     """
@@ -1402,24 +1352,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
   attr :student_progress_per_resource_id, :map
-  attr :display_props_per_module_id, :map
 
   def module_index(assigns) do
-    show_completed_pages =
-      get_in(
-        assigns.display_props_per_module_id,
-        [assigns.module["resource_id"], :show_completed_pages],
-        true
-      )
-
     assigns =
       Map.merge(assigns, %{
-        show_completed_pages: show_completed_pages,
         page_due_dates:
           get_contained_pages_due_dates(
             assigns.module,
             assigns.student_end_date_exceptions_per_resource_id,
-            show_completed_pages,
             assigns.ctx
           )
       })
@@ -1429,53 +1369,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={"index_for_#{@module["resource_id"]}"}
       class="relative flex flex-col gap-[25px] items-start"
     >
-      <%!-- This learning objectives tooltip was hidden in ticket NG-201 but will be reactivated with NG23-199 --%>
-
-      <%!-- <div
-        :if={@module["learning_objectives"] != []}
-        phx-click-away={JS.hide(to: "#learning_objectives_#{@module["resource_id"]}")}
-        class="hidden flex-col gap-3 w-full p-6 bg-white dark:bg-[#242533] shadow-xl rounded-xl absolute top-[35px] left-0 z-50"
-        id={"learning_objectives_#{@module["resource_id"]}"}
-        role="learning objectives tooltip"
-      >
-        <Icons.right_arrow class="absolute -top-[8px] left-[8px] w-[27px] h-3 fill-white dark:fill-[#242533] -rotate-90" />
-        <div class="flex items-center gap-[10px] mb-3">
-          <h3 class="text-[12px] leading-[16px] tracking-[0.96px] dark:opacity-40 font-bold uppercase dark:text-white">
-            Learning Objectives
-          </h3>
-          <button
-            phx-click={JS.hide(to: "#learning_objectives_#{@module["resource_id"]}")}
-            tabindex="0"
-            class="ml-auto cursor-pointer hover:opacity-50 hover:scale-105"
-          >
-            <Icons.close class="stroke-black dark:stroke-white" />
-          </button>
-        </div>
-        <ul class="flex flex-col gap-[6px]">
-          <li
-            :for={{learning_objective, index} <- Enum.with_index(@module["learning_objectives"], 1)}
-            class="flex py-1"
-          >
-            <span class="w-[30px] text-[12px] leading-[24px] font-bold dark:text-white dark:opacity-40">
-              <%= "L#{index}" %>
-            </span>
-            <span class="text-[14px] leading-[24px] tracking-[0.02px] dark:text-white dark:opacity-80">
-              <%= learning_objective.title %>
-            </span>
-          </li>
-        </ul>
-      </div>
-      <button
-        :if={@module["learning_objectives"] != []}
-        role="module learning objectives"
-        class="hidden items-center gap-[14px] px-[10px] w-full p-1 cursor-pointer"
-        phx-click={JS.toggle(to: "#learning_objectives_#{@module["resource_id"]}", display: "flex")}
-      >
-        <Icons.learning_objectives />
-        <h3 class="text-[16px] leading-[22px] font-semibold dark:text-white">
-          Introduction and Learning Objectives
-        </h3>
-      </button> --%>
       <.intro_video_item
         :if={module_has_intro_video(@module)}
         section={@section}
@@ -1498,7 +1391,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           :for={child <- @module["children"]}
           :if={
             display_module_item?(
-              @show_completed_pages,
               grouped_due_date,
               grouped_scheduling_type,
               @student_end_date_exceptions_per_resource_id,
@@ -1537,7 +1429,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
           progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
           student_progress_per_resource_id={@student_progress_per_resource_id}
-          show_completed_pages={@show_completed_pages}
         />
       </div>
     </div>
@@ -1565,7 +1456,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :parent_due_date, Date
   attr :parent_scheduling_type, :atom
   attr :progress, :float
-  attr :show_completed_pages, :boolean
 
   def index_item(%{type: "section"} = assigns) do
     assigns =
@@ -1579,7 +1469,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       :if={
         display_module_item?(
-          @show_completed_pages,
           @parent_due_date,
           @parent_scheduling_type,
           @student_end_date_exceptions_per_resource_id,
@@ -1621,7 +1510,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         :for={child <- @children}
         :if={
           display_module_item?(
-            @show_completed_pages,
             @parent_due_date,
             @parent_scheduling_type,
             @student_end_date_exceptions_per_resource_id,
@@ -1660,7 +1548,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
-        show_completed_pages={@show_completed_pages}
       />
     </div>
     """
@@ -2004,7 +1891,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
         if(@selected, do: "outline outline-[3px]")
       ]}
-      role={"card_#{@module_index}"}
+      role={"card resource #{@module_index}"}
+      data-completed={"#{@card["completed"]}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
       aria-expanded={Kernel.to_string(@selected)}
@@ -2399,7 +2287,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   defp display_module_item?(
-         _show_completed_pages,
          _grouped_due_date,
          _grouped_scheduling_type,
          _student_end_date_exceptions_per_resource_id,
@@ -2409,7 +2296,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        do: false
 
   defp display_module_item?(
-         _show_completed_pages,
          _grouped_due_date,
          "Not yet scheduled" = _grouped_scheduling_type,
          _student_end_date_exceptions_per_resource_id,
@@ -2420,7 +2306,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        do: true
 
   defp display_module_item?(
-         show_completed_pages,
          grouped_due_date,
          grouped_scheduling_type,
          student_end_date_exceptions_per_resource_id,
@@ -2431,7 +2316,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       Enum.any?(
         child["children"],
         &display_module_item?(
-          show_completed_pages,
           grouped_due_date,
           grouped_scheduling_type,
           student_end_date_exceptions_per_resource_id,
@@ -2449,13 +2333,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         )
         |> then(&if is_nil(&1), do: "Not yet scheduled", else: to_localized_date(&1, ctx))
 
-      if show_completed_pages do
-        student_due_date == grouped_due_date and
-          grouped_scheduling_type == child["section_resource"].scheduling_type
-      else
-        !child["completed"] and student_due_date == grouped_due_date and
-          grouped_scheduling_type == child["section_resource"].scheduling_type
-      end
+      student_due_date == grouped_due_date and
+        grouped_scheduling_type == child["section_resource"].scheduling_type
     end
   end
 
@@ -2464,13 +2343,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp get_contained_pages_due_dates(
          container,
          student_end_date_exceptions_per_resource_id,
-         show_completed_pages,
          ctx
        ) do
     contained_pages_due_dates(
       container,
       student_end_date_exceptions_per_resource_id,
-      show_completed_pages,
       ctx
     )
     |> Enum.uniq()
@@ -2495,7 +2372,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp contained_pages_due_dates(
          container,
          student_end_date_exceptions_per_resource_id,
-         show_completed_pages,
          ctx
        ) do
     page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
@@ -2504,7 +2380,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     Enum.flat_map(container["children"], fn
       %{
         "resource_type_id" => ^page_type_id,
-        "completed" => completed,
         "section_resource" => %{
           scheduling_type: scheduling_type,
           end_date: end_date,
@@ -2512,28 +2387,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         }
       }
       when scheduling_type in [:due_by, :read_by] ->
-        if completed and !show_completed_pages do
-          []
-        else
-          [
-            {scheduling_type,
-             Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
-               to_localized_date(
-                 Map.get(
-                   student_end_date_exceptions_per_resource_id,
-                   resource_id,
-                   end_date
-                 ),
-                 ctx
-               )}
-          ]
-        end
+        [
+          {scheduling_type,
+           Map.get(student_end_date_exceptions_per_resource_id, resource_id, end_date) &&
+             to_localized_date(
+               Map.get(
+                 student_end_date_exceptions_per_resource_id,
+                 resource_id,
+                 end_date
+               ),
+               ctx
+             )}
+        ]
 
       %{"resource_type_id" => ^container_type_id} = section_or_subsection ->
         contained_pages_due_dates(
           section_or_subsection,
           student_end_date_exceptions_per_resource_id,
-          show_completed_pages,
           ctx
         )
 
