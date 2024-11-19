@@ -44,6 +44,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   @page_resource_type_id Oli.Resources.ResourceType.get_id_by_type("page")
   @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
 
+  @completed_resource_css_selector ~s{[role^="resource"][data-completed="true"]}
+
   def mount(_params, _session, socket) do
     section = socket.assigns.section
 
@@ -740,10 +742,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       </div>
       <div class="md:p-[25px] md:pl-[50px]">
         <DeliveryUtils.toggle_visibility_button
-          class="text-[#bab8bf] text-sm font-medium"
-          target_selector={
-            ~s{div[role="top level resource"][data-completed="true"], div[role^="card resource"][data-completed="true"]}
-          }
+          class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
+          target_selector={completed_resource_css_selector()}
         />
       </div>
 
@@ -803,7 +803,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       id={"top_level_page_#{@unit["resource_id"]}"}
       tabindex="0"
       data-completed={"#{@progress == 100}"}
-      role="top level resource"
+      role="resource top level"
     >
       <div class="md:p-[25px] md:pl-[50px]" role={"top_level_page_#{@unit["numbering"]["index"]}"}>
         <div role="header" class="flex flex-col md:flex-row md:gap-[30px]">
@@ -866,7 +866,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-keydown={enter_unit(@unit["resource_id"])}
       phx-key="enter"
       data-completed={"#{@progress == 100}"}
-      role="top level resource"
+      role="resource top level"
     >
       <div class="md:p-[25px] md:pl-[50px]" role={"unit_#{@unit["numbering"]["index"]}"}>
         <div class="flex flex-col md:flex-row md:gap-[30px]">
@@ -1429,6 +1429,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           raw_avg_score={Map.get(@student_raw_avg_score_per_page_id, child["resource_id"])}
           progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
           student_progress_per_resource_id={@student_progress_per_resource_id}
+          completed={child["completed"]}
         />
       </div>
     </div>
@@ -1456,6 +1457,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :parent_due_date, Date
   attr :parent_scheduling_type, :atom
   attr :progress, :float
+  attr :completed, :boolean
 
   def index_item(%{type: "section"} = assigns) do
     assigns =
@@ -1476,12 +1478,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           @ctx
         )
       }
-      role={"#{@type} #{@numbering_index} details"}
+      role={"resource #{@type} #{@numbering_index} details"}
       class="w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-5 flex rounded-lg"
       id={"index_item_#{@resource_id}_#{@parent_scheduling_type}_#{@parent_due_date}"}
       phx-value-resource_id={@resource_id}
       phx-value-parent_due_date={@parent_due_date}
       phx-value-module_resource_id={@module_resource_id}
+      data-completed={"#{@progress == 1}"}
     >
       <div class="justify-start items-start gap-5 flex">
         <Icons.no_icon />
@@ -1548,6 +1551,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
+        completed={child["completed"]}
       />
     </div>
     """
@@ -1556,7 +1560,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   def index_item(assigns) do
     ~H"""
     <button
-      role={"#{@type} #{@numbering_index} details"}
+      role={"resource #{@type} #{@numbering_index} details"}
       class={[
         "w-full pl-[5px] pr-[7px] py-2.5 rounded-lg justify-start items-center gap-5 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5",
         if(@graded,
@@ -1569,6 +1573,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-slug={@revision_slug}
       phx-value-resource_id={@resource_id}
       phx-value-module_resource_id={@module_resource_id}
+      data-completed={"#{@completed}"}
     >
       <div class="justify-start items-start gap-5 flex">
         <.index_item_icon
@@ -1891,7 +1896,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         "relative slider-card mr-4 rounded-xl hover:outline hover:outline-[3px] outline-gray-800 dark:outline-white",
         if(@selected, do: "outline outline-[3px]")
       ]}
-      role={"card resource #{@module_index}"}
+      role={"resource card #{@module_index}"}
       data-completed={"#{@card["completed"]}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
@@ -2727,4 +2732,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp maybe_scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view),
     do: scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view)
+
+  defp completed_resource_css_selector, do: @completed_resource_css_selector
 end
