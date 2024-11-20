@@ -192,39 +192,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.HTMLComponents do
 
   def student_progress_label(assigns) do
     ~H"""
-    <div class="inline-flex gap-2 items-center relative cursor-auto" onclick="event.stopPropagation()">
+    <div
+      id="student_progress_tooltip_container"
+      class="flex relative cursor-auto"
+      phx-hook="HoverAway"
+      mouse-leave-js={
+        JS.hide(
+          transition: {"ease-out duration-300", "opacity-100", "opacity-0"},
+          time: 300,
+          to: "#student_progress_tooltip"
+        )
+      }
+    >
+      <!-- Tooltip Element -->
       <div
-        onclick="event.stopPropagation()"
         id="student_progress_tooltip"
-        class="absolute -translate-y-[34px] -translate-x-[140px] min-w-max w-full pb-[27px] z-10 hidden"
-        phx-click-away={JS.hide()}
-        phx-hook="HoverAway"
-        mouse-leave-js={
-          JS.hide(transition: {"ease-out duration-300", "opacity-100", "opacity-0"}, time: 300)
-        }
+        onclick="event.stopPropagation()"
+        class="absolute z-10 hidden -translate-x-[140px] -translate-y-[73px] w-max flex-col items-start p-3 border border-[#3a3740] rounded-md shadow bg-white dark:bg-[#0d0c0f] font-normal"
       >
-        <div class="px-4 py-2 bg-white dark:bg-[#0d0c0f] rounded-md shadow border border-[#3a3740] justify-start items-center inline-flex font-normal z-10">
-          <div class="grow shrink basis-0">
-            <span style="text-[#353740] dark:text-[#eeebf5] text-sm leading-normal">
-              This is an estimate of student progress.<br />
-              <button
-                phx-hook="ClickExecJS"
-                click-exec-js={
-                  Modal.show_modal("student_progress_calculation_modal")
-                  |> JS.hide(to: "#student_progress_tooltip")
-                }
-                id="student_progress_tooltip_link"
-                class="text-[#0165da] text-sm dark:text-white underline font-bold"
-              >
-                Learn more.
-              </button>
-            </span>
-          </div>
-        </div>
+        <span style="text-[#353740] dark:text-[#eeebf5] text-sm leading-normal">
+          This is an estimate of student progress.
+        </span>
+        <button
+          phx-hook="ClickExecJS"
+          click-exec-js={
+            Modal.show_modal("student_progress_calculation_modal")
+            |> JS.hide(to: "#student_progress_tooltip")
+          }
+          id="student_progress_tooltip_link"
+          class="text-[#0165da] text-sm dark:text-white underline font-bold"
+        >
+          Learn more.
+        </button>
       </div>
+      <!-- Trigger Element -->
       <button
-        xphx-mouseover={JS.show(to: "#student_progress_tooltip")}
-        class="max-w-min border border-transparent"
+        id="student_progress_tooltip_trigger"
+        xphx-mouseover={JS.show(to: "#student_progress_tooltip", display: "flex")}
       >
         <Icons.info />
       </button>

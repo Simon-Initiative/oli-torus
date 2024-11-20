@@ -68,16 +68,17 @@ defmodule Oli.Activities.Realizer.Selection do
   def fulfill_from_bank(%Selection{count: count} = selection, %Source{bank: bank} = source) do
     blacklisted = MapSet.new(source.blacklisted_activity_ids)
 
-    expressions =
+    {func, expressions} =
       case selection.logic.conditions do
-        nil -> []
-        %Logic.Clause{children: children} -> children
-        %Logic.Expression{} = e -> [e]
+        nil -> {&Enum.all?/2, []}
+        %Logic.Clause{children: children, operator: :all} -> {&Enum.all?/2, children}
+        %Logic.Clause{children: children} -> {&Enum.any?/2, children}
+        %Logic.Expression{} = e -> {&Enum.all?/2, [e]}
       end
 
     Enum.reduce_while(bank, {[], 1}, fn activity, {all, total} ->
       case !MapSet.member?(blacklisted, activity.resource_id) and
-             Enum.all?(expressions, &evaluate_expression(&1, activity)) do
+             func.(expressions, &evaluate_expression(&1, activity)) do
         true ->
           if total == count do
             {:halt, {[activity | all], total + 1}}

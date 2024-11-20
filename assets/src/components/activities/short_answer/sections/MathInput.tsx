@@ -14,13 +14,7 @@ export const MathInput: React.FC<MathInputProps> = ({ input, onEditInput }) => {
     <div className="mb-2">
       <MathLive
         value={input.value}
-        options={{
-          readOnly: !editMode,
-          // need this because while keyboard toggle gets hidden if readonly, it apparently
-          // isn't automatically restored on change back to nonReadOnly, and authoring context
-          // routinely passes through readonly renders before becoming editable
-          virtualKeyboardMode: editMode ? 'manual' : 'off',
-        }}
+        options={{ readOnly: !editMode }}
         onChange={(latex: string) => onEditInput({ ...input, value: latex, operator: 'equals' })}
       />
     </div>

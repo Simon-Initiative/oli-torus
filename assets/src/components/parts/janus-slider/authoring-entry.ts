@@ -18,7 +18,7 @@ import {
 const manifest = require('./manifest.json');
 
 const observedAttributes: string[] = [...apiObservedAttributes];
-const customEvents: any = { ...apiCustomEvents };
+const customEvents: any = { ...apiCustomEvents, onSaveConfigure: 'saveconfigure' };
 
 register(SliderAuthor, manifest.authoring.element, observedAttributes, {
   customEvents,
