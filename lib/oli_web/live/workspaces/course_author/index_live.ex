@@ -207,7 +207,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
           </div>
         </div>
         <div class="lg:w-1/2 flex items-center justify-center">
-          <Components.Auth.log_in_form
+          <Components.Auth.login_form
             title="Course Author Sign In"
             form={@form}
             action={~p"/authors/log_in"}

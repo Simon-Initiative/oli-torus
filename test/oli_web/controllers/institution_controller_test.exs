@@ -95,7 +95,7 @@ defmodule OliWeb.InstitutionControllerTest do
 
       conn =
         recycle(conn)
-        |> log_in_user(author)
+        |> log_in_author(author)
 
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some updated country_code"
@@ -124,15 +124,14 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   defp create_institution(%{conn: conn}) do
-    {:ok, author} =
-      Author.noauth_changeset(%Author{}, %{
+    author =
+      author_fixture(%{
         email: "test@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
         system_role_id: Accounts.SystemRole.role_id().system_admin
       })
-      |> Repo.insert()
 
     create_attrs = Map.put(@create_attrs, :author_id, author.id)
     {:ok, institution} = create_attrs |> Institutions.create_institution()

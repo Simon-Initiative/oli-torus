@@ -30,6 +30,7 @@ defmodule Oli.TestHelpers do
   Mox.defmock(Oli.Test.MockOpenAIClient, for: Oli.OpenAIClient)
   Mox.defmock(Oli.Test.DateTimeMock, for: Oli.DateTime)
   Mox.defmock(Oli.Test.DateMock, for: Oli.Date)
+  Mox.defmock(Oli.Test.RecaptchaMock, for: Oli.Recaptcha)
 
   defmodule CustomDispatcher do
     @moduledoc """
@@ -65,6 +66,10 @@ defmodule Oli.TestHelpers do
     end)
 
     Mox.stub(Oli.Test.DateMock, :utc_today, fn -> DateTime.to_date(utc_now) end)
+  end
+
+  def stub_recaptcha() do
+    Mox.stub(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
   end
 
   def yesterday(now \\ DateTime.now!("Etc/UTC")) do

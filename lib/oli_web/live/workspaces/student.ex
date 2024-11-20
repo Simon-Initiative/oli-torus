@@ -141,7 +141,7 @@ defmodule OliWeb.Workspaces.Student do
           </div>
         </div>
         <div class="lg:w-1/2 flex items-center justify-center">
-          <Components.Auth.log_in_form
+          <Components.Auth.login_form
             title="Student Sign In"
             form={to_form(%{}, as: "user")}
             action={~p"/users/log_in"}

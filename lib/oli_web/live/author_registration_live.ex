@@ -35,8 +35,8 @@ defmodule OliWeb.AuthorRegistrationLive do
   def mount(_params, _session, socket) do
     changeset = Accounts.change_author_registration(%Author{})
 
-    # MER-3835 TODO
-    authentication_providers = []
+    authentication_providers =
+      Oli.AssentAuth.AuthorAssentAuth.authentication_providers() |> Keyword.keys()
 
     socket =
       socket

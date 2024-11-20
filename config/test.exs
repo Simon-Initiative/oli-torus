@@ -14,6 +14,7 @@ config :oli,
   openai_client: Oli.Test.MockOpenAIClient,
   date_time_module: Oli.Test.DateTimeMock,
   date_module: Oli.Test.DateMock,
+  recaptcha_module: Oli.Test.RecaptchaMock,
   slack_webhook_url: nil,
   branding: [
     name: "OLI Torus Test",

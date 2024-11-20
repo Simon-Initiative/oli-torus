@@ -12,7 +12,7 @@ defmodule OliWeb.Components.Auth do
   attr :registration_link, :string, default: nil
   attr :reset_password_link, :string, required: true
 
-  def log_in_form(assigns) do
+  def login_form(assigns) do
     ~H"""
     <div class={["w-96 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white", @class]}>
       <div class="text-center text-xl font-normal leading-7 py-8">
@@ -30,7 +30,7 @@ defmodule OliWeb.Components.Auth do
         />
       </div>
 
-      <.form :let={f} id="log_in_form" for={@form} action={@action} phx-update="ignore">
+      <.form :let={f} id="login_form" for={@form} action={@action} phx-update="ignore">
         <div class="w-80 mx-auto flex flex-col gap-2 py-8">
           <div>
             <%= email_input(f, :email,
@@ -213,7 +213,7 @@ defmodule OliWeb.Components.Auth do
             phx-disable-with="Creating account..."
             class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
           >
-            Create an account
+            Create account
           </.button>
 
           <hr

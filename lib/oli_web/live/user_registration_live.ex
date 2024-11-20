@@ -5,7 +5,7 @@ defmodule OliWeb.UserRegistrationLive do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
-  alias Oli.Utils.Recaptcha
+  alias Oli.Recaptcha
 
   def render(assigns) do
     ~H"""
@@ -53,10 +53,10 @@ defmodule OliWeb.UserRegistrationLive do
 
   def handle_event(
         "save",
-        %{"user" => user_params, "g-recaptcha-response" => g_recaptcha_response},
+        %{"user" => user_params} = params,
         socket
       ) do
-    with {:success, true} <- Recaptcha.verify(g_recaptcha_response),
+    with {:success, true} <- Recaptcha.verify(params["g-recaptcha-response"]),
          {:ok, user} <- Accounts.register_independent_user(user_params) do
       {:ok, _} =
         Accounts.deliver_user_confirmation_instructions(

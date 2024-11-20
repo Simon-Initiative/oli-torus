@@ -1,9 +1,7 @@
 defmodule OliWeb.DeploymentControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Repo
   alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Author
   alias Oli.Institutions
 
   @create_attrs %{deployment_id: "some deployment_id", registration_id: 1}
@@ -182,15 +180,14 @@ defmodule OliWeb.DeploymentControllerTest do
   end
 
   defp create_fixtures(%{conn: conn}) do
-    {:ok, admin} =
-      Author.noauth_changeset(%Author{}, %{
+    admin =
+      author_fixture(%{
         email: "test@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
         system_role_id: SystemRole.role_id().system_admin
       })
-      |> Repo.insert()
 
     jwk = jwk_fixture()
     institution = institution_fixture()

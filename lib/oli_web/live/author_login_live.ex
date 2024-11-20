@@ -39,7 +39,7 @@ defmodule OliWeb.AuthorLoginLive do
         </div>
 
         <div class="w-full lg:w-1/2 flex items-center justify-center dark">
-          <Components.Auth.log_in_form
+          <Components.Auth.login_form
             title="Course Author Sign In"
             form={@form}
             action={~p"/authors/log_in"}

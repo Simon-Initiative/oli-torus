@@ -41,7 +41,7 @@ defmodule OliWeb.UserLoginLive do
         </div>
 
         <div class="w-full lg:w-1/2 flex items-center justify-center dark">
-          <Components.Auth.log_in_form
+          <Components.Auth.login_form
             title="Instructor Sign In"
             form={@form}
             action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
@@ -66,7 +66,7 @@ defmodule OliWeb.UserLoginLive do
       </div>
       <div class="flex flex-col gap-y-10 lg:flex-row w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
         <div class="w-full flex items-center justify-center dark">
-          <Components.Auth.log_in_form
+          <Components.Auth.login_form
             title="Sign In"
             form={@form}
             action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
