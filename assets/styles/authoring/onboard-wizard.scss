@@ -61,6 +61,7 @@ $headerColor: $darkForeground;
       position: relative;
       margin: auto;
       bottom: 15px;
+      padding-left: 1px;
       &:focus {
         box-shadow: none;
       }
@@ -71,9 +72,11 @@ $headerColor: $darkForeground;
       height: 320px;
       overflow: hidden;
       border-bottom: 1px solid #acbbc9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      &.step-1 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
       &.working {
         display: flex;
         flex-direction: column;
