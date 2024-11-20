@@ -4886,8 +4886,6 @@ defmodule Oli.Delivery.Sections do
               Map.merge(sub_objective, %{
                 objective: objective.title,
                 objective_resource_id: objective.resource_id,
-                # TODO
-                proficiency_distribution: %{},
                 student_proficiency_obj:
                   Metrics.proficiency_range(calc.(parent_correct, parent_total), parent_total),
                 subobjective: sub_objective.title,
