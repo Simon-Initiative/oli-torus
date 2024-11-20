@@ -4,15 +4,15 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   import Ecto.Query, warn: false
   import OliWeb.Common.Utils
 
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
 
-  @impl Phoenix.LiveView
-  def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
+  @impl Phoenix.LiveView
+  def mount(_params, _session, socket) do
     enrollment = Sections.get_enrollment(socket.assigns.section.slug, socket.assigns.student.id)
 
     survey_responses =
@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
           )
       end
 
-    {:ok, assign(socket, ctx: ctx, survey_responses: survey_responses, enrollment: enrollment)}
+    {:ok, assign(socket, survey_responses: survey_responses, enrollment: enrollment)}
   end
 
   @impl Phoenix.LiveView
@@ -112,7 +112,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
         %{
           enrollment: enrollment,
           user_role_id: user_role_id,
-          current_user: socket.assigns.current_user,
+          bypassed_by_user_id: (socket.assigns.current_user || socket.assigns.current_author).id,
           is_suspended?: is_nil(enrollment)
         }
       end)
@@ -206,6 +206,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
       user={@student}
       section={@section}
       enrollment_info={@enrollment_info}
+      is_admin={@is_admin}
     />
     """
   end

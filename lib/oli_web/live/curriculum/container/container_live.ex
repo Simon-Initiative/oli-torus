@@ -43,6 +43,9 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(
         %{"project_id" => project_slug} = params,
         %{"current_author_id" => _} = session,

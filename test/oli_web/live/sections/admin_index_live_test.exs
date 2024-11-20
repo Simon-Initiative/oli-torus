@@ -12,7 +12,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the index view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fsections"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_index_route)
     end
   end
@@ -23,7 +23,10 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     test "returns forbidden when accessing the index view", %{conn: conn} do
       conn = get(conn, @live_view_index_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn) == "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
   end
 

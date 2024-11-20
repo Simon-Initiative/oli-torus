@@ -13,6 +13,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
   def mount(_params, session, socket) do
     ctx = SessionContext.init(socket, session)

@@ -270,7 +270,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}%2Fattempt%2F#{attempt.attempt_guid}%2Freview&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 

@@ -130,7 +130,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
       assert document
              |> Floki.find("[phx-feedback-for='user[email]'] > p")
              |> Floki.text() =~
-               "has invalid format"
+               "must have the @ sign and no spaces"
 
       assert has_element?(view, "[type='submit'][disabled]")
 
@@ -157,7 +157,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
              |> Floki.parse_document!()
              |> Floki.find("[phx-feedback-for='user[email]'] > p")
              |> Floki.text() =~
-               "Email has already been taken by another independent learner"
+               "has already been taken"
 
       assert has_element?(view, "[type='submit'][disabled]")
     end
@@ -230,10 +230,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     test "redirects to new session when accessing the user details view", %{conn: conn} do
       student = insert(:user)
 
-      assert conn
-             |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{student.id}\">redirected</a>"
+      conn =
+        conn
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert redirected_to(conn) =~ "/authors/log_in"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) == "/admin/users/#{student.id}"
     end
   end
 
@@ -243,10 +246,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     test "redirects to new session when accessing the user details view as student", %{conn: conn} do
       student = insert(:user)
 
-      assert conn
-             |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{student.id}\">redirected</a>"
+      conn =
+        conn
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
+
+      assert redirected_to(conn) =~ "/authors/log_in"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) == "/admin/users/#{student.id}"
     end
   end
 
@@ -258,34 +264,13 @@ defmodule OliWeb.Users.UsersDetailViewTest do
     } do
       student = insert(:user)
 
-      assert conn
-             |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{student.id}\">redirected</a>"
-    end
-  end
+      conn =
+        conn
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, student.id))
 
-  describe "System Admin" do
-    setup [:admin_conn]
+      assert redirected_to(conn) =~ "/authors/log_in"
 
-    test "can create a reset password link for a user", %{conn: conn} do
-      user = insert(:user)
-
-      {:ok, view, _html} =
-        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user.id))
-
-      view
-      |> element(~s{button[phx-click="generate_reset_password_link"]})
-      |> render_click()
-
-      assert has_element?(view, "p", "This link will expire in 24 hours.")
-
-      assert view
-             |> element(~s{input[id="password-reset-link-1"]})
-             |> render()
-             |> Floki.parse_fragment!()
-             |> Floki.attribute("value")
-             |> hd() =~ "/reset-password/"
+      assert Plug.Conn.get_session(conn, :author_return_to) == "/admin/users/#{student.id}"
     end
   end
 

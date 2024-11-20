@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fstudents"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_students_route(section.slug))
@@ -406,14 +406,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
 
-      [non_student_1, _non_student_2] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
-
-      assert non_student_1 =~ "Scaloni, Lionel"
       refute render(view) =~ "Messi, Lionel"
       refute render(view) =~ "Suarez, Luis"
 

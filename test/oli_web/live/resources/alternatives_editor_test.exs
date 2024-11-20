@@ -34,7 +34,7 @@ defmodule OliWeb.Resources.AlternativesEditorTest do
       project: project
     } do
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Falternatives"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(

@@ -66,7 +66,14 @@ defmodule OliWeb.Delivery.NewCourse do
             Accounts.load_lti_params(current_user)
             |> Repo.preload([:author])
 
-          {current_user, get_in(current_user.lti_params, [:params])}
+          lti_params =
+            if current_user.lti_params do
+              current_user.lti_params.params
+            else
+              nil
+            end
+
+          {current_user, lti_params}
       end
 
     changeset =

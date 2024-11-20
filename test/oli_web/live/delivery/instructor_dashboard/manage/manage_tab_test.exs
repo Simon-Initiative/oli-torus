@@ -17,7 +17,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fmanage"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_manage_route(section.slug))
@@ -58,7 +58,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
 
       # Manage tab content gets rendered
-      assert has_element?(view, ~s{div[id="overview"]})
+      assert render(view) =~ " Overview of course section details"
 
       # Collab Space Group gets rendered
       assert render(view) =~ "Collaborative Space"

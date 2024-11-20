@@ -164,10 +164,15 @@ defmodule OliWeb.PublishLiveTest do
     test "redirects to new session when accessing the publish view", %{conn: conn} do
       project = insert(:project)
 
-      assert conn
-             |> get(live_view_publish_route(project.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fpublish\">redirected</a>"
+      conn =
+        conn
+        |> get(live_view_publish_route(project.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) ==
+               "/authoring/project/#{project.slug}/publish"
     end
   end
 
@@ -194,10 +199,15 @@ defmodule OliWeb.PublishLiveTest do
     } do
       project = insert(:project)
 
-      assert conn
-             |> get(live_view_publish_route(project.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fpublish\">redirected</a>"
+      conn =
+        conn
+        |> get(live_view_publish_route(project.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) ==
+               "/authoring/project/#{project.slug}/publish"
     end
   end
 
@@ -209,10 +219,15 @@ defmodule OliWeb.PublishLiveTest do
     } do
       project = insert(:project)
 
-      assert conn
-             |> get(live_view_publish_route(project.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fpublish\">redirected</a>"
+      conn =
+        conn
+        |> get(live_view_publish_route(project.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) ==
+               "/authoring/project/#{project.slug}/publish"
     end
   end
 

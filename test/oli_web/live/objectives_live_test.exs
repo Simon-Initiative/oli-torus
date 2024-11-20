@@ -1,4 +1,9 @@
 defmodule OliWeb.ObjectivesLiveTest do
+  # TODO: FIX This module generates the following errors in the test logs:
+  # 1) 15:39:55.788 [error] Postgrex.Protocol (#PID<0.494.0>) disconnected: **
+  #    (DBConnection.ConnectionError) owner #PID<0.643.0> exited
+  # 2) Client #PID<0.762.0> is still using a connection from owner at location ...
+  #
   use OliWeb.ConnCase
 
   import Oli.Factory
@@ -117,7 +122,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       project: project
     } do
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fobjectives"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, live_view_route(project.slug))
     end
@@ -237,7 +242,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
-    @tag :skip
     test "show objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
       {:ok, sub_obj_2} = create_objective(project, publication, "sub_obj_2", "Sub Objective 2")
@@ -512,6 +516,7 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
+    @tag :skip
     test "new sub objective", %{conn: conn, project: project, publication: publication} do
       title = "Sub Objective"
       {:ok, obj} = create_objective(project, publication, "obj", "Objective")

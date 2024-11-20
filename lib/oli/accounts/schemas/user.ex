@@ -167,7 +167,10 @@ defmodule Oli.Accounts.User do
     if Keyword.get(opts, :validate_email, true) do
       changeset
       |> unsafe_validate_unique(:email, Oli.Repo)
-      |> unique_constraint(:email)
+      |> unique_constraint(:email,
+        name: :users_email_independent_learner_index,
+        message: "Email has already been taken by another independent learner"
+      )
     else
       changeset
     end
@@ -342,9 +345,18 @@ defmodule Oli.Accounts.User do
       :age_verified
     ])
     |> cast_embed(:preferences)
-    |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
+    |> validate_required([:given_name, :family_name])
+    |> validate_email_if(&is_independent_learner_and_not_guest/1)
     |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
+  end
+
+  defp validate_email_if(changeset, condition) do
+    if condition.(changeset) do
+      validate_email(changeset, [])
+    else
+      changeset
+    end
   end
 
   @doc """

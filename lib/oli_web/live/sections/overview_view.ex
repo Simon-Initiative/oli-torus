@@ -19,6 +19,9 @@ defmodule OliWeb.Sections.OverviewView do
 
   require Logger
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
     |> breadcrumb(section)

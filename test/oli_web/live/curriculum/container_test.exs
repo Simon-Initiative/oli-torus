@@ -19,7 +19,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       project = insert(:project)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fcurriculum"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, Routes.container_path(@endpoint, :index, project.slug))
@@ -35,7 +35,7 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       project = insert(:project)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fcurriculum"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, Routes.container_path(@endpoint, :index, project.slug))

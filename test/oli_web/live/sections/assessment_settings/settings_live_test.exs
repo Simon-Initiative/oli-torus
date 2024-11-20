@@ -483,7 +483,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assessment_id = "all"
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_overview_route(section.slug, "settings", "all"))
@@ -499,7 +499,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assessment_id = "all"
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(
