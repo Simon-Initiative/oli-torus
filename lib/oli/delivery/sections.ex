@@ -4884,6 +4884,7 @@ defmodule Oli.Delivery.Sections do
                 )
 
               Map.merge(sub_objective, %{
+                section_id: section.id,
                 objective: objective.title,
                 objective_resource_id: objective.resource_id,
                 student_proficiency_obj:

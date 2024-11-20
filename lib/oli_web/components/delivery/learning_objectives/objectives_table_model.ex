@@ -75,11 +75,16 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   def custom_render(
         assigns,
-        %{resource_id: objective_id, proficiency_distribution: proficiency_distribution},
+        %{section_id: section_id, resource_id: objective_id},
         %ColumnSpec{
           name: :student_proficiency_distribution
         }
       ) do
+    proficiency_distribution =
+      section_id
+      |> Oli.Delivery.Metrics.proficiency_per_student_for_objective(objective_id)
+      |> Enum.frequencies_by(fn {_student_id, proficiency} -> proficiency end)
+
     assigns =
       Map.merge(assigns, %{
         objective_id: objective_id,
@@ -92,20 +97,21 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   end
 
   defp render_proficiency_data_chart(objective_id, data) do
-    # TODO
     data = [
-      %{type: "Not enough data", perc: 8},
-      %{type: "Low", perc: 25},
-      %{type: "Medium", perc: 21},
-      %{type: "High", perc: 46}
+      %{proficiency: "Not enough data", count: data["Not enough data"] || 0},
+      %{proficiency: "Low", count: data["Low"] || 0},
+      %{proficiency: "Medium", count: data["Medium"] || 0},
+      %{proficiency: "High", count: data["High"] || 0}
     ]
+
+    IO.inspect(data, label: "DATA in render_proficiency_data_chart/2")
 
     spec = %{
       mark: "bar",
       data: %{values: data},
       encoding: %{
-        x: %{aggregate: "sum", field: "perc"},
-        color: %{field: "type"}
+        x: %{aggregate: "sum", field: "count"},
+        color: %{field: "proficiency"}
       },
       config: %{
         axis: %{
