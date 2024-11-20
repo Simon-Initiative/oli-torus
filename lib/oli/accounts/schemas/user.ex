@@ -1,6 +1,7 @@
 defmodule Oli.Accounts.User do
   use Ecto.Schema
 
+  import Ecto.Query, warn: false
   import Ecto.Changeset
   import Oli.Utils
 
@@ -166,7 +167,10 @@ defmodule Oli.Accounts.User do
   defp maybe_validate_unique_email(changeset, opts) do
     if Keyword.get(opts, :validate_email, true) do
       changeset
-      |> unsafe_validate_unique(:email, Oli.Repo)
+      |> unsafe_validate_unique([:email], Oli.Repo,
+        message: "Email has already been taken by another independent learner",
+        query: from(u in Oli.Accounts.User, where: u.independent_learner == true)
+      )
       |> unique_constraint(:email,
         name: :users_email_independent_learner_index,
         message: "Email has already been taken by another independent learner"
@@ -345,7 +349,6 @@ defmodule Oli.Accounts.User do
       :age_verified
     ])
     |> cast_embed(:preferences)
-    |> validate_required([:given_name, :family_name])
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
     |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
@@ -417,7 +420,6 @@ defmodule Oli.Accounts.User do
       :picture,
       :website,
       :email,
-      :password,
       :email_verified,
       :email_confirmation,
       :gender,
@@ -437,8 +439,6 @@ defmodule Oli.Accounts.User do
       :can_create_sections,
       :age_verified
     ])
-    |> validate_email([])
-    |> validate_password([])
     |> validate_required_if([:email], &is_independent_learner_and_not_guest/1)
     |> validate_acceptance_if(
       :age_verified,

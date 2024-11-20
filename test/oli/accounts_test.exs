@@ -12,41 +12,19 @@ defmodule Oli.AccountsTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.SystemRole
 
-  # def user_fixture(attrs \\ %{}) do
-  #   %User{}
-  #   |> User.noauth_changeset(attrs)
-  #   |> Repo.insert()
-  # end
-
   describe "authors" do
     test "system role defaults to author", %{} do
-      {:ok, author} =
-        Author.changeset(%Author{}, %{
-          email: "user#{System.unique_integer([:positive])}@example.com",
-          given_name: "Test",
-          family_name: "User",
-          password: "password123",
-          password_confirmation: "password123"
-        })
-        |> Repo.insert()
+      author = author_fixture()
 
       assert author.system_role_id == Accounts.SystemRole.role_id().author
       assert Accounts.is_admin?(author) == false
     end
 
     test "changeset accepts system role change", %{} do
-      {:ok, author} =
-        Author.noauth_changeset(%Author{}, %{
-          email: "user#{System.unique_integer([:positive])}@example.com",
-          given_name: "Test",
-          family_name: "User",
-          password: "password123",
-          password_confirmation: "password123"
-        })
-        |> Repo.insert()
+      author = author_fixture()
 
       assert Accounts.is_admin?(author) == false
-      assert author.system_role_id == nil
+      assert author.system_role_id == Accounts.SystemRole.role_id().author
 
       {:ok, author} =
         Accounts.insert_or_update_author(%{
@@ -58,15 +36,7 @@ defmodule Oli.AccountsTest do
     end
 
     test "Accounts.is_admin? returns true when the author has and admin role and has_admin_role?/2 returns true when the author has the matching role or system_admin role" do
-      {:ok, author} =
-        Author.noauth_changeset(%Author{}, %{
-          email: "user#{System.unique_integer([:positive])}@example.com",
-          given_name: "Test",
-          family_name: "User",
-          password: "password123",
-          password_confirmation: "password123"
-        })
-        |> Repo.insert()
+      author = author_fixture()
 
       assert Accounts.is_admin?(author) == false
       assert Accounts.has_admin_role?(author, SystemRole.role_id().system_admin) == false
@@ -124,22 +94,15 @@ defmodule Oli.AccountsTest do
 
     test "search_authors_matching/1 returns authors matching the input exactly" do
       author = insert(:author)
-      assert [author] == Accounts.search_authors_matching(author.email)
+
+      [matching_author] = Accounts.search_authors_matching(author.email)
+
+      assert matching_author == %Author{author | email_verified: nil}
     end
 
     test "search_authors_matching/1 returns nothing when only matching a prefix" do
       author = insert(:author)
       assert [] == Accounts.search_authors_matching(String.slice(author.email, 0..3))
-    end
-
-    test "user_confirmation_pending?/1 returns true when author has not a confirmed account" do
-      non_confirmed_author = insert(:author, email_confirmation_token: "token")
-      assert Accounts.user_confirmation_pending?(non_confirmed_author)
-    end
-
-    test "user_confirmation_pending?/1 returns false when author has a confirmed account" do
-      confirmed_author = insert(:author, email_confirmed_at: Timex.now())
-      refute Accounts.user_confirmation_pending?(confirmed_author)
     end
 
     test "get_author_preference/3 returns an author preference" do
@@ -185,52 +148,13 @@ defmodule Oli.AccountsTest do
         "current_password" => "password_1",
         "email" => "new_email@example.com",
         "family_name" => "new family name",
-        "given_name" => "new given name",
-        "password" => "password_2",
-        "password_confirmation" => "password_2"
+        "given_name" => "new given name"
       }
 
       assert {:ok, author = %Author{}} = Accounts.update_author(author, attrs)
       assert author.email == attrs["email"]
       assert author.family_name == attrs["family_name"]
       assert author.given_name == attrs["given_name"]
-      assert Bcrypt.verify_pass(attrs["password"], author.password_hash)
-    end
-
-    test "update author password fails when new password and password confirmation are different" do
-      author = insert(:author)
-
-      attrs = %{
-        "current_password" => "password_1",
-        "password" => "password_22",
-        "password_confirmation" => "password_2"
-      }
-
-      assert {:error, changeset} = Accounts.update_author(author, attrs)
-      assert changeset.valid? == false
-
-      {:password_confirmation, {error_message, [validation: :confirmation]}} =
-        List.first(changeset.errors)
-
-      assert error_message == "does not match confirmation"
-    end
-
-    test "update author password fails when the new password is less than 8 characters long" do
-      author = insert(:author)
-
-      attrs = %{
-        "current_password" => "password_1",
-        "password" => "pass",
-        "password_confirmation" => "pass"
-      }
-
-      assert {:error, changeset} = Accounts.update_author(author, attrs)
-      assert changeset.valid? == false
-
-      {:password, {error_message, [count: 8, validation: :length, kind: :min, type: :string]}} =
-        List.first(changeset.errors)
-
-      assert error_message =~ "should be at least %{count} character(s)"
     end
 
     test "update author data with an email used by another author fails" do
@@ -287,7 +211,7 @@ defmodule Oli.AccountsTest do
         @valid_attrs
         |> Map.put(:author_id, author.id)
 
-      {:ok, user} = valid_attrs |> user_fixture()
+      user = valid_attrs |> user_fixture()
 
       {:ok, %{user: user, author: author, valid_attrs: valid_attrs}}
     end
@@ -453,7 +377,7 @@ defmodule Oli.AccountsTest do
       fields = %{"sub" => user.sub, "cognito:username" => "username", "email" => user.email}
       {:ok, returned_author} = Accounts.setup_sso_author(fields, community.id)
 
-      assert returned_author == author
+      assert returned_author == %Author{author | email_verified: nil}
 
       returned_user = Accounts.get_user_by(%{email: user.email})
       assert returned_user.email == user.email
@@ -606,34 +530,13 @@ defmodule Oli.AccountsTest do
         "current_password" => "password_1",
         "email" => "new_email@example.com",
         "family_name" => "new family name",
-        "given_name" => "new given name",
-        "password" => "password_2",
-        "password_confirmation" => "password_2"
+        "given_name" => "new given name"
       }
 
       assert {:ok, user = %User{}} = Accounts.update_user(user, attrs)
       assert user.email == attrs["email"]
       assert user.family_name == attrs["family_name"]
       assert user.given_name == attrs["given_name"]
-      assert Bcrypt.verify_pass(attrs["password"], user.password_hash)
-    end
-
-    test "update user password fails when new password and password confirmation are different" do
-      user = insert(:user)
-
-      attrs = %{
-        "current_password" => "password_1",
-        "password" => "password_22",
-        "password_confirmation" => "password_2"
-      }
-
-      assert {:error, changeset} = Accounts.update_user(user, attrs)
-      assert changeset.valid? == false
-
-      {:password_confirmation, {error_message, [validation: :confirmation]}} =
-        List.first(changeset.errors)
-
-      assert error_message == "does not match confirmation"
     end
 
     test "update user password fails when the new password is less than 8 characters long" do
@@ -645,10 +548,10 @@ defmodule Oli.AccountsTest do
         "password_confirmation" => "pass"
       }
 
-      assert {:error, changeset} = Accounts.update_user(user, attrs)
+      changeset = Accounts.change_user_password(user, attrs)
       assert changeset.valid? == false
 
-      {:password, {error_message, [count: 8, validation: :length, kind: :min, type: :string]}} =
+      {:password, {error_message, [count: 12, validation: :length, kind: :min, type: :string]}} =
         List.first(changeset.errors)
 
       assert error_message =~ "should be at least %{count} character(s)"
@@ -670,8 +573,8 @@ defmodule Oli.AccountsTest do
 
       assert changeset.errors == [
                email:
-                 {"has already been taken",
-                  [constraint: :unique, constraint_name: "users_email_independent_learner_index"]}
+                 {"Email has already been taken by another independent learner",
+                  [validation: :unsafe_unique, fields: [:email]]}
              ]
     end
   end
@@ -839,11 +742,13 @@ defmodule Oli.AccountsTest do
     test "validates email uniqueness" do
       %{email: email} = user_fixture()
       {:error, changeset} = Accounts.register_independent_user(%{email: email})
-      assert "has already been taken" in errors_on(changeset).email
+
+      assert "Email has already been taken by another independent learner" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
       {:error, changeset} = Accounts.register_independent_user(%{email: String.upcase(email)})
-      assert "has already been taken" in errors_on(changeset).email
+
+      assert "Email has already been taken by another independent learner" in errors_on(changeset).email
     end
 
     test "registers users with a hashed password" do
@@ -918,7 +823,7 @@ defmodule Oli.AccountsTest do
 
       {:error, changeset} = Accounts.apply_user_email(user, password, %{email: email})
 
-      assert "has already been taken" in errors_on(changeset).email
+      assert "Email has already been taken by another independent learner" in errors_on(changeset).email
     end
 
     test "validates current password", %{user: user} do
@@ -974,7 +879,6 @@ defmodule Oli.AccountsTest do
       assert changed_user.email != user.email
       assert changed_user.email == email
       assert changed_user.email_confirmed_at
-      assert changed_user.email_confirmed_at != user.email_confirmed_at
       refute Repo.get_by(UserToken, user_id: user.id)
     end
 
@@ -1126,7 +1030,13 @@ defmodule Oli.AccountsTest do
 
   describe "deliver_user_confirmation_instructions/2" do
     setup do
-      %{user: user_fixture()}
+      %{
+        user:
+          user_fixture(%{
+            email_verified: nil,
+            email_confirmed_at: nil
+          })
+      }
     end
 
     test "sends token through notification", %{user: user} do
@@ -1145,7 +1055,7 @@ defmodule Oli.AccountsTest do
 
   describe "confirm_user/1" do
     setup do
-      user = user_fixture()
+      user = user_fixture(%{email_verified: nil, email_confirmed_at: nil})
 
       token =
         extract_user_token(fn url ->

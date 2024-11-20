@@ -215,9 +215,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
         _,
         socket
       ) do
-    changeset = Author.confirm_changeset(socket.assigns.author)
-
-    case Accounts.admin_update_author(changeset) do
+    case Accounts.admin_confirm_author(socket.assigns.author) do
       {:ok, author} ->
         {:noreply,
          socket

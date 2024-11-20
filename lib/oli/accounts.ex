@@ -1282,6 +1282,15 @@ defmodule Oli.Accounts do
     |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
+  @doc """
+  Confirms a user as an admin.
+  """
+  def admin_confirm_user(user) do
+    user
+    |> User.confirm_changeset()
+    |> Repo.update()
+  end
+
   ## Reset password
 
   @doc ~S"""
@@ -1714,6 +1723,15 @@ defmodule Oli.Accounts do
     Ecto.Multi.new()
     |> Ecto.Multi.update(:author, Author.confirm_changeset(author))
     |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, ["confirm"]))
+  end
+
+  @doc """
+  Confirms an author as an admin.
+  """
+  def admin_confirm_author(author) do
+    author
+    |> Author.confirm_changeset()
+    |> Repo.update()
   end
 
   ## Reset password

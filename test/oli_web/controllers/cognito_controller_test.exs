@@ -1,6 +1,5 @@
 defmodule OliWeb.CognitoControllerTest do
   use OliWeb.ConnCase
-  import Swoosh.TestAssertions
 
   import Oli.Factory
   import Mox

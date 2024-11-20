@@ -17,7 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
     } do
       project = insert(:project)
 
-      {:error, {:redirect, %{to: "/workspaces/course_author"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, live_view_route(project.slug))
     end
   end
@@ -30,7 +30,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLiveTest do
     } do
       project = insert(:project)
 
-      {:error, {:redirect, %{to: "/workspaces/course_author"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, live_view_route(project.slug))
     end
   end

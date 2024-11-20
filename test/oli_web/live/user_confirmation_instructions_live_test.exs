@@ -7,7 +7,13 @@ defmodule OliWeb.UserConfirmationInstructionsLiveTest do
   alias Oli.Repo
 
   setup do
-    %{user: user_fixture()}
+    %{
+      user:
+        user_fixture(%{
+          email_verified: nil,
+          email_confirmed_at: nil
+        })
+    }
   end
 
   describe "Resend confirmation" do

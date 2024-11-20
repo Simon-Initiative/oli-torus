@@ -7,7 +7,13 @@ defmodule OliWeb.UserConfirmationLiveTest do
   alias Oli.Repo
 
   setup do
-    %{user: user_fixture()}
+    %{
+      user:
+        user_fixture(%{
+          email_verified: false,
+          email_confirmed_at: nil
+        })
+    }
   end
 
   describe "Confirm user" do
@@ -33,7 +39,7 @@ defmodule OliWeb.UserConfirmationLiveTest do
       assert {:ok, conn} = result
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
-               "User confirmed successfully"
+               "Email successfully confirmed."
 
       assert Accounts.get_user!(user.id).email_confirmed_at
       refute get_session(conn, :user_token)

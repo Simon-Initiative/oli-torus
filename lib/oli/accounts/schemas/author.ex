@@ -257,6 +257,7 @@ defmodule Oli.Accounts.Author do
       :email_confirmed_at
     ])
     |> cast_embed(:preferences)
+    |> unique_constraint(:email)
     |> default_system_role()
     |> maybe_hash_password([])
     |> maybe_name_from_given_and_family()

@@ -59,8 +59,8 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
 
       conn =
         conn
+        |> recycle()
         |> log_in_author(admin)
-        |> recycle_author_session(admin)
 
       conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
       assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:true]

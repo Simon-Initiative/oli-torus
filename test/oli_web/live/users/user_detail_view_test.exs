@@ -118,16 +118,6 @@ defmodule OliWeb.Users.UsersDetailViewTest do
         |> Floki.parse_document!()
 
       assert document
-             |> Floki.find("[phx-feedback-for='user[family_name]'] > p")
-             |> Floki.text() =~
-               "can't be blank"
-
-      assert document
-             |> Floki.find("[phx-feedback-for='user[given_name]'] > p")
-             |> Floki.text() =~
-               "can't be blank"
-
-      assert document
              |> Floki.find("[phx-feedback-for='user[email]'] > p")
              |> Floki.text() =~
                "must have the @ sign and no spaces"

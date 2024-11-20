@@ -260,9 +260,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("confirm_email", _, socket) do
-    changeset = User.confirm_changeset(socket.assigns.user)
-
-    case Accounts.update_user(changeset) do
+    case Accounts.admin_confirm_user(socket.assigns.user) do
       {:ok, user} ->
         {:noreply,
          socket

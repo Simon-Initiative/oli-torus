@@ -20,7 +20,7 @@ defmodule OliWeb.UserForgotPasswordLiveTest do
         conn
         |> log_in_user(Oli.AccountsFixtures.user_fixture())
         |> live(~p"/users/reset_password")
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/workspaces/student")
 
       assert {:ok, _conn} = result
     end
