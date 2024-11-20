@@ -61,6 +61,7 @@ $headerColor: $darkForeground;
       position: relative;
       margin: auto;
       bottom: 15px;
+      padding-left: 1px;
       &:focus {
         box-shadow: none;
       }
