@@ -3,6 +3,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
+  @proficiency_labels ["Not enough data", "Low", "Medium", "High"]
+
   def render(assigns) do
     ~H"""
     <div>nothing</div>
@@ -92,19 +94,23 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       })
 
     ~H"""
-    <div><%= render_proficiency_data_chart(@objective_id, @proficiency_distribution) %></div>
+    <div class="group flex relative">
+      <%= render_proficiency_data_chart(@objective_id, @proficiency_distribution) %>
+      <div class="absolute left-1/2 -translate-x-1/2 -translate-y-full bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block">
+        <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
+          <p><%= label %>: <%= value %>%</p>
+        <% end %>
+      </div>
+    </div>
     """
   end
 
   defp render_proficiency_data_chart(objective_id, data) do
-    data = [
-      %{proficiency: "Not enough data", count: data["Not enough data"] || 0},
-      %{proficiency: "Low", count: data["Low"] || 0},
-      %{proficiency: "Medium", count: data["Medium"] || 0},
-      %{proficiency: "High", count: data["High"] || 0}
-    ]
-
-    IO.inspect(data, label: "DATA in render_proficiency_data_chart/2")
+    data =
+      @proficiency_labels
+      |> Enum.map(fn label ->
+        %{proficiency: label, count: Map.get(data, label, 0)}
+      end)
 
     spec = %{
       mark: "bar",
@@ -130,5 +136,15 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %{spec: spec},
       id: "proficiency-data-bar-chart-for-objective-#{objective_id}"
     )
+  end
+
+  defp calc_percentages(data) do
+    total = data |> Map.values() |> Enum.sum()
+
+    @proficiency_labels
+    |> Enum.map(fn label ->
+      {label, round(Map.get(data, label, 0) / total * 100)}
+    end)
+    |> Map.new()
   end
 end
