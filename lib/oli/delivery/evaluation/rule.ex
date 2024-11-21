@@ -227,7 +227,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp parse_number(str) when is_binary(str) do
     str =
       if Regex.match?(~r/^[+-]?\.\d+$/, str) do
-        String.replace(str, ".", "0.");
+        String.replace(str, ".", "0.")
       else
         str
       end
