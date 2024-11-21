@@ -44,7 +44,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   @page_resource_type_id Oli.Resources.ResourceType.get_id_by_type("page")
   @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
 
-  @completed_resource_css_selector ~s{[role^="resource"][data-completed="true"]}
+  @completed_resources_css_selector ~s{[role^="resource"][data-completed="true"]}
 
   def mount(_params, _session, socket) do
     section = socket.assigns.section
@@ -76,7 +76,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             socket.assigns.current_user.id
           ),
         assistant_enabled: Sections.assistant_enabled?(section),
-        selected_view: @default_selected_view
+        selected_view: @default_selected_view,
+        show_completed?: true
       )
       |> stream_configure(:units, dom_id: &"units-#{&1["uuid"]}")
       |> stream_configure(:unit_resource_ids, dom_id: &"unit_resource_ids-#{&1["uuid"]}")
@@ -437,6 +438,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
+  def handle_event("toggle_completed_visibility", _, socket),
+    do: {:noreply, update(socket, :show_completed?, &(not &1))}
+
   def enter_unit(js \\ %JS{}, unit_id) do
     unit_cards_selector = "#slider_focus_wrap_#{unit_id} > div[role*=\"card\"]"
 
@@ -576,6 +580,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     |> push_event("js-exec", %{
       to: "#selected_module_in_unit_#{unit_resource_id}",
       attr: "data-animate"
+    })
+    |> push_event("js-exec", %{
+      to: completed_resources_css_selector("#selected_module_in_unit_#{unit_resource_id}"),
+      attr: "data-toggle-visibility"
     })
   end
 
@@ -743,7 +751,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="md:p-[25px] md:pl-[50px]">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
-          target_selector={completed_resource_css_selector()}
+          target_selector={completed_resources_css_selector()}
+          on_toggle={&JS.push(&1, "toggle_completed_visibility")}
         />
       </div>
 
@@ -775,6 +784,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )
           }
           assistant_enabled={@assistant_enabled}
+          show_completed?={@show_completed?}
         />
       </div>
     </div>
@@ -795,6 +805,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :unit_raw_avg_score, :map
   attr :assistant_enabled, :boolean, required: true
   attr :page_metrics_per_module_id, :map
+  attr :show_completed?, :boolean, required: true
 
   # top level page as a card with title and header
   def gallery_row(%{unit: %{"resource_type_id" => 1}} = assigns) do
@@ -1122,6 +1133,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 intro_video_viewed={
                   selected_module["resource_id"] in @viewed_intro_video_resource_ids
                 }
+                show_completed?={@show_completed?}
               />
             </div>
           </div>
@@ -1352,6 +1364,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :student_id, :integer
   attr :intro_video_viewed, :boolean
   attr :student_progress_per_resource_id, :map
+  attr :show_completed?, :boolean, required: true
 
   def module_index(assigns) do
     assigns =
@@ -1430,6 +1443,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
           student_progress_per_resource_id={@student_progress_per_resource_id}
           completed={child["completed"]}
+          show_completed?={@show_completed?}
         />
       </div>
     </div>
@@ -1458,6 +1472,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   attr :parent_scheduling_type, :atom
   attr :progress, :float
   attr :completed, :boolean
+  attr :show_completed?, :boolean, required: true
 
   def index_item(%{type: "section"} = assigns) do
     assigns =
@@ -1485,6 +1500,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-parent_due_date={@parent_due_date}
       phx-value-module_resource_id={@module_resource_id}
       data-completed={"#{@progress == 1}"}
+      data-toggle-visibility={
+        if @show_completed?, do: JS.remove_class(%JS{}, "hidden"), else: JS.add_class(%JS{}, "hidden")
+      }
     >
       <div class="justify-start items-start gap-5 flex">
         <Icons.no_icon />
@@ -1552,6 +1570,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         progress={Map.get(@student_progress_per_resource_id, child["resource_id"])}
         student_progress_per_resource_id={@student_progress_per_resource_id}
         completed={child["completed"]}
+        show_completed?={@show_completed?}
       />
     </div>
     """
@@ -1574,6 +1593,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-value-resource_id={@resource_id}
       phx-value-module_resource_id={@module_resource_id}
       data-completed={"#{@completed}"}
+      data-toggle-visibility={
+        if @show_completed?, do: JS.remove_class(%JS{}, "hidden"), else: JS.add_class(%JS{}, "hidden")
+      }
     >
       <div class="justify-start items-start gap-5 flex">
         <.index_item_icon
@@ -2733,5 +2755,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp maybe_scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view),
     do: scroll_to_target_resource(socket, resource_id, full_hierarchy, selected_view)
 
-  defp completed_resource_css_selector, do: @completed_resource_css_selector
+  defp completed_resources_css_selector(prefix \\ ""),
+    do: String.trim("#{prefix} #{@completed_resources_css_selector}")
 end

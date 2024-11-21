@@ -304,11 +304,13 @@ defmodule OliWeb.Components.Delivery.Utils do
   attr :target_selector, :string, required: true, doc: "CSS Selector of the elements to hide/show"
   attr :class, :string, default: "", doc: "CSS extra classes for the button"
 
+  attr :on_toggle, :any, doc: "Callback function to execute after toggling visibility"
+
   def toggle_visibility_button(assigns) do
     ~H"""
     <button
       id="hide_completed_button"
-      phx-click={hide_completed(@target_selector)}
+      phx-click={hide_completed(@target_selector, @on_toggle)}
       class={["self-stretch justify-center items-center gap-2 flex", @class]}
     >
       <div class="w-4 h-4"><Icons.hidden /></div>
@@ -316,7 +318,7 @@ defmodule OliWeb.Components.Delivery.Utils do
     </button>
     <button
       id="show_completed_button"
-      phx-click={show_completed(@target_selector)}
+      phx-click={show_completed(@target_selector, @on_toggle)}
       class={["hidden self-stretch justify-center items-center gap-2", @class]}
     >
       <div class="w-4 h-4"><Icons.visible /></div>
@@ -325,16 +327,18 @@ defmodule OliWeb.Components.Delivery.Utils do
     """
   end
 
-  def hide_completed(target_selector) do
+  def hide_completed(target_selector, on_toggle \\ fn js -> js end) do
     JS.hide()
     |> JS.add_class("hidden", to: target_selector)
     |> JS.show(to: "#show_completed_button", display: "flex")
+    |> on_toggle.()
   end
 
-  def show_completed(target_selector) do
+  def show_completed(target_selector, on_toggle \\ fn js -> js end) do
     JS.hide()
     |> JS.remove_class("hidden", to: target_selector)
     |> JS.show(to: "#hide_completed_button", display: "flex")
+    |> on_toggle.()
   end
 
   @doc """
