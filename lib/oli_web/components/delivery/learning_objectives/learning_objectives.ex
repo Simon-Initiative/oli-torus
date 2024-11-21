@@ -43,7 +43,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
 
     {total_count, rows} = apply_filters(objectives_tab.objectives, params)
 
-    {:ok, objectives_table_model} = ObjectivesTableModel.new(rows)
+    {:ok, objectives_table_model} = ObjectivesTableModel.new(rows, assigns[:patch_url_type])
 
     objectives_table_model =
       Map.merge(objectives_table_model, %{

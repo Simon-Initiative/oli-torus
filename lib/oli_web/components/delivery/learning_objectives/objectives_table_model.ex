@@ -11,7 +11,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  def new(objectives) do
+  def new(objectives, :instructor_dashboard) do
     column_specs = [
       %ColumnSpec{
         name: :objective,
@@ -29,6 +29,41 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
         name: :student_proficiency_distribution,
         label: "PROFICIENCY DISTRIBUTION",
         render_fn: &custom_render/3
+      }
+    ]
+
+    SortableTableModel.new(
+      rows: objectives,
+      column_specs: column_specs,
+      event_suffix: "",
+      id_field: [:id]
+    )
+  end
+
+  def new(objectives, _patch_url_type) do
+    column_specs = [
+      %ColumnSpec{
+        name: :objective,
+        label: "LEARNING OBJECTIVE",
+        render_fn: &custom_render/3,
+        th_class: "pl-10"
+      },
+      %ColumnSpec{
+        name: :subobjective,
+        label: "SUB LEARNING OBJ.",
+        render_fn: &custom_render/3
+      },
+      %ColumnSpec{
+        name: :student_proficiency_obj,
+        label: "STUDENT PROFICIENCY OBJ.",
+        tooltip:
+          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
+      },
+      %ColumnSpec{
+        name: :student_proficiency_subobj,
+        label: "STUDENT PROFICIENCY (SUB OBJ.)",
+        tooltip:
+          "For all students, or one specific student, proficiency for a learning objective will be calculated off the percentage of correct answers for first part attempts within first activity attempts - for those parts that have that learning objective or any of its sub-objectives attached to it."
       }
     ]
 
@@ -72,6 +107,16 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       <span></span>
       <span><%= @objective %></span>
     </div>
+    """
+  end
+
+  defp custom_render(assigns, %{subobjective: subobjective} = _objectives, %ColumnSpec{
+         name: :subobjective
+       }) do
+    assigns = Map.merge(assigns, %{subobjective: subobjective})
+
+    ~H"""
+    <div><%= if is_nil(@subobjective), do: "-", else: @subobjective %></div>
     """
   end
 
