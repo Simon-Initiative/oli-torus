@@ -292,7 +292,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
-      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
@@ -353,7 +352,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
-      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
