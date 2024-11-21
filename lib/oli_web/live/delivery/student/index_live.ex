@@ -594,6 +594,17 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             />
           <% end %>
         </div>
+        <.link
+          navigate={
+            Utils.assignments_live_path(
+              @section_slug,
+              request_path: ~p"/sections/#{@section_slug}"
+            )
+          }
+          class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+        >
+          View All Assignments
+        </.link>
       </div>
     </div>
     """
