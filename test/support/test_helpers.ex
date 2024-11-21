@@ -860,6 +860,80 @@ defmodule Oli.TestHelpers do
      page_2_revision: page_2_revision}
   end
 
+  def create_project_with_n_scored_pages(_conn, n) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    pages =
+      Enum.map(1..n, fn i ->
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Page_#{i}",
+          graded: true,
+          content: %{"advancedDelivery" => true}
+        )
+      end)
+
+    # Associate page to the project
+    Enum.map(pages, fn page ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: page.resource.id
+      })
+    end)
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.id_for_container(),
+        children: Enum.map(pages, & &1.resource.id),
+        content: %{},
+        deleted: false,
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision,
+      author: author
+    })
+
+    Enum.map(pages, fn page ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: page.resource,
+        revision: page,
+        author: author
+      })
+    end)
+
+    section =
+      insert(:section,
+        base_project: project,
+        context_id: UUID.uuid4(),
+        open_and_free: true,
+        registration_open: true,
+        type: :enrollable
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+
+    %{section: section, project: project, pages: pages}
+  end
+
   def create_project_with_products(_conn) do
     author = insert(:author)
     project = insert(:project, authors: [author])
