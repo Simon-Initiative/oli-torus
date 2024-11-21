@@ -454,8 +454,23 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def handle_event("card_keydown", _, socket), do: {:noreply, socket}
 
-  def handle_event("toggle_completed_visibility", _, socket),
-    do: {:noreply, update(socket, :show_completed?, &(not &1))}
+  def handle_event("toggle_completed_visibility", _, socket) do
+    full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
+
+    socket =
+      socket
+      |> update(:show_completed?, &(not &1))
+      # We need to potentially hide or show the sliders buttons since the number of cards might have changed.
+      |> push_event("hide-or-show-buttons-on-sliders", %{
+        unit_resource_ids:
+          Enum.map(
+            full_hierarchy["children"],
+            & &1["resource_id"]
+          )
+      })
+
+    {:noreply, socket}
+  end
 
   def enter_unit(js \\ %JS{}, unit_id) do
     unit_cards_selector = "#slider_focus_wrap_#{unit_id} > div[role*=\"card\"]"
@@ -602,6 +617,9 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       to: "#selected_module_in_unit_#{unit_resource_id}",
       attr: "data-animate"
     })
+    # When a module content is expanded, we need to update the visibility of the completed resources within that module,
+    # since they were not part of the DOM before, so they were not hidden/shown when the user toggled the visibility
+    # of the completed resources.
     |> push_event("js-exec", %{
       to: completed_resources_css_selector("#selected_module_in_unit_#{unit_resource_id}"),
       attr: "data-toggle-visibility"
@@ -1000,7 +1018,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           </div>
         </div>
       </div>
-      <div class="overflow-hidden">
+      <% selected_module = Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
+      <% selected_module_metrics =
+        get_module_page_metrics(@page_metrics_per_module_id, selected_module["resource_id"]) %>
+      <% module_completed? =
+        selected_module_metrics[:completed_pages_count] ==
+          selected_module_metrics[:total_pages_count] %>
+      <div
+        class="overflow-hidden"
+        role="resource module content"
+        data-completed={"#{module_completed?}"}
+      >
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
           class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
@@ -1025,7 +1053,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           }
           phx-key="Escape"
         >
-          <% selected_module = Map.get(@selected_module_per_unit_resource_id, @unit["resource_id"]) %>
           <div
             role="expanded module header"
             class="self-stretch px-6 py-0.5 flex-col justify-start items-center gap-2 flex"
@@ -1940,7 +1967,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         if(@selected, do: "outline outline-[3px]")
       ]}
       role={"resource card #{@module_index}"}
-      data-completed={"#{@card["completed"]}"}
+      data-completed={"#{card_completed?(@card, @is_page, @page_metrics)}"}
       data-enter-event={enter_module(@unit_resource_id)}
       data-leave-event={leave_unit(@unit_resource_id)}
       aria-expanded={Kernel.to_string(@selected)}
@@ -2778,4 +2805,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   defp completed_resources_css_selector(prefix \\ ""),
     do: String.trim("#{prefix} #{@completed_resources_css_selector}")
+
+  def card_completed?(page, true, _), do: page["completed"]
+
+  def card_completed?(_module, false, %{
+        completed_pages_count: completed_pages_count,
+        total_pages_count: total_pages_count
+      }),
+      do: completed_pages_count == total_pages_count
 end

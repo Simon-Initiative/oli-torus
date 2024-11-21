@@ -303,7 +303,6 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   attr :target_selector, :string, required: true, doc: "CSS Selector of the elements to hide/show"
   attr :class, :string, default: "", doc: "CSS extra classes for the button"
-
   attr :on_toggle, :any, doc: "Callback function to execute after toggling visibility"
 
   def toggle_visibility_button(assigns) do
