@@ -4861,6 +4861,7 @@ defmodule Oli.Delivery.Sections do
 
           objective =
             Map.merge(objective, %{
+              section_id: section.id,
               objective: objective.title,
               objective_resource_id: objective.resource_id,
               student_proficiency_obj: Metrics.proficiency_range(calc.(correct, total), total),

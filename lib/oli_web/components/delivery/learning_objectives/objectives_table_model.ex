@@ -16,7 +16,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :objective,
         label: "LEARNING OBJECTIVE",
-        render_fn: &__MODULE__.custom_render/3,
+        render_fn: &custom_render/3,
         th_class: "pl-10"
       },
       %ColumnSpec{
@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_distribution,
         label: "PROFICIENCY DISTRIBUTION",
-        render_fn: &__MODULE__.custom_render/3
+        render_fn: &custom_render/3
       }
     ]
 
@@ -40,13 +40,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     )
   end
 
-  def custom_render(
-        assigns,
-        %{objective: objective, student_proficiency: student_proficiency} = _objectives,
-        %ColumnSpec{
-          name: :objective
-        }
-      ) do
+  defp custom_render(
+         assigns,
+         %{objective: objective, student_proficiency: student_proficiency} = _objectives,
+         %ColumnSpec{
+           name: :objective
+         }
+       ) do
     assigns =
       Map.merge(assigns, %{objective: objective, student_proficiency: student_proficiency})
 
@@ -62,9 +62,9 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  def custom_render(assigns, %{objective: objective} = _objectives, %ColumnSpec{
-        name: :objective
-      }) do
+  defp custom_render(assigns, %{objective: objective} = _objectives, %ColumnSpec{
+         name: :objective
+       }) do
     assigns = Map.merge(assigns, %{objective: objective})
 
     ~H"""
@@ -75,13 +75,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     """
   end
 
-  def custom_render(
-        assigns,
-        %{section_id: section_id, resource_id: objective_id},
-        %ColumnSpec{
-          name: :student_proficiency_distribution
-        }
-      ) do
+  defp custom_render(
+         assigns,
+         %{section_id: section_id, resource_id: objective_id},
+         %ColumnSpec{
+           name: :student_proficiency_distribution
+         }
+       ) do
     proficiency_distribution =
       section_id
       |> Oli.Delivery.Metrics.proficiency_per_student_for_objective(objective_id)
@@ -142,10 +142,12 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
   defp calc_percentages(data) do
     total = data |> Map.values() |> Enum.sum()
 
+    perc = fn label ->
+      if total == 0, do: 0, else: round(Map.get(data, label, 0) / total * 100)
+    end
+
     @proficiency_labels
-    |> Enum.map(fn label ->
-      {label, round(Map.get(data, label, 0) / total * 100)}
-    end)
+    |> Enum.map(fn label -> {label, perc.(label)} end)
     |> Map.new()
   end
 end
