@@ -108,6 +108,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       ) do
     full_hierarchy = get_or_compute_full_hierarchy(socket.assigns.section)
 
+    units =
+      full_hierarchy["children"]
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          socket.assigns.student_visited_pages,
+          socket.assigns.student_raw_avg_score_per_page_id,
+          socket.assigns.student_progress_per_resource_id
+        )
+      end)
+
     send(self(), :gc)
 
     with selected_view <- get_selected_view(params),
@@ -116,7 +127,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        socket
        |> maybe_assign_contained_scheduling_types(selected_view, full_hierarchy)
        |> maybe_assign_selected_view(selected_view)
-       |> stream(:units, full_hierarchy["children"], reset: true)
+       |> stream(:units, units, reset: true)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
     end
   end
@@ -317,6 +328,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           fn node -> node["resource_id"] == resource_id end
         )
       end
+      |> mark_visited_and_completed_pages(
+        socket.assigns.student_visited_pages,
+        socket.assigns.student_raw_avg_score_per_page_id,
+        socket.assigns.student_progress_per_resource_id
+      )
 
     updated_viewed_videos =
       if resource_id in socket.assigns.viewed_intro_video_resource_ids do
@@ -502,6 +518,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       Hierarchy.find_parent_in_hierarchy(
         full_hierarchy,
         fn node -> node["resource_id"] == module_resource_id end
+      )
+      |> mark_visited_and_completed_pages(
+        socket.assigns.student_visited_pages,
+        socket.assigns.student_raw_avg_score_per_page_id,
+        socket.assigns.student_progress_per_resource_id
       )
 
     current_selected_module_for_unit =
