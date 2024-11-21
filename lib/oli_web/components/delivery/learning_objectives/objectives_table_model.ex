@@ -126,7 +126,8 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
           labels: false,
           title: false
         },
-        legend: %{disable: true}
+        legend: %{disable: true},
+        background: nil
       }
     }
 
