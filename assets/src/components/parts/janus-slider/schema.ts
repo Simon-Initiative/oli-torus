@@ -44,6 +44,7 @@ export const simpleSchema: JSONSchema7Object = {
   snapInterval: {
     title: 'Interval',
     type: 'number',
+    description: 'Value cannot be smaller than 1/100 of the range between the min and max values',
   },
 
   answer: correctOrRange.schema,
@@ -71,7 +72,7 @@ export const simpleUISchema = {
     classNames: 'col-span-6',
   },
   snapInterval: {
-    classNames: 'col-span-6',
+    classNames: 'col-span-12',
   },
   advancedFeedback: numericAdvancedFeedback.uiSchema,
 };
@@ -118,6 +119,7 @@ export const schema: JSONSchema7Object = {
   },
   snapInterval: {
     title: 'Interval',
+    description: 'Value cannot be smaller than 1/100 of the range between the min and max values',
     type: 'number',
   },
   enabled: {

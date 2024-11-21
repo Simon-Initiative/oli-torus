@@ -71,7 +71,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       # Button that triggers a tooltip
       assert has_element?(
                view,
-               "button[xphx-mouseover='[[\"show\",{\"to\":\"#student_progress_tooltip\"}]]']"
+               "button[xphx-mouseover='[[\"show\",{\"display\":\"flex\",\"to\":\"#student_progress_tooltip\"}]]']"
              )
 
       # Renders correct column title

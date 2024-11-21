@@ -111,20 +111,27 @@ const Delivery: React.FC<DeliveryProps> = ({
   }, [screenIdleExpirationTime]);
 
   const handleUserThemePreferende = () => {
-    switch (getModeFromLocalStorage()) {
-      case 'dark':
-        setCurrentTheme('dark');
-        break;
-      case 'auto':
-        if (isDarkMode()) {
+    const isDarkModeThemeEnabled = content?.custom?.darkModeSetting;
+    // If dark mode is disabled, do not apply the dark theme to the lesson.
+    // If dark mode is enabled, apply the theme based on the student's selected theme (default current behavior).
+    if (!isDarkModeThemeEnabled) {
+      setCurrentTheme('light');
+    } else {
+      switch (getModeFromLocalStorage()) {
+        case 'dark':
           setCurrentTheme('dark');
-        } else {
+          break;
+        case 'auto':
+          if (isDarkMode()) {
+            setCurrentTheme('dark');
+          } else {
+            setCurrentTheme('light');
+          }
+          break;
+        case 'light':
           setCurrentTheme('light');
-        }
-        break;
-      case 'light':
-        setCurrentTheme('light');
-        break;
+          break;
+      }
     }
   };
   useEffect(() => {

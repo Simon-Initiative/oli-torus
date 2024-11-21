@@ -9,11 +9,18 @@ defmodule OliWeb.Icons do
 
   ########## Studend Delivery Icons (start) ##########
 
+  def no_icon(assigns) do
+    ~H"""
+    <div role="no icon" class="flex justify-center items-center w-[22px] h-[22px] shrink-0"></div>
+    """
+  end
+
   attr :fill_class, :string, default: "fill-[#FF9040]"
 
   def flag(assigns) do
     ~H"""
     <svg
+      role="flag icon"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
       height="24"
@@ -92,16 +99,25 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "fill-[#0CAF61] dark:fill-[#12E56A]"
+
   def square_checked(assigns) do
     ~H"""
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <svg
+      role="square checked icon"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
       <path
         d="M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H17.925L15.925 5H5V19H19V12.05L21 10.05V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H5Z"
-        class="fill-[#0CAF61] dark:fill-[#12E56A]"
+        class={@class}
       />
       <path
         d="M11.7 16.025L6 10.325L7.425 8.9L11.7 13.175L20.875 4L22.3 5.425L11.7 16.025Z"
-        class="fill-[#0CAF61] dark:fill-[#12E56A]"
+        class={@class}
       />
     </svg>
     """
@@ -330,9 +346,19 @@ defmodule OliWeb.Icons do
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
       class={@class}
+      fill="currentColor"
     >
       <path d="M6.70711 8.29289C6.31658 7.90237 5.68342 7.90237 5.29289 8.29289C4.90237 8.68342 4.90237 9.31658 5.29289 9.70711L11.2929 15.7071C11.6834 16.0976 12.3166 16.0976 12.7071 15.7071L18.7071 9.70711C19.0976 9.31658 19.0976 8.68342 18.7071 8.29289C18.3166 7.90237 17.6834 7.90237 17.2929 8.29289L12 13.5858L6.70711 8.29289Z" />
     </svg>
+    """
+  end
+
+  attr :width, :string, default: "24"
+  attr :height, :string, default: "24"
+
+  def chevron_right(assigns) do
+    ~H"""
+    <.chevron_down width={@width} height={@height} class="-rotate-90" />
     """
   end
 
@@ -448,6 +474,7 @@ defmodule OliWeb.Icons do
   def world(assigns) do
     ~H"""
     <svg
+      role="world icon"
       width="20"
       height="20"
       viewBox="0 0 20 20"
@@ -760,6 +787,7 @@ defmodule OliWeb.Icons do
   end
 
   attr :is_active, :boolean, default: false
+  attr :color, :string, default: "black"
 
   def explorations(%{is_active: true} = assigns) do
     ~H"""
@@ -773,6 +801,7 @@ defmodule OliWeb.Icons do
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
+        stroke={@color}
         fill-rule="evenodd"
         clip-rule="evenodd"
         d="M6.09812 0.861754C5.15525 1.24527 4.28869 1.8156 3.55498 2.54931C3.07205 3.03224 2.6599 3.57273 2.32521 4.15464H5.30913C5.49263 3.03193 5.75648 1.92996 6.09812 0.861754ZM1.4096 6.69883C1.33715 7.12365 1.30005 7.55651 1.30005 7.9932C1.30005 8.42787 1.33686 8.86072 1.40957 9.28719H5.03353C5.01024 8.85716 4.99854 8.42559 4.99854 7.99315C4.99854 7.56061 5.01025 7.12894 5.03354 6.69883H1.4096ZM2.32502 11.8314C2.66189 12.4171 3.07514 12.9572 3.55498 13.4371C4.26988 14.152 5.11859 14.7191 6.05266 15.106C6.06781 15.1123 6.08297 15.1185 6.09815 15.1247C5.75647 14.0563 5.4926 12.9542 5.30909 11.8314H2.32502ZM11.8988 15.125C11.9143 15.1187 11.9297 15.1124 11.9451 15.106C12.8791 14.7191 13.7279 14.152 14.4428 13.4371C14.9226 12.9572 15.3358 12.4171 15.6727 11.8314H12.688C12.5045 12.9543 12.2405 14.0565 11.8988 15.125ZM16.5882 9.28719C16.6609 8.86072 16.6977 8.42787 16.6977 7.9932C16.6977 7.55651 16.6606 7.12365 16.5881 6.69883H12.9635C12.9868 7.12894 12.9985 7.56061 12.9985 7.99315C12.9985 8.42559 12.9868 8.85716 12.9635 9.28719H16.5882ZM15.6725 4.15464H12.6879C12.5044 3.03183 12.2405 1.92975 11.8989 0.861442C12.842 1.24496 13.7088 1.8154 14.4428 2.54931C14.9257 3.03224 15.3378 3.57273 15.6725 4.15464ZM8.99854 0.659973C9.42684 1.77686 9.75589 2.94887 9.97995 4.15464H8.01713C8.24118 2.94887 8.57023 1.77686 8.99854 0.659973ZM7.6652 7.99315C7.6652 7.56003 7.67846 7.12829 7.70474 6.69883H10.2923C10.3186 7.12829 10.3319 7.56003 10.3319 7.99315C10.3319 8.42617 10.3186 8.85782 10.2923 9.28719H7.70473C7.67846 8.85782 7.6652 8.42617 7.6652 7.99315ZM8.99853 15.3263C8.5702 14.2093 8.24113 13.0372 8.01707 11.8314H9.98C9.75594 13.0372 9.42687 14.2093 8.99853 15.3263Z"
@@ -813,6 +842,63 @@ defmodule OliWeb.Icons do
         stroke-linecap="round"
         stroke-linejoin="round"
       />
+    </svg>
+    """
+  end
+
+  attr :is_active, :boolean, default: false
+
+  def assignments(%{is_active: true} = assigns) do
+    ~H"""
+    <svg
+      role="active assignments icon"
+      class="dark:fill-white fill-black/70 dark:stroke-white stroke-black/70"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
+  def assignments(%{is_active: false} = assigns) do
+    ~H"""
+    <svg
+      role="assignments icon"
+      class="dark:stroke-[#B8B4BF] stroke-black/70"
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g clip-path="url(#clip0_1_19943)">
+        <path
+          d="M4.16602 11.666H15.8327L12.0827 7.91602L15.8327 4.16602H4.16602V17.4993"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_1_19943">
+          <rect width="20" height="20" fill="white" />
+        </clipPath>
+      </defs>
     </svg>
     """
   end
@@ -1140,7 +1226,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 19 18"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      class="dark:stroke-white stroke-black/70"
+      stroke="currentColor"
     >
       <g clip-path="url(#clip0_2850_70040)">
         <path
@@ -1158,7 +1244,7 @@ defmodule OliWeb.Icons do
       </g>
       <defs>
         <clipPath id="clip0_2850_70040">
-          <rect width="18" height="18" fill="white" transform="translate(0.5)" />
+          <rect width="18" height="18" fill="currentColor" transform="translate(0.5)" />
         </clipPath>
       </defs>
     </svg>
@@ -1168,12 +1254,12 @@ defmodule OliWeb.Icons do
   def hidden(assigns) do
     ~H"""
     <svg
-      class="dark:stroke-white stroke-black/70"
       role="hidden icon"
       width="19"
+      fill="none"
+      stroke="currentColor"
       height="18"
       viewBox="0 0 19 18"
-      fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <g clip-path="url(#clip0_2850_70060)">
@@ -1198,12 +1284,7 @@ defmodule OliWeb.Icons do
       </g>
       <defs>
         <clipPath id="clip0_2850_70060">
-          <rect
-            width="18"
-            height="18"
-            class="dark:fill-white fill-black/70"
-            transform="translate(0.5)"
-          />
+          <rect width="18" fill="currentColor" height="18" transform="translate(0.5)" />
         </clipPath>
       </defs>
     </svg>

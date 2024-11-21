@@ -69,13 +69,25 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
   @doc """
   Returns a list of SectionResource records for all graded pages for a given section.
+
+  An optional keyword list can be passed to extend the filtering conditions.
+
+  Example:
+    SectionResourceDepot.graded_pages(some_section_id, [hidden: false])
   """
-  def graded_pages(section_id) do
+  def graded_pages(section_id, additional_query_conditions \\ []) do
     init_if_necessary(section_id)
 
     page = Oli.Resources.ResourceType.id_for_page()
 
-    Depot.query(@depot_desc, section_id, graded: true, resource_type_id: page)
+    query_conditions =
+      Keyword.merge([graded: true, resource_type_id: page], additional_query_conditions)
+
+    Depot.query(
+      @depot_desc,
+      section_id,
+      query_conditions
+    )
     |> Enum.sort_by(& &1.numbering_index)
   end
 

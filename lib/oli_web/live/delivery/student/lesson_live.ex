@@ -11,17 +11,18 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       emit_page_viewed_event: 1
     ]
 
+  alias Oli.Accounts
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
-  alias Oli.Delivery.Metrics
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Settings
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Collaboration
   alias Oli.Resources.Collaboration.CollabSpaceConfig
   alias OliWeb.Delivery.Student.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
+  alias OliWeb.Delivery.Student.Lesson.Components.OutlineComponent
+  alias Oli.Delivery.{Hierarchy, Metrics, Sections, Settings}
+  alias Oli.Delivery.Sections.SectionCache
 
   require Logger
 
@@ -35,11 +36,32 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     current_user: {[:id, :name, :email], %User{}}
   }
 
+  @default_selected_view :gallery
+
   @decorate transaction_event()
-  def mount(_params, _session, %{assigns: %{view: :practice_page}} = socket) do
+  def mount(params, _session, %{assigns: %{view: :practice_page}} = socket) do
     # when updating to Liveview 0.20 we should replace this with assign_async/3
     # https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html#assign_async/3
     if connected?(socket) do
+      thin_hierarchy =
+        socket.assigns.section
+        |> get_or_compute_full_hierarchy()
+        |> Hierarchy.thin_hierarchy(
+          [
+            "id",
+            "slug",
+            "title",
+            "numbering",
+            "resource_id",
+            "resource_type_id",
+            "children",
+            "graded",
+            "section_resource"
+          ],
+          # only include units, modules, sections or pages until level 3
+          fn node -> node["numbering"]["level"] <= 3 end
+        )
+
       %{current_user: current_user, section: section, page_context: page_context} = socket.assigns
       is_instructor = Sections.has_instructor_role?(current_user, section.slug)
 
@@ -59,14 +81,30 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> emit_page_viewed_event()
         |> assign_html_and_scripts()
         |> annotations_assigns(page_context.collab_space_config, is_instructor)
-        |> assign(is_instructor: is_instructor, page_resource_id: page_context.page.resource_id)
+        |> assign(
+          is_instructor: is_instructor,
+          active_sidebar_panel:
+            if(
+              Accounts.get_user_preference(
+                current_user.id,
+                :page_outline_panel_active?,
+                false
+              ),
+              do: :outline,
+              else: nil
+            ),
+          selected_view: get_selected_view(params),
+          page_resource_id: page_context.page.resource_id
+        )
         |> assign_objectives()
         |> slim_assigns()
 
       script_sources =
         Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources})}
+      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
+       temporary_assigns: [hierarchy: thin_hierarchy]}
+
       # These temp assigns were disabled in MER-3672
       #  temporary_assigns: [scripts: [], html: [], page_context: %{}]}
     else
@@ -190,18 +228,35 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, assign_annotations(socket, point_markers: markers)}
   end
 
-  def handle_event("toggle_sidebar", _params, socket) do
-    %{show_sidebar: show_sidebar, selected_point: selected_point} = socket.assigns.annotations
+  def handle_event("toggle_outline_sidebar", _params, socket) do
+    active_sidebar_panel =
+      if socket.assigns.active_sidebar_panel != :outline, do: :outline, else: nil
+
+    Accounts.set_user_preference(
+      socket.assigns.current_user,
+      :page_outline_panel_active?,
+      active_sidebar_panel == :outline
+    )
+
+    {:noreply, assign(socket, active_sidebar_panel: active_sidebar_panel)}
+  end
+
+  def handle_event("toggle_notes_sidebar", _params, socket) do
+    active_sidebar_panel = if socket.assigns.active_sidebar_panel != :notes, do: :notes, else: nil
+
+    %{selected_point: selected_point} = socket.assigns.annotations
 
     {:noreply,
      socket
-     |> assign_annotations(show_sidebar: !show_sidebar)
+     |> assign(active_sidebar_panel: active_sidebar_panel)
      |> push_event("request_point_markers", %{})
      |> then(fn socket ->
-       if show_sidebar do
-         push_event(socket, "clear_highlighted_point_markers", %{})
-       else
-         push_event(socket, "highlight_point_marker", %{id: selected_point})
+       case active_sidebar_panel do
+         nil ->
+           push_event(socket, "clear_highlighted_point_markers", %{})
+
+         :notes ->
+           push_event(socket, "highlight_point_marker", %{id: selected_point})
        end
      end)}
   end
@@ -654,29 +709,65 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
     <Annotations.delete_post_modal />
-    <div id="sticky_annotations_panel" class="absolute top-8 right-0 z-50 h-full">
-      <div class="sticky ml-auto top-20 right-0">
-        <Annotations.toggle_notes_button :if={!@annotations.show_sidebar}>
-          <Annotations.annotations_icon />
-        </Annotations.toggle_notes_button>
+    <div id="sticky_panel" class="absolute top-4 right-0 z-40 h-full">
+      <div class="sticky top-20 right-0">
+        <div class={[
+          "absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "right-[380px]"),
+          if(@active_sidebar_panel == :notes, do: "right-[505px]"),
+          if(@active_sidebar_panel == nil, do: "right-0")
+        ]}>
+          <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
+            <div class={[
+              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              if(@active_sidebar_panel,
+                do: "rounded-t-xl rounded-b-xl",
+                else: "rounded-tl-xl rounded-bl-xl"
+              )
+            ]}>
+              <Annotations.toggle_notes_button is_active={@active_sidebar_panel == :notes}>
+                <Annotations.annotations_icon />
+              </Annotations.toggle_notes_button>
 
-        <Annotations.panel
-          :if={@annotations.show_sidebar}
-          section_slug={@section.slug}
-          collab_space_config={@collab_space_config}
-          create_new_annotation={@annotations.create_new_annotation}
-          annotations={@annotations.posts}
-          current_user={@current_user}
-          is_instructor={@is_instructor}
-          active_tab={@annotations.active_tab}
-          search_results={@annotations.search_results}
-          search_term={@annotations.search_term}
-          selected_point={@annotations.selected_point}
-        />
+              <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
+                <OutlineComponent.outline_icon />
+              </OutlineComponent.toggle_outline_button>
+            </div>
+          </div>
+        </div>
+
+        <%= case @active_sidebar_panel do %>
+          <% :notes -> %>
+            <Annotations.panel
+              section_slug={@section.slug}
+              collab_space_config={@collab_space_config}
+              create_new_annotation={@annotations.create_new_annotation}
+              annotations={@annotations.posts}
+              current_user={@current_user}
+              is_instructor={@is_instructor}
+              active_tab={@annotations.active_tab}
+              search_results={@annotations.search_results}
+              search_term={@annotations.search_term}
+              selected_point={@annotations.selected_point}
+            />
+          <% :outline -> %>
+            <.live_component
+              module={OutlineComponent}
+              id="outline_component"
+              hierarchy={@hierarchy}
+              section_slug={@section.slug}
+              section_id={@section.id}
+              user_id={@current_user.id}
+              page_resource_id={@page_resource_id}
+              selected_view={@selected_view}
+            />
+          <% nil -> %>
+            <div></div>
+        <% end %>
       </div>
     </div>
 
-    <.page_content_with_sidebar_layout show_sidebar={@annotations.show_sidebar}>
+    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
       <:header>
         <.page_header
           page_context={@page_context}
@@ -706,7 +797,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         <.references ctx={@ctx} bib_app_params={@bib_app_params} />
       </div>
 
-      <:point_markers :if={@annotations.show_sidebar && @annotations.point_markers}>
+      <:point_markers :if={@active_sidebar_panel == :notes && @annotations.point_markers}>
         <Annotations.annotation_bubble
           point_marker={:page}
           selected={@annotations.selected_point == :page}
@@ -726,32 +817,64 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
-    <div class="flex-1 flex flex-col w-full">
-      <div class="flex-1 mt-20 px-[80px] relative">
-        <div class="container mx-auto max-w-[880px] pb-20">
-          <.page_header
-            page_context={@page_context}
-            ctx={@ctx}
-            objectives={@objectives}
-            index={@current_page["index"]}
-            container_label={Utils.get_container_label(@current_page["id"], @section)}
-          />
-
-          <div id="page_content" class="content" phx-update="ignore" role="page content">
-            <%= raw(@html) %>
-            <div class="flex w-full justify-center">
-              <.reset_attempts_button
-                activity_count={@activity_count}
-                advanced_delivery={@advanced_delivery}
-                page_context={@page_context}
-                section_slug={@section.slug}
-              />
+    <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
+      <div class="sticky ml-auto top-20 right-0">
+        <div class={[
+          "absolute top-24",
+          if(@active_sidebar_panel == :outline, do: "right-[380px]", else: "right-0")
+        ]}>
+          <div class="h-32 rounded-tl-xl rounded-bl-xl justify-start items-center inline-flex">
+            <div class={[
+              "px-2 py-6 bg-white dark:bg-black shadow flex-col justify-center gap-4 inline-flex",
+              if(@active_sidebar_panel,
+                do: "rounded-t-xl rounded-b-xl",
+                else: "rounded-tl-xl rounded-bl-xl"
+              )
+            ]}>
+              <OutlineComponent.toggle_outline_button is_active={@active_sidebar_panel == :outline}>
+                <OutlineComponent.outline_icon />
+              </OutlineComponent.toggle_outline_button>
             </div>
-            <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
+
+        <.live_component
+          :if={@active_sidebar_panel == :outline}
+          module={OutlineComponent}
+          id="outline_component"
+          hierarchy={@hierarchy}
+          section_slug={@section.slug}
+          section_id={@section.id}
+          user_id={@current_user.id}
+          page_resource_id={@page_resource_id}
+          selected_view={@selected_view}
+        />
       </div>
     </div>
+    <.page_content_with_sidebar_layout active_sidebar_panel={@active_sidebar_panel}>
+      <:header>
+        <.page_header
+          page_context={@page_context}
+          ctx={@ctx}
+          objectives={@objectives}
+          index={@current_page["index"]}
+          container_label={Utils.get_container_label(@current_page["id"], @section)}
+        />
+      </:header>
+
+      <div id="page_content" class="content" phx-update="ignore" role="page content">
+        <%= raw(@html) %>
+        <div class="flex w-full justify-center">
+          <.reset_attempts_button
+            activity_count={@activity_count}
+            advanced_delivery={@advanced_delivery}
+            page_context={@page_context}
+            section_slug={@section.slug}
+          />
+        </div>
+        <.references ctx={@ctx} bib_app_params={@bib_app_params} />
+      </div>
+    </.page_content_with_sidebar_layout>
     """
   end
 
@@ -774,7 +897,8 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
-          <div :if={@questions != []} class="relative min-h-[500px]">
+
+          <div :if={@questions != []} class="relative min-h-[500px] justify-center">
             <.live_component
               id="one_at_a_time_questions"
               module={OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion}
@@ -790,11 +914,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
               section_slug={@section.slug}
               effective_settings={@page_context.effective_settings}
             />
-          </div>
-          <div :if={@questions == []} class="flex w-full justify-center">
-            <p>
-              There are no questions available for this page.
-            </p>
           </div>
           <div :if={@questions == []} class="flex w-full justify-center">
             <p>
@@ -823,6 +942,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
             index={@current_page["index"]}
             container_label={Utils.get_container_label(@current_page["id"], @section)}
           />
+
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
             <div class="flex w-full justify-center">
@@ -928,79 +1048,23 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     """
   end
 
-  defp finalize_attempt(
-         %{
-           assigns: %{
-             section: section,
-             datashop_session_id: datashop_session_id,
-             request_path: request_path,
-             revision_slug: revision_slug,
-             attempt_guid: attempt_guid
-           }
-         } = socket
-       ) do
-    case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
-      {:ok,
-       %FinalizationSummary{
-         graded: true,
-         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
-         effective_settings: effective_settings
-       }} ->
-        # graded resource finalization success
-        section = Sections.get_section_by(slug: section.slug)
-
-        if section.grade_passback_enabled,
-          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
-
-        redirect_to =
-          case effective_settings.review_submission do
-            :allow ->
-              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
-                request_path: request_path
-              )
-
-            _ ->
-              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-          end
-
-        {:noreply, redirect(socket, to: redirect_to)}
-
-      {:ok, %FinalizationSummary{graded: false}} ->
-        {:noreply,
-         redirect(socket,
-           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
-         )}
-
-      {:error, {reason}}
-      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-
-      e ->
-        error_msg = Kernel.inspect(e)
-        Logger.error("Page finalization error encountered: #{error_msg}")
-        Oli.Utils.Appsignal.capture_error(error_msg)
-
-        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
-    end
-  end
-
   attr :show_sidebar, :boolean, default: false
+  attr :active_sidebar_panel, :atom, default: nil
   slot :header, required: true
   slot :inner_block, required: true
-  slot :sidebar, default: nil
-  slot :sidebar_toggle, default: nil
   slot :point_markers, default: nil
 
   defp page_content_with_sidebar_layout(assigns) do
     ~H"""
     <div class="flex-1 flex flex-col w-full">
       <div class={[
-        "flex-1 flex flex-col",
-        if(@show_sidebar, do: "xl:mr-[520px]")
+        "flex-1 flex flex-col overflow-auto",
+        if(@active_sidebar_panel == :notes, do: "xl:mr-[550px]"),
+        if(@active_sidebar_panel == :outline, do: "xl:mr-[360px]")
       ]}>
         <div class={[
           "flex-1 mt-20 px-[80px] relative",
-          if(@show_sidebar, do: "border-r border-gray-300 xl:mr-[80px]")
+          if(@active_sidebar_panel == :notes, do: "border-r border-gray-300 xl:mr-[80px]")
         ]}>
           <div class="container mx-auto max-w-[880px] pb-20">
             <%= render_slot(@header) %>
@@ -1085,6 +1149,62 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     )
   end
 
+  defp finalize_attempt(
+         %{
+           assigns: %{
+             section: section,
+             datashop_session_id: datashop_session_id,
+             request_path: request_path,
+             revision_slug: revision_slug,
+             attempt_guid: attempt_guid
+           }
+         } = socket
+       ) do
+    case PageLifecycle.finalize(section.slug, attempt_guid, datashop_session_id) do
+      {:ok,
+       %FinalizationSummary{
+         graded: true,
+         resource_access: %Oli.Delivery.Attempts.Core.ResourceAccess{id: id},
+         effective_settings: effective_settings
+       }} ->
+        # graded resource finalization success
+        section = Sections.get_section_by(slug: section.slug)
+
+        if section.grade_passback_enabled,
+          do: PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+
+        redirect_to =
+          case effective_settings.review_submission do
+            :allow ->
+              Utils.review_live_path(section.slug, revision_slug, attempt_guid,
+                request_path: request_path
+              )
+
+            _ ->
+              Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+          end
+
+        {:noreply, redirect(socket, to: redirect_to)}
+
+      {:ok, %FinalizationSummary{graded: false}} ->
+        {:noreply,
+         redirect(socket,
+           to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
+         )}
+
+      {:error, {reason}}
+      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
+        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
+
+      e ->
+        error_msg = Kernel.inspect(e)
+        Logger.error("Page finalization error encountered: #{error_msg}")
+        Oli.Utils.Appsignal.capture_error(error_msg)
+
+        {:noreply, put_flash(socket, :error, "Unable to finalize page")}
+    end
+  end
+
   defp get_post(socket, post_id) do
     Enum.find(socket.assigns.annotations.posts, fn post -> post.id == post_id end)
   end
@@ -1110,7 +1230,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       %CollabSpaceConfig{status: :enabled, auto_accept: auto_accept} ->
         assign(socket,
           annotations: %{
-            show_sidebar: false,
             point_markers: nil,
             selected_point: nil,
             post_counts: nil,
@@ -1409,5 +1528,19 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     date_time
     |> DateTime.to_unix(:second)
     |> Kernel.*(1000)
+  end
+
+  defp get_selected_view(params) do
+    case params["selected_view"] do
+      nil -> @default_selected_view
+      view when view not in ~w(gallery outline) -> @default_selected_view
+      view -> String.to_existing_atom(view)
+    end
+  end
+
+  defp get_or_compute_full_hierarchy(section) do
+    SectionCache.get_or_compute(section.slug, :full_hierarchy, fn ->
+      Hierarchy.full_hierarchy(section)
+    end)
   end
 end

@@ -2694,7 +2694,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id=desktop-nav-menu] a}, "Schedule")
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=true")
+      assert_redirect(view, "/sections/#{section.slug}/student_schedule?sidebar_expanded=true")
 
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, sidebar_expanded: false))
@@ -2705,7 +2705,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       |> element(~s{nav[id="desktop-nav-menu"] a[id="schedule_nav_link"])})
       |> render_click()
 
-      assert_redirect(view, "/sections/#{section.slug}/assignments?sidebar_expanded=false")
+      assert_redirect(view, "/sections/#{section.slug}/student_schedule?sidebar_expanded=false")
     end
 
     test "exit course button redirects to the student workspace", %{
