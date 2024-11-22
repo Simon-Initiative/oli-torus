@@ -27,6 +27,7 @@ default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
   depot_coordinator: Oli.Delivery.DistributedDepotCoordinator,
+  depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
   load_testing_mode: false,
   problematic_query_detection: false,
   problematic_query_cost_threshold: 150,
