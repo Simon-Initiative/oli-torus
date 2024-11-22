@@ -7,10 +7,12 @@ defmodule OliWeb.Delivery.NewCourse do
 
   alias Oli.Accounts
   alias Oli.Delivery
-  alias Oli.Lti.LtiParams
+  alias Oli.Delivery.DistributedDepotCoordinator
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
@@ -275,7 +277,7 @@ defmodule OliWeb.Delivery.NewCourse do
              }
            ) do
         {:ok, section} ->
-          send(liveview_pid, {:section_created, section.slug})
+          send(liveview_pid, {:section_created, section.id, section.slug})
 
         {:error, error} ->
           {_error_id, error_msg} = log_error("Failed to create new section", error)
@@ -326,7 +328,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
           case create_from_publication(socket, publication, section_params) do
             {:ok, section} ->
-              send(liveview_pid, {:section_created, section.slug})
+              send(liveview_pid, {:section_created, section.id, section.slug})
 
             {:error, error} ->
               {_error_id, error_msg} = log_error("Failed to create new section", error)
@@ -363,7 +365,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
           case create_from_product(socket, blueprint, section_params) do
             {:ok, section} ->
-              send(liveview_pid, {:section_created, section.slug})
+              send(liveview_pid, {:section_created, section.id, section.slug})
 
             {:error, error} ->
               {_error_id, error_msg} = log_error("Failed to create new section", error)
@@ -432,13 +434,16 @@ defmodule OliWeb.Delivery.NewCourse do
     end
   end
 
-  def handle_info({:section_created, section_slug}, socket) do
-    socket = put_flash(socket, :info, "Section successfully created.")
+  def handle_info({:section_created, section_id, section_slug}, socket) do
+    Task.Supervisor.start_child(Oli.TaskSupervisor, fn ->
+      depot_desc = SectionResourceDepot.depot_desc()
+      DistributedDepotCoordinator.init_if_necessary(depot_desc, section_id, SectionResourceDepot)
+    end)
 
-    {:noreply,
-     redirect(socket,
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_slug)
-     )}
+    socket
+    |> put_flash(:info, "Section successfully created.")
+    |> redirect(to: ~p"/sections/#{section_slug}/manage")
+    |> noreply()
   end
 
   def handle_info({:section_created_error, error_msg}, socket) do
