@@ -759,14 +759,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="flex justify-end md:p-[25px]">
+      <div class="flex justify-end md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <.live_component
           id="view_selector"
           module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
           selected_view={@selected_view}
         />
       </div>
-      <div class="pl-6">
+      <div class="sticky w-fit top-20 md:px-[25px] md:pl-[20px] z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
@@ -1409,7 +1409,6 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           get_contained_pages_due_dates(
             assigns.row,
             assigns.student_end_date_exceptions_per_resource_id,
-            true,
             assigns.ctx
           )
       })
