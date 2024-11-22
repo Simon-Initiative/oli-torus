@@ -111,6 +111,7 @@ defmodule OliWeb.Components.Delivery.QuizScores do
             page_change={JS.push("paged_table_page_change", target: @myself)}
             limit_change={JS.push("paged_table_limit_change", target: @myself)}
             show_limit_change={true}
+            overflow_class="block scrollbar"
           />
         <% else %>
           <h6 class="text-center py-4">There are no quiz scores to show</h6>
