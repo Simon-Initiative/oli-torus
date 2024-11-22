@@ -20,4 +20,13 @@ defmodule Oli.Delivery.SingletonDepotCoordinator do
       Depot.clear(depot_desc, table_id)
     end
   end
+
+  def init_if_necessary(%DepotDesc{} = depot_desc, table_id, caller_module) do
+    if Depot.table_exists?(depot_desc, table_id) do
+      {:ok, :exists}
+    else
+      caller_module.process_table_creation(table_id)
+      {:ok, :created}
+    end
+  end
 end

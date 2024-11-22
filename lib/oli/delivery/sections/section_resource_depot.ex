@@ -17,7 +17,6 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   import Ecto.Query
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Depot
-  alias Oli.Delivery.DistributedDepotCoordinator
   alias Oli.Delivery.Depot.DepotDesc
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
@@ -42,7 +41,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   directly.
   """
   def get_full_hierarchy(%Section{} = section) do
-    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section.id, __MODULE__)
+    depot_coordinator().init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
@@ -60,7 +59,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   directly.
   """
   def get_delivery_resolver_full_hierarchy(%Section{} = section) do
-    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section.id, __MODULE__)
+    depot_coordinator().init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
@@ -78,7 +77,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     SectionResourceDepot.graded_pages(some_section_id, [hidden: false])
   """
   def graded_pages(section_id, additional_query_conditions \\ []) do
-    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section_id, __MODULE__)
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
 
@@ -97,7 +96,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Access the SectionResource records pertaining to the course schedule.
   """
   def retrieve_schedule(section_id, filter_resource_type \\ false) do
-    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section_id, __MODULE__)
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
     container_type_id = Oli.Resources.ResourceType.id_for_container()
@@ -122,7 +121,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   An optional parameter `graded_only` can be passed to filter only graded pages.
   """
   def get_lessons(section, graded_only \\ false) do
-    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section.id, __MODULE__)
+    depot_coordinator().init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -139,7 +138,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Returns a list of SectionResource records filtered by type ids for a given section.
   """
   def get_section_resources_by_type_ids(section_id, type_ids) do
-    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section_id, __MODULE__)
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
     Depot.query(@depot_desc, section_id, [{:resource_type_id, {:in, type_ids}}])
   end
 
@@ -187,4 +186,6 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Application.get_env(:oli, :depot_warmer_days_lookback)
     |> String.to_integer()
   end
+
+  defp depot_coordinator(), do: Application.get_env(:oli, :depot_coordinator)
 end
