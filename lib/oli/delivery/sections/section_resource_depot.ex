@@ -15,7 +15,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   """
 
   import Ecto.Query
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Depot
+  alias Oli.Delivery.DistributedDepotCoordinator
   alias Oli.Delivery.Depot.DepotDesc
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
@@ -40,7 +42,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   directly.
   """
   def get_full_hierarchy(%Section{} = section) do
-    init_if_necessary(section.id)
+    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
@@ -58,7 +60,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   directly.
   """
   def get_delivery_resolver_full_hierarchy(%Section{} = section) do
-    init_if_necessary(section.id)
+    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
     container = Oli.Resources.ResourceType.id_for_container()
@@ -76,7 +78,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     SectionResourceDepot.graded_pages(some_section_id, [hidden: false])
   """
   def graded_pages(section_id, additional_query_conditions \\ []) do
-    init_if_necessary(section_id)
+    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section_id, __MODULE__)
 
     page = Oli.Resources.ResourceType.id_for_page()
 
@@ -95,7 +97,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Access the SectionResource records pertaining to the course schedule.
   """
   def retrieve_schedule(section_id, filter_resource_type \\ false) do
-    init_if_necessary(section_id)
+    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section_id, __MODULE__)
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
     container_type_id = Oli.Resources.ResourceType.id_for_container()
@@ -120,7 +122,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   An optional parameter `graded_only` can be passed to filter only graded pages.
   """
   def get_lessons(section, graded_only \\ false) do
-    init_if_necessary(section.id)
+    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section.id, __MODULE__)
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -137,23 +139,20 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Returns a list of SectionResource records filtered by type ids for a given section.
   """
   def get_section_resources_by_type_ids(section_id, type_ids) do
-    init_if_necessary(section_id)
+    DistributedDepotCoordinator.init_if_necessary(@depot_desc, section_id, __MODULE__)
     Depot.query(@depot_desc, section_id, [{:resource_type_id, {:in, type_ids}}])
   end
 
-  defp init_if_necessary(section_id) do
-    if Depot.table_exists?(@depot_desc, section_id) do
-      {:ok, :exists}
-    else
-      if SectionResourceMigration.requires_migration?(section_id) do
-        SectionResourceMigration.migrate(section_id)
-      end
-
-      Depot.create_table(@depot_desc, section_id)
-      load(section_id)
-
-      {:ok, :created}
+  @doc """
+  Public function responsible for creating the ETS table
+  """
+  def process_table_creation(section_id) do
+    if SectionResourceMigration.requires_migration?(section_id) do
+      SectionResourceMigration.migrate(section_id)
     end
+
+    Depot.create_table(@depot_desc, section_id)
+    load(section_id)
   end
 
   defp load(section_id) do
@@ -170,5 +169,22 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     results = Repo.all(query)
 
     Depot.clear_and_set(@depot_desc, section_id, results)
+  end
+
+  def fetch_recently_active_sections() do
+    now = DateTime.utc_now()
+    criteria = DateTime.add(now, -days_lookback(), :day)
+
+    from(ra in ResourceAccess,
+      where: ra.updated_at >= ^criteria,
+      distinct: ra.section_id,
+      select: ra.section_id
+    )
+    |> Repo.all()
+  end
+
+  defp days_lookback() do
+    Application.get_env(:oli, :depot_warmer_days_lookback)
+    |> String.to_integer()
   end
 end
