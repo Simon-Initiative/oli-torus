@@ -400,6 +400,25 @@ defmodule OliWeb.Delivery.Student.Utils do
   def schedule_live_path(section_slug, params),
     do: ~p"/sections/#{section_slug}/student_schedule?#{params}"
 
+  @doc """
+  Generates a URL for the course assignments.
+
+  ## Parameters
+    - `section_slug`: The unique identifier for the section.
+    - `params`: (Optional) Additional query parameters in a list or map format. If omitted, a URL is generated without additional parameters.
+
+  ## Examples
+    - `assignments_live_path("math")` returns `"/sections/math/assignments"`.
+    - `assignments_live_path("math", request_path: "some/previous/url")` returns `"/sections/math/assignments?request_path=some/previous/url"`.
+  """
+  def assignments_live_path(section_slug, params \\ [])
+
+  def assignments_live_path(section_slug, []),
+    do: ~p"/sections/#{section_slug}/assignments"
+
+  def assignments_live_path(section_slug, params),
+    do: ~p"/sections/#{section_slug}/assignments?#{params}"
+
   # nil case arises for linked loose pages not in in hierarchy index
   def get_container_label(nil, section), do: section.title
 
