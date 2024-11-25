@@ -4,10 +4,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   in the instructor dashboard's Insights View (Scored Activities, Practice Activities and Surveys)
   """
 
+  use OliWeb, :html
+
   alias Oli.Analytics.Summary
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.DeliveryResolver
+  alias OliWeb.ManualGrading.RenderedActivity
 
   def get_activities(assessment_resource_id, section_id, student_ids, filter_by_survey \\ false),
     do:
@@ -67,6 +70,172 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     else
       activity_attempts
     end
+  end
+
+  attr :activity, :map, required: true
+
+  def rendered_activity(
+        %{activity: %{preview_rendered: ["<oli-likert-authoring" <> _rest]}} = assigns
+      ) do
+    spec =
+      VegaLite.from_json("""
+      {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "padding": {"left": 5, "top": 10, "right": 5, "bottom": 10},
+        "description": "Likert Scale Ratings Distributions and Medians.",
+        "datasets": {
+          "medians": #{Jason.encode!(assigns.activity.datasets.medians)},
+          "values": #{Jason.encode!(assigns.activity.datasets.values)}
+        },
+        "data": {"name": "medians"},
+        "title": {
+          "text": #{Jason.encode!(assigns.activity.datasets.title)},
+          "offset": 20,
+          "fontSize": 20
+        },
+        "width": 600,
+        "height": #{60 + 30 * assigns.activity.datasets.questions_count},
+        "encoding": {
+          "y": {
+            "field": "question",
+            "type": "nominal",
+            "sort": null,
+            "axis": {
+              "domain": false,
+              "labels": false,
+              "offset": #{50 + max(String.length(assigns.activity.datasets.first_choice_text) - 7, 0) * 5},
+              "ticks": false,
+              "grid": true,
+              "title": null
+            }
+          },
+          "x": {
+            "type": "quantitative",
+            "scale": {"domain": [0, #{to_string(length(assigns.activity.datasets.axis_values) + 1)}]},
+            "axis": {
+              "grid": false,
+              "values": #{Jason.encode!(assigns.activity.datasets.axis_values)},
+              "title": null
+            }
+          }
+        },
+        "view": {"stroke": null},
+        "layer": [
+          {
+            "mark": {"type": "circle"},
+            "data": {"name": "values"},
+            "encoding": {
+              "x": {"field": "value"},
+              "size": {
+                "aggregate": "count",
+                "type": "quantitative",
+                "title": "Number of Ratings",
+                "legend": {
+                  "offset": #{75 + max(String.length(assigns.activity.datasets.last_choice_text) - 7, 0) * 5}
+                }
+              },
+              "color": {
+                "value": "#0165DA"
+              },
+              "tooltip": [
+                {"field": "choice", "type": "nominal", "title": "Rating"},
+                {"field": "value", "type": "quantitative", "aggregate": "count", "title": "# Answers"},
+                {"field": "out_of", "type": "nominal", "title": "Out of"}
+              ]
+            }
+          },
+          {
+            "mark": "tick",
+            "encoding": {
+              "x": {"field": "median"},
+              "color": {
+                "value": "black"
+              },
+              "tooltip": [{"field": "median", "type": "quantitative", "title": "Median"}]
+            }
+          },
+          {
+            "mark": {"type": "text", "x": -5, "align": "right"},
+            "encoding": {
+              "text": {"field": "lo"},
+              "color": {
+                "value": "black"
+              }
+            }
+          },
+          {
+            "mark": {"type": "text", "x": 605, "align": "left"},
+            "encoding": {
+              "text": {"field": "hi"},
+              "color": {
+                "value": "black"
+              }
+            }
+          },
+          {
+            "transform": [
+              {
+                "calculate": "length(datum.question) > 30 ? substring(datum.question, 0, 30) + '…' : datum.question",
+                "as": "maybe_truncated_question"
+              }
+            ],
+            "mark": {
+              "type": "text",
+              "align": "right",
+              "baseline": "middle",
+              "dx": #{-50 - max(String.length(assigns.activity.datasets.first_choice_text) - 7, 0) * 5},
+              "fontSize": 13,
+              "fontWeight": "bold"
+            },
+            "encoding": {
+              "y": {
+                "field": "question",
+                "type": "nominal",
+                "sort": null
+              },
+              "x": {
+                "value": 0
+              },
+              "text": {
+                "field": "maybe_truncated_question"
+              },
+              "tooltip": {
+                "condition": {
+                  "test": "length(datum.question) > 30",
+                  "field": "question"
+                },
+                "value": null
+              }
+            }
+          }
+        ]
+      }
+      """)
+      |> VegaLite.to_spec()
+
+    assigns = Map.merge(assigns, %{spec: spec})
+
+    ~H"""
+    <div class="mt-5 py-10 px-5 overflow-x-hidden w-full flex justify-center">
+      <%= OliWeb.Common.React.component(
+        %{is_liveview: true},
+        "Components.VegaLiteRenderer",
+        %{spec: @spec},
+        id: "activity_#{@activity.id}",
+        container: [class: "overflow-x-scroll"],
+        container_tag: :div
+      ) %>
+    </div>
+    """
+  end
+
+  def rendered_activity(assigns) do
+    ~H"""
+    <RenderedActivity.render
+      id={"activity_#{@activity.id}"}
+      rendered_activity={@activity.preview_rendered}
+    />
+    """
   end
 
   def add_activity_attempts_info(activity, students, student_ids, section) do
