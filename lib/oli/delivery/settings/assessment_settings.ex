@@ -14,34 +14,23 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
   def do_update(:late_policy, asmt_set_id, new_value, resources) do
     %{section: section, user: user, assessments: asmts} = resources
 
-    case new_value do
-      :allow_late_start_and_late_submit ->
-        changes = %{late_start: :allow, late_submit: :allow}
+    changes =
+      case new_value do
+        :allow_late_start_and_late_submit ->
+          %{late_start: :allow, late_submit: :allow}
 
-        insert_settings_change(:late_start, :allow, asmts, asmt_set_id, section.id, user)
-        |> insert_settings_change(:late_submit, :allow, asmts, asmt_set_id, section.id, user)
-        |> get_section_resource(section.id, asmt_set_id)
-        |> update_section_resource(changes, section.id, asmt_set_id)
-        |> updated_section_resource_depot()
+        :allow_late_submit_but_not_late_start ->
+          %{late_start: :disallow, late_submit: :allow}
 
-      :allow_late_submit_but_not_late_start ->
-        changes = %{late_start: :disallow, late_submit: :allow}
+        :disallow_late_start_and_late_submit ->
+          %{late_start: :disallow, late_submit: :disallow}
+      end
 
-        insert_settings_change(:late_start, :disallow, asmts, asmt_set_id, section.id, user)
-        |> insert_settings_change(:late_submit, :allow, asmts, asmt_set_id, section.id, user)
-        |> get_section_resource(section.id, asmt_set_id)
-        |> update_section_resource(changes, section.id, asmt_set_id)
-        |> updated_section_resource_depot()
-
-      :disallow_late_start_and_late_submit ->
-        changes = %{late_start: :disallow, late_submit: :disallow}
-
-        insert_settings_change(:late_start, :disallow, asmts, asmt_set_id, section.id, user)
-        |> insert_settings_change(:late_submit, :disallow, asmts, asmt_set_id, section.id, user)
-        |> get_section_resource(section.id, asmt_set_id)
-        |> update_section_resource(changes, section.id, asmt_set_id)
-        |> updated_section_resource_depot()
-    end
+    insert_setting(:late_start, changes[:late_start], asmts, asmt_set_id, section.id, user)
+    |> insert_setting(:late_submit, changes[:late_submit], asmts, asmt_set_id, section.id, user)
+    |> get_section_resource(section.id, asmt_set_id)
+    |> update_section_resource(changes, section.id, asmt_set_id)
+    |> updated_section_resource_depot()
     |> Repo.transaction()
   end
 
@@ -50,7 +39,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
 
     changes = %{key => new_value}
 
-    insert_settings_change(key, new_value, asmts, asmt_set_id, section.id, user)
+    insert_setting(key, new_value, asmts, asmt_set_id, section.id, user)
     |> get_section_resource(section.id, asmt_set_id)
     |> update_section_resource(changes, section.id, asmt_set_id)
     |> updated_section_resource_depot()
@@ -87,7 +76,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
     end)
   end
 
-  defp insert_settings_change(
+  defp insert_setting(
          %Multi{} = multi \\ Multi.new(),
          key,
          new_value,
@@ -96,7 +85,7 @@ defmodule Oli.Delivery.Settings.AssessmentSettings do
          section_id,
          user
        ) do
-    Multi.run(multi, {:insert_settings_change, key}, fn _repo, _changes ->
+    Multi.run(multi, {:insert_setting, key}, fn _repo, _changes ->
       old_value = get_old_value(asmts, asmt_set_id, key)
 
       Settings.insert_settings_change(%{

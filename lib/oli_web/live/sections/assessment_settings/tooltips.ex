@@ -8,7 +8,7 @@ defmodule OliWeb.Sections.AssessmentSettings.Tooltips do
 
   def for(:late_policy),
     do:
-      "Select how the system should handle student attempts and submissions after the due date.  If set to “disallow late submit”, the system will automatically submit an attempt at the deadline."
+      "Select how the system should handle student attempts and submissions after the due date. If set to “disallow late submit and late submit”, the system will automatically submit an attempt at the deadline."
 
   def for(:late_submit),
     do:

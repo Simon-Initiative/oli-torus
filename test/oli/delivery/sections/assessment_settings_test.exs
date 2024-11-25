@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                old_value: ^old_value,
                new_value: ^new_value,
                key: ^key_str
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       #  Password is updated in the section resource
       refute Map.get(sr_1, key) == Map.get(result.update_section_resource, key)
@@ -83,7 +83,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                key: ^key_str,
                old_value: ^old_value_str,
                new_value: "allow"
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       key = :late_submit
       key_str = "#{key}"
@@ -95,7 +95,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                key: ^key_str,
                old_value: ^old_value_str,
                new_value: "allow"
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       assert %SectionResource{
                late_start: :allow,
@@ -129,7 +129,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                key: ^key_str,
                old_value: ^old_value_str,
                new_value: "disallow"
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       key = :late_submit
       key_str = "#{key}"
@@ -141,7 +141,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                key: ^key_str,
                old_value: ^old_value_str,
                new_value: "allow"
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       assert %SectionResource{
                late_start: :disallow,
@@ -175,7 +175,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                key: ^key_str,
                old_value: ^old_value_str,
                new_value: "disallow"
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       key = :late_submit
       key_str = "#{key}"
@@ -187,7 +187,7 @@ defmodule Oli.Delivery.Sections.AssessmentSettingsTest do
                key: ^key_str,
                old_value: ^old_value_str,
                new_value: "disallow"
-             } = result[{:insert_settings_change, key}]
+             } = result[{:insert_setting, key}]
 
       assert %SectionResource{
                late_start: :disallow,

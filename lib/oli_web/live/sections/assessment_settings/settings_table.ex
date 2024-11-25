@@ -697,7 +697,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
           {:error, _} ->
             {:noreply,
              socket
-             |> flash_to_liveview(:error, "ERROR: Setting change not be inserted")}
+             |> flash_to_liveview(:error, "ERROR: Failed to insert the setting")}
         end
     end
   end
@@ -709,15 +709,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   defp process_updated_result({:error, :update_section_resource, _, _}, socket, _, _, _) do
-    {:noreply, flash_to_liveview(socket, :error, "ERROR: Setting could not be updated")}
+    {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to update the section resource")}
   end
 
   defp process_updated_result({:error, :get_section_resource, message, _}, socket, _, _, _) do
     {:noreply, flash_to_liveview(socket, :error, message)}
   end
 
-  defp process_updated_result({:error, {:insert_settings_change, _}, _, _}, socket, _, _, _) do
-    {:noreply, flash_to_liveview(socket, :error, "ERROR: Setting change not be inserted")}
+  defp process_updated_result({:error, {:insert_setting, _}, _, _}, socket, _, _, _) do
+    {:noreply, flash_to_liveview(socket, :error, "ERROR: Failed to insert the setting")}
   end
 
   defp generate_setting_changes(assessment, values, section_id, user) do
