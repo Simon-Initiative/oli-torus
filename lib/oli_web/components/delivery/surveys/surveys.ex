@@ -161,10 +161,7 @@ defmodule OliWeb.Components.Delivery.Surveys do
                   phx-hook="LoadSurveyScripts"
                 >
                   <%= if activity.preview_rendered != nil do %>
-                    <RenderedActivity.render
-                      id={"activity_#{activity.id}"}
-                      rendered_activity={activity.preview_rendered}
-                    />
+                    <ActivityHelpers.rendered_activity activity={activity} />
                   <% else %>
                     <p class="pt-9 pb-5">No attempt registered for this question</p>
                   <% end %>
