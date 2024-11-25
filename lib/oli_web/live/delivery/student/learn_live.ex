@@ -780,14 +780,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="flex justify-end md:p-[25px]">
+      <div class="flex justify-end md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <.live_component
           id="view_selector"
           module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
           selected_view={@selected_view}
         />
       </div>
-      <div class="md:p-[25px] md:pl-[50px]">
+      <div class="sticky w-fit top-20 md:px-[25px] md:pl-[50px] z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
