@@ -8,7 +8,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
   alias OliWeb.Common.SearchInput
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.Surveys.SurveysAssessmentsTableModel
-  alias OliWeb.ManualGrading.RenderedActivity
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 

@@ -9,7 +9,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel
-  alias OliWeb.ManualGrading.RenderedActivity
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
@@ -134,7 +133,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       <%= unless is_nil(@activities) do %>
         <%= if @activities == [] do %>
           <div class="bg-white dark:bg-gray-800 dark:text-white shadow-sm px-10 my-5 mx-10">
-            <p class="py-5">No attempt registered for this assessment</p>
+            <p class="py-5">No attempt registered for this question</p>
           </div>
         <% else %>
           <div class="mt-9">

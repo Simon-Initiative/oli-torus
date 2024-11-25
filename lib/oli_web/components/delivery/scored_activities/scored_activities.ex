@@ -26,7 +26,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
   alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
   alias OliWeb.ManualGrading.Rendering
-  alias OliWeb.ManualGrading.RenderedActivity
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
 
