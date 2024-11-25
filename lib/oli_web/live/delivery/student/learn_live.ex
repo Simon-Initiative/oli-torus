@@ -624,6 +624,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       to: completed_resources_css_selector("#selected_module_in_unit_#{unit_resource_id}"),
       attr: "data-toggle-visibility"
     })
+    # For the following edge case:
+    # 1. A completed module is expanded.
+    # 2. The user hides the completed resources (via toggle button). The completed module and its content are now hidden.
+    # 3. The user expands another module.
+    # This event will ensure that the content of the expanded module is visible and not hidden.
+    |> push_event("js-exec", %{
+      to: ~s{[role="resource module content"]},
+      attr: "data-show"
+    })
   end
 
   def navigate_to_resource(values, socket) do
@@ -1027,7 +1036,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div
         class="overflow-hidden"
         role="resource module content"
-        data-completed={"#{module_completed?}"}
+        data-completed={if is_nil(selected_module), do: "false", else: "#{module_completed?}"}
+        data-show={JS.remove_class(%JS{}, "hidden")}
       >
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
