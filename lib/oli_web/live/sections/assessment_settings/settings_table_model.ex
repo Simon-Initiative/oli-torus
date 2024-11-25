@@ -61,18 +61,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         tooltip: Tooltips.for(:time_limit)
       },
       %ColumnSpec{
-        name: :late_submit,
-        label: "LATE SUBMIT",
-        render_fn: &__MODULE__.render_late_submit_column/3,
+        name: :late_policy,
+        label: "LATE POLICY",
+        render_fn: &__MODULE__.render_late_policy_column/3,
         th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:late_submit)
-      },
-      %ColumnSpec{
-        name: :late_start,
-        label: "LATE START",
-        render_fn: &__MODULE__.render_late_start_column/3,
-        th_class: "whitespace-nowrap",
-        tooltip: Tooltips.for(:late_start)
+        tooltip: Tooltips.for(:late_policy)
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
@@ -245,25 +238,34 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
     """
   end
 
-  def render_late_submit_column(assigns, assessment, _) do
+  def render_late_policy_column(assigns, assessment, _) do
     assigns =
-      Map.merge(assigns, %{late_submit: assessment.late_submit, id: assessment.resource_id})
+      Map.merge(assigns, %{
+        late_start: assessment.late_start,
+        late_submit: assessment.late_submit,
+        id: assessment.resource_id
+      })
 
     ~H"""
-    <select class="torus-select pr-32" name={"late_submit-#{@id}"}>
-      <option selected={@late_submit == :allow} value={:allow}>Allow</option>
-      <option selected={@late_submit == :disallow} value={:disallow}>Disallow</option>
-    </select>
-    """
-  end
-
-  def render_late_start_column(assigns, assessment, _) do
-    assigns = Map.merge(assigns, %{late_start: assessment.late_start, id: assessment.resource_id})
-
-    ~H"""
-    <select class="torus-select pr-32" name={"late_start-#{@id}"}>
-      <option selected={@late_start == :allow} value={:allow}>Allow</option>
-      <option selected={@late_start == :disallow} value={:disallow}>Disallow</option>
+    <select class="torus-select pr-32" name={"late_policy-#{@id}"}>
+      <option
+        selected={@late_start == :allow && @late_submit == :allow}
+        value={:allow_late_start_and_late_submit}
+      >
+        Allow late start and late submit
+      </option>
+      <option
+        selected={@late_start == :disallow && @late_submit == :allow}
+        value={:allow_late_submit_but_not_late_start}
+      >
+        Allow late submit but not late start
+      </option>
+      <option
+        selected={@late_start == :disallow && @late_submit == :disallow}
+        value={:disallow_late_start_and_late_submit}
+      >
+        Disallow late start and late submit
+      </option>
     </select>
     """
   end
