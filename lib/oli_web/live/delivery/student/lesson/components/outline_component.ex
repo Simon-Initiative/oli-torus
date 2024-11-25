@@ -7,7 +7,11 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   alias Oli.Delivery.{Hierarchy, Metrics}
   alias OliWeb.Components.Common
 
-  def mount(socket), do: {:ok, socket}
+  def mount(socket) do
+    {:ok,
+     socket
+     |> assign(expanded_items: [])}
+  end
 
   def update(assigns, socket) do
     item_with_progress =
@@ -40,10 +44,22 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
      |> assign(:item_with_progress, item_with_progress)}
   end
 
+  def handle_event("expand_item", %{"item_id" => item_id}, socket) do
+    expanded_items =
+      if item_id in socket.assigns.expanded_items do
+        List.delete(socket.assigns.expanded_items, item_id)
+      else
+        [item_id | socket.assigns.expanded_items]
+      end
+
+    {:noreply, assign(socket, expanded_items: expanded_items)}
+  end
+
   attr :hierarchy, :map, required: true
   attr :section_slug, :string, required: true
   attr :selected_view, :atom, required: true
   attr :item_with_progress, :map, required: true
+  attr :expanded_items, :list, default: []
 
   def render(assigns) do
     ~H"""
@@ -72,6 +88,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
             :for={node <- @hierarchy["children"]}
             item={node}
             is_container?={node["resource_type_id"] == ResourceType.id_for_container()}
+            expanded_items={@expanded_items}
             target={@myself}
             section_slug={@section_slug}
             selected_view={@selected_view}
@@ -92,6 +109,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
   attr :section_slug, :string, required: true
   attr :selected_view, :atom, required: true
   attr :progress, :float, default: nil
+  attr :expanded_items, :list, required: true
 
   def outline_item(%{item: %{"numbering" => %{"level" => level}}}) when level > 3, do: nil
 
@@ -157,6 +175,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
 
   def outline_item(assigns) do
     ~H"""
+    <% expanded? = Integer.to_string(@item["id"]) in @expanded_items %>
     <div
       id={"outline_item_#{@item["id"]}"}
       class={[
@@ -165,12 +184,12 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
       ]}
     >
       <div
-        phx-click={JS.toggle_class("rotate-90", to: "#icon_#{@item["id"]}")}
+        phx-click={JS.toggle_class("rotate-90", to: "#icon_#{@item["id"]}") |> JS.push("expand_item")}
         phx-value-item_id={@item["id"]}
         phx-target={@target}
         data-bs-toggle="collapse"
         data-bs-target={"#collapse_#{@item["id"]}"}
-        aria-expanded="false"
+        aria-expanded={"#{expanded?}"}
         class={[
           "w-full grow shrink basis-0 p-2 flex-col justify-start items-start gap-1 inline-flex rounded-lg hover:bg-[#f2f8ff] dark:hover:bg-[#2e2b33] hover:cursor-pointer",
           if(@progress, do: "bg-[#f3f4f8] dark:bg-[#1b191f]")
@@ -207,6 +226,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponent do
           target={@target}
           section_slug={@section_slug}
           selected_view={@selected_view}
+          expanded_items={@expanded_items}
         />
       </div>
     </div>
