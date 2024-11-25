@@ -229,8 +229,155 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def rendered_activity(
         %{activity: %{preview_rendered: ["<oli-likert-authoring" <> _rest]}} = assigns
       ) do
+    spec =
+      VegaLite.from_json("""
+      {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "padding": {"left": 5, "top": 10, "right": 5, "bottom": 10},
+        "description": "Likert Scale Ratings Distributions and Medians.",
+        "datasets": {
+          "medians": #{Jason.encode!(assigns.activity.datasets.medians)},
+          "values": #{Jason.encode!(assigns.activity.datasets.values)}
+        },
+        "data": {"name": "medians"},
+        "title": {
+          "text": #{Jason.encode!(assigns.activity.datasets.title)},
+          "offset": 20,
+          "fontSize": 20
+        },
+        "width": 600,
+        "height": #{60 + 30 * assigns.activity.datasets.questions_count},
+        "encoding": {
+          "y": {
+            "field": "question",
+            "type": "nominal",
+            "sort": null,
+            "axis": {
+              "domain": false,
+              "labels": false,
+              "offset": #{50 + max(String.length(assigns.activity.datasets.first_choice_text) - 7, 0) * 5},
+              "ticks": false,
+              "grid": true,
+              "title": null
+            }
+          },
+          "x": {
+            "type": "quantitative",
+            "scale": {"domain": [0, #{to_string(length(assigns.activity.datasets.axis_values) + 1)}]},
+            "axis": {
+              "grid": false,
+              "values": #{Jason.encode!(assigns.activity.datasets.axis_values)},
+              "title": null
+            }
+          }
+        },
+        "view": {"stroke": null},
+        "layer": [
+          {
+            "mark": {"type": "circle"},
+            "data": {"name": "values"},
+            "encoding": {
+              "x": {"field": "value"},
+              "size": {
+                "aggregate": "count",
+                "type": "quantitative",
+                "title": "Number of Ratings",
+                "legend": {
+                  "offset": #{75 + max(String.length(assigns.activity.datasets.last_choice_text) - 7, 0) * 5}
+                }
+              },
+              "color": {
+                "value": "#0165DA"
+              },
+              "tooltip": [
+                {"field": "choice", "type": "nominal", "title": "Rating"},
+                {"field": "value", "type": "quantitative", "aggregate": "count", "title": "# Answers"},
+                {"field": "out_of", "type": "nominal", "title": "Out of"}
+              ]
+            }
+          },
+          {
+            "mark": "tick",
+            "encoding": {
+              "x": {"field": "median"},
+              "color": {
+                "value": "black"
+              },
+              "tooltip": [{"field": "median", "type": "quantitative", "title": "Median"}]
+            }
+          },
+          {
+            "mark": {"type": "text", "x": -5, "align": "right"},
+            "encoding": {
+              "text": {"field": "lo"},
+              "color": {
+                "value": "black"
+              }
+            }
+          },
+          {
+            "mark": {"type": "text", "x": 605, "align": "left"},
+            "encoding": {
+              "text": {"field": "hi"},
+              "color": {
+                "value": "black"
+              }
+            }
+          },
+          {
+            "transform": [
+              {
+                "calculate": "length(datum.question) > 30 ? substring(datum.question, 0, 30) + '…' : datum.question",
+                "as": "maybe_truncated_question"
+              }
+            ],
+            "mark": {
+              "type": "text",
+              "align": "right",
+              "baseline": "middle",
+              "dx": #{-50 - max(String.length(assigns.activity.datasets.first_choice_text) - 7, 0) * 5},
+              "fontSize": 13,
+              "fontWeight": "bold"
+            },
+            "encoding": {
+              "y": {
+                "field": "question",
+                "type": "nominal",
+                "sort": null
+              },
+              "x": {
+                "value": 0
+              },
+              "text": {
+                "field": "maybe_truncated_question"
+              },
+              "tooltip": {
+                "condition": {
+                  "test": "length(datum.question) > 30",
+                  "field": "question"
+                },
+                "value": null
+              }
+            }
+          }
+        ]
+      }
+      """)
+      |> VegaLite.to_spec()
+
+    assigns = Map.merge(assigns, %{spec: spec})
+
     ~H"""
-    I'm a likert activity. A custom rendering will be implemented here.
+    <div class="mt-5 py-10 px-5 overflow-x-hidden w-full flex justify-center">
+      <%= OliWeb.Common.React.component(
+        %{is_liveview: true},
+        "Components.VegaLiteRenderer",
+        %{spec: @spec},
+        id: "activity_#{@activity.id}",
+        container: [class: "overflow-x-scroll"],
+        container_tag: :div
+      ) %>
+    </div>
     """
   end
 
@@ -285,7 +432,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
             activity.resource_id == activity_details.revision.resource_id
           end)
 
-        Map.put(activity, :preview_rendered, get_preview_rendered(activity_details, socket))
+        activity
+        |> Map.put(:preview_rendered, get_preview_rendered(activity_details, socket))
+        |> Map.put(:datasets, Map.get(activity_details, :datasets))
         |> add_activity_attempts_info(students, student_ids, section)
       end)
 
@@ -866,24 +1015,133 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   end
 
   defp add_likert_details(activity_attempt, response_summaries) do
-    responses_count_mapper =
-      Enum.filter(response_summaries, fn response_summary ->
-        response_summary.activity_id == activity_attempt.resource_id
-      end)
-      |> Enum.reduce(%{}, fn response, acc ->
-        Map.put(acc, response.response, Map.get(acc, response.response, 0) + 1)
+    {ordered_questions, question_text_mapper} =
+      Enum.reduce(
+        activity_attempt.revision.content["items"],
+        %{ordered_questions: [], question_text_mapper: %{}},
+        fn q, acc ->
+          question = %{
+            id: q["id"],
+            text: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text")
+          }
+
+          %{
+            ordered_questions: [question | acc.ordered_questions],
+            question_text_mapper: Map.put(acc.question_text_mapper, q["id"], question.text)
+          }
+        end
+      )
+      |> then(fn acc ->
+        {Enum.reverse(acc.ordered_questions), acc.question_text_mapper}
       end)
 
-    questions_summary =
-      activity_attempt.revision.content["choices"]
-      |> Enum.map(fn q ->
+    {ordered_choices, choice_mapper} =
+      Enum.reduce(
+        activity_attempt.revision.content["choices"],
+        %{ordered_choices: [], choice_mapper: %{}, aux_points: 1},
+        fn ch, acc ->
+          choice = %{
+            id: ch["id"],
+            text: ch["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
+            points: acc.aux_points
+          }
+
+          %{
+            ordered_choices: [choice | acc.ordered_choices],
+            choice_mapper:
+              Map.put(acc.choice_mapper, ch["id"], %{text: choice.text, points: choice.points}),
+            aux_points: acc.aux_points + 1
+          }
+        end
+      )
+      |> then(fn acc ->
+        {Enum.reverse(acc.ordered_choices), acc.choice_mapper}
+      end)
+
+    responses =
+      Enum.reduce(response_summaries, [], fn response_summary, acc ->
+        if response_summary.activity_id == activity_attempt.resource_id do
+          [
+            %{
+              count: response_summary.count,
+              choice_id: response_summary.response,
+              selected_choice_text:
+                Map.get(choice_mapper, to_string(response_summary.response))[:text],
+              selected_choice_points:
+                Map.get(choice_mapper, to_string(response_summary.response))[:points],
+              question_id: response_summary.part_id,
+              question: Map.get(question_text_mapper, to_string(response_summary.part_id))
+            }
+            | acc
+          ]
+        else
+          acc
+        end
+      end)
+
+    {average_points_per_question_id, responses_per_question_id} =
+      Enum.reduce(responses, {%{}, %{}}, fn response, {avg_points_acc, responses_acc} ->
+        {Map.put(avg_points_acc, response.question_id, [
+           response.selected_choice_points | Map.get(avg_points_acc, response.question_id, [])
+         ]),
+         Map.put(
+           responses_acc,
+           response.question_id,
+           Map.get(responses_acc, response.question_id, 0) + 1
+         )}
+      end)
+      |> then(fn {points_per_question_id, responses_per_question_id} ->
+        average_points_per_question_id =
+          Enum.into(points_per_question_id, %{}, fn {question_id, points} ->
+            count = Enum.count(points)
+
+            {
+              question_id,
+              if count == 0 do
+                0
+              else
+                Enum.sum(points) / count
+              end
+            }
+          end)
+
+        {average_points_per_question_id, responses_per_question_id}
+      end)
+
+    first_choice_text = Enum.at(ordered_choices, 0)[:text]
+    last_choice_text = Enum.at(ordered_choices, -1)[:text]
+
+    medians =
+      Enum.map(ordered_questions, fn q ->
         %{
-          title: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
-          count: Map.get(responses_count_mapper, q["id"], 0)
+          question: q.text,
+          median: Map.get(average_points_per_question_id, q.id, 0.0),
+          lo: first_choice_text,
+          hi: last_choice_text
         }
       end)
 
-    Map.merge(activity_attempt, %{questions_summary: questions_summary})
+    values =
+      Enum.map(responses, fn r ->
+        %{
+          value: r.selected_choice_points,
+          choice: r.selected_choice_text,
+          question: r.question,
+          out_of: Map.get(responses_per_question_id, r.question_id, 0)
+        }
+      end)
+
+    Map.merge(activity_attempt, %{
+      datasets: %{
+        medians: medians,
+        values: values,
+        questions_count: length(ordered_questions),
+        axis_values: Enum.map(ordered_choices, fn c -> c.points end),
+        first_choice_text: first_choice_text,
+        last_choice_text: last_choice_text,
+        title: activity_attempt.revision.title
+      }
+    })
   end
 
   defp build_units_and_modules(container_count, modules_and_units) do
