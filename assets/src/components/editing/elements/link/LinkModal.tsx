@@ -43,7 +43,6 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
   const [source, setSource] = useState<ContentModel.HyperlinkType>(
     getHyperlinkType(model.linkType, model.href),
   );
-  const store = configureStore();
 
   const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
   const [selectedPage, setSelectedPage] = useState<null | Persistence.Page>(null);
