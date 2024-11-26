@@ -27,6 +27,8 @@ export interface MathLiveProps {
   initialValue?: string;
   inline?: boolean;
   onChange?: (value: string) => void;
+  onKeyUp?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onBlur?: () => void;
 }
 
 export const MathLive = ({
@@ -36,11 +38,23 @@ export const MathLive = ({
   initialValue,
   inline,
   onChange,
+  onKeyUp,
+  onBlur,
 }: MathLiveProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const divRef = useRef<HTMLDivElement>(null);
   const mfe = useRef<MathfieldElement | null>(null);
 
+  // state tracked to suppress unnecessary onChange notifications:
+  const [lastNotifiedValue, setLastNotifiedValue] = React.useState<string | null>(null);
+
+  // get effective options as string for useEffect dependency
+  const mathFieldOptions = mergeOptions(DEFAULT_OPTIONS, valueOr(options, {}));
+  const optionString = JSON.stringify(mathFieldOptions);
+
   useEffect(() => {
+    // Setting this to large value ensures MathLive keyboard renders at top of z-order
+    document.body.style.setProperty('--keyboard-zindex', '3000');
+
     // As a workaround to an issue where the MathfieldElement package must be using global state,
     // we must first check to see if it is already defined globally. If so, we use the class that
     // if defined on the window. Otherwise, use the class imported from the package. Ugh.
@@ -50,39 +64,61 @@ export const MathLive = ({
       mfe.current = new MathfieldElement() as MathfieldElement;
     }
 
-    mfe.current.value = initialValue ?? value ?? '';
+    if (initialValue !== undefined) mfe.current.value = initialValue;
 
-    const mathFieldOptions = mergeOptions(DEFAULT_OPTIONS, valueOr(options, {}));
-    if (onChange !== undefined) {
-      mathFieldOptions.onContentDidChange = (mf: Mathfield) => onChange(mf.getValue());
-    }
+    divRef.current?.appendChild(mfe.current as any);
 
-    mfe.current.setOptions(mathFieldOptions);
-
-    ref.current?.appendChild(mfe.current as any);
-
-    const mathLiveRef = ref.current;
-
+    // return value is cleanup function
+    const mathfieldParent = divRef.current;
     return () => {
       if (mfe.current !== null) {
-        mathLiveRef?.removeChild(mfe.current);
+        mathfieldParent?.removeChild(mfe.current);
       }
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // handle any prop change affecting options
   useEffect(() => {
-    mfe.current?.setValue(value);
-  }, [value]);
+    if (onChange !== undefined) {
+      mathFieldOptions.onContentDidChange = (mf: Mathfield) => {
+        // Found can get these when no change in value, causing problems
+        const value = mf.getValue();
+        if (value !== lastNotifiedValue) {
+          onChange(value);
+          setLastNotifiedValue(value);
+        }
+      };
+    }
+
+    if (onBlur !== undefined) {
+      mathFieldOptions.onBlur = (mf: Mathfield) => onBlur();
+    }
+
+    if (onKeyUp !== undefined) {
+      // Mathfield fires onCommit on hitting Enter OR losing focus w/change.
+      // Ignore if we don't have focus; onBlur will be sent instead
+      mathFieldOptions.onCommit = (mf: Mathfield) => {
+        if (mfe.current?.hasFocus())
+          onKeyUp({ key: 'Enter' } as React.KeyboardEvent<HTMLInputElement>);
+      };
+    }
+
+    mfe.current?.setOptions(mathFieldOptions);
+  }, [optionString, onChange, onKeyUp, onBlur]);
 
   useEffect(() => {
-    mfe.current?.setOptions(valueOr(options, {}));
-  }, [options]);
+    // firing onChange handler in middle of activity reset process led to errors
+    // so suppress change notifications when programmatically setting value
+    if (value !== undefined) {
+      mfe.current?.setValue(value, { suppressChangeNotifications: true });
+    }
+  }, [value]);
 
   return (
     <div
-      ref={ref}
+      ref={divRef}
       className={classNames(
         styles.mathLive,
         className,

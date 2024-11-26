@@ -1028,6 +1028,27 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
     end
 
+    test "can navigate to my assignments page from the homonymous component", %{
+      conn: conn,
+      section: section
+    } do
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div[role='my assignments'] a", "View All Assignments")
+
+      assert view
+             |> element("div[role='my assignments'] a", "View All Assignments")
+             |> render_click() ==
+               {:error,
+                {:live_redirect,
+                 %{
+                   kind: :push,
+                   to:
+                     "/sections/#{section.slug}/assignments?request_path=%2Fsections%2F#{section.slug}"
+                 }}}
+    end
+
     test "can see the course progress details and navigate to the learn page", %{
       conn: conn,
       user: user,

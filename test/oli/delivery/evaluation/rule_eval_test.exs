@@ -40,8 +40,14 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
   test "evaluating floats" do
     assert eval("attemptNumber = {1} && input = {0.1}", "0.1")
     refute eval("attemptNumber = {1} && input = {0.1}", "0.2")
+    # handles odd forms without digits on both sides of decimal
     assert eval("attemptNumber = {1} && input = {0.1}", ".1")
     refute eval("attemptNumber = {1} && input = {0.1}", ".2")
+    assert eval("attemptNumber = {1} && input = {-0.1}", "-.1")
+    refute eval("attemptNumber = {1} && input = {-0.1}", "-.2")
+    assert eval("attemptNumber = {1} && input = {1.0}", "1.")
+    refute eval("attemptNumber = {1} && input = {1.0}", "+2.")
+    assert eval("attemptNumber = {1} && input = {-1.0}", "-1.")
     assert eval("attemptNumber = {1} && input = {3.1}", "3.1")
     refute eval("attemptNumber = {1} && input = {3.1}", "3.2")
     refute eval("attemptNumber = {1} && input = {3.1}", "4")

@@ -551,7 +551,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     assigns = Map.put(assigns, :lessons, lessons)
 
     ~H"""
-    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
+    <div
+      role="my assignments"
+      class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex"
+    >
       <div class="w-full flex-col justify-start items-start gap-5 flex grow">
         <div class="w-full xl:w-48 overflow-hidden justify-start items-start gap-2.5 flex">
           <div class="text-2xl font-bold leading-loose tracking-tight">
@@ -594,6 +597,17 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             />
           <% end %>
         </div>
+        <.link
+          navigate={
+            Utils.assignments_live_path(
+              @section_slug,
+              request_path: ~p"/sections/#{@section_slug}"
+            )
+          }
+          class="text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+        >
+          View All Assignments
+        </.link>
       </div>
     </div>
     """
