@@ -2,7 +2,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
   use OliWeb, :live_component
 
   alias OliWeb.Delivery.ActivityHelpers
-  alias Oli.Delivery.Attempts.Core
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput

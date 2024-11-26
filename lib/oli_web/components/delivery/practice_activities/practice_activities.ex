@@ -2,7 +2,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   use OliWeb, :live_component
 
   alias OliWeb.Common.InstructorDashboardPagedTable
-  alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Sections
   alias OliWeb.Common.{Params, SearchInput}
