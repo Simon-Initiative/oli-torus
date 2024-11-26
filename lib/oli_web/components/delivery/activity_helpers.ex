@@ -75,7 +75,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   attr :activity, :map, required: true
 
   def rendered_activity(
-        %{activity: %{preview_rendered: ["<oli-likert-authoring" <> _rest]}} = assigns
+        %{
+          activity: %{
+            preview_rendered: ["<oli-likert-authoring" <> _rest],
+            analytics_version: :v2
+          }
+        } = assigns
       ) do
     spec =
       VegaLite.from_json("""
@@ -266,8 +271,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   def get_preview_rendered(nil, _activity_types_map, _section), do: nil
 
-  def get_preview_rendered(activity_attempt, activity_types_map, section)
-      when section.analytics_version == :v2 do
+  def get_preview_rendered(activity_attempt, activity_types_map, section) do
     OliWeb.ManualGrading.Rendering.create_rendering_context(
       activity_attempt,
       Core.get_latest_part_attempts(activity_attempt.attempt_guid),
@@ -277,8 +281,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     |> Map.merge(%{is_liveview: true})
     |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
   end
-
-  def get_preview_rendered(_activity_attempt, _activity_types_map, _section), do: nil
 
   defp add_single_response_details(activity_attempt, response_summaries) do
     responses =

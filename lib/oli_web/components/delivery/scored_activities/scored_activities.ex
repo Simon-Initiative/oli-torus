@@ -381,45 +381,45 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       current_assessment: %{resource_id: page_id}
     } = socket.assigns
 
-    with :v2 <- section.analytics_version,
-         details when details not in [nil, []] <-
-           ActivityHelpers.get_activities_details(
-             [selected_activity.resource_id],
-             section,
-             activity_types_map,
-             page_id
-           ) do
-      activity_attempt = hd(details)
-      part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+    case ActivityHelpers.get_activities_details(
+           [selected_activity.resource_id],
+           section,
+           activity_types_map,
+           page_id
+         ) do
+      details when details not in [nil, []] ->
+        activity_attempt = hd(details)
+        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
-      rendering_context =
-        Rendering.create_rendering_context(
-          activity_attempt,
-          part_attempts,
-          activity_types_map,
-          section
-        )
-        |> Map.merge(%{is_liveview: true})
+        rendering_context =
+          Rendering.create_rendering_context(
+            activity_attempt,
+            part_attempts,
+            activity_types_map,
+            section
+          )
+          |> Map.merge(%{is_liveview: true})
 
-      selected_activity =
-        Map.merge(selected_activity, %{
-          preview_rendered: Rendering.render(rendering_context, :instructor_preview),
-          datasets: Map.get(activity_attempt, :datasets)
-        })
-
-      socket
-      |> assign(table_model: table_model, selected_activity: selected_activity)
-      |> case do
-        %{assigns: %{scripts_loaded: true}} = socket ->
-          socket
-
-        socket ->
-          push_event(socket, "load_survey_scripts", %{
-            script_sources: socket.assigns.scripts
+        selected_activity =
+          Map.merge(selected_activity, %{
+            preview_rendered: Rendering.render(rendering_context, :instructor_preview),
+            datasets: Map.get(activity_attempt, :datasets),
+            analytics_version: section.analytics_version
           })
-      end
-    else
-      _other_cases ->
+
+        socket
+        |> assign(table_model: table_model, selected_activity: selected_activity)
+        |> case do
+          %{assigns: %{scripts_loaded: true}} = socket ->
+            socket
+
+          socket ->
+            push_event(socket, "load_survey_scripts", %{
+              script_sources: socket.assigns.scripts
+            })
+        end
+
+      _details ->
         assign(socket, table_model: table_model, selected_activity: selected_activity)
     end
   end

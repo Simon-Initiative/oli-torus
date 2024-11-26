@@ -255,6 +255,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           )
         )
         |> Map.put(:datasets, Map.get(activity_details, :datasets))
+        |> Map.put(:analytics_version, section.analytics_version)
         |> ActivityHelpers.add_activity_attempts_info(students, student_ids, section)
       end)
 
