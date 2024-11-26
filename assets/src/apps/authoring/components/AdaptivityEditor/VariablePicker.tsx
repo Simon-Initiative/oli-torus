@@ -185,51 +185,53 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
               </Accordion.Toggle>
               <Accordion.Collapse eventKey={`${index}`}>
                 <ul className="list-unstyled m-0 mb-2 tree">
-                  {Object.keys(adaptivitySchema).map((key: string, index: number) =>
-                    !hasNesting(adaptivitySchema[key]) ? (
-                      <li
-                        className="pb-2 pl-1 ml-4"
-                        key={index}
-                        onClick={() => {
-                          setTargetRef(
-                            `${
-                              specificSequenceId === 'stage'
-                                ? 'stage.'
-                                : `${specificSequenceId}|stage.`
-                            }${part.id}.${key}`,
-                          );
-                          setTypeRef(`${adaptivitySchema[key as unknown as number]}`);
-                        }}
-                      >
-                        <button type="button" className="text-btn font-italic">
-                          <span
-                            title={
-                              CapiVariableTypes[adaptivitySchema[key]][0] +
-                              CapiVariableTypes[adaptivitySchema[key]].slice(1).toLowerCase()
-                            }
-                          >
-                            {key}
-                          </span>
-                        </button>
-                      </li>
-                    ) : (
-                      <TreeView
-                        state={adaptivitySchema}
-                        onClick={(currentKey, variableType) => {
-                          setTargetRef(
-                            `${
-                              specificSequenceId === 'stage'
-                                ? 'stage.'
-                                : `${specificSequenceId}|stage.`
-                            }${part.id}.${currentKey}`,
-                          );
-                          setTypeRef(variableType);
-                        }}
-                        rootLevel={key}
-                        currentTarget={key}
-                      ></TreeView>
-                    ),
-                  )}
+                  {Object.keys(adaptivitySchema)
+                    .sort()
+                    .map((key: string, index: number) =>
+                      !hasNesting(adaptivitySchema[key]) ? (
+                        <li
+                          className="pb-2 pl-1 ml-4"
+                          key={index}
+                          onClick={() => {
+                            setTargetRef(
+                              `${
+                                specificSequenceId === 'stage'
+                                  ? 'stage.'
+                                  : `${specificSequenceId}|stage.`
+                              }${part.id}.${key}`,
+                            );
+                            setTypeRef(`${adaptivitySchema[key as unknown as number]}`);
+                          }}
+                        >
+                          <button type="button" className="text-btn font-italic">
+                            <span
+                              title={
+                                CapiVariableTypes[adaptivitySchema[key]][0] +
+                                CapiVariableTypes[adaptivitySchema[key]].slice(1).toLowerCase()
+                              }
+                            >
+                              {key}
+                            </span>
+                          </button>
+                        </li>
+                      ) : (
+                        <TreeView
+                          state={adaptivitySchema}
+                          onClick={(currentKey, variableType) => {
+                            setTargetRef(
+                              `${
+                                specificSequenceId === 'stage'
+                                  ? 'stage.'
+                                  : `${specificSequenceId}|stage.`
+                              }${part.id}.${currentKey}`,
+                            );
+                            setTypeRef(variableType);
+                          }}
+                          rootLevel={key}
+                          currentTarget={key}
+                        ></TreeView>
+                      ),
+                    )}
                 </ul>
               </Accordion.Collapse>
             </>
