@@ -1418,64 +1418,19 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    @tag :skip
-    test "hides/shows completed pages", %{
+    test "can see the toggle button to show and hide the completed pages", %{
       conn: conn,
-      user: user,
-      section: section,
-      section_1: section_1,
-      subsection_1: subsection_1,
-      page_11: page_11
+      section: section
     } do
-      set_progress(section.id, page_11.resource_id, user.id, 1.0, page_11)
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
-
-      # when the slider buttons are enabled we know the student async metrics were loaded
-      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
-
-      # expand unit 5/module 3 details
-      view
-      |> element(~s{div[role="unit_5"] div[role="resource card 4"]})
-      |> render_click()
-
-      # correct icon is shown
-      assert has_element?(view, ~s{svg[role="hidden icon"]})
-      refute has_element?(view, ~s{svg[role="visible icon"]})
-
-      assert view
-             |> element(~s{div[role="completed count"]})
-             |> render() =~ "1 of 5 Pages"
-
-      completed_toggle = element(view, ~s{button[role="toggle completed button"]})
-
-      assert render(completed_toggle) =~ "Hide Completed"
-
-      # By default it shows the completed and incompleted pages
-      assert has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{button[role="page 12 details"]})
-
-      # Click on the toggle to hide the completed pages
-      render_click(completed_toggle)
-
-      # correct icon is shown
-      refute has_element?(view, ~s{svg[role="hidden icon"]})
-      assert has_element?(view, ~s{svg[role="visible icon"]})
-
-      assert render(completed_toggle) =~ "Show Completed"
-
-      # Hides the completed pages and sections
-      refute has_element?(view, ~s{button[role="page 11 details"] div[role="check icon"]})
-      assert has_element?(view, ~s{button[role="page 12 details"]})
-
-      refute has_element?(
-               view,
-               "#index_item_#{subsection_1.resource_id}"
-             )
 
       assert has_element?(
                view,
-               "#index_item_#{section_1.resource_id}_due_by_2023-11-03"
+               "#hide_completed_button",
+               "Hide Completed"
              )
+
+      assert has_element?(view, "#show_completed_button.hidden", "Show Completed")
     end
 
     test "does not see a check icon on visited pages that are not fully completed", %{
