@@ -2816,11 +2816,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   defp completed_resources_css_selector(prefix \\ ""),
     do: String.trim("#{prefix} #{@completed_resources_css_selector}")
 
-  def card_completed?(page, true, _), do: page["completed"]
+  defp card_completed?(page, true, _), do: page["completed"]
 
-  def card_completed?(_module, false, %{
-        completed_pages_count: completed_pages_count,
-        total_pages_count: total_pages_count
-      }),
-      do: completed_pages_count == total_pages_count
+  defp card_completed?(_module, false, %{
+         completed_pages_count: completed_pages_count,
+         total_pages_count: total_pages_count
+       }),
+       do: completed_pages_count == total_pages_count
 end
