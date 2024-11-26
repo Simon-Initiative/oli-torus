@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 id="activity_detail"
                 phx-hook="LoadSurveyScripts"
               >
-                <%= if activity.preview_rendered != nil do %>
+                <%= if Map.get(activity, :preview_rendered) != nil do %>
                   <ActivityHelpers.rendered_activity activity={activity} />
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
@@ -247,7 +247,14 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           end)
 
         activity
-        |> Map.put(:preview_rendered, get_preview_rendered(activity_details, socket))
+        |> Map.put(
+          :preview_rendered,
+          ActivityHelpers.get_preview_rendered(
+            activity_details,
+            socket.assigns.activity_types_map,
+            socket.assigns.section
+          )
+        )
         |> Map.put(:datasets, Map.get(activity_details, :datasets))
         |> ActivityHelpers.add_activity_attempts_info(students, student_ids, section)
       end)
@@ -491,19 +498,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       :practice_activities,
       params
     )
-  end
-
-  defp get_preview_rendered(nil, socket), do: socket
-
-  defp get_preview_rendered(activity_attempt, socket) do
-    OliWeb.ManualGrading.Rendering.create_rendering_context(
-      activity_attempt,
-      Core.get_latest_part_attempts(activity_attempt.attempt_guid),
-      socket.assigns.activity_types_map,
-      socket.assigns.section
-    )
-    |> Map.merge(%{is_liveview: true})
-    |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
   end
 
   defp assign_selected_assessment(socket, selected_assessment_id)

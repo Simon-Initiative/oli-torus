@@ -1011,12 +1011,12 @@ defmodule Oli.Delivery.Attempts.Core do
   Counts the number of attempts made by a list of students for a given activity in a given section.
   """
   @spec count_student_attempts(integer(), %Section{}, [integer()]) :: integer() | nil
-  def count_student_attempts(activity_resource_id, section, student_ids) do
+  def count_student_attempts(activity_resource_id, section_id, student_ids) do
     from(ra in ResourceAttempt,
       join: access in ResourceAccess,
       on: access.id == ra.resource_access_id,
       where:
-        ra.lifecycle_state == :evaluated and access.section_id == ^section.id and
+        ra.lifecycle_state == :evaluated and access.section_id == ^section_id and
           access.resource_id == ^activity_resource_id and access.user_id in ^student_ids,
       select: count(ra.id)
     )

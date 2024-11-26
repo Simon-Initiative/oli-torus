@@ -264,6 +264,22 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     )
   end
 
+  def get_preview_rendered(nil, _activity_types_map, _section), do: nil
+
+  def get_preview_rendered(activity_attempt, activity_types_map, section)
+      when section.analytics_version == :v2 do
+    OliWeb.ManualGrading.Rendering.create_rendering_context(
+      activity_attempt,
+      Core.get_latest_part_attempts(activity_attempt.attempt_guid),
+      activity_types_map,
+      section
+    )
+    |> Map.merge(%{is_liveview: true})
+    |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
+  end
+
+  def get_preview_rendered(_activity_attempt, _activity_types_map, _section), do: nil
+
   defp add_single_response_details(activity_attempt, response_summaries) do
     responses =
       Enum.reduce(response_summaries, [], fn response_summary, acc ->
@@ -408,9 +424,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               count: response_summary.count,
               choice_id: response_summary.response,
               selected_choice_text:
-                Map.get(choice_mapper, to_string(response_summary.response))[:text],
+                Map.get(choice_mapper, to_string(response_summary.response))[:text] || "",
               selected_choice_points:
-                Map.get(choice_mapper, to_string(response_summary.response))[:points],
+                Map.get(choice_mapper, to_string(response_summary.response))[:points] || 0,
               question_id: response_summary.part_id,
               question: Map.get(question_text_mapper, to_string(response_summary.part_id))
             }

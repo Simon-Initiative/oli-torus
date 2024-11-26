@@ -56,7 +56,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         students: assigns.students,
         scripts: assigns.scripts,
         activity_types_map: assigns.activity_types_map,
-        preview_rendered: nil
+        selected_activity: nil
       )
 
     case params.assessment_id do
@@ -248,10 +248,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           id="activity_detail"
           phx-hook="LoadSurveyScripts"
         >
-          <%= if @preview_rendered != nil do %>
-            <ActivityHelpers.rendered_activity activity={
-              %{id: @rendered_activity_id, preview_rendered: @preview_rendered}
-            } />
+          <%= if Map.get(@selected_activity, :preview_rendered) != nil do %>
+            <ActivityHelpers.rendered_activity activity={@selected_activity} />
           <% else %>
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
@@ -377,45 +375,52 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     table_model =
       Map.merge(socket.assigns.table_model, %{selected: "#{selected_activity_id}"})
 
-    section = socket.assigns.section
-    activity_types_map = socket.assigns.activity_types_map
-    page_id = socket.assigns.current_assessment.resource_id
+    %{
+      section: section,
+      activity_types_map: activity_types_map,
+      current_assessment: %{resource_id: page_id}
+    } = socket.assigns
 
-    case ActivityHelpers.get_activities_details(
-           [selected_activity.resource_id],
-           section,
-           activity_types_map,
-           page_id
-         ) do
-      details when details in [nil, []] ->
-        assign(socket, table_model: table_model)
+    with :v2 <- section.analytics_version,
+         details when details not in [nil, []] <-
+           ActivityHelpers.get_activities_details(
+             [selected_activity.resource_id],
+             section,
+             activity_types_map,
+             page_id
+           ) do
+      activity_attempt = hd(details)
+      part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
-      details ->
-        activity_attempt = hd(details)
-        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+      rendering_context =
+        Rendering.create_rendering_context(
+          activity_attempt,
+          part_attempts,
+          activity_types_map,
+          section
+        )
+        |> Map.merge(%{is_liveview: true})
 
-        rendering_context =
-          Rendering.create_rendering_context(
-            activity_attempt,
-            part_attempts,
-            activity_types_map,
-            section
-          )
-          |> Map.merge(%{is_liveview: true})
+      selected_activity =
+        Map.merge(selected_activity, %{
+          preview_rendered: Rendering.render(rendering_context, :instructor_preview),
+          datasets: Map.get(activity_attempt, :datasets)
+        })
 
-        preview_rendered = Rendering.render(rendering_context, :instructor_preview)
+      socket
+      |> assign(table_model: table_model, selected_activity: selected_activity)
+      |> case do
+        %{assigns: %{scripts_loaded: true}} = socket ->
+          socket
 
-        socket
-        |> assign(table_model: table_model, preview_rendered: preview_rendered)
-        |> case do
-          %{assigns: %{scripts_loaded: true}} = socket ->
-            socket
-
-          socket ->
-            push_event(socket, "load_survey_scripts", %{
-              script_sources: socket.assigns.scripts
-            })
-        end
+        socket ->
+          push_event(socket, "load_survey_scripts", %{
+            script_sources: socket.assigns.scripts
+          })
+      end
+    else
+      _other_cases ->
+        assign(socket, table_model: table_model, selected_activity: selected_activity)
     end
   end
 
