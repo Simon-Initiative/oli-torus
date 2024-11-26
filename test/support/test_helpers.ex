@@ -3654,4 +3654,333 @@ defmodule Oli.TestHelpers do
     """
     |> Jason.decode!()
   end
+
+  def likert_activity_content(title \\ "Some Title") do
+    %{
+      "stem" => %{
+        "id" => "2045374543",
+        "editor" => "slate",
+        "content" => [
+          %{
+            "id" => "481387076",
+            "type" => "p",
+            "children" => [
+              %{
+                "text" => title
+              }
+            ]
+          }
+        ],
+        "textDirection" => "ltr"
+      },
+      "items" => [
+        %{
+          "id" => "1801321981",
+          "editor" => "slate",
+          "content" => [
+            %{
+              "id" => "1756897531",
+              "type" => "p",
+              "children" => [
+                %{
+                  "text" => "item 1"
+                }
+              ]
+            }
+          ],
+          "required" => false,
+          "textDirection" => "ltr"
+        },
+        %{
+          "id" => "1",
+          "editor" => "slate",
+          "content" => [
+            %{
+              "id" => "1513586314",
+              "type" => "p",
+              "children" => [
+                %{
+                  "text" => "item 2"
+                }
+              ]
+            }
+          ],
+          "textDirection" => "ltr"
+        }
+      ],
+      "bibrefs" => [],
+      "choices" => [
+        %{
+          "id" => "id_for_option_a",
+          "value" => %{
+            "type" => 0
+          },
+          "editor" => "slate",
+          "content" => [
+            %{
+              "id" => "2993895163",
+              "type" => "p",
+              "children" => [
+                %{
+                  "text" => "Agree"
+                }
+              ]
+            }
+          ],
+          "textDirection" => "ltr"
+        },
+        %{
+          "id" => "id_for_option_b",
+          "value" => %{
+            "type" => 0
+          },
+          "editor" => "slate",
+          "content" => [
+            %{
+              "id" => "2480215248",
+              "type" => "p",
+              "children" => [
+                %{
+                  "text" => "Neither Agree Nor Disagree"
+                }
+              ]
+            }
+          ],
+          "textDirection" => "ltr"
+        },
+        %{
+          "id" => "2744313274",
+          "value" => %{
+            "type" => 0
+          },
+          "editor" => "slate",
+          "content" => [
+            %{
+              "id" => "1677958907",
+              "type" => "p",
+              "children" => [
+                %{
+                  "text" => "Disagree"
+                }
+              ]
+            }
+          ],
+          "textDirection" => "ltr"
+        }
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "hints" => [
+              %{
+                "id" => "3815680172",
+                "editor" => "slate",
+                "content" => [
+                  %{
+                    "id" => "1086576948",
+                    "type" => "p",
+                    "children" => [
+                      %{
+                        "text" => ""
+                      }
+                    ]
+                  }
+                ],
+                "textDirection" => "ltr"
+              },
+              %{
+                "id" => "2087690726",
+                "editor" => "slate",
+                "content" => [
+                  %{
+                    "id" => "11486367",
+                    "type" => "p",
+                    "children" => [
+                      %{
+                        "text" => ""
+                      }
+                    ]
+                  }
+                ],
+                "textDirection" => "ltr"
+              },
+              %{
+                "id" => "1328056631",
+                "editor" => "slate",
+                "content" => [
+                  %{
+                    "id" => "3113974429",
+                    "type" => "p",
+                    "children" => [
+                      %{
+                        "text" => ""
+                      }
+                    ]
+                  }
+                ],
+                "textDirection" => "ltr"
+              }
+            ],
+            "outOf" => nil,
+            "targets" => [],
+            "responses" => [
+              %{
+                "id" => "1506873322",
+                "rule" => "input like %{2059901803}",
+                "score" => 1,
+                "correct" => true,
+                "feedback" => %{
+                  "id" => "3973552980",
+                  "editor" => "slate",
+                  "content" => [
+                    %{
+                      "id" => "560772231",
+                      "type" => "p",
+                      "children" => [
+                        %{
+                          "text" => "Correct"
+                        }
+                      ]
+                    }
+                  ],
+                  "textDirection" => "ltr"
+                }
+              },
+              %{
+                "id" => "3417030249",
+                "rule" => "input like %{.*}",
+                "score" => 0,
+                "feedback" => %{
+                  "id" => "2851599196",
+                  "editor" => "slate",
+                  "content" => [
+                    %{
+                      "id" => "3187218957",
+                      "type" => "p",
+                      "children" => [
+                        %{
+                          "text" => "Incorrect"
+                        }
+                      ]
+                    }
+                  ],
+                  "textDirection" => "ltr"
+                }
+              }
+            ],
+            "gradingApproach" => "automatic",
+            "scoringStrategy" => "average"
+          },
+          %{
+            "id" => "1",
+            "hints" => [
+              %{
+                "id" => "3763332041",
+                "editor" => "slate",
+                "content" => [
+                  %{
+                    "id" => "38052499",
+                    "type" => "p",
+                    "children" => [
+                      %{
+                        "text" => ""
+                      }
+                    ]
+                  }
+                ],
+                "textDirection" => "ltr"
+              },
+              %{
+                "id" => "665246757",
+                "editor" => "slate",
+                "content" => [
+                  %{
+                    "id" => "3064108522",
+                    "type" => "p",
+                    "children" => [
+                      %{
+                        "text" => ""
+                      }
+                    ]
+                  }
+                ],
+                "textDirection" => "ltr"
+              },
+              %{
+                "id" => "1510363789",
+                "editor" => "slate",
+                "content" => [
+                  %{
+                    "id" => "3760829234",
+                    "type" => "p",
+                    "children" => [
+                      %{
+                        "text" => ""
+                      }
+                    ]
+                  }
+                ],
+                "textDirection" => "ltr"
+              }
+            ],
+            "outOf" => nil,
+            "targets" => [],
+            "responses" => [
+              %{
+                "id" => "1625009830",
+                "rule" => "input like %{2059901803}",
+                "score" => 1,
+                "correct" => true,
+                "feedback" => %{
+                  "id" => "3396414840",
+                  "editor" => "slate",
+                  "content" => [
+                    %{
+                      "id" => "3625710370",
+                      "type" => "p",
+                      "children" => [
+                        %{
+                          "text" => "Correct"
+                        }
+                      ]
+                    }
+                  ],
+                  "textDirection" => "ltr"
+                }
+              },
+              %{
+                "id" => "2686336238",
+                "rule" => "input like %{.*}",
+                "score" => 0,
+                "feedback" => %{
+                  "id" => "1381016321",
+                  "editor" => "slate",
+                  "content" => [
+                    %{
+                      "id" => "798578659",
+                      "type" => "p",
+                      "children" => [
+                        %{
+                          "text" => "Incorrect"
+                        }
+                      ]
+                    }
+                  ],
+                  "textDirection" => "ltr"
+                }
+              }
+            ],
+            "gradingApproach" => "automatic",
+            "scoringStrategy" => "average"
+          }
+        ],
+        "targeted" => [],
+        "previewText" => "",
+        "transformations" => []
+      },
+      "activityTitle" => "",
+      "orderDescending" => false
+    }
+  end
 end
