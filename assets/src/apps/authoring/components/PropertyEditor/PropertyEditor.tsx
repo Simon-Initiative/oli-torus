@@ -100,6 +100,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         }
       }}
       onBlur={(key, changed) => {
+        //AdvancedFeedbackNumberRange widget does not call the onFocus hence we are using the onBlur and passing 'partPropertyElementFocus' as key
+        // to identify if this was called from onfocus event of the input
+        if (key == 'partPropertyElementFocus' && onfocusHandler) {
+          onfocusHandler(false);
+          return;
+        }
+        console.log('I M IN PE - ONBLUR');
         // key will look like root_Position_x
         // changed will be the new value
         // formData will be the current state of the form
