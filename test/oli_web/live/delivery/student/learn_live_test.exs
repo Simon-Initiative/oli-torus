@@ -1331,7 +1331,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       # when the slider buttons are enabled we know the student async metrics were loaded
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
-      assert has_element?(view, ~s{div[role="unit_1_progress"]}, "100%")
+      assert has_element?(view, ~s{div[role="unit_1_progress"]}, "Completed")
     end
 
     test "can expand more than one module card", %{
