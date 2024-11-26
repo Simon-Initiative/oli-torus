@@ -319,7 +319,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp header_banner(assigns) do
     ~H"""
     <div class="relative">
-      <div class="w-full h-1/2 relative flex items-center">
+      <div class="w-full h-72 relative flex items-center">
         <div class="inset-0 absolute">
           <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
           <img
