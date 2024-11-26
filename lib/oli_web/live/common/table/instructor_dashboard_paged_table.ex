@@ -20,10 +20,11 @@ defmodule OliWeb.Common.InstructorDashboardPagedTable do
   attr :scrollable, :boolean, default: true
   attr :show_limit_change, :boolean, default: false
   attr :no_records_message, :string, default: "None exist"
+  attr :overflow_class, :string, default: "inline"
 
   def render(assigns) do
     ~H"""
-    <div class={if @scrollable, do: "overflow-x-scroll inline"}>
+    <div class={if @scrollable, do: "overflow-x-scroll #{@overflow_class}"}>
       <%= if @filter != "" and @render_top_info do %>
         <strong>Results filtered on &quot;<%= @filter %>&quot;</strong>
       <% end %>

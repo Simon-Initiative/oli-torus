@@ -6,6 +6,10 @@ defmodule OliWeb.Sections.AssessmentSettings.Tooltips do
   def for(:max_attempts), do: "The maximum number of times a student can attempt the assessment"
   def for(:time_limit), do: "A time limit, in minutes, that the student has for each attempt"
 
+  def for(:late_policy),
+    do:
+      "Select how the system should handle student attempts and submissions after the due date. If set to “disallow late start and late submit”, the system will automatically submit an attempt at the deadline."
+
   def for(:late_submit),
     do:
       "Whether or not to allow submissions past the due date or time limit. If set to disallow the system will automatically submit an attempt at the deadline"

@@ -141,6 +141,21 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Depot.query(@depot_desc, section_id, [{:resource_type_id, {:in, type_ids}}])
   end
 
+  @doc """
+  Returns a SectionResource record for a given section and resource id.
+  """
+  def get_section_resource(section_id, resource_id) do
+    init_if_necessary(section_id)
+    Depot.get(@depot_desc, section_id, resource_id)
+  end
+
+  @doc """
+  Updates a SectionResource record.
+  """
+  def update_section_resource(section_resource) do
+    Depot.update(@depot_desc, section_resource)
+  end
+
   defp init_if_necessary(section_id) do
     if Depot.table_exists?(@depot_desc, section_id) do
       {:ok, :exists}

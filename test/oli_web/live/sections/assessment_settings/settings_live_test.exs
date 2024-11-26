@@ -413,8 +413,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :due_date,
             :max_attempts,
             :time_limit,
-            :late_submit,
-            :late_start,
+            :late_policy,
             :scoring_strategy_id,
             :grace_period,
             :retake_mode,
@@ -799,17 +798,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       [assessment_1, assessment_2, assessment_3, assessment_4] =
         table_as_list_of_maps(view, :settings)
 
-      assert assessment_1.late_submit == "Allow"
-      assert assessment_2.late_submit == "Allow"
-      assert assessment_3.late_submit == "Allow"
-      assert assessment_4.late_submit == "Allow"
+      assert assessment_1.late_policy == "Allow late start and late submit"
+      assert assessment_2.late_policy == "Allow late start and late submit"
+      assert assessment_3.late_policy == "Allow late start and late submit"
+      assert assessment_4.late_policy == "Allow late start and late submit"
 
       # we change page 3 late submit setting to :disallow
       view
       |> form(~s{form[for="settings_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{page_3.resource.id}"],
-        "late_submit-#{page_3.resource.id}" => "disallow"
+        "_target" => ["late_policy-#{page_3.resource.id}"],
+        "late_policy-#{page_3.resource.id}" => "disallow_late_start_and_late_submit"
       })
 
       # and bulk apply that change to all other assessments
@@ -830,10 +829,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       [assessment_1, assessment_2, assessment_3, assessment_4] =
         table_as_list_of_maps(view, :settings)
 
-      assert assessment_1.late_submit == "Disallow"
-      assert assessment_2.late_submit == "Disallow"
-      assert assessment_3.late_submit == "Disallow"
-      assert assessment_4.late_submit == "Disallow"
+      assert assessment_1.late_policy == "Disallow late start and late submit"
+      assert assessment_2.late_policy == "Disallow late start and late submit"
+      assert assessment_3.late_policy == "Disallow late start and late submit"
+      assert assessment_4.late_policy == "Disallow late start and late submit"
 
       assert Enum.uniq([
                Map.drop(assessment_1, [:name, :index]),
@@ -905,12 +904,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert hd(assessments).name == "Page 3"
     end
 
-    test "can be sorted",
-         %{
-           conn: conn,
-           section: section,
-           page_3: page_3
-         } do
+    test "can be sorted", %{conn: conn, section: section, page_3: page_3} do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
       [initial_a1, initial_a2, initial_a3, initial_a4] = table_as_list_of_maps(view, :settings)
@@ -926,25 +920,25 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert initial_a2 == sorted_3
       assert initial_a1 == sorted_4
 
-      # change page 3 late_submit value to "disallow" and then sort by that column
+      # change page 3 late_policy value to "disallow_late_start_and_late_submit" and then sort by that column
       view
       |> form(~s{form[for="settings_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{page_3.resource.id}"],
-        "late_submit-#{page_3.resource.id}" => "disallow"
+        "_target" => ["late_policy-#{page_3.resource.id}"],
+        "late_policy-#{page_3.resource.id}" => "disallow_late_start_and_late_submit"
       })
 
       view
-      |> element("th[phx-value-sort_by=late_submit]")
+      |> element("th[phx-value-sort_by=late_policy]")
       |> render_click()
 
       [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
 
       assert initial_a3.name == sorted_1.name
-      assert sorted_1.late_submit == "Disallow"
-      assert sorted_2.late_submit == "Allow"
-      assert sorted_3.late_submit == "Allow"
-      assert sorted_4.late_submit == "Allow"
+      assert sorted_1.late_policy == "Disallow late start and late submit"
+      assert sorted_2.late_policy == "Allow late start and late submit"
+      assert sorted_3.late_policy == "Allow late start and late submit"
+      assert sorted_4.late_policy == "Allow late start and late submit"
     end
 
     test "can be paginated", %{
@@ -1031,14 +1025,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
          } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      # sort by late_submit
+      # sort by late_policy
       view
-      |> element("th[phx-value-sort_by=late_submit]")
+      |> element("th[phx-value-sort_by=late_policy]")
       |> render_click()
 
       [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
 
-      # change the late_submit value of the second listed assessment
+      # change the late_policy value of the second listed assessment
       second_listed_page =
         Enum.find([page_1, page_2, page_3, page_4], fn page ->
           page.title == sorted_2.name
@@ -1047,8 +1041,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       view
       |> form(~s{form[for="settings_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{second_listed_page.resource.id}"],
-        "late_submit-#{second_listed_page.resource.id}" => "disallow"
+        "_target" => ["late_policy-#{second_listed_page.resource.id}"],
+        "late_policy-#{second_listed_page.resource.id}" => "disallow_late_start_and_late_submit"
       })
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
@@ -1056,7 +1050,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       assert sorted_1 == assessment_1
       assert sorted_2.name == assessment_2.name
-      assert assessment_2.late_submit == "Disallow"
+      assert assessment_2.late_policy == "Disallow late start and late submit"
       assert sorted_3 == assessment_3
       assert sorted_4 == assessment_4
     end
@@ -1551,33 +1545,28 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
              |> Map.get(:new_value) == "allow"
     end
 
-    test "bulk apply settings persist all changes in the database", %{
-      conn: conn,
-      section: section,
-      page_1: page_1,
-      page_2: page_2,
-      page_3: page_3
-    } do
+    test "bulk apply settings persist all changes in the database", ctx do
+      %{conn: conn, section: section, page_1: page_1, page_2: page_2, page_3: page_3} = ctx
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      ## Checks that there is no setting change for late_submit
+      ## Checks that there is no setting change for password
       assert Settings.fetch_all_settings_changes() == []
 
-      # we change page 3 late submit setting to :disallow
+      # we change page 3 password setting to "asdf"
       view
       |> form(~s{form[for="settings_table"]})
       |> render_change(%{
-        "_target" => ["late_submit-#{page_3.resource.id}"],
-        "late_submit-#{page_3.resource.id}" => "disallow"
+        "_target" => ["password-#{page_3.resource.id}"],
+        "password-#{page_3.resource.id}" => "asdf"
       })
 
       changes = Settings.fetch_all_settings_changes()
       change_for_page_3 = hd(changes)
       assert length(changes) == 1
       assert change_for_page_3.resource_id == page_3.resource.id
-      assert change_for_page_3.key == "late_submit"
-      assert change_for_page_3.new_value == "disallow"
-      assert change_for_page_3.old_value == "allow"
+      assert change_for_page_3.key == "password"
+      assert change_for_page_3.new_value == "asdf"
+      assert change_for_page_3.old_value == nil
 
       refute change_for_page_3.resource_id == page_1.resource.id
       refute change_for_page_3.resource_id == page_2.resource.id

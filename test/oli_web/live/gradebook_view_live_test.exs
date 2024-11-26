@@ -92,5 +92,18 @@ defmodule OliWeb.GradebookViewLiveTest do
                |> render =~ "#{@expected_score}/#{@out_of}"
       end
     end
+
+    test "table has classes to ensure overflow", %{conn: conn} do
+      %{section: section} = create_project_with_n_scored_pages(conn, 30)
+
+      user = insert(:user, %{family_name: "James", given_name: "LeBron"})
+      enroll_user_to_section(user, section, :context_learner)
+
+      {:ok, view, _html} = live(conn, live_view_gradebook_view_route(section.slug))
+
+      # Check that the table is rendered with a horizontal scroll bar
+      assert view
+             |> element(~s(table[class="overflow-x-scroll block scrollbar"]))
+    end
   end
 end
