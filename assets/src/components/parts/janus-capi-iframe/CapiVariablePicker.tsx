@@ -92,7 +92,6 @@ const CapiVariablePicker: React.FC<StateDisplayProps> = ({
                       aria-expanded={expandedPanels[`panel-Root${label}`]}
                       aria-controls={`collapseRoot${label}`}
                       onClick={() => {
-                        console.log({ expandedPanels, a: [`panel-Root${label}`] });
                         setExpandedPanels({
                           [`panel-Root${label}`]: !expandedPanels[`panel-Root${label}`],
                         });
