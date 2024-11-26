@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { Provider } from 'react-redux';
 import { Maybe } from 'tsmonad';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
@@ -13,7 +14,10 @@ import {
   toInternalLink,
 } from 'data/content/model/elements/utils';
 import * as Persistence from 'data/persistence/resource';
+import { configureStore } from 'state/store';
 import { MediaItem } from 'types/media';
+
+const store = configureStore();
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -39,6 +43,7 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext, projectSlug
   const [source, setSource] = useState<ContentModel.HyperlinkType>(
     getHyperlinkType(model.linkType, model.href),
   );
+  const store = configureStore();
 
   const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
   const [selectedPage, setSelectedPage] = useState<null | Persistence.Page>(null);
@@ -247,14 +252,16 @@ const MediaLibraryInput: React.FC<{
     [setHref],
   );
   return (
-    <UrlOrUpload
-      onUrlChange={setHref}
-      onMediaSelectionChange={onMediaChange}
-      projectSlug={projectSlug}
-      mimeFilter={undefined}
-      selectionType={SELECTION_TYPES.SINGLE}
-      initialSelectionPaths={href ? [href] : []}
-      externalUrlAllowed={false}
-    ></UrlOrUpload>
+    <Provider store={store}>
+      <UrlOrUpload
+        onUrlChange={setHref}
+        onMediaSelectionChange={onMediaChange}
+        projectSlug={projectSlug}
+        mimeFilter={undefined}
+        selectionType={SELECTION_TYPES.SINGLE}
+        initialSelectionPaths={href ? [href] : []}
+        externalUrlAllowed={false}
+      ></UrlOrUpload>
+    </Provider>
   );
 };
