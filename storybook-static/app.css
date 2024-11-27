@@ -9728,6 +9728,16 @@ table.table-striped tbody tr:nth-child(even) {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.placeholder-\[\#9ca3af\]::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-\[\#9ca3af\]::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-placeholder-opacity));
+}
+
 .\!opacity-100 {
   opacity: 1 !important;
 }
@@ -15421,6 +15431,14 @@ Not supports in Firefox and IE */
 
 .dark .dark\:text-opacity-80 {
   --tw-text-opacity: 0.8;
+}
+
+.dark .dark\:placeholder-\[\#eeebf5\]\/70::-moz-placeholder {
+  color: rgb(238 235 245 / 0.7);
+}
+
+.dark .dark\:placeholder-\[\#eeebf5\]\/70::placeholder {
+  color: rgb(238 235 245 / 0.7);
 }
 
 .dark .dark\:placeholder-gray-400::-moz-placeholder {
