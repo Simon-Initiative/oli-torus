@@ -265,13 +265,16 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     );
   }
 
-  onActivityAdd(context: ActivityEditContext) {
-    const inserted = [
-      [context.activitySlug, context],
-      ...this.state.activityContexts.toArray(),
-    ].slice(0, PAGE_SIZE);
+  onActivityAdd(context: ActivityEditContext, atSlug: string | null = null) {
+    const atIndex = this.state.activityContexts.keySeq().findIndex((key) => key === atSlug);
+    const insertPos = atIndex < 0 ? 0 : atIndex;
+
+    const tempContexts = this.state.activityContexts.toArray();
+    tempContexts.splice(insertPos, 0, [context.activitySlug, context]);
+    const newContexts = tempContexts.slice(0, PAGE_SIZE);
+
     this.setState({
-      activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
+      activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(newContexts as any),
       totalInBank: this.state.totalInBank + 1,
       totalCount: this.state.totalCount + 1,
     });
@@ -469,7 +472,10 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       (ed: EditorDesc) => ed.slug === context.typeSlug,
     );
     if (editorDesc)
-      createCopy(this.props.projectSlug, editorDesc, context, 'banked', this.onActivityAdd);
+      createCopy(this.props.projectSlug, editorDesc, context, 'banked', (newContext) =>
+        // include slug of activity to insert before
+        this.onActivityAdd(newContext, context.activitySlug),
+      );
   }
 
   createActivityEditors() {
