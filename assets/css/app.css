@@ -216,17 +216,6 @@ Not supports in Firefox and IE */
   height: 0;
 }
 
-/* set placeholder text color */
-#project-title-placeholder::placeholder {
-  color: #9ca3af;
-}
-
-/* set placeholder text color in dark mode */
-.dark #project-title-placeholder::placeholder {
-  color: #eeebf5;
-  opacity: 0.7;
-}
-
 /* Firefox customized styles */
 
 @-moz-document url-prefix() {

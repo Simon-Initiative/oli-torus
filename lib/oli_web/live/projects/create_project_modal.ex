@@ -39,8 +39,7 @@ defmodule OliWeb.Projects.CreateProjectModal do
               <div class="form-label-group">
                 <%= text_input(f, :title,
                   required: true,
-                  id: "project-title-placeholder",
-                  class: "block min-w-full",
+                  class: "block min-w-full placeholder-[#9ca3af] dark:placeholder-[#eeebf5]/70",
                   placeholder: "e.g. Introduction to Psychology"
                 ) %>
                 <%= label f, :title, class: "block text-sm text-gray-500 dark:text-[#eeebf5]" do %>
