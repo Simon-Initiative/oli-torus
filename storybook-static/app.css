@@ -4062,10 +4062,6 @@ table.table-striped tbody tr:nth-child(even) {
   top: -89px;
 }
 
-.-top-\[8px\] {
-  top: -8px;
-}
-
 .bottom-0 {
   bottom: 0px;
 }
@@ -4144,10 +4140,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .left-\[52px\] {
   left: 52px;
-}
-
-.left-\[8px\] {
-  left: 8px;
 }
 
 .right-0 {
@@ -4264,10 +4256,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-\[16px\] {
   top: 16px;
-}
-
-.top-\[35px\] {
-  top: 35px;
 }
 
 .top-\[40px\] {
@@ -5672,10 +5660,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[26px\] {
   width: 26px;
-}
-
-.w-\[27px\] {
-  width: 27px;
 }
 
 .w-\[280px\] {
@@ -9078,10 +9062,6 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 21px;
 }
 
-.leading-\[22px\] {
-  line-height: 22px;
-}
-
 .leading-\[24px\] {
   line-height: 24px;
 }
@@ -9148,10 +9128,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .tracking-\[0\.32px\] {
   letter-spacing: 0.32px;
-}
-
-.tracking-\[0\.96px\] {
-  letter-spacing: 0.96px;
 }
 
 .tracking-\[1\.28px\] {
@@ -14822,11 +14798,6 @@ Not supports in Firefox and IE */
   background-color: rgb(34 33 38 / var(--tw-bg-opacity));
 }
 
-.dark .dark\:bg-\[\#242533\] {
-  --tw-bg-opacity: 1;
-  background-color: rgb(36 37 51 / var(--tw-bg-opacity));
-}
-
 .dark .dark\:bg-\[\#2957A9\] {
   --tw-bg-opacity: 1;
   background-color: rgb(41 87 169 / var(--tw-bg-opacity));
@@ -15082,10 +15053,6 @@ Not supports in Firefox and IE */
 
 .dark .dark\:fill-\[\#12E56A\] {
   fill: #12E56A;
-}
-
-.dark .dark\:fill-\[\#242533\] {
-  fill: #242533;
 }
 
 .dark .dark\:fill-\[\#39e581\] {
@@ -15472,10 +15439,6 @@ Not supports in Firefox and IE */
 
 .dark .dark\:opacity-20 {
   opacity: 0.2;
-}
-
-.dark .dark\:opacity-40 {
-  opacity: 0.4;
 }
 
 .dark .dark\:opacity-80 {
@@ -16343,6 +16306,11 @@ Not supports in Firefox and IE */
   .md\:px-8 {
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+
+  .md\:px-\[25px\] {
+    padding-left: 25px;
+    padding-right: 25px;
   }
 
   .md\:\!pl-\[226px\] {
