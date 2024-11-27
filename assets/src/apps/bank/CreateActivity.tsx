@@ -59,7 +59,7 @@ export const createCopy = (
   editorDesc: EditorDesc,
   context: ActivityEditContext,
   scope: 'banked' | 'embedded',
-  onAdded: (context: ActivityEditContext) => void,
+  onAdded: (context: ActivityEditContext, atSlug?: string | null) => void,
 ) => {
   const model = clone(context.model);
   const title = context.title + ' (Copy)';
@@ -80,7 +80,7 @@ export const createCopy = (
         tags,
         variables: editorDesc.variables,
       };
-      onAdded(activity);
+      onAdded(activity, context.activitySlug);
     })
     .catch((err) => {
       // tslint:disable-next-line

@@ -472,10 +472,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       (ed: EditorDesc) => ed.slug === context.typeSlug,
     );
     if (editorDesc)
-      createCopy(this.props.projectSlug, editorDesc, context, 'banked', (newContext) =>
-        // include slug of activity to insert before
-        this.onActivityAdd(newContext, context.activitySlug),
-      );
+      createCopy(this.props.projectSlug, editorDesc, context, 'banked', this.onActivityAdd);
   }
 
   createActivityEditors() {
