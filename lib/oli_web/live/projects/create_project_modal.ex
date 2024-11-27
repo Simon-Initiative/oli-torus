@@ -26,7 +26,10 @@ defmodule OliWeb.Projects.CreateProjectModal do
             action={Routes.project_path(OliWeb.Endpoint, :create)}
           >
             <div class="modal-header flex flex-shrink-0 items-center justify-between p-4 border-b border-gray-200 rounded-t-md">
-              <h5 class="text-xl font-medium leading-normal text-gray-800" id="exampleModalLabel">
+              <h5
+                class="text-xl font-medium leading-normal text-gray-800 dark:text-[#eeebf5]"
+                id="exampleModalLabel"
+              >
                 Create Project
               </h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
@@ -36,10 +39,11 @@ defmodule OliWeb.Projects.CreateProjectModal do
               <div class="form-label-group">
                 <%= text_input(f, :title,
                   required: true,
+                  id: "project-title-placeholder",
                   class: "block min-w-full",
                   placeholder: "e.g. Introduction to Psychology"
                 ) %>
-                <%= label f, :title, class: "block text-sm text-gray-500" do %>
+                <%= label f, :title, class: "block text-sm text-gray-500 dark:text-[#eeebf5]" do %>
                   This can be changed later
                 <% end %>
                 <%= error_tag(f, :title) %>
