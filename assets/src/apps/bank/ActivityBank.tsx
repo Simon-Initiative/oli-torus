@@ -40,7 +40,7 @@ import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBo
 import { initAppSignal } from '../../utils/appsignal';
 import '../ResourceEditor.scss';
 import styles from './ActivityBank.modules.scss';
-import { CreateActivity } from './CreateActivity';
+import { CreateActivity, createCopy } from './CreateActivity';
 import { EditButton } from './EditButton';
 import { LogicFilter } from './LogicFilter';
 
@@ -464,6 +464,14 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     }
   }
 
+  duplicateActivity(context: ActivityEditContext) {
+    const editorDesc = Object.values(this.props.editorMap).find(
+      (ed: EditorDesc) => ed.slug === context.typeSlug,
+    );
+    if (editorDesc)
+      createCopy(this.props.projectSlug, editorDesc, context, 'banked', this.onActivityAdd);
+  }
+
   createActivityEditors() {
     return this.state.activityContexts.toArray().map((item) => {
       const [key, context] = item;
@@ -478,6 +486,9 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       const onDelete = () => {
         const thisKey = key;
         this.onDelete(thisKey);
+      };
+      const onDuplicateActivity = () => {
+        this.duplicateActivity(context);
       };
 
       const CustomToolbar = (_props: any) => (
@@ -502,6 +513,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             banked={true}
             canRemove={true}
             onRemove={onDelete}
+            onDuplicate={onDuplicateActivity}
             customToolbarItems={CustomToolbar}
             contentBreaksExist={false}
             {...context}
