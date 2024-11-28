@@ -120,8 +120,8 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Returns a list of SectionResource pages (graded + ungraded) for a given section.
   An optional parameter `graded_only` can be passed to filter only graded pages.
   """
-  def get_lessons(section, graded_only \\ false) do
-    depot_coordinator().init_if_necessary(@depot_desc, section.id, __MODULE__)
+  def get_lessons(section_id, graded_only \\ false) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
 
     page_type_id = Oli.Resources.ResourceType.id_for_page()
 
@@ -131,7 +131,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
         false -> [resource_type_id: page_type_id, hidden: false]
       end
 
-    Depot.query(@depot_desc, section.id, conditions)
+    Depot.query(@depot_desc, section_id, conditions)
   end
 
   @doc """
@@ -161,8 +161,8 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
     query =
       from sr in SectionResource,
-        where:
-          sr.section_id == ^section_id and sr.resource_type_id in [^page, ^container, ^objective],
+        where: sr.section_id == ^section_id,
+        where: sr.resource_type_id in [^page, ^container, ^objective],
         select: sr
 
     results = Repo.all(query)
