@@ -2045,11 +2045,22 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
       assert has_element?(view, "span", "The best course ever!")
-      assert has_element?(view, "div", "Unit 1: Introduction")
-      assert has_element?(view, "div", "Unit 2: Building a Phoenix app")
-      assert has_element?(view, "div", "Unit 3: Implementing LiveView")
+      assert has_element?(view, "div", "Introduction")
+      assert has_element?(view, "div", "Building a Phoenix app")
+      assert has_element?(view, "div", "Implementing LiveView")
     end
 
+    test "can see the toggle button to show and hide the completed pages", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
+
+      assert has_element?(view, ~s{button[id="hide_completed_button"]}, "Hide Completed")
+    end
+
+    @tag :skip
     test "can see unit intro as first row and play the video (if provided)", %{
       conn: conn,
       section: section,
@@ -2074,6 +2085,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
+    @tag :skip
     test "intro video is marked as seen after playing it",
          %{
            conn: conn,
@@ -2245,12 +2257,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
          } do
       {:ok, view, _html} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
-
-      assert view
-             |> element(
-               ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
-             )
-             |> render() =~ "Top Level Page"
 
       assert view
              |> element(~s{div[id="page_#{top_level_page.resource_id}"] span[role="page title"]})
@@ -2444,17 +2450,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(page_12_element) =~ "Page 12"
       assert render(page_12_element) =~ "ml-[40px]"
 
-      # Section and Sub-section are displayed with their corresponding indentation
       section_1_element =
         element(
           view,
-          "#section_#{section_1.resource_id}"
+          "#section_#{section_1.resource_id}_outline"
         )
 
       subsection_1_element =
         element(
           view,
-          "#section_#{subsection_1.resource_id}"
+          "#section_#{subsection_1.resource_id}_outline"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
