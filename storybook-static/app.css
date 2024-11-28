@@ -6910,6 +6910,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-bottom-width: 4px;
 }
 
+.border-b-\[1px\] {
+  border-bottom-width: 1px;
+}
+
 .border-l {
   border-left-width: 1px;
 }
@@ -7221,6 +7225,16 @@ table.table-striped tbody tr:nth-child(even) {
 .border-zinc-700 {
   --tw-border-opacity: 1;
   border-color: rgb(63 63 70 / var(--tw-border-opacity));
+}
+
+.border-b-\[\#39E581\] {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(57 229 129 / var(--tw-border-opacity));
+}
+
+.border-b-\[\#3B3740\] {
+  --tw-border-opacity: 1;
+  border-bottom-color: rgb(59 55 64 / var(--tw-border-opacity));
 }
 
 .border-b-delivery-primary {
@@ -8568,6 +8582,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-left: 0.625rem;
 }
 
+.pl-20 {
+  padding-left: 5rem;
+}
+
 .pl-3 {
   padding-left: 0.75rem;
 }
@@ -8730,6 +8748,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-6 {
   padding-top: 1.5rem;
+}
+
+.pt-8 {
+  padding-top: 2rem;
 }
 
 .pt-9 {
@@ -9811,6 +9833,12 @@ table.table-striped tbody tr:nth-child(even) {
 .shadow-md {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+
+.shadow-none {
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
@@ -14779,6 +14807,11 @@ Not supports in Firefox and IE */
   background-color: rgb(15 108 245 / var(--tw-bg-opacity));
 }
 
+.dark .dark\:bg-\[\#0d0c0e\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(13 12 14 / var(--tw-bg-opacity));
+}
+
 .dark .dark\:bg-\[\#0d0c0f\] {
   --tw-bg-opacity: 1;
   background-color: rgb(13 12 15 / var(--tw-bg-opacity));
@@ -16345,6 +16378,10 @@ Not supports in Firefox and IE */
 
   .md\:pl-\[125px\] {
     padding-left: 125px;
+  }
+
+  .md\:pl-\[20px\] {
+    padding-left: 20px;
   }
 
   .md\:pl-\[50px\] {
