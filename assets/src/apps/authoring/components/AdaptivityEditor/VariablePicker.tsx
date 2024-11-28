@@ -2,6 +2,7 @@ import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react
 import { Accordion, Button, Dropdown, ListGroup, OverlayTrigger, Popover } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { selectPartComponentTypes, selectPaths } from 'apps/authoring/store/app/slice';
+import { hasNesting, unflatten } from 'apps/delivery/components/preview-tools/inspector/utils';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import {
   SequenceEntryChild,
@@ -37,6 +38,13 @@ interface VariablePickerProps {
   onTargetChange?: (value: any) => any;
   onTypeChange?: (value: any) => any;
   context: 'init' | 'mutate' | 'condition';
+}
+interface NestedStateDisplayProps {
+  rootLevel: any;
+  currentTarget: string;
+  state: any;
+  currentState?: any;
+  onClick?: (key: string, variableType: string) => void;
 }
 
 export interface LessonVariable {
@@ -153,56 +161,80 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       if (adaptivitySchema) {
         return (
           <>
-            <Accordion.Toggle
-              as={ListGroup.Item}
-              eventKey={`${index}`}
-              action
-              className="part-type"
-              onClick={() => setIsFilterMenuOpen(false)}
-            >
-              <div className="d-flex align-items-center justify-space-between flex-grow-1">
-                <div className="d-flex flex-grow-1">
-                  <div className="text-center mr-2 d-flex">
-                    <img
-                      title={part.type}
-                      src={getPartIcon(part.type)}
-                      className="part-type-icon"
-                    />
+            <>
+              <Accordion.Toggle
+                as={ListGroup.Item}
+                eventKey={`${index}`}
+                action
+                className="part-type"
+                onClick={() => setIsFilterMenuOpen(false)}
+              >
+                <div className="d-flex align-items-center justify-space-between flex-grow-1">
+                  <div className="d-flex flex-grow-1">
+                    <div className="text-center mr-2 d-flex">
+                      <img
+                        title={part.type}
+                        src={getPartIcon(part.type)}
+                        className="part-type-icon"
+                      />
+                    </div>
+                    <span className="mr-2">{part.id}</span>
                   </div>
-                  <span className="mr-2">{part.id}</span>
+                  <ContextAwareToggle eventKey={`${index}`} />
                 </div>
-                <ContextAwareToggle eventKey={`${index}`} />
-              </div>
-            </Accordion.Toggle>
-            <Accordion.Collapse eventKey={`${index}`}>
-              <ul className="list-unstyled m-0 mb-2">
-                {Object.keys(adaptivitySchema).map((key: string, index: number) => (
-                  <li
-                    className="pb-2 pl-1 ml-4"
-                    key={index}
-                    onClick={() => {
-                      setTargetRef(
-                        `${
-                          specificSequenceId === 'stage' ? 'stage.' : `${specificSequenceId}|stage.`
-                        }${part.id}.${key}`,
-                      );
-                      setTypeRef(`${adaptivitySchema[key as unknown as number]}`);
-                    }}
-                  >
-                    <button type="button" className="text-btn font-italic">
-                      <span
-                        title={
-                          CapiVariableTypes[adaptivitySchema[key]][0] +
-                          CapiVariableTypes[adaptivitySchema[key]].slice(1).toLowerCase()
-                        }
-                      >
-                        {key}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </Accordion.Collapse>
+              </Accordion.Toggle>
+              <Accordion.Collapse eventKey={`${index}`}>
+                <ul className="list-unstyled m-0 mb-2 tree">
+                  {Object.keys(adaptivitySchema)
+                    .sort()
+                    .map((key: string, index: number) =>
+                      !hasNesting(adaptivitySchema[key]) ? (
+                        <li
+                          className="pb-2 pl-1 ml-4"
+                          key={index}
+                          onClick={() => {
+                            setTargetRef(
+                              `${
+                                specificSequenceId === 'stage'
+                                  ? 'stage.'
+                                  : `${specificSequenceId}|stage.`
+                              }${part.id}.${key}`,
+                            );
+                            setTypeRef(`${adaptivitySchema[key as unknown as number]}`);
+                          }}
+                        >
+                          <button type="button" className="text-btn font-italic">
+                            <span
+                              title={
+                                CapiVariableTypes[adaptivitySchema[key]][0] +
+                                CapiVariableTypes[adaptivitySchema[key]].slice(1).toLowerCase()
+                              }
+                            >
+                              {key}
+                            </span>
+                          </button>
+                        </li>
+                      ) : (
+                        <TreeView
+                          state={adaptivitySchema}
+                          onClick={(currentKey, variableType) => {
+                            setTargetRef(
+                              `${
+                                specificSequenceId === 'stage'
+                                  ? 'stage.'
+                                  : `${specificSequenceId}|stage.`
+                              }${part.id}.${currentKey}`,
+                            );
+                            setTypeRef(variableType);
+                          }}
+                          rootLevel={key}
+                          currentTarget={key}
+                        ></TreeView>
+                      ),
+                    )}
+                </ul>
+              </Accordion.Collapse>
+            </>
           </>
         );
       }
@@ -223,6 +255,20 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
               currentModel: part,
               editorContext: context,
             });
+            if (
+              part.type === 'janus-capi-iframe' &&
+              adaptivitySchema &&
+              Object.keys(adaptivitySchema)?.length
+            ) {
+              const globalStateAsVars = Object.keys(adaptivitySchema).reduce(
+                (collect: any, key: any) => {
+                  if (adaptivitySchema) collect[key] = adaptivitySchema[key];
+                  return collect;
+                },
+                {},
+              );
+              adaptivitySchema = unflatten(globalStateAsVars);
+            }
           }
         }
       }
@@ -493,5 +539,59 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
         <i className="fa fa-crosshairs" />
       </Button>
     </OverlayTrigger>
+  );
+};
+
+const TreeView: React.FC<NestedStateDisplayProps> = ({
+  state,
+  rootLevel,
+  onClick,
+  currentTarget,
+  currentState,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasChildren = hasNesting(state[rootLevel]);
+  return (
+    <li className={`${hasChildren ? 'pb-2 pl-1 ml-4' : 'pb-0 pt-2 pl-1 ml-4'}`}>
+      <div
+        onClick={() => {
+          setIsExpanded(!isExpanded);
+          if (onClick && !hasChildren) {
+            const variableType = currentState[rootLevel];
+            onClick(currentTarget, variableType);
+          }
+        }}
+        style={{ cursor: 'pointer' }}
+      >
+        {rootLevel}
+        {hasChildren ? (
+          isExpanded ? (
+            <button type="button" className="btn btn-link  pr-1 pt-0 pb-0 mr-1">
+              <i className="fa fa-angle-down"></i>
+            </button>
+          ) : (
+            <button type="button" className="btn btn-link  pr-1 pt-0 pb-0 mr-1">
+              <i className="fa fa-angle-right"></i>
+            </button>
+          )
+        ) : (
+          ''
+        )}{' '}
+      </div>
+      {hasChildren && isExpanded && (
+        <div>
+          {Object.keys(state[rootLevel]).map((level2: any) => (
+            <TreeView
+              key={level2}
+              state={{ [level2]: { ...state[rootLevel][level2] } }}
+              rootLevel={level2}
+              onClick={onClick}
+              currentTarget={`${currentTarget}.${level2}`}
+              currentState={state[rootLevel]}
+            />
+          ))}
+        </div>
+      )}
+    </li>
   );
 };
