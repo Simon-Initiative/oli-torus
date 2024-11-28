@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
-import { selectCurrentSelection } from '../../../store/parts/slice';
+import { selectCurrentSelection, setCurrentPartPropertyFocus } from '../../../store/parts/slice';
 
 /*
  This component handles editing advanced feedback for a question type that has a fixed set of options.
@@ -43,7 +43,7 @@ export const OptionsCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> =
   const currentPartSelection = useSelector(selectCurrentSelection);
   const activityTree = useSelector(selectCurrentActivityTree);
   const part = getPartDef(activityTree, currentPartSelection);
-
+  const dispatch = useDispatch();
   // TODO - make this widget more generic, right now it's very tied to dropdowns.
   const options: string[] = part?.custom?.optionLabels || ['Option 1', 'Option 2'];
   const correctIndex = (part?.custom?.correctAnswer || 0) - 1; // -1 because the correct answer is specified in a 1-based index
@@ -76,12 +76,18 @@ export const OptionsCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> =
         } // No advanced feedback for the correct answer, that's just the "correct" feedback
         return (
           <OptionFeedback
-            onBlur={() => onBlur(id, value)}
+            onBlur={() => {
+              onBlur(id, value);
+              dispatch(setCurrentPartPropertyFocus({ focus: true }));
+            }}
             key={index}
             index={index}
             option={option}
             feedback={value[index] || ''}
             onChange={OnOptionChanged(index)}
+            onFocusHandler={() => {
+              dispatch(setCurrentPartPropertyFocus({ focus: false }));
+            }}
           />
         );
       })}
@@ -95,6 +101,7 @@ interface OptionFeedbackProps {
   index: number;
   onChange: (value: string) => void;
   onBlur: () => void;
+  onFocusHandler: () => void;
 }
 const OptionFeedback: React.FC<OptionFeedbackProps> = ({
   option,
@@ -102,6 +109,7 @@ const OptionFeedback: React.FC<OptionFeedbackProps> = ({
   onBlur,
   feedback,
   onChange,
+  onFocusHandler,
 }) => {
   const labelOption = option || `Option ${index + 1}`;
   return (
@@ -112,6 +120,7 @@ const OptionFeedback: React.FC<OptionFeedbackProps> = ({
         className="form-control"
         value={feedback}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocusHandler}
       />
     </div>
   );
