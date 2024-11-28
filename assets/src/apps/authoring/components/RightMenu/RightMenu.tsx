@@ -26,7 +26,7 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { updateSequenceItem } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState } from '../../store/page/slice';
-import { selectCurrentSelection } from '../../store/parts/slice';
+import { selectCurrentSelection, setCurrentPartPropertyFocus } from '../../store/parts/slice';
 import PropertyEditor from '../PropertyEditor/PropertyEditor';
 import bankSchema, {
   bankUiSchema,
@@ -231,6 +231,13 @@ const RightMenu: React.FC<any> = () => {
     [currentLesson, dispatch],
   );
 
+  const onfocusHandler = useCallback(
+    (partPropertyElementFocus: any) => {
+      dispatch(setCurrentPartPropertyFocus({ focus: partPropertyElementFocus }));
+    },
+    [currentActivity, dispatch],
+  );
+
   return (
     <Tabs
       className="aa-panel-section-title-bar aa-panel-tabs"
@@ -245,6 +252,7 @@ const RightMenu: React.FC<any> = () => {
             value={lessonData}
             triggerOnChange={['CustomLogic']}
             onChangeHandler={lessonPropertyChangeHandler}
+            onfocusHandler={onfocusHandler}
           />
         </div>
       </Tab>
@@ -258,6 +266,7 @@ const RightMenu: React.FC<any> = () => {
               value={questionBankData}
               onChangeHandler={bankPropertyChangeHandler}
               triggerOnChange={true}
+              onfocusHandler={onfocusHandler}
             />
           </div>
         ) : null}
@@ -269,6 +278,7 @@ const RightMenu: React.FC<any> = () => {
               uiSchema={scrUiSchema as UiSchema}
               value={scrData}
               onChangeHandler={screenPropertyChangeHandler}
+              onfocusHandler={onfocusHandler}
             />
           ) : null}
         </div>

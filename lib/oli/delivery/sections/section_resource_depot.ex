@@ -143,6 +143,22 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns a SectionResource record for a given section and resource id.
+  """
+
+  def get_section_resource(section_id, resource_id) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+    Depot.get(@depot_desc, section_id, resource_id)
+  end
+
+  @doc """
+  Updates a SectionResource record.
+  """
+  def update_section_resource(section_resource) do
+    Depot.update(@depot_desc, section_resource)
+  end
+
+  @doc """
   Public function responsible for creating the ETS table
   """
   def process_table_creation(section_id) do

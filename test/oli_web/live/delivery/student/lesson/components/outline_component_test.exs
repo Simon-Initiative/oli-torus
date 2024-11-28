@@ -92,25 +92,47 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       {:ok, lcd, _html} = live_component_isolated(conn, OutlineComponent, component_params)
 
       # Unit 1
-      assert lcd |> element("#outline_item_1 div[role='title']") |> render() =~ "Unit 1"
-      assert lcd |> element("#outline_item_1 div[role='title']") |> render() =~ "Introduction"
+      assert lcd
+             |> element("#outline_item_1 div[aria-expanded='false'] div[role='title']")
+             |> render() =~
+               "Unit 1"
+
+      assert lcd
+             |> element("#outline_item_1 div[aria-expanded='false'] div[role='title']")
+             |> render() =~
+               "Introduction"
 
       # Renders top level ancestor progress bar
       assert lcd
-             |> element("#outline_item_1 div[role='progress bar']")
+             |> element("#outline_item_1 div[aria-expanded='false'] div[role='progress bar']")
              |> render() =~ "0%"
 
       # Unit 2
-      assert lcd |> element("#outline_item_2 div[role='title']") |> render() =~ "Unit 2"
-      assert lcd |> element("#outline_item_2 div[role='title']") |> render() =~ "Main Concepts"
+      assert lcd
+             |> element("#outline_item_2 div[aria-expanded='false'] div[role='title']")
+             |> render() =~
+               "Unit 2"
+
+      assert lcd
+             |> element("#outline_item_2 div[aria-expanded='false'] div[role='title']")
+             |> render() =~
+               "Main Concepts"
 
       # Top Level Lesson
-      assert lcd |> element("#outline_item_3 div[role='title']") |> render() =~ "Top Level Lesson"
+      assert lcd
+             |> element("#outline_item_3 div[role='title']")
+             |> render() =~
+               "Top Level Lesson"
 
-      assert lcd |> element("#outline_item_3 div[role='page icon']") |> render() =~
+      assert lcd
+             |> element("#outline_item_3 div[role='page icon']")
+             |> render() =~
                "text-exploration"
 
-      assert lcd |> element("#outline_item_3 div[role='index']") |> render() =~ "3"
+      assert lcd
+             |> element("#outline_item_3 div[role='index']")
+             |> render() =~
+               "3"
     end
 
     test "expands and collapses an item to show or hide its children", %{
@@ -120,33 +142,32 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OutlineComponentTest do
       {:ok, lcd, _html} = live_component_isolated(conn, OutlineComponent, component_params)
 
       # Ensure children are not visible initially
-      refute lcd |> has_element?("#outline_item_11")
-      refute lcd |> has_element?("#outline_item_12")
+      assert has_element?(lcd, "[aria-expanded='false'] + #collapse_1 #outline_item_11")
+      assert has_element?(lcd, "[aria-expanded='false'] + #collapse_1 #outline_item_12")
 
       # Expand item "1" to show children
       lcd
-      |> element("[phx-click='expand_item'][phx-value-item_id='1']")
+      |> element("[data-bs-toggle=collapse][phx-value-item_id='1']")
       |> render_click()
 
       # Ensure children are visible after expanding
-      assert lcd |> element("#outline_item_11 div[role='title']") |> render() =~ "Lesson 1"
-
-      assert lcd |> element("#outline_item_11 div[role='page icon']") |> render() =~
-               "text-checkpoint"
-
-      assert lcd |> element("#outline_item_12 div[role='title']") |> render() =~ "Lesson 2"
+      assert has_element?(lcd, "[aria-expanded='true'] + #collapse_1 #outline_item_11")
+      assert has_element?(lcd, "[aria-expanded='true'] + #collapse_1 #outline_item_12")
 
       # It is a practice page so it has no icon
-      assert lcd |> has_element?("#outline_item_12 div[role='no icon']")
+      assert has_element?(
+               lcd,
+               "[aria-expanded='true'] + #collapse_1 #outline_item_12 div[role='no icon']"
+             )
 
       # Collapse item "1" to hide children again
       lcd
-      |> element("[phx-click='expand_item'][phx-value-item_id='1']")
+      |> element("[data-bs-toggle=collapse][phx-value-item_id='1']")
       |> render_click()
 
       # Ensure children are hidden after collapsing
-      refute lcd |> has_element?("#outline_item_11")
-      refute lcd |> has_element?("#outline_item_12")
+      assert has_element?(lcd, "[aria-expanded='false'] + #collapse_1 #outline_item_11")
+      assert has_element?(lcd, "[aria-expanded='false'] + #collapse_1 #outline_item_12")
     end
   end
 end

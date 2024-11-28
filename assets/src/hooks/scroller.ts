@@ -32,7 +32,7 @@ export const Scroller = {
   //       }
   //    end
   //
-  // Expects the card_id of the elemento to scroll X to, the unit_resource_id of the slider that contains that module,
+  // Expects the card_id of the element to scroll X to, the unit_resource_id of the slider that contains that module,
   // the scroll animation delay in milliseconds (defaults to 0), the id of the element to animate with a pulse effect (optional),
   // and the pulse animation delay in milliseconds (defaults to 300).
   //
@@ -68,24 +68,31 @@ export const Scroller = {
         return;
       }
 
-      // show right button if slider is scrollable
-      if (slider.scrollWidth > slider.clientWidth) {
-        sliderRightButton?.classList.remove('hidden');
-        sliderRightButton?.classList.add('flex');
-      } else {
-        sliderRightButton?.classList.remove('flex');
-        sliderRightButton?.classList.add('hidden');
-      }
+      const updateSliderButtons = () => {
+        // Show right button if slider is scrollable
+        if (slider.scrollWidth > slider.clientWidth) {
+          sliderRightButton?.classList.remove('hidden');
+          sliderRightButton?.classList.add('flex');
+        } else {
+          sliderRightButton?.classList.remove('flex');
+          sliderRightButton?.classList.add('hidden');
+        }
 
-      if (slider.scrollLeft === 0) {
-        // If the left part is fully visible, hide the left button
-        sliderLeftButton?.classList.add('hidden');
-        sliderLeftButton?.classList.remove('flex');
-      } else {
-        // Otherwise, show it
-        sliderLeftButton?.classList.remove('hidden');
-        sliderLeftButton?.classList.add('flex');
-      }
+        if (slider.scrollLeft === 0) {
+          // If the left part is fully visible, hide the left button
+          sliderLeftButton?.classList.add('hidden');
+          sliderLeftButton?.classList.remove('flex');
+        } else {
+          // Otherwise, show it
+          sliderLeftButton?.classList.remove('hidden');
+          sliderLeftButton?.classList.add('flex');
+        }
+      };
+
+      // Use requestAnimationFrame to ensure DOM updates (like scrollWidth)
+      // are fully processed before determining slider buttons visibility.
+      // This avoids layout inconsistencies when toggling slider content.
+      requestAnimationFrame(updateSliderButtons);
     };
 
     window.addEventListener('phx:scroll-y-to-target', (e: Event) => {
