@@ -391,25 +391,28 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp add_likert_details(activity_attempt, response_summaries) do
-    {ordered_questions, question_text_mapper} =
+    %{questions: questions, question_mapper: question_mapper} =
       Enum.reduce(
         activity_attempt.revision.content["items"],
-        %{ordered_questions: [], question_text_mapper: %{}},
+        %{questions: [], question_mapper: %{}, question_number: 1},
         fn q, acc ->
           question = %{
             id: q["id"],
-            text: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text")
+            text: q["content"] |> hd() |> Map.get("children") |> hd() |> Map.get("text"),
+            number: acc.question_number
           }
 
           %{
-            ordered_questions: [question | acc.ordered_questions],
-            question_text_mapper: Map.put(acc.question_text_mapper, q["id"], question.text)
+            questions: [question | acc.questions],
+            question_mapper:
+              Map.put(acc.question_mapper, q["id"], %{
+                text: question.text,
+                number: question.number
+              }),
+            question_number: acc.question_number + 1
           }
         end
       )
-      |> then(fn acc ->
-        {Enum.reverse(acc.ordered_questions), acc.question_text_mapper}
-      end)
 
     {ordered_choices, choice_mapper} =
       Enum.reduce(
@@ -442,11 +445,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               count: response_summary.count,
               choice_id: response_summary.response,
               selected_choice_text:
-                Map.get(choice_mapper, to_string(response_summary.response))[:text] || "",
+                Map.get(choice_mapper, to_string(response_summary.response))[:text] ||
+                  "Student left this question blank",
               selected_choice_points:
                 Map.get(choice_mapper, to_string(response_summary.response))[:points] || 0,
               question_id: response_summary.part_id,
-              question: Map.get(question_text_mapper, to_string(response_summary.part_id))
+              question: Map.get(question_mapper, to_string(response_summary.part_id))[:text],
+              question_number:
+                Map.get(question_mapper, to_string(response_summary.part_id))[:number]
             }
             | acc
           ]
@@ -454,6 +460,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           acc
         end
       end)
+      |> Enum.sort_by(& &1.question_number)
 
     {average_points_per_question_id, responses_per_question_id} =
       Enum.reduce(responses, {%{}, %{}}, fn response, {avg_points_acc, responses_acc} ->
@@ -488,7 +495,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     last_choice_text = Enum.at(ordered_choices, -1)[:text]
 
     medians =
-      Enum.map(ordered_questions, fn q ->
+      Enum.map(questions, fn q ->
         %{
           question: q.text,
           median: Map.get(average_points_per_question_id, q.id, 0.0),
@@ -511,7 +518,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       datasets: %{
         medians: medians,
         values: values,
-        questions_count: length(ordered_questions),
+        questions_count: length(questions),
         axis_values: Enum.map(ordered_choices, fn c -> c.points end),
         first_choice_text: first_choice_text,
         last_choice_text: last_choice_text,
