@@ -188,14 +188,22 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
 
   def fetch_recently_active_sections() do
     now = DateTime.utc_now()
-    criteria = DateTime.add(now, -days_lookback(), :day)
+    days_lookback = DateTime.add(now, -days_lookback(), :day)
+    limit = max_number_of_entries()
 
     from(ra in ResourceAccess,
-      where: ra.updated_at >= ^criteria,
+      where: ra.updated_at >= ^days_lookback,
       distinct: ra.section_id,
+      limit: ^limit,
+      order_by: [desc: ra.updated_at],
       select: ra.section_id
     )
     |> Repo.all()
+  end
+
+  defp max_number_of_entries() do
+    Application.get_env(:oli, :depot_warmer_max_number_of_entries)
+    |> String.to_integer()
   end
 
   defp days_lookback() do

@@ -270,46 +270,76 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
 
   describe "fetch_recently_active_sections/0" do
     setup [
-      :setup_depot_warmer_days_lookback_env,
-      :remove_depot_warmer_days_lookback_env_on_exit
+      :remove_depot_warmer_days_lookback_env_on_exit,
+      :setup_for_fetch_recently_active_sections
     ]
 
-    test "" do
-      now = DateTime.utc_now()
-      yesterday = DateTime.add(now, -1, :day)
-      six_days_ago = DateTime.add(now, -6, :day)
+    test "checks days_back", ctx do
+      %{section_1_id: section_1_id, section_2_id: section_2_id, section_3_id: section_3_id} = ctx
+      setup_depot_warmer_days_lookback_env("5")
+      setup_depot_warmer_max_number_of_entries_env("10")
 
-      %{id: section_1_id} = section_1 = insert(:section)
-      %{id: section_2_id} = section_2 = insert(:section)
-      %{id: section_3_id} = section_3 = insert(:section)
-
-      page_type_id = Oli.Resources.ResourceType.id_for_page()
-
-      insert(:section_resource, section: section_1, resource_type_id: page_type_id)
-      insert(:section_resource, section: section_2, resource_type_id: page_type_id)
-      insert(:section_resource, section: section_3, resource_type_id: page_type_id)
-
-      insert(:resource_access, section: section_1, updated_at: now)
-      insert(:resource_access, section: section_2, updated_at: yesterday)
-      insert(:resource_access, section: section_3, updated_at: six_days_ago)
-
-      SectionResourceDepot.process_table_creation(section_1_id)
-      SectionResourceDepot.process_table_creation(section_2_id)
-      SectionResourceDepot.process_table_creation(section_3_id)
       active_sections = SectionResourceDepot.fetch_recently_active_sections()
 
+      assert length(active_sections) == 2
       assert Enum.all?(active_sections, fn ac -> ac in [section_1_id, section_2_id] end)
-
       assert section_3_id not in active_sections
+    end
+
+    test "checks when max_entries is equal to 0" do
+      setup_depot_warmer_days_lookback_env("5")
+      setup_depot_warmer_max_number_of_entries_env("0")
+
+      active_sections = SectionResourceDepot.fetch_recently_active_sections()
+
+      assert length(active_sections) == 0
+    end
+
+    test "checks limit is apply when max_entries is defined", ctx do
+      %{section_1_id: section_1_id} = ctx
+      setup_depot_warmer_days_lookback_env("5")
+      setup_depot_warmer_max_number_of_entries_env("1")
+
+      assert [^section_1_id] = SectionResourceDepot.fetch_recently_active_sections()
     end
   end
 
-  defp setup_depot_warmer_days_lookback_env(_) do
-    Application.put_env(:oli, :depot_warmer_days_lookback, "5")
+  defp setup_depot_warmer_max_number_of_entries_env(max_entries) do
+    Application.put_env(:oli, :depot_warmer_max_number_of_entries, max_entries)
+  end
+
+  defp setup_depot_warmer_days_lookback_env(days) do
+    Application.put_env(:oli, :depot_warmer_days_lookback, days)
   end
 
   defp remove_depot_warmer_days_lookback_env_on_exit(_) do
     on_exit(fn -> Application.put_env(:oli, :depot_warmer_days_lookback, nil) end)
+    on_exit(fn -> Application.put_env(:oli, :depot_warmer_max_number_of_entries, nil) end)
+  end
+
+  defp setup_for_fetch_recently_active_sections(_) do
+    now = DateTime.utc_now()
+    yesterday = DateTime.add(now, -1, :day)
+    six_days_ago = DateTime.add(now, -6, :day)
+
+    %{id: section_1_id} = section_1 = insert(:section)
+    %{id: section_2_id} = section_2 = insert(:section)
+    %{id: section_3_id} = section_3 = insert(:section)
+
+    page_type_id = Oli.Resources.ResourceType.id_for_page()
+
+    insert(:section_resource, section: section_1, resource_type_id: page_type_id)
+    insert(:section_resource, section: section_2, resource_type_id: page_type_id)
+    insert(:section_resource, section: section_3, resource_type_id: page_type_id)
+
+    insert(:resource_access, section: section_1, updated_at: now)
+    insert(:resource_access, section: section_2, updated_at: yesterday)
+    insert(:resource_access, section: section_3, updated_at: six_days_ago)
+
+    SectionResourceDepot.process_table_creation(section_1_id)
+    SectionResourceDepot.process_table_creation(section_2_id)
+    SectionResourceDepot.process_table_creation(section_3_id)
+    %{section_1_id: section_1_id, section_2_id: section_2_id, section_3_id: section_3_id}
   end
 
   defp get_section_resource_ids(revision_ids) do
