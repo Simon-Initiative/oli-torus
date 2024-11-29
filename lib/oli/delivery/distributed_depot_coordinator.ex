@@ -18,6 +18,9 @@ defmodule Oli.Delivery.DistributedDepotCoordinator do
   def clear(%DepotDesc{} = depot_desc, table_id),
     do: PubSub.broadcast(Oli.PubSub, topic(), {:clear, depot_desc, table_id})
 
+  def init_if_necessary(%DepotDesc{} = depot_desc, table_id, caller_module),
+    do: GenServer.call(__MODULE__, {:init_if_necessary, depot_desc, table_id, caller_module})
+
   def init(_) do
     PubSub.subscribe(Oli.PubSub, topic())
     {:ok, []}
@@ -40,6 +43,18 @@ defmodule Oli.Delivery.DistributedDepotCoordinator do
     end
 
     {:noreply, state}
+  end
+
+  def handle_call({:init_if_necessary, depot_desc, table_id, caller_module}, _from, state) do
+    result =
+      if Depot.table_exists?(depot_desc, table_id) do
+        {:ok, :exists}
+      else
+        caller_module.process_table_creation(table_id)
+        {:ok, :created}
+      end
+
+    {:reply, result, state}
   end
 
   defp topic,
