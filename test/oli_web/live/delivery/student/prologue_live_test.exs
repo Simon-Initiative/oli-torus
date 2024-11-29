@@ -676,12 +676,16 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       attempt = create_attempt(user, section, page_3)
 
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_3.resource_id)
+      learn_path =
+        Utils.learn_live_path(section.slug, target_resource_id: page_3.resource_id)
+
+      prologue_path =
+        Utils.prologue_live_path(section.slug, page_3.slug, request_path: learn_path)
 
       {:ok, view, _html} =
         live(
           conn,
-          Utils.prologue_live_path(section.slug, page_3.slug, request_path: request_path)
+          prologue_path
         )
 
       view
@@ -691,7 +695,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert_redirected(
         view,
         Utils.review_live_path(section.slug, page_3.slug, attempt.attempt_guid,
-          request_path: request_path
+          request_path: prologue_path
         )
       )
     end
@@ -708,17 +712,20 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       attempt = create_attempt(user, section, graded_adaptive_page_revision)
 
-      request_path =
+      learn_path =
         Utils.learn_live_path(section.slug,
           target_resource_id: graded_adaptive_page_revision.resource_id
+        )
+
+      prologue_path =
+        Utils.prologue_live_path(section.slug, graded_adaptive_page_revision.slug,
+          request_path: learn_path
         )
 
       {:ok, view, _html} =
         live(
           conn,
-          Utils.prologue_live_path(section.slug, graded_adaptive_page_revision.slug,
-            request_path: request_path
-          )
+          prologue_path
         )
 
       view
@@ -727,7 +734,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert_redirected(
         view,
-        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: request_path}}"
+        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: prologue_path}}"
       )
 
       # Note that the student will then be redirected to the adaptive chromeless review path in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless
