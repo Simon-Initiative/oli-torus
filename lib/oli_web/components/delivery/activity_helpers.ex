@@ -250,17 +250,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     """
   end
 
-  defp likert_dynamic_height(questions_count), do: 60 + 30 * questions_count
-
-  defp likert_dynamic_y_offset(first_choice_text),
-    do: 60 + (String.length(first_choice_text) - 7) * 5
-
-  defp likert_dynamic_legend_offset(last_choice_text),
-    do: 80 + (String.length(last_choice_text) - 7) * 5
-
-  defp likert_dynamic_x_scale(axis_values),
-    do: "[0, #{to_string(length(axis_values) + 1)}]"
-
   def rendered_activity(assigns) do
     ~H"""
     <RenderedActivity.render
@@ -621,4 +610,15 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          student_ids
        ),
        do: Core.count_student_attempts(activity_resource_id, section.id, student_ids)
+
+  defp likert_dynamic_height(questions_count), do: 60 + 30 * questions_count
+
+  defp likert_dynamic_y_offset(first_choice_text),
+    do: 60 + (String.length(first_choice_text) - 7) * 5
+
+  defp likert_dynamic_legend_offset(last_choice_text),
+    do: 80 + (String.length(last_choice_text) - 7) * 5
+
+  defp likert_dynamic_x_scale(axis_values),
+    do: "[0, #{to_string(length(axis_values) + 1)}]"
 end
