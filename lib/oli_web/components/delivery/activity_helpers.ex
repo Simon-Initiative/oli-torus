@@ -86,20 +86,29 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       VegaLite.from_json("""
       {
         "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "padding": {"left": 5, "top": 10, "right": 5, "bottom": 10},
+        "padding": {"left": 20, "top": 30, "right": 20, "bottom": 30},
         "description": "Likert Scale Ratings Distributions and Medians.",
         "datasets": {
           "medians": #{Jason.encode!(assigns.activity.datasets.medians)},
           "values": #{Jason.encode!(assigns.activity.datasets.values)}
         },
         "data": {"name": "medians"},
-        "title": {
-          "text": #{Jason.encode!(assigns.activity.datasets.title)},
-          "offset": 20,
-          "fontSize": 20
-        },
+        "title": {"text": #{Jason.encode!(assigns.activity.datasets.title)}, "offset": 20, "fontSize": 20},
         "width": 600,
         "height": #{60 + 30 * assigns.activity.datasets.questions_count},
+        "config": {
+          "axis": {
+            "labelColor": {"expr": "isDarkMode ? 'white' : 'black'"},
+            "titleColor": {"expr": "isDarkMode ? 'white' : 'black'"},
+            "gridColor": {"expr": "isDarkMode ? '#666' : '#e0e0e0'"}
+          },
+          "title": {"color": {"expr": "isDarkMode ? 'white' : 'black'"}},
+          "legend": {
+            "labelColor": {"expr": "isDarkMode ? 'red' : 'blue'"},
+            "titleColor": {"expr": "isDarkMode ? 'white' : 'black'"}
+          },
+          "text": {"color": {"expr": "isDarkMode ? 'white' : 'black'"}}
+        },
         "encoding": {
           "y": {
             "field": "question",
@@ -117,11 +126,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           "x": {
             "type": "quantitative",
             "scale": {"domain": [0, #{to_string(length(assigns.activity.datasets.axis_values) + 1)}]},
-            "axis": {
-              "grid": false,
-              "values": #{Jason.encode!(assigns.activity.datasets.axis_values)},
-              "title": null
-            }
+            "axis": {"grid": false, "values": #{Jason.encode!(assigns.activity.datasets.axis_values)}, "title": null}
           }
         },
         "view": {"stroke": null},
@@ -136,17 +141,27 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 "type": "quantitative",
                 "title": "Number of Ratings",
                 "legend": {
-                  "offset": #{75 + max(String.length(assigns.activity.datasets.last_choice_text) - 7, 0) * 5}
+                  "offset": #{75 + max(String.length(assigns.activity.datasets.last_choice_text) - 7, 0) * 5},
+                  "labelColor": {"expr": "isDarkMode ? 'white' : 'black'"},
+                  "type": null,
+                  "symbolFillColor": {"expr": "isDarkMode ? '#4CA6FF' : '#0165DA'"},
+                  "symbolStrokeColor": {"expr": "isDarkMode ? '#4CA6FF' : '#0165DA'"}
                 }
-              },
-              "color": {
-                "value": "#0165DA"
               },
               "tooltip": [
                 {"field": "choice", "type": "nominal", "title": "Rating"},
-                {"field": "value", "type": "quantitative", "aggregate": "count", "title": "# Answers"},
+                {
+                  "field": "value",
+                  "type": "quantitative",
+                  "aggregate": "count",
+                  "title": "# Answers"
+                },
                 {"field": "out_of", "type": "nominal", "title": "Out of"}
-              ]
+              ],
+              "color": {
+                "condition": {"test": "isDarkMode", "value": "#4CA6FF"},
+                "value": "#0165DA"
+              }
             }
           },
           {
@@ -154,9 +169,12 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             "encoding": {
               "x": {"field": "median"},
               "color": {
+                "condition": {"test": "isDarkMode", "value": "white"},
                 "value": "black"
               },
-              "tooltip": [{"field": "median", "type": "quantitative", "title": "Median"}]
+              "tooltip": [
+                {"field": "median", "type": "quantitative", "title": "Median"}
+              ]
             }
           },
           {
@@ -164,6 +182,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             "encoding": {
               "text": {"field": "lo"},
               "color": {
+                "condition": {"test": "isDarkMode", "value": "white"},
                 "value": "black"
               }
             }
@@ -173,6 +192,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             "encoding": {
               "text": {"field": "hi"},
               "color": {
+                "condition": {"test": "isDarkMode", "value": "white"},
                 "value": "black"
               }
             }
@@ -193,17 +213,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               "fontWeight": "bold"
             },
             "encoding": {
-              "y": {
-                "field": "question",
-                "type": "nominal",
-                "sort": null
-              },
-              "x": {
-                "value": 0
-              },
-              "text": {
-                "field": "maybe_truncated_question"
-              },
+              "y": {"field": "question", "type": "nominal", "sort": null},
+              "x": {"value": 0},
+              "text": {"field": "maybe_truncated_question"},
               "tooltip": {
                 "condition": {
                   "test": "length(datum.question) > 30",
@@ -218,10 +230,14 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       """)
       |> VegaLite.to_spec()
 
-    assigns = Map.merge(assigns, %{spec: spec})
+    spec =
+      %{spec: spec}
+      |> VegaLite.config(signals: [%{"name" => "isDarkMode", "value" => true}])
+
+    assigns = Map.merge(assigns, spec)
 
     ~H"""
-    <div class="mt-5 py-10 px-5 overflow-x-hidden w-full flex justify-center">
+    <div class="mt-5 overflow-x-hidden w-full flex justify-center">
       <%= OliWeb.Common.React.component(
         %{is_liveview: true},
         "Components.VegaLiteRenderer",
