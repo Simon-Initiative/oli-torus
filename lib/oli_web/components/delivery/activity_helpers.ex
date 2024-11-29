@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         "data": {"name": "medians"},
         "title": {"text": #{Jason.encode!(assigns.activity.datasets.title)}, "offset": 20, "fontSize": 20},
         "width": 600,
-        "height": #{60 + 30 * assigns.activity.datasets.questions_count},
+        "height": #{likert_dynamic_height(assigns.activity.datasets.questions_count)},
         "config": {
           "axis": {
             "labelColor": {"expr": "isDarkMode ? 'white' : 'black'"},
@@ -117,7 +117,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             "axis": {
               "domain": false,
               "labels": false,
-              "offset": #{50 + max(String.length(assigns.activity.datasets.first_choice_text) - 7, 0) * 5},
+              "offset": #{likert_dynamic_y_offset(assigns.activity.datasets.first_choice_text)},
               "ticks": false,
               "grid": true,
               "title": null
@@ -125,7 +125,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           },
           "x": {
             "type": "quantitative",
-            "scale": {"domain": [0, #{to_string(length(assigns.activity.datasets.axis_values) + 1)}]},
+            "scale": {"domain": #{likert_dynamic_x_scale(assigns.activity.datasets.axis_values)}},
             "axis": {"grid": false, "values": #{Jason.encode!(assigns.activity.datasets.axis_values)}, "title": null}
           }
         },
@@ -141,7 +141,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
                 "type": "quantitative",
                 "title": "Number of Ratings",
                 "legend": {
-                  "offset": #{75 + max(String.length(assigns.activity.datasets.last_choice_text) - 7, 0) * 5},
+                  "offset": #{likert_dynamic_legend_offset(assigns.activity.datasets.last_choice_text)},
                   "labelColor": {"expr": "isDarkMode ? 'white' : 'black'"},
                   "type": null,
                   "symbolFillColor": {"expr": "isDarkMode ? '#4CA6FF' : '#0165DA'"},
@@ -178,7 +178,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             }
           },
           {
-            "mark": {"type": "text", "x": -5, "align": "right"},
+            "mark": {"type": "text", "x": -10, "align": "right"},
             "encoding": {
               "text": {"field": "lo"},
               "color": {
@@ -188,7 +188,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             }
           },
           {
-            "mark": {"type": "text", "x": 605, "align": "left"},
+            "mark": {"type": "text", "x": 610, "align": "left"},
             "encoding": {
               "text": {"field": "hi"},
               "color": {
@@ -208,7 +208,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
               "type": "text",
               "align": "right",
               "baseline": "middle",
-              "dx": #{-50 - max(String.length(assigns.activity.datasets.first_choice_text) - 7, 0) * 5},
+              "dx": #{-likert_dynamic_y_offset(assigns.activity.datasets.first_choice_text)},
               "fontSize": 13,
               "fontWeight": "bold"
             },
@@ -249,6 +249,17 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     </div>
     """
   end
+
+  defp likert_dynamic_height(questions_count), do: 60 + 30 * questions_count
+
+  defp likert_dynamic_y_offset(first_choice_text),
+    do: 60 + (String.length(first_choice_text) - 7) * 5
+
+  defp likert_dynamic_legend_offset(last_choice_text),
+    do: 80 + (String.length(last_choice_text) - 7) * 5
+
+  defp likert_dynamic_x_scale(axis_values),
+    do: "[0, #{to_string(length(axis_values) + 1)}]"
 
   def rendered_activity(assigns) do
     ~H"""
