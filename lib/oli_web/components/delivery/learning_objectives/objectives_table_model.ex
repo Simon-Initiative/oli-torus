@@ -28,6 +28,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       %ColumnSpec{
         name: :student_proficiency_distribution,
         label: "PROFICIENCY DISTRIBUTION",
+        sortable: false,
         render_fn: &custom_render/3
       }
     ]
@@ -162,7 +163,13 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
       data: %{values: data},
       encoding: %{
         x: %{aggregate: "sum", field: "count"},
-        color: %{field: "proficiency"}
+        color: %{
+          field: "proficiency",
+          scale: %{
+            domain: ["Not enough data", "Low", "Medium", "High"],
+            range: ["#C2C2C2", "#E6D4FA", "#B37CEA", "#7B19C1"]
+          }
+        }
       },
       config: %{
         axis: %{
