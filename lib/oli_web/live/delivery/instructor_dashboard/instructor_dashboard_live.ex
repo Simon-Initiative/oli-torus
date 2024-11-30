@@ -543,12 +543,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     <div class="container mx-auto">
       <.live_component
-        id="objectives_table"
+        id="objectives_table_#{@section_slug}"
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
         view={@view}
         objectives_tab={@objectives_tab}
-        section={@section}
+        section_slug={@section_slug}
+        v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
       />
     </div>
