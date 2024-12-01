@@ -38,6 +38,7 @@ export type EditorsProps = {
   onRegisterNewTag: (o: Tag) => void;
   onEditActivity: (id: string, update: EditorUpdate) => void;
   onPostUndoable: (id: string, undoable: Undoable) => void;
+  onDuplicate: (context: ActivityEditContext) => void;
 };
 
 // The list of editors
@@ -64,6 +65,7 @@ export const Editors = (props: EditorsProps) => {
     onPostUndoable,
     onRegisterNewObjective,
     onRegisterNewTag,
+    onDuplicate,
   } = props;
 
   const allObjectives = props.objectives.toArray();
@@ -102,6 +104,7 @@ export const Editors = (props: EditorsProps) => {
       onRegisterNewTag,
       onAddItem,
       onRemove,
+      onDuplicate,
     });
 
     return (

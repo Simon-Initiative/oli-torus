@@ -39,6 +39,7 @@ export const SurveyEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onDuplicate,
 }: SurveyEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
     const updatedContent = {
@@ -93,6 +94,7 @@ export const SurveyEditor = ({
               onRegisterNewObjective,
               onRegisterNewTag,
               onAddItem,
+              onDuplicate,
             })}
           </div>
         );
