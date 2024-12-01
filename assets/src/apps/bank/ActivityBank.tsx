@@ -467,7 +467,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     }
   }
 
-  duplicateActivity(context: ActivityEditContext) {
+  onDuplicateActivity(context: ActivityEditContext) {
     const editorDesc = Object.values(this.props.editorMap).find(
       (ed: EditorDesc) => ed.slug === context.typeSlug,
     );
@@ -490,9 +490,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         const thisKey = key;
         this.onDelete(thisKey);
       };
-      const onDuplicateActivity = () => {
-        this.duplicateActivity(context);
-      };
+      const onDuplicate = () => this.onDuplicateActivity(context);
 
       const CustomToolbar = (_props: any) => (
         <React.Fragment>
@@ -516,7 +514,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             banked={true}
             canRemove={true}
             onRemove={onDelete}
-            onDuplicate={onDuplicateActivity}
+            onDuplicate={onDuplicate}
             customToolbarItems={CustomToolbar}
             contentBreaksExist={false}
             {...context}
