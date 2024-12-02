@@ -25,6 +25,8 @@ defmodule OliWeb.UserRegistrationLive do
             trigger_submit={@trigger_submit}
             check_errors={@check_errors}
             recaptcha_error={@recaptcha_error}
+            from_invitation_link?={@from_invitation_link?}
+            section={@section}
           />
         </div>
       </div>
@@ -44,11 +46,21 @@ defmodule OliWeb.UserRegistrationLive do
         trigger_submit: false,
         check_errors: false,
         recaptcha_error: false,
-        authentication_providers: authentication_providers
+        authentication_providers: authentication_providers,
+        from_invitation_link?: false,
+        section: nil
       )
       |> assign_form(changeset)
 
     {:ok, socket, temporary_assigns: [form: nil]}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_params(unsigned_params, _uri, socket) do
+    from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
+    section = unsigned_params["section"]
+
+    {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
   end
 
   def handle_event(

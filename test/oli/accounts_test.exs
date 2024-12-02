@@ -500,11 +500,11 @@ defmodule Oli.AccountsTest do
              ]
     end
 
-    test "bulk_invite_users/2" do
+    test "bulk_create_invited_users/2" do
       inviter_author = insert(:author)
       invited_users = ["non_existant_user_1@test.com", "non_existant_user_2@test.com"]
 
-      Accounts.bulk_invite_users(
+      Accounts.bulk_create_invited_users(
         ["non_existant_user_1@test.com", "non_existant_user_2@test.com"],
         inviter_author
       )

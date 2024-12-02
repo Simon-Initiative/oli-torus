@@ -10,6 +10,8 @@ defmodule Oli.Accounts.User do
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
+
+    field :invitation_token, :string
     field :invitation_accepted_at, :utc_datetime
 
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
@@ -488,6 +490,29 @@ defmodule Oli.Accounts.User do
 
   defp is_age_verification_enabled(_changeset),
     do: Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"
+
+  @doc """
+  Invites user.
+
+  A unique `:invitation_token` will be generated, and `invited_by` association
+  will be set. Only the user id will be set, and the persisted user won't have
+  any password for authentication.
+  """
+  def invite_changeset(user, invited_by, attrs) do
+    # MER-4068 TODO
+    throw("Not implemented")
+  end
+
+  @doc """
+  Accepts an invitation.
+
+  `:invitation_accepted_at` will be updated. The password can be set, and the
+  user id updated.
+  """
+  def accept_invitation_changeset(user, attrs) do
+    # MER-4068 TODO
+    throw("Not implemented")
+  end
 end
 
 # define implementations required for LTI 1.3 library integration

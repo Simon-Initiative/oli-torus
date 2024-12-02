@@ -3,24 +3,6 @@ defmodule Oli.Email do
     view: OliWeb.EmailView,
     layout: {OliWeb.LayoutView, :email}
 
-  def invitation_email(recipient_email, :enrollment_invitation, assigns) do
-    base_email()
-    |> to(recipient_email)
-    |> subject(
-      "You were invited as #{if assigns.role == "instructor", do: "an instructor", else: "a student"} to \"#{assigns.section_title}\""
-    )
-    |> render_body(:enrollment_invitation, assigns)
-    |> html_text_body()
-  end
-
-  def invitation_email(recipient_email, view, assigns) do
-    base_email()
-    |> to(recipient_email)
-    |> subject("Collaborator Invitation")
-    |> render_body(view, assigns)
-    |> html_text_body()
-  end
-
   def help_desk_email(from_email, help_desk_email, subject, view, assigns) do
     base_email()
     |> reply_to(from_email)

@@ -65,6 +65,10 @@ defmodule OliWeb.Components.Auth do
             </div>
           </div>
 
+          <%= if @from_invitation_link? do %>
+            <%= hidden_input(f, :from_invitation_link?, value: @from_invitation_link?) %>
+          <% end %>
+
           <%= if @section do %>
             <%= hidden_input(f, :section, value: @section) %>
           <% end %>
@@ -84,7 +88,7 @@ defmodule OliWeb.Components.Auth do
           <.button
             :if={@from_invitation_link? || @registration_link}
             variant={:link}
-            href={@registration_link || ~p"/users/register"}
+            href={(@registration_link || ~p"/users/register") <> "?#{maybe_params([section: @section, from_invitation_link?: @from_invitation_link?])}"}
             class="!text-white"
           >
             Create an account
@@ -98,6 +102,8 @@ defmodule OliWeb.Components.Auth do
   attr :title, :string, default: "Create Account"
   attr :form, :any, required: true
   attr :action, :string, required: true
+  attr :section, :string, default: nil
+  attr :from_invitation_link?, :boolean, default: false
   attr :class, :string, default: ""
   attr :authentication_providers, :list, required: true
   attr :auth_provider_path_fn, :any, required: true
@@ -209,6 +215,14 @@ defmodule OliWeb.Components.Auth do
             <%= hidden_input(f, :link_account, value: @link_account) %>
           <% end %>
 
+          <%= if @from_invitation_link? do %>
+            <%= hidden_input(f, :from_invitation_link?, value: @from_invitation_link?) %>
+          <% end %>
+
+          <%= if @section do %>
+            <%= hidden_input(f, :section, value: @section) %>
+          <% end %>
+
           <.button
             phx-disable-with="Creating account..."
             class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
@@ -221,7 +235,14 @@ defmodule OliWeb.Components.Auth do
             class="mt-8 mb-3 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10"
           />
 
-          <.button variant={:link} href={@log_in_link} class="!text-white">
+          <.button
+            variant={:link}
+            href={@log_in_link <> "?#{maybe_params([
+            section: @section,
+            from_invitation_link?: @from_invitation_link?
+          ])}"}
+            class="!text-white"
+          >
             Sign in to existing account
           </.button>
         </div>
@@ -431,5 +452,15 @@ defmodule OliWeb.Components.Auth do
       <%= render_slot(@inner_block) %>
     </.link>
     """
+  end
+
+  defp maybe_params(params) do
+    Enum.reduce(params, [], fn {k, v}, acc ->
+      if v do
+        [{k, v} | acc]
+      else
+        acc
+      end
+    end)
   end
 end

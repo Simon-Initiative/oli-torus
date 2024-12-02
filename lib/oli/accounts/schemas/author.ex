@@ -12,6 +12,8 @@ defmodule Oli.Accounts.Author do
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
+
+    field :invitation_token, :string
     field :invitation_accepted_at, :utc_datetime
 
     field :name, :string
@@ -329,5 +331,28 @@ defmodule Oli.Accounts.Author do
       _ ->
         changeset
     end
+  end
+
+  @doc """
+  Invites an author.
+
+  A unique `:invitation_token` will be generated, and `invited_by` association
+  will be set. Only the author id will be set, and the persisted author won't have
+  any password for authentication.
+  """
+  def invite_changeset(author, invited_by, attrs) do
+    # MER-4068 TODO
+    throw("Not implemented")
+  end
+
+  @doc """
+  Accepts an invitation.
+
+  `:invitation_accepted_at` will be updated. The password can be set, and the
+  user id updated.
+  """
+  def accept_invitation_changeset(author, attrs) do
+    # MER-4068 TODO
+    throw("Not implemented")
   end
 end
