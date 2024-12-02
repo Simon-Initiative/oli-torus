@@ -82,11 +82,6 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
-              <a href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :admin)}>
-                Browse all Collaborative Spaces
-              </a>
-            </li>
-            <li>
               <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}>Ingest Project</a>
             </li>
             <li><a href={Routes.ingest_path(OliWeb.Endpoint, :index)}>V2 Ingest Project</a></li>
