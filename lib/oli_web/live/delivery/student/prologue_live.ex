@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   use OliWeb, :live_view
 
   import OliWeb.Delivery.Student.Utils,
-    only: [page_header: 1]
+    only: [page_header: 1, page_terms: 1]
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
@@ -97,8 +97,9 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           index={@current_page["index"]}
           container_label={Utils.get_container_label(@current_page["id"], @section)}
         />
-        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mb-10">
+        <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
+        <.page_terms effective_settings={@page_context.effective_settings} ctx={@ctx} />
         <.attempts_summary
           page_context={@page_context}
           attempt_message={@attempt_message}
