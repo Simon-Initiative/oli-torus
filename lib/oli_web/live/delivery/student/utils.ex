@@ -186,13 +186,13 @@ defmodule OliWeb.Delivery.Student.Utils do
         TERMS
       </span>
       <ul class="list-disc ml-6">
-        <li>
+        <li id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil}>
+        <li :if={@effective_settings.end_date != nil} id="page_submission_terms">
           <.page_submission_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil}>
+        <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
         </li>
       </ul>
