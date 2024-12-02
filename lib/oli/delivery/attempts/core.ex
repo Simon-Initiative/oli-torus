@@ -660,6 +660,93 @@ defmodule Oli.Delivery.Attempts.Core do
     {:ok, results}
   end
 
+  @doc """
+  Returns a list of activity attempts for a given section and activity resource ids.
+  """
+  @spec get_activity_attempts_by(integer(), [integer()]) :: [map()]
+  def get_activity_attempts_by(section_id, activity_resource_ids) do
+    from(activity_attempt in ActivityAttempt,
+      left_join: resource_attempt in assoc(activity_attempt, :resource_attempt),
+      left_join: resource_access in assoc(resource_attempt, :resource_access),
+      left_join: user in assoc(resource_access, :user),
+      left_join: activity_revision in assoc(activity_attempt, :revision),
+      left_join: resource_revision in assoc(resource_attempt, :revision),
+      where:
+        resource_access.section_id == ^section_id and
+          activity_revision.resource_id in ^activity_resource_ids,
+      select: activity_attempt,
+      select_merge: %{
+        activity_type_id: activity_revision.activity_type_id,
+        activity_title: activity_revision.title,
+        page_title: resource_revision.title,
+        page_id: resource_revision.resource_id,
+        resource_attempt_number: resource_attempt.attempt_number,
+        graded: resource_revision.graded,
+        user: user,
+        revision: activity_revision,
+        resource_attempt_guid: resource_attempt.attempt_guid,
+        resource_access_id: resource_access.id
+      }
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Fetches the activities for a given assessment and section attempted by a list of students
+
+  ## Parameters
+    * `assessment_resource_id` - the resource id of the assessment
+    * `section_id` - the section id
+    * `student_ids` - the list of student ids
+    * `filter_by_survey` - an optional boolean flag to filter by survey activities
+
+  iex> get_activities(1, 2, [3, 4], false)
+  [
+    %{
+      id: 1,
+      resource_id: 1,
+      title: "Activity 1"
+    },
+    %{
+      id: 2,
+      resource_id: 2,
+      title: "Activity 2"
+    }
+  ]
+  """
+  @spec get_evaluated_activities_for(integer(), integer(), [integer()], boolean()) :: [map()]
+  def get_evaluated_activities_for(
+        assessment_resource_id,
+        section_id,
+        student_ids,
+        filter_by_survey \\ false
+      ) do
+    filter_by_survey? =
+      if filter_by_survey do
+        dynamic([aa, _], not is_nil(aa.survey_id))
+      else
+        dynamic([aa, _], is_nil(aa.survey_id))
+      end
+
+    from(aa in ActivityAttempt,
+      join: res_attempt in ResourceAttempt,
+      on: aa.resource_attempt_id == res_attempt.id,
+      where: aa.lifecycle_state == :evaluated,
+      join: res_access in ResourceAccess,
+      on: res_attempt.resource_access_id == res_access.id,
+      where:
+        res_access.section_id == ^section_id and
+          res_access.resource_id == ^assessment_resource_id and
+          res_access.user_id in ^student_ids,
+      where: ^filter_by_survey?,
+      join: rev in Revision,
+      on: aa.revision_id == rev.id,
+      group_by: [rev.resource_id, rev.id],
+      select: map(rev, [:id, :resource_id, :title])
+    )
+    |> Repo.all()
+  end
+
   def get_all_activity_attempts(resource_attempt_id) do
     Repo.all(
       from(activity_attempt in ActivityAttempt,
@@ -918,5 +1005,21 @@ defmodule Oli.Delivery.Attempts.Core do
         where: res_acc.section_id == ^target_section_id and res_acc.user_id == ^target_user_id
       )
     )
+  end
+
+  @doc """
+  Counts the number of attempts made by a list of students for a given activity in a given section.
+  """
+  @spec count_student_attempts(integer(), %Section{}, [integer()]) :: integer() | nil
+  def count_student_attempts(activity_resource_id, section_id, student_ids) do
+    from(ra in ResourceAttempt,
+      join: access in ResourceAccess,
+      on: access.id == ra.resource_access_id,
+      where:
+        ra.lifecycle_state == :evaluated and access.section_id == ^section_id and
+          access.resource_id == ^activity_resource_id and access.user_id in ^student_ids,
+      select: count(ra.id)
+    )
+    |> Repo.one()
   end
 end
