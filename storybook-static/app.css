@@ -14492,6 +14492,10 @@ Not supports in Firefox and IE */
   color: rgb(115 115 115 / var(--tw-text-opacity));
 }
 
+.group:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
 .group:hover .group-hover\:opacity-70 {
   opacity: 0.7;
 }
