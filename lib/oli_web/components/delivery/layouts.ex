@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Common.SessionContext
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
@@ -521,6 +522,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
+        :if={section_has_assignments?(@section.id)}
         id="assignments_nav_link"
         href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
         is_active={@active_tab == :assignments}
@@ -1120,4 +1122,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def show_collab_space?(nil), do: false
   def show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   def show_collab_space?(_), do: true
+
+  defp section_has_assignments?(section_id) do
+    section_id |> SectionResourceDepot.graded_pages(hidden: false) |> Enum.any?()
+  end
 end
