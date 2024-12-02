@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def page_header(assigns) do
     ~H"""
-    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full mb-16">
+    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full">
       <div class="flex-col justify-start items-start gap-3 flex w-full">
         <div class="self-stretch flex-col justify-start items-start flex">
           <div class="self-stretch justify-between items-center inline-flex">
