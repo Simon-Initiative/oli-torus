@@ -221,8 +221,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns)
-       when is_nil(end_date) do
+  defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
     ~H"""
     <div>
       <span>
@@ -265,7 +264,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         Your work will automatically be submitted at
       </span>
       <span class="font-bold">
-        <%= Timex.shift(@effective_settings.end_date, minutes: grace_period)
+        <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
         |> FormatDateTime.to_formatted_datetime(
           @ctx,
           "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
@@ -332,7 +331,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           Your work will automatically be submitted at
         </span>
         <span class="font-bold">
-          <%= Timex.shift(@effective_settings.end_date, minutes: grace_period)
+          <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
           |> FormatDateTime.to_formatted_datetime(
             @ctx,
             "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
