@@ -18,6 +18,7 @@ import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
 import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
+import { createCopy } from 'apps/bank/CreateActivity';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -522,6 +523,25 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       }
     };
 
+    const onDuplicateActivity = (origContext: ActivityEditContext) => {
+      const editorDesc = props.editorMap[origContext.typeSlug];
+      createCopy(props.projectSlug, editorDesc, origContext, 'embedded', (newContext, atSlug) => {
+        const resourceContent: ActivityReference = {
+          type: 'activity-reference',
+          id: guid(),
+          activitySlug: newContext.activitySlug,
+          children: [],
+        };
+        // find index of original activity by slug
+        const index = this.state.content.findIndex(
+          (c) =>
+            c.type === 'activity-reference' && (c as ActivityReference).activitySlug === atSlug,
+        );
+        // insert at original's position
+        onAddItem(resourceContent, index, newContext);
+      });
+    };
+
     const onRegisterNewObjective = (objective: Objective) => {
       this.setState({
         allObjectives: this.state.allObjectives.push(objective),
@@ -625,6 +645,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       content={this.state.content}
                       onAddItem={onAddItem}
                       resourceContext={props}
+                      onDuplicate={onDuplicateActivity}
                     />
                   </AlternativesContextProvider>
                 </div>

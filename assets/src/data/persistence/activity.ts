@@ -163,6 +163,24 @@ export function create(
   return makeRequest<Created>(params);
 }
 
+export function createFull(
+  project: ProjectSlug,
+  activityTypeSlug: ActivityTypeSlug,
+  model: ActivityModelSchema,
+  title: string,
+  objective_map: ObjectiveMap,
+  tags: ResourceId[],
+  scope = 'embedded',
+) {
+  const params = {
+    method: 'POST',
+    body: JSON.stringify({ model, title, objectives: [], objective_map, tags, scope }),
+    url: `/project/${project}/activity/${activityTypeSlug}`,
+  };
+
+  return makeRequest<Created>(params);
+}
+
 export function deleteActivity(project: ProjectSlug, resourceId: ResourceId) {
   const params = {
     method: 'DELETE',

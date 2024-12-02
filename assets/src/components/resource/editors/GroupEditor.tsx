@@ -32,6 +32,7 @@ export const GroupEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onDuplicate,
 }: GroupEditorProps) => {
   const onEditChild = (child: ResourceContent) => {
     const updatedContent = {
@@ -82,6 +83,7 @@ export const GroupEditor = ({
               onRegisterNewObjective,
               onRegisterNewTag,
               onAddItem,
+              onDuplicate,
             })}
           </div>
         );

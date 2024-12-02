@@ -25,6 +25,7 @@ export const ActivityEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onDuplicate,
 }: ActivityEditorProps) => {
   const activity = activities.get(contentItem.activitySlug);
 
@@ -61,6 +62,7 @@ export const ActivityEditor = ({
           onPostUndoable={(undoable: Undoable) => onPostUndoable(activity.activitySlug, undoable)}
           onRegisterNewObjective={onRegisterNewObjective}
           onRegisterNewTag={onRegisterNewTag}
+          onDuplicate={() => onDuplicate(activity)}
         />
       </ActivityBlock>
     );
