@@ -260,7 +260,10 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
                 @section_slug,
                 @page_revision_slug,
                 @attempt.attempt_guid,
-                request_path: @request_path
+                request_path:
+                  Utils.prologue_live_path(@section_slug, @page_revision_slug,
+                    request_path: @request_path
+                  )
               )
             }
             role="review_attempt_link"

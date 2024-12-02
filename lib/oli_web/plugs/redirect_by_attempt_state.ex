@@ -184,6 +184,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     else
       conn
       |> halt()
+      |> put_session(:request_path, conn.params["request_path"])
       |> assign(:already_been_redirected?, true)
       |> Phoenix.Controller.redirect(
         to:
