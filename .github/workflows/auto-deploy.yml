@@ -7,6 +7,23 @@ on:
     types: [completed]
 
 jobs:
+  debug-auto-deploy:
+    name: Debug Auto Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ vars.AUTO_DEPLOY_TARGET }}
+      url: https://${{ vars.AUTO_DEPLOY_TARGET }}
+
+    steps:
+      - name: Debug
+        id: info
+        run: |
+          echo "${{ vars.AUTO_DEPLOY_TARGET }}"
+          echo "${{ vars.AUTO_DEPLOY_ENABLED }}"
+          echo "${{ vars.AUTO_DEPLOY_REF }}"
+          echo "${{ github.event.workflow_run.conclusion }}"
+          echo "${{ github.event.workflow_run.head_branch }}"
+
   auto-deploy:
     name: Auto Deploy
     if: vars.AUTO_DEPLOY_ENABLED == 'TRUE' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == vars.AUTO_DEPLOY_REF
