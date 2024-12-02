@@ -379,14 +379,15 @@ defmodule OliWeb.Delivery.Student.Utils do
   defp page_scoring_term(1 = _scoring_strategy_id),
     do: "Your overall score for this assignment will be the average score of your attempts."
 
-  defp page_scoring_term(2 = _scoring_strategy_id),
-    do: "Your overall score for this assignment will be the score of your best attempt."
-
   defp page_scoring_term(3 = _scoring_strategy_id),
     do: "Your overall score for this assignment will be the score of your last attempt."
 
   defp page_scoring_term(4 = _scoring_strategy_id),
     do: "Your overall score for this assignment will be the total sum of your attempts."
+
+  # scoring strategy 2 is the default scoring strategy
+  defp page_scoring_term(_scoring_strategy_id),
+    do: "Your overall score for this assignment will be the score of your best attempt."
 
   @doc """
   Returns the scheduling type label for the container.
