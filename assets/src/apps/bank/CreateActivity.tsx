@@ -3,7 +3,6 @@ import { invokeCreationFunc } from 'components/activities/creation';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import * as Persistence from 'data/persistence/activity';
-import { clone } from 'utils/common';
 
 export type CreateActivityProps = {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -47,40 +46,6 @@ const create = (
       };
 
       onAdded(activity);
-    })
-    .catch((err) => {
-      // tslint:disable-next-line
-      console.error(err);
-    });
-};
-
-export const createCopy = (
-  projectSlug: string,
-  editorDesc: EditorDesc,
-  context: ActivityEditContext,
-  scope: 'banked' | 'embedded',
-  onAdded: (context: ActivityEditContext, atSlug?: string | null) => void,
-) => {
-  const model = clone(context.model);
-  const title = context.title + ' (Copy)';
-  const objectives = context.objectives;
-  const tags = context.tags;
-  Persistence.createFull(projectSlug, editorDesc.slug, model, title, objectives, tags, scope)
-    .then((result: Persistence.Created) => {
-      const activity: ActivityEditContext = {
-        authoringElement: editorDesc.authoringElement as string,
-        description: editorDesc.description,
-        friendlyName: editorDesc.friendlyName,
-        typeSlug: editorDesc.slug,
-        activitySlug: result.revisionSlug,
-        activityId: result.resourceId,
-        title,
-        model,
-        objectives,
-        tags,
-        variables: editorDesc.variables,
-      };
-      onAdded(activity, context.activitySlug);
     })
     .catch((err) => {
       // tslint:disable-next-line
