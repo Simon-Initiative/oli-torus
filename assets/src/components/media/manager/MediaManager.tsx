@@ -128,6 +128,7 @@ export interface MediaManagerState {
   filteredMimeTypes: string[] | undefined;
   uploading: boolean;
   duplicateWarning: string[];
+  accessibilityWarning: string[];
   showConfirmDelete: boolean;
 }
 
@@ -167,6 +168,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       filteredMimeTypes: props.mimeFilter,
       uploading: false,
       duplicateWarning: [],
+      accessibilityWarning: [],
       showConfirmDelete: false,
     };
 
@@ -320,6 +322,11 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
         const duplicates = result.filter((r: any) => r.duplicate).map((r: any) => r.filename);
         if (duplicates.length > 0) {
           this.setState({ duplicateWarning: duplicates });
+        }
+
+        const accessibility = result.filter((r: any) => r.accessibility).map((r: any) => r.accessibility);
+        if (accessibility.length > 0) {
+          this.setState({ accessibilityWarning: accessibility });
         }
 
         onResetMedia();
@@ -875,6 +882,16 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               onDismiss={() => this.setState({ duplicateWarning: [] })}
             />
           ))
+        },
+        {
+          // Show a toast for each duplicate file
+          this.state.accessibilityWarning.map((file, idx) => (
+            <AccessibilityToast
+              key={idx}
+              filename={file}
+              onDismiss={() => this.setState({ accessibilityWarning: [] })}
+            />
+          ))
         }
       </div>
     );
@@ -897,6 +914,25 @@ export const DuplicateToast: React.FC<{ filename: string; onDismiss: () => void 
       <strong className="me-auto">Duplicate File</strong>
       <p>{filename}</p>
       <p>This file was previously uploaded and has been selected for you.</p>
+    </div>
+  );
+};
+
+export const AccessibilityToast: React.FC<{ filename: string; onDismiss: () => void }> = ({
+  filename,
+  onDismiss,
+}) => {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 10000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div
+      className="bg-body-50 text-body-800 w-64 fixed bottom-4 left-4 p-4 border-gray-800 border-1 rounded"
+      onClick={onDismiss}
+    >
+      <strong className="me-auto">Accessibility Warning</strong>
+      <p>{filename}</p>
     </div>
   );
 };

@@ -6,6 +6,11 @@ defmodule OliWeb.Api.MediaController do
   basis to create (upload) and access media items.
   """
 
+  @image_size {224, 224}
+  @mean [0.485, 0.456, 0.406]
+  @std [0.229, 0.224, 0.225]
+
+
   alias OpenApiSpex.Schema
 
   alias Oli.Authoring.MediaLibrary.{MediaItem, ItemOptions}
@@ -246,7 +251,10 @@ defmodule OliWeb.Api.MediaController do
       {:ok, contents} ->
         case MediaLibrary.add(project_slug, name, contents) do
           {:ok, %MediaItem{} = item} ->
-            json(conn, %{type: "success", url: item.url, duplicate: false, filename: name})
+
+            accessibility = perform_accessibility_check(contents)
+
+            json(conn, %{type: "success", accessibility: accessibility, url: item.url, duplicate: false, filename: name})
 
           {:duplicate, %MediaItem{} = item} ->
             json(conn, %{
@@ -320,4 +328,42 @@ defmodule OliWeb.Api.MediaController do
         "An unexpected error has occurred. Please try again or contact support."
     end
   end
+
+  def image_from_content(content) do
+    image = Evision.imdecode(content, Evision.Constant.cv_IMREAD_COLOR())
+    resized_image = Evision.resize(image, @image_size)
+
+    # Convert the image to Nx tensor and normalize it
+    Nx.from_binary(Evision.Mat.to_binary(resized_image), {:u, 8})
+    |> Nx.reshape({@image_size |> elem(0), @image_size |> elem(1), 3})
+    |> Nx.divide(255.0)  # Scale pixel values from [0, 255] to [0, 1]
+  end
+
+  # Check to see if this file is perhaps a screenshot of source code
+  # or a screenshot of a table.  If so, we flag it as an accessiblity issue.
+  defp perform_accessibility_check(contents) do
+
+    inputs = %{"pixel_values" => image_from_content(contents) |> Nx.new_axis(0)}
+
+    batch = Nx.Batch.concatenate([inputs])
+    result = Nx.Serving.batched_run(ImageClassifier, batch)
+
+    softmax = fn t ->
+      exp_tensor = Nx.exp(t)
+      sum_exp = Nx.sum(exp_tensor, axes: [-1], keep_axes: true)
+      Nx.divide(exp_tensor, sum_exp)
+    end
+
+    # Apply softmax to logits
+    probabilities = softmax.(result.logits) |> Nx.to_flat_list()
+
+    accessibility = case Enum.zip(probabilities, Oli.ImageClassifier.labels())
+    |> Enum.sort(fn {a, _}, {b, _} -> a > b end)
+    |> hd() do
+      {_, "other"} -> nil
+      {_, "code"} -> "This image appears to be a screenshot of source code. Not good for accessibiilty!"
+      {_, "table"} -> "This image appears to be a screenshot of a table. Not good for accessibiilty!."
+    end
+  end
+
 end

@@ -5,6 +5,18 @@ defmodule Oli.Application do
 
   use Application
 
+  def serving() do
+    mistral = {:local, "/home/toranb/lit/out/lora_merged/Mistral-7B-v0.1"}
+    {:ok, spec} = Bumblebee.load_spec(mistral, module: Bumblebee.Text.Mistral, architecture: :for_causal_language_modeling)
+
+    {:ok, model_info} = Bumblebee.load_model(mistral, spec: spec, backend: {EXLA.Backend, client: :host})
+    {:ok, tokenizer} = Bumblebee.load_tokenizer(mistral, module: Bumblebee.Text.LlamaTokenizer)
+    {:ok, generation_config} = Bumblebee.load_generation_config(mistral, spec_module: Bumblebee.Text.Mistral)
+
+    generation_config = Bumblebee.configure(generation_config, max_new_tokens: 500)
+    Bumblebee.Text.generation(model_info, tokenizer, generation_config, defn_options: [compiler: EXLA])
+  end
+
   def start(_type, _args) do
     # List all child processes to be supervised
     children =
@@ -15,6 +27,8 @@ defmodule Oli.Application do
 
         # Start Phoenix PubSub
         {Phoenix.PubSub, name: Oli.PubSub},
+
+        {Nx.Serving, serving: Oli.ImageClassifier.serving(), name: ImageClassifier},
 
         # Start the Ecto repository
         Oli.Repo,
