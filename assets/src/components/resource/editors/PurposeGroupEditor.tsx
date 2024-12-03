@@ -50,6 +50,7 @@ export const PurposeGroupEditor = ({
   onPostUndoable,
   onRegisterNewObjective,
   onRegisterNewTag,
+  onDuplicate,
 }: PurposeGroupEditorProps) => {
   return (
     <PurposeGroupBlock
@@ -84,6 +85,7 @@ export const PurposeGroupEditor = ({
         onPostUndoable={onPostUndoable}
         onRegisterNewObjective={onRegisterNewObjective}
         onRegisterNewTag={onRegisterNewTag}
+        onDuplicate={onDuplicate}
       />
     </PurposeGroupBlock>
   );

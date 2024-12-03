@@ -65,6 +65,9 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
         "oli_multiple_choice" ->
           %{choices: generate_choices(activity_revision.id)}
 
+        "oli_likert" ->
+          Oli.TestHelpers.likert_activity_content()
+
         _ ->
           nil
       end
@@ -419,92 +422,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
     }
   end
 
-  defp generate_likert_content(title) do
-    %{
-      "stem" => %{
-        "id" => "2028833010",
-        "content" => [
-          %{"id" => "280825708", "type" => "p", "children" => [%{"text" => title}]}
-        ]
-      },
-      "choices" => generate_choices("2028833010"),
-      "authoring" => %{
-        "parts" => [
-          %{
-            "id" => "1",
-            "hints" => [
-              %{
-                "id" => "540968727",
-                "content" => [
-                  %{"id" => "2256338253", "type" => "p", "children" => [%{"text" => ""}]}
-                ]
-              },
-              %{
-                "id" => "2627194758",
-                "content" => [
-                  %{"id" => "3013119256", "type" => "p", "children" => [%{"text" => ""}]}
-                ]
-              },
-              %{
-                "id" => "2413327578",
-                "content" => [
-                  %{"id" => "3742562774", "type" => "p", "children" => [%{"text" => ""}]}
-                ]
-              }
-            ],
-            "outOf" => nil,
-            "responses" => [
-              %{
-                "id" => "4122423546",
-                "rule" => "(!(input like {1968053412})) && (input like {1436663133})",
-                "score" => 1,
-                "feedback" => %{
-                  "id" => "685174561",
-                  "content" => [
-                    %{
-                      "id" => "2621700133",
-                      "type" => "p",
-                      "children" => [%{"text" => "Correct"}]
-                    }
-                  ]
-                }
-              },
-              %{
-                "id" => "3738563441",
-                "rule" => "input like {.*}",
-                "score" => 0,
-                "feedback" => %{
-                  "id" => "3796426513",
-                  "content" => [
-                    %{
-                      "id" => "1605260471",
-                      "type" => "p",
-                      "children" => [%{"text" => "Incorrect"}]
-                    }
-                  ]
-                }
-              }
-            ],
-            "gradingApproach" => "automatic",
-            "scoringStrategy" => "average"
-          }
-        ],
-        "correct" => [["1436663133"], "4122423546"],
-        "version" => 2,
-        "targeted" => [],
-        "previewText" => "",
-        "transformations" => [
-          %{
-            "id" => "1349799137",
-            "path" => "choices",
-            "operation" => "shuffle",
-            "firstAttemptOnly" => true
-          }
-        ]
-      }
-    }
-  end
-
   defp generate_choices(id),
     do: [
       %{
@@ -632,7 +549,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
         },
         activity_type_id: likert_reg.id,
         title: "The Likert question",
-        content: generate_likert_content("This is a likert question")
+        content: Oli.TestHelpers.likert_activity_content("This is a likert question")
       )
 
     ## graded pages (assessments)...
@@ -1484,14 +1401,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
       |> render_click()
 
-      # check that the multi input details render correctly
-      selected_activity_model =
+      # check that the likert VegaLite visualization renders correctly
+      selected_activity_data =
         view
+        |> element("div[data-live-react-class=\"Components.VegaLiteRenderer\"]")
         |> render()
         |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-likert-authoring})
-        |> Floki.attribute("model")
-        |> hd
+        |> Floki.attribute("data-live-react-props")
+        |> hd()
+        |> Jason.decode!()
 
       assert has_element?(
                view,
@@ -1499,8 +1417,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
                "#{likert_activity.title} - Question details"
              )
 
-      assert selected_activity_model =~
-               "{\"activityTitle\":\"The Likert question\",\"authoring\":{\"correct\":[[\"1436663133\"],\"4122423546\"],\"parts\":[{\"gradingApproach\":\"automatic\",\"hints\":[{\"content\":[{\"children\":[{\"text\":\"\"}],\"id\":\"2256338253\",\"type\":\"p\"}],\"id\":\"540968727\"},{\"content\":[{\"children\":[{\"text\":\"\"}],\"id\":\"3013119256\",\"type\":\"p\"}],\"id\":\"2627194758\"},{\"content\":[{\"children\":[{\"text\":\"\"}],\"id\":\"3742562774\",\"type\":\"p\"}],\"id\":\"2413327578\"}],\"id\":\"1\",\"outOf\":null,\"responses\":[{\"feedback\":{\"content\":[{\"children\":[{\"text\":\"Correct\"}],\"id\":\"2621700133\",\"type\":\"p\"}],\"id\":\"685174561\"},\"id\":\"4122423546\",\"rule\":\"(!(input like {1968053412})) && (input like {1436663133})\",\"score\":1},{\"feedback\":{\"content\":[{\"children\":[{\"text\":\"Incorrect\"}],\"id\":\"1605260471\",\"type\":\"p\"}],\"id\":\"3796426513\"},\"id\":\"3738563441\",\"rule\":\"input like {.*}\",\"score\":0}],\"scoringStrategy\":\"average\"}],\"previewText\":\"\",\"targeted\":[],\"transformations\":[{\"firstAttemptOnly\":true,\"id\":\"1349799137\",\"operation\":\"shuffle\",\"path\":\"choices\"}],\"version\":2},\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for 2028833010\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for 2028833010\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}],\"stem\":{\"content\":[{\"children\":[{\"text\":\"This is a likert question\"}],\"id\":\"280825708\",\"type\":\"p\"}],\"id\":\"2028833010\"}}"
+      assert selected_activity_data["spec"]["title"]["text"] == likert_activity.title
     end
 
     test "single response details get rendered for a section with analytics_version :v2 but not for :v1",
@@ -1707,16 +1624,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
       |> render_click()
 
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-likert-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      assert selected_activity_model =~ ~s{"id":"id_for_option_a"}
-      refute selected_activity_model =~ ~s{"frequency":}
+      # check that the likert VegaLite visualization is not rendered
+      refute has_element?(
+               view,
+               ~s(div[data-live-react-class="Components.VegaLiteRenderer"])
+             )
     end
 
     test "question details responds to user click on an activity", %{

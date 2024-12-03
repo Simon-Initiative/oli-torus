@@ -395,11 +395,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # if objectives to attach are provided, attach them to all parts
-  defp attach_objectives(model, objectives_to_attach, raw_objectives) when raw_objectives == %{},
+  defp attach_objectives(model, objectives_to_attach, objective_map) when objective_map == %{},
     do: attach_objectives_to_all_parts(model, objectives_to_attach)
 
   # if the objectives map is already built and can be used directly
-  defp attach_objectives(_model, _objectives = [], raw_objectives), do: {:ok, raw_objectives}
+  defp attach_objectives(_model, _objectives = [], objective_map), do: {:ok, objective_map}
 
   # takes the model of the activity to be created and a list of objective ids and
   # creates a map of all part ids to objective resource ids
@@ -610,7 +610,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         all_parts_objectives,
         scope \\ "embedded",
         title \\ nil,
-        raw_objectives \\ %{}
+        objective_map \\ %{},
+        tags \\ []
       ) do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
@@ -619,7 +620,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-           {:ok, objectives} <- attach_objectives(model, all_parts_objectives, raw_objectives),
+           {:ok, objectives} <- attach_objectives(model, all_parts_objectives, objective_map),
            {:ok, %{content: content} = activity} <-
              Resources.create_new(
                %{
@@ -629,7 +630,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                  author_id: author.id,
                  content: model,
                  scope: scope,
-                 activity_type_id: activity_type.id
+                 activity_type_id: activity_type.id,
+                 tags: tags
                },
                Oli.Resources.ResourceType.id_for_activity()
              ),

@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   def page_header(assigns) do
     ~H"""
-    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full mb-16">
+    <div id="page_header" class="flex-col justify-start items-start gap-9 flex w-full">
       <div class="flex-col justify-start items-start gap-3 flex w-full">
         <div class="self-stretch flex-col justify-start items-start flex">
           <div class="self-stretch justify-between items-center inline-flex">
@@ -172,6 +172,222 @@ defmodule OliWeb.Delivery.Student.Utils do
     </div>
     """
   end
+
+  attr :effective_settings, Oli.Delivery.Settings.Combined
+  attr :ctx, SessionContext
+
+  def page_terms(assigns) do
+    ~H"""
+    <div
+      id="page_terms"
+      class="dark:text-[#eeebf5] text-base leading-normal font-normal flex flex-col w-full mb-10"
+    >
+      <span class="font-bold">
+        TERMS
+      </span>
+      <ul class="list-disc ml-6">
+        <li id="page_due_terms">
+          <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
+        </li>
+        <li :if={@effective_settings.end_date != nil} id="page_submission_terms">
+          <.page_submission_term effective_settings={@effective_settings} ctx={@ctx} />
+        </li>
+        <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
+          <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  attr :effective_settings, Oli.Delivery.Settings.Combined
+  attr :ctx, SessionContext
+
+  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns)
+       when not is_nil(end_date) do
+    ~H"""
+    <div>
+      <span>
+        <%= "This assignment is #{scheduling_type(@effective_settings.scheduling_type)}" %>
+      </span>
+      <span class="font-bold">
+        <%= FormatDateTime.to_formatted_datetime(
+          @effective_settings.end_date,
+          @ctx,
+          "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
+        ) %>
+      </span>
+    </div>
+    """
+  end
+
+  defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
+    ~H"""
+    <div>
+      <span>
+        <%= "This assignment is" %>
+      </span>
+      <span class="font-bold">
+        not yet scheduled.
+      </span>
+    </div>
+    """
+  end
+
+  defp scheduling_type(:due_by), do: "due on"
+  defp scheduling_type(_scheduling_type), do: "suggested by"
+
+  defp page_submission_term(%{effective_settings: %{time_limit: 0, grace_period: 0}} = assigns) do
+    ~H"""
+    <div>
+      <span>
+        Your work will automatically be submitted at
+      </span>
+      <span class="font-bold">
+        <%= FormatDateTime.to_formatted_datetime(
+          @effective_settings.end_date,
+          @ctx,
+          "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
+        ) %>
+      </span>
+    </div>
+    """
+  end
+
+  defp page_submission_term(
+         %{effective_settings: %{time_limit: 0, grace_period: grace_period}} = assigns
+       )
+       when grace_period > 0 do
+    ~H"""
+    <div>
+      <span>
+        Your work will automatically be submitted at
+      </span>
+      <span class="font-bold">
+        <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
+        |> FormatDateTime.to_formatted_datetime(
+          @ctx,
+          "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
+        ) %>
+      </span>
+    </div>
+    """
+  end
+
+  defp page_submission_term(
+         %{effective_settings: %{time_limit: time_limit, grace_period: 0}} = assigns
+       )
+       when time_limit > 0 do
+    ~H"""
+    <div>
+      <span>
+        Your work will automatically be submitted
+      </span>
+      <span class="font-bold">
+        <%= parse_minutes(@effective_settings.time_limit) %>
+      </span>
+      <span>
+        after you click the Begin button
+      </span>
+    </div>
+    """
+  end
+
+  defp page_submission_term(
+         %{
+           effective_settings: %{
+             time_limit: time_limit,
+             grace_period: grace_period,
+             end_date: end_date
+           }
+         } = assigns
+       )
+       when time_limit > 0 and grace_period > 0 do
+    # when we have both time limit and grace period,
+    # the end date time that comes first is the one that should be considered.
+    # For calculating the start_date_with_time_limit we assume the student is about to begin the attempt
+    now = Oli.DateTime.utc_now()
+    start_date_with_time_limit = Timex.shift(now, minutes: time_limit)
+    end_date_with_grace_period = Timex.shift(end_date, minutes: grace_period)
+
+    if DateTime.compare(start_date_with_time_limit, end_date_with_grace_period) == :lt do
+      ~H"""
+      <div>
+        <span>
+          Your work will automatically be submitted
+        </span>
+        <span class="font-bold">
+          <%= parse_minutes(@effective_settings.time_limit) %>
+        </span>
+        <span>
+          after you click the Begin button
+        </span>
+      </div>
+      """
+    else
+      ~H"""
+      <div>
+        <span>
+          Your work will automatically be submitted at
+        </span>
+        <span class="font-bold">
+          <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
+          |> FormatDateTime.to_formatted_datetime(
+            @ctx,
+            "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
+          ) %>
+        </span>
+      </div>
+      """
+    end
+  end
+
+  @doc """
+  Parses the minutes into a human-readable format.
+
+  iex> parse_minutes(1)
+  "1 minute"
+
+  iex> parse_minutes(60)
+  "1 hour"
+
+  iex> parse_minutes(61)
+  "1 hour and 1 minute"
+
+  iex> parse_minutes(120)
+  "2 hours"
+
+  iex> parse_minutes(125)
+  "2 hours and 5 minutes"
+  """
+  def parse_minutes(minutes) when minutes <= 60, do: to_minutes(minutes)
+
+  def parse_minutes(minutes) when minutes > 60 do
+    hours = div(minutes, 60)
+    minutes = rem(minutes, 60)
+
+    if minutes != 0,
+      do: "#{to_hours(hours)} and #{to_minutes(minutes)}",
+      else: "#{to_hours(hours)}"
+  end
+
+  defp to_minutes(1), do: "1 minute"
+  defp to_minutes(minutes), do: "#{minutes} minutes"
+  defp to_hours(1), do: "1 hour"
+  defp to_hours(hours), do: "#{hours} hours"
+
+  defp page_scoring_term(1 = _scoring_strategy_id),
+    do: "Your overall score for this assignment will be the average score of your attempts."
+
+  defp page_scoring_term(3 = _scoring_strategy_id),
+    do: "Your overall score for this assignment will be the score of your last attempt."
+
+  defp page_scoring_term(4 = _scoring_strategy_id),
+    do: "Your overall score for this assignment will be the total sum of your attempts."
+
+  # scoring strategy 2 is the default scoring strategy
+  defp page_scoring_term(_scoring_strategy_id),
+    do: "Your overall score for this assignment will be the score of your best attempt."
 
   @doc """
   Returns the scheduling type label for the container.

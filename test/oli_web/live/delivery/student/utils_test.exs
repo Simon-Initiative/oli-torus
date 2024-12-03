@@ -212,4 +212,15 @@ defmodule OliWeb.Delivery.Student.UtilsTest do
       assert Utils.format_time_remaining(~U[2024-05-10 11:30:20Z]) == "00:00:00"
     end
   end
+
+  describe "parse_minutes/1" do
+    test "parses the minutes into a human-readable format" do
+      assert Utils.parse_minutes(1) == "1 minute"
+      assert Utils.parse_minutes(5) == "5 minutes"
+      assert Utils.parse_minutes(60) == "60 minutes"
+      assert Utils.parse_minutes(90) == "1 hour and 30 minutes"
+      assert Utils.parse_minutes(120) == "2 hours"
+      assert Utils.parse_minutes(125) == "2 hours and 5 minutes"
+    end
+  end
 end

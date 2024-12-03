@@ -28,6 +28,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onRemove: () => void;
+  onDuplicate?: () => void;
 }
 
 // This is the state of our activity editing that is undoable
@@ -169,6 +170,18 @@ export class InlineActivityEditor extends React.Component<
       </div>
     ) : null;
 
+    const DuplicateButton = (
+      <button
+        className="btn btn-link"
+        onClick={this.props.onDuplicate}
+        data-bs-toggle="tooltip"
+        data-bs-placement="top"
+        title="Duplicate this activity"
+      >
+        <i className="fa-solid fa-clone mr-2 fa-align-center"></i>
+      </button>
+    );
+
     return (
       <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
         <div className="d-flex align-items-baseline flex-grow-1 mr-2">
@@ -194,6 +207,7 @@ export class InlineActivityEditor extends React.Component<
 
           <div className={styles.toolbar}>
             {this.props.customToolbarItems && <this.props.customToolbarItems />}
+            {this.props.onDuplicate && DuplicateButton}
             <DeleteButton
               className="ml-2"
               editMode={this.props.editMode && this.props.canRemove}
