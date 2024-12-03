@@ -337,6 +337,16 @@ defmodule OliWeb.Api.MediaController do
     Nx.from_binary(Evision.Mat.to_binary(resized_image), {:u, 8})
     |> Nx.reshape({@image_size |> elem(0), @image_size |> elem(1), 3})
     |> Nx.divide(255.0)  # Scale pixel values from [0, 255] to [0, 1]
+    |> normalize_image()
+  end
+
+  def normalize_image(image_tensor) do
+    mean_tensor = Nx.tensor(@mean, backend: Nx.BinaryBackend)
+    std_tensor = Nx.tensor(@std, backend: Nx.BinaryBackend)
+
+    image_tensor
+    |> Nx.subtract(mean_tensor)
+    |> Nx.divide(std_tensor)
   end
 
   # Check to see if this file is perhaps a screenshot of source code
@@ -357,7 +367,7 @@ defmodule OliWeb.Api.MediaController do
     # Apply softmax to logits
     probabilities = softmax.(result.logits) |> Nx.to_flat_list()
 
-    accessibility = case Enum.zip(probabilities, Oli.ImageClassifier.labels())
+    case Enum.zip(probabilities, Oli.ImageClassifier.labels())
     |> Enum.sort(fn {a, _}, {b, _} -> a > b end)
     |> hd() do
       {_, "other"} -> nil
