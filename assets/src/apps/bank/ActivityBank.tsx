@@ -609,6 +609,8 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                   <CreateActivity
                     projectSlug={props.projectSlug}
                     editorMap={props.editorMap}
+                    allObjectives={props.allObjectives}
+                    allTags={props.allTags}
                     onAdd={this.onActivityAdd}
                   />
                 </div>

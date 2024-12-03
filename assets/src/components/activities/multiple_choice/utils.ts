@@ -8,7 +8,7 @@ import {
   makeHint,
   makePart,
   makeStem,
-  makeTransformation,
+  makeTransformation, CreationData, Hint, Part, makeFeedback,
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { Responses, getCorrectResponse } from 'data/activities/model/responses';
@@ -28,6 +28,58 @@ export const defaultMCModel: () => MCSchema = () => {
           [makeHint(''), makeHint(''), makeHint('')],
           '1',
         ),
+      ],
+      targeted: [],
+      transformations: [makeTransformation('choices', Transform.shuffle, true)],
+      previewText: '',
+    },
+  };
+};
+
+export const mCModel: (creationData: CreationData) => MCSchema = (creationData: CreationData) => {
+  const choices: Map<string, Choice> = new Map();
+  Object.entries(creationData).filter(([key, value]) => key.startsWith('choice') && value).map(([key, value]) => {
+    const choice = makeChoice(value as string);
+    choices.set(key, choice);
+    return choice;
+  });
+
+  if (choices.size === 0) {
+    throw new Error(`No choices provided for ${creationData.title}`);
+  }
+
+  const hints: Hint[] = Object.entries(creationData).filter(([key, value]) => key.startsWith('hint') && value).map(([_key, value]) => {
+    return makeHint(value as string);
+  });
+
+  let answer: Choice = choices.get(`choice${creationData.answer}`) as Choice;
+
+  if (!answer) {
+    throw new Error('No answer provided');
+  }
+
+  const correctFeedback = creationData.correct_feedback ? creationData.correct_feedback : 'Correct';
+  const incorrectFeedback = creationData.incorrect_feedback ? creationData.incorrect_feedback : 'Incorrect';
+
+  const part: Part = makePart(
+    Responses.forMultipleChoice(answer.id, correctFeedback, incorrectFeedback),
+    hints,
+    '1',
+  );
+
+  if (creationData.explanation) {
+    part.explanation = makeFeedback(creationData.explanation);
+  }
+
+  const stem = creationData.stem ? creationData.stem : '';
+
+  return {
+    stem: makeStem(stem),
+    choices: [...choices.values()],
+    authoring: {
+      version: 2,
+      parts: [
+        part,
       ],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle, true)],

@@ -6,7 +6,18 @@ import {
   getIncorrectResponse,
   getResponsesByPartId,
 } from 'data/activities/model/responses';
-import { HasParts, ScoringStrategy, makeHint, makeStem } from '../types';
+import {
+  HasParts,
+  ScoringStrategy,
+  makeHint,
+  makeStem,
+  CreationData,
+  Hint,
+  makeResponse,
+  Part,
+  makePart, makeFeedback,
+} from '../types';
+import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 
 export const defaultModel: () => ShortAnswerModelSchema = () => {
   return {
@@ -20,6 +31,66 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
           responses: Responses.forTextInput(),
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
+      ],
+      transformations: [],
+      previewText: '',
+    },
+  };
+};
+
+export const sAModel: (creationData: CreationData) => ShortAnswerModelSchema = (creationData: CreationData) => {
+
+  const hints: Hint[] = Object.entries(creationData).filter(([key, value]) => key.startsWith('hint') && value).map(([_key, value]) => {
+    return makeHint(value as string);
+  });
+
+  const correctFeedback = creationData.correct_feedback ? creationData.correct_feedback : 'Correct';
+  const incorrectFeedback = creationData.incorrect_feedback ? creationData.incorrect_feedback : 'Incorrect';
+
+  let response  = Responses.forTextInput();
+  let inputType: InputType = 'text';
+  switch (creationData.type.toLowerCase()) {
+    case 'number':
+      response = [makeResponse(eqRule(creationData.answer), 1, correctFeedback, true),
+        Responses.catchAll(incorrectFeedback)];
+      inputType = 'numeric';
+      break;
+    case 'text':
+      response =  [makeResponse(containsRule(creationData.answer), 1, correctFeedback, true),
+        Responses.catchAll(incorrectFeedback)];
+      inputType = 'text';
+      break;
+    case 'paragraph':
+      response = [makeResponse(matchRule('.*'), 0, 'correct', true)]
+      inputType = 'textarea';
+      break;
+    case 'math':
+      response = [makeResponse(equalsRule(creationData.answer), 1, correctFeedback, true),
+        Responses.catchAll(incorrectFeedback)]
+      inputType = 'math';
+      break;
+    default:
+      break;
+  }
+
+  const part: Part = {
+    id: '1',
+    scoringStrategy: ScoringStrategy.average,
+    responses: response,
+    hints: hints,
+  };
+
+  if (creationData.explanation) {
+    part.explanation = makeFeedback(creationData.explanation);
+  }
+
+  const stem = creationData.stem ? creationData.stem : '';
+  return {
+    stem: makeStem(stem),
+    inputType: inputType,
+    authoring: {
+      parts: [
+        part,
       ],
       transformations: [],
       previewText: '',
