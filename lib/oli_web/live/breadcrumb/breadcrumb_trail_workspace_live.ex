@@ -28,8 +28,8 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive do
             module={BreadcrumbWorkspaceLive}
             id={"breadcrumb-#{index}"}
             breadcrumb={breadcrumb}
-            is_last={length(@breadcrumbs) - 1 == index}
-            show_short={length(@breadcrumbs) > 3}
+            is_last={@breadcrumbs_count - 1 == index}
+            show_short={@breadcrumbs_count > 3}
           />
         <% end %>
       </ol>
