@@ -44,6 +44,9 @@ defmodule OliWeb.Resources.PagesView do
     text_search: nil
   }
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def breadcrumb(project) do
     [
       Breadcrumb.new(%{
@@ -56,14 +59,14 @@ defmodule OliWeb.Resources.PagesView do
 
   def mount(
         %{"project_id" => project_slug},
-        %{"current_author_id" => author_id} = session,
+        _session,
         socket
       ) do
     socket =
-      with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
+      with author <- socket.assigns.current_author,
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         pages =
           PageBrowse.browse_pages(

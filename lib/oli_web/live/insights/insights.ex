@@ -32,7 +32,7 @@ defmodule OliWeb.Insights do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(%{"project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
 
     project = Course.get_project_by_slug(project_slug)
 
@@ -91,7 +91,6 @@ defmodule OliWeb.Insights do
        breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})],
        active: :insights,
        sections_by_product_id: sections_by_product_id,
-       ctx: ctx,
        is_admin?: Accounts.is_admin?(ctx.author),
        project: project,
        parent_pages: parent_pages,

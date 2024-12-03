@@ -17,12 +17,15 @@ defmodule OliWeb.Qa.QaLive do
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster.Subscriber
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(
         %{"project_id" => project_slug},
-        %{"current_author_id" => _} = session,
+        _session,
         socket
       ) do
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     project = Course.get_project_by_slug(project_slug)
 
     subscribe(project.slug)

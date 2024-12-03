@@ -16,6 +16,8 @@ defmodule OliWeb.Products.DetailsView do
 
   require Logger
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def set_breadcrumbs(section),
     do: [
       Breadcrumb.new(%{

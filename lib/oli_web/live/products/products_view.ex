@@ -19,6 +19,8 @@ defmodule OliWeb.Products.ProductsView do
     Search by section title, amount or base project title.
   """
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def live_path(socket, params) do
     if socket.assigns.is_admin_view do
       Routes.live_path(socket, OliWeb.Products.ProductsView, params)
@@ -44,10 +46,10 @@ defmodule OliWeb.Products.ProductsView do
 
   def mount(
         %{"project_id" => project_slug} = params,
-        %{"current_author_id" => author_id} = session,
+        session,
         socket
       ) do
-    author = Repo.get(Author, author_id)
+    author = socket.assigns.current_author
 
     project = Course.get_project_by_slug(project_slug)
 
@@ -63,8 +65,8 @@ defmodule OliWeb.Products.ProductsView do
     )
   end
 
-  def mount(params, %{"current_author_id" => author_id} = session, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(params, session, socket) do
+    author = socket.assigns.current_author
 
     mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket, session)
   end
