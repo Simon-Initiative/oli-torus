@@ -6,6 +6,7 @@ defmodule OliWeb.Progress.AttemptHistory do
   attr(:section, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:revision, :map, required: true)
+  attr(:request_path, :string, default: "")
 
   def render(assigns) do
     ~H"""
@@ -16,6 +17,7 @@ defmodule OliWeb.Progress.AttemptHistory do
           attempt={attempt}
           section={@section}
           ctx={@ctx}
+          request_path={@request_path}
         />
       <% end %>
     </div>

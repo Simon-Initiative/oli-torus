@@ -140,6 +140,19 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert project_row =~ "Active"
     end
 
+    test "the modal text displays clearly using the appropriate dark mode class", %{
+      conn: conn
+    } do
+      {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")
+
+      view |> element("button", "New Project") |> render_click()
+
+      html = render(view)
+      parsed_html = Floki.parse_document!(html)
+
+      assert has_class?(parsed_html, "h5", "dark:text-[#eeebf5]")
+    end
+
     test "applies show-all filter", %{conn: conn, admin: admin} do
       admin_project = create_project_with_owner(admin)
       project = insert(:author) |> create_project_with_owner()
@@ -447,5 +460,14 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
     project = insert(:project, attrs)
     insert(:author_project, project_id: project.id, author_id: owner.id)
     project
+  end
+
+  defp has_class?(parsed_html, tag, class_name) do
+    Floki.find(parsed_html, tag)
+    |> Enum.any?(fn {_tag, attrs, _content} ->
+      Enum.any?(attrs, fn {key, value} ->
+        key == "class" and String.contains?(value, class_name)
+      end)
+    end)
   end
 end

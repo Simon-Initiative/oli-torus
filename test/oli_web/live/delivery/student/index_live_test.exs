@@ -1028,6 +1028,27 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
     end
 
+    test "can navigate to my assignments page from the homonymous component", %{
+      conn: conn,
+      section: section
+    } do
+      stub_current_time(~U[2024-05-01 20:00:00Z])
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert has_element?(view, "div[role='my assignments'] a", "View All Assignments")
+
+      assert view
+             |> element("div[role='my assignments'] a", "View All Assignments")
+             |> render_click() ==
+               {:error,
+                {:live_redirect,
+                 %{
+                   kind: :push,
+                   to:
+                     "/sections/#{section.slug}/assignments?request_path=%2Fsections%2F#{section.slug}"
+                 }}}
+    end
+
     test "can see the course progress details and navigate to the learn page", %{
       conn: conn,
       user: user,
@@ -1532,6 +1553,91 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
              )
              |> render() =~
                ~s{href="/sections/#{section.slug}/lesson/#{page_3.slug}?request_path=%2Fsections%2F#{section.slug}"}
+    end
+
+    test "do not show assignments navigation if there are no assignments in section", %{
+      conn: conn,
+      user: user
+    } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      author = insert(:author)
+      project = insert(:project, authors: [author])
+
+      page_1_revision =
+        insert(:revision,
+          resource_type_id: ResourceType.get_id_by_type("page"),
+          title: "Start here",
+          graded: false
+        )
+
+      module_1_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          children: [page_1_revision.resource_id],
+          title: "How to use this course"
+        })
+
+      unit_1_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          children: [module_1_revision.resource_id],
+          title: "Introduction"
+        })
+
+      container_revision =
+        insert(:revision, %{
+          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+          children: [unit_1_revision.resource_id],
+          title: "Root Container"
+        })
+
+      all_revisions =
+        [
+          page_1_revision,
+          module_1_revision,
+          unit_1_revision,
+          container_revision
+        ]
+
+      # asociate resources to project
+      Enum.each(all_revisions, fn revision ->
+        insert(:project_resource, %{
+          project_id: project.id,
+          resource_id: revision.resource_id
+        })
+      end)
+
+      # publish project
+      publication =
+        insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+      # publish resources
+      Enum.each(all_revisions, fn revision ->
+        insert(:published_resource, %{
+          publication: publication,
+          resource: revision.resource,
+          revision: revision,
+          author: author
+        })
+      end)
+
+      section =
+        insert(:section,
+          base_project: project,
+          title: "Another course!",
+          analytics_version: :v2
+        )
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+      {:ok, _} = Sections.rebuild_contained_pages(section)
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
+
+      refute view |> element("#assignments_nav_link") |> has_element?()
     end
   end
 end

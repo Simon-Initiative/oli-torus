@@ -11,6 +11,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   alias OliWeb.Common.SessionContext
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Accounts.{User, Author}
   alias Oli.Branding
   alias OliWeb.Components.Delivery.UserAccount
@@ -517,6 +518,17 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.nav_link>
 
       <.nav_link
+        :if={section_has_assignments?(@section.id)}
+        id="assignments_nav_link"
+        href={path_for(:assignments, @section, @preview_mode, @sidebar_expanded)}
+        is_active={@active_tab == :assignments}
+        sidebar_expanded={@sidebar_expanded}
+      >
+        <:icon><Icons.assignments is_active={@active_tab == :assignments} /></:icon>
+        <:text>Assignments</:text>
+      </.nav_link>
+
+      <.nav_link
         :if={@section.contains_explorations}
         id="explorations_nav_link"
         href={path_for(:explorations, @section, @preview_mode, @sidebar_expanded)}
@@ -607,11 +619,23 @@ defmodule OliWeb.Components.Delivery.Layouts do
     "#"
   end
 
-  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+  defp path_for(:assignments, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
     if preview_mode do
       ~p"/sections/#{section_slug}/preview/assignments"
     else
       ~p"/sections/#{section_slug}/assignments?#{%{sidebar_expanded: sidebar_expanded}}"
+    end
+  end
+
+  defp path_for(:assignments, _section, _preview_mode, _sidebar_expanded) do
+    "#"
+  end
+
+  defp path_for(:schedule, %Section{slug: section_slug}, preview_mode, sidebar_expanded) do
+    if preview_mode do
+      ~p"/sections/#{section_slug}/preview/student_schedule"
+    else
+      ~p"/sections/#{section_slug}/student_schedule?#{%{sidebar_expanded: sidebar_expanded}}"
     end
   end
 
@@ -1094,4 +1118,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def show_collab_space?(nil), do: false
   def show_collab_space?(%CollabSpaceConfig{status: :disabled}), do: false
   def show_collab_space?(_), do: true
+
+  defp section_has_assignments?(section_id) do
+    section_id |> SectionResourceDepot.graded_pages(hidden: false) |> Enum.any?()
+  end
 end

@@ -16,6 +16,7 @@ defmodule Oli.Publishing.Publications.DiffAgentTest do
         minor: 0,
         changes: %{},
         from_pub: 0,
+        all_links: [],
         to_pub: 1,
         created_at: Timex.now() |> Timex.subtract(Timex.Duration.from_days(4))
       })
@@ -30,6 +31,7 @@ defmodule Oli.Publishing.Publications.DiffAgentTest do
         changes: %{},
         from_pub: 0,
         to_pub: 1,
+        all_links: [],
         created_at: Timex.now() |> Timex.subtract(Timex.Duration.from_days(11))
       })
 

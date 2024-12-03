@@ -42,6 +42,7 @@ export type EditorProps = {
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onAddItem: AddCallback;
+  onDuplicate: (context: ActivityEditContext) => void;
 };
 
 //content or referenced activities

@@ -77,7 +77,14 @@ defmodule OliWeb do
       # in the live_session on_mount if needed before other on_mount plugs
       on_mount OliWeb.LiveSessionPlugs.SetToken
 
+      unquote(socket_helpers())
       unquote(html_helpers())
+    end
+  end
+
+  defp socket_helpers() do
+    quote do
+      import OliWeb.Live.SocketHelpers
     end
   end
 

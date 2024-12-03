@@ -169,12 +169,15 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   @doc false
-  def create(conn, %{
-        "project" => project_slug,
-        "activity_type" => activity_type_slug,
-        "model" => model,
-        "objectives" => objectives
-      }) do
+  def create(
+        conn,
+        %{
+          "project" => project_slug,
+          "activity_type" => activity_type_slug,
+          "model" => model,
+          "objectives" => objectives
+        }
+      ) do
     author = conn.assigns[:current_author]
 
     scope = Map.get(conn.body_params, "scope", "embedded")
@@ -185,7 +188,11 @@ defmodule OliWeb.Api.ActivityController do
            author,
            model,
            objectives,
-           scope
+           scope,
+           # optional:
+           Map.get(conn.body_params, "title", nil),
+           Map.get(conn.body_params, "objective_map", %{}),
+           Map.get(conn, "tags", [])
          ) do
       {:ok, {%{slug: slug, resource_id: resource_id}, _}} ->
         json(conn, %{

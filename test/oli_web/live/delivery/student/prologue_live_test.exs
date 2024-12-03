@@ -675,12 +675,16 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       attempt = create_attempt(user, section, page_3)
 
-      request_path = Utils.learn_live_path(section.slug, target_resource_id: page_3.resource_id)
+      learn_path =
+        Utils.learn_live_path(section.slug, target_resource_id: page_3.resource_id)
+
+      prologue_path =
+        Utils.prologue_live_path(section.slug, page_3.slug, request_path: learn_path)
 
       {:ok, view, _html} =
         live(
           conn,
-          Utils.prologue_live_path(section.slug, page_3.slug, request_path: request_path)
+          prologue_path
         )
 
       view
@@ -690,7 +694,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert_redirected(
         view,
         Utils.review_live_path(section.slug, page_3.slug, attempt.attempt_guid,
-          request_path: request_path
+          request_path: prologue_path
         )
       )
     end
@@ -707,17 +711,20 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       attempt = create_attempt(user, section, graded_adaptive_page_revision)
 
-      request_path =
+      learn_path =
         Utils.learn_live_path(section.slug,
           target_resource_id: graded_adaptive_page_revision.resource_id
+        )
+
+      prologue_path =
+        Utils.prologue_live_path(section.slug, graded_adaptive_page_revision.slug,
+          request_path: learn_path
         )
 
       {:ok, view, _html} =
         live(
           conn,
-          Utils.prologue_live_path(section.slug, graded_adaptive_page_revision.slug,
-            request_path: request_path
-          )
+          prologue_path
         )
 
       view
@@ -726,7 +733,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert_redirected(
         view,
-        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: request_path}}"
+        ~p"/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}/attempt/#{attempt.attempt_guid}/review?#{%{request_path: prologue_path}}"
       )
 
       # Note that the student will then be redirected to the adaptive chromeless review path in OliWeb.LiveSessionPlugs.RedirectAdaptiveChromeless
@@ -1044,6 +1051,89 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert href ==
                "/sections/#{section.slug}/learn?target_resource_id=#{graded_adaptive_page_revision.resource_id}"
+    end
+
+    test "page terms are shown correctly when page is not yet scheduled",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_5: page_5
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
+
+      assert view
+             |> element("#page_terms")
+             |> render() =~ "not yet scheduled."
+    end
+
+    test "page terms are shown correctly when page is scheduled",
+         %{
+           conn: conn,
+           user: user,
+           section: section,
+           page_2: page_2
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view
+             |> element("#page_due_terms")
+             |> render() =~
+               "This assignment is suggested by"
+
+      assert view
+             |> element("#page_due_terms")
+             |> render() =~
+               "Tue Nov 14, 2023 by 8:00pm."
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "Your work will automatically be submitted at"
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "8:00pm on Tue Nov 14, 2023"
+
+      assert view
+             |> element("#page_scoring_terms")
+             |> render() =~
+               "Your overall score for this assignment will be the score of your best attempt."
+
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{
+        scoring_strategy_id: 1,
+        time_limit: 90
+      })
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "Your work will automatically be submitted"
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "1 hour and 30 minutes"
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "after you click the Begin button"
+
+      assert view
+             |> element("#page_scoring_terms")
+             |> render() =~
+               "Your overall score for this assignment will be the average score of your attempts."
     end
   end
 

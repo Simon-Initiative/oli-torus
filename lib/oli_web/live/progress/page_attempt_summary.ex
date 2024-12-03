@@ -7,6 +7,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   attr(:section, :map, required: true)
   attr(:ctx, :map, required: true)
   attr(:revision, :map, required: true)
+  attr(:request_path, :string, default: "")
 
   @spec render(
           atom
@@ -24,7 +25,11 @@ defmodule OliWeb.Progress.PageAttemptSummary do
     ~H"""
     <div class="list-group-item list-group-action flex-column align-items-start">
       <.link
-        href={StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid)}
+        href={
+          StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid,
+            request_path: @request_path
+          )
+        }
         class="block"
       >
         <div class="d-flex w-100 justify-content-between">
@@ -53,7 +58,11 @@ defmodule OliWeb.Progress.PageAttemptSummary do
     ~H"""
     <div class="list-group-item list-group-action flex-column align-items-start">
       <.link
-        href={StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid)}
+        href={
+          StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid,
+            request_path: @request_path
+          )
+        }
         class="block"
       >
         <div class="d-flex w-100 justify-content-between">
@@ -85,7 +94,11 @@ defmodule OliWeb.Progress.PageAttemptSummary do
     ~H"""
     <div class="list-group-item list-group-action flex-column align-items-start">
       <.link
-        href={StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid)}
+        href={
+          StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid,
+            request_path: @request_path
+          )
+        }
         class="block"
       >
         <div class="d-flex w-100 justify-content-between">

@@ -55,6 +55,11 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: false,
         },
+        {
+          key: 'userOpened',
+          type: CapiVariableTypes.BOOLEAN,
+          value: false,
+        },
       ],
     });
 
@@ -209,6 +214,21 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     };
   }, [props.notify]);
 
+  useEffect(() => {
+    if (showPopup) {
+      //When the student opens the popup, userOpened changes to true and stays true even if the popup is closed.
+      props.onSave({
+        id,
+        responses: [
+          {
+            key: 'userOpened',
+            type: CapiVariableTypes.BOOLEAN,
+            value: true,
+          },
+        ],
+      });
+    }
+  }, [showPopup]);
   const iconTriggerStyle: CSSProperties = {
     width,
     height,

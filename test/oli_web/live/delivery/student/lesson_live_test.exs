@@ -1230,7 +1230,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       Sections.mark_section_visited_for_student(section, user)
 
       # when the request path is not the learn view, it keeps it when navigating between pages
-      request_path = ~p"/sections/#{section.slug}/assignments"
+      request_path = ~p"/sections/#{section.slug}/student_schedule"
 
       {:ok, view, _html} =
         live(
@@ -1382,7 +1382,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert not has_element?(
                view,
-               "button[phx-click='toggle_sidebar']"
+               "button[phx-click='toggle_notes_sidebar']"
              )
     end
 
@@ -1401,7 +1401,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       assert has_element?(
                view,
-               "button[phx-click='toggle_sidebar']"
+               "button[phx-click='toggle_notes_sidebar']"
              )
     end
 
@@ -1436,7 +1436,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> element(~s{button[phx-click='toggle_notes_sidebar']})
       |> render_click
 
       assert has_element?(
@@ -1458,7 +1458,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> element(~s{button[phx-click='toggle_notes_sidebar']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -1487,7 +1487,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> element(~s{button[phx-click='toggle_notes_sidebar']})
       |> render_click
 
       view
@@ -1534,7 +1534,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> element(~s{button[phx-click='toggle_notes_sidebar']})
       |> render_click
 
       view
@@ -1571,12 +1571,12 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> element(~s{button[phx-click='toggle_notes_sidebar']})
       |> render_click
 
       assert_push_event(view, "request_point_markers", %{})
 
-      # when we handle the event "toggle_sidebar", the "request_point_markers" event is pushed to the client.
+      # when we handle the event "toggle_notes_sidebar", the "request_point_markers" event is pushed to the client.
       # The client then responds back with the "update_point_markers" event
       # that is handled by the server and finally used to show the point marks on the annotations panel.
       # We need to trigger the "update_point_markers" event manually because no js is executed while testing the liveview
@@ -1656,7 +1656,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       ensure_content_is_visible(view)
 
       view
-      |> element(~s{button[phx-click='toggle_sidebar']})
+      |> element(~s{button[phx-click='toggle_notes_sidebar']})
       |> render_click
 
       wait_while(fn -> has_element?(view, "svg.loading") end)
@@ -1697,6 +1697,59 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute render(view) =~ "This is a another one for the student"
       assert render(view) =~ "This is a class note"
       assert render(view) =~ "This is another one for all the class"
+    end
+  end
+
+  describe "outline panel" do
+    setup [:user_conn, :create_elixir_project]
+
+    test "do not display the panel in graded pages", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_3: graded_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, graded_page, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, graded_page.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(
+               view,
+               ~s{button[phx-click='toggle_outline_sidebar']}
+             )
+    end
+
+    test "is toggled open when toolbar button is clicked in practice pages", %{
+      conn: conn,
+      section: section,
+      user: user,
+      page_1: practice_page
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, practice_page.slug))
+      ensure_content_is_visible(view)
+
+      # It is not stored as a user preference and is not open by default
+      refute Oli.Accounts.get_user_preference(user.id, :page_outline_panel_active?)
+
+      view
+      |> element(~s{button[phx-click='toggle_outline_sidebar']})
+      |> render_click
+
+      assert has_element?(
+               view,
+               "#outline_panel"
+             )
+
+      # It stores the user preference
+      assert Oli.Accounts.get_user_preference(user.id, :page_outline_panel_active?)
     end
   end
 

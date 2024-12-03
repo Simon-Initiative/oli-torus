@@ -221,6 +221,7 @@ defmodule OliWeb.Progress.StudentResourceView do
           section={@section}
           resource_attempts={@resource_attempts}
           ctx={@ctx}
+          request_path={~p"/sections/#{@section.slug}/progress/#{@user.id}/#{@revision.resource_id}"}
         />
       </Group.render>
     </Groups.render>

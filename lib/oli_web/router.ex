@@ -1041,7 +1041,8 @@ defmodule OliWeb.Router do
         live("/", Delivery.Student.IndexLive)
         live("/learn", Delivery.Student.LearnLive)
         live("/discussions", Delivery.Student.DiscussionsLive)
-        live("/assignments", Delivery.Student.ScheduleLive)
+        live("/assignments", Delivery.Student.AssignmentsLive)
+        live("/student_schedule", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
       end
@@ -1065,7 +1066,8 @@ defmodule OliWeb.Router do
         live("/", Delivery.Student.IndexLive, :preview)
         live("/learn", Delivery.Student.LearnLive, :preview)
         live("/discussions", Delivery.Student.DiscussionsLive, :preview)
-        live("/assignments", Delivery.Student.ScheduleLive, :preview)
+        live("/assignments", Delivery.Student.AssignmentsLive, :preview)
+        live("/student_schedule", Delivery.Student.ScheduleLive, :preview)
         live("/explorations", Delivery.Student.ExplorationsLive, :preview)
         live("/practice", Delivery.Student.PracticeLive, :preview)
       end
@@ -1281,9 +1283,7 @@ defmodule OliWeb.Router do
         Sections.GatingAndScheduling
       )
 
-      live("/collaborative_spaces", CollaborationLive.IndexView, :instructor,
-        as: :collab_spaces_index
-      )
+      live("/collaborative_spaces", CollaborationLive.IndexView, as: :collab_spaces_index)
 
       live(
         "/assessment_settings/:active_tab/:assessment_id",
@@ -1388,7 +1388,6 @@ defmodule OliWeb.Router do
     live("/products", Products.ProductsView)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
-    live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
 
     live(
       "/products/:product_id/discounts/new",

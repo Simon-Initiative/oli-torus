@@ -72,10 +72,10 @@ const ImageHotspotComponent: React.FC = () => {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasRef2 = useRef<HTMLCanvasElement>(null);
-  const canvas = canvasRef.current;
-  const ctx = canvas?.getContext('2d');
 
   const showSelected = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
     if (canvas && ctx) {
       ctx?.clearRect(0, 0, canvas?.width, canvas.height);
     }

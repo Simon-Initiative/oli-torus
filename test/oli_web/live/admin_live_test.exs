@@ -295,12 +295,6 @@ defmodule OliWeb.AdminLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{~p"/admin/collaborative_spaces"}\"]",
-               "Browse all Collaborative Spaces"
-             )
-
-      assert has_element?(
-               view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)}\"]",
                "Ingest Project"
              )
@@ -435,12 +429,6 @@ defmodule OliWeb.AdminLiveTest do
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}\"]",
                "Browse all Course Sections"
-             )
-
-      assert has_element?(
-               view,
-               "a[href=\"#{~p"/admin/collaborative_spaces"}\"]",
-               "Browse all Collaborative Spaces"
              )
 
       assert has_element?(

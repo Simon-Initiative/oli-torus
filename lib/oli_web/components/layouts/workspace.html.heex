@@ -19,7 +19,7 @@
         />
       </div>
     </div>
-    <div class="absolute top-0">
+    <div class={"absolute top-0 #{if @disable_sidebar?, do: "w-full"}"}>
       <Components.Delivery.Layouts.workspace_sidebar_nav
         :if={!@disable_sidebar?}
         ctx={@ctx}

@@ -45,7 +45,7 @@ defmodule OliWeb.Progress.PageAttemptSummaryTest do
       assert html =~ "Submit Attempt on Behalf of Student"
 
       href = Utils.review_live_path(section.slug, revision.slug, attempt.attempt_guid)
-      assert html =~ ~r/href="#{href}"/
+      assert html =~ ~r/href="#{href}\?.*"/
     end
 
     test "renders evaluated attempt", %{
@@ -64,7 +64,7 @@ defmodule OliWeb.Progress.PageAttemptSummaryTest do
       assert html =~ "Submitted: July 2, 2024 11:30 AM UTC"
 
       href = Utils.review_live_path(section.slug, revision.slug, attempt.attempt_guid)
-      assert html =~ ~r/href="#{href}"/
+      assert html =~ ~r/href="#{href}\?.*"/
     end
 
     test "renders submitted attempt", %{
@@ -83,7 +83,7 @@ defmodule OliWeb.Progress.PageAttemptSummaryTest do
       assert html =~ "Submitted: July 3, 2024 12:40 PM UTC"
 
       href = Utils.review_live_path(section.slug, revision.slug, attempt.attempt_guid)
-      assert html =~ ~r/href="#{href}"/
+      assert html =~ ~r/href="#{href}\?.*"/
     end
   end
 end

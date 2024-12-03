@@ -184,6 +184,7 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
     else
       conn
       |> halt()
+      |> put_session(:request_path, conn.params["request_path"])
       |> assign(:already_been_redirected?, true)
       |> Phoenix.Controller.redirect(
         to:
@@ -227,7 +228,9 @@ defmodule OliWeb.Plugs.RedirectByAttemptState do
       conn
       |> halt()
       |> assign(:already_been_redirected?, true)
-      |> Phoenix.Controller.redirect(to: "/sections/#{section_slug}/prologue/#{revision_slug}")
+      |> Phoenix.Controller.redirect(
+        to: "/sections/#{section_slug}/prologue/#{revision_slug}?#{conn.query_string}"
+      )
     end
   end
 

@@ -2402,7 +2402,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> log_in_user(user)
-        |> get(~p"/sections/#{section.slug}/assignments")
+        |> get(~p"/sections/#{section.slug}/student_schedule")
 
       assert html_response(conn, 200) =~ section.title
 
@@ -2435,7 +2435,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn =
         recycle(conn)
         |> log_in_user(user)
-        |> get(~p"/sections/#{section.slug}/preview/assignments")
+        |> get(~p"/sections/#{section.slug}/preview/student_schedule")
 
       assert html_response(conn, 200) =~ section.title
       assert html_response(conn, 200) =~ "Course content"

@@ -494,4 +494,14 @@ defmodule Oli.Utils do
       value -> value
     end
   end
+
+  @doc """
+  Returns the value passed in.
+
+  ## Examples
+  iex> Utils.identity(1)
+  1
+  """
+  @spec identity(any) :: any
+  def identity(x), do: x
 end

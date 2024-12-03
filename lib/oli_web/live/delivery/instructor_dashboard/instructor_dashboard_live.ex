@@ -2,11 +2,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  import OliWeb.Delivery.InstructorDashboard.HTMLComponents
-
   alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Oli.Delivery.RecommendedActions
   alias OliWeb.Components.Delivery.InstructorDashboard
   alias OliWeb.Components.Delivery.InstructorDashboard.TabLink
@@ -541,7 +540,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         patch_url_type={:instructor_dashboard}
       />
     </div>
-    <.view_example_student_progress_modal />
+    <HTMLComponents.view_example_student_progress_modal />
     """
   end
 
@@ -551,12 +550,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
 
     <div class="container mx-auto">
       <.live_component
-        id="objectives_table"
+        id="objectives_table_#{@section_slug}"
         module={OliWeb.Components.Delivery.LearningObjectives}
         params={@params}
         view={@view}
         objectives_tab={@objectives_tab}
-        section={@section}
+        section_slug={@section_slug}
+        v25_migration={@section.v25_migration}
         patch_url_type={:instructor_dashboard}
       />
     </div>

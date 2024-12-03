@@ -412,7 +412,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       Enum.find(table_model.rows, fn r -> r.id == String.to_integer(table_model.selected) end)
 
     # Only re-render the activities when it is the first selection or on an actual selection change
-    if is_nil(assigns.attempt) or assigns.attempt.id != activity_attempt.id do
+    if get_in(assigns, [:attempt, Access.key(:id)]) != activity_attempt.id do
       part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
       rendering_context =

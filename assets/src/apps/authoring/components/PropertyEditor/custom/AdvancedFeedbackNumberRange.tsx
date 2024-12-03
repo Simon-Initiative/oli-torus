@@ -59,6 +59,7 @@ export const AdvancedFeedbackNumberRange: React.FC<Props> = ({ id, value, onChan
           value={item}
           onRemoveRule={() => onChange(value.filter((v, i) => i !== index))}
           onChange={(newItem) => onChange(value.map((v, i) => (i === index ? newItem : v)))}
+          onfocusHandler={() => onBlur('partPropertyElementFocus', [])}
         />
       ))}
 
@@ -74,7 +75,8 @@ const FeedbackEditor: React.FC<{
   onChange: (value: FeedbackItem) => void;
   onBlur: () => void;
   onRemoveRule: () => void;
-}> = ({ value, onBlur, onChange, onRemoveRule }) => {
+  onfocusHandler: (changes: boolean) => void;
+}> = ({ value, onBlur, onChange, onRemoveRule, onfocusHandler }) => {
   const onFeedbackChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...value, feedback: e.target.value });
   };
@@ -154,6 +156,7 @@ const FeedbackEditor: React.FC<{
                 value={value.answer.correctMin}
                 onChange={onCorrectMinChange}
                 onBlur={onBlur}
+                onFocus={() => onfocusHandler(false)}
               />
             </div>
             <div className="col-span-6">
@@ -163,6 +166,7 @@ const FeedbackEditor: React.FC<{
                 value={value.answer.correctMax}
                 onChange={onCorrectMaxChange}
                 onBlur={onBlur}
+                onFocus={() => onfocusHandler(false)}
               />
             </div>
           </>
@@ -177,6 +181,7 @@ const FeedbackEditor: React.FC<{
                 value={value.answer.correctAnswer}
                 onChange={onCorrectAnswerChange}
                 onBlur={onBlur}
+                onFocus={() => onfocusHandler(false)}
               />
             </div>
           </>
@@ -190,6 +195,7 @@ const FeedbackEditor: React.FC<{
             value={value.feedback}
             onChange={onFeedbackChange}
             onBlur={onBlur}
+            onFocus={() => onfocusHandler(false)}
           />
         </div>
       </div>

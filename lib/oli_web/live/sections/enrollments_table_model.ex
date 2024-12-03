@@ -3,6 +3,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias Lti_1p3.Tool.ContextRoles
 
   use Phoenix.Component
@@ -35,9 +36,8 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         },
         %ColumnSpec{
           name: :progress,
-          label: "COURSE PROGRESS",
-          tooltip:
-            "Progress is percent attempted of activities present on the page from the most recent page attempt. If there are no activities within the page, and if the student has visited that page, we count that as an attempt.",
+          th_class: "flex items-center gap-1 ",
+          label: HTMLComponents.student_progress_label(%{title: "COURSE PROGRESS"}),
           render_fn: &__MODULE__.render_progress_column/3
         },
         %ColumnSpec{

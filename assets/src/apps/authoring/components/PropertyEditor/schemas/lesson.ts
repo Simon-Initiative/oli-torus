@@ -59,6 +59,11 @@ const lessonSchema: JSONSchema7 = {
               title: 'Display Torus Navigation',
               default: 'false',
             },
+            darkModeSetting: {
+              type: 'boolean',
+              title: 'Enable Dark Mode',
+              default: 'false',
+            },
           },
         },
         FinishPanel: {
@@ -142,6 +147,11 @@ export const simpleLessonSchema: JSONSchema7 = {
             displayApplicationChrome: {
               type: 'boolean',
               title: 'Display Torus Navigation',
+              default: 'false',
+            },
+            darkModeSetting: {
+              type: 'boolean',
+              title: 'Enable Dark Mode',
               default: 'false',
             },
           },
@@ -242,6 +252,7 @@ export const transformModelToSchema = (model: any) => {
         backgroundImageURL: model.custom.backgroundImageURL,
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
         displayApplicationChrome: model.displayApplicationChrome,
+        darkModeSetting: model.custom.darkModeSetting || false,
       },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
@@ -286,6 +297,7 @@ export const transformSchemaToModel = (schema: any) => {
       logoutPanelImageURL: schema.Properties.FinishPanel.logoutPanelImageURL,
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
+      darkModeSetting: schema.Properties.Appearance.darkModeSetting,
     },
     displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
     additionalStylesheets,

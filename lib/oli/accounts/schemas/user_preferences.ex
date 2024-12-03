@@ -6,10 +6,11 @@ defmodule Oli.Accounts.UserPreferences do
   @primary_key false
   embedded_schema do
     field :timezone, :string
+    field :page_outline_panel_active?, :boolean, default: false
   end
 
   def changeset(preferences, attrs \\ %{}) do
     preferences
-    |> cast(attrs, [:timezone])
+    |> cast(attrs, [:timezone, :page_outline_panel_active?])
   end
 end

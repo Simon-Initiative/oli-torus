@@ -58,6 +58,7 @@ defmodule Oli.Application do
 
         # Starts Cachex to store page content info
         Oli.Delivery.DistributedDepotCoordinator,
+        Oli.Delivery.DepotWarmer,
         {Cachex, name: :page_content_cache},
 
         # Starts Cachex to store datashop export info
