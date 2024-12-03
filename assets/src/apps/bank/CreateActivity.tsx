@@ -5,8 +5,9 @@ import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
 import * as Persistence from 'data/persistence/activity';
 import { CreationData } from 'components/activities';
-import { Objective } from 'data/content/objective';
+import { Objective, ResourceId } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
+import { BulkActivityCreate } from 'data/persistence/activity';
 
 export type CreateActivityProps = {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -60,35 +61,66 @@ const create = (
     });
 };
 
+function editorForData(data: CreationData, editorMap: ActivityEditorMap) {
+  let editorDesc: EditorDesc | null = null;
+  switch (data.type.toLowerCase()) {
+    case 'mcq':
+      editorDesc = editorMap['oli_multiple_choice'];
+      break;
+    case 'cata':
+      editorDesc = editorMap['oli_check_all_that_apply'];
+      break;
+    case 'ordering':
+      editorDesc = editorMap['oli_ordering'];
+      break;
+    case 'number':
+    case 'text':
+    case 'paragraph':
+    case 'math':
+      editorDesc = editorMap['oli_short_answer'];
+      break;
+    default:
+      console.error('unknown type', data.type);
+      break;
+  }
+  return editorDesc;
+}
+
+function tagsAndObjectives(data: CreationData, allObjectives: Objective[], allTags: Tag[]) {
+  const objectives: ResourceId[] = [];
+  if (data.objectives) {
+    const objectiveTitles: string[] = data.objectives.split(',').map((ob) => ob.replace(/[\[\]']+/g, ''));
+    for (const objectiveTitle of objectiveTitles) {
+      const objective = allObjectives.find((o) => o.title === objectiveTitle);
+      if (objective) {
+        objectives.push(objective.id);
+      }
+    }
+  }
+  const tags: ResourceId[] = [];
+  if (data.tags) {
+    const tagTitles: string[] = data.tags.split(',').map((ob) => ob.replace(/[\[\]']+/g, ''));
+    for (const tagTitle of tagTitles) {
+      const tag = allTags.find((t) => t.title === tagTitle);
+      if (tag) {
+        tags.push(tag.id);
+      }
+    }
+  }
+  return { objectives, tags };
+}
+
 const createBulk = async (
   projectSlug: string,
+  allObjectives: Objective[],
+  allTags: Tag[],
   editorMap: ActivityEditorMap,
   bulkImportData: CreationData[],
   onAdd: (added: ActivityEditContext) => void,
 ) => {
-  console.log('editorMap', editorMap);
+  const bulkCreateData: BulkActivityCreate[] = []
   for (const data of bulkImportData) {
-    let editorDesc: EditorDesc | null = null;
-    switch (data.type.toLowerCase()) {
-      case 'mcq':
-         editorDesc = editorMap['oli_multiple_choice'];
-        break;
-      case 'cata':
-         editorDesc = editorMap['oli_check_all_that_apply'];
-        break;
-      case 'ordering':
-        editorDesc = editorMap['oli_ordering'];
-        break;
-      case 'number':
-      case 'text':
-      case 'paragraph':
-      case 'math':
-        editorDesc = editorMap['oli_short_answer'];
-        break;
-      default:
-        console.error('unknown type', data.type);
-        break;
-    }
+    let editorDesc = editorForData(data, editorMap);
     if (editorDesc) {
       const model = await invokeCreationFunc(editorDesc.slug, {creationData: data} as any)
         .then((createdModel) => {
@@ -98,9 +130,50 @@ const createBulk = async (
           // tslint:disable-next-line
           console.error(err);
         });
-      console.log('createdModel', JSON.stringify(model));
+      const { objectives, tags } = tagsAndObjectives(data, allObjectives, allTags);
+      if (model) {
+        const bulkCreate: BulkActivityCreate = {
+          title: data.title,
+          objectives: objectives,
+          tags: tags,
+          content: model,
+          activityTypeSlug: editorDesc.slug,
+        }
+        bulkCreateData.push(bulkCreate);
+        console.log('createdModel', JSON.stringify(model));
+      }
     }
   }
+  Persistence.createBulk(projectSlug, bulkCreateData, 'banked').then((result: Persistence.CreatedBulk[]) => {
+    // const objectives = model.authoring.parts
+    //   .map((p: any) => {
+    //     return p.id;
+    //   })
+    //   .reduce((m: any, id: any) => {
+    //     m[id] = [];
+    //     return m;
+    //   }, {});
+    //
+    // const activity: ActivityEditContext = {
+    //   authoringElement: editorDesc.authoringElement as string,
+    //   description: editorDesc.description,
+    //   friendlyName: editorDesc.friendlyName,
+    //   activitySlug: result.revisionSlug,
+    //   typeSlug: editorDesc.slug,
+    //   activityId: result.resourceId,
+    //   title: editorDesc.friendlyName,
+    //   model,
+    //   objectives,
+    //   tags: [],
+    //   variables: editorDesc.variables,
+    // };
+    //
+    // onAdded(activity);
+  })
+    .catch((err) => {
+      // tslint:disable-next-line
+      console.error(err);
+    });
 };
 
 export const CreateActivity = (props: CreateActivityProps) => {
@@ -111,7 +184,7 @@ export const CreateActivity = (props: CreateActivityProps) => {
 
   const handleBulkAdd = (bulkImportData: CreationData[]) => {
     setModalShow(false);
-    createBulk(projectSlug, editorMap, bulkImportData, onAdd);
+    createBulk(projectSlug, props.allObjectives, props.allTags, editorMap, bulkImportData, onAdd);
   };
 
   let activityEntries = Object.keys(editorMap)

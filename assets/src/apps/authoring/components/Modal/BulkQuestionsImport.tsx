@@ -32,6 +32,8 @@ const requiredHeaders = [
   'explanation',
 ];
 
+const maxQuestionsPerImport = 200;
+
 export const BulkQuestionsImport: React.FC<Props> = ({
   onCancel,
   onUpload,
@@ -63,14 +65,24 @@ export const BulkQuestionsImport: React.FC<Props> = ({
           }
           const data: CreationData[] = results.data;
 
-          if (data.length > 200) {
+          if (data.length > maxQuestionsPerImport) {
             setError('Maximum 200 questions can be imported at a time');
+            return;
+          }
+          if (data.length == 0) {
+            setError('A file with no questions cannot be uploaded');
             return;
           }
           if (results.errors.length) {
             setError(`Errors while parsing: ${results.errors}`);
             return;
           }
+          data.forEach((question, index) => {
+            if (!question.title || question.title.trim() === '') {
+              setError(`Title is required for question ${index + 1}`);
+              return;
+            }
+          });
 
           setBulkImportData(data);
         },

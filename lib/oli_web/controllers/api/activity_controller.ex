@@ -206,6 +206,46 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
+  @doc false
+  def create_bulk(conn, %{
+    "project" => project_slug,
+    "bulkData" => bulk_data
+  }) do
+    author = conn.assigns[:current_author]
+
+    scope = Map.get(conn.body_params, "scope", "embedded")
+
+    IO.inspect(bulk_data)
+
+#    case ActivityEditor.create(
+#           project_slug,
+#           activity_type_slug,
+#           author,
+#           model,
+#           objectives,
+#           scope
+#         ) do
+#      {:ok, {%{slug: slug, resource_id: resource_id}, _}} ->
+#        json(conn, %{
+#          "type" => "success",
+#          "revisionSlug" => slug,
+#          "resourceId" => resource_id
+#        })
+#
+#      {:error, {:not_found}} ->
+#        error(conn, 404, "not found")
+#
+#      {:error, {:not_authorized}} ->
+#        error(conn, 403, "unauthorized")
+#
+#      e ->
+#        {_, msg} = Oli.Utils.log_error("Could not create activity", e)
+#        error(conn, 500, msg)
+#    end
+
+    error(conn, 404, "not found")
+  end
+
   defp document_to_result(nil) do
     %{
       "result" => "failed"

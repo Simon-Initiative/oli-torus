@@ -521,7 +521,9 @@ defmodule OliWeb.Router do
     put("/:project/resource/:resource", Api.ResourceController, :update)
     get("/:project/link", Api.ResourceController, :index)
 
-    post("/:project/activity/:activity_type", Api.ActivityController, :create)
+    post("/:project/activity/:activity_type", Api.ActivityController, :create_bulk)
+
+    post("/:project/activity/bulk", Api.ActivityController, :create)
 
     put("/test/evaluate", Api.ActivityController, :evaluate)
     put("/test/transform", Api.ActivityController, :transform)
