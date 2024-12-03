@@ -115,7 +115,9 @@ defmodule Oli.Delivery.Depot do
   end
 
   @doc """
-  Returns the count of entries that match the given conditions.
+  count/2 :: Returns the number of objects inserted in the table.
+
+  count/3 :: Returns the count of entries that match the given conditions.
 
   Full details on the supported conditions can be found in the MatchSpecTranslator
   module, but the basic idea is that you can pass a list of conditions to match on.
@@ -129,6 +131,12 @@ defmodule Oli.Delivery.Depot do
 
   [{:duration, {:between, 5, 10}}, {:graded, {:=, true}}]
   """
+
+  def count(%DepotDesc{} = depot_desc, table_id) do
+    DepotDesc.table_name(depot_desc, table_id)
+    |> :ets.info(:size)
+  end
+
   def count(%DepotDesc{} = depot_desc, table_id, conditions) do
     {match_head, guards, _return_fields} =
       MatchSpecTranslator.translate(depot_desc, conditions)

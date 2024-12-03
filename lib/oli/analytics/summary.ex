@@ -1,4 +1,6 @@
 defmodule Oli.Analytics.Summary do
+  import Ecto.Query
+
   alias Oli.Analytics.Summary.{
     AttemptGroup,
     ResponseLabel,
@@ -10,6 +12,9 @@ defmodule Oli.Analytics.Summary do
 
   alias Oli.Analytics.Common.Pipeline
   alias Oli
+  alias Oli.Repo
+  alias Oli.Resources.ResourceType
+
   require Logger
 
   @resource_fields "project_id, publication_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
@@ -408,5 +413,59 @@ defmodule Oli.Analytics.Summary do
     %StudentResponse{}
     |> StudentResponse.changeset(attrs)
     |> Oli.Repo.insert()
+  end
+
+  @doc """
+  Counts the number of attempts made by a list of students for a given activity in a given section.
+  """
+  @spec count_student_attempts(
+          activity_resource_id :: integer(),
+          section_id :: integer(),
+          student_ids :: [integer()]
+        ) :: integer() | nil
+  def count_student_attempts(activity_resource_id, section_id, student_ids) do
+    page_type_id = ResourceType.get_id_by_type("activity")
+
+    from(rs in ResourceSummary,
+      where:
+        rs.section_id == ^section_id and rs.resource_id == ^activity_resource_id and
+          rs.user_id in ^student_ids and rs.project_id == -1 and rs.publication_id == -1 and
+          rs.resource_type_id == ^page_type_id,
+      select: sum(rs.num_attempts)
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Returns a list of response summaries for a given page resource id, section id, and activity resource ids.
+  """
+  @spec get_response_summary_for(
+          page_resource_id :: integer(),
+          section_id :: integer(),
+          activity_resource_ids :: [integer()]
+        ) :: [map()]
+  def get_response_summary_for(page_resource_id, section_id, activity_resource_ids) do
+    from(rs in ResponseSummary,
+      join: rpp in ResourcePartResponse,
+      on: rs.resource_part_response_id == rpp.id,
+      left_join: sr in StudentResponse,
+      on:
+        rs.section_id == sr.section_id and rs.page_id == sr.page_id and
+          rs.resource_part_response_id == sr.resource_part_response_id,
+      left_join: u in Oli.Accounts.User,
+      on: sr.user_id == u.id,
+      where:
+        rs.section_id == ^section_id and rs.page_id == ^page_resource_id and
+          rs.publication_id == -1 and rs.project_id == -1 and
+          rs.activity_id in ^activity_resource_ids,
+      select: %{
+        part_id: rpp.part_id,
+        response: rpp.response,
+        count: rs.count,
+        user: u,
+        activity_id: rs.activity_id
+      }
+    )
+    |> Repo.all()
   end
 end

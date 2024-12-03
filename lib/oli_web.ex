@@ -79,7 +79,14 @@ defmodule OliWeb do
       on_mount OliWeb.LiveSessionPlugs.SetUser
       on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
+      unquote(socket_helpers())
       unquote(html_helpers())
+    end
+  end
+
+  defp socket_helpers() do
+    quote do
+      import OliWeb.Live.SocketHelpers
     end
   end
 

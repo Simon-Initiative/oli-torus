@@ -106,7 +106,7 @@ const ReviewModeNavigation: React.FC = () => {
             }
             .review-button button {
               text-decoration: none;
-              padding: 0 0 0 4px;
+              padding: 4px 10px;
               font-size: 1.3rem;
               line-height: 1.5;
               border-radius: 0 0 4px 4px;
@@ -119,6 +119,7 @@ const ReviewModeNavigation: React.FC = () => {
               color: #fff;
               background-color: #6c757d;
               box-shadow: 0 1px 2px #00000079;
+              cursor: pointer;
             }
             `}
           </style>
@@ -131,22 +132,32 @@ const ReviewModeNavigation: React.FC = () => {
               &nbsp;
             </span>
           </button>
-          {
+          {showHistory && (
             <div className={['navigationContainer', 'pullLeftInCheckContainer'].join(' ')}>
-              {showHistory && (
+              {
                 <ReviewModeHistoryPanel
                   items={historyItems}
                   onMinimize={minimizeHandler}
                 ></ReviewModeHistoryPanel>
-              )}
+              }
             </div>
-          }
-          <button onClick={prevHandler} aria-label="Previous screen" disabled={isFirst}>
+          )}
+          <button
+            onClick={prevHandler}
+            title="Previous screen"
+            aria-label="Previous screen"
+            disabled={isFirst}
+          >
             <span title="Previous screen" className="fa fa-arrow-left">
               &nbsp;
             </span>
           </button>
-          <button onClick={nextHandler} aria-label="Next screen" disabled={isLast}>
+          <button
+            onClick={nextHandler}
+            title="Next screen"
+            aria-label="Next screen"
+            disabled={isLast}
+          >
             <span title="Next screen" className="fa fa-arrow-right">
               &nbsp;
             </span>

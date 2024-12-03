@@ -3,11 +3,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   import Ecto.Query
 
-  alias Oli.Accounts.User
-  alias Oli.Analytics.Summary.ResourcePartResponse
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Analytics.Summary.ResponseSummary
-  alias Oli.Analytics.Summary.StudentResponse
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Delivery.Attempts.Core.ResourceAccess
@@ -25,10 +22,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias OliWeb.Common.Params
   alias OliWeb.Common.SearchInput
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
   alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
   alias OliWeb.ManualGrading.Rendering
-  alias OliWeb.ManualGrading.RenderedActivity
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
 
@@ -59,7 +56,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
         students: assigns.students,
         scripts: assigns.scripts,
         activity_types_map: assigns.activity_types_map,
-        preview_rendered: nil
+        selected_activity: nil
       )
 
     case params.assessment_id do
@@ -251,8 +248,8 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           id="activity_detail"
           phx-hook="LoadSurveyScripts"
         >
-          <%= if @preview_rendered != nil do %>
-            <RenderedActivity.render id={@rendered_activity_id} rendered_activity={@preview_rendered} />
+          <%= if Map.get(@selected_activity, :preview_rendered) != nil do %>
+            <ActivityHelpers.rendered_activity activity={@selected_activity} />
           <% else %>
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
@@ -378,15 +375,20 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     table_model =
       Map.merge(socket.assigns.table_model, %{selected: "#{selected_activity_id}"})
 
-    section = socket.assigns.section
-    activity_types_map = socket.assigns.activity_types_map
-    page_id = socket.assigns.current_assessment.resource_id
+    %{
+      section: section,
+      activity_types_map: activity_types_map,
+      current_assessment: %{resource_id: page_id}
+    } = socket.assigns
 
-    case get_activity_details(selected_activity, section, activity_types_map, page_id) do
-      nil ->
-        assign(socket, table_model: table_model)
-
-      activity_attempt ->
+    case ActivityHelpers.get_activities_details(
+           [selected_activity.resource_id],
+           section,
+           activity_types_map,
+           page_id
+         ) do
+      details when details not in [nil, []] ->
+        activity_attempt = hd(details)
         part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
         rendering_context =
@@ -398,10 +400,15 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           )
           |> Map.merge(%{is_liveview: true})
 
-        preview_rendered = Rendering.render(rendering_context, :instructor_preview)
+        selected_activity =
+          Map.merge(selected_activity, %{
+            preview_rendered: Rendering.render(rendering_context, :instructor_preview),
+            datasets: Map.get(activity_attempt, :datasets),
+            analytics_version: section.analytics_version
+          })
 
         socket
-        |> assign(table_model: table_model, preview_rendered: preview_rendered)
+        |> assign(table_model: table_model, selected_activity: selected_activity)
         |> case do
           %{assigns: %{scripts_loaded: true}} = socket ->
             socket
@@ -411,6 +418,9 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
               script_sources: socket.assigns.scripts
             })
         end
+
+      _details ->
+        assign(socket, table_model: table_model, selected_activity: selected_activity)
     end
   end
 
@@ -650,309 +660,5 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           )
       end
     end)
-  end
-
-  defp get_activity_details(selected_activity, section, activity_types_map, page_id) do
-    multiple_choice_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
-
-    single_response_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
-
-    multi_input_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} ->
-        if v.title == "Multi Input",
-          do: k
-      end)
-
-    likert_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
-
-    activity_attempt =
-      ActivityAttempt
-      |> join(:left, [aa], resource_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == resource_attempt.id
-      )
-      |> join(:left, [_, resource_attempt], ra in ResourceAccess,
-        on: resource_attempt.resource_access_id == ra.id
-      )
-      |> join(:left, [_, _, ra], a in assoc(ra, :user))
-      |> join(:left, [aa, _, _, _], activity_revision in Revision,
-        on: activity_revision.id == aa.revision_id
-      )
-      |> join(:left, [_, resource_attempt, _, _, _], resource_revision in Revision,
-        on: resource_revision.id == resource_attempt.revision_id
-      )
-      |> where(
-        [aa, _resource_attempt, resource_access, _u, activity_revision, _resource_revision],
-        resource_access.section_id == ^section.id and
-          activity_revision.resource_id == ^selected_activity.resource_id
-      )
-      |> order_by([aa, _, _, _, _, _], desc: aa.inserted_at)
-      |> limit(1)
-      |> Ecto.Query.select([aa, _, _, _, _, _], aa)
-      |> select_merge(
-        [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
-        %{
-          activity_type_id: activity_revision.activity_type_id,
-          activity_title: activity_revision.title,
-          page_title: resource_revision.title,
-          page_id: resource_revision.resource_id,
-          resource_attempt_number: resource_attempt.attempt_number,
-          graded: resource_revision.graded,
-          user: user,
-          revision: activity_revision,
-          resource_attempt_guid: resource_attempt.attempt_guid,
-          resource_access_id: resource_access.id
-        }
-      )
-      |> Repo.one()
-
-    if section.analytics_version == :v2 do
-      response_summaries =
-        from(rs in ResponseSummary,
-          join: rpp in ResourcePartResponse,
-          on: rs.resource_part_response_id == rpp.id,
-          join: sr in StudentResponse,
-          on:
-            rs.section_id == sr.section_id and rs.page_id == sr.page_id and
-              rs.resource_part_response_id == sr.resource_part_response_id,
-          join: u in User,
-          on: sr.user_id == u.id,
-          where:
-            rs.section_id == ^section.id and rs.activity_id == ^selected_activity.resource_id and
-              rs.publication_id == -1 and rs.project_id == -1 and
-              rs.page_id == ^page_id,
-          select: %{
-            part_id: rpp.part_id,
-            response: rpp.response,
-            count: rs.count,
-            user: u,
-            activity_id: rs.activity_id
-          }
-        )
-        |> Repo.all()
-
-      case activity_attempt.activity_type_id do
-        ^multiple_choice_type_id ->
-          add_choices_frequencies(activity_attempt, response_summaries)
-
-        ^single_response_type_id ->
-          add_single_response_details(activity_attempt, response_summaries)
-
-        ^multi_input_type_id ->
-          add_multi_input_details(activity_attempt, response_summaries)
-
-        ^likert_type_id ->
-          add_likert_details(activity_attempt, response_summaries)
-
-        _ ->
-          activity_attempt
-      end
-    else
-      activity_attempt
-    end
-  end
-
-  defp add_single_response_details(activity_attempt, response_summaries) do
-    responses =
-      Enum.reduce(response_summaries, [], fn response_summary, acc ->
-        if response_summary.activity_id == activity_attempt.resource_id do
-          [
-            %{
-              text: response_summary.response,
-              user_name: OliWeb.Common.Utils.name(response_summary.user)
-            }
-            | acc
-          ]
-        else
-          acc
-        end
-      end)
-      |> Enum.reverse()
-
-    update_in(
-      activity_attempt,
-      [Access.key!(:revision), Access.key!(:content)],
-      &Map.put(&1, "responses", responses)
-    )
-  end
-
-  defp add_choices_frequencies(activity_attempt, response_summaries) do
-    responses =
-      Enum.filter(response_summaries, fn response_summary ->
-        response_summary.activity_id == activity_attempt.resource_id
-      end)
-
-    choices =
-      activity_attempt.transformed_model["choices"]
-      |> Enum.map(
-        &Map.merge(&1, %{
-          "frequency" =>
-            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
-        })
-      )
-      |> then(fn choices ->
-        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
-
-        if blank_reponses[:response] do
-          [
-            %{
-              "content" => [
-                %{
-                  "children" => [
-                    %{
-                      "text" =>
-                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
-                    }
-                  ],
-                  "type" => "p"
-                }
-              ],
-              "frequency" => blank_reponses.count
-            }
-            | choices
-          ]
-        else
-          choices
-        end
-      end)
-
-    update_in(
-      activity_attempt,
-      [Access.key!(:transformed_model)],
-      &Map.put(&1, "choices", choices)
-    )
-  end
-
-  defp add_multi_input_details(activity_attempt, response_summaries) do
-    if activity_attempt.transformed_model do
-      mapper = build_input_mapper(activity_attempt.transformed_model["inputs"])
-
-      Enum.reduce(
-        activity_attempt.transformed_model["inputs"],
-        activity_attempt,
-        fn input, acc2 ->
-          case input["inputType"] do
-            response when response in ["numeric", "text"] ->
-              add_text_or_numeric_responses(
-                acc2,
-                response_summaries,
-                mapper
-              )
-
-            "dropdown" ->
-              add_dropdown_choices(acc2, response_summaries)
-          end
-        end
-      )
-    end
-  end
-
-  defp add_dropdown_choices(acc, response_summaries) do
-    add_choices_frequencies(acc, response_summaries)
-    |> update_in(
-      [
-        Access.key!(:transformed_model),
-        Access.key!("inputs"),
-        Access.filter(&(&1["inputType"] == "dropdown")),
-        Access.key!("choiceIds")
-      ],
-      &List.insert_at(&1, -1, "0")
-    )
-  end
-
-  defp add_text_or_numeric_responses(acumulator, response_summaries, mapper) do
-    responses =
-      relevant_responses(acumulator.resource_id, response_summaries, mapper)
-
-    update_in(
-      acumulator,
-      [Access.key!(:transformed_model), Access.key!("authoring")],
-      &Map.put(&1, "responses", responses)
-    )
-  end
-
-  defp relevant_responses(resource_id, response_summaries, mapper) do
-    Enum.reduce(response_summaries, [], fn response_summary, acc_responses ->
-      if response_summary.activity_id == resource_id do
-        [
-          %{
-            text: response_summary.response,
-            user_name: OliWeb.Common.Utils.name(response_summary.user),
-            type: mapper[response_summary.part_id],
-            part_id: response_summary.part_id,
-            count: response_summary.count
-          }
-          | acc_responses
-        ]
-      else
-        acc_responses
-      end
-    end)
-  end
-
-  defp build_input_mapper(nil) do
-    %{}
-  end
-
-  defp build_input_mapper(inputs) do
-    Enum.into(inputs, %{}, fn input ->
-      {input["partId"], input["inputType"]}
-    end)
-  end
-
-  defp add_likert_details(activity_attempt, response_summaries) do
-    responses =
-      Enum.filter(response_summaries, fn response_summary ->
-        response_summary.activity_id == activity_attempt.resource_id
-      end)
-
-    choices =
-      activity_attempt.revision.content["choices"]
-      |> Enum.map(
-        &Map.merge(&1, %{
-          "frequency" =>
-            Enum.find(responses, %{count: 0}, fn r -> r.response == &1["id"] end).count
-        })
-      )
-      |> then(fn choices ->
-        blank_reponses = Enum.find(responses, fn r -> r.response == "" end)
-
-        if blank_reponses[:response] do
-          [
-            %{
-              "content" => [
-                %{
-                  "children" => [
-                    %{
-                      "text" =>
-                        "Blank attempt (user submitted assessment without selecting any choice for this activity)"
-                    }
-                  ],
-                  "type" => "p"
-                }
-              ],
-              "frequency" => blank_reponses.count
-            }
-            | choices
-          ]
-        else
-          choices
-        end
-      end)
-
-    update_in(
-      activity_attempt,
-      [Access.key!(:revision), Access.key!(:content)],
-      &Map.put(&1, "choices", choices)
-    )
-    |> update_in(
-      [
-        Access.key!(:revision),
-        Access.key!(:content)
-      ],
-      &Map.put(&1, "activityTitle", activity_attempt.revision.title)
-    )
   end
 end

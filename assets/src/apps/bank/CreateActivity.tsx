@@ -23,7 +23,6 @@ const create = (
   onAdded: (context: ActivityEditContext) => void,
 ) => {
   let model: any;
-
   invokeCreationFunc(editorDesc.slug, {} as any)
     .then((createdModel) => {
       model = createdModel;

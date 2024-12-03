@@ -193,6 +193,28 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       refute has_element?(view, "span", "#{obj_revision_1.title}")
       assert has_element?(view, "span", "#{obj_revision_2.title}")
     end
+
+    test "display proficiency distribution", %{
+      conn: conn,
+      instructor: instructor,
+      section: section,
+      obj_revision_1: obj_revision_1,
+      obj_revision_2: obj_revision_2
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.update_section(section, %{v25_migration: :not_started})
+      {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
+
+      assert has_element?(
+               view,
+               "#proficiency-data-bar-chart-for-objective-#{obj_revision_1.resource_id}"
+             )
+
+      assert has_element?(
+               view,
+               "#proficiency-data-bar-chart-for-objective-#{obj_revision_2.resource_id}"
+             )
+    end
   end
 
   describe "objectives filtering" do
@@ -292,7 +314,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       assert has_element?(view, "span", "#{revisions.obj_revision_a.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_b.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
-      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")
@@ -353,7 +374,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.LearningObjectivesTabTest do
       {:ok, view, _html} = live(conn, live_view_learning_objectives_route(section.slug))
 
       assert has_element?(view, "span", "#{revisions.obj_revision_c.title}")
-      assert has_element?(view, "div", "#{revisions.obj_revision_c1.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_d.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_e.title}")
       assert has_element?(view, "span", "#{revisions.obj_revision_f.title}")

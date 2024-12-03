@@ -639,7 +639,16 @@ defmodule OliWeb.Components.Common do
         :if={@show_percent}
         class="text-right dark:text-white text-base font-semibold leading-loose tracking-tight"
       >
-        <%= @percent %>%
+        <%= if @percent == 100 do %>
+          <div class="flex gap-1 ml-2">
+            Completed
+            <div class="w-7 h-8 py-1 flex gap-2.5">
+              <OliWeb.Icons.check />
+            </div>
+          </div>
+        <% else %>
+          <%= @percent %>%
+        <% end %>
       </div>
     </div>
     """

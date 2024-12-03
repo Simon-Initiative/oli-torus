@@ -436,7 +436,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
     portalEl &&
     ReactDOM.createPortal(
       <CapiVariablePicker
-        label="Stage"
+        label={`CAPI - ${id}`}
         state={internalState.filter((item: CapiVariable) => !item.readonly)}
         onChange={handleValueChangeFromModal}
         onSave={handleEditorSave}

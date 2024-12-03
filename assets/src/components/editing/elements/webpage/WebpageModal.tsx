@@ -1,9 +1,13 @@
 import React, { useCallback, useState } from 'react';
+import { Provider } from 'react-redux';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
+import { configureStore } from 'state/store';
 import { MediaItem } from 'types/media';
+
+const store = configureStore();
 
 interface ModalProps {
   onDone: (x: Partial<ContentModel.Webpage>) => void;
@@ -114,15 +118,17 @@ const MediaEntry: React.FC<{
     [setHref],
   );
   return (
-    <UrlOrUpload
-      onUrlChange={setHref}
-      onMediaSelectionChange={onMediaChange}
-      projectSlug={projectSlug}
-      mimeFilter={undefined}
-      selectionType={SELECTION_TYPES.SINGLE}
-      initialSelectionPaths={href ? [href] : []}
-      externalUrlAllowed={false}
-    ></UrlOrUpload>
+    <Provider store={store}>
+      <UrlOrUpload
+        onUrlChange={setHref}
+        onMediaSelectionChange={onMediaChange}
+        projectSlug={projectSlug}
+        mimeFilter={undefined}
+        selectionType={SELECTION_TYPES.SINGLE}
+        initialSelectionPaths={href ? [href] : []}
+        externalUrlAllowed={false}
+      ></UrlOrUpload>
+    </Provider>
   );
 };
 

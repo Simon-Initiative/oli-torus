@@ -1240,9 +1240,7 @@ defmodule OliWeb.Router do
         Sections.GatingAndScheduling
       )
 
-      live("/collaborative_spaces", CollaborationLive.IndexView, :instructor,
-        as: :collab_spaces_index
-      )
+      live("/collaborative_spaces", CollaborationLive.IndexView, as: :collab_spaces_index)
 
       live(
         "/assessment_settings/:active_tab/:assessment_id",
@@ -1360,7 +1358,6 @@ defmodule OliWeb.Router do
     live("/products", Products.ProductsView)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
-    live("/collaborative_spaces", CollaborationLive.IndexView, :admin, as: :collab_spaces_index)
 
     live(
       "/products/:product_id/discounts/new",

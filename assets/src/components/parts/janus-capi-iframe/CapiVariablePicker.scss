@@ -1,0 +1,198 @@
+#CAPIVariablePicker {
+  display: flex;
+  flex-direction: row;
+  top: 70px;
+  z-index: 10000;
+  min-width: 0;
+  border-radius: 0px 5px 5px 0px;
+
+  .action-picker {
+    padding: 12px;
+    text-align: center;
+  }
+  &.opened {
+    top: 70px;
+    bottom: 0;
+    min-width: 350px;
+    max-width: 350px;
+    width: auto;
+  }
+  .pt-header {
+    position: relative;
+    padding: 0px;
+    border-bottom: 1px solid #94a3b8;
+    > button {
+      float: right;
+      margin-top: 5px;
+      border: none;
+      background: transparent;
+      font-size: initial;
+    }
+    > div {
+      display: flex;
+      background: #f1f5f9;
+      align-items: center;
+      padding: 0px;
+      margin: 0;
+    }
+    .pt-title {
+      margin-left: 8px;
+      color: black;
+      font-size: 18px;
+    }
+  }
+  .pt-body {
+    overflow: auto;
+    color: #1e293b;
+    width: 100%;
+    .preview-tools-view {
+      overflow: auto;
+      counter-reset: li;
+
+      ol {
+        list-style: none;
+      }
+      li {
+        counter-increment: li;
+        &.active {
+          background-color: var(--color-primary);
+        }
+        a {
+          color: #1e293b;
+          display: block;
+          position: relative;
+          padding: 8px 8px;
+          text-decoration: none;
+          margin-left: 30px;
+          &.selected {
+            background-color: var(--color-primary);
+          }
+        }
+        a::before {
+          content: '.' counter(li);
+          display: inline-block;
+          width: 1em;
+          left: -1em;
+          position: absolute;
+          text-align: right;
+          direction: rtl;
+        }
+        &.active a {
+          color: white;
+        }
+      }
+    }
+    .inspector {
+      font-size: 0.8rem;
+      .text-uppercase {
+        text-transform: uppercase;
+        font-weight: bold;
+        margin: 8px;
+        padding-top: 8px;
+      }
+      .list-group-item {
+        padding: 0px;
+        margin-bottom: 0px;
+      }
+      .correct {
+        border-left: 4px solid #4ade80;
+        border-top: 1px solid #d4d4d4;
+      }
+      .incorrect {
+        border-left: 4px solid #facc15;
+        border-top: 1px solid #d4d4d4;
+      }
+      .initState {
+        border-left: 4px solid #d4d4d4;
+      }
+      .even {
+        border-left: 2px solid #475569;
+      }
+      .odd {
+        border-left: 2px solid #64748b;
+      }
+      .chevron-arrow {
+        display: inline-block;
+        transform: rotate(0deg);
+        transition: transform 200ms ease-in-out;
+        margin-right: 10px;
+        vertical-align: inherit;
+        &.rotate {
+          transform: rotate(90deg);
+        }
+      }
+      .card-header button {
+        color: black;
+      }
+    }
+  }
+  .inspector {
+    .card-header {
+      background-color: #f1f5f9;
+      padding: 0px;
+      border-top: 1px solid #d4d4d4;
+      border-left: 1px solid #d4d4d4;
+      border-right: 1px solid #d4d4d4;
+      border-radius: 5px;
+    }
+    .user-input {
+      display: flex;
+      align-items: center;
+    }
+    .stateKey {
+      flex: 1 0 60%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stateValue {
+      flex: 1;
+      min-width: 75px;
+    }
+    .is-parent {
+      &.list-group-item {
+        padding: 0;
+      }
+      .list-group {
+        margin-left: 1rem !important;
+      }
+      .list-group {
+        margin: 0px !important;
+      }
+      button {
+        font-size: 0.9rem;
+      }
+    }
+    .custom-control-label {
+      margin-right: -4px;
+    }
+    .custom-select-sm {
+      height: calc(1.5em + 0.5rem + 1px);
+      width: auto;
+      font-size: 0.75rem;
+      max-width: 75px;
+    }
+    .custom-switch {
+      transform: scale(1.5);
+    }
+    .apply-changes {
+      display: flex;
+      background-color: #cbd5e1;
+      button {
+        flex-grow: 1;
+      }
+    }
+  }
+  .visually-hidden:not(:focus):not(:active) {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+}
+.dark .inspector .stateKey {
+  color: white !important;
+}
