@@ -118,6 +118,7 @@ export const ScreenList: React.FC<Props> = ({ onFlowchartMode }) => {
 
   const onSelectScreen = useCallback(
     (screenResourceId: EntityId) => {
+      dispatch(setCurrentPartPropertyFocus({ focus: false }));
       dispatch(setCurrentActivityId({ activityId: screenResourceId }));
     },
     [dispatch],

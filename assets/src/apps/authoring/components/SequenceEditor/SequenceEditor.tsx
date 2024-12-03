@@ -90,7 +90,7 @@ const SequenceEditor: React.FC<any> = (props: any) => {
 
   const handleItemClick = (e: any, entry: SequenceEntry<SequenceEntryChild>) => {
     e.stopPropagation();
-    dispatch(setCurrentPartPropertyFocus({ focus: true }));
+    dispatch(setCurrentPartPropertyFocus({ focus: false }));
     dispatch(setCurrentActivityFromSequence(entry.custom.sequenceId));
     dispatch(
       setRightPanelActiveTab({

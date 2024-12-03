@@ -9,7 +9,8 @@ on:
 jobs:
   auto-deploy:
     name: Auto Deploy
-    if: vars.AUTO_DEPLOY_ENABLED == 'TRUE' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == vars.AUTO_DEPLOY_REF
+    # always() is required here due to a strange bug in GitHub Actions https://github.com/actions/runner/issues/2205#issuecomment-1534430719
+    if: always() && (vars.AUTO_DEPLOY_ENABLED == 'TRUE' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == vars.AUTO_DEPLOY_REF)
     runs-on: ubuntu-latest
     environment:
       name: ${{ vars.AUTO_DEPLOY_TARGET }}
