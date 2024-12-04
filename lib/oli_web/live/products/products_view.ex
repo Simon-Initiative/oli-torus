@@ -3,12 +3,10 @@ defmodule OliWeb.Products.ProductsView do
 
   import OliWeb.DelegatedEvents
 
-  alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, SessionContext, TextSearch}
   alias OliWeb.Products.Create
   alias Oli.Authoring.Course
-  alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes

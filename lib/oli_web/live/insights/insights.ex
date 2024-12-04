@@ -19,7 +19,6 @@ defmodule OliWeb.Insights do
   alias OliWeb.Components.Project.AsyncExporter
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.SessionContext
   alias Oli.Analytics.Summary.BrowseInsights
   alias Oli.Analytics.Summary.BrowseInsightsOptions
   alias OliWeb.Insights.ActivityTableModel
@@ -31,7 +30,7 @@ defmodule OliWeb.Insights do
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  def mount(%{"project_id" => project_slug}, session, socket) do
+  def mount(%{"project_id" => project_slug}, _session, socket) do
     ctx = socket.assigns.ctx
 
     project = Course.get_project_by_slug(project_slug)

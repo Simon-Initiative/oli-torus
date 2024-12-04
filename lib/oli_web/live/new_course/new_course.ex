@@ -14,7 +14,6 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
@@ -25,6 +24,9 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Phoenix.LiveView.JS
 
   import OliWeb.Components.Delivery.Layouts
+
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   @form_id "open_and_free_form"
   def mount(_params, session, socket) do

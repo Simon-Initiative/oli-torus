@@ -23,6 +23,9 @@ defmodule OliWeb.Sections.SectionsView do
   }
   @type_opts [:open, :lms]
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
     |> breadcrumb()
@@ -38,8 +41,8 @@ defmodule OliWeb.Sections.SectionsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
+  def mount(_, _session, socket) do
+    ctx = socket.assigns.ctx
 
     sections =
       Browse.browse_sections(
@@ -53,9 +56,8 @@ defmodule OliWeb.Sections.SectionsView do
 
     {:ok,
      assign(socket,
-       ctx: ctx,
        breadcrumbs: set_breadcrumbs(),
-       author: author,
+       author: socket.assigns.current_author,
        sections: sections,
        total_count: total_count,
        table_model: table_model,

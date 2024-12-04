@@ -12,6 +12,9 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
   alias Phoenix.LiveView.JS
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(_params, session, socket) do
     institutions = Institutions.list_institutions()
 

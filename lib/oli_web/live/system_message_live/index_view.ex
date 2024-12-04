@@ -9,6 +9,9 @@ defmodule OliWeb.SystemMessageLive.IndexView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.SystemMessageLive.EditMessage
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def breadcrumb() do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [
@@ -24,7 +27,6 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
     {:ok,
      assign(socket,
-       ctx: SessionContext.init(socket, session),
        messages: messages,
        breadcrumbs: breadcrumb(),
        changeset: SystemMessage.changeset(%SystemMessage{}) |> to_form()

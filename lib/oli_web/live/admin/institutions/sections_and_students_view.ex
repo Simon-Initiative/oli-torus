@@ -21,6 +21,9 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
     text_search: nil
   }
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(
         %{"institution_id" => institution_id, "selected_tab" => selected_tab},
         session,

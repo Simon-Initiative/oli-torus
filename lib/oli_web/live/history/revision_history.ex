@@ -25,6 +25,9 @@ defmodule OliWeb.RevisionHistory do
 
   @page_size 15
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, session, socket) do
     ctx = SessionContext.init(socket, session)

@@ -22,10 +22,12 @@ defmodule OliWeb.Datashop.AnalyticsLive do
 
   @limit 25
 
-  on_mount(OliWeb.LiveSessionPlugs.SetProject)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+  on_mount OliWeb.LiveSessionPlugs.SetProject
 
-  def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(_params, _session, socket) do
+    ctx = socket.assigns.ctx
     project = socket.assigns.project
     selected_sections = MapSet.new([])
 

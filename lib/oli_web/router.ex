@@ -1298,6 +1298,8 @@ defmodule OliWeb.Router do
 
     live_session :enrolled_students,
       on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetRouteName,
         OliWeb.Delivery.StudentDashboard.InitialAssigns
       ],

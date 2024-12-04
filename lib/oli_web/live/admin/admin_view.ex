@@ -7,8 +7,11 @@ defmodule OliWeb.Admin.AdminView do
   alias Oli.Accounts.{Author}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  def mount(_, _session, socket) do
+    author = socket.assigns.current_author
 
     {:ok,
      assign(socket,

@@ -4,14 +4,10 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLive do
   import Ecto.Query, warn: false
   import OliWeb.Common.Utils
 
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.StudentDashboard.Components.Helpers
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Metrics
-
-  on_mount {OliWeb.UserAuth, :ensure_authenticated}
-  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do

@@ -18,6 +18,9 @@ defmodule OliWeb.Users.UsersView do
     text_search: ""
   }
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
     |> breadcrumb()

@@ -25,6 +25,7 @@ defmodule OliWeb.Workspaces.Student do
   ]
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_params, _session, %{assigns: %{is_admin: true}} = socket) do
     # admin case...
