@@ -53,7 +53,7 @@ export const AuthoringFlowchartPageEditor: React.FC<AuthoringPageEditorProps> = 
   return (
     <div
       id="advanced-authoring"
-      className={`advanced-authoring flowchart-editor ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
+      className={`advanced-authoring flowchart-editor mt-8 ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
       ref={authoringContainer}
     >
       <FlowchartHeaderNav

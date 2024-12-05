@@ -7,6 +7,7 @@ import { Maybe } from 'tsmonad';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
 import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
+import { createCopy } from 'components/activity/DuplicateActivity';
 import {
   EditorUpdate as ActivityEditorUpdate,
   InlineActivityEditor,
@@ -40,7 +41,7 @@ import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBo
 import { initAppSignal } from '../../utils/appsignal';
 import '../ResourceEditor.scss';
 import styles from './ActivityBank.modules.scss';
-import { CreateActivity, createCopy } from './CreateActivity';
+import { CreateActivity } from './CreateActivity';
 import { EditButton } from './EditButton';
 import { LogicFilter } from './LogicFilter';
 
