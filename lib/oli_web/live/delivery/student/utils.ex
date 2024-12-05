@@ -193,7 +193,9 @@ defmodule OliWeb.Delivery.Student.Utils do
         <li
           :if={
             @effective_settings.end_date != nil and @effective_settings.scheduling_type == :due_by and
-              !@is_adaptive and @effective_settings.late_submit != :allow
+              !@is_adaptive and
+              (@effective_settings.late_submit == :disallow or
+                 (@effective_settings.late_submit == :allow and @effective_settings.time_limit > 0))
           }
           id="page_submission_terms"
         >
