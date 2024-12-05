@@ -4561,8 +4561,16 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: -0.375rem;
 }
 
+.-mt-2 {
+  margin-top: -0.5rem;
+}
+
 .-mt-5 {
   margin-top: -1.25rem;
+}
+
+.-mt-\[28px\] {
+  margin-top: -28px;
 }
 
 .mb-0 {
