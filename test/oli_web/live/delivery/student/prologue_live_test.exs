@@ -357,7 +357,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
     |> Sections.update_section_resource(%{
       start_date: ~U[2023-11-10 20:00:00Z],
-      end_date: ~U[2023-11-14 20:00:00Z]
+      end_date: ~U[2023-11-14 20:00:00Z],
+      late_submit: :disallow,
+      scheduling_type: :due_by
     })
 
     # enable collaboration spaces for all pages in the section
@@ -1076,7 +1078,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
            conn: conn,
            user: user,
            section: section,
-           page_2: page_2
+           page_2: page_2,
+           graded_adaptive_page_revision: graded_adaptive_page
          } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
@@ -1086,7 +1089,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert view
              |> element("#page_due_terms")
              |> render() =~
-               "This assignment is suggested by"
+               "This assignment is due on"
 
       assert view
              |> element("#page_due_terms")
@@ -1135,6 +1138,41 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
              |> element("#page_scoring_terms")
              |> render() =~
                "Your overall score for this assignment will be the average score of your attempts."
+
+      # submission terms shouln't be visible when scheduling type is read_by
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :read_by
+      })
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, "#page_submission_terms")
+
+      # submission terms shouln't be visible when late submit is allowed
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        late_submit: :allow
+      })
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, "#page_submission_terms")
+
+      # submission terms shouln't be visible in prologue for adaptive pages
+      Sections.get_section_resource(section.id, graded_adaptive_page.resource_id)
+      |> Sections.update_section_resource(%{
+        start_date: ~U[2023-11-10 20:00:00Z],
+        end_date: ~U[2023-11-14 20:00:00Z],
+        late_submit: :disallow,
+        scheduling_type: :due_by
+      })
+
+      {:ok, view, _html} =
+        live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page.slug))
+
+      refute has_element?(view, "#page_submission_terms")
     end
   end
 
