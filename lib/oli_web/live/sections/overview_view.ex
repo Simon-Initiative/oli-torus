@@ -248,7 +248,7 @@ defmodule OliWeb.Sections.OverviewView do
           </li>
           <li>
             <a
-              href={Routes.collab_spaces_index_path(OliWeb.Endpoint, :instructor, @section.slug)}
+              href={~p"/sections/#{@section.slug}/collaborative_spaces"}
               class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
             >
               Browse Collaborative Spaces
