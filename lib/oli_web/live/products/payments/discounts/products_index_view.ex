@@ -33,13 +33,12 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
         discounts = Paywall.get_product_discounts(product.id)
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         {:ok, table_model} = TableModel.new(discounts, ctx)
 
         {:ok,
          assign(socket,
-           ctx: ctx,
            breadcrumbs: set_breadcrumbs(product),
            discounts: discounts,
            table_model: table_model,

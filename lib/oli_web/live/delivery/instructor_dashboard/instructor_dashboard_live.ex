@@ -2,7 +2,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -16,9 +15,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   @impl Phoenix.LiveView
-  def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
-    {:ok, assign(socket, ctx: ctx)}
+  def mount(_params, _session, socket) do
+    {:ok, socket}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do

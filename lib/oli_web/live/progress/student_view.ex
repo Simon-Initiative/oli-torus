@@ -36,7 +36,7 @@ defmodule OliWeb.Progress.StudentView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user} ->
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         case Mount.for(section_slug, session) do
           {:error, e} ->
@@ -74,7 +74,6 @@ defmodule OliWeb.Progress.StudentView do
 
             {:ok,
              assign(socket,
-               ctx: ctx,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,

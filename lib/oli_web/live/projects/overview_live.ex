@@ -18,12 +18,10 @@ defmodule OliWeb.Projects.OverviewLive do
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Components.Overview
   alias OliWeb.Projects.{RequiredSurvey, TransferPaymentCodes}
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Components.Common
   alias OliWeb.Components.Project.AsyncExporter
 
   def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
     project = socket.assigns.project
 
     author = socket.assigns[:current_author]
@@ -52,7 +50,6 @@ defmodule OliWeb.Projects.OverviewLive do
 
     socket =
       assign(socket,
-        ctx: ctx,
         breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
         active: :overview,
         collaborators: Accounts.project_authors(project),

@@ -415,6 +415,7 @@ defmodule OliWeb.Router do
     live_session :load_projects,
       on_mount: [
         {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.SetProject
       ] do
       live("/:project_id", Projects.OverviewLive)

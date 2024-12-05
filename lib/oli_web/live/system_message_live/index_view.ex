@@ -5,7 +5,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
   alias Oli.Notifications
   alias Oli.Notifications.{PubSub, SystemMessage}
-  alias OliWeb.Common.{Breadcrumb, Confirm, FormatDateTime, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Confirm, FormatDateTime}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.SystemMessageLive.EditMessage
 
@@ -22,7 +22,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
       ]
   end
 
-  def mount(_, session, socket) do
+  def mount(_, _session, socket) do
     messages = Notifications.list_system_messages()
 
     {:ok,

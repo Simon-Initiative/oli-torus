@@ -20,9 +20,11 @@ defmodule OliWeb.Projects.ProjectsLive do
   @limit 25
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
+  def mount(_, _session, socket) do
+    author = socket.assigns.current_author
+    ctx = socket.assigns.ctx
     is_admin = Accounts.has_admin_role?(author, :content_admin)
 
     show_all =
@@ -48,7 +50,6 @@ defmodule OliWeb.Projects.ProjectsLive do
     {:ok,
      assign(
        socket,
-       ctx: ctx,
        author: author,
        projects: projects,
        table_model: table_model,

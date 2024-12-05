@@ -23,7 +23,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
             id -> {id, "Create Student Exception"}
           end
 
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         {:ok,
          GatingConditionStore.init(

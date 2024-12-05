@@ -7,7 +7,7 @@ defmodule OliWeb.Users.UsersView do
   alias Oli.Accounts
   alias Oli.Accounts.UserBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.UsersTableModel
@@ -46,7 +46,7 @@ defmodule OliWeb.Users.UsersView do
 
     total_count = SortableTableModel.determine_total(users)
 
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     {:ok, table_model} = UsersTableModel.new(users, ctx)
 
     {:ok,

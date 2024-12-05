@@ -4,7 +4,7 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   alias Oli.Accounts
   alias Oli.Groups
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -14,6 +14,7 @@ defmodule OliWeb.CommunityLive.IndexView do
   @table_push_patch_path &__MODULE__.live_path/2
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def filter_rows(socket, query, filter) do
     query_str = String.downcase(query)
@@ -40,7 +41,7 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   def mount(
         _,
-        %{"current_author_id" => author_id} = session,
+        _session,
         socket
       ) do
     is_admin = socket.assigns.is_admin
@@ -49,10 +50,10 @@ defmodule OliWeb.CommunityLive.IndexView do
       if is_admin do
         Groups.list_communities()
       else
-        Accounts.list_admin_communities(author_id)
+        Accounts.list_admin_communities(socket.assigns.current_author.id)
       end
 
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
 
     {:ok, table_model} = TableModel.new(communities, ctx)
 

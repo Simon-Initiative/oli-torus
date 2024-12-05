@@ -3,7 +3,7 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Groups
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.ShowView
   alias OliWeb.CommunityLive.Associated.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
@@ -12,6 +12,7 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
   @table_push_patch_path &__MODULE__.live_path/2
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def filter_rows(socket, query, _filter) do
     Enum.filter(socket.assigns.associations, fn a ->
@@ -33,15 +34,14 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
       ]
   end
 
-  def mount(%{"community_id" => community_id}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(%{"community_id" => community_id}, _session, socket) do
+    ctx = socket.assigns.ctx
 
     associations = Groups.list_community_visibilities(community_id)
     {:ok, table_model} = TableModel.new(associations, ctx, :id, "remove")
 
     {:ok,
      assign(socket,
-       ctx: ctx,
        breadcrumbs: breadcrumb(community_id),
        associations: associations,
        community_id: community_id,

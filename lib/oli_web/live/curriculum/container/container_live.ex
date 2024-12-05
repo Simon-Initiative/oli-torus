@@ -37,7 +37,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Revision
-  alias OliWeb.Common.SessionContext
   alias Oli.Resources
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Components.Modal
@@ -48,10 +47,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def mount(
         %{"project_id" => project_slug} = params,
-        %{"current_author_id" => _} = session,
+        _session,
         socket
       ) do
-    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
+    author = socket.assigns.current_author
+    ctx = socket.assigns.ctx
 
     root_container = AuthoringResolver.root_container(project_slug)
     container_slug = Map.get(params, "container_slug")
@@ -90,7 +90,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
         {:ok,
          assign(socket,
-           ctx: ctx,
            children: children,
            active: :curriculum,
            breadcrumbs:

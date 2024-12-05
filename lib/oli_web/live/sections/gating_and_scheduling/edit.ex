@@ -26,7 +26,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
             %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
           end
 
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         {:ok,
          GatingConditionStore.init(

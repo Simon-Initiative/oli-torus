@@ -60,7 +60,6 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
-           ctx: SessionContext.init(socket, session),
            brands: available_brands,
            institutions: available_institutions,
            changeset: Sections.change_section(section),

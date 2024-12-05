@@ -11,7 +11,7 @@ defmodule OliWeb.Projects.PublishView do
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Publishing.Publications.PublicationDiff
-  alias OliWeb.Common.{Breadcrumb, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Listing}
 
   alias OliWeb.Projects.{
     ActiveSectionsTableModel,
@@ -37,7 +37,7 @@ defmodule OliWeb.Projects.PublishView do
         session,
         socket
       ) do
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     project = Course.get_project_by_slug(project_slug)
 
     latest_published_publication =
@@ -126,7 +126,6 @@ defmodule OliWeb.Projects.PublishView do
        active_sections: active_sections,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
        changeset: Publishing.change_publication(active_publication),
-       ctx: ctx,
        has_changes: has_changes,
        latest_published_publication: latest_published_publication,
        lti_connect_info: lti_connect_info,

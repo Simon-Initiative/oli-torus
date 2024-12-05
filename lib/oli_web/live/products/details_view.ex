@@ -17,6 +17,7 @@ defmodule OliWeb.Products.DetailsView do
   require Logger
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def set_breadcrumbs(section),
     do: [
@@ -36,9 +37,7 @@ defmodule OliWeb.Products.DetailsView do
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
-        ctx = SessionContext.init(socket, session)
-
-        author = Repo.get(Author, author_id)
+        author = socket.assigns.current_author
 
         base_project = Course.get_project!(product.base_project_id)
 
@@ -60,8 +59,7 @@ defmodule OliWeb.Products.DetailsView do
            title: "Edit Product",
            show_confirm: false,
            breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})],
-           base_project: base_project,
-           ctx: ctx
+           base_project: base_project
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),

@@ -21,13 +21,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   require Logger
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(%{"product_id" => product_slug}, session, socket) do
     case Mount.for(product_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         author = socket.assigns.ctx.author
         base_project = Course.get_project!(product.base_project_id)
@@ -50,7 +53,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            title: "Edit Product",
            show_confirm: false,
            base_project: base_project,
-           ctx: ctx,
            resource_slug: project.slug,
            resource_title: project.title,
            active_workspace: :course_author,

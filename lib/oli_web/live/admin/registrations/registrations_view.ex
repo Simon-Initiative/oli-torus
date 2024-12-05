@@ -1,10 +1,8 @@
 defmodule OliWeb.Admin.RegistrationsView do
   use OliWeb, :live_view
 
-  alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Accounts.Author
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Admin.RegistrationsTableModel
@@ -38,9 +36,9 @@ defmodule OliWeb.Admin.RegistrationsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
-    ctx = SessionContext.init(socket, session)
-    author = Repo.get(Author, author_id)
+  def mount(_, _session, socket) do
+    ctx = socket.assigns.ctx
+    author = socket.assigns.current_author
 
     registrations =
       Institutions.browse_registrations(

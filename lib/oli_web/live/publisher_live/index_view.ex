@@ -3,7 +3,7 @@ defmodule OliWeb.PublisherLive.IndexView do
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Inventories
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.PublisherLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -35,7 +35,7 @@ defmodule OliWeb.PublisherLive.IndexView do
   end
 
   def mount(_, session, socket) do
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     publishers = Inventories.list_publishers()
 
     {:ok, table_model} = TableModel.new(publishers, ctx)

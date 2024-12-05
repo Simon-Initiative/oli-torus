@@ -6,7 +6,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
   alias OliWeb.InstitutionController
   alias Oli.Institutions
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.{PagedTable, Params, SessionContext, SearchInput, TextSearch}
+  alias OliWeb.Common.{PagedTable, Params, SearchInput, TextSearch}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.Table.SortableTableModel
@@ -26,11 +26,9 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
 
   def mount(
         %{"institution_id" => institution_id, "selected_tab" => selected_tab},
-        session,
+        _session,
         socket
       ) do
-    ctx = SessionContext.init(socket, session)
-
     institutions = Oli.Institutions.list_institutions()
     institution = Enum.find(institutions, fn i -> i.id == String.to_integer(institution_id) end)
 
@@ -43,7 +41,6 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsView do
        institution: institution,
        institutions: institutions,
        selected_tab: String.to_existing_atom(selected_tab),
-       ctx: ctx,
        modal_assigns: %{show: false}
      )}
   end

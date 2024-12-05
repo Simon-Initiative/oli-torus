@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.ScheduleView do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.{Breadcrumb}
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -28,7 +28,6 @@ defmodule OliWeb.Sections.ScheduleView do
       {type, current_user, section} ->
         {:ok,
          assign(socket,
-           ctx: SessionContext.init(socket, session, user: current_user),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            js_path: Routes.static_path(OliWeb.Endpoint, "/js/scheduler.js"),

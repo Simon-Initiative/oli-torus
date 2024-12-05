@@ -15,7 +15,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     institutions = Institutions.list_institutions()
 
     socket =
@@ -26,7 +26,6 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         pending_registrations: Institutions.list_pending_registrations(),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
-        ctx: OliWeb.Common.SessionContext.init(socket, session),
         registration_changeset: nil,
         institution_id: nil,
         form_disabled?: false,

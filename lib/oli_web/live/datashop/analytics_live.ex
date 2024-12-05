@@ -13,7 +13,7 @@ defmodule OliWeb.Datashop.AnalyticsLive do
   alias Oli.Authoring.{Broadcaster, Course}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions}
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Datashop.SectionsTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Project.AsyncExporter

@@ -18,6 +18,7 @@ defmodule OliWeb.Products.ProductsView do
   """
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def live_path(socket, params) do
     if socket.assigns.is_admin_view do
@@ -83,7 +84,7 @@ defmodule OliWeb.Products.ProductsView do
 
     total_count = determine_total(products)
 
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
 
     published? =
@@ -109,8 +110,7 @@ defmodule OliWeb.Products.ProductsView do
        query: "",
        text_search: "",
        text_search_tooltip: @text_search_tooltip,
-       creation_title: "",
-       ctx: ctx
+       creation_title: ""
      )}
   end
 
