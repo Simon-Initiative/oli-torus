@@ -55,7 +55,6 @@ defmodule OliWeb.UserRegistrationLive do
     {:ok, socket, temporary_assigns: [form: nil]}
   end
 
-  @impl Phoenix.LiveView
   def handle_params(unsigned_params, _uri, socket) do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
     section = unsigned_params["section"]

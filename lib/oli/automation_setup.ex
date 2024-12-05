@@ -365,8 +365,22 @@ defmodule Oli.AutomationSetup do
   end
 
   defp validate_user(email, password, user_type, expected_name) do
-    # MER-3835 TODO
-    throw("NOT IMPLEMENTED")
+    user_mod =
+      case user_type do
+        :author -> Oli.Accounts.Author
+        :user -> Oli.Accounts.User
+      end
+
+    case Repo.get_by(user_mod, name: expected_name, email: email) do
+      nil ->
+        {:error, "User not found"}
+
+      user ->
+        case user.__struct__.valid_password?(user, password) do
+          true -> {:ok, user}
+          false -> {:error, "Credentials didn't match"}
+        end
+    end
   end
 
   defp generate_email(prefix) do

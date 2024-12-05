@@ -150,8 +150,9 @@ defmodule Oli.Authoring.Collaborators do
       end
 
     email =
-      Oli.Email.invitation_email(
+      Oli.Email.create_email(
         collaborator_author.email,
+        "Collaborator Invitation",
         :collaborator_invitation,
         %{
           invited_by: invited_by,
@@ -161,7 +162,7 @@ defmodule Oli.Authoring.Collaborators do
         }
       )
 
-    Oli.Mailer.deliver_now(email)
+    Oli.Mailer.deliver(email)
     {:ok, "email sent"}
   end
 

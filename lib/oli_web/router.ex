@@ -42,6 +42,8 @@ defmodule OliWeb.Router do
   # pipeline for LTI launch endpoints
   pipeline :lti do
     plug(:fetch_session)
+    plug(:fetch_current_author)
+    plug(:fetch_current_user)
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, :lti})
     plug(OliWeb.Plugs.SessionContext)

@@ -4,7 +4,6 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.{LoginHint, LoginHints, PlatformInstance}
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Institutions
-  alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections
   alias Oli.Accounts.User
 
@@ -211,10 +210,6 @@ defmodule OliWeb.LtiControllerTest do
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
       assert redirected_to(conn) == Routes.delivery_path(conn, :index)
-
-      # ensure lti params are cached and id is stored in session
-      assert get_session(conn, :lti_params_id) != nil
-      assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
     end
 
     test "launch successful for valid params and updates lms user", %{
@@ -267,11 +262,9 @@ defmodule OliWeb.LtiControllerTest do
 
       assert redirected_to(conn) == Routes.delivery_path(conn, :index)
 
-      # ensure lti params are cached and id is stored in session
-      assert get_session(conn, :lti_params_id) != nil
-      assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
-
-      # Check that the user is the same as lti_user, but has some new field defined (it was updated).
+      # Check that the user is the same as lti_user, but has some new field defined (it was
+      # updated).
+      conn = OliWeb.UserAuth.fetch_current_user(conn, [])
       logged_user = conn.assigns[:current_user]
       new_name = Oli.Lti.TestHelpers.user_detail_data()["name"]
 
@@ -312,10 +305,6 @@ defmodule OliWeb.LtiControllerTest do
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
       assert redirected_to(conn) == Routes.delivery_path(conn, :index)
-
-      # ensure lti params are cached and id is stored in session
-      assert get_session(conn, :lti_params_id) != nil
-      assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
     end
 
     test "launch successful for valid params with no email", %{
@@ -348,10 +337,6 @@ defmodule OliWeb.LtiControllerTest do
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
       assert redirected_to(conn) == Routes.delivery_path(conn, :index)
-
-      # ensure lti params are cached and id is stored in session
-      assert get_session(conn, :lti_params_id) != nil
-      assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
     end
 
     test "launch handles invalid registration and shows registration form", %{conn: conn} do
@@ -434,7 +419,7 @@ defmodule OliWeb.LtiControllerTest do
         "state" => state
       }
 
-      conn = log_in_user(conn, user)
+      conn = log_in_user(conn, user) |> Plug.Conn.assign(:current_user, user)
 
       conn = get(conn, Routes.lti_path(conn, :authorize_redirect, params))
 

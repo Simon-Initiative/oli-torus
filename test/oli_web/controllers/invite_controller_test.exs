@@ -59,7 +59,7 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_email_sent(%{to: @invite_email, subject: "You've been added to a course"})
+      assert_email_sent(to: @invite_email, subject: "You've been added to a course")
     end
 
     test "deliver new student invitation", %{conn: conn} do
@@ -78,10 +78,10 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_email_sent(%{
+      assert_email_sent(
         to: @invite_email,
         subject: "You were invited as a student to \"#{section.title}\""
-      })
+      )
     end
 
     test "deliver existing instructor invitation", %{conn: conn} do
@@ -101,10 +101,10 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_email_sent(%{
+      assert_email_sent(
         to: @invite_email,
-        subject: "You were invited as a instructor to \"#{section.title}\""
-      })
+        subject: "You were invited as an instructor to \"#{section.title}\""
+      )
     end
 
     test "deliver existing student invitation", %{conn: conn} do
@@ -124,10 +124,10 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_email_sent(%{
+      assert_email_sent(
         to: @invite_email,
         subject: "You were invited as a student to \"#{section.title}\""
-      })
+      )
     end
   end
 

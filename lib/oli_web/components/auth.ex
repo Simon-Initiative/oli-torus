@@ -237,10 +237,10 @@ defmodule OliWeb.Components.Auth do
 
           <.button
             variant={:link}
-            href={@log_in_link <> "?#{maybe_params([
+            href={@log_in_link <> maybe_params([
             section: @section,
             from_invitation_link?: @from_invitation_link?
-          ])}"}
+          ])}
             class="!text-white"
           >
             Sign in to existing account
@@ -455,12 +455,19 @@ defmodule OliWeb.Components.Auth do
   end
 
   defp maybe_params(params) do
-    Enum.reduce(params, [], fn {k, v}, acc ->
-      if v do
-        [{k, v} | acc]
-      else
-        acc
-      end
-    end)
+    has_params? = Enum.any?(params, fn {_, v} -> v end)
+
+    if has_params? do
+      "?" <>
+        Enum.reduce(params, [], fn {k, v}, acc ->
+          if v do
+            [{k, v} | acc]
+          else
+            acc
+          end
+        end)
+    else
+      ""
+    end
   end
 end

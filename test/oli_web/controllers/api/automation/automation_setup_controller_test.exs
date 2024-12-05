@@ -204,7 +204,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
         {:error, "User not found"}
 
       user ->
-        case user.__struct__.verify_password(user, password) do
+        case user.__struct__.valid_password?(user, password) do
           true -> {:ok, user}
           false -> {:error, "Credentials didn't match"}
         end

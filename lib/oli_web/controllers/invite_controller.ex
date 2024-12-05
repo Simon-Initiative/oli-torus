@@ -5,6 +5,7 @@ defmodule OliWeb.InviteController do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.{Email, Mailer}
 
   def create_bulk(conn, %{
         "emails" => emails,
