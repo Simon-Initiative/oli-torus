@@ -175,6 +175,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
+  attr :is_adaptive, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -189,7 +190,13 @@ defmodule OliWeb.Delivery.Student.Utils do
         <li id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil} id="page_submission_terms">
+        <li
+          :if={
+            @effective_settings.end_date != nil and @effective_settings.scheduling_type == :due_by and
+              !@is_adaptive and @effective_settings.late_submit != :allow
+          }
+          id="page_submission_terms"
+        >
           <.page_submission_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
@@ -1006,6 +1013,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       {f, _s} -> f
     end
   end
+
+  def is_adaptive_page(%Oli.Resources.Revision{content: %{"advancedDelivery" => true}}), do: true
+  def is_adaptive_page(_), do: false
 
   defp build_page_link_params(section_slug, page, request_path, selected_view) do
     current_page_path =
