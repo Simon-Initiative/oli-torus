@@ -1149,16 +1149,42 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       refute has_element?(view, "#page_submission_terms")
 
-      # submission terms shouln't be visible when late submit is allowed
+      # submission terms shouldn't be visible when late submit is allowed and time_limit = 0
       Sections.get_section_resource(section.id, page_2.resource_id)
       |> Sections.update_section_resource(%{
         scheduling_type: :due_by,
-        late_submit: :allow
+        late_submit: :allow,
+        time_limit: 0
       })
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       refute has_element?(view, "#page_submission_terms")
+
+      # submission terms should be visible when late submit is allowed and time limit > 0
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{
+        scheduling_type: :due_by,
+        late_submit: :allow,
+        time_limit: 33
+      })
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "Your work will automatically be submitted"
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "33 minutes"
+
+      assert view
+             |> element("#page_submission_terms")
+             |> render() =~
+               "after you click the Begin button"
 
       # submission terms shouln't be visible in prologue for adaptive pages
       Sections.get_section_resource(section.id, graded_adaptive_page.resource_id)
