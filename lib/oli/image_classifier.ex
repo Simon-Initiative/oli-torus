@@ -6,10 +6,12 @@ defmodule Oli.ImageClassifier do
     defn_options = [compiler: EXLA]
 
     Nx.Serving.new(
-      # This function runs on the serving startup
+      # This function runs on application startup
       fn ->
-        # Build the Axon model and load params (usually from file)
+        # Download and configure the base ResNet model
         model_info = build_model()
+
+        # Download our saved model parameters from the S3 bucket
         params = download_params()
 
         # Build the prediction defn function
@@ -18,10 +20,9 @@ defmodule Oli.ImageClassifier do
         inputs_template = %{"pixel_values" => Nx.template({batch_size, 224, 224, 3}, :f32)}
         template_args = [Nx.to_template(params), inputs_template]
 
-        # Compile the prediction function upfront for the configured batch_size
         predict_fun = Nx.Defn.compile(predict_fun, template_args, defn_options)
 
-        # The returned function is called for every accumulated batch
+        # This function will be called to make predictions on each batch of inputs
         fn inputs ->
           inputs = Nx.Batch.pad(inputs, batch_size - inputs.size)
           predict_fun.(params, inputs)
