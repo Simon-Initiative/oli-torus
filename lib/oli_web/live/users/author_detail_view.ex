@@ -306,13 +306,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
-  def handle_event("generate_reset_password_link", params, socket) do
-    {:noreply,
-     assign(socket,
-       password_reset_link: OliWeb.PowController.create_password_reset_link(params, :author)
-     )}
-  end
-
   def handle_event(
         "unlock_account",
         %{"id" => id},

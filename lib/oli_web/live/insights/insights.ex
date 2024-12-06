@@ -11,7 +11,7 @@ defmodule OliWeb.Insights do
   alias OliWeb.Common.MultiSelectInput
   alias OliWeb.Common.MultiSelect.Option
   alias Oli.{Accounts, Publishing}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Course

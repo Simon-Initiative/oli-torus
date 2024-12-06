@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.EditView do
   alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionCache
-  alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime, CustomLabelsForm}
+  alias OliWeb.Common.{Breadcrumb, FormatDateTime, CustomLabelsForm}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
 

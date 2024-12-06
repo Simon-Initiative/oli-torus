@@ -2,13 +2,12 @@ defmodule OliWeb.Products.DetailsView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.{Accounts, Branding, Inventories, Repo}
-  alias Oli.Accounts.Author
+  alias Oli.{Accounts, Branding, Inventories}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Utils.S3Storage
-  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Router.Helpers, as: Routes
@@ -29,7 +28,7 @@ defmodule OliWeb.Products.DetailsView do
 
   def mount(
         %{"product_id" => product_slug},
-        %{"current_author_id" => author_id} = session,
+        session,
         socket
       ) do
     case Mount.for(product_slug, session) do

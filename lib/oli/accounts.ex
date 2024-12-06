@@ -110,7 +110,7 @@ defmodule Oli.Accounts do
     Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
   end
 
-  def create_invited_author(email) do
+  def create_invited_author(_email) do
     # MER-4068 TODO
     throw("Not implemented")
   end

@@ -11,7 +11,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Inventories
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
@@ -30,9 +29,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
-        ctx = socket.assigns.ctx
-
-        author = socket.assigns.ctx.author
+        author = socket.assigns.current_author
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
         is_admin = Accounts.has_admin_role?(author, :content_admin)

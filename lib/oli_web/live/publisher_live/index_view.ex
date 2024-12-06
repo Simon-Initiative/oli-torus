@@ -34,7 +34,7 @@ defmodule OliWeb.PublisherLive.IndexView do
     ]
   end
 
-  def mount(_, session, socket) do
+  def mount(_, _session, socket) do
     ctx = socket.assigns.ctx
     publishers = Inventories.list_publishers()
 

@@ -5,7 +5,7 @@ defmodule OliWeb.Products.PaymentsView do
 
   alias Oli.Delivery.Paywall
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Params, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, Params, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Router.Helpers, as: Routes

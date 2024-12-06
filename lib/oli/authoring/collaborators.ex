@@ -166,7 +166,7 @@ defmodule Oli.Authoring.Collaborators do
     {:ok, "email sent"}
   end
 
-  defp author_invitation_url(conn, token) do
+  defp author_invitation_url(_conn, _token) do
     throw("NOT IMPLEMENTED")
   end
 end

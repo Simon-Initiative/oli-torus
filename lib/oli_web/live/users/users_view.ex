@@ -36,7 +36,7 @@ defmodule OliWeb.Users.UsersView do
       ]
   end
 
-  def mount(_, session, socket) do
+  def mount(_, _session, socket) do
     users =
       Accounts.browse_users(
         %Paging{offset: 0, limit: @limit},

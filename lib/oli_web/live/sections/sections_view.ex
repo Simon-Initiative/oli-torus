@@ -6,7 +6,7 @@ defmodule OliWeb.Sections.SectionsView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
-  alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.SectionsTableModel
   alias OliWeb.Router.Helpers, as: Routes

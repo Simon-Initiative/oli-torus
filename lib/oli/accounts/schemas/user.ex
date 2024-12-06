@@ -498,7 +498,7 @@ defmodule Oli.Accounts.User do
   will be set. Only the user id will be set, and the persisted user won't have
   any password for authentication.
   """
-  def invite_changeset(user, invited_by, attrs) do
+  def invite_changeset(_user, _invited_by, _attrs) do
     # MER-4068 TODO
     throw("Not implemented")
   end
@@ -509,7 +509,7 @@ defmodule Oli.Accounts.User do
   `:invitation_accepted_at` will be updated. The password can be set, and the
   user id updated.
   """
-  def accept_invitation_changeset(user, attrs) do
+  def accept_invitation_changeset(_user, _attrs) do
     # MER-4068 TODO
     throw("Not implemented")
   end

@@ -17,7 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   alias Oli.Resources.{PageBrowse, PageBrowseOptions, Revision}
   alias OliWeb.Common.Hierarchy.MoveModal
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox, SessionContext}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
   alias OliWeb.Curriculum.{OptionsModalContent, HyperlinkDependencyModal}
@@ -38,7 +38,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   @impl Phoenix.LiveView
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     project = socket.assigns.project
     project_slug = project.slug
     author = socket.assigns.current_author

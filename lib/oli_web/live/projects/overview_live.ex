@@ -21,7 +21,7 @@ defmodule OliWeb.Projects.OverviewLive do
   alias OliWeb.Components.Common
   alias OliWeb.Components.Project.AsyncExporter
 
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     project = socket.assigns.project
 
     author = socket.assigns[:current_author]

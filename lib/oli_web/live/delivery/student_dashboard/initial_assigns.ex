@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.StudentDashboard.InitialAssigns do
       {:error, error} ->
         {:halt, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
-      {_user_type, user, section} ->
+      {_user_type, _user, section} ->
         section =
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])

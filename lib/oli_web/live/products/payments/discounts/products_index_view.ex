@@ -4,7 +4,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
 
   alias Oli.Delivery.{Sections, Paywall}
   alias Oli.Delivery.Sections.Section
-  alias OliWeb.Common.{Breadcrumb, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Listing}
   alias OliWeb.Products.Payments.Discounts.TableModel
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -29,7 +29,7 @@ defmodule OliWeb.Products.Payments.Discounts.ProductsIndexView do
       ]
   end
 
-  def mount(%{"product_id" => product_slug}, session, socket) do
+  def mount(%{"product_id" => product_slug}, _session, socket) do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
         discounts = Paywall.get_product_discounts(product.id)

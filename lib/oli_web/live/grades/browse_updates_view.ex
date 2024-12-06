@@ -11,7 +11,6 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
   alias OliWeb.Grades.UpdatesTableModel
-  alias OliWeb.Common.SessionContext
 
   @limit 25
 

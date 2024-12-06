@@ -186,7 +186,7 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def link_account(conn, _params) do
+  def link_account(_conn, _params) do
     # MER-3835 TODO
     throw("NOT IMPLEMENTED")
   end

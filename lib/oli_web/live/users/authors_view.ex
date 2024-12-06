@@ -7,7 +7,7 @@ defmodule OliWeb.Users.AuthorsView do
   alias Oli.Accounts
   alias Oli.Accounts.AuthorBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.AuthorsTableModel
@@ -35,7 +35,7 @@ defmodule OliWeb.Users.AuthorsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
+  def mount(_, _session, socket) do
     author = socket.assigns.current_author
 
     authors =

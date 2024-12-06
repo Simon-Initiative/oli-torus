@@ -51,7 +51,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
         socket
       ) do
     author = socket.assigns.current_author
-    ctx = socket.assigns.ctx
 
     root_container = AuthoringResolver.root_container(project_slug)
     container_slug = Map.get(params, "container_slug")

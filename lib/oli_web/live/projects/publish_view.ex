@@ -34,7 +34,7 @@ defmodule OliWeb.Projects.PublishView do
 
   def mount(
         %{"project_id" => project_slug},
-        session,
+        _session,
         socket
       ) do
     ctx = socket.assigns.ctx

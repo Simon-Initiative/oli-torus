@@ -25,7 +25,7 @@ defmodule OliWeb.Sections.ScheduleView do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {type, current_user, section} ->
+      {type, _user, section} ->
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),

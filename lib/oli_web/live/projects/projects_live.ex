@@ -13,7 +13,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Projects.{CreateProjectModal, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 

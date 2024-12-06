@@ -8,14 +8,12 @@ defmodule OliWeb.Resources.PagesView do
   import Oli.Authoring.Editing.Utils
   import OliWeb.Curriculum.Utils
 
-  alias Oli.Accounts
   alias Oli.Resources
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
   alias Oli.Resources.PageBrowse
   alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Resources.PageBrowseOptions
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Resources.PagesTableModel
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Editing.ContainerEditor

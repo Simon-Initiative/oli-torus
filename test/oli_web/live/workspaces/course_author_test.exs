@@ -5,8 +5,6 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
   import Oli.Factory
   import Phoenix.LiveViewTest
 
-  alias OliWeb.Common.Utils
-
   describe "course author workspace as author" do
     setup [:author_conn, :set_timezone]
 

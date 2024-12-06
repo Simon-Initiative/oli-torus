@@ -5,7 +5,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 

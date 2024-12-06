@@ -6,7 +6,7 @@ defmodule OliWeb.Qa.QaLive do
 
   import Phoenix.HTML.Link
 
-  alias OliWeb.Common.{SessionContext, Utils}
+  alias OliWeb.Common.{Utils}
   alias Oli.Authoring.Course
   alias Oli.Qa
   alias OliWeb.Qa.WarningFilter

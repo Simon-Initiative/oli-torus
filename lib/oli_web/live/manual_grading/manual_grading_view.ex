@@ -19,7 +19,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   use OliWeb, :live_view
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions

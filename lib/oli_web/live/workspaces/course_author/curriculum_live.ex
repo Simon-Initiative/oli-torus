@@ -39,12 +39,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CurriculumLive do
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
 
   @impl Phoenix.LiveView
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     project = socket.assigns.project
     project_slug = project.slug
 
     author = socket.assigns.current_author
-    ctx = socket.assigns.ctx
 
     root_container = AuthoringResolver.root_container(project_slug)
     container_slug = Map.get(params, "container_slug")

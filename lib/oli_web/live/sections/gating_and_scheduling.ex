@@ -13,7 +13,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Delivery.Sections.GatingAndScheduling.TableModel
   alias Oli.Delivery.Gating.GatingCondition
-  alias OliWeb.Common.SessionContext
 
   @default_params %{sort_by: "numbering_index", limit: 25}
 

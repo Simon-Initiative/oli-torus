@@ -1,10 +1,9 @@
 defmodule OliWeb.Admin.AdminView do
   use OliWeb, :live_view
 
-  alias Oli.{Accounts, Repo}
+  alias Oli.Accounts
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Accounts.{Author}
   alias OliWeb.Router.Helpers, as: Routes
 
   on_mount {OliWeb.AuthorAuth, :ensure_authenticated}

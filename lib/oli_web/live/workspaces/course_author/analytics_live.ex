@@ -13,7 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AnalyticsLive do
   alias Oli.Authoring.{Broadcaster, Course}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions}
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Project.AsyncExporter
@@ -27,7 +27,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AnalyticsLive do
   on_mount OliWeb.LiveSessionPlugs.SetCtx
   on_mount OliWeb.LiveSessionPlugs.SetProject
 
-  def mount(_params, session, socket) do
+  def mount(_params, _session, socket) do
     ctx = socket.assigns.ctx
     project = socket.assigns.project
     selected_sections = MapSet.new([])

@@ -5,7 +5,6 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
   alias OliWeb.Sections.Mount
   alias OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore
   alias OliWeb.Sections.GatingAndScheduling.Form
-  alias OliWeb.Common.SessionContext
 
   def mount(
         %{"section_slug" => section_slug} = params,

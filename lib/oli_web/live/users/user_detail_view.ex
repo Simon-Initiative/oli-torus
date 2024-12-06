@@ -242,6 +242,7 @@ defmodule OliWeb.Users.UsersDetailView do
       url(~p"/users/reset_password/#{encoded_token}")
 
     socket = assign(socket, password_reset_link: password_reset_link)
+
     {:noreply, socket}
   end
 

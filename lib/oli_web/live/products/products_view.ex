@@ -4,7 +4,7 @@ defmodule OliWeb.Products.ProductsView do
   import OliWeb.DelegatedEvents
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, TextSearch}
   alias OliWeb.Products.Create
   alias Oli.Authoring.Course
   alias Oli.Delivery.Sections.Blueprint
@@ -45,7 +45,7 @@ defmodule OliWeb.Products.ProductsView do
 
   def mount(
         %{"project_id" => project_slug} = params,
-        session,
+        _session,
         socket
       ) do
     author = socket.assigns.current_author
@@ -59,18 +59,17 @@ defmodule OliWeb.Products.ProductsView do
       project,
       breadcrumb([]),
       "Products | " <> project.title,
-      socket,
-      session
+      socket
     )
   end
 
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     author = socket.assigns.current_author
 
-    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket, session)
+    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket)
   end
 
-  defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket, session) do
+  defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
     project_id = if project === nil, do: nil, else: project.id
 
     products =
