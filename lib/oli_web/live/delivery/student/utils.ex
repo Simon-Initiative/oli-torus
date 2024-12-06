@@ -210,34 +210,46 @@ defmodule OliWeb.Delivery.Student.Utils do
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
 
-  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns)
-       when not is_nil(end_date) do
+  defp page_due_term(%{effective_settings: %{end_date: nil, time_limit: time_limit}} = assigns)
+       when time_limit > 0 do
+    minute_label =
+      case time_limit do
+        1 -> "minute"
+        _ -> "minutes"
+      end
+
+    assigns = assign(assigns, minute_label: minute_label)
+
     ~H"""
-    <div>
-      <span>
-        <%= "This assignment is #{scheduling_type(@effective_settings.scheduling_type)}" %>
-      </span>
-      <span class="font-bold">
-        <%= FormatDateTime.to_formatted_datetime(
-          @effective_settings.end_date,
-          @ctx,
-          "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
-        ) %>
-      </span>
-    </div>
+    You have <b><%= @effective_settings.time_limit %> <%= @minute_label %></b>
+    to complete the assessment. If you exceed this time, it will be marked as late.
     """
   end
 
   defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
     ~H"""
-    <div>
-      <span>
-        <%= "This assignment is" %>
-      </span>
-      <span class="font-bold">
-        not yet scheduled.
-      </span>
-    </div>
+    This assignment is <b>not yet scheduled.</b>
+    """
+  end
+
+  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
+    verb_form =
+      case DateTime.compare(DateTime.utc_now(), end_date) do
+        :gt -> "was"
+        :lt -> "is"
+      end
+
+    assigns = assign(assigns, verb_form: verb_form)
+
+    ~H"""
+    <%= "This assignment #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
+    <b>
+      <%= FormatDateTime.to_formatted_datetime(
+        @effective_settings.end_date,
+        @ctx,
+        "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
+      ) %>
+    </b>
     """
   end
 
