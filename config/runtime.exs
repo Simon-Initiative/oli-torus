@@ -133,6 +133,7 @@ if config_env() == :prod do
 
   # General OLI app config
   config :oli,
+    emr_dataset_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
     s3_media_bucket_name: s3_media_bucket_name,
     s3_xapi_bucket_name: s3_xapi_bucket_name,
     media_url: media_url,

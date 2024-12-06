@@ -26,6 +26,7 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
+  emr_dataset_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
   depot_coordinator: Oli.Delivery.DistributedDepotCoordinator,
   depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
   depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
