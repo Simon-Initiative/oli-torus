@@ -1200,7 +1200,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "#page_submission_terms")
     end
 
-    test "page terms show a time limit message when the due date is not set", ctx do
+    test "page terms display a time limit message", ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
@@ -1208,21 +1208,24 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       # Singular case
       Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{time_limit: 1, end_date: nil})
+      |> Sections.update_section_resource(%{time_limit: 1})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
       assert view |> element("#page_due_terms") |> render() =~
-               "You have <b>1 minute</b>\nto complete the assessment. If you exceed this time, it will be marked as late."
+               "This assignment was due on"
+
+      assert view |> element("#page_time_limit_term") |> render() =~
+               "You have <b>1 minute</b>\n  to complete the assessment. If you exceed this time, it will be marked as late."
 
       # Plural case
       Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{time_limit: 2, end_date: nil})
+      |> Sections.update_section_resource(%{time_limit: 2})
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
-      assert view |> element("#page_due_terms") |> render() =~
-               "You have <b>2 minutes</b>\nto complete the assessment. If you exceed this time, it will be marked as late."
+      assert view |> element("#page_time_limit_term") |> render() =~
+               "You have <b>2 minutes</b>\n  to complete the assessment. If you exceed this time, it will be marked as late."
     end
   end
 
