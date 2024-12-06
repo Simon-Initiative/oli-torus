@@ -114,6 +114,29 @@ defmodule Oli.Analytics.Datasets do
     # Construct the URL for the "applications" EMR serverless endpoint
     url = "https://emr-serverless.us-east-1.amazonaws.com/applications/#{job.application_id}/jobruns"
 
+    arguments = [
+      "--bucket_name",
+      "torus-xapi-prod",
+      "--chunk_size",
+      "#{job.configuration.chunk_size}",
+      "--ignored_student_ids",
+      "#{job.configuration.ignored_student_ids |> to_str}",
+      "--sub_types",
+      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_sub_types}",
+      "--job_id",
+      "#{job.job_id}",
+      "--section_ids",
+      "#{job.configuration.section_ids |> to_str}",
+      "--action",
+      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}"
+    ]
+
+    arguments = case {job.job_type, Enum.count(job.configuration.excluded_fields)} do
+      {:datashop, _} -> arguments
+      {_, 0} -> arguments
+      _ -> arguments ++ ["--exclude_fields", job.configuration.excluded_fields |> to_str]
+    end
+
     body = %{
       "clientToken" => job.job_id,
       "applicationId" => job.application_id,
@@ -121,24 +144,7 @@ defmodule Oli.Analytics.Datasets do
       "jobDriver" => %{
         "sparkSubmit" => %{
           "entryPoint" => "s3://analyticsjobs/job.py",
-          "entryPointArguments" => [
-            "--bucket_name",
-            "torus-xapi-prod",
-            "--chunk_size",
-            "#{job.configuration.chunk_size}",
-            "--ignored_student_ids",
-            "#{job.configuration.ignored_student_ids |> to_str}",
-            "--sub_types",
-            "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_sub_types}",
-            "--job_id",
-            "#{job.job_id}",
-            "--section_ids",
-            "#{job.configuration.section_ids |> to_str}",
-            "--action",
-            "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}",
-            "--exclude_fields",
-            "#{if Enum.count(job.configuration.excluded_fields) == 0, do: ".", else: job.configuration.excluded_fields |> to_str}}",
-          ],
+          "entryPointArguments" => arguments,
           "sparkSubmitParameters" => "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
         }
       },
@@ -150,6 +156,8 @@ defmodule Oli.Analytics.Datasets do
         }
       }
     }
+
+
 
     # Generate signed headers, using the ExAws.Auth module
     {:ok, signed_headers} =

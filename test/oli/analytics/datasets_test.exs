@@ -10,7 +10,7 @@ defmodule Oli.Analytics.Datasets.Test do
 
     dataset_job = %Datasets.DatasetJob{
       application_id: app_id,
-      job_id: "1234",
+      job_id: "12a346993",
       job_type: :custom,
       output_type: :csv,
       status: nil,
