@@ -26,8 +26,10 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { ActivitySettings } from '../common/authoring/settings/ActivitySettings';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { toggleSubmitAndCompareOption } from '../common/utils';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { ShortAnswerActions } from './actions';
@@ -38,6 +40,13 @@ const store = configureStore();
 const ShortAnswer = () => {
   const { dispatch, model, editMode, projectSlug } =
     useAuthoringElementContext<ShortAnswerModelSchema>();
+
+  const submitAndCompareSetting = {
+    label: 'Submit And Compare',
+    isEnabled: model.submitAndCompare === true,
+    onToggle: () => dispatch(toggleSubmitAndCompareOption()),
+  };
+
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -167,6 +176,7 @@ const ShortAnswer = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
+        <ActivitySettings settings={[submitAndCompareSetting]} />
       </TabbedNavigation.Tabs>
     </>
   );
