@@ -27,8 +27,6 @@ defmodule OliWeb.Sections.InviteViewTest do
       conn: conn,
       section: section
     } do
-      section_slug = section.slug
-
       redirect_path =
         "/users/log_in"
 

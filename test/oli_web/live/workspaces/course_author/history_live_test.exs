@@ -184,7 +184,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       project: project,
       container_revision: container_revision
     } do
-      redirect_path = "/workspaces/course_author"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))

@@ -159,8 +159,7 @@ defmodule OliWeb.DeliveryControllerTest do
           link_account: author_params
         )
 
-      assert html_response(conn, 200) =~
-               "The provided login details did not work. Please verify your credentials, and try again."
+      assert redirected_to(conn, 302) =~ "/users/log_in"
     end
 
     test "processes link account for user email", %{
@@ -812,7 +811,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
 
-    lti_param_ids = %{
+    _lti_param_ids = %{
       student:
         cache_lti_params(
           %{

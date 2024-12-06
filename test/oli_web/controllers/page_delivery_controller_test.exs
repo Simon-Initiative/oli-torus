@@ -1470,7 +1470,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 302) =~
                ~p"/sections/#{section.slug}"
 
+      conn = OliWeb.UserAuth.fetch_current_user(conn, [])
+
       user = conn.assigns[:current_user]
+
+      ensure_email_confirmed(user)
+
       ensure_user_visit(user, section)
 
       # make the same request with a user logged in

@@ -1,9 +1,7 @@
 defmodule OliWeb.InstitutionControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.Author
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Lti.Tool.Registration

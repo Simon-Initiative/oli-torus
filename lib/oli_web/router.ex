@@ -1018,8 +1018,8 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :require_authenticated_user_or_guest,
       :student,
-      :delivery_protected,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,
       :force_required_survey

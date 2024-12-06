@@ -776,8 +776,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:error, {:redirect, %{to: redirect_path}}} =
         live(conn, Utils.learn_live_path(section.slug))
 
-      assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+      assert redirect_path == "/users/log_in"
     end
   end
 

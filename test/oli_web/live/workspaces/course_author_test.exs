@@ -124,7 +124,7 @@ defmodule OliWeb.Workspaces.CourseAuthorTest do
       assert has_element?(view, "#button-new-project")
     end
 
-    test "lists projects", %{conn: conn, admin: admin, ctx: ctx} do
+    test "lists projects", %{conn: conn, admin: admin} do
       project = create_project_with_owner(admin)
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/course_author")

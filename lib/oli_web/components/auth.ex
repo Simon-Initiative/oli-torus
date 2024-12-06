@@ -88,7 +88,7 @@ defmodule OliWeb.Components.Auth do
           <.button
             :if={@from_invitation_link? || @registration_link}
             variant={:link}
-            href={(@registration_link || ~p"/users/register") <> "?#{maybe_params([section: @section, from_invitation_link?: @from_invitation_link?])}"}
+            href={(@registration_link || ~p"/users/register") <> maybe_params([section: @section, from_invitation_link?: @from_invitation_link?])}
             class="!text-white"
           >
             Create an account

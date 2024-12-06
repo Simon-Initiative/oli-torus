@@ -4,7 +4,7 @@ defmodule OliWeb.Progress.StudentView do
   import OliWeb.Common.Params
   import OliWeb.Common.Utils
 
-  alias OliWeb.Common.{Breadcrumb, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, TextSearch}
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Progress.StudentTabelModel

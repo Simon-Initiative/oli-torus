@@ -5,6 +5,7 @@ defmodule OliWeb.UserAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
   # Make the remember me cookie valid for 60 days.
@@ -289,7 +290,7 @@ defmodule OliWeb.UserAuth do
     # This block assumes that any admin authoring account that may be logged in has already been
     # loaded into the assigns by the AuthorAuth module. This should be the case since both
     # :fetch_current_author and :fetch_current_user are called in that exact order in the router
-    # base :browser and :api pipelines.
+    # base :browser, :api and :lti pipelines.
     if conn.assigns[:current_user] || conn.assigns[:is_admin] do
       conn
       |> require_confirmed_email()
@@ -300,6 +301,32 @@ defmodule OliWeb.UserAuth do
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
       |> halt()
+    end
+  end
+
+  def require_authenticated_user_or_guest(conn, _opts) do
+    if conn.assigns[:current_user] || conn.assigns[:is_admin] do
+      conn
+      |> require_confirmed_email()
+      |> check_account_lock()
+    else
+      # If the user is not logged in, but the section is open and free and does not require
+      # enrollment, redirect to the enroll page. Otherwise, redirect to the login page.
+      section = conn.assigns[:section]
+
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: ~p"/sections/#{section.slug}/enroll")
+          |> halt()
+
+        _ ->
+          conn
+          |> put_flash(:error, "You must log in to access this page.")
+          |> maybe_store_return_to()
+          |> redirect(to: ~p"/users/log_in")
+          |> halt()
+      end
     end
   end
 

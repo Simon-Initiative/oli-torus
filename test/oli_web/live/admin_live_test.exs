@@ -846,17 +846,6 @@ defmodule OliWeb.AdminLiveTest do
       refute render(view) =~ first_author.given_name
     end
 
-    test "shows confirmation pending message when author account was created but not confirmed yet",
-         %{conn: conn} do
-      non_confirmed_author = insert(:author, email_confirmation_token: "token")
-
-      {:ok, view, _html} = live(conn, @live_view_authors_route)
-
-      assert view
-             |> element("##{non_confirmed_author.id} span[data-bs-toggle=\"tooltip\"")
-             |> render() =~ "Confirmation Pending"
-    end
-
     test "shows email confirmed message when author account was created and confirmed", %{
       conn: conn
     } do

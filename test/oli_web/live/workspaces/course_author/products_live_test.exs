@@ -20,6 +20,8 @@ defmodule OliWeb.Workspace.CourseAuthor.ProductsLiveTest do
         live(conn, live_view_route(project.slug))
 
       assert redirect_path == "/authors/log_in"
+
+      assert error_msg == "You must log in to access this page."
     end
   end
 

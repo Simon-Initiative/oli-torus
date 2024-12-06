@@ -6,7 +6,7 @@ defmodule Oli.TestHelpers do
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.AuthorPreferences
+  alias Oli.Accounts.{AuthorPreferences, User, UserToken}
   alias Oli.Activities
   alias Oli.Analytics.Summary
   alias Oli.Authoring.Course
@@ -275,6 +275,12 @@ defmodule Oli.TestHelpers do
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.delete_session(:user_token)
     |> Plug.Conn.delete_session(:current_user_id)
+  end
+
+  def ensure_email_confirmed(user) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
   end
 
   @doc """

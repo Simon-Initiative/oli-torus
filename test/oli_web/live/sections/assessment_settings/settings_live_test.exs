@@ -477,10 +477,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       conn: conn,
       section: section
     } do
-      section_slug = section.slug
-      active_tab = "settings"
-      assessment_id = "all"
-
       redirect_path =
         "/users/log_in"
 
@@ -493,10 +489,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            conn: conn,
            section: section
          } do
-      section_slug = section.slug
-      active_tab = "student_exceptions"
-      assessment_id = "all"
-
       redirect_path =
         "/users/log_in"
 
