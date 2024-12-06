@@ -335,7 +335,7 @@ defmodule OliWeb.UserAuth do
       nil ->
         conn
 
-      %Accounts.User{independent_learner: true, email_confirmed_at: nil} ->
+      %Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil} ->
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)

@@ -1474,8 +1474,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       user = conn.assigns[:current_user]
 
-      ensure_email_confirmed(user)
-
       ensure_user_visit(user, section)
 
       # make the same request with a user logged in

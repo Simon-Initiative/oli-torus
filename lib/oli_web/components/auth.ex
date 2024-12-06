@@ -458,14 +458,18 @@ defmodule OliWeb.Components.Auth do
     has_params? = Enum.any?(params, fn {_, v} -> v end)
 
     if has_params? do
-      "?" <>
-        Enum.reduce(params, [], fn {k, v}, acc ->
+      query =
+        params
+        |> Enum.reduce([], fn {k, v}, acc ->
           if v do
             [{k, v} | acc]
           else
             acc
           end
         end)
+        |> URI.encode_query()
+
+      "?#{query}"
     else
       ""
     end

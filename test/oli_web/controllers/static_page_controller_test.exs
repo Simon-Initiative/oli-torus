@@ -183,11 +183,14 @@ defmodule OliWeb.StaticPageControllerTest do
   end
 
   describe "enrollment link" do
-    test "displays 'Create an Account' link if from_invitation_link?", %{conn: conn} do
-      conn = get(conn, Routes.static_page_path(conn, :index, from_invitation_link?: true))
+    test "displays 'Create an account' link if from_invitation_link?", %{conn: conn} do
+      conn = get(conn, ~p"/users/log_in?#{[from_invitation_link?: true]}")
 
       assert html_response(conn, 200) =~
-               "href=\"/registration/new?from_invitation_link%3F=true\">Create an Account"
+               "<a href=\"/users/register?from_invitation_link%3F=true\""
+
+      assert html_response(conn, 200) =~
+               "Create an account"
     end
   end
 end

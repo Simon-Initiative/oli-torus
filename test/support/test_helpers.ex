@@ -277,12 +277,6 @@ defmodule Oli.TestHelpers do
     |> Plug.Conn.delete_session(:current_user_id)
   end
 
-  def ensure_email_confirmed(user) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
-    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
-  end
-
   @doc """
   Setup helper that registers and logs in authors.
 

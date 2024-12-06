@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       conn: conn,
       project: project
     } do
-      {:error, {:redirect, %{to: redirect_path, flash: %{"error" => error_msg}}}} =
+      {:error, {:redirect, %{to: redirect_path, flash: %{"error" => _error_msg}}}} =
         live(conn, live_view_route(project.slug))
 
       assert redirect_path == "/authors/log_in"
