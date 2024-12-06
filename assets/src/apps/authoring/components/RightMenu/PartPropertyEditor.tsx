@@ -332,7 +332,8 @@ export const PartPropertyEditor: React.FC<Props> = ({
 
   if (!partDef) return null;
 
-  const selectPartType = selectedPartDef?.type || '';
+  const selectPartType =
+    selectedPartDef?.type === 'janus-image-carousel' ? '' : selectedPartDef?.type || '';
 
   return (
     <div className={`component-tab p-3 overflow-hidden part-property-editor ${selectPartType}`}>
