@@ -340,7 +340,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         base_project: project,
         title: "The best course ever!",
         start_date: ~U[2023-10-30 20:00:00Z],
-        analytics_version: :v2
+        analytics_version: :v2,
+        assistant_enabled: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -1135,6 +1136,21 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
              |> element("#page_scoring_terms")
              |> render() =~
                "Your overall score for this assignment will be the average score of your attempts."
+    end
+
+    test "can not see DOT AI Bot interface if it's on a scored page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
+
+      refute has_element?(view, "div[id='dialogue-window']")
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
     end
   end
 
