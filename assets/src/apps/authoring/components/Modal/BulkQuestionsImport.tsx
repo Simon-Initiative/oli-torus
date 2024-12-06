@@ -34,19 +34,14 @@ const requiredHeaders = [
 
 const maxQuestionsPerImport = 200;
 
-export const BulkQuestionsImport: React.FC<Props> = ({
-  onCancel,
-  onUpload,
-  title,
-  show,
-}) => {
+export const BulkQuestionsImport: React.FC<Props> = ({ onCancel, onUpload, title, show }) => {
   const [file, setFile] = useState<File | null>(null);
   const [bulkImportData, setBulkImportData] = useState<CreationData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
-      handleRemoveFile()
+      handleRemoveFile();
       setFile(acceptedFiles[0]);
       Papa.parse<CreationData>(acceptedFiles[0], {
         header: true,
@@ -58,9 +53,13 @@ export const BulkQuestionsImport: React.FC<Props> = ({
             setError('No headers found in the CSV file');
             return;
           }
-          const missingHeaders: string[] =  validateHeaders(results.meta.fields);
+          const missingHeaders: string[] = validateHeaders(results.meta.fields);
           if (missingHeaders.length > 0) {
-            setError(`Missing required headers, please consult the sample CSV file: ${missingHeaders.join(', ')}`);
+            setError(
+              `Missing required headers, please consult the sample CSV file: ${missingHeaders.join(
+                ', ',
+              )}`,
+            );
             return;
           }
           const data: CreationData[] = results.data;
@@ -114,7 +113,7 @@ export const BulkQuestionsImport: React.FC<Props> = ({
     setFile(null);
     setBulkImportData(null);
     setError(null);
-  }
+  };
 
   return (
     <Modal show={show} size={'xl'} onHide={onCancel} centered>

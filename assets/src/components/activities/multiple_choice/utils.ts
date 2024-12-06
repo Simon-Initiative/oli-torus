@@ -2,13 +2,17 @@ import { Maybe } from 'tsmonad';
 import { MCSchema } from 'components/activities/multiple_choice/schema';
 import {
   Choice,
+  CreationData,
   HasParts,
+  Hint,
+  Part,
   Transform,
   makeChoice,
+  makeFeedback,
   makeHint,
   makePart,
   makeStem,
-  makeTransformation, CreationData, Hint, Part, makeFeedback,
+  makeTransformation,
 } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { Responses, getCorrectResponse } from 'data/activities/model/responses';
@@ -38,19 +42,26 @@ export const defaultMCModel: () => MCSchema = () => {
 
 export const mCModel: (creationData: CreationData) => MCSchema = (creationData: CreationData) => {
   const choices: Map<string, Choice> = new Map();
-  Object.entries(creationData).filter(([key, value]) => key.startsWith('choice') && value).map(([key, value]) => {
-    const choice = makeChoice(value as string);
-    choices.set(key, choice);
-    return choice;
-  });
+  Object.entries(creationData)
+    .filter(([key, value]) => key.startsWith('choice') && value)
+    .map(([key, value]) => {
+      const choice = makeChoice(value.toString());
+      choices.set(key, choice);
+      return choice;
+    });
 
   if (choices.size === 0) {
     throw new Error(`No choices provided for ${creationData.title}`);
   }
 
-  const hints: Hint[] = Object.entries(creationData).filter(([key, value]) => key.startsWith('hint') && value).map(([_key, value]) => {
-    return makeHint(value as string);
-  });
+  const hints: Hint[] = Object.entries(creationData)
+    .filter(([key, _value]) => key.startsWith('hint'))
+    .map(([_key, value]) => {
+      if (value) {
+        return makeHint(value.toString());
+      }
+      return makeHint('');
+    });
 
   let answer: Choice = choices.get(`choice${creationData.answer}`) as Choice;
 
@@ -59,7 +70,9 @@ export const mCModel: (creationData: CreationData) => MCSchema = (creationData: 
   }
 
   const correctFeedback = creationData.correct_feedback ? creationData.correct_feedback : 'Correct';
-  const incorrectFeedback = creationData.incorrect_feedback ? creationData.incorrect_feedback : 'Incorrect';
+  const incorrectFeedback = creationData.incorrect_feedback
+    ? creationData.incorrect_feedback
+    : 'Incorrect';
 
   const part: Part = makePart(
     Responses.forMultipleChoice(answer.id, correctFeedback, incorrectFeedback),
@@ -78,9 +91,7 @@ export const mCModel: (creationData: CreationData) => MCSchema = (creationData: 
     choices: [...choices.values()],
     authoring: {
       version: 2,
-      parts: [
-        part,
-      ],
+      parts: [part],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle, true)],
       previewText: '',

@@ -658,6 +658,98 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end)
   end
 
+  def create_bulk(
+        project_slug,
+        author,
+        bulk_activity_data,
+        scope \\ "embedded"
+      ) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil() do
+      activities =
+        Enum.reduce(bulk_activity_data, [], fn %{
+                                                 "activityTypeSlug" => activity_type_slug,
+                                                 "objectives" => objectives,
+                                                 "content" => model,
+                                                 "title" => title,
+                                                 "tags" => tags
+                                               },
+                                               m ->
+          case process_create_activity(
+                 project,
+                 author,
+                 publication,
+                 activity_type_slug,
+                 objectives,
+                 model,
+                 scope,
+                 title,
+                 tags
+               ) do
+            {:ok, activity} ->
+              m ++ [%{activity_type_slug: activity_type_slug, activity: activity}]
+
+            _ ->
+              m
+          end
+        end)
+
+      {:ok, activities}
+    else
+      error -> error
+    end
+  end
+
+  defp process_create_activity(
+         project,
+         author,
+         publication,
+         activity_type_slug,
+         objectives,
+         model,
+         scope,
+         title,
+         tags
+       ) do
+    Repo.transaction(fn ->
+      with {:ok, activity_type} <-
+             Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
+           {:ok, objectives} <- attach_objectives(model, objectives, %{}),
+           {:ok, activity} <-
+             Resources.create_new(
+               %{
+                 title: title || activity_type.title,
+                 scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
+                 objectives: objectives,
+                 author_id: author.id,
+                 content: model,
+                 scope: scope,
+                 activity_type_id: activity_type.id,
+                 tags: tags
+               },
+               Oli.Resources.ResourceType.id_for_activity()
+             ),
+           {:ok, _} <-
+             Course.create_project_resource(%{
+               project_id: project.id,
+               resource_id: activity.resource_id
+             })
+             |> trap_nil(),
+           {:ok, _mapping} <-
+             Publishing.create_published_resource(%{
+               publication_id: publication.id,
+               resource_id: activity.resource_id,
+               revision_id: activity.id
+             }) do
+        activity
+      else
+        error -> Repo.rollback(error)
+      end
+    end)
+  end
+
   @spec create_context(any, any, any, any) ::
           {:error, :not_found}
           | {:ok,

@@ -30,14 +30,22 @@ export type BulkActivityCreate = {
   objectives: ResourceId[];
   tags: ResourceId[];
   content: ActivityModelSchema;
-  activityTypeSlug: ActivityTypeSlug
+  activityTypeSlug: ActivityTypeSlug;
+};
+
+export type CreateRevision = {
+  revisionSlug: string;
+  resourceId: ResourceId;
+  activityTypeslug: string;
+  title: string;
+  objectives: any;
+  tags: any;
+  content: any;
 };
 
 export type CreatedBulk = {
   result: 'success';
-  revisionSlug: string;
-  resourceId: ResourceId;
-  activityTypeslug: string;
+  revisions: CreateRevision[];
 };
 
 export type Created = {
@@ -186,10 +194,10 @@ export function createBulk(
   const params = {
     method: 'POST',
     body: JSON.stringify({ bulkData, scope }),
-    url: `/project/${project}/activity/bulk`,
+    url: `/project/${project}/create/activity/bulk`,
   };
 
-  return makeRequest<CreatedBulk[]>(params);
+  return makeRequest<CreatedBulk>(params);
 }
 
 export function createFull(

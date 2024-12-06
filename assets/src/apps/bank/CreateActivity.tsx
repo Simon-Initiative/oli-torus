@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
+import { CreationData } from 'components/activities';
 import { invokeCreationFunc } from 'components/activities/creation';
 import { BulkQuestionsImport } from 'apps/authoring/components/Modal/BulkQuestionsImport';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import * as Persistence from 'data/persistence/activity';
-import { CreationData } from 'components/activities';
 import { Objective, ResourceId } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
+import * as Persistence from 'data/persistence/activity';
 import { BulkActivityCreate } from 'data/persistence/activity';
 
 export type CreateActivityProps = {
-  editorMap: ActivityEditorMap; // Map of activity types to activity elements
+  editorMap: ActivityEditorMap;
   onAdd: (added: ActivityEditContext) => void;
+  onBulkAdd: (added: ActivityEditContext[]) => void;
   projectSlug: string;
-  allObjectives: Objective[]; // All objectives
-  allTags: Tag[]; // All tags
+  allObjectives: Objective[];
+  allTags: Tag[];
+  onError: (message: string) => void;
 };
 
 const create = (
@@ -88,7 +90,9 @@ function editorForData(data: CreationData, editorMap: ActivityEditorMap) {
 function tagsAndObjectives(data: CreationData, allObjectives: Objective[], allTags: Tag[]) {
   const objectives: ResourceId[] = [];
   if (data.objectives) {
-    const objectiveTitles: string[] = data.objectives.split(',').map((ob) => ob.replace(/[\[\]']+/g, ''));
+    const objectiveTitles: string[] = data.objectives
+      .split(',')
+      .map((ob) => ob.replace(/[\[\]']+/g, ''));
     for (const objectiveTitle of objectiveTitles) {
       const objective = allObjectives.find((o) => o.title === objectiveTitle);
       if (objective) {
@@ -115,19 +119,21 @@ const createBulk = async (
   allTags: Tag[],
   editorMap: ActivityEditorMap,
   bulkImportData: CreationData[],
-  onAdd: (added: ActivityEditContext) => void,
+  onBulkAdd: (added: ActivityEditContext[]) => void,
+  onError: (message: string) => void,
 ) => {
-  const bulkCreateData: BulkActivityCreate[] = []
+  const bulkCreateData: BulkActivityCreate[] = [];
   for (const data of bulkImportData) {
     let editorDesc = editorForData(data, editorMap);
     if (editorDesc) {
-      const model = await invokeCreationFunc(editorDesc.slug, {creationData: data} as any)
+      const model = await invokeCreationFunc(editorDesc.slug, { creationData: data } as any)
         .then((createdModel) => {
-          return createdModel
+          return createdModel;
         })
         .catch((err) => {
           // tslint:disable-next-line
           console.error(err);
+          onError(`Bulk question import error: ${err.message}`);
         });
       const { objectives, tags } = tagsAndObjectives(data, allObjectives, allTags);
       if (model) {
@@ -137,53 +143,50 @@ const createBulk = async (
           tags: tags,
           content: model,
           activityTypeSlug: editorDesc.slug,
-        }
+        };
         bulkCreateData.push(bulkCreate);
-        console.log('createdModel', JSON.stringify(model));
       }
     }
   }
-  Persistence.createBulk(projectSlug, bulkCreateData, 'banked').then((result: Persistence.CreatedBulk[]) => {
-    // const objectives = model.authoring.parts
-    //   .map((p: any) => {
-    //     return p.id;
-    //   })
-    //   .reduce((m: any, id: any) => {
-    //     m[id] = [];
-    //     return m;
-    //   }, {});
-    //
-    // const activity: ActivityEditContext = {
-    //   authoringElement: editorDesc.authoringElement as string,
-    //   description: editorDesc.description,
-    //   friendlyName: editorDesc.friendlyName,
-    //   activitySlug: result.revisionSlug,
-    //   typeSlug: editorDesc.slug,
-    //   activityId: result.resourceId,
-    //   title: editorDesc.friendlyName,
-    //   model,
-    //   objectives,
-    //   tags: [],
-    //   variables: editorDesc.variables,
-    // };
-    //
-    // onAdded(activity);
-  })
+  console.log('bulkCreateData', JSON.stringify(bulkCreateData));
+  Persistence.createBulk(projectSlug, bulkCreateData, 'banked')
+    .then((results: Persistence.CreatedBulk) => {
+      const activities: ActivityEditContext[] = [];
+      for (const result of results.revisions) {
+        const editorDesc = editorMap[result.activityTypeslug];
+        const activity: ActivityEditContext = {
+          authoringElement: editorDesc.authoringElement as string,
+          description: editorDesc.description,
+          friendlyName: editorDesc.friendlyName,
+          activitySlug: result.revisionSlug,
+          typeSlug: editorDesc.slug,
+          activityId: result.resourceId,
+          title: result.title,
+          model: result.content,
+          objectives: result.objectives,
+          tags: result.tags,
+          variables: editorDesc.variables,
+        };
+      }
+
+      onBulkAdd(activities);
+    })
     .catch((err) => {
       // tslint:disable-next-line
       console.error(err);
+      onError(`Server error while processing bulk question import: ${err.message}`);
     });
 };
 
 export const CreateActivity = (props: CreateActivityProps) => {
-  const { editorMap, onAdd, projectSlug } = props;
+  const { editorMap, onAdd, onBulkAdd, onError, projectSlug, allObjectives, allTags } = props;
   const [modalShow, setModalShow] = useState(false);
 
   const handleAdd = (editorDesc: EditorDesc) => create(projectSlug, editorDesc, onAdd);
 
   const handleBulkAdd = (bulkImportData: CreationData[]) => {
     setModalShow(false);
-    createBulk(projectSlug, props.allObjectives, props.allTags, editorMap, bulkImportData, onAdd);
+    createBulk(projectSlug, allObjectives, allTags, editorMap, bulkImportData, onBulkAdd, onError);
   };
 
   let activityEntries = Object.keys(editorMap)

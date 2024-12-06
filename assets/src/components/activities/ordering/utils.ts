@@ -2,15 +2,17 @@ import { Responses } from 'data/activities/model/responses';
 import { matchInOrderRule } from 'data/activities/model/rules';
 import guid from 'utils/guid';
 import {
+  Choice,
+  CreationData,
+  Hint,
+  Part,
   Transform,
   makeChoice,
+  makeFeedback,
   makeHint,
   makePart,
   makeResponse,
   makeStem,
-  CreationData,
-  Choice,
-  Hint, makeFeedback, Part,
 } from '../types';
 import { OrderingSchema as Ordering } from './schema';
 
@@ -50,21 +52,30 @@ export const defaultOrderingModel = (): Ordering => {
 
 export const orderingModel = (creationData: CreationData): Ordering => {
   const choices: Map<string, Choice> = new Map();
-  Object.entries(creationData).filter(([key, value]) => key.startsWith('choice') && value).map(([key, value]) => {
-    const choice = makeChoice(value as string);
-    choices.set(key, choice);
-    return choice;
-  });
+  Object.entries(creationData)
+    .filter(([key, value]) => key.startsWith('choice') && value)
+    .map(([key, value]) => {
+      const choice = makeChoice(value.toString());
+      choices.set(key, choice);
+      return choice;
+    });
 
   if (choices.size === 0) {
     throw new Error(`No choices provided for ${creationData.title}`);
   }
 
-  const hints: Hint[] = Object.entries(creationData).filter(([key, value]) => key.startsWith('hint') && value).map(([_key, value]) => {
-    return makeHint(value as string);
-  });
+  const hints: Hint[] = Object.entries(creationData)
+    .filter(([key, _value]) => key.startsWith('hint'))
+    .map(([_key, value]) => {
+      if (value) {
+        return makeHint(value.toString());
+      }
+      return makeHint('');
+    });
 
-  const correctChoices: string[] = creationData.answer.split(',').map((choice) => `choice${choice}`);
+  const correctChoices: string[] = creationData.answer
+    .split(',')
+    .map((choice) => `choice${choice}`);
 
   const answers: Choice[] = correctChoices.map((choice) => choices.get(choice) as Choice);
   if (answers.length === 0) {
@@ -72,7 +83,9 @@ export const orderingModel = (creationData: CreationData): Ordering => {
   }
 
   const correctFeedback = creationData.correct_feedback ? creationData.correct_feedback : 'Correct';
-  const incorrectFeedback = creationData.incorrect_feedback ? creationData.incorrect_feedback : 'Incorrect';
+  const incorrectFeedback = creationData.incorrect_feedback
+    ? creationData.incorrect_feedback
+    : 'Incorrect';
 
   const correctResponse = makeResponse(
     matchInOrderRule(answers.map((choice) => choice.id)),
@@ -81,11 +94,7 @@ export const orderingModel = (creationData: CreationData): Ordering => {
     true,
   );
 
-  const part: Part = makePart(
-    [correctResponse, Responses.catchAll(incorrectFeedback)],
-    hints,
-    '1',
-  );
+  const part: Part = makePart([correctResponse, Responses.catchAll(incorrectFeedback)], hints, '1');
 
   if (creationData.explanation) {
     part.explanation = makeFeedback(creationData.explanation);
@@ -97,9 +106,7 @@ export const orderingModel = (creationData: CreationData): Ordering => {
     choices: [...choices.values()],
     authoring: {
       version: 2,
-      parts: [
-        part,
-      ],
+      parts: [part],
       targeted: [],
       correct: [answers.map((choice) => choice.id), correctResponse.id],
       transformations: [

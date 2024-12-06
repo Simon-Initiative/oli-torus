@@ -266,6 +266,26 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     );
   }
 
+  bulkAddErrorMessage(message: string) {
+    this.addAsUnique(
+      createMessage({
+        guid: 'general-error',
+        canUserDismiss: true,
+        content: message,
+      }),
+    );
+  }
+
+  onActivityAddBulk(contexts: ActivityEditContext[]) {
+    const activities = contexts.map((c) => [c.activitySlug, c]);
+    const inserted = [...activities, ...this.state.activityContexts.toArray()].slice(0, PAGE_SIZE);
+    this.setState({
+      activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
+      totalInBank: this.state.totalInBank + 1,
+      totalCount: this.state.totalCount + 1,
+    });
+  }
+
   onActivityAdd(context: ActivityEditContext, atSlug: string | null = null) {
     const atIndex = this.state.activityContexts.keySeq().findIndex((key) => key === atSlug);
     const insertPos = atIndex < 0 ? 0 : atIndex;
@@ -626,6 +646,8 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                     allObjectives={props.allObjectives}
                     allTags={props.allTags}
                     onAdd={this.onActivityAdd}
+                    onBulkAdd={this.onActivityAddBulk}
+                    onError={this.bulkAddErrorMessage.bind(this)}
                   />
                 </div>
                 <LogicFilter
