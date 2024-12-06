@@ -772,11 +772,11 @@ defmodule OliWeb.CommunityLiveTest do
     } do
       email = "example@test.com"
       user_1 = insert(:user, email: email)
-      user_2 = user_fixture(%{email: email, independent_learner: false})
+      user_2 = insert(:user, email: email, independent_learner: false)
 
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
-      assert 0 == length(Groups.list_community_members(community.id))
+      assert Enum.empty?(Groups.list_community_members(community.id))
 
       view
       |> element("form[phx-change=\"suggest_member\"")
