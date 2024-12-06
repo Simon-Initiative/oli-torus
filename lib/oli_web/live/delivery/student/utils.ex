@@ -190,6 +190,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         <li id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
+        <.maybe_add_time_limit_term effective_settings={@effective_settings} />
         <li
           :if={
             @effective_settings.end_date != nil and @effective_settings.scheduling_type == :due_by and
@@ -209,10 +210,7 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  attr :effective_settings, Oli.Delivery.Settings.Combined
-  attr :ctx, SessionContext
-
-  defp page_due_term(%{effective_settings: %{end_date: nil, time_limit: time_limit}} = assigns)
+  defp maybe_add_time_limit_term(%{effective_settings: %{time_limit: time_limit}} = assigns)
        when time_limit > 0 do
     minute_label =
       case time_limit do
@@ -223,10 +221,20 @@ defmodule OliWeb.Delivery.Student.Utils do
     assigns = assign(assigns, minute_label: minute_label)
 
     ~H"""
-    You have <b><%= @effective_settings.time_limit %> <%= @minute_label %></b>
-    to complete the assessment. If you exceed this time, it will be marked as late.
+    <li id="page_time_limit_term">
+      You have <b><%= @effective_settings.time_limit %> <%= @minute_label %></b>
+      to complete the assessment. If you exceed this time, it will be marked as late.
+    </li>
     """
   end
+
+  defp maybe_add_time_limit_term(assigns) do
+    ~H"""
+    """
+  end
+
+  attr :effective_settings, Oli.Delivery.Settings.Combined
+  attr :ctx, SessionContext
 
   defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
     ~H"""
