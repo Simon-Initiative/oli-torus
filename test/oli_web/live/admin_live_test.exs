@@ -760,7 +760,7 @@ defmodule OliWeb.AdminLiveTest do
     test "confirms user email", %{
       conn: conn
     } do
-      %User{id: id} = insert(:user, %{email_confirmation_token: "token"})
+      %User{id: id} = insert(:user, %{email_confirmed_at: nil})
 
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
@@ -884,8 +884,8 @@ defmodule OliWeb.AdminLiveTest do
          %{conn: conn} do
       accepted_with_different_email_author =
         insert(:author,
-          email_confirmation_token: "token",
-          unconfirmed_email: "other_email",
+          email_confirmed_at: nil,
+          email: "other_email",
           invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
@@ -951,7 +951,8 @@ defmodule OliWeb.AdminLiveTest do
     test "redirects to index view and displays error message when author does not exist", %{
       conn: conn
     } do
-      assert {:error, {:redirect, %{to: "/not_found"}}} =
+      assert {:error,
+              {:redirect, %{to: "/admin/authors", flash: %{"error" => "Author not found"}}}} =
                live(conn, live_view_author_detail_route(-1))
     end
 
@@ -1038,7 +1039,7 @@ defmodule OliWeb.AdminLiveTest do
     test "confirms author email", %{
       conn: conn
     } do
-      %Author{id: id} = insert(:author, %{email_confirmation_token: "token"})
+      %Author{id: id} = insert(:author, %{email_confirmed_at: nil})
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
@@ -1056,7 +1057,7 @@ defmodule OliWeb.AdminLiveTest do
 
     test "shows email confirmation buttons when author account was created but not confirmed yet",
          %{conn: conn} do
-      non_confirmed_author = insert(:author, email_confirmation_token: "token")
+      non_confirmed_author = insert(:author, email_confirmed_at: nil)
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(non_confirmed_author.id))
 
@@ -1108,8 +1109,8 @@ defmodule OliWeb.AdminLiveTest do
          %{conn: conn} do
       accepted_with_different_email_author =
         insert(:author,
-          email_confirmation_token: "token",
-          unconfirmed_email: "other_email",
+          email_confirmed_at: nil,
+          email: "other_email",
           invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
