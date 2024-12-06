@@ -1068,9 +1068,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
-      assert view
-             |> element("#page_terms")
-             |> render() =~ "not yet scheduled."
+      assert view |> element("#page_terms") |> render() =~
+               "This assignment is <b>not yet scheduled.</b>"
     end
 
     test "page terms are shown correctly when page is scheduled",
@@ -1089,7 +1088,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       assert view
              |> element("#page_due_terms")
              |> render() =~
-               "This assignment is due on"
+               "This assignment was due on"
 
       assert view
              |> element("#page_due_terms")
@@ -1199,6 +1198,31 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page.slug))
 
       refute has_element?(view, "#page_submission_terms")
+    end
+
+    test "page terms show a time limit message when the due date is not set", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      # Singular case
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{time_limit: 1, end_date: nil})
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~
+               "You have <b>1 minute</b>\nto complete the assessment. If you exceed this time, it will be marked as late."
+
+      # Plural case
+      Sections.get_section_resource(section.id, page_2.resource_id)
+      |> Sections.update_section_resource(%{time_limit: 2, end_date: nil})
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~
+               "You have <b>2 minutes</b>\nto complete the assessment. If you exceed this time, it will be marked as late."
     end
   end
 
