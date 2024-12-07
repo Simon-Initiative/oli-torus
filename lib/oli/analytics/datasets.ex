@@ -62,14 +62,26 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp preprocess(%DatasetJob{job_type: :custom} = job) do
+
+    job = set_ignore_student_ids(job)
+
     chunk_size = Utils.determine_chunk_size(job.configuration.excluded_fields)
     config = %JobConfig{job.configuration | chunk_size: chunk_size}
     {:ok, %DatasetJob{job | configuration: config}}
   end
 
   defp preprocess(%DatasetJob{job_type: :datashop} = job) do
+
+    job = set_ignore_student_ids(job)
+
     build_json_context(job)
     |> stage_json_context(job)
+  end
+
+  defp set_ignore_student_ids(%DatasetJob{configuration: config} = job) do
+    ignored_student_ids = Utils.determine_ignored_student_ids(job.configuration.section_ids)
+    config = %JobConfig{job.configuration | ignored_student_ids: ignored_student_ids}
+    %DatasetJob{job | configuration: config}
   end
 
   defp build_json_context(%DatasetJob{project_id: project_id}) do
@@ -119,8 +131,6 @@ defmodule Oli.Analytics.Datasets do
       "torus-xapi-prod",
       "--chunk_size",
       "#{job.configuration.chunk_size}",
-      "--ignored_student_ids",
-      "#{job.configuration.ignored_student_ids |> to_str}",
       "--sub_types",
       "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_sub_types}",
       "--job_id",
@@ -128,13 +138,20 @@ defmodule Oli.Analytics.Datasets do
       "--section_ids",
       "#{job.configuration.section_ids |> to_str}",
       "--action",
-      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}"
+      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}",
+      "--enforce_project_id",
+      "#{job.project_id}"
     ]
 
     arguments = case {job.job_type, Enum.count(job.configuration.excluded_fields)} do
       {:datashop, _} -> arguments
       {_, 0} -> arguments
       _ -> arguments ++ ["--exclude_fields", job.configuration.excluded_fields |> to_str]
+    end
+
+    arguments = case Enum.count(job.configuration.ignored_student_ids) do
+      0 -> arguments
+      _ -> arguments ++ ["--ignored_student_ids", "#{job.configuration.ignored_student_ids |> to_str}"]
     end
 
     body = %{

@@ -1,5 +1,8 @@
 defmodule Oli.Analytics.Datasets.Utils do
 
+  alias Oli.Repo
+  import Ecto.Query
+
   def determine_chunk_size(excluded_fields) do
 
     excluded_set = MapSet.new(excluded_fields)
@@ -16,6 +19,15 @@ defmodule Oli.Analytics.Datasets.Utils do
       2 -> 15_000
       3 -> 10_000
     end
+  end
+
+  def determine_ignored_student_ids(section_ids) do
+    query = from(e in Oli.Delivery.Sections.Enrollment,
+      join: u in Oli.Accounts.User, on: u.id == e.user_id,
+      where: e.section_id in ^section_ids and u.research_opt_out == true,
+      select: u.id)
+
+    Repo.all(query)
   end
 
 end
