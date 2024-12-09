@@ -2,7 +2,7 @@
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
 import { registerCreationFunc } from '../creation';
 import { CreationContext, Manifest } from '../types';
-import { defaultCATAModel } from './utils';
+import { cATAModel, defaultCATAModel } from './utils';
 
 // This is the entry point for the check all that apply authoring
 // component, as specified in the manifest.json
@@ -26,7 +26,10 @@ export { CheckAllThatApplyAuthoring } from './CheckAllThatApplyAuthoring';
 // eslint-disable-next-line
 const manifest: Manifest = require('./manifest.json');
 
-function createFn(_context: CreationContext): Promise<CATASchema> {
+function createFn(context: CreationContext): Promise<CATASchema> {
+  if (context && context.creationData) {
+    return Promise.resolve(Object.assign({}, cATAModel(context.creationData)));
+  }
   return Promise.resolve(Object.assign({}, defaultCATAModel()));
 }
 
