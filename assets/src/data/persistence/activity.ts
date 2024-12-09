@@ -36,7 +36,7 @@ export type BulkActivityCreate = {
 export type CreateRevision = {
   revisionSlug: string;
   resourceId: ResourceId;
-  activityTypeslug: string;
+  activityTypeSlug: string;
   title: string;
   objectives: any;
   tags: any;

@@ -234,13 +234,13 @@ defmodule OliWeb.Api.ActivityController do
             activity = a.activity
 
             %{
-              revision_slug: activity.slug,
-              resource_id: activity.resource_id,
-              activity_type_slug: a.activity_type_slug,
-              title: activity.title,
-              objectives: activity.objectives,
-              tags: activity.tags,
-              content: activity.content
+              "revisionSlug" => activity.slug,
+              "resourceId" => activity.resource_id,
+              "activityTypeSlug" => a.activity_type_slug,
+              "title" => activity.title,
+              "objectives" => activity.objectives,
+              "tags" => activity.tags,
+              "content" => activity.content
             }
           end)
 

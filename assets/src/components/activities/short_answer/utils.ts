@@ -15,7 +15,6 @@ import {
   ScoringStrategy,
   makeFeedback,
   makeHint,
-  makePart,
   makeResponse,
   makeStem,
 } from '../types';

@@ -92,7 +92,7 @@ function tagsAndObjectives(data: CreationData, allObjectives: Objective[], allTa
   if (data.objectives) {
     const objectiveTitles: string[] = data.objectives
       .split(',')
-      .map((ob) => ob.replace(/[\[\]']+/g, ''));
+      .map((ob) => ob.replace(/[[\]]/g, ''));
     for (const objectiveTitle of objectiveTitles) {
       const objective = allObjectives.find((o) => o.title === objectiveTitle);
       if (objective) {
@@ -102,7 +102,7 @@ function tagsAndObjectives(data: CreationData, allObjectives: Objective[], allTa
   }
   const tags: ResourceId[] = [];
   if (data.tags) {
-    const tagTitles: string[] = data.tags.split(',').map((ob) => ob.replace(/[\[\]']+/g, ''));
+    const tagTitles: string[] = data.tags.split(',').map((ob) => ob.replace(/[[\]]/g, ''));
     for (const tagTitle of tagTitles) {
       const tag = allTags.find((t) => t.title === tagTitle);
       if (tag) {
@@ -124,7 +124,7 @@ const createBulk = async (
 ) => {
   const bulkCreateData: BulkActivityCreate[] = [];
   for (const data of bulkImportData) {
-    let editorDesc = editorForData(data, editorMap);
+    const editorDesc = editorForData(data, editorMap);
     if (editorDesc) {
       const model = await invokeCreationFunc(editorDesc.slug, { creationData: data } as any)
         .then((createdModel) => {
@@ -148,12 +148,11 @@ const createBulk = async (
       }
     }
   }
-  console.log('bulkCreateData', JSON.stringify(bulkCreateData));
   Persistence.createBulk(projectSlug, bulkCreateData, 'banked')
     .then((results: Persistence.CreatedBulk) => {
       const activities: ActivityEditContext[] = [];
       for (const result of results.revisions) {
-        const editorDesc = editorMap[result.activityTypeslug];
+        const editorDesc = editorMap[result.activityTypeSlug];
         const activity: ActivityEditContext = {
           authoringElement: editorDesc.authoringElement as string,
           description: editorDesc.description,
@@ -167,13 +166,11 @@ const createBulk = async (
           tags: result.tags,
           variables: editorDesc.variables,
         };
+        activities.push(activity);
       }
-
       onBulkAdd(activities);
     })
     .catch((err) => {
-      // tslint:disable-next-line
-      console.error(err);
       onError(`Server error while processing bulk question import: ${err.message}`);
     });
 };

@@ -613,51 +613,48 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         objective_map \\ %{},
         tags \\ []
       ) do
-    Repo.transaction(fn ->
-      with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
-           {:ok} <- authorize_user(author, project),
-           {:ok, publication} <-
-             Publishing.project_working_publication(project_slug) |> trap_nil(),
-           {:ok, activity_type} <-
-             Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-           {:ok, objectives} <- attach_objectives(model, all_parts_objectives, objective_map),
-           {:ok, %{content: content} = activity} <-
-             Resources.create_new(
-               %{
-                 title: title || activity_type.title,
-                 scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-                 objectives: objectives,
-                 author_id: author.id,
-                 content: model,
-                 scope: scope,
-                 activity_type_id: activity_type.id,
-                 tags: tags
-               },
-               Oli.Resources.ResourceType.id_for_activity()
-             ),
-           {:ok, _} <-
-             Course.create_project_resource(%{
-               project_id: project.id,
-               resource_id: activity.resource_id
-             })
-             |> trap_nil(),
-           {:ok, _mapping} <-
-             Publishing.create_published_resource(%{
-               publication_id: publication.id,
-               resource_id: activity.resource_id,
-               revision_id: activity.id
-             }) do
-        case Transformers.apply_transforms([activity]) do
-          [{:ok, nil}] -> {activity, content}
-          [{:ok, transformed}] -> {activity, transformed}
-          _ -> {activity, nil}
-        end
-      else
-        error -> Repo.rollback(error)
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         {:ok, %{content: content} = activity} <-
+           process_create_activity(
+             project,
+             author,
+             publication,
+             scope,
+             activity_type_slug,
+             all_parts_objectives,
+             model,
+             title,
+             tags,
+             objective_map
+           ) do
+      case Transformers.apply_transforms([activity]) do
+        [{:ok, nil}] -> {:ok, {activity, content}}
+        [{:ok, transformed}] -> {:ok, {activity, transformed}}
+        _ -> {:ok, {activity, nil}}
       end
-    end)
+    else
+      error -> error
+    end
   end
 
+  @doc """
+  Attempts to process a request to create a list of new activities.
+
+  Returns:
+
+  .`{:ok, list({String.t(), %Revision{}})}` when the creation processes succeeds
+  .`{:error, {:not_found}}` if the project, resource, or user cannot be found
+  .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
+  .`{:error, {:error}}` unknown error
+  """
+  @spec create_bulk(String.t(), %Author{}, %{}) ::
+          {:ok, list({String.t(), %Revision{}})}
+          | {:error, {:not_found}}
+          | {:error, {:error}}
+          | {:error, {:not_authorized}}
   def create_bulk(
         project_slug,
         author,
@@ -681,10 +678,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                  project,
                  author,
                  publication,
+                 scope,
                  activity_type_slug,
                  objectives,
                  model,
-                 scope,
                  title,
                  tags
                ) do
@@ -706,17 +703,18 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          project,
          author,
          publication,
+         scope,
          activity_type_slug,
          objectives,
          model,
-         scope,
          title,
-         tags
+         tags,
+         objective_map \\ %{}
        ) do
     Repo.transaction(fn ->
       with {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-           {:ok, objectives} <- attach_objectives(model, objectives, %{}),
+           {:ok, objectives} <- attach_objectives(model, objectives, objective_map),
            {:ok, activity} <-
              Resources.create_new(
                %{

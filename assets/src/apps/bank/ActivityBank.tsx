@@ -224,6 +224,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
     this.onRegisterNewTag = this.onRegisterNewTag.bind(this);
     this.onActivityAdd = this.onActivityAdd.bind(this);
+    this.onActivityAddBulk = this.onActivityAddBulk.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
     this.onInvokeUndo = this.onInvokeUndo.bind(this);
@@ -284,6 +285,14 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       totalInBank: this.state.totalInBank + 1,
       totalCount: this.state.totalCount + 1,
     });
+    this.addAsUnique(
+      createMessage({
+        guid: 'general',
+        canUserDismiss: true,
+        content: `${contexts.length} questions were added successfully`,
+        severity: Severity.Information,
+      }),
+    );
   }
 
   onActivityAdd(context: ActivityEditContext, atSlug: string | null = null) {

@@ -135,6 +135,7 @@ export const BulkQuestionsImport: React.FC<Props> = ({ onCancel, onUpload, title
               <a
                 href="https://docs.google.com/spreadsheets/d/1C9rrY3dHToxG19d8b6Lvwob5PojshV62osO9LrqyWUI/edit?usp=sharing"
                 target="_blank"
+                rel="noreferrer"
               >
                 Download Sample CSV
               </a>

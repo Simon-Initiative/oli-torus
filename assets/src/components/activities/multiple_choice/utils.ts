@@ -63,7 +63,7 @@ export const mCModel: (creationData: CreationData) => MCSchema = (creationData: 
       return makeHint('');
     });
 
-  let answer: Choice = choices.get(`choice${creationData.answer}`) as Choice;
+  const answer: Choice = choices.get(`choice${creationData.answer}`) as Choice;
 
   if (!answer) {
     throw new Error('No answer provided');
