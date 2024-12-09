@@ -191,17 +191,6 @@ defmodule OliWeb.Delivery.Student.Utils do
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
         <.maybe_add_time_limit_term effective_settings={@effective_settings} />
-        <li
-          :if={
-            @effective_settings.end_date != nil and @effective_settings.scheduling_type == :due_by and
-              !@is_adaptive and
-              (@effective_settings.late_submit == :disallow or
-                 (@effective_settings.late_submit == :allow and @effective_settings.time_limit > 0))
-          }
-          id="page_submission_terms"
-        >
-          <.page_submission_term effective_settings={@effective_settings} ctx={@ctx} />
-        </li>
         <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
         </li>
@@ -212,18 +201,10 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp maybe_add_time_limit_term(%{effective_settings: %{time_limit: time_limit}} = assigns)
        when time_limit > 0 do
-    minute_label =
-      case time_limit do
-        1 -> "minute"
-        _ -> "minutes"
-      end
-
-    assigns = assign(assigns, minute_label: minute_label)
-
     ~H"""
     <li id="page_time_limit_term">
-      You have <b><%= @effective_settings.time_limit %> <%= @minute_label %></b>
-      to complete the assessment. If you exceed this time, it will be marked as late.
+      You have <b><%= parse_minutes(@effective_settings.time_limit) %></b>
+      to complete the assessment from the time you begin. If you exceed this time, it will be marked as late.
     </li>
     """
   end
@@ -265,111 +246,6 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   defp scheduling_type(:due_by), do: "due on"
   defp scheduling_type(_scheduling_type), do: "suggested by"
-
-  defp page_submission_term(%{effective_settings: %{time_limit: 0, grace_period: 0}} = assigns) do
-    ~H"""
-    <div>
-      <span>
-        Your work will automatically be submitted at
-      </span>
-      <span class="font-bold">
-        <%= FormatDateTime.to_formatted_datetime(
-          @effective_settings.end_date,
-          @ctx,
-          "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
-        ) %>
-      </span>
-    </div>
-    """
-  end
-
-  defp page_submission_term(
-         %{effective_settings: %{time_limit: 0, grace_period: grace_period}} = assigns
-       )
-       when grace_period > 0 do
-    ~H"""
-    <div>
-      <span>
-        Your work will automatically be submitted at
-      </span>
-      <span class="font-bold">
-        <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
-        |> FormatDateTime.to_formatted_datetime(
-          @ctx,
-          "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
-        ) %>
-      </span>
-    </div>
-    """
-  end
-
-  defp page_submission_term(
-         %{effective_settings: %{time_limit: time_limit, grace_period: 0}} = assigns
-       )
-       when time_limit > 0 do
-    ~H"""
-    <div>
-      <span>
-        Your work will automatically be submitted
-      </span>
-      <span class="font-bold">
-        <%= parse_minutes(@effective_settings.time_limit) %>
-      </span>
-      <span>
-        after you click the Begin button
-      </span>
-    </div>
-    """
-  end
-
-  defp page_submission_term(
-         %{
-           effective_settings: %{
-             time_limit: time_limit,
-             grace_period: grace_period,
-             end_date: end_date
-           }
-         } = assigns
-       )
-       when time_limit > 0 and grace_period > 0 do
-    # when we have both time limit and grace period,
-    # the end date time that comes first is the one that should be considered.
-    # For calculating the start_date_with_time_limit we assume the student is about to begin the attempt
-    now = Oli.DateTime.utc_now()
-    start_date_with_time_limit = Timex.shift(now, minutes: time_limit)
-    end_date_with_grace_period = Timex.shift(end_date, minutes: grace_period)
-
-    if DateTime.compare(start_date_with_time_limit, end_date_with_grace_period) == :lt do
-      ~H"""
-      <div>
-        <span>
-          Your work will automatically be submitted
-        </span>
-        <span class="font-bold">
-          <%= parse_minutes(@effective_settings.time_limit) %>
-        </span>
-        <span>
-          after you click the Begin button
-        </span>
-      </div>
-      """
-    else
-      ~H"""
-      <div>
-        <span>
-          Your work will automatically be submitted at
-        </span>
-        <span class="font-bold">
-          <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
-          |> FormatDateTime.to_formatted_datetime(
-            @ctx,
-            "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
-          ) %>
-        </span>
-      </div>
-      """
-    end
-  end
 
   @doc """
   Parses the minutes into a human-readable format.
