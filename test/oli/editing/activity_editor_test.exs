@@ -96,22 +96,28 @@ defmodule Oli.ActivityEditingTest do
     end
 
     test "create_bulk/3 creates a list of activity revisions", %{author: author, project: project} do
+      bulk_content = [
+        %{
+          "activityTypeSlug" => "oli_multiple_choice",
+          "objectives" => [],
+          "content" => %{"stem" => "Hey there"},
+          "title" => "title1",
+          "tags" => []
+        },
+        %{
+          "activityTypeSlug" => "oli_short_answer",
+          "objectives" => [],
+          "content" => %{"stem" => "Hey there2"},
+          "title" => "title2",
+          "tags" => []
+        }
+      ]
 
-      bulk_content = [%{
-        "activityTypeSlug" => "oli_multiple_choice",
-        "objectives" => [],
-        "content" => %{"stem" => "Hey there"},
-        "title" => "title1",
-        "tags" => []
-      }, %{
-        "activityTypeSlug" => "oli_short_answer",
-        "objectives" => [],
-        "content" => %{"stem" => "Hey there2"},
-        "title" => "title2",
-        "tags" => []
-      }]
-
-      {:ok, [%{activity: activity1, activity_type_slug: activity_type_slug1}, %{activity: activity2, activity_type_slug: activity_type_slug2}]} =
+      {:ok,
+       [
+         %{activity: activity1, activity_type_slug: activity_type_slug1},
+         %{activity: activity2, activity_type_slug: activity_type_slug2}
+       ]} =
         ActivityEditor.create_bulk(project.slug, author, bulk_content)
 
       assert activity1.title == "title1"

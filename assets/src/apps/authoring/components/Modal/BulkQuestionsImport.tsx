@@ -171,7 +171,9 @@ export const BulkQuestionsImport: React.FC<Props> = ({ onCancel, onUpload, title
           </div>
         </div>
         {error && (
-          <Alert className="mt-5" variant="warning">{error}</Alert>
+          <Alert className="mt-5" variant="warning">
+            {error}
+          </Alert>
         )}
       </Modal.Body>
       <Modal.Footer>
