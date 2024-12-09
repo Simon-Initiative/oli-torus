@@ -4,6 +4,7 @@ defmodule Oli.Analytics.Datasets do
   alias Oli.Analytics.Datasets.JobConfig
   alias Oli.Analytics.Datasets.DatasetJob
   alias Oli.Analytics.Datasets.Utils
+  alias Oli.Analytics.Datasets.Settings
   alias Oli.Repo
   alias ExAws.S3
   alias ExAws
@@ -121,14 +122,16 @@ defmodule Oli.Analytics.Datasets do
 
   def submit_job(%DatasetJob{} = job) do
 
-    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.us-east-1.amazonaws.com")
+    region = Settings.region()
+
+    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{region}.amazonaws.com")
 
     # Construct the URL for the "applications" EMR serverless endpoint
-    url = "https://emr-serverless.us-east-1.amazonaws.com/applications/#{job.application_id}/jobruns"
+    url = "https://emr-serverless.#{region}.amazonaws.com/applications/#{job.application_id}/jobruns"
 
     arguments = [
       "--bucket_name",
-      "torus-xapi-prod",
+      Settings.source_bucket(),
       "--chunk_size",
       "#{job.configuration.chunk_size}",
       "--sub_types",
@@ -157,18 +160,18 @@ defmodule Oli.Analytics.Datasets do
     body = %{
       "clientToken" => job.job_id,
       "applicationId" => job.application_id,
-      "executionRoleArn" => "arn:aws:iam::762438811603:role/service-role/AmazonEMR-ExecutionRole-1731366715097",
+      "executionRoleArn" => Settings.execution_role(),
       "jobDriver" => %{
         "sparkSubmit" => %{
-          "entryPoint" => "s3://analyticsjobs/job.py",
+          "entryPoint" => Settings.entry_point(),
           "entryPointArguments" => arguments,
-          "sparkSubmitParameters" => "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+          "sparkSubmitParameters" => Settings.spark_submit_parameters()
         }
       },
       "configurationOverrides" => %{
         "monitoringConfiguration" => %{
           "s3MonitoringConfiguration" => %{
-            "logUri" => "s3://analyticsjobs/logs/"
+            "logUri" => Settings.log_uri()
           }
         }
       }
@@ -204,10 +207,10 @@ defmodule Oli.Analytics.Datasets do
 
   def determine_application_id() do
 
-    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.us-east-1.amazonaws.com")
+    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
 
     # Construct the URL for the "applications" EMR serverless endpoint
-    base_url = "https://emr-serverless.us-east-1.amazonaws.com/applications"
+    base_url = "https://emr-serverless.#{Settings.region()}.amazonaws.com/applications"
     query_params = "maxResults=50"
     url = "#{base_url}?#{query_params}"
 

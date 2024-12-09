@@ -133,7 +133,6 @@ if config_env() == :prod do
 
   # General OLI app config
   config :oli,
-    emr_dataset_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
     s3_media_bucket_name: s3_media_bucket_name,
     s3_xapi_bucket_name: s3_xapi_bucket_name,
     media_url: media_url,
@@ -160,6 +159,14 @@ if config_env() == :prod do
     always_use_persistent_login_sessions:
       get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+
+  config :oli, :dataset_generation,
+    emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+    execution_role: System.get_env("EMR_DATASET_EXECUTION_ROLE", "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"),
+    entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
+    log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
+    source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+    spark_submit_parameters: System.get_env("EMR_DATASET_SPARK_SUBMIT_PARAMETERS", "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2")
 
   config :oli, :xapi_upload_pipeline,
     batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
