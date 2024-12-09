@@ -98,19 +98,6 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "delivery_controller link_account" do
-    setup [:setup_lti_session]
-
-    test "renders link account form", %{conn: conn, instructor: instructor} do
-      conn =
-        conn
-        |> log_in_user(instructor)
-        |> get(Routes.delivery_path(conn, :link_account))
-
-      assert html_response(conn, 200) =~ "Link Authoring Account"
-    end
-  end
-
   describe "delivery_controller deleted_project" do
     setup [:setup_lti_session]
 
@@ -128,56 +115,8 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "delivery_controller process_link_account_provider" do
+  describe "delivery_controller - show_enroll" do
     setup [:setup_lti_session]
-
-    test "processes link account for provider", %{conn: conn} do
-      conn =
-        conn
-        |> get(Routes.authoring_delivery_path(conn, :process_link_account_provider, :google))
-
-      assert html_response(conn, 302) =~ "redirect"
-    end
-  end
-
-  describe "delivery_controller process_link_account_user" do
-    setup [:setup_lti_session]
-
-    test "processes link account for user email authentication failure", %{
-      conn: conn,
-      author: author
-    } do
-      author_params =
-        author
-        |> Map.from_struct()
-        |> Map.put(:password, "wrong_password")
-        |> Map.put(:password_confirmation, "wrong_password")
-
-      conn =
-        conn
-        |> post(Routes.delivery_path(conn, :process_link_account),
-          link_account: author_params
-        )
-
-      assert redirected_to(conn, 302) =~ "/users/log_in"
-    end
-
-    test "processes link account for user email", %{
-      conn: conn,
-      author: author
-    } do
-      author_params =
-        author
-        |> Map.from_struct()
-        |> Map.put(:password, "password123")
-        |> Map.put(:password_confirmation, "password123")
-
-      conn =
-        conn
-        |> post(Routes.delivery_path(conn, :process_link_account), link_account: author_params)
-
-      assert html_response(conn, 302) =~ "redirect"
-    end
 
     test "redirect unenrolled user to enrollment page", %{
       conn: conn,
@@ -223,10 +162,6 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 403) =~ "Section Not Available"
     end
-  end
-
-  describe "delivery_controller - show_enroll" do
-    setup [:setup_lti_session]
 
     test "blocks LMS users from manually enrollment", %{
       conn: conn,

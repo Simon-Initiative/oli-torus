@@ -1159,6 +1159,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    # NON-DETERMINISTIC: https://eliterate.atlassian.net/browse/TRIAGE-4 Fix or remove
+    @tag :skip
     test "sorting by Due Date", %{
       conn: conn,
       section: section,

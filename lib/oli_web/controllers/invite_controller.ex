@@ -127,7 +127,7 @@ defmodule OliWeb.InviteController do
     Accounts.get_author_by_email(email)
     |> case do
       nil ->
-        case PowInvitation.Plug.create_user(conn, %{email: email}) do
+        case create_user(conn, %{email: email}) do
           {:ok, user, _conn} -> {:ok, user}
           {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
         end
@@ -141,25 +141,13 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  defp deliver_invitation_email(conn, user) do
-    invited_by = conn.assigns.current_author
-    token = PowInvitation.Plug.sign_invitation_token(conn, user)
-    url = Routes.pow_invitation_invitation_path(conn, :edit, token)
+  defp deliver_invitation_email(_conn, _user) do
+    # TODO: MER-4068
+    throw("NOT IMPLEMENTED")
+  end
 
-    invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
-
-    email =
-      Oli.Email.invitation_email(
-        user.email,
-        :author_invitation,
-        %{
-          invited_by: invited_by,
-          invited_by_user_id: invited_by_user_id,
-          url: Routes.url(conn) <> url
-        }
-      )
-
-    Oli.Mailer.deliver_now(email)
-    {:ok, "email sent"}
+  defp create_user(_conn, _params) do
+    # TODO: MER-4068
+    throw("NOT IMPLEMENTED")
   end
 end

@@ -6,7 +6,7 @@ defmodule Oli.TestHelpers do
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.{AuthorPreferences, User, UserToken}
+  alias Oli.Accounts.{AuthorPreferences}
   alias Oli.Activities
   alias Oli.Analytics.Summary
   alias Oli.Authoring.Course

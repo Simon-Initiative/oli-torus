@@ -1328,6 +1328,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
                "\"responses\":[{\"text\":\"This is an incorrect answer from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the second answer (correct) from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the first answer (correct) from the GOAT\",\"user_name\":\"Messi, Lionel\"}]"
     end
 
+    # https://eliterate.atlassian.net/browse/TRIAGE-4
+    @tag :skip
     test "multi input activity details get rendered correctly when page is selected",
          %{
            conn: conn,

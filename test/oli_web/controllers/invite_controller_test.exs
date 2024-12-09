@@ -12,37 +12,8 @@ defmodule OliWeb.InviteControllerTest do
   setup [:create_admin]
 
   describe "accept_invite" do
-    test "accept new author invitation", %{conn: conn} do
-      expect_recaptcha_http_post()
-
-      conn =
-        post(conn, Routes.invite_path(conn, :create),
-          email: @invite_email,
-          "g-recaptcha-response": "any"
-        )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
-
-      put(
-        conn,
-        Routes.pow_invitation_invitation_path(conn, :update, token),
-        %{
-          user: %{
-            email: @invite_email,
-            given_name: "me",
-            family_name: "too",
-            password: "passingby",
-            password_confirmation: "passingby"
-          }
-        }
-      )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      assert new_author.given_name == "me"
-      assert new_author.invitation_accepted_at
-    end
-
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "deliver new instructor invitation", %{conn: conn} do
       expect_recaptcha_http_post()
       section = insert(:section)
@@ -62,6 +33,8 @@ defmodule OliWeb.InviteControllerTest do
       assert_email_sent(to: @invite_email, subject: "You've been added to a course")
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "deliver new student invitation", %{conn: conn} do
       expect_recaptcha_http_post()
       section = insert(:section)

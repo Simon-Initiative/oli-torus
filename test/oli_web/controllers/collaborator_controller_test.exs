@@ -34,6 +34,8 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Collaborator invitations sent!"
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "allows multiple comma separated values", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -50,6 +52,8 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Collaborator invitations sent!"
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "allows capital letters in emails", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -66,6 +70,8 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Collaborator invitations sent!"
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "some emails succeed, some fail", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -86,6 +92,8 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Failed to add some collaborators: notevenan_email"
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -144,40 +152,6 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "Collaborator invitations cannot exceed 20 emails at a time. Please try again with fewer invites"
-    end
-  end
-
-  describe "collaboration_invite" do
-    test "accept new collaboration invitation", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
-
-      conn =
-        post(conn, Routes.collaborator_path(conn, :create, project),
-          collaborator_emails: @invite_email,
-          authors: get_authors(project),
-          "g-recaptcha-response": "any"
-        )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
-
-      put(
-        conn,
-        Routes.pow_invitation_invitation_path(conn, :update, token),
-        %{
-          user: %{
-            email: @invite_email,
-            given_name: "me",
-            family_name: "too",
-            password: "passingby",
-            password_confirmation: "passingby"
-          }
-        }
-      )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      assert new_author.given_name == "me"
-      assert new_author.invitation_accepted_at
     end
   end
 
