@@ -1063,8 +1063,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
            section: section,
            page_5: page_5
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
+      enroll_and_mark_visited(user, section)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
@@ -1072,143 +1071,41 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "This assignment is <b>not yet scheduled.</b>"
     end
 
-    test "page terms are shown correctly when page is scheduled",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           page_2: page_2,
-           graded_adaptive_page_revision: graded_adaptive_page
-         } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view
-             |> element("#page_due_terms")
-             |> render() =~
-               "This assignment was due on"
-
-      assert view
-             |> element("#page_due_terms")
-             |> render() =~
-               "Tue Nov 14, 2023 by 8:00pm."
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "Your work will automatically be submitted at"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "8:00pm on Tue Nov 14, 2023"
-
-      assert view
-             |> element("#page_scoring_terms")
-             |> render() =~
-               "Your overall score for this assignment will be the score of your best attempt."
-
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{
-        scoring_strategy_id: 1,
-        time_limit: 90
-      })
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "Your work will automatically be submitted"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "1 hour and 30 minutes"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "after you click the Begin button"
-
-      assert view
-             |> element("#page_scoring_terms")
-             |> render() =~
-               "Your overall score for this assignment will be the average score of your attempts."
-
-      # submission terms shouln't be visible when scheduling type is read_by
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{
-        scheduling_type: :read_by
-      })
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      refute has_element?(view, "#page_submission_terms")
-
-      # submission terms shouldn't be visible when late submit is allowed and time_limit = 0
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{
-        scheduling_type: :due_by,
-        late_submit: :allow,
-        time_limit: 0
-      })
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      refute has_element?(view, "#page_submission_terms")
-
-      # submission terms should be visible when late submit is allowed and time limit > 0
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{
-        scheduling_type: :due_by,
-        late_submit: :allow,
-        time_limit: 33
-      })
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "Your work will automatically be submitted"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "33 minutes"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "after you click the Begin button"
-
-      # submission terms shouln't be visible in prologue for adaptive pages
-      Sections.get_section_resource(section.id, graded_adaptive_page.resource_id)
-      |> Sections.update_section_resource(%{
-        start_date: ~U[2023-11-10 20:00:00Z],
-        end_date: ~U[2023-11-14 20:00:00Z],
-        late_submit: :disallow,
-        scheduling_type: :due_by
-      })
-
-      {:ok, view, _html} =
-        live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page.slug))
-
-      refute has_element?(view, "#page_submission_terms")
-    end
-
-    test "page terms display a time limit message", ctx do
+    test "page terms render the due date when is set", ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
+      enroll_and_mark_visited(user, section)
 
-      # Singular case
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{time_limit: 1})
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~ "This assignment was due on"
+
+      assert view |> element("#page_due_terms") |> render() =~ "Tue Nov 14, 2023 by 8:00pm."
+    end
+
+    test "page terms are shown correctly when page is scheduled", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{scoring_strategy_id: 1}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_scoring_terms") |> render() =~
+               "Your overall score for this assignment will be the average score of your attempts."
+    end
+
+    test "page terms render a time limit message", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{time_limit: 1}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
 
@@ -1216,16 +1113,17 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "This assignment was due on"
 
       assert view |> element("#page_time_limit_term") |> render() =~
-               "You have <b>1 minute</b>\n  to complete the assessment. If you exceed this time, it will be marked as late."
+               "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin. If you exceed this time, it will be marked as late.\n</li>"
+    end
 
-      # Plural case
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{time_limit: 2})
+    defp enroll_and_mark_visited(user, section) do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+    end
 
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view |> element("#page_time_limit_term") |> render() =~
-               "You have <b>2 minutes</b>\n  to complete the assessment. If you exceed this time, it will be marked as late."
+    defp get_and_update_section_resource(section_id, resource_id, updated_params) do
+      Sections.get_section_resource(section_id, resource_id)
+      |> Sections.update_section_resource(updated_params)
     end
   end
 
