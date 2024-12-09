@@ -54,24 +54,6 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  defp get_or_create_invited_author(email) do
-    Accounts.get_author_by_email(email)
-    |> case do
-      nil ->
-        case Accounts.create_invited_author(email) do
-          {:ok, author} -> {:ok, author, :new_user}
-          {:error, _changeset} -> {:error, "Unable to create invitation for new author"}
-        end
-
-      author ->
-        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-          {:ok, author, :new_user}
-        else
-          {:ok, author, :existing_user}
-        end
-    end
-  end
-
   def add_collaborator(conn, email, project_slug) do
     with {:ok, author, status} <- get_or_create_invited_author(email),
          {:ok, results} <- add_collaborator(email, project_slug),
@@ -133,6 +115,24 @@ defmodule Oli.Authoring.Collaborators do
       end
     else
       {:error, {message}} -> {:error, message}
+    end
+  end
+
+  def get_or_create_invited_author(email) do
+    Accounts.get_author_by_email(email)
+    |> case do
+      nil ->
+        case Accounts.create_invited_author(email) do
+          {:ok, author} -> {:ok, author, :new_user}
+          {:error, _changeset} -> {:error, "Unable to create invitation for new author"}
+        end
+
+      author ->
+        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
+          {:ok, author, :new_user}
+        else
+          {:ok, author, :existing_user}
+        end
     end
   end
 

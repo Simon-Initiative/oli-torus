@@ -1467,6 +1467,9 @@ defmodule OliWeb.Router do
         Admin.Institutions.SectionsAndStudentsView
       )
 
+      get("/invite", InviteController, :index)
+      post("/invite", InviteController, :create)
+
       # Communities
       live("/communities/new", CommunityLive.NewView)
 

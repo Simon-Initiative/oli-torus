@@ -249,6 +249,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     readonly={@form_disabled?}
                     field={@registration_changeset[:name]}
                     label="Institution Name"
+                    label_position={:responsive}
                     required
                   />
                   <.input
@@ -257,6 +258,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     readonly={@form_disabled?}
                     field={@registration_changeset[:institution_url]}
                     label="Institution URL"
+                    label_position={:responsive}
                     required
                   />
                   <.input
@@ -265,6 +267,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     readonly={@form_disabled?}
                     field={@registration_changeset[:institution_email]}
                     label="Contact Email"
+                    label_position={:responsive}
                     required
                   />
                   <.input
@@ -275,6 +278,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     options={@country_codes}
                     field={@registration_changeset[:country_code]}
                     label="Select Country"
+                    label_position={:responsive}
                     required
                   />
                 </div>
@@ -289,6 +293,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:issuer]}
                     label="Issuer"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -296,6 +301,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:client_id]}
                     label="Client ID"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -303,6 +309,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:deployment_id]}
                     label="Deployment ID"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -310,6 +317,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:key_set_url]}
                     label="Keyset URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -317,6 +325,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:auth_token_url]}
                     label="Auth Token URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -324,6 +333,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:auth_login_url]}
                     label="Auth Login URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -331,6 +341,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:auth_server]}
                     label="Auth Server URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -338,6 +349,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:line_items_service_domain]}
                     label="Line items service domain"
+                    label_position={:responsive}
                     readonly
                   />
                 </div>

@@ -298,7 +298,7 @@ defmodule OliWeb.Components.Common do
                 multiple pattern placeholder readonly required rows size step)
   )
 
-  attr(:label_position, :atom, default: :top, values: [:top, :bottom])
+  attr(:label_position, :atom, default: :top, values: [:top, :bottom, :responsive])
   attr(:error_position, :atom, default: :bottom, values: [:top, :bottom])
 
   slot(:inner_block)
@@ -492,7 +492,11 @@ defmodule OliWeb.Components.Common do
         placeholder={@placeholder}
         {@rest}
       />
-      <.label :if={@label && @label_position == :bottom} class={@label_class} for={@id}>
+      <.label
+        :if={@label && (@label_position == :bottom || @label_position == :responsive)}
+        class={@label_class}
+        for={@id}
+      >
         <%= @label %>
       </.label>
       <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
