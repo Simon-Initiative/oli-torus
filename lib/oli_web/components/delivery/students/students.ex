@@ -286,6 +286,12 @@ defmodule OliWeb.Components.Delivery.Students do
             student.user_role_id != 4
         end)
 
+      :pending_confirmation ->
+        Enum.filter(students, fn student ->
+          student.enrollment_status == :pending_confirmation and
+            student.user_role_id == 4
+        end)
+
       _ ->
         students
     end
@@ -1216,7 +1222,15 @@ defmodule OliWeb.Components.Delivery.Students do
         Params.get_atom_param(
           params,
           "filter_by",
-          [:enrolled, :suspended, :paid, :not_paid, :grace_period, :non_students],
+          [
+            :enrolled,
+            :suspended,
+            :paid,
+            :not_paid,
+            :grace_period,
+            :non_students,
+            :pending_confirmation
+          ],
           @default_params.filter_by
         ),
       selected_card_value:
