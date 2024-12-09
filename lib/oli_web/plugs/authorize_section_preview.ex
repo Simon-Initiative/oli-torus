@@ -17,7 +17,7 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
     section_slug = conn.path_params["section_slug"]
 
     cond do
-      Sections.is_instructor?(user, section_slug) or Accounts.has_admin_role?(author) ->
+      Sections.is_instructor?(user, section_slug) or Accounts.is_admin?(author) ->
         conn
         |> put_session(:preview_mode, true)
 

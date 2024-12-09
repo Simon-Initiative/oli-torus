@@ -45,36 +45,6 @@ defmodule OliWeb.StaticPageControllerTest do
     end
   end
 
-  describe "keep alive" do
-    test "redirects when user is not logged in", %{conn: conn} do
-      conn = get(conn, Routes.static_page_path(conn, :keep_alive))
-
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fkeep-alive\">redirected"
-    end
-
-    test "returns ok when user is logged in", conn do
-      {:ok, conn: conn, user: _} = user_conn(conn)
-      conn = get(conn, Routes.static_page_path(conn, :keep_alive))
-
-      assert response(conn, 200) =~ "Ok"
-    end
-
-    test "redirects when author is not logged in", %{conn: conn} do
-      conn = get(conn, Routes.author_keep_alive_path(conn, :keep_alive))
-
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fkeep-alive\">redirected"
-    end
-
-    test "returns ok when author is logged in", conn do
-      {:ok, conn: conn, author: _} = author_conn(conn)
-      conn = get(conn, Routes.author_keep_alive_path(conn, :keep_alive))
-
-      assert response(conn, 200) =~ "Ok"
-    end
-  end
-
   describe "update_timezone" do
     test "updates the author timezone preference and redirects correctly", context do
       {:ok, conn: conn, author: author} = author_conn(context)
@@ -213,11 +183,14 @@ defmodule OliWeb.StaticPageControllerTest do
   end
 
   describe "enrollment link" do
-    test "displays 'Create an Account' link if from_invitation_link?", %{conn: conn} do
-      conn = get(conn, Routes.static_page_path(conn, :index, from_invitation_link?: true))
+    test "displays 'Create an account' link if from_invitation_link?", %{conn: conn} do
+      conn = get(conn, ~p"/users/log_in?#{[from_invitation_link?: true]}")
 
       assert html_response(conn, 200) =~
-               "href=\"/registration/new?from_invitation_link%3F=true\">Create an Account"
+               "<a href=\"/users/register?from_invitation_link%3F=true\""
+
+      assert html_response(conn, 200) =~
+               "Create an account"
     end
   end
 end

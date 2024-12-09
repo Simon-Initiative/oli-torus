@@ -78,13 +78,13 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
 
           <div className="flex-grow-1"></div>
           <a
-            href={`/course/create_account?section=${props.sectionSlug}`}
+            href={`/users/register?section=${props.sectionSlug}`}
             className="btn btn-sm btn-outline-primary ml-1"
           >
             Create account
           </a>
           <a
-            href={`/course/signin?section=${props.sectionSlug}`}
+            href={`/users/log_in?section=${props.sectionSlug}`}
             className="btn btn-sm btn-primary ml-1"
           >
             Sign in

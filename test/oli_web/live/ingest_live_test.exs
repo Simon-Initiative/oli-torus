@@ -23,7 +23,7 @@ defmodule OliWeb.IngestLiveTest do
     test "redirects to new session when accessing the ingest project view", %{
       conn: conn
     } do
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fingest"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, @live_view_ingest_route)
     end

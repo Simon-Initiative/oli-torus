@@ -36,14 +36,12 @@ defmodule OliWeb.CommunityLiveTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the index view", %{conn: conn} do
-      {:error,
-       {:redirect, %{to: "/authoring/session/new?request_path=%2Fauthoring%2Fcommunities"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_index_route)
     end
 
     test "redirects to new session when accessing the create view", %{conn: conn} do
-      {:error,
-       {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fcommunities%2Fnew"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_new_route)
     end
 
@@ -51,7 +49,7 @@ defmodule OliWeb.CommunityLiveTest do
       community_id = insert(:community).id
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fcommunities%2F#{community_id}"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_show_route(community_id))
@@ -69,7 +67,10 @@ defmodule OliWeb.CommunityLiveTest do
     test "returns forbidden when accessing the create view", %{conn: conn} do
       conn = get(conn, @live_view_new_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn) == "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
 
     test "redirects to projects when accessing the show view", %{conn: conn} do
@@ -79,14 +80,14 @@ defmodule OliWeb.CommunityLiveTest do
         live(conn, live_view_show_route(community.id))
     end
 
-    test "redirects to communities when accessing a community that is not an admin of", %{
+    test "redirects to projects when accessing a community that is not an admin of", %{
       conn: conn,
       author: author
     } do
       non_admin_community_id = insert(:community).id
       insert(:community_account, %{author: author})
 
-      {:error, {:redirect, %{to: "/authoring/communities"}}} =
+      {:error, {:redirect, %{to: "/workspaces/course_author"}}} =
         live(conn, live_view_show_route(non_admin_community_id))
     end
   end
@@ -775,7 +776,7 @@ defmodule OliWeb.CommunityLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_show_route(community.id))
 
-      assert 0 == length(Groups.list_community_members(community.id))
+      assert Enum.empty?(Groups.list_community_members(community.id))
 
       view
       |> element("form[phx-change=\"suggest_member\"")

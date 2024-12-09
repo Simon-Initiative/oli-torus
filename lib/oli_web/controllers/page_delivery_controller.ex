@@ -45,15 +45,7 @@ defmodule OliWeb.PageDeliveryController do
 
           if user_roles.is_instructor? do
             conn
-            |> redirect(
-              to:
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                  section_slug,
-                  :manage
-                )
-            )
+            |> redirect(to: ~p"/sections/#{section_slug}/manage")
           else
             revision = DeliveryResolver.root_container(section_slug)
 
@@ -751,7 +743,7 @@ defmodule OliWeb.PageDeliveryController do
           |> to_epoch,
         lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
-        signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+        signoutUrl: ~p"/users/log_out",
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,

@@ -5,7 +5,9 @@ defmodule Oli.Plugs.RequireIndependentInstructor do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if Sections.is_independent_instructor?(Pow.Plug.current_user(conn)) do
+    current_user = conn.assigns[:current_user]
+
+    if Sections.is_independent_instructor?(current_user) do
       conn
     else
       conn

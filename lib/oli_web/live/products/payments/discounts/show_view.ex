@@ -10,6 +10,9 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
   alias OliWeb.InstitutionController
   alias OliWeb.Router.Helpers, as: Routes
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   defp set_breadcrumbs(:product, product, discount_id) do
     ProductsIndexView.set_breadcrumbs(product) ++
       [

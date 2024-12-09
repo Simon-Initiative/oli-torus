@@ -1,5 +1,5 @@
 defmodule OliWeb.Components.Delivery.Actions do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
   use OliWeb.Common.Modal
 
   alias Lti_1p3.Tool.ContextRoles
@@ -7,7 +7,6 @@ defmodule OliWeb.Components.Delivery.Actions do
   alias OliWeb.Common.Confirm
   alias Phoenix.LiveView.JS
   alias Oli.Delivery.Paywall
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Modal
 
   @user_role_data [
@@ -19,14 +18,15 @@ defmodule OliWeb.Components.Delivery.Actions do
         %{
           user: user,
           section: section,
-          enrollment_info: enrollment_info
+          enrollment_info: enrollment_info,
+          is_admin: is_admin
         } = _assigns,
         socket
       ) do
     %{
       enrollment: enrollment,
       user_role_id: user_role_id,
-      current_user: current_user,
+      bypassed_by_user_id: bypassed_by_user_id,
       is_suspended?: is_suspended?
     } =
       enrollment_info
@@ -41,8 +41,8 @@ defmodule OliWeb.Components.Delivery.Actions do
        user_role_id: user_role_id,
        user_role_data: @user_role_data,
        has_payment: has_payment,
-       current_user: current_user,
-       is_admin: Accounts.has_admin_role?(current_user),
+       bypassed_by_user_id: bypassed_by_user_id,
+       is_admin: is_admin,
        is_suspended?: is_suspended?,
        payment_status_uuid: UUID.uuid4()
      )}
@@ -195,7 +195,7 @@ defmodule OliWeb.Components.Delivery.Actions do
          {:ok, _updated_payment} <-
            Paywall.update_payment(active_payment, %{
              type: :invalidated,
-             invalidated_by_user_id: socket.assigns.current_user.id
+             invalidated_by_user_id: socket.assigns.bypassed_by_user_id
            }) do
       {:noreply, assign(socket, has_payment: false)}
     else
@@ -211,13 +211,7 @@ defmodule OliWeb.Components.Delivery.Actions do
       {:ok, _} ->
         {:noreply,
          redirect(socket,
-           to:
-             Routes.live_path(
-               OliWeb.Endpoint,
-               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-               socket.assigns.section.slug,
-               :manage
-             )
+           to: ~p"/sections/#{socket.assigns.section.slug}/manage"
          )}
 
       _ ->
@@ -232,13 +226,7 @@ defmodule OliWeb.Components.Delivery.Actions do
       {:ok, _} ->
         {:noreply,
          redirect(socket,
-           to:
-             Routes.live_path(
-               OliWeb.Endpoint,
-               OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-               socket.assigns.section.slug,
-               :manage
-             )
+           to: ~p"/sections/#{section.slug}/manage"
          )}
 
       {:error, :not_found} ->
@@ -327,7 +315,7 @@ defmodule OliWeb.Components.Delivery.Actions do
 
   def handle_event(
         "bypass_payment",
-        %{"current_user_id" => current_user_id, "enrollment_id" => enrollment_id},
+        %{"bypassed_by_user_id" => bypassed_by_user_id, "enrollment_id" => enrollment_id},
         socket
       ) do
     case Paywall.create_payment(%{
@@ -337,7 +325,7 @@ defmodule OliWeb.Components.Delivery.Actions do
            amount: Money.new(0, "USD"),
            section_id: socket.assigns.section.id,
            enrollment_id: enrollment_id,
-           bypassed_by_user_id: current_user_id
+           bypassed_by_user_id: bypassed_by_user_id
          }) do
       {:ok, _payment} ->
         {:noreply, assign(socket, has_payment: !socket.assigns.has_payment)}
@@ -355,7 +343,7 @@ defmodule OliWeb.Components.Delivery.Actions do
         JS.push("bypass_payment",
           target: socket.assigns.myself,
           value: %{
-            "current_user_id" => socket.assigns.current_user.id,
+            "bypassed_by_user_id" => socket.assigns.bypassed_by_user_id,
             "enrollment_id" => socket.assigns.enrollment.id
           }
         ),

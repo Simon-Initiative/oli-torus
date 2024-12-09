@@ -5,10 +5,10 @@
     <div aria-hidden="true" class="label mt-1">Projects</div>
   </a>
 
-  <%= if Accounts.has_admin_role?(@current_author) do %>
+  <%= if Accounts.is_admin?(@current_author) do %>
     <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
   <% else %>
-    <%= if Plug.Conn.get_session(@conn, :is_community_admin) do %>
+    <%= if Accounts.is_community_admin?(@current_author) do %>
       <%= render OliWeb.LayoutView, "_community_admin_sidebar.html", assigns %>
     <% end %>
   <% end %>

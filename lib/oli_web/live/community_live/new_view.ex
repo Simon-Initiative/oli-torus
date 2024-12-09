@@ -7,6 +7,9 @@ defmodule OliWeb.CommunityLive.NewView do
   alias OliWeb.CommunityLive.{Form, IndexView}
   alias OliWeb.Router.Helpers, as: Routes
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def breadcrumb() do
     IndexView.breadcrumb() ++
       [

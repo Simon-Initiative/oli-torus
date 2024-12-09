@@ -59,8 +59,8 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
 
       conn =
         conn
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-        |> recycle_author_session(admin)
+        |> recycle()
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
       assert html_response(conn, 200) =~ ~s[&quot;revisionHistoryLink&quot;:true]
@@ -170,10 +170,9 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
     )
 
     conn =
-      Pow.Plug.assign_current_user(
+      log_in_author(
         conn,
-        map.author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        map.author
       )
 
     {:ok, Map.merge(%{conn: conn}, map)}

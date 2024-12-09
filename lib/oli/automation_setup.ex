@@ -225,7 +225,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.create_user(%{
+      Oli.Accounts.register_independent_user(%{
         email: generate_email("learner"),
         given_name: "Test",
         family_name: "Learner",
@@ -255,7 +255,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.create_user(%{
+      Oli.Accounts.register_independent_user(%{
         email: generate_email("educator"),
         given_name: "Test",
         family_name: "Educator",
@@ -280,7 +280,7 @@ defmodule Oli.AutomationSetup do
     password = random_password()
 
     {:ok, user} =
-      Oli.Accounts.create_author(%{
+      Oli.Accounts.register_author(%{
         email: generate_email("author"),
         given_name: "Test",
         family_name: "Author",
@@ -365,14 +365,18 @@ defmodule Oli.AutomationSetup do
   end
 
   defp validate_user(email, password, user_type, expected_name) do
-    config = OliWeb.Pow.PowHelpers.get_pow_config(user_type)
+    user_mod =
+      case user_type do
+        :author -> Oli.Accounts.Author
+        :user -> Oli.Accounts.User
+      end
 
-    case Pow.Operations.get_by([{:name, expected_name}, {:email, email}], config) do
+    case Repo.get_by(user_mod, name: expected_name, email: email) do
       nil ->
         {:error, "User not found"}
 
       user ->
-        case user.__struct__.verify_password(user, password) do
+        case user.__struct__.valid_password?(user, password) do
           true -> {:ok, user}
           false -> {:error, "Credentials didn't match"}
         end

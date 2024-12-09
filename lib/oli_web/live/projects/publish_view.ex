@@ -11,7 +11,7 @@ defmodule OliWeb.Projects.PublishView do
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Publishing.Publications.PublicationDiff
-  alias OliWeb.Common.{Breadcrumb, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Listing}
 
   alias OliWeb.Projects.{
     ActiveSectionsTableModel,
@@ -24,6 +24,9 @@ defmodule OliWeb.Projects.PublishView do
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def filter_rows(socket, _, _), do: socket.assigns.active_sections
 
   def live_path(socket, params),
@@ -31,10 +34,10 @@ defmodule OliWeb.Projects.PublishView do
 
   def mount(
         %{"project_id" => project_slug},
-        session,
+        _session,
         socket
       ) do
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     project = Course.get_project_by_slug(project_slug)
 
     latest_published_publication =
@@ -123,7 +126,6 @@ defmodule OliWeb.Projects.PublishView do
        active_sections: active_sections,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Publish"})],
        changeset: Publishing.change_publication(active_publication),
-       ctx: ctx,
        has_changes: has_changes,
        latest_published_publication: latest_published_publication,
        lti_connect_info: lti_connect_info,

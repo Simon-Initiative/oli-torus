@@ -108,7 +108,7 @@ defmodule OliWeb.ManageSourceMaterialsLiveTest do
       conn: conn,
       section: section
     } do
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_source_materials(section.slug))

@@ -254,7 +254,7 @@ defmodule OliWeb.ProductsLiveTest do
       product_slug = product.slug
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproducts%2F#{product_slug}"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_details_route(product_slug))

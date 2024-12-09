@@ -9,7 +9,7 @@ defmodule OliWeb.Common.Properties.Group do
 
   def render(assigns) do
     ~H"""
-    <div class={"grid grid-cols-12 py-5 #{if !@is_last, do: "border-b dark:border-gray-700"}"}>
+    <div class={"grid grid-cols-12 py-5 last:border-none #{if !@is_last, do: "border-b dark:border-gray-700"}"}>
       <div class="md:col-span-4">
         <h4><%= @label %></h4>
         <%= if @description != "" do %>

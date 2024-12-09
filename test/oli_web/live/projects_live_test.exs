@@ -9,7 +9,7 @@ defmodule OliWeb.Projects.ProjectsLiveTest do
 
   describe "author cannot access when is not logged in" do
     test "redirects to new session when accessing the index view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fauthoring%2Fprojects"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, Routes.live_path(Endpoint, ProjectsLive))
     end
   end

@@ -7,7 +7,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias Oli.Repo
-  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext, Utils}
+  alias OliWeb.Common.{Breadcrumb, Confirm, Utils}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias OliWeb.Progress.{AttemptHistory, Passback}
   alias OliWeb.Sections.Mount
@@ -41,7 +41,6 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
-            ctx = SessionContext.init(socket, session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             resource_attempts =
@@ -70,7 +69,6 @@ defmodule OliWeb.Progress.StudentResourceView do
 
             {:ok,
              assign(socket,
-               ctx: ctx,
                changeset: changeset,
                breadcrumbs: set_breadcrumbs(type, section, user_id),
                section: section,

@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
       ) do
     Logger.debug("ReviewLive mount")
 
-    is_system_admin = Map.get(socket.assigns, :is_system_admin, false)
+    is_admin = Map.get(socket.assigns, :is_admin, false)
     current_user = Map.get(socket.assigns, :current_user)
 
     if connected?(socket) do
@@ -56,7 +56,7 @@ defmodule OliWeb.Delivery.Student.ReviewLive do
 
       page_revision = page_context.page
 
-      if (is_system_admin or
+      if (is_admin or
             PageLifecycle.can_access_attempt?(attempt_guid, current_user, section)) and
            review_allowed?(page_context) do
         socket =

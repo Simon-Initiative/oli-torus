@@ -29,8 +29,7 @@ defmodule Oli.Application do
         # Start the Oban background job processor
         {Oban, oban_config()},
 
-        # Start the Pow MnesiaCache to persist session across multiple servers
-        Oli.MnesiaClusterSupervisor,
+        # Starts the presence tracker
         OliWeb.Presence,
 
         # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
@@ -57,14 +56,14 @@ defmodule Oli.Application do
         Oli.Publishing.Publications.DiffAgent,
         Oli.Delivery.Attempts.PartAttemptCleaner,
 
-        # Starts Cachex to store user/author info across requests
-        Oli.AccountLookupCache,
+        # Starts Cachex to store page content info
         Oli.Delivery.DistributedDepotCoordinator,
         Oli.Delivery.DepotWarmer,
         {Cachex, name: :page_content_cache},
 
         # Starts Cachex to store datashop export info
         Oli.DatashopCache,
+
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
 

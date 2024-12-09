@@ -15,14 +15,9 @@ export const getModeFromLocalStorage = () => {
   return localStorage.theme;
 };
 
-const maybeLabel = (label: string, showLabel: boolean) =>
-  showLabel ? <span className="ml-1">{label}</span> : undefined;
+export interface DarkModeSelectorProps {}
 
-export interface DarkModeSelectorProps {
-  showLabels?: boolean;
-}
-
-export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) => {
+export const DarkModeSelector = (_props: DarkModeSelectorProps) => {
   const [mode, setMode] = useState<Mode>(getModeFromLocalStorage());
 
   const onSelect = (mode: Mode) => () => {
@@ -97,8 +92,6 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
             d="M14 3.07191C15.2162 3.77405 16.2261 4.78396 16.9282 6.00011C17.6304 7.21626 18 8.59582 18 10.0001C18 11.4044 17.6303 12.7839 16.9282 14.0001C16.226 15.2162 15.2161 16.2261 13.9999 16.9283C12.7837 17.6304 11.4042 18 9.99987 18C8.59557 18 7.21602 17.6303 5.99987 16.9281C4.78372 16.226 3.77383 15.216 3.07171 13.9999C2.36958 12.7837 1.99996 11.4041 2 9.99986L2.004 9.74066C2.0488 8.35906 2.45084 7.01265 3.17091 5.83268C3.89099 4.65271 4.90452 3.67946 6.11271 3.00781C7.3209 2.33616 8.68252 1.98903 10.0648 2.00026C11.4471 2.0115 12.8029 2.38071 14 3.07191ZM6.8 4.4575C5.57991 5.16199 4.62639 6.24939 4.08731 7.55104C3.54823 8.8527 3.45373 10.2959 3.81847 11.6567C4.1832 13.0175 4.98678 14.22 6.10458 15.0776C7.22238 15.9351 8.59192 16.3999 10.0008 16.3998L10 3.5999C8.87655 3.59995 7.77291 3.89573 6.8 4.4575Z"
           />
         </svg>
-
-        {maybeLabel('Auto', showLabels)}
       </ToggleOption>
       <ToggleOption id="light" checked={isChecked(mode, 'light')} onChange={onSelect('light')}>
         <svg
@@ -126,8 +119,6 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
             strokeLinejoin="round"
           />
         </svg>
-
-        {maybeLabel('Light', showLabels)}
       </ToggleOption>
       <ToggleOption id="dark" checked={isChecked(mode, 'dark')} onChange={onSelect('dark')}>
         <div className="dark:stroke-[#B8B4BF] stroke-black/70 hover:stroke-black hover:dark:stroke-white">
@@ -149,8 +140,6 @@ export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) =
             />
           </svg>
         </div>
-
-        {maybeLabel('Dark', showLabels)}
       </ToggleOption>
     </ThreeStateToggle>
   );

@@ -11,11 +11,7 @@ defmodule OliWeb.LiveSessionPlugs.SetCtx do
   def on_mount(:default, _params, session, socket) do
     socket =
       assign(socket,
-        ctx:
-          SessionContext.init(socket, session,
-            user: socket.assigns[:current_user],
-            is_liveview: true
-          )
+        ctx: SessionContext.init(socket, session, is_liveview: true)
       )
 
     {:cont, socket}

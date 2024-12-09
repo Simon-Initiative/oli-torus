@@ -49,8 +49,8 @@ defmodule OliWeb.MetricsControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_author(map.author)
+      |> log_in_user(instructor)
 
     {:ok, conn: conn, map: map, section: map.section, unit1_container: map.unit1_container}
   end

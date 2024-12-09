@@ -7,6 +7,9 @@ defmodule OliWeb.Admin.Institutions.ResearchConsentView do
   alias OliWeb.InstitutionController
   alias OliWeb.Router.Helpers, as: Routes
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   defp institution_route(institution_id),
     do: Routes.institution_path(OliWeb.Endpoint, :show, institution_id)
 

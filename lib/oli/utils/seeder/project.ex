@@ -3,6 +3,7 @@ defmodule Oli.Utils.Seeder.Project do
 
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo
+  alias Oli.AccountsFixtures
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publications.Publication
@@ -36,14 +37,12 @@ defmodule Oli.Utils.Seeder.Project do
     family_name = NameGenerator.last_name()
     name = "#{given_name} #{family_name}"
 
-    {:ok, author} =
-      Author.noauth_changeset(%Author{}, %{
+    author =
+      AccountsFixtures.author_fixture(%{
         email: "#{Slug.slugify(name)}@test.com",
         given_name: given_name,
-        family_name: family_name,
-        system_role_id: SystemRole.role_id().author
+        family_name: family_name
       })
-      |> Repo.insert()
 
     seeds
     |> tag(author_tag, author)
@@ -58,9 +57,10 @@ defmodule Oli.Utils.Seeder.Project do
     name = "Administrator"
 
     {:ok, admin} =
-      Author.noauth_changeset(%Author{}, %{
+      %Author{}
+      |> Author.noauth_changeset(%{
         email: "#{Slug.slugify(name)}@test.com",
-        given_name: name,
+        name: name,
         system_role_id: SystemRole.role_id().system_admin
       })
       |> Repo.insert()

@@ -7,7 +7,7 @@ defmodule OliWeb.Users.AuthorsView do
   alias Oli.Accounts
   alias Oli.Accounts.AuthorBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.AuthorsTableModel
@@ -16,6 +16,9 @@ defmodule OliWeb.Users.AuthorsView do
   @default_options %AuthorBrowseOptions{
     text_search: ""
   }
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -32,8 +35,8 @@ defmodule OliWeb.Users.AuthorsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
-    author = Accounts.get_author(author_id)
+  def mount(_, _session, socket) do
+    author = socket.assigns.current_author
 
     authors =
       Accounts.browse_authors(
@@ -42,7 +45,7 @@ defmodule OliWeb.Users.AuthorsView do
         @default_options
       )
 
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     total_count = SortableTableModel.determine_total(authors)
     {:ok, table_model} = AuthorsTableModel.new(authors, ctx)
 

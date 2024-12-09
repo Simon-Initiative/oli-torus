@@ -56,7 +56,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
     } do
       project = insert(:project)
 
-      redirect_path = "/workspaces/course_author"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
@@ -70,7 +70,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       conn: conn,
       project: project
     } do
-      redirect_path = "/workspaces/course_author"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
@@ -84,7 +84,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ExperimentsLiveTest do
       conn: conn,
       project: project
     } do
-      redirect_path = "/workspaces/course_author"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))

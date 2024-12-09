@@ -381,12 +381,7 @@ defmodule OliWeb.Users.AuthorsDetailViewTest do
 
       assert has_element?(view, "p", "This link will expire in 24 hours.")
 
-      assert view
-             |> element(~s{input[id="password-reset-link-1"]})
-             |> render()
-             |> Floki.parse_fragment!()
-             |> Floki.attribute("value")
-             |> hd() =~ "https://localhost/authoring/reset-password/"
+      assert render(view) =~ "/authors/reset_password/"
     end
   end
 

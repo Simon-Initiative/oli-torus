@@ -175,7 +175,8 @@ config :oli, Oban,
     project_export: 3,
     analytics_export: 3,
     datashop_export: 3,
-    objectives: 3
+    objectives: 3,
+    mailer: 10
   ]
 
 config :ex_money,
@@ -217,7 +218,9 @@ config :lti_1p3,
   ags_line_item_prefix: "oli-torus-"
 
 config :ex_aws,
-  region: {:system, "AWS_REGION"}
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
+  region: [{:system, "AWS_REGION"}, :instance_role]
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -265,14 +268,6 @@ config :ex_json_schema,
 
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
-
-config :oli, :auth_providers,
-  google_client_id: System.get_env("GOOGLE_CLIENT_ID", ""),
-  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", ""),
-  author_github_client_id: System.get_env("AUTHOR_GITHUB_CLIENT_ID", ""),
-  author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
-  user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
-  user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
 
 # Configure libcluster for horizontal scaling
 # Take into account that different strategies could use different config options

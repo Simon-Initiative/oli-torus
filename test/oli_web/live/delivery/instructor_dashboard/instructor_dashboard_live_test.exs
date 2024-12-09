@@ -22,25 +22,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :overview))
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :insights))
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fmanage"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :manage))
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fdiscussions"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, instructor_dashboard_path(section.slug, :discussions))
@@ -147,7 +147,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLiveTest do
     } do
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, instructor_dashboard_path(section.slug, :manage))
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/manage")
 
       assert has_element?(view, "div", "Overview of course section details")
     end

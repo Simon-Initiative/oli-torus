@@ -5,7 +5,7 @@ defmodule OliWeb.Sections.EditView do
   alias OliWeb.Sections.StartEnd
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionCache
-  alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime, CustomLabelsForm}
+  alias OliWeb.Common.{Breadcrumb, FormatDateTime, CustomLabelsForm}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -60,7 +60,6 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
-           ctx: SessionContext.init(socket, session),
            brands: available_brands,
            institutions: available_institutions,
            changeset: Sections.change_section(section),

@@ -2,7 +2,6 @@ defmodule OliWeb.DeliveryControllerTest do
   use OliWeb.ConnCase
 
   alias Oli.Accounts
-  alias OliWeb.Common.LtiSession
   alias Oli.Publishing
   alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
@@ -14,10 +13,10 @@ defmodule OliWeb.DeliveryControllerTest do
   describe "delivery_controller index" do
     setup [:setup_lti_session]
 
-    test "handles student with no section", %{conn: conn, lti_param_ids: lti_param_ids} do
+    test "handles student with no section", %{conn: conn, student_no_section: student_no_section} do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.student_no_section)
+        |> log_in_user(student_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~
@@ -26,11 +25,14 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles user with student and instructor roles with no section", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      student_instructor_no_section: student_instructor_no_section
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.student_instructor_no_section)
+        |> log_in_user(student_instructor_no_section)
+
+      conn =
+        conn
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
@@ -38,11 +40,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles student with section and research consent form", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      student: student
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.student)
+        |> log_in_user(student)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Online Consent Form"
@@ -51,11 +53,11 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles student with section and no research consent form", %{
       conn: conn,
       section_no_rc: section_no_rc,
-      lti_param_ids: lti_param_ids
+      student_no_rc: student_no_rc
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.student_no_rc)
+        |> log_in_user(student_no_rc)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
@@ -64,12 +66,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles instructor with no section or linked account", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      user: _user
+      instructor_no_section: instructor_no_section
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
+        |> log_in_user(instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
@@ -78,36 +79,22 @@ defmodule OliWeb.DeliveryControllerTest do
     test "handles LMS instructor with section and redirects to instructor dashboard", %{
       conn: conn,
       section: section,
-      lti_param_ids: lti_param_ids,
-      user: user
+      instructor: instructor
     } do
       author_id =
         Accounts.list_authors()
         |> hd()
         |> Map.get(:id, 1)
 
-      {:ok, _user} = Accounts.update_user(user, %{author_id: author_id})
+      {:ok, _user} = Accounts.update_user(instructor, %{author_id: author_id})
 
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section.slug}/instructor_dashboard/manage\">redirected"
-    end
-  end
-
-  describe "delivery_controller link_account" do
-    setup [:setup_lti_session]
-
-    test "renders link account form", %{conn: conn, lti_param_ids: lti_param_ids} do
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> get(Routes.delivery_path(conn, :link_account))
-
-      assert html_response(conn, 200) =~ "Link Authoring Account"
+               "You are being <a href=\"/sections/#{section.slug}/manage\">redirected"
     end
   end
 
@@ -128,62 +115,8 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "delivery_controller process_link_account_provider" do
+  describe "delivery_controller - show_enroll" do
     setup [:setup_lti_session]
-
-    test "processes link account for provider", %{conn: conn, lti_param_ids: lti_param_ids} do
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> get(Routes.authoring_delivery_path(conn, :process_link_account_provider, :google))
-
-      assert html_response(conn, 302) =~ "redirect"
-    end
-  end
-
-  describe "delivery_controller process_link_account_user" do
-    setup [:setup_lti_session]
-
-    test "processes link account for user email authentication failure", %{
-      conn: conn,
-      lti_param_ids: lti_param_ids,
-      author: author
-    } do
-      author_params =
-        author
-        |> Map.from_struct()
-        |> Map.put(:password, "wrong_password")
-        |> Map.put(:password_confirmation, "wrong_password")
-
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> post(Routes.delivery_path(conn, :process_link_account),
-          link_account: author_params
-        )
-
-      assert html_response(conn, 200) =~
-               "The provided login details did not work. Please verify your credentials, and try again."
-    end
-
-    test "processes link account for user email", %{
-      conn: conn,
-      lti_param_ids: lti_param_ids,
-      author: author
-    } do
-      author_params =
-        author
-        |> Map.from_struct()
-        |> Map.put(:password, "password123")
-        |> Map.put(:password_confirmation, "password123")
-
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
-        |> post(Routes.delivery_path(conn, :process_link_account), link_account: author_params)
-
-      assert html_response(conn, 302) =~ "redirect"
-    end
 
     test "redirect unenrolled user to enrollment page", %{
       conn: conn,
@@ -197,7 +130,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(other_user)
 
       {:ok, section} =
         Sections.update_section(section, %{
@@ -221,7 +154,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(other_user)
 
       {:ok, section} = Sections.update_section(section, %{registration_open: false})
 
@@ -229,14 +162,18 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 403) =~ "Section Not Available"
     end
-  end
 
-  describe "delivery_controller - show_enroll" do
-    setup [:setup_lti_session]
-
-    test "blocks LMS users from manually enrollment", %{conn: conn, section: section} do
+    test "blocks LMS users from manually enrollment", %{
+      conn: conn,
+      section: section,
+      student: student
+    } do
       # Assert that the user is an LMS user
-      assert conn.assigns.current_user.independent_learner == false
+      assert student.independent_learner == false
+
+      conn =
+        conn
+        |> log_in_user(student)
 
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
       conn = get(conn, enrollment_path)
@@ -245,7 +182,10 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "redirect to requested path after login", %{conn: conn, section: section} do
       {:ok, section} = Sections.update_section(section, %{requires_enrollment: true})
-      conn = Map.update!(conn, :assigns, &Map.drop(&1, [:current_author, :current_user]))
+
+      conn =
+        conn
+        |> log_out_user()
 
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
 
@@ -260,13 +200,13 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the course content when section exists and filters by units", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      section: section,
+      instructor: instructor
     } do
       # Filter by units
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(
           Routes.delivery_path(conn, :download_course_content_info, section.slug,
             container_filter_by: :units
@@ -289,13 +229,13 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the course content when section exists and filters by modules", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      section: section,
+      instructor: instructor
     } do
       # Filter by modules
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(
           Routes.delivery_path(conn, :download_course_content_info, section.slug,
             container_filter_by: :modules
@@ -311,11 +251,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      student: student
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(student)
         |> get(Routes.delivery_path(conn, :download_course_content_info, "invalid_section_slug"))
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
@@ -327,12 +267,12 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the student progress when section exists", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      section: section,
+      instructor: instructor
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_students_progress, section.slug))
 
       Enum.any?(conn.resp_headers, fn h ->
@@ -346,11 +286,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      instructor: instructor
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_students_progress, "invalid_section_slug"))
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
@@ -362,12 +302,12 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the learning objectives when section exists", %{
       conn: conn,
-      lti_param_ids: lti_param_ids,
-      section: section
+      section: section,
+      instructor: instructor
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_learning_objectives, section.slug))
 
       Enum.any?(conn.resp_headers, fn h ->
@@ -381,11 +321,14 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      student: student
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(student)
+
+      conn =
+        conn
         |> get(Routes.delivery_path(conn, :download_learning_objectives, "invalid_section_slug"))
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
@@ -397,13 +340,13 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "downloads the quiz scores when section exists", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      instructor: instructor
     } do
       %{section: section} = basic_section(nil)
 
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_quiz_scores, section.slug))
 
       Enum.any?(conn.resp_headers, fn h ->
@@ -417,11 +360,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "Redirects to \"Not found\" page if the section doesn't exist", %{
       conn: conn,
-      lti_param_ids: lti_param_ids
+      instructor: instructor
     } do
       conn =
         conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+        |> log_in_user(instructor)
         |> get(Routes.delivery_path(conn, :download_quiz_scores, "invalid_section_slug"))
 
       assert response(conn, 302) =~ "You are being <a href=\"/not_found\">redirected</a>"
@@ -463,7 +406,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(other_user)
 
       {:ok, section} =
         Sections.update_section(section, %{
@@ -657,7 +600,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Enroll in Course Section"
 
       assert html_response(conn, 200) =~
-               ~s(<a href="/?section=#{section.slug}&amp;from_invitation_link%3F=true" )
+               ~s(<a href="/users/log_in?section=#{section.slug}&amp;from_invitation_link%3F=true" )
     end
 
     test "shows enroll view and Sign Up link", %{conn: conn} do
@@ -675,7 +618,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "Sign Up"
 
       assert html_response(conn, 200) =~
-               ~s(<a href="/registration/new?section=#{section.slug}&amp;from_invitation_link%3F=true")
+               ~s(<a href="/users/register?section=#{section.slug}&amp;from_invitation_link%3F=true")
     end
   end
 
@@ -724,7 +667,7 @@ defmodule OliWeb.DeliveryControllerTest do
                "Cannot enroll guest users in a course section that requires enrollment"
 
       assert response(conn, 302) =~
-               "<html><body>You are being <a href=\"/session/new?request_path=/sections/#{section.slug}/enroll\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/users/log_in?request_path=/sections/#{section.slug}/enroll\">redirected</a>.</body></html>"
     end
 
     test "redirects to overview section screen if section does not requires enrollment", %{
@@ -760,17 +703,14 @@ defmodule OliWeb.DeliveryControllerTest do
     end)
 
     conn
+    |> recycle(conn)
     |> post(Routes.delivery_path(conn, :process_enroll, section.slug), %{
       "g-recaptcha-response" => "some-valid-capcha-data"
     })
   end
 
   defp setup_lti_session(%{conn: conn}) do
-    author =
-      author_fixture(%{
-        password: "password123",
-        password_confirmation: "password123"
-      })
+    author = author_fixture()
 
     %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)
 
@@ -794,10 +734,11 @@ defmodule OliWeb.DeliveryControllerTest do
     section_no_rc =
       insert(:section, institution: institution_no_rc, lti_1p3_deployment: deployment_no_rc)
 
-    user = user_fixture(%{independent_learner: false})
     student = user_fixture(%{independent_learner: false})
     student_no_section = user_fixture(%{independent_learner: false})
+    student_no_rc = user_fixture(%{independent_learner: false})
     instructor = user_fixture(%{independent_learner: false})
+    instructor_no_rc = user_fixture(%{independent_learner: false})
     instructor_no_section = user_fixture(%{independent_learner: false})
     student_instructor_no_section = user_fixture(%{independent_learner: false})
 
@@ -805,7 +746,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
 
-    lti_param_ids = %{
+    _lti_param_ids = %{
       student:
         cache_lti_params(
           %{
@@ -859,7 +800,7 @@ defmodule OliWeb.DeliveryControllerTest do
             "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
               deployment_no_rc.deployment_id
           },
-          student.id
+          student_no_rc.id
         ),
       instructor_no_rc:
         cache_lti_params(
@@ -878,7 +819,7 @@ defmodule OliWeb.DeliveryControllerTest do
             "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
               deployment_no_rc.deployment_id
           },
-          instructor.id
+          instructor_no_rc.id
         ),
       instructor:
         cache_lti_params(
@@ -937,25 +878,19 @@ defmodule OliWeb.DeliveryControllerTest do
         )
     }
 
-    conn =
-      conn
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-
     {:ok,
      conn: conn,
      author: author,
      institution: institution,
      section: section,
-     user: user,
      student: student,
+     student_no_rc: student_no_rc,
      student_no_section: student_no_section,
      instructor: instructor,
      instructor_no_section: instructor_no_section,
      student_instructor_no_section: student_instructor_no_section,
      project: project,
      publication: publication,
-     lti_param_ids: lti_param_ids,
      section_no_rc: section_no_rc}
   end
 
@@ -964,7 +899,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_user(user)
 
     map = Seeder.base_project_with_resource4()
 
@@ -975,7 +910,7 @@ defmodule OliWeb.DeliveryControllerTest do
     enrollment_path = ~p"/sections/#{section_slug}/enroll"
 
     redirected_path =
-      ~p"/?#{[section: section_slug, from_invitation_link?: true, request_path: enrollment_path]}"
+      ~p"/users/log_in?#{[section: section_slug, from_invitation_link?: true, request_path: enrollment_path]}"
 
     {:safe, link} =
       Phoenix.HTML.Link.link("redirected", to: redirected_path) |> Phoenix.HTML.raw()

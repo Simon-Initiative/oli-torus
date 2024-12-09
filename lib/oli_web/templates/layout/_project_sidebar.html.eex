@@ -20,7 +20,7 @@
       <hr class="dropdown-divider" />
 
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.PagesView, @project.slug) %>">All Pages</a></li>
-      <%= if Accounts.is_system_admin?(@current_author) do %>
+      <%= if Accounts.has_admin_role?(@current_author, :content_admin) do %>
         <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.ActivitiesView, @project.slug) %>">All Activities</a></li>
       <% end %>
 
@@ -49,7 +49,7 @@
     </div>
   </div>
 
-  <%= if Accounts.has_admin_role?(@current_author) do %>
+  <%= if Accounts.is_admin?(@current_author) do %>
     <%= render OliWeb.LayoutView, "_admin_sidebar.html", assigns %>
   <% end %>
 

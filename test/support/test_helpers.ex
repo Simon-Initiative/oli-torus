@@ -2,10 +2,11 @@ defmodule Oli.TestHelpers do
   import Ecto.Query, warn: false
   import Mox
   import Oli.Factory
+  import Oli.AccountsFixtures
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, AuthorPreferences, User}
+  alias Oli.Accounts.{AuthorPreferences}
   alias Oli.Activities
   alias Oli.Analytics.Summary
   alias Oli.Authoring.Course
@@ -16,7 +17,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Institutions
   alias Oli.PartComponents
   alias Oli.Publishing
-  alias OliWeb.Common.{LtiSession, SessionContext}
+  alias OliWeb.Common.SessionContext
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Gating.GatingConditionData
   alias Oli.Resources.ResourceType
@@ -29,6 +30,7 @@ defmodule Oli.TestHelpers do
   Mox.defmock(Oli.Test.MockOpenAIClient, for: Oli.OpenAIClient)
   Mox.defmock(Oli.Test.DateTimeMock, for: Oli.DateTime)
   Mox.defmock(Oli.Test.DateMock, for: Oli.Date)
+  Mox.defmock(Oli.Test.RecaptchaMock, for: Oli.Recaptcha)
 
   defmodule CustomDispatcher do
     @moduledoc """
@@ -66,6 +68,10 @@ defmodule Oli.TestHelpers do
     Mox.stub(Oli.Test.DateMock, :utc_today, fn -> DateTime.to_date(utc_now) end)
   end
 
+  def stub_recaptcha() do
+    Mox.stub(Oli.Test.RecaptchaMock, :verify, fn _ -> {:success, true} end)
+  end
+
   def yesterday(now \\ DateTime.now!("Etc/UTC")) do
     DateTime.add(now, -(60 * 60 * 24), :second)
   end
@@ -95,58 +101,6 @@ defmodule Oli.TestHelpers do
       |> Repo.insert()
 
     section
-  end
-
-  def user_fixture(attrs \\ %{}) do
-    params =
-      attrs
-      |> Enum.into(%{
-        sub: UUID.uuid4(),
-        name: "Ms Jane Marie Doe",
-        given_name: "Jane",
-        family_name: "Doe",
-        middle_name: "Marie",
-        picture: "https://platform.example.edu/jane.jpg",
-        email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
-        locale: "en-US"
-      })
-
-    {:ok, user} =
-      case attrs do
-        %{password: _password, password_confirmation: _password_confirmation} ->
-          User.changeset(%User{}, params)
-          |> Repo.insert()
-
-        _ ->
-          User.noauth_changeset(%User{}, params)
-          |> Repo.insert()
-      end
-
-    user
-  end
-
-  def author_fixture(attrs \\ %{}) do
-    params =
-      attrs
-      |> Enum.into(%{
-        email: "author#{System.unique_integer([:positive])}@example.edu",
-        given_name: "Test",
-        family_name: "Author",
-        system_role_id: Accounts.SystemRole.role_id().author
-      })
-
-    {:ok, author} =
-      case attrs do
-        %{password: _password, password_confirmation: _password_confirmation} ->
-          Author.changeset(%Author{}, params)
-          |> Repo.insert()
-
-        _ ->
-          Author.noauth_changeset(%Author{}, params)
-          |> Repo.insert()
-      end
-
-    author
   end
 
   def institution_fixture(attrs \\ %{}) do
@@ -289,33 +243,95 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
+  @doc """
+  Setup helper that registers and logs in users.
+
+      setup :register_and_log_in_user
+
+  It stores an updated connection and a registered user in the
+  test context.
+  """
+  def register_and_log_in_user(%{conn: conn}, attrs \\ %{}) do
+    user = Oli.AccountsFixtures.user_fixture(attrs)
+    %{conn: log_in_user(conn, user), user: user}
+  end
+
+  @doc """
+  Logs the given `user` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_user(conn, user) do
+    token = Oli.Accounts.generate_user_session_token(user)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:user_token, token)
+    |> Plug.Conn.put_session(:current_user_id, user.id)
+  end
+
+  def log_out_user(conn) do
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.delete_session(:user_token)
+    |> Plug.Conn.delete_session(:current_user_id)
+  end
+
+  @doc """
+  Setup helper that registers and logs in authors.
+
+      setup :register_and_log_in_author
+
+  It stores an updated connection and a registered author in the
+  test context.
+  """
+  def register_and_log_in_author(%{conn: conn}, attrs \\ %{}) do
+    author = Oli.AccountsFixtures.author_fixture(attrs)
+    %{conn: log_in_author(conn, author), author: author}
+  end
+
+  @doc """
+  Logs the given `author` into the `conn`.
+
+  It returns an updated `conn`.
+  """
+  def log_in_author(conn, author) do
+    token = Oli.Accounts.generate_author_session_token(author)
+
+    conn
+    |> Phoenix.ConnTest.init_test_session(%{})
+    |> Plug.Conn.put_session(:author_token, token)
+    |> Plug.Conn.put_session(:current_author_id, author.id)
+  end
+
   def independent_instructor_conn(context), do: user_conn(context, %{can_create_sections: true})
 
   def user_conn(%{conn: conn}, attrs \\ %{}) do
     user = user_fixture(attrs)
-    conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+    conn = log_in_user(conn, user)
 
     {:ok, conn: conn, user: user}
   end
 
   def guest_conn(%{conn: conn}) do
     guest = user_fixture(%{guest: true})
-    conn = Pow.Plug.assign_current_user(conn, guest, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+    conn = log_in_user(conn, guest)
 
     {:ok, conn: conn, guest: guest}
   end
 
   def instructor_conn(%{conn: conn}) do
+    instructor = user_fixture(%{can_create_sections: true})
+
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
-        insert(:user, %{can_create_sections: true, independent_learner: true}),
+        instructor,
         [Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)]
       )
 
     conn =
       conn
-      |> Plug.Test.init_test_session(lti_session: nil)
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_user(instructor)
 
     {:ok, conn: conn, instructor: instructor}
   end
@@ -325,34 +341,29 @@ defmodule Oli.TestHelpers do
     tool_jwk = jwk_fixture()
     registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
     deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
-    instructor = insert(:user)
+    instructor = user_fixture(%{can_create_sections: true})
 
-    lti_param_ids = %{
-      instructor:
-        cache_lti_params(
-          %{
-            "iss" => registration.issuer,
-            "aud" => registration.client_id,
-            "sub" => instructor.sub,
-            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-              "id" => "some_id",
-              "title" => "some_title"
-            },
-            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
-            ],
-            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-          },
-          instructor.id
-        )
-    }
+    cache_lti_params(
+      %{
+        "iss" => registration.issuer,
+        "aud" => registration.client_id,
+        "sub" => instructor.sub,
+        "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+        "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+          "id" => "some_id",
+          "title" => "some_title"
+        },
+        "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+          "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+        ],
+        "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+      },
+      instructor.id
+    )
 
     conn =
       conn
-      |> Plug.Test.init_test_session(lti_session: nil)
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+      |> log_in_user(instructor)
 
     {:ok, conn: conn, instructor: instructor}
   end
@@ -361,7 +372,7 @@ defmodule Oli.TestHelpers do
     author = author_fixture()
 
     conn =
-      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author}
   end
@@ -371,7 +382,7 @@ defmodule Oli.TestHelpers do
     [project | _rest] = make_n_projects(1, author)
 
     conn =
-      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author, project: project}
   end
@@ -384,7 +395,7 @@ defmodule Oli.TestHelpers do
       })
 
     conn =
-      Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      log_in_author(conn, admin)
 
     {:ok, conn: conn, admin: admin}
   end
@@ -397,10 +408,9 @@ defmodule Oli.TestHelpers do
       })
 
     conn =
-      Pow.Plug.assign_current_user(
+      log_in_author(
         conn,
-        account_admin,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        account_admin
       )
 
     {:ok, conn: conn, account_admin: account_admin}
@@ -414,10 +424,9 @@ defmodule Oli.TestHelpers do
       })
 
     conn =
-      Pow.Plug.assign_current_user(
+      log_in_author(
         conn,
-        content_admin,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        content_admin
       )
 
     {:ok, conn: conn, content_admin: content_admin}
@@ -425,12 +434,12 @@ defmodule Oli.TestHelpers do
 
   def recycle_author_session(conn, author) do
     Phoenix.ConnTest.recycle(conn)
-    |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    |> log_in_author(author)
   end
 
   def recycle_user_session(conn, user) do
     Phoenix.ConnTest.recycle(conn)
-    |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+    |> log_in_user(user)
   end
 
   def author_project_fixture(), do: author_project_fixture(nil)
@@ -448,7 +457,7 @@ defmodule Oli.TestHelpers do
     objective_revision = objective.objective_revision
 
     conn =
-      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author, project: project, objective_revision: objective_revision}
   end

@@ -31,7 +31,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
   end
 
   defp enforce_gating(conn, resource_id, revision) do
-    %{section: section, current_user: user, is_system_admin: is_admin} = conn.assigns
+    %{section: section, current_user: user, is_admin: is_admin} = conn.assigns
 
     if is_admin do
       conn

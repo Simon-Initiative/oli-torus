@@ -7,7 +7,6 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
   import Plug.Conn
 
   alias OliWeb.Plugs.HeaderSizeLogger
-  alias OliWeb.Pow.SessionUtils
 
   setup :set_mox_from_context
   setup :verify_on_exit!
@@ -51,7 +50,7 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
       |> assign(:remote_ip, {127, 0, 0, 1})
 
     expected_size =
-      SessionUtils.calculate_headers_size(conn.req_headers)
+      HeaderSizeLogger.calculate_headers_size(conn.req_headers)
 
     log = capture_log(fn -> HeaderSizeLogger.call(conn, opts) end)
 
@@ -104,7 +103,7 @@ defmodule OliWeb.Plugs.HeaderSizeLoggerTest do
         |> send_resp(200, "OK")
       end)
 
-    expected_size = SessionUtils.calculate_headers_size(conn.resp_headers)
+    expected_size = HeaderSizeLogger.calculate_headers_size(conn.resp_headers)
 
     assert log =~
              "Response headers size (#{expected_size} bytes) exceeds the threshold of #{threshold} bytes."

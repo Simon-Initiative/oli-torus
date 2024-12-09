@@ -117,7 +117,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ObjectivesLiveTest do
       project: project
     } do
       redirect_path =
-        "/workspaces/course_author"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, live_view_route(project.slug))
     end

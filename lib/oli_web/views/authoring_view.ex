@@ -6,13 +6,13 @@ defmodule OliWeb.AuthoringView do
   alias Oli.Accounts.Author
 
   def author_role_text(author) do
-    if Accounts.has_admin_role?(author),
+    if Accounts.is_admin?(author),
       do: "Admin",
       else: "Author"
   end
 
   def author_role_color(author) do
-    if Accounts.has_admin_role?(author),
+    if Accounts.is_admin?(author),
       do: "admin-color",
       else: "author-color"
   end

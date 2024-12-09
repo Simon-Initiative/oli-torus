@@ -167,7 +167,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       assert conn
              |> get(live_view_publish_route(project.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/workspaces/course_author\">redirected</a>"
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
     end
   end
 
@@ -197,7 +197,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       assert conn
              |> get(live_view_publish_route(project.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/workspaces/course_author\">redirected</a>"
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
     end
   end
 
@@ -212,7 +212,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
       assert conn
              |> get(live_view_publish_route(project.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/workspaces/course_author\">redirected</a>"
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
     end
   end
 
@@ -226,7 +226,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PublishLiveTest do
     } do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> log_in_author(author)
         |> get(live_view_publish_route(project.slug))
 
       assert html_response(conn, 200) =~ "Publication Details"

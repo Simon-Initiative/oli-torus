@@ -183,8 +183,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       {:error, {:redirect, %{to: redirect_path}}} =
         live(conn, live_view_discussions_live_route(section.slug))
 
-      assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Fdiscussions&section=#{section.slug}"
+      assert redirect_path == "/users/log_in"
     end
   end
 
