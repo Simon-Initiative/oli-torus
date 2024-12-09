@@ -171,7 +171,7 @@ const createBulk = async (
       onBulkAdd(activities);
     })
     .catch((err) => {
-      onError(`Server error while processing bulk question import: ${err.message}`);
+      onError(`Bulk import failed. Try again.`);
     });
 };
 
