@@ -355,7 +355,9 @@ defmodule Oli.Delivery.Sections do
       {:error, changeset} # Something went wrong
   """
   @spec enroll(list(number()), number(), [%ContextRole{}]) :: {:ok, list(%Enrollment{})}
-  def enroll(user_ids, section_id, context_roles) when is_list(user_ids) do
+  def enroll(user_ids, section_id, context_roles, status \\ :enrolled)
+
+  def enroll(user_ids, section_id, context_roles, status) when is_list(user_ids) do
     Repo.transaction(fn ->
       context_roles = EctoProvider.Marshaler.to(context_roles)
       date = DateTime.utc_now() |> DateTime.truncate(:second)
@@ -369,7 +371,7 @@ defmodule Oli.Delivery.Sections do
             section_id: section_id,
             inserted_at: date,
             updated_at: date,
-            status: :enrolled,
+            status: status,
             state: %{}
           }
         )
@@ -398,7 +400,7 @@ defmodule Oli.Delivery.Sections do
   end
 
   @spec enroll(number(), number(), [%ContextRole{}]) :: {:ok, %Enrollment{}}
-  def enroll(user_id, section_id, context_roles) do
+  def enroll(user_id, section_id, context_roles, status) do
     context_roles = EctoProvider.Marshaler.to(context_roles)
 
     case Repo.one(
@@ -409,7 +411,7 @@ defmodule Oli.Delivery.Sections do
            )
          ) do
       # Enrollment doesn't exist, we are creating it
-      nil -> %Enrollment{user_id: user_id, section_id: section_id}
+      nil -> %Enrollment{user_id: user_id, section_id: section_id, status: status}
       # Enrollment exists, we are potentially just updating it
       e -> e
     end

@@ -84,7 +84,7 @@ defmodule OliWeb.InviteController do
   defp do_section_enrollment(users_ids, section, role) do
     context_identifier = contextualize_role(role)
     context_role = ContextRoles.get_role(context_identifier)
-    Sections.enroll(users_ids, section.id, [context_role])
+    Sections.enroll(users_ids, section.id, [context_role], :pending_confirmation)
   end
 
   defp contextualize_role("instructor"), do: :context_instructor

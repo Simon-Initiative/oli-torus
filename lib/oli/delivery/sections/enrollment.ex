@@ -8,7 +8,10 @@ defmodule Oli.Delivery.Sections.Enrollment do
     belongs_to :most_recently_visited_resource, Oli.Resources.Resource
 
     field :state, :map, default: %{}
-    field :status, Ecto.Enum, values: [:enrolled, :suspended], default: :enrolled
+
+    field :status, Ecto.Enum,
+      values: [:enrolled, :suspended, :pending_confirmation],
+      default: :enrolled
 
     many_to_many :context_roles, Lti_1p3.DataProviders.EctoProvider.ContextRole,
       join_through: "enrollments_context_roles",
@@ -22,5 +25,6 @@ defmodule Oli.Delivery.Sections.Enrollment do
     enrollment
     |> cast(attrs, [:user_id, :section_id, :state, :status, :most_recently_visited_resource_id])
     |> validate_required([:user_id, :section_id])
+    |> validate_inclusion(:payment_type, Ecto.Enum.values(__MODULE__, :payment_type))
   end
 end
