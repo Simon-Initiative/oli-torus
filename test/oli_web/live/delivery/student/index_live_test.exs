@@ -1115,10 +1115,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_3: page_3,
       page_4: page_4
     } do
-      Sections.update_section(section, %{
-        agenda: true
-      })
-
       stub_current_time(~U[2023-11-03 21:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -1135,6 +1131,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       section: section,
       page_1: page_1
     } do
+      Sections.update_section(section, %{
+        agenda: false
+      })
+
       stub_current_time(~U[2023-11-03 21:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
