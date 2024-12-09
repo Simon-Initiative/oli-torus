@@ -3,6 +3,7 @@ import { Button, Modal } from 'react-bootstrap';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
 import { CreationData } from 'components/activities';
+import { Alert } from 'components/misc/Alert';
 
 interface Props {
   onCancel: () => void;
@@ -150,7 +151,7 @@ export const BulkQuestionsImport: React.FC<Props> = ({ onCancel, onUpload, title
                 <input {...getInputProps()} />
                 <p>
                   <span>Drag and drop the CSV file here, or </span>
-                  <span className="text-primary">Browses</span>
+                  <span className="text-primary">Browse</span>
                 </p>
               </div>
             </div>
@@ -169,7 +170,9 @@ export const BulkQuestionsImport: React.FC<Props> = ({ onCancel, onUpload, title
             </div>
           </div>
         </div>
-        <div>{error}</div>
+        {error && (
+          <Alert className="mt-5" variant="warning">{error}</Alert>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button type="button" variant="secondary" onClick={onCancel}>
