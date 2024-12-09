@@ -53,7 +53,7 @@ const ExpertHeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   return (
     paths && (
       <nav
-        className={`aa-header-nav top-panel overflow-hidden${
+        className={`aa-header-nav mt-8 top-panel overflow-hidden${
           isVisible ? ' open' : ''
         } d-flex aa-panel-section-title-bar ${!sidebarExpanded ? '' : 'ml-[135px]'}`}
         style={{
