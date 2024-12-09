@@ -15,6 +15,8 @@ defmodule Oli.Accounts.UserToken do
 
   schema "users_tokens" do
     field :token, :binary
+    # the context is used to differentiate between different types of tokens
+    # such as "session", "confirm" (for email confirmation), "reset_password", "change:<current_email>"
     field :context, :string
     field :sent_to, :string
     belongs_to :user, Oli.Accounts.User
