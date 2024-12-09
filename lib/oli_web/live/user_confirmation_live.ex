@@ -6,12 +6,17 @@ defmodule OliWeb.UserConfirmationLive do
   def render(%{live_action: :edit} = assigns) do
     ~H"""
     <div class="mx-auto max-w-sm">
-      <.simple_header class="text-center">Confirm Account</.simple_header>
+      <.simple_header class="text-center mt-20">Confirm Account</.simple_header>
 
       <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
         <.input field={@form[:token]} type="hidden" />
         <:actions>
-          <.button phx-disable-with="Confirming..." class="w-full">Confirm my account</.button>
+          <.button
+            phx-disable-with="Confirming..."
+            class="w-full bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md"
+          >
+            Confirm my account
+          </.button>
         </:actions>
       </.simple_form>
 
