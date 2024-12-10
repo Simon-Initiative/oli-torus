@@ -15,11 +15,6 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
     closePicker();
   }, [closePicker, id, onBlur, value]);
 
-  const onClick = useCallback(() => {
-    onBlur('partPropertyElementFocus', value);
-    openPicker();
-  }, [openPicker, onBlur]);
-
   const hasImage = value && value !== '/images/placeholder-image.svg';
 
   return (
@@ -38,7 +33,10 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
       {hasImage || <div className="truncate-left">No Image</div>}
 
       <Button
-        onClick={onClick}
+        onClick={() => {
+          onBlur('partPropertyElementFocus', value);
+          openPicker();
+        }}
         type="button"
         variant="secondary"
         size="sm"
@@ -47,7 +45,14 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
         <i className="fa-solid fa-image"></i>
       </Button>
 
-      <a href="#" style={{ marginLeft: '5px', textDecoration: 'underline' }} onClick={onClick}>
+      <a
+        href="#"
+        style={{ marginLeft: '5px', textDecoration: 'underline' }}
+        onClick={() => {
+          onBlur('partPropertyElementFocus', value);
+          openPicker();
+        }}
+      >
         Upload or Link Image
       </a>
       {pickerOpen && (
