@@ -75,6 +75,9 @@ defmodule Oli.Delivery.Sections.Section do
     field(:contains_explorations, :boolean, default: false)
     field(:contains_deliberate_practice, :boolean, default: false)
 
+    field(:certificate_enabled, :boolean, default: false)
+    has_one(:certificate, Oli.Delivery.Sections.Certificate)
+
     belongs_to(:required_survey, Oli.Resources.Resource,
       foreign_key: :required_survey_resource_id
     )
