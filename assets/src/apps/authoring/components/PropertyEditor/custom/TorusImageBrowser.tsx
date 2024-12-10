@@ -6,7 +6,14 @@ import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 import { MediaBrowserComponent, TorusMediaBrowserWrapper } from './TorusMediaBrowserWrapper';
 
-const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange, onBlur }) => {
+const _TorusImageBrowser: MediaBrowserComponent = ({
+  id,
+  label,
+  value,
+  onChange,
+  onBlur,
+  onFocus,
+}) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();
   const projectSlug: string = useSelector(selectProjectSlug);
 
@@ -34,7 +41,7 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
 
       <Button
         onClick={() => {
-          onBlur('partPropertyElementFocus', value);
+          if (onFocus) onFocus();
           openPicker();
         }}
         type="button"
@@ -49,7 +56,7 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
         href="#"
         style={{ marginLeft: '5px', textDecoration: 'underline' }}
         onClick={() => {
-          onBlur('partPropertyElementFocus', value);
+          if (onFocus) onFocus();
           openPicker();
         }}
       >
