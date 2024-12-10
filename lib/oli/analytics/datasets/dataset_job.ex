@@ -24,11 +24,11 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
     field(:application_id, :string)
     field(:job_id, :string)
     field(:job_run_id, :string)
-    field(:job_type, Ecto.Enum, values: @emr_statuses, default: :submitted)
+    field(:job_type, Ecto.Enum, values: [:datashop, :custom], default: :submitted)
     field(:output_type, Ecto.Enum, values: [:csv, :parquet], default: :csv)
 
     # Runtime status information
-    field(:status, Ecto.Enum, values: [:pending, :running, :cancelled, :finished], default: :pending)
+    field(:status, Ecto.Enum, values: @emr_statuses, default: :pending)
     field(:total_chunks, :integer, default: 0)
     field(:completed_chunks, :integer, default: 0)
 

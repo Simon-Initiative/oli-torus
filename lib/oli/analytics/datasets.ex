@@ -1,13 +1,13 @@
 defmodule Oli.Analytics.Datasets do
 
-  alias ExAws.Auth
   alias Oli.Analytics.Datasets.JobConfig
   alias Oli.Analytics.Datasets.DatasetJob
   alias Oli.Analytics.Datasets.Utils
   alias Oli.Analytics.Datasets.Settings
-  alias Oli.Repo
+  alias Oli.Analytics.Datasets.EmrServerless
   alias ExAws.S3
   alias ExAws
+  alias Oli.Repo
 
   require Logger
 
@@ -114,136 +114,55 @@ defmodule Oli.Analytics.Datasets do
       {:ok, application_id} ->
 
         %DatasetJob{job | application_id: application_id}
-        |> submit_job()
+        |> EmrServerless.submit_job()
 
       {:error, e} -> {:error, e}
     end
   end
 
-  def submit_job(%DatasetJob{} = job) do
-
-    region = Settings.region()
-
-    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{region}.amazonaws.com")
-
-    # Construct the URL for the "applications" EMR serverless endpoint
-    url = "https://emr-serverless.#{region}.amazonaws.com/applications/#{job.application_id}/jobruns"
-
-    arguments = [
-      "--bucket_name",
-      Settings.source_bucket(),
-      "--chunk_size",
-      "#{job.configuration.chunk_size}",
-      "--sub_types",
-      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_sub_types}",
-      "--job_id",
-      "#{job.job_id}",
-      "--section_ids",
-      "#{job.configuration.section_ids |> to_str}",
-      "--action",
-      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}",
-      "--enforce_project_id",
-      "#{job.project_id}"
-    ]
-
-    arguments = case {job.job_type, Enum.count(job.configuration.excluded_fields)} do
-      {:datashop, _} -> arguments
-      {_, 0} -> arguments
-      _ -> arguments ++ ["--exclude_fields", job.configuration.excluded_fields |> to_str]
-    end
-
-    arguments = case Enum.count(job.configuration.ignored_student_ids) do
-      0 -> arguments
-      _ -> arguments ++ ["--ignored_student_ids", "#{job.configuration.ignored_student_ids |> to_str}"]
-    end
-
-    body = %{
-      "clientToken" => job.job_id,
-      "applicationId" => job.application_id,
-      "executionRoleArn" => Settings.execution_role(),
-      "jobDriver" => %{
-        "sparkSubmit" => %{
-          "entryPoint" => Settings.entry_point(),
-          "entryPointArguments" => arguments,
-          "sparkSubmitParameters" => Settings.spark_submit_parameters()
-        }
-      },
-      "configurationOverrides" => %{
-        "monitoringConfiguration" => %{
-          "s3MonitoringConfiguration" => %{
-            "logUri" => Settings.log_uri()
-          }
-        }
-      }
-    }
-
-
-
-    # Generate signed headers, using the ExAws.Auth module
-    {:ok, signed_headers} =
-      Auth.headers(
-        :post,
-        url,
-        String.to_atom("emr-serverless"),
-        config,
-        [],
-        Poison.encode!(body)
-      )
-
-    # Send the HTTP request
-    case HTTPoison.post(url, Poison.encode!(body), signed_headers) do
-      {:ok, response} ->
-        # Parse the response and extract the job run id
-        json = Poison.decode!(response.body)
-        job = %DatasetJob{job | job_run_id: json["jobRunId"]}
-        {:ok, job}
-      e -> e
-    end
-  end
-
-  defp to_str(list) do
-    Enum.join(list, ",")
-  end
-
   def determine_application_id() do
 
-    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
+    case EmrServerless.list_applications() do
 
-    # Construct the URL for the "applications" EMR serverless endpoint
-    base_url = "https://emr-serverless.#{Settings.region()}.amazonaws.com/applications"
-    query_params = "maxResults=50"
-    url = "#{base_url}?#{query_params}"
+      {:ok, json} ->
+         # Parse and find the appliction whose name matches the configured application name
+         emr_application_name = Settings.emr_application_name()
 
-    # Generate signed headers, using the ExAws.Auth module
-    {:ok, signed_headers} =
-      Auth.headers(
-        :get,
-        url,
-        String.to_atom("emr-serverless"),
-        config,
-        [],
-        ""
-      )
-
-    # Send the HTTP request
-    case HTTPoison.get(url, signed_headers) do
-      {:ok, response} ->
-
-        # Parse and find the appliction whose name matches the configured application name
-        emr_application_name = Application.get_env(:oli, :emr_dataset_aplication_name)
-
-        json = Poison.decode!(response.body)
-        case Enum.filter(json["applications"], fn app -> app["name"] == emr_application_name end) do
-          [app] -> {:ok, app["id"]}
-          [] -> {:error, "Application not found"}
-        end
+         case Enum.filter(json["applications"], fn app -> app["name"] == emr_application_name end) do
+           [app] -> {:ok, app["id"]}
+           [] -> {:error, "Application not found"}
+         end
 
       e -> e
     end
+  end
+
+  def update_job_statuses() do
+
+    # Get the application and job run ids for all jobs that are not in a terminal state
+    by_app_ids = fetch_app_job_ids()
+
+    # For each application id, issue a request to the EMR serverless endpoint to get the job run statuses
+    Enum.keys(by_app_ids)
+    |> Enum.map(fn app_id -> EmrServerless.get_jobs(app_id) end)
+
+    # Update the job status in the database
+
   end
 
   defp persist(job) do
     Repo.insert(job)
+  end
+
+  defp fetch_app_job_ids() do
+    # Get the application and job run ids for all jobs that are not in a terminal state
+    query = from(j in DatasetJob,
+      where: j.status in [:submitted, :pending, :scheduled, :running, :cancelling, :queued],
+      select: {j.application_id, j.job_run_id})
+
+    Repo.all(query)
+    |> Enum.group_by(&elem(&1, 0))
+
   end
 
 end
