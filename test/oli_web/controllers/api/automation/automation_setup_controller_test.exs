@@ -119,8 +119,8 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       } = response
 
       refute Accounts.get_author_by_email(author_email)
-      refute Accounts.get_user_by_email(author_email)
-      refute Accounts.get_user_by_email(educator_email)
+      refute Accounts.get_author_by_email(author_email)
+      refute Accounts.get_independent_user_by_email(educator_email)
 
       refute Oli.Authoring.Course.get_project_by_slug(project_slug)
 
@@ -196,7 +196,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
     get_by =
       case user_type do
         :author -> &Accounts.get_author_by_email/1
-        :user -> &Accounts.get_user_by_email/1
+        :user -> &Accounts.get_independent_user_by_email/1
       end
 
     case get_by.(email) do

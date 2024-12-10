@@ -991,15 +991,15 @@ defmodule Oli.Accounts do
 
   ## Examples
 
-      iex> get_user_by_email("foo@example.com")
+      iex> get_independent_user_by_email("foo@example.com")
       %User{}
 
-      iex> get_user_by_email("unknown@example.com")
+      iex> get_independent_user_by_email("unknown@example.com")
       nil
 
   """
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+  def get_independent_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email, independent_learner: true)
   end
 
   @doc """
@@ -1007,16 +1007,16 @@ defmodule Oli.Accounts do
 
   ## Examples
 
-      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
+      iex> get_independent_user_by_email_and_password("foo@example.com", "correct_password")
       %User{}
 
-      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
+      iex> get_independent_user_by_email_and_password("foo@example.com", "invalid_password")
       nil
 
   """
-  def get_user_by_email_and_password(email, password)
+  def get_independent_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = Repo.get_by(User, email: email, independent_learner: true)
     if User.valid_password?(user, password), do: user
   end
 
