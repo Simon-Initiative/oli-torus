@@ -22,6 +22,7 @@ export interface MediaBrowserProps {
   value: string;
   onChange: (url: string) => void;
   onBlur: (id: string, url: string) => void;
+  onFocus?: () => void;
 }
 
 export type MediaBrowserComponent = React.FC<MediaBrowserProps>;
@@ -43,6 +44,9 @@ export const TorusMediaBrowserWrapper = (
             value={props.value}
             onChange={(event) => props.onChange(event.target.value)}
             onBlur={(event) => props.onBlur(props.id, event.target.value)}
+            onFocus={() => {
+              if (props.onFocus) props.onFocus();
+            }}
           />
         </div>
       );
