@@ -1175,68 +1175,52 @@ defmodule OliWeb.Components.Common do
     """
   end
 
-  #### MER-3835 TODO: REMOVE
-
   @doc """
-  Renders a header with title.
-  """
-  attr :class, :string, default: nil
-
-  slot :inner_block, required: true
-  slot :subtitle
-  slot :actions
-
-  def simple_header(assigns) do
-    ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
-      <div>
-        <h1 class="text-lg font-semibold leading-8 text-zinc-800">
-          <%= render_slot(@inner_block) %>
-        </h1>
-        <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
-          <%= render_slot(@subtitle) %>
-        </p>
-      </div>
-      <div class="flex-none"><%= render_slot(@actions) %></div>
-    </header>
-    """
-  end
-
-  #### MER-3835 TODO: REMOVE
-
-  @doc """
-  Renders a simple form.
+  Renders a simple form box.
 
   ## Examples
 
-      <.simple_form for={@form} phx-change="validate" phx-submit="save">
+      <.form_box for={@form} phx-change="validate" phx-submit="save">
         <.input field={@form[:email]} label="Email"/>
         <.input field={@form[:username]} label="Username" />
         <:actions>
           <.button>Save</.button>
         </:actions>
-      </.simple_form>
+      </.form_box>
   """
   attr :for, :any, required: true, doc: "the data structure for the form"
   attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
+
+  attr :class, :string, default: nil, doc: "the class to apply to the form"
 
   attr :rest, :global,
     include: ~w(autocomplete name rel action enctype method novalidate target multipart),
     doc: "the arbitrary HTML attributes to apply to the form tag"
 
+  slot :title, default: nil, doc: "the title of the form"
+  slot :subtitle, default: nil, doc: "the subtitle of the form"
+
   slot :inner_block, required: true
   slot :actions, doc: "the slot for form actions, such as a submit button"
 
-  def simple_form(assigns) do
+  def form_box(assigns) do
     ~H"""
-    <.form :let={f} for={@for} as={@as} {@rest}>
-      <div class="mt-10 space-y-8 bg-white">
+    <div class={["w-96 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white py-8 px-10"]}>
+      <div :if={@title} class="text-center text-xl font-normal leading-7 pb-6">
+        <%= render_slot(@title) %>
+      </div>
+      <div :if={@subtitle} class="text-center leading-6 pb-6">
+        <%= render_slot(@subtitle) %>
+      </div>
+
+      <.form :let={f} for={@for} as={@as} {@rest}>
         <%= render_slot(@inner_block, f) %>
-        <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
+
+        <div :for={action <- @actions} class="mt-2 flex flex-col items-center justify-between gap-2">
           <%= render_slot(action, f) %>
         </div>
-      </div>
-    </.form>
+      </.form>
+    </div>
     """
   end
 end
