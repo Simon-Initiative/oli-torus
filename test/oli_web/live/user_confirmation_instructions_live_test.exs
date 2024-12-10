@@ -29,7 +29,7 @@ defmodule OliWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/users/confirm")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
@@ -46,7 +46,7 @@ defmodule OliWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: user.email})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/users/confirm")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
@@ -61,7 +61,7 @@ defmodule OliWeb.UserConfirmationInstructionsLiveTest do
         lv
         |> form("#resend_confirmation_form", user: %{email: "unknown@example.com"})
         |> render_submit()
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/users/confirm")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
