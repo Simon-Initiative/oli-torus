@@ -2,12 +2,14 @@ defmodule Oli.Repo.Migrations.CreateCertificatesTables do
   use Ecto.Migration
 
   def change do
+    execute_types()
+
     create table(:certificates) do
       add :required_discussion_posts, :integer
       add :required_class_notes, :integer
       add :min_percentage_for_completion, :float
       add :min_percentage_for_distinction, :float
-      add :assessments_apply_to, :string, default: "all"
+      add :assessments_apply_to, :certificates_assessments_apply_to, default: "all"
       add :custom_assessments, {:array, :integer}, default: []
       add :requires_instructor_approval, :boolean, default: false
 
@@ -25,17 +27,17 @@ defmodule Oli.Repo.Migrations.CreateCertificatesTables do
       add :logo2, :string
       add :logo3, :string
 
-      add :section_id, references(:sections)
+      add :section_id, references(:sections, on_delete: :delete_all), null: false
 
       timestamps(type: :utc_datetime)
     end
 
     create table(:granted_certificates) do
-      add :state, :string
+      add :state, :granted_certificates_state
       add :with_distinction, :boolean
       add :guid, :string
       add :issued_by, :integer, allow_nil: true
-      add :issued_by_type, :string
+      add :issued_by_type, :granted_certificates_issued_by_type
       add :issued_at, :utc_datetime, allow_nil: true
 
       add :certificate_id, references(:certificates)
@@ -47,5 +49,22 @@ defmodule Oli.Repo.Migrations.CreateCertificatesTables do
     alter table(:sections) do
       add :certificate_enabled, :boolean, default: false
     end
+  end
+
+  defp execute_types() do
+    execute(
+      "CREATE TYPE public.certificates_assessments_apply_to AS ENUM ('all', 'custom');",
+      "DROP TYPE public.certificates_assessments_apply_to;"
+    )
+
+    execute(
+      "CREATE TYPE public.granted_certificates_issued_by_type AS ENUM ('user', 'autor');",
+      "DROP TYPE public.granted_certificates_issued_by_type;"
+    )
+
+    execute(
+      "CREATE TYPE public.granted_certificates_state AS ENUM ('pending', 'earned', 'denied');",
+      "DROP TYPE public.granted_certificates_state;"
+    )
   end
 end
