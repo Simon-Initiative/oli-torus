@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Sections.CertificateTest do
+defmodule Oli.Delivery.Sections.GrantedCertificateTest do
   use Oli.DataCase, async: true
 
   import Oli.Factory
