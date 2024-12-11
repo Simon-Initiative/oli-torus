@@ -12,6 +12,7 @@ import { navigateToActivity } from '../../../store/features/groups/actions/deck'
 import { selectSequence } from '../../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
+  selectIsGraded,
   selectShowHistory,
   setShowHistory,
 } from '../../../store/features/page/slice';
@@ -30,7 +31,7 @@ const HistoryNavigation: React.FC = () => {
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
   const isHistoryMode = useSelector(selectHistoryNavigationActivity);
-
+  const graded = useSelector(selectIsGraded);
   const sequences = useSelector(selectSequence);
   const dispatch = useDispatch();
 
@@ -168,7 +169,9 @@ const HistoryNavigation: React.FC = () => {
             <button onClick={restartHandler} className="theme-no-history-restart">
               <span>
                 <div className="theme-no-history-restart__icon" />
-                <span className="theme-no-history-restart__label">Restart Lesson</span>
+                <span className="theme-no-history-restart__label">
+                  {graded ? 'Submit Attempt' : 'Restart Lesson'}
+                </span>
               </span>
             </button>
           )}
