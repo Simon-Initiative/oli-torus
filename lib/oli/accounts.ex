@@ -182,8 +182,6 @@ defmodule Oli.Accounts do
     Repo.all(Author)
   end
 
-  #### MER-3835 TODO: Reconcile these functions with new functions at end of module
-
   @doc """
   Gets a single user.
   Raises `Ecto.NoResultsError` if the User does not exist.
@@ -462,8 +460,6 @@ defmodule Oli.Accounts do
 
     Repo.exists?(query)
   end
-
-  # MER-3835 TODO: reconcile with new functions below
 
   def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().content_admin == system_role_id or
