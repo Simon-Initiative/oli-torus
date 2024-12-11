@@ -643,8 +643,7 @@ defmodule Oli.Factory do
   def certificate_factory() do
     %Certificate{
       user: build(:user),
-      section: build(:section),
-      certificate_url: "https://example.com/foobarbaz"
+      section: build(:section)
     }
   end
 

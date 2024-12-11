@@ -16,38 +16,27 @@ defmodule Oli.CertificatesTest do
   describe "create/3" do
     test "creates a certificate", ctx do
       html = "<a>Certificate</a>"
-      certificate_url = "https://some.example.url"
 
       expect(Oli.Test.MockAws, :request, 1, fn operation ->
         assert operation.data.html == html
-        {:ok, %{status_code: 200, body: %{certificate_url: certificate_url}}}
+        {:ok, %{status_code: 200}}
       end)
 
-      assert {:ok, certificate} = Certificates.create(ctx.user.id, ctx.section.id, html)
-      assert certificate.user_id == ctx.user.id
-      assert certificate.section_id == ctx.section.id
-      assert certificate.certificate_url == certificate_url
+      assert {:ok, multi} = Certificates.create(ctx.user.id, ctx.section.id, html)
+      assert multi.certificate.user_id == ctx.user.id
+      assert multi.certificate.section_id == ctx.section.id
+      assert multi.complete_certificate.status == "complete"
     end
 
     test "fails when creating a duplicate certificate", ctx do
-      expect(Oli.Test.MockAws, :request, 4, fn operation ->
-        {:ok,
-         %{status_code: 200, body: %{certificate_url: "https://#{operation.data.html}.example"}}}
-      end)
-
-      section2 = insert(:section)
-      section3 = insert(:section)
+      expect(Oli.Test.MockAws, :request, 4, fn _ -> {:ok, %{status_code: 200}} end)
 
       assert {:ok, _certificate} = Certificates.create(ctx.user.id, ctx.section.id, "foo")
-      assert {:ok, _certificate} = Certificates.create(ctx.user.id, section2.id, "bar")
 
-      # Duplicate section
-      assert {:error, dupuser} = Certificates.create(ctx.user.id, section2.id, "qux")
-      assert {"has already been taken", _} = dupuser.errors[:user_id]
+      assert {:error, :certificate, changeset, _multi} =
+               Certificates.create(ctx.user.id, ctx.section.id, "bar")
 
-      # Duplicate certificate
-      assert {:error, dupcert} = Certificates.create(ctx.user.id, section3.id, "foo")
-      assert {"has already been taken", _} = dupcert.errors[:certificate_url]
+      assert {"has already been taken", _} = changeset.errors[:user_id]
     end
 
     test "fails if aws operation fails", ctx do
@@ -55,7 +44,8 @@ defmodule Oli.CertificatesTest do
         {:error, %{status_code: 500, body: %{error: "Internal server error"}}}
       end)
 
-      assert {:error, _error} = Certificates.create(ctx.user.id, ctx.section.id, "foo")
+      assert {:error, :invoke_lambda, _error, _multi} =
+               Certificates.create(ctx.user.id, ctx.section.id, "foo")
     end
 
     test "fails when html is not a string or empty", ctx do
