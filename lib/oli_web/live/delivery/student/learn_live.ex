@@ -2397,7 +2397,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     >
       <div class="dark:text-white text-[13px] font-semibold">
         <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
-          ((@page_metrics.total_duration_minutes > 0 && " · #{parsed_minutes}") || "") %>
+          maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}" %>
       </div>
     </div>
     """
@@ -2426,11 +2426,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
         <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
-          ((@page_metrics.total_duration_minutes > 0 && " · #{parsed_minutes}") || "") %>
+          maybe_add_separator(@page_metrics.total_pages_count, parsed_minutes) <> "#{parsed_minutes}" %>
       </div>
     </div>
     """
   end
+
+  def maybe_add_separator(total_pages_count, parsed_minutes),
+    do: if(total_pages_count > 0 and parsed_minutes != "", do: " · ", else: "")
 
   def video_player(assigns) do
     ~H"""
@@ -3051,17 +3054,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       |> Timex.Duration.to_clock()
 
     case {clock_duration, resource_type} do
-      {{hours, minutes, _seconds, _milliseconds}, :module} when hours > 0 ->
+      {{hours, minutes, _seconds, _milliseconds}, _resource_type} when hours > 0 ->
         "#{hours}h #{minutes}m"
 
-      {{_, minutes, _seconds, _milliseconds}, :module} ->
+      {{_, minutes, _seconds, _milliseconds}, :module} when minutes > 0 ->
         "#{minutes}m"
 
-      {{hours, minutes, _seconds, _milliseconds}, :page} when hours > 0 ->
-        "#{hours}h #{minutes}m"
-
-      {{_, minutes, _seconds, _milliseconds}, :page} ->
+      {{_, minutes, _seconds, _milliseconds}, :page} when minutes > 0 ->
         "#{minutes} min"
+
+      {{_, _, _seconds, _milliseconds}, _} ->
+        ""
     end
   end
 
