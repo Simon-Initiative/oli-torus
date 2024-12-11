@@ -2397,7 +2397,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     >
       <div class="dark:text-white text-[13px] font-semibold">
         <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
-          if parsed_minutes, do: " · #{parsed_minutes}" %>
+          ((@page_metrics.total_duration_minutes > 0 && " · #{parsed_minutes}") || "") %>
       </div>
     </div>
     """
@@ -2426,7 +2426,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         class="hidden dark:text-white text-[13px] font-semibold pointer-events-none"
       >
         <%= parse_module_total_pages(@page_metrics.total_pages_count) <>
-          if parsed_minutes, do: " · #{parsed_minutes}" %>
+          ((@page_metrics.total_duration_minutes > 0 && " · #{parsed_minutes}") || "") %>
       </div>
     </div>
     """
