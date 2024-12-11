@@ -330,6 +330,26 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  def require_independent_user(conn, _opts) do
+    case conn.assigns[:current_user] do
+      nil ->
+        conn
+        |> put_flash(:error, "You must log in to access this page.")
+        |> maybe_store_return_to()
+        |> redirect(to: ~p"/users/log_in")
+        |> halt()
+
+      %Accounts.User{independent_learner: true, guest: false} ->
+        conn
+
+      _ ->
+        conn
+        |> put_flash(:error, "You must be an independent learner to access this page.")
+        |> redirect(to: ~p"/workspaces/student")
+        |> halt()
+    end
+  end
+
   defp require_confirmed_email(conn) do
     case conn.assigns[:current_user] do
       nil ->

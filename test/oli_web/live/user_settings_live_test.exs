@@ -22,6 +22,17 @@ defmodule OliWeb.UserSettingsLiveTest do
       assert path == ~p"/users/log_in"
       assert %{"error" => "You must log in to access this page."} = flash
     end
+
+    test "disallow LMS users access to settings page", %{conn: conn} do
+      assert {:error, redirect} =
+               conn
+               |> log_in_user(user_fixture(%{independent_learner: false}))
+               |> live(~p"/users/settings")
+
+      assert {:redirect, %{to: path, flash: flash}} = redirect
+      assert path == ~p"/workspaces/student"
+      assert %{"error" => "You must be an independent learner to access this page."} = flash
+    end
   end
 
   describe "update email form" do

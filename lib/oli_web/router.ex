@@ -212,7 +212,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user, :require_independent_user]
 
     live_session :require_authenticated_user,
       root_layout: {OliWeb.LayoutView, :delivery},
