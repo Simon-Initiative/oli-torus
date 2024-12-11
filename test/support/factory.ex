@@ -49,6 +49,7 @@ defmodule Oli.Factory do
   alias Oli.Resources.{Resource, ResourceType, Revision}
   alias Oli.Resources.Collaboration.{CollabSpaceConfig, Post, PostContent, UserReactionPost}
   alias Oli.Search.RevisionEmbedding
+  alias Oli.Certificates.Certificate
 
   def author_factory() do
     %Author{
@@ -636,6 +637,14 @@ defmodule Oli.Factory do
     %ResourceSummary{
       num_correct: 5,
       num_attempts: 10
+    }
+  end
+
+  def certificate_factory() do
+    %Certificate{
+      user: build(:user),
+      section: build(:section),
+      certificate_url: "https://example.com/foobarbaz"
     }
   end
 
