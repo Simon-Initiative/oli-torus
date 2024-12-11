@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from 'apps/delivery/store/features/adaptivity/slice';
 import {
   selectEnableHistory,
+  selectIsGraded,
   selectPreviewMode,
   selectShowHistory,
   setShowHistory,
@@ -14,6 +15,7 @@ export interface OptionsPanelProps {
 
 const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
   const dispatch = useDispatch();
+  const graded = useSelector(selectIsGraded);
   const enableHistory = useSelector(selectEnableHistory);
   const showHistory = useSelector(selectShowHistory);
   const isPreviewMode = useSelector(selectPreviewMode);
@@ -65,7 +67,7 @@ const OptionsPanel: React.FC<OptionsPanelProps> = ({ open }) => {
             aria-label="Open restart lesson window"
             onClick={handleRestartLesson}
           >
-            Restart Lesson
+            {graded ? 'Submit Attempt' : 'Restart Lesson'}
           </button>
         </div>
         <div className="option logoutOption displayNone">
