@@ -7,6 +7,8 @@ defmodule Oli.Delivery.Sections.Certificate do
 
   @assessments_options [:all, :custom]
 
+  @derive {Jason.Encoder, except: [:id, :section, :__meta__]}
+
   schema "certificates" do
     field :required_discussion_posts, :integer
     field :required_class_notes, :integer
