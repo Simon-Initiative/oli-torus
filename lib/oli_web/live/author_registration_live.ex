@@ -53,10 +53,10 @@ defmodule OliWeb.AuthorRegistrationLive do
 
   def handle_event(
         "save",
-        %{"author" => author_params, "g-recaptcha-response" => g_recaptcha_response},
+        %{"author" => author_params} = params,
         socket
       ) do
-    with {:success, true} <- Recaptcha.verify(g_recaptcha_response),
+    with {:success, true} <- Recaptcha.verify(params["g-recaptcha-response"]),
          {:ok, author} <- Accounts.register_author(author_params) do
       {:ok, _} =
         Accounts.deliver_author_confirmation_instructions(
