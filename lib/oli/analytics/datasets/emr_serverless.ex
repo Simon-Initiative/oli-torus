@@ -12,9 +12,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
 
   alias ExAws.Auth
   alias Oli.Analytics.Datasets.DatasetJob
-  alias Oli.Analytics.Datasets.Utils
   alias Oli.Analytics.Datasets.Settings
-  alias ExAws.S3
+
   alias ExAws
 
   require Logger
@@ -55,21 +54,25 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     end
   end
 
-  def get_jobs(application_id), do: get_jobs(application_id, [], nil)
+  def get_jobs(application_id, created_at_after), do: get_jobs(application_id, created_at_after, [], nil)
 
-  def get_jobs(application_id, results, next_token) do
+  def get_jobs(application_id, created_at_after, results, next_token) do
 
     config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
 
-    # Construct the URL for the "applications" EMR serverless endpoint
     base_url = "https://emr-serverless.#{Settings.region()}.amazonaws.com/applications/#{application_id}/jobruns"
-    query_params = "maxResults=50"
 
-    query_params = case next_token do
-      nil -> query_params
-      _ -> "#{query_params}&nextToken=#{next_token}"
+    params = %{maxResults: 50, createdAtAfter: DateTime.to_iso8601(created_at_after)}
+
+    params = case next_token do
+      nil -> params
+      _ -> Map.put(params, :nextToken, next_token)
     end
-    url = "#{base_url}?#{query_params}"
+
+    # Convert the params to a query string
+    query_string = URI.encode_query(params)
+
+    url = "#{base_url}?#{query_string}"
 
     # Generate signed headers, using the ExAws.Auth module
     {:ok, signed_headers} =
@@ -92,7 +95,7 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
           nil -> {:ok, results ++ json["jobRuns"]}
 
           token ->
-            get_jobs(application_id, results ++ json["jobRuns"], token)
+            get_jobs(application_id, created_at_after, results ++ json["jobRuns"], token)
         end
 
       e -> e

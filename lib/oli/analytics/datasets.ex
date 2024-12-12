@@ -4,16 +4,20 @@ defmodule Oli.Analytics.Datasets do
   alias Oli.Analytics.Datasets.DatasetJob
   alias Oli.Analytics.Datasets.Utils
   alias Oli.Analytics.Datasets.Settings
+  alias Oli.Analytics.Datasets.BrowseJobOptions
   alias Oli.Analytics.Datasets.EmrServerless
+  alias Oli.Repo.{Paging, Sorting}
   alias ExAws.S3
   alias ExAws
   alias Oli.Repo
-
+  import Ecto.Query
   require Logger
+
+  @terminal_states [:success, :failed]
 
 
   @doc """
-  Creates a new dataset creation job, submitting to the EMR serverless
+  Submits a new dataset creation job to the EMR serverless
   environment for processing.  This is a four step process:
 
   1. Initiaze the job with the provided configuration, generating a unique job ID
@@ -51,6 +55,159 @@ defmodule Oli.Analytics.Datasets do
 
   end
 
+  @doc """
+  Browse jobs in the system, with optional filtering and sorting.  This function
+  is used to display a list of jobs in the UI, and supports pagination, filtering by
+  initiated_by_id, project_id, job_type, and status, and sorting by project_title and
+  initiator_email.
+  """
+  def browse_jobs(
+    %Paging{limit: limit, offset: offset},
+    %Sorting{direction: direction, field: field},
+    %BrowseJobOptions{} = options) do
+
+    filter_by_initiated_by_id =
+      if options.initiated_by_id,
+        do: dynamic([j, _, _], j.initiated_by_id == ^options.initiated_by_id),
+        else: true
+
+    filter_by_project_id =
+      if options.project_id,
+        do: dynamic([j, _, _], j.project_id == ^options.project_id),
+        else: true
+
+    filter_by_job_type =
+      if options.job_type,
+        do: dynamic([j, _, _], j.job_type == ^options.job_type),
+        else: true
+
+    filter_by_statuses =
+      case options.statuses do
+        nil -> true
+        [] -> true
+        statuses -> dynamic([j, _, _], j.status in ^statuses)
+      end
+
+      query =
+        DatasetJob
+        |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
+        |> join(:left, [j, _], proj in Oli.Authoring.Course.Project,
+          on: j.project_id == proj.id
+        )
+        |> where(^filter_by_initiated_by_id)
+        |> where(^filter_by_project_id)
+        |> where(^filter_by_job_type)
+        |> where(^filter_by_statuses)
+        |> limit(^limit)
+        |> offset(^offset)
+        |> select_merge([_j, u, p], %{
+          total_count: fragment("count(*) OVER()"),
+          project_title: p.title,
+          initiator_email: u.email
+        })
+
+      # sorting
+      query =
+        case field do
+          :project_title ->
+            order_by(query, [_, _, p], {^direction, p.title})
+
+          :initiator_email ->
+            order_by(query, [_, u, _], {^direction, u.email})
+
+          _ ->
+            order_by(query, [j, _, _], {^direction, field(j, ^field)})
+        end
+
+      # ensure there is always a stable sort order based on id, in addition to the specified sort order
+      query = order_by(query, [j, _, _], j.id)
+
+      Repo.all(query)
+
+  end
+
+  @doc """
+  Returns the values for the project filter (the distinct set of projects that have
+  jobs in the system)
+  """
+  def get_project_values() do
+    query = DatasetJob
+      |> join(:left, [j], proj in Oli.Authoring.Course.Project, on: j.project_id == proj.id)
+      |> distinct(true)
+      |> select([proj], {proj.id, proj.title})
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Returns the values for the initiator filter (the distinct set of initiators that have
+  jobs in the system)
+  """
+  def get_initator_values(project_id \\ nil) do
+
+    filter_by_project_id =
+      if project_id,
+        do: dynamic([j, _], j.project_id == ^project_id),
+        else: true
+
+    query = DatasetJob
+    |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
+    |> distinct(true)
+    |> where(^filter_by_project_id)
+    |> select([u], {u.id, u.email})
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Updates the status of all active jobs in the database by querying the EMR serverless
+  environment and checking on their ground truth statuses.  This is multi step process:
+
+  1. Fetch the application and job run ids from the DB for all jobs that are not in a terminal state,
+  grouped by application id.
+
+  2. Fetch the job statuses in bulk by using the application id from the EMR serverless environment.
+  We also have to consider that over time the application id may change, so we need to fetch job
+  statuses for more than one application id.
+
+  3. We then determine which statuses have changed, and then issue a bulk update to the database.
+
+  This function guarantees that we do 1 DB read and 1 DB write.  We cannot put an upper bound on the
+  number of API calls to the EMR serverless environment, as this is dependent on the number of active
+  jobs in the system (and the fact that we can only fetch 50 jobs statuses at a time) and the number
+  of applications tied to these jobs.  We expect low volume of jobs, so this should result in a
+  at most 1 or 2 API calls to the EMR serverless environment.
+  """
+  def update_job_statuses() do
+
+    # Get the application and job run ids for all jobs that are not in a terminal state
+    active_jobs_by_id = fetch_app_job_ids()
+
+    statuses_by_id = Enum.map(active_jobs_by_id, fn {app_id, [earliest | _rest]} -> EmrServerless.get_jobs(app_id, earliest.inserted_at) end)
+    |> Enum.reduce([], fn result, all ->
+      case result do
+        {:ok, jobs} -> jobs ++ all
+        e ->
+          Logger.warning("Failed to fetch job statuses: #{Kernel.to_string(e)}")
+          all
+      end
+    end)
+    |> Enum.reduce(%{}, fn job, all -> Map.put(all, job["id"], job) end)
+
+    # Pair up the jobs and their statuses, filtering to those whose have changed
+    to_update = Enum.reduce(active_jobs_by_id, [], fn jobs, all -> jobs ++ all end)
+    |> Enum.map(fn job -> {job, Map.get(statuses_by_id, job.job_run_id, nil)} end)
+    |> Enum.filter(fn {job, status_job} -> status_job != nil and job.status != status_job["state"] |> from_emr_status() end)
+
+    # Update the job status in the database
+    case to_update do
+      [] -> {:ok, []}
+      _ ->
+        bulk_update_statuses(to_update)
+    end
+
+  end
+
   defp init(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
     job = %DatasetJob{
       project_id: project_id,
@@ -80,7 +237,7 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp set_ignore_student_ids(%DatasetJob{configuration: config} = job) do
-    ignored_student_ids = Utils.determine_ignored_student_ids(job.configuration.section_ids)
+    ignored_student_ids = Utils.determine_ignored_student_ids(config.section_ids)
     config = %JobConfig{job.configuration | ignored_student_ids: ignored_student_ids}
     %DatasetJob{job | configuration: config}
   end
@@ -120,7 +277,9 @@ defmodule Oli.Analytics.Datasets do
     end
   end
 
-  def determine_application_id() do
+
+  # Find the application id that matches the configured application name
+  defp determine_application_id() do
 
     case EmrServerless.list_applications() do
 
@@ -137,17 +296,35 @@ defmodule Oli.Analytics.Datasets do
     end
   end
 
-  def update_job_statuses() do
+  defp bulk_update_statuses(to_update) do
+    {values, params, _} =
+      Enum.reduce(to_update, {[], [], 0}, fn {_db_job, status_job}, {values, params, i} ->
+        {
+          values ++ ["($#{i + 1}, $#{i + 2})"],
+          params ++ [status_job["state"] |> String.downcase(), status_job["id"]],
+          i + 2
+        }
+      end)
 
-    # Get the application and job run ids for all jobs that are not in a terminal state
-    by_app_ids = fetch_app_job_ids()
+      values = Enum.join(values, ",")
 
-    # For each application id, issue a request to the EMR serverless endpoint to get the job run statuses
-    Enum.keys(by_app_ids)
-    |> Enum.map(fn app_id -> EmrServerless.get_jobs(app_id) end)
+    sql = """
+      UPDATE dataset_jobs
+      SET
+        status = batch_values.status,
+        updated_at = NOW()
+      FROM (
+          VALUES
+          #{values}
+      ) AS batch_values (status, job_run_id)
+      WHERE dataset_jobs.job_run_id = batch_values.job_run_id
+    """
 
-    # Update the job status in the database
+    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+  end
 
+  defp from_emr_status(status_str) do
+    String.downcase(status_str) |> String.to_existing_atom()
   end
 
   defp persist(job) do
@@ -157,11 +334,12 @@ defmodule Oli.Analytics.Datasets do
   defp fetch_app_job_ids() do
     # Get the application and job run ids for all jobs that are not in a terminal state
     query = from(j in DatasetJob,
-      where: j.status in [:submitted, :pending, :scheduled, :running, :cancelling, :queued],
-      select: {j.application_id, j.job_run_id})
+      where: j.status in [:submitted, :pending, :scheduled, :running, :cancelling, :queued])
 
     Repo.all(query)
-    |> Enum.group_by(&elem(&1, 0))
+    |> Enum.group_by(fn job -> job.application_id end)
+    # now sort each DatasetJob struct  by earliest inserted_at
+    |> Enum.map(fn {app_id, jobs} -> {app_id, Enum.sort_by(jobs, & &1.inserted_at)} end)
 
   end
 

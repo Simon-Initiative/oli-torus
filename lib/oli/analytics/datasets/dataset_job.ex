@@ -3,7 +3,7 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Oli.Analytics.Datasets.JobConfiguration
+  alias Oli.Analytics.Datasets.JobConfig
 
   @emr_statuses [
     :submitted,
@@ -24,20 +24,19 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
     field(:application_id, :string)
     field(:job_id, :string)
     field(:job_run_id, :string)
-    field(:job_type, Ecto.Enum, values: [:datashop, :custom], default: :submitted)
+    field(:job_type, Ecto.Enum, values: [:datashop, :custom], default: :custom)
     field(:output_type, Ecto.Enum, values: [:csv, :parquet], default: :csv)
 
     # Runtime status information
     field(:status, Ecto.Enum, values: @emr_statuses, default: :pending)
-    field(:total_chunks, :integer, default: 0)
-    field(:completed_chunks, :integer, default: 0)
-
-    field(:initiated_on, :utc_datetime)
-    field(:started_on, :utc_datetime)
     field(:finished_on, :utc_datetime)
 
     # Embedded schema for job configuration
-    embeds_one(:configuration, JobConfiguration, on_replace: :update)
+    embeds_one(:configuration, JobConfig, on_replace: :update)
+
+    field(:project_title, :string, virtual: true)
+    field(:total_count, :integer, virtual: true)
+    field(:initiator_email, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
 
@@ -55,10 +54,6 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
       :job_type,
       :output_type,
       :status,
-      :total_chunks,
-      :completed_chunks,
-      :initiated_on,
-      :started_on,
       :finished_on
     ])
     |> cast_embed(:configuration, required: true)

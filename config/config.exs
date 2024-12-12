@@ -67,7 +67,7 @@ config :oli,
   log_incomplete_requests: true
 
 config :oli, :dataset_generation,
-  emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+  emr_application_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
   execution_role: System.get_env("EMR_DATASET_EXECUTION_ROLE", "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"),
   entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
   log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
