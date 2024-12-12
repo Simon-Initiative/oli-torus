@@ -80,8 +80,8 @@ defmodule OliWeb.AuthorAuth do
   #
   defp renew_session(conn) do
     # when clearing the session, we want to preserve the following keys
-    # so that the renew doesn't affect an author's session or other data
-    # unrelated to the user session.
+    # so that the renew doesn't affect an user's session or other data
+    # unrelated to the author session.
     preserve_session_data =
       get_session(conn)
       |> Map.take([
