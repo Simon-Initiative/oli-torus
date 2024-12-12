@@ -408,10 +408,9 @@ defmodule OliWeb.ActivityControllerTest do
     assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
 
     conn =
-      Pow.Plug.assign_current_user(
+      log_in_author(
         conn,
-        seeds.author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        seeds.author
       )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}

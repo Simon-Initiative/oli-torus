@@ -11,7 +11,7 @@ defmodule Oli.Utils.Recaptcha do
     {"Accept", "application/json"}
   ]
 
-  @spec verify(String.t()) :: {:success, atom()}
+  @spec verify(String.t()) :: {:success, boolean()}
 
   def verify(""), do: {:success, false}
   def verify(nil), do: {:success, false}

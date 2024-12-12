@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.StudentDashboard.StudentDashboardLiveTest do
       Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fstudent_dashboard%2F#{student.id}%2Fcontent"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_students_dashboard_route(section.slug, student.id))

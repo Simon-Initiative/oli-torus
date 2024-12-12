@@ -5,7 +5,6 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
   alias OliWeb.Sections.Mount
   alias OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore
   alias OliWeb.Sections.GatingAndScheduling.Form
-  alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Gating
 
   def mount(
@@ -26,7 +25,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
             %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
           end
 
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         {:ok,
          GatingConditionStore.init(

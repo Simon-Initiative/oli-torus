@@ -10,6 +10,7 @@ defmodule OliWeb.LaunchController do
   alias Lti_1p3.DataProviders.EctoProvider.Marshaler
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.UserAuth
 
   def join(conn, %{"section_slug" => section_slug}) do
     section = conn.assigns.section
@@ -55,14 +56,14 @@ defmodule OliWeb.LaunchController do
           )
 
           conn
-          |> create_pow_user(:user, user)
+          |> UserAuth.create_session(user)
           |> redirect(to: first_page_url)
         end
       else
         {:redirect, nil} ->
           # guest user cant access courses that require enrollment
           redirect_path =
-            "/session/new?request_path=#{Routes.delivery_path(conn, :show_enroll, conn.assigns.section.slug)}"
+            "/users/log_in?request_path=#{Routes.delivery_path(conn, :show_enroll, conn.assigns.section.slug)}"
 
           conn
           |> put_flash(

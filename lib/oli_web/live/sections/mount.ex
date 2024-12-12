@@ -58,7 +58,7 @@ defmodule OliWeb.Sections.Mount do
   defp ensure_admin(section, author_id) do
     author = Oli.Accounts.get_author!(author_id)
 
-    case Accounts.has_admin_role?(author) do
+    case Accounts.is_admin?(author) do
       true -> {:admin, author, section}
       _ -> {:error, :unauthorized}
     end

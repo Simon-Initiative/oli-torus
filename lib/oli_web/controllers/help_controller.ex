@@ -65,9 +65,7 @@ defmodule OliWeb.HelpController do
         }
       )
 
-    current_user =
-      Pow.Plug.current_user(conn) ||
-        conn.assigns[:current_user]
+    current_user = conn.assigns[:current_user]
 
     if current_user do
       # :TODO: find a way to reliably get roles in both authoring and delivery contexts

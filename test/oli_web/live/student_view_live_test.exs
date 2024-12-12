@@ -17,12 +17,12 @@ defmodule OliWeb.StudentViewLiveTest do
   describe "user cannot access when is not logged in" do
     setup [:section_with_assessment]
 
-    test "redirects to section enroll page when accessing the student view", %{
+    test "redirects to login when accessing the student view", %{
       conn: conn,
       section: section
     } do
       user = insert(:user)
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_student_view_route(section.slug, user.id))
@@ -32,14 +32,14 @@ defmodule OliWeb.StudentViewLiveTest do
   describe "student cannot access when is logged in as an author but is not a system admin" do
     setup [:author_conn, :section_with_assessment]
 
-    test "redirects to enroll page when accessing the student view", %{
+    test "redirects to login when accessing the student view", %{
       conn: conn,
       section: section
     } do
       user = insert(:user)
       conn = get(conn, live_view_student_view_route(section.slug, user.id))
 
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       assert conn
              |> get(live_view_student_view_route(section.slug, user.id))

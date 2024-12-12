@@ -16,11 +16,11 @@ defmodule OliWeb.GradebookViewLiveTest do
   describe "user cannot access when is not logged in" do
     setup [:section_with_assessment]
 
-    test "redirects to enroll page when accessing the gradebook view", %{
+    test "redirects to login page when accessing the gradebook view", %{
       conn: conn,
       section: section
     } do
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_gradebook_view_route(section.slug))
@@ -30,13 +30,13 @@ defmodule OliWeb.GradebookViewLiveTest do
   describe "user cannot access when is logged in as an author but is not a system admin" do
     setup [:author_conn, :section_with_assessment]
 
-    test "redirects to section enroll page when accessing the student view", %{
+    test "redirects to login page when accessing the student view", %{
       conn: conn,
       section: section
     } do
       conn = get(conn, live_view_gradebook_view_route(section.slug))
 
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       assert conn
              |> get(live_view_gradebook_view_route(section.slug))

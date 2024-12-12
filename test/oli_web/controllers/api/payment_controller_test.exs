@@ -146,7 +146,7 @@ defmodule OliWeb.PaymentControllerTest do
 
       enroll_user_to_section(user, enrollable, :context_learner)
 
-      conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = log_in_user(conn, user)
 
       conn =
         conn

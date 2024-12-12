@@ -13,7 +13,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Delivery.Sections.GatingAndScheduling.TableModel
   alias Oli.Delivery.Gating.GatingCondition
-  alias OliWeb.Common.SessionContext
 
   @default_params %{sort_by: "numbering_index", limit: 25}
 
@@ -104,12 +103,12 @@ defmodule OliWeb.Sections.GatingAndScheduling do
         Mount.handle_error(socket, {:error, e})
 
       {user_type, _user, section} ->
-        {:ok, assign_defaults(socket, section, session, parent_gate, title, user_type)}
+        {:ok, assign_defaults(socket, section, parent_gate, title, user_type)}
     end
   end
 
-  def assign_defaults(socket, section, session, parent_gate, title, user_type) do
-    ctx = SessionContext.init(socket, session)
+  def assign_defaults(socket, section, parent_gate, title, user_type) do
+    ctx = socket.assigns.ctx
 
     rows =
       Gating.browse_gating_conditions(
@@ -126,7 +125,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     socket
     |> assign(
       title: title,
-      ctx: ctx,
       section: section,
       breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
       table_model: table_model,

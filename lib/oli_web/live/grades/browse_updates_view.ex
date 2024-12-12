@@ -11,7 +11,6 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
   alias OliWeb.Grades.UpdatesTableModel
-  alias OliWeb.Common.SessionContext
 
   @limit 25
 
@@ -45,7 +44,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         options = default_options(section)
 

@@ -12,7 +12,7 @@ defmodule OliWeb.History.RevisionHistoryTest do
   end
 
   defp create_project(_conn) do
-    author = insert(:author)
+    author = author_fixture()
     project = insert(:project, %{authors: [author]})
 
     # revisions...
@@ -183,32 +183,28 @@ defmodule OliWeb.History.RevisionHistoryTest do
       project: project,
       container_revision: container_revision
     } do
-      redirect_path =
-        "/authoring/session/new?request_path=%2Fproject%2F#{project.slug}%2Fhistory%2Fslug%2F#{container_revision.slug}"
-
-      {:error, {:redirect, %{to: ^redirect_path}}} =
+      {:error, {:redirect, %{to: redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
+
+      assert redirect_path == "/authors/log_in"
     end
   end
 
   describe "user cannot access when logged in" do
     setup [:create_project]
 
-    test "as an author that is not a collaborator of that project", %{
+    test "as an author that is not a content admin", %{
       conn: conn,
       project: project,
       container_revision: container_revision
     } do
-      author = insert(:author)
+      %{conn: conn} = register_and_log_in_author(%{conn: conn})
 
-      conn =
-        Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-
-      {:error, {:redirect, %{flash: %{"info" => flash_message}, to: redirect_path}}} =
+      {:error, {:redirect, %{flash: %{"error" => flash_message}, to: redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
 
       assert redirect_path == "/workspaces/course_author"
-      assert flash_message == "You don't have access to that project"
+      assert flash_message == "You must be a content admin to access this page."
     end
 
     test "as an author that is a collaborator of that project", %{
@@ -217,15 +213,13 @@ defmodule OliWeb.History.RevisionHistoryTest do
       container_revision: container_revision,
       author: author_project_creator
     } do
-      conn =
-        Pow.Plug.assign_current_user(
-          conn,
-          author_project_creator,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
-        |> get(revision_history_route(project.slug, container_revision.slug))
+      conn = log_in_author(conn, author_project_creator)
 
-      assert response(conn, 403)
+      {:error, {:redirect, %{flash: %{"error" => flash_message}, to: redirect_path}}} =
+        live(conn, revision_history_route(project.slug, container_revision.slug))
+
+      assert redirect_path == "/workspaces/course_author"
+      assert flash_message == "You must be a content admin to access this page."
     end
 
     test "as an user", %{
@@ -236,12 +230,8 @@ defmodule OliWeb.History.RevisionHistoryTest do
       user = insert(:user)
 
       conn =
-        Pow.Plug.assign_current_user(
-          conn,
-          user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
-        )
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        conn
+        |> log_in_user(user)
         |> get(revision_history_route(project.slug, container_revision.slug))
 
       assert response(conn, 302)

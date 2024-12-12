@@ -2,10 +2,11 @@ defmodule OliWeb.InviteController do
   use OliWeb, :controller
 
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.{Email, Mailer}
 
-  @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
     render_invite_page(conn, "index.html", title: "Invite")
   end
@@ -30,7 +31,7 @@ defmodule OliWeb.InviteController do
         "section_slug" => section_slug,
         "inviter" => inviter
       }) do
-    existing_users = Oli.Accounts.get_users_by_email(emails)
+    existing_users = Accounts.get_users_by_email(emails)
     non_found_users = emails -- Enum.map(existing_users, & &1.email)
     section = Sections.get_section_by_slug(section_slug)
 
@@ -38,8 +39,9 @@ defmodule OliWeb.InviteController do
       if inviter == "author", do: conn.assigns.current_author, else: conn.assigns.current_user
 
     # Enroll users
-    Oli.Repo.transaction(fn ->
-      {_count, new_users} = Oli.Accounts.bulk_invite_users(non_found_users, inviter_struct)
+    Repo.transaction(fn ->
+      {_count, new_users} =
+        Accounts.bulk_create_invited_users(non_found_users, inviter_struct)
 
       users_ids = Enum.map(new_users ++ existing_users, & &1.id)
       do_section_enrollment(users_ids, section, role)
@@ -54,20 +56,25 @@ defmodule OliWeb.InviteController do
           case user.status do
             :new_user ->
               {"Join now",
-               ~p"/registration/new?#{[section: section.slug, from_invitation_link?: true]}"}
+               ~p"/users/register?#{[section: section.slug, from_invitation_link?: true]}"}
 
             :existing_user ->
               {"Go to the course", ~p"/sections/#{section.slug}?#{[from_invitation_link?: true]}"}
           end
 
-        Oli.Email.invitation_email(user.email, :enrollment_invitation, %{
-          inviter: inviter_struct.name,
-          url: Routes.url(conn) <> url,
-          role: role,
-          section_title: section.title,
-          button_label: button_label
-        })
-        |> Oli.Mailer.deliver_now()
+        Email.create_email(
+          user.email,
+          "You were invited as #{if role == "instructor", do: "an instructor", else: "a student"} to \"#{section.title}\"",
+          :enrollment_invitation,
+          %{
+            inviter: inviter_struct.name,
+            url: url,
+            role: role,
+            section_title: section.title,
+            button_label: button_label
+          }
+        )
+        |> Mailer.deliver()
       end)
     end)
 
@@ -103,7 +110,7 @@ defmodule OliWeb.InviteController do
   end
 
   defp invite_author(conn, email) do
-    with {:ok, author} <- get_or_invite_author(conn, email),
+    with {:ok, author} <- get_or_create_invited_author(conn, email),
          {:ok, _mail} <- deliver_invitation_email(conn, author) do
       conn
       |> put_flash(:info, "Author invitation sent successfully.")
@@ -116,11 +123,11 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  defp get_or_invite_author(conn, email) do
+  defp get_or_create_invited_author(conn, email) do
     Accounts.get_author_by_email(email)
     |> case do
       nil ->
-        case PowInvitation.Plug.create_user(conn, %{email: email}) do
+        case create_user(conn, %{email: email}) do
           {:ok, user, _conn} -> {:ok, user}
           {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
         end
@@ -134,25 +141,13 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  defp deliver_invitation_email(conn, user) do
-    invited_by = Pow.Plug.current_user(conn)
-    token = PowInvitation.Plug.sign_invitation_token(conn, user)
-    url = Routes.pow_invitation_invitation_path(conn, :edit, token)
+  defp deliver_invitation_email(_conn, _user) do
+    # TODO: MER-4068
+    throw("NOT IMPLEMENTED")
+  end
 
-    invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
-
-    email =
-      Oli.Email.invitation_email(
-        user.email,
-        :author_invitation,
-        %{
-          invited_by: invited_by,
-          invited_by_user_id: invited_by_user_id,
-          url: Routes.url(conn) <> url
-        }
-      )
-
-    Oli.Mailer.deliver_now(email)
-    {:ok, "email sent"}
+  defp create_user(_conn, _params) do
+    # TODO: MER-4068
+    throw("NOT IMPLEMENTED")
   end
 end

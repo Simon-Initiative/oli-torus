@@ -166,10 +166,15 @@ defmodule OliWeb.CollaborationLiveTest do
       project: project,
       page_revision: page_revision
     } do
-      assert conn
-             |> get(live_view_author_edit(project.slug, page_revision.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fresource%2F#{page_revision.slug}\">redirected</a>"
+      conn =
+        conn
+        |> get(live_view_author_edit(project.slug, page_revision.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) ==
+               "/authoring/project/#{project.slug}/resource/#{page_revision.slug}"
     end
 
     test "returns forbidden when accessing the instructor preview page view", %{
@@ -186,10 +191,15 @@ defmodule OliWeb.CollaborationLiveTest do
       conn: conn,
       section: section
     } do
-      assert conn
-             |> get(live_view_collab_space_index(section.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fsections%2F#{section.slug}%2Fcollaborative_spaces&amp;section=#{section.slug}\">redirected"
+      conn =
+        conn
+        |> get(live_view_collab_space_index(section.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/users/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :user_return_to) ==
+               "/sections/#{section.slug}/collaborative_spaces"
     end
 
     test "redirects to new session when accessing the student collab space page view", %{
@@ -197,10 +207,15 @@ defmodule OliWeb.CollaborationLiveTest do
       section: section,
       page_revision: page_revision
     } do
-      assert conn
-             |> get(live_view_student_page(section.slug, page_revision.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/?request_path=%2Fsections%2F#{section.slug}%2Fpage%2F#{page_revision.slug}&amp;section=#{section.slug}\">redirected"
+      conn =
+        conn
+        |> get(live_view_student_page(section.slug, page_revision.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/users/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :user_return_to) ==
+               "/sections/#{section.slug}/page/#{page_revision.slug}"
     end
   end
 
@@ -212,10 +227,15 @@ defmodule OliWeb.CollaborationLiveTest do
       project: project,
       page_revision: page_revision
     } do
-      assert conn
-             |> get(live_view_author_edit(project.slug, page_revision.slug))
-             |> html_response(302) =~
-               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fresource%2F#{page_revision.slug}\">redirected</a>"
+      conn =
+        conn
+        |> get(live_view_author_edit(project.slug, page_revision.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/authors/log_in\">redirected</a>"
+
+      assert Plug.Conn.get_session(conn, :author_return_to) ==
+               "/authoring/project/#{project.slug}/resource/#{page_revision.slug}"
     end
 
     test "redirects to page when accessing the instructor preview page view", %{
@@ -269,7 +289,7 @@ defmodule OliWeb.CollaborationLiveTest do
     } do
       conn =
         conn
-        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> log_in_author(author)
         |> get(live_view_author_edit(project.slug, page_revision.slug))
 
       assert html_response(conn, 200) =~

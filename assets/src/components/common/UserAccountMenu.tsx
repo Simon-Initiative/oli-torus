@@ -137,7 +137,7 @@ export const UserAccountMenu = ({
             <DropdownItem>
               <div className="py-1">
                 Dark Mode
-                <DarkModeSelector showLabels={false} />
+                <DarkModeSelector />
               </div>
             </DropdownItem>
 

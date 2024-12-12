@@ -52,7 +52,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
       student = insert(:user)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fstudent_dashboard%2F#{student.id}%2Factions"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(
@@ -146,12 +146,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       assert_redirected(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :manage
-        )
+        ~p"/sections/#{section.slug}/manage"
       )
 
       assert Enrollment
@@ -190,12 +185,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.ActionsTabTest do
 
       assert_redirected(
         view,
-        Routes.live_path(
-          OliWeb.Endpoint,
-          OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-          section.slug,
-          :manage
-        )
+        ~p"/sections/#{section.slug}/manage"
       )
 
       assert Enrollment

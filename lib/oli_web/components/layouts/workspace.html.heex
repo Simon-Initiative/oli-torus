@@ -14,7 +14,7 @@
         <Components.Delivery.UserAccount.workspace_menu
           id="workspace-user-menu"
           ctx={@ctx}
-          has_admin_role={@has_admin_role}
+          is_admin={@is_admin}
           active_workspace={@active_workspace}
         />
       </div>
@@ -23,7 +23,7 @@
       <Components.Delivery.Layouts.workspace_sidebar_nav
         :if={!@disable_sidebar?}
         ctx={@ctx}
-        is_system_admin={assigns[:is_system_admin] || false}
+        is_admin={@is_admin}
         active_workspace={assigns[:active_workspace] || :student}
         active_view={assigns[:active_view]}
         preview_mode={@preview_mode}
@@ -37,7 +37,7 @@
         :if={@disable_sidebar?}
         ctx={@ctx}
         include_logo
-        is_system_admin={assigns[:is_system_admin] || false}
+        is_admin={@is_admin}
         preview_mode={@preview_mode}
         sidebar_expanded={@sidebar_expanded}
       />

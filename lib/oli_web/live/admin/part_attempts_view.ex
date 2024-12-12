@@ -4,6 +4,9 @@ defmodule OliWeb.Admin.PartAttemptsView do
   alias Oli.Delivery.Attempts.PartAttemptCleaner
   alias Phoenix.PubSub
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(_, _, socket) do
     status = PartAttemptCleaner.status()
 

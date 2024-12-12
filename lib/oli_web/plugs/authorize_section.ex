@@ -8,7 +8,7 @@ defmodule Oli.Plugs.AuthorizeSection do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if Accounts.has_admin_role?(conn.assigns[:current_author]) or is_instructor?(conn) do
+    if Accounts.is_admin?(conn.assigns[:current_author]) or is_instructor?(conn) do
       conn
     else
       conn

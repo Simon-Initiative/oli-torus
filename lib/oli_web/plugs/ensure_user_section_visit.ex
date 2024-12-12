@@ -12,14 +12,14 @@ defmodule Oli.Plugs.EnsureUserSectionVisit do
   def call(conn, _opts) do
     user = conn.assigns[:current_user]
     section = conn.assigns[:section]
-    is_system_admin = conn.assigns[:is_system_admin]
+    is_admin = conn.assigns[:is_admin]
 
     cond do
-      is_system_admin ->
+      is_admin ->
         conn
 
       !has_visited_section_key(conn) ->
-        if Sections.is_enrolled?(user.id, section.slug) do
+        if user && Sections.is_enrolled?(user.id, section.slug) do
           if Sections.has_instructor_role?(user, section.slug) do
             visited_sections =
               Map.get(get_session(conn), @visited_sections_key, %{})

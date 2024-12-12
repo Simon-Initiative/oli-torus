@@ -15,7 +15,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
        {:redirect,
         %{
           flash: %{},
-          to: "/workspaces/course_author"
+          to: "/authors/log_in"
         }}} = live(conn, live_view_route("project-slug"))
     end
   end

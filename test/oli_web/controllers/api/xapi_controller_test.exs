@@ -32,15 +32,13 @@ defmodule OliWeb.XAPIControllerTest do
 
       # Here we are using user2, but the attempt is for user1.  User2 isn't
       # enrolled in the section, so this should fail.
-      lti_params_id =
-        Oli.Lti.TestHelpers.all_default_claims()
-        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
-        |> cache_lti_params(map.user2.id)
+      Oli.Lti.TestHelpers.all_default_claims()
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
+      |> cache_lti_params(map.user2.id)
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(map.user2, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+        |> log_in_user(map.user2)
 
       conn = post(conn, Routes.xapi_path(conn, :emit), %{"event" => event, "key" => key})
       assert %{"result" => "failure"} = json_response(conn, 200)
@@ -281,15 +279,13 @@ defmodule OliWeb.XAPIControllerTest do
         Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
       ])
 
-      lti_params_id =
-        Oli.Lti.TestHelpers.all_default_claims()
-        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
-        |> cache_lti_params(user.id)
+      Oli.Lti.TestHelpers.all_default_claims()
+      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
+      |> cache_lti_params(user.id)
 
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-        |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+        |> log_in_user(user)
 
       {:ok, conn: conn, map: map}
     end

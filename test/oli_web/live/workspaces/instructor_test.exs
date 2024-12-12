@@ -9,65 +9,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
   alias Oli.Accounts
   alias Oli.Delivery.Sections
 
-  describe "user not signed in" do
-    test "can access page", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-
-      assert has_element?(view, "span", "Welcome to")
-      assert has_element?(view, "span", "OLI Torus")
-    end
-
-    test "can signin and get redirected back to the instructor workspace", %{conn: conn} do
-      expect_recaptcha_http_post()
-
-      # create an instructor account
-      post(
-        conn,
-        Routes.pow_registration_path(conn, :create),
-        %{
-          user: %{
-            email: "my_instructor@test.com",
-            email_confirmation: "my_instructor@test.com",
-            given_name: "me",
-            family_name: "too",
-            password: "some_password",
-            password_confirmation: "some_password",
-            can_create_sections: true
-          },
-          "g-recaptcha-response": "any"
-        }
-      )
-
-      # access without being singed in
-      conn = Phoenix.ConnTest.build_conn()
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-
-      assert has_element?(view, "div", "Instructor Sign In")
-
-      # we sign in and get redirected back to the instructor workspace
-      conn =
-        conn
-        |> post(
-          Routes.session_path(conn, :signin,
-            type: :user,
-            after_sign_in_target: :instructor_workspace
-          ),
-          user: %{email: "my_instructor@test.com", password: "some_password"}
-        )
-
-      assert conn.assigns.current_user.email == "my_instructor@test.com"
-      assert redirected_to(conn) == ~p"/workspaces/instructor"
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-
-      # instructor is signed in
-      refute has_element?(view, "div", "Instructor Sign In")
-      assert has_element?(view, "h1", "Instructor Dashboard")
-      assert has_element?(view, "p", "You are not enrolled in any courses as an instructor.")
-    end
-  end
-
   describe "user logged in as student" do
     setup [:user_conn]
 
@@ -109,7 +50,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert has_element?(
                view,
-               ~s{a[href="/sections/#{section.slug}/instructor_dashboard/manage?sidebar_expanded=true"]}
+               ~s{a[href="/sections/#{section.slug}/manage?sidebar_expanded=true"]}
              )
     end
 
@@ -375,41 +316,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
 
       assert_redirect(view, "/workspaces/student?sidebar_expanded=false")
     end
-
-    test "can signout from student account and return to instructor workspace (and author account stays signed in)",
-         %{conn: conn} do
-      author = insert(:author, email: "author_account@test.com")
-
-      conn =
-        Pow.Plug.assign_current_user(
-          conn,
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-      assert conn.assigns.current_author
-      assert conn.assigns.current_user
-      refute has_element?(view, "div", "Instructor Sign In")
-
-      view
-      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/course/signout?type=user&target=%2Fworkspaces%2Finstructor"
-      )
-
-      conn = delete(conn, "/course/signout?type=user&target=%2Fworkspaces%2Finstructor")
-
-      assert redirected_to(conn) == ~p"/workspaces/instructor"
-      assert conn.assigns.current_author
-      refute conn.assigns.current_user
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-      assert has_element?(view, "div", "Instructor Sign In")
-    end
   end
 
   describe "user as instructor" do
@@ -452,41 +358,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
                "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
                author.email
              )
-    end
-
-    test "can signout from instructor account and return to instructor workspace (and author account stays signed in)",
-         %{conn: conn} do
-      author = insert(:author, email: "author_account@test.com")
-
-      conn =
-        Pow.Plug.assign_current_user(
-          conn,
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-      assert conn.assigns.current_author
-      assert conn.assigns.current_user
-      refute has_element?(view, "div", "Instructor Sign In")
-
-      view
-      |> element("div[id='workspace-user-menu-dropdown'] a", "Sign out")
-      |> render_click()
-
-      assert_redirected(
-        view,
-        "/course/signout?type=user&target=%2Fworkspaces%2Finstructor"
-      )
-
-      conn = delete(conn, "/course/signout?type=user&target=%2Fworkspaces%2Finstructor")
-
-      assert redirected_to(conn) == ~p"/workspaces/instructor"
-      assert conn.assigns.current_author
-      refute conn.assigns.current_user
-
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-      assert has_element?(view, "div", "Instructor Sign In")
     end
   end
 

@@ -1,15 +1,15 @@
 defmodule Oli.Utils.Seeder.Session do
   import Oli.Utils.Seeder.Utils
 
+  alias Oli.TestHelpers
+
   @doc """
   Creates an author session
   """
   def login_as_author(%{conn: conn} = seeds, author, _tags \\ []) do
     [author] = unpack(seeds, [author])
 
-    conn =
-      Plug.Test.init_test_session(conn, %{})
-      |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    conn = TestHelpers.log_in_author(conn, author)
 
     %{seeds | conn: conn}
   end
@@ -20,9 +20,7 @@ defmodule Oli.Utils.Seeder.Session do
   def login_as_user(%{conn: conn} = seeds, user, _tags \\ []) do
     [user] = unpack(seeds, [user])
 
-    conn =
-      Plug.Test.init_test_session(conn, %{})
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+    conn = TestHelpers.log_in_user(conn, user)
 
     %{seeds | conn: conn}
   end

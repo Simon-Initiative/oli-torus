@@ -1,3 +1,13 @@
 defmodule Oli.Mailer do
-  use Bamboo.Mailer, otp_app: :oli
+  use Swoosh.Mailer, otp_app: :oli
+
+  alias Oli.Mailer.SendEmailWorker
+
+  def deliver_later(email) do
+    %{email: SendEmailWorker.serialize_email(email)}
+    |> SendEmailWorker.new()
+    |> Oban.insert()
+
+    {:ok, email}
+  end
 end

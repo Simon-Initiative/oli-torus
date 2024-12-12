@@ -24,7 +24,10 @@ defmodule OliWeb.Workspaces.Student do
     Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
   ]
 
-  def mount(_params, _session, %{assigns: %{has_admin_role: true}} = socket) do
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  def mount(_params, _session, %{assigns: %{is_admin: true}} = socket) do
     # admin case...
     {:ok, assign(socket, active_workspace: :student)}
   end
@@ -51,15 +54,8 @@ defmodule OliWeb.Workspaces.Student do
   def mount(_params, _session, socket) do
     # no current user case...
 
-    app_conf = %{phoenix_router: OliWeb.Router, phoenix_endpoint: OliWeb.Endpoint, otp_app: :oli}
-    secret_key_base = Application.get_env(:oli, OliWeb.Endpoint)[:secret_key_base]
-
-    provider_links =
-      %Plug.Conn{}
-      |> Map.replace(:private, app_conf)
-      |> Map.replace(:secret_key_base, secret_key_base)
-      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-      |> OliWeb.Pow.PowHelpers.provider_links()
+    authentication_providers =
+      Oli.AssentAuth.UserAssentAuth.authentication_providers() |> Keyword.keys()
 
     {:ok,
      assign(socket,
@@ -67,7 +63,7 @@ defmodule OliWeb.Workspaces.Student do
        active_workspace: :student,
        header_enabled?: false,
        footer_enabled?: false,
-       provider_links: provider_links
+       authentication_providers: authentication_providers
      )}
   end
 
@@ -88,7 +84,7 @@ defmodule OliWeb.Workspaces.Student do
 
   @impl Phoenix.LiveView
 
-  def render(%{has_admin_role: true} = assigns) do
+  def render(%{is_admin: true} = assigns) do
     ~H"""
     <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
@@ -146,72 +142,14 @@ defmodule OliWeb.Workspaces.Student do
           </div>
         </div>
         <div class="lg:w-1/2 flex items-center justify-center">
-          <div class="w-[360px] lg:w-96 bg-neutral-700 rounded-md">
-            <div class="text-center text-white text-xl font-normal font-['Open Sans'] leading-7 py-8">
-              Student Sign In
-            </div>
-            <%= for link <- @provider_links, do: raw(link) %>
-            <div
-              :if={@provider_links != []}
-              class="my-4 text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
-            >
-              OR
-            </div>
-            <%= form_for :user, Routes.session_path(@socket, :signin, type: :user, after_sign_in_target: :student_workspace), [as: :user], fn f -> %>
-              <div class="flex flex-col gap-y-2">
-                <div class="w-80 h-11 m-auto form-label-group border-none">
-                  <%= email_input(f, Pow.Ecto.Schema.user_id_field(@socket),
-                    class:
-                      "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
-                    placeholder: "Email",
-                    required: true,
-                    autofocus: true
-                  ) %>
-                  <%= error_tag(f, Pow.Ecto.Schema.user_id_field(@socket)) %>
-                </div>
-                <div class="w-80 h-11 m-auto form-label-group border-none">
-                  <%= password_input(f, :password,
-                    class:
-                      "form-control placeholder:text-zinc-300 !pl-6 h-11 !bg-stone-900 !rounded-md !border !border-zinc-300 !text-zinc-300 text-base font-normal font-['Open Sans'] leading-snug",
-                    placeholder: "Password",
-                    required: true
-                  ) %>
-                  <%= error_tag(f, :password) %>
-                </div>
-              </div>
-              <div class="mb-4 d-flex flex-row justify-between px-8 pb-2 pt-6">
-                <%= unless Application.fetch_env!(:oli, :always_use_persistent_login_sessions) do %>
-                  <div class="flex items-center gap-x-2 custom-control custom-checkbox">
-                    <%= checkbox(f, :persistent_session,
-                      class: "w-4 h-4 !border !border-white",
-                      style: "background-color: #171717"
-                    ) %>
-                    <%= label(f, :persistent_session, "Remember me",
-                      class:
-                        "text-center text-white text-base font-normal font-['Open Sans'] leading-snug"
-                    ) %>
-                  </div>
-                <% else %>
-                  <div></div>
-                <% end %>
-                <div class="custom-control">
-                  <%= link("Forgot password?",
-                    to: Routes.pow_reset_password_reset_password_path(@socket, :new),
-                    tabindex: "1",
-                    class:
-                      "text-center text-[#4ca6ff] text-base font-bold font-['Open Sans'] leading-snug"
-                  ) %>
-                </div>
-              </div>
-
-              <div class="flex justify-center">
-                <%= submit("Sign In",
-                  class:
-                    "w-80 h-11 bg-[#0062f2] mx-auto text-white text-xl font-normal leading-7 rounded-md btn btn-md btn-block mb-16 mt-2"
-                ) %>
-              </div>
-            <% end %>
-          </div>
+          <Components.Auth.login_form
+            title="Student Sign In"
+            form={to_form(%{}, as: "user")}
+            action={~p"/users/log_in"}
+            reset_password_link={~p"/users/reset_password"}
+            authentication_providers={@authentication_providers}
+            auth_provider_path_fn={&~p"/users/auth/#{&1}/new"}
+          />
         </div>
       </div>
     </div>

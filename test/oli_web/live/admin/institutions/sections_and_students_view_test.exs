@@ -195,11 +195,8 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
     setup [:create_project]
 
     test "is redirected to new session when not logged in", %{conn: conn, section_1: section_1} do
-      {:error, {:redirect, %{to: url}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, live_view_sections_and_students_live(section_1.institution_id, :sections))
-
-      assert url ==
-               "/authoring/session/new?request_path=%2Fadmin%2Finstitutions%2F#{section_1.institution_id}%2Fsections_and_students%2Fsections"
     end
   end
 
@@ -208,7 +205,7 @@ defmodule OliWeb.Admin.Institutions.SectionsAndStudentsViewTest do
 
     test "cannot access page", %{conn: conn, section_1: section_1} do
       redirect_path =
-        "/authoring/session/new?request_path=%2Fadmin%2Finstitutions%2F#{section_1.institution_id}%2Fsections_and_students%2Fsections"
+        "/authors/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(

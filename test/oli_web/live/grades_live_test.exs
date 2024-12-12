@@ -64,7 +64,7 @@ defmodule OliWeb.GradesLiveTest do
       section: %Section{slug: section_slug}
     } do
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fgrades%2Flms&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_grades_route(section_slug))
@@ -79,7 +79,7 @@ defmodule OliWeb.GradesLiveTest do
       section: %Section{slug: section_slug}
     } do
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fgrades%2Flms&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_grades_route(section_slug))

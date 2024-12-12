@@ -2,6 +2,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   use OliWeb.ConnCase
   alias OliWeb.Api.AutomationSetupController
   alias Oli.Resources.Revision
+  alias Oli.Accounts
   alias Oli.Repo
   alias Oli.Resources.Resource
   import Oli.Utils
@@ -117,12 +118,9 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
         "section_deleted" => %{"success" => true}
       } = response
 
-      user_config = OliWeb.Pow.PowHelpers.get_pow_config(:user)
-      author_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
-
-      refute Pow.Operations.get_by([{:email, author_email}], author_config)
-      refute Pow.Operations.get_by([{:email, learner_email}], user_config)
-      refute Pow.Operations.get_by([{:email, educator_email}], user_config)
+      refute Accounts.get_author_by_email(author_email)
+      refute Accounts.get_author_by_email(author_email)
+      refute Accounts.get_independent_user_by_email(educator_email)
 
       refute Oli.Authoring.Course.get_project_by_slug(project_slug)
 
@@ -195,14 +193,18 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   end
 
   defp validate_user(email, password, user_type) do
-    config = OliWeb.Pow.PowHelpers.get_pow_config(user_type)
+    get_by =
+      case user_type do
+        :author -> &Accounts.get_author_by_email/1
+        :user -> &Accounts.get_independent_user_by_email/1
+      end
 
-    case Pow.Operations.get_by([{:email, email}], config) do
+    case get_by.(email) do
       nil ->
         {:error, "User not found"}
 
       user ->
-        case user.__struct__.verify_password(user, password) do
+        case user.__struct__.valid_password?(user, password) do
           true -> {:ok, user}
           false -> {:error, "Credentials didn't match"}
         end

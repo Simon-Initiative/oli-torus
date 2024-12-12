@@ -13,15 +13,19 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Projects.{CreateProjectModal, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   @limit 25
 
-  def mount(_, %{"current_author_id" => _} = session, socket) do
-    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
-    is_admin = Accounts.has_admin_role?(author)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  def mount(_, _session, socket) do
+    author = socket.assigns.current_author
+    ctx = socket.assigns.ctx
+    is_admin = Accounts.has_admin_role?(author, :content_admin)
 
     show_all =
       if is_admin,
@@ -46,7 +50,6 @@ defmodule OliWeb.Projects.ProjectsLive do
     {:ok,
      assign(
        socket,
-       ctx: ctx,
        author: author,
        projects: projects,
        table_model: table_model,

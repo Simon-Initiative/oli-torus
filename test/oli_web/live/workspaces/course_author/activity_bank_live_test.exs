@@ -15,16 +15,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       conn: conn,
       project: project
     } do
-      {:error, {:redirect, %{to: redirect_path, flash: %{"error" => error_msg}}}} =
+      {:error, {:redirect, %{to: redirect_path, flash: %{"error" => _error_msg}}}} =
         live(conn, live_view_route(project.slug))
 
-      assert redirect_path == "/workspaces/course_author"
-      assert error_msg == "You must be logged in to access that project"
-
-      {:ok, _view, html} = live(conn, redirect_path)
-
-      assert html =~
-               "<span class=\"text-white font-normal font-[&#39;Open Sans&#39;] leading-10\">\n            Welcome to\n          </span><span class=\"text-white font-bold font-[&#39;Open Sans&#39;] leading-10\">\n            OLI Torus\n          </span>"
+      assert redirect_path == "/authors/log_in"
     end
   end
 

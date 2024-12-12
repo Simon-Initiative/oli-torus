@@ -12,6 +12,9 @@ defmodule OliWeb.Admin.IngestV2 do
   alias OliWeb.Admin.Ingest.ErrorsTableModel
   import OliWeb.DelegatedEvents
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   defp ingest_file(author) do
     "_digests/#{author.id}-digest.zip"
   end

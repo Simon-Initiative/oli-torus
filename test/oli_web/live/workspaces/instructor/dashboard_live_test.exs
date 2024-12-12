@@ -10,9 +10,9 @@ defmodule OliWeb.Workspaces.Instructor.DashboardLiveTest do
   describe "instructor dashboard" do
     setup [:instructor_conn]
 
-    test "renders sub-menu and exit section button", %{conn: conn} do
+    test "renders sub-menu and exit section button", %{conn: conn, instructor: instructor} do
       section = insert(:section, %{open_and_free: true})
-      user_id = conn.assigns.current_user.id
+      user_id = instructor.id
 
       Sections.enroll(user_id, section.id, [ContextRoles.get_role(:context_instructor)])
 
