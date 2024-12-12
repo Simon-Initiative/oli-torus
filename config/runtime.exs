@@ -198,8 +198,6 @@ if config_env() == :prod do
     node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
-    always_use_persistent_login_sessions:
-      get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
   config :oli, :xapi_upload_pipeline,
