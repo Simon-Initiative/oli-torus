@@ -154,13 +154,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     page_5_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 5"
+        title: "Page 5",
+        duration_minutes: 0
       )
 
     page_6_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 6"
+        title: "Page 6",
+        duration_minutes: 0
       )
 
     page_7_revision =
@@ -2010,6 +2012,38 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       refute render(view) =~ "Page 7"
+    end
+
+    test "modules do not show duration minutes if duration is 0", %{
+      conn: conn,
+      section: section,
+      module_3: module_3,
+      page_5: page_5,
+      page_6: page_6
+    } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[id="module_#{module_3.resource_id}"]})
+      |> render_click()
+
+      # assert that page 5 and page 6 have duration 0
+      assert page_5.duration_minutes == 0
+      assert page_6.duration_minutes == 0
+
+      # assert that module 3 contains 2 pages (page 5 and page 6)
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
+               "2 pages"
+             )
+
+      # assert that module 3 does not show duration minutes (since it is 0)
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
+               "0 minutes"
+             )
     end
   end
 
