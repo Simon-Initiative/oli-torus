@@ -344,9 +344,6 @@ if config_env() == :prod do
       ]
   end
 
-  # Configure Mnesia directory (used by pow persistent sessions)
-  config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
-
   truncate =
     System.get_env("LOGGER_TRUNCATE", "8192")
     |> String.downcase()

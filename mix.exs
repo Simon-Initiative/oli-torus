@@ -110,7 +110,7 @@ defmodule Oli.MixProject do
   def application do
     [
       mod: {Oli.Application, []},
-      extra_applications: [:logger, :crypto, :public_key, :mnesia, :runtime_tools, :os_mon]
+      extra_applications: [:logger, :crypto, :public_key, :runtime_tools, :os_mon]
     ]
   end
 
