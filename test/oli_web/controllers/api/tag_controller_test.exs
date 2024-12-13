@@ -3,11 +3,6 @@ defmodule OliWeb.TagControllerTest do
 
   alias Oli.Seeder
 
-  defp again(conn, user) do
-    recycle(conn)
-    |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-  end
-
   describe "tag endpoint" do
     setup [:setup_session]
 
@@ -27,8 +22,7 @@ defmodule OliWeb.TagControllerTest do
 
     test "can create a tag", %{
       conn: conn,
-      project: project,
-      author: user
+      project: project
     } do
       conn =
         post(
@@ -39,8 +33,6 @@ defmodule OliWeb.TagControllerTest do
 
       assert %{"result" => "success", "tag" => %{"title" => "my new tag", "id" => _}} =
                json_response(conn, 200)
-
-      conn = again(conn, user)
 
       conn =
         get(
@@ -73,7 +65,7 @@ defmodule OliWeb.TagControllerTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      |> log_in_author(map.author)
 
     {:ok, conn: conn, map: map, author: map.author, project: map.project}
   end

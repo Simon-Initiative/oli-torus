@@ -1,9 +1,7 @@
 defmodule OliWeb.DeploymentControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Repo
   alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Author
   alias Oli.Institutions
 
   @create_attrs %{deployment_id: "some deployment_id", registration_id: 1}
@@ -53,7 +51,7 @@ defmodule OliWeb.DeploymentControllerTest do
       # validate the new deployment exists on the institution details page
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
       assert html_response(conn, 200) =~ "some deployment_id"
@@ -127,7 +125,7 @@ defmodule OliWeb.DeploymentControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
       assert html_response(conn, 200) =~ "some updated deployment_id"
@@ -182,15 +180,14 @@ defmodule OliWeb.DeploymentControllerTest do
   end
 
   defp create_fixtures(%{conn: conn}) do
-    {:ok, admin} =
-      Author.noauth_changeset(%Author{}, %{
+    admin =
+      author_fixture(%{
         email: "test@test.com",
         given_name: "First",
         family_name: "Last",
         provider: "foo",
         system_role_id: SystemRole.role_id().system_admin
       })
-      |> Repo.insert()
 
     jwk = jwk_fixture()
     institution = institution_fixture()
@@ -202,8 +199,7 @@ defmodule OliWeb.DeploymentControllerTest do
     # sign admin author in
     conn =
       conn
-      |> Pow.Plug.assign_current_user(admin, get_pow_config(:author))
-      |> use_pow_config(:author)
+      |> log_in_author(admin)
 
     %{
       conn: conn,

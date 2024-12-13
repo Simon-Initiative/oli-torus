@@ -1,22 +1,28 @@
 import React, { CSSProperties, useEffect } from 'react';
+import { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/scrollbar';
+import 'swiper/css/zoom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { AuthorPartComponentProps } from 'components/parts/types/parts';
+import './Carousel.css';
 import { CarouselModel } from './schema';
 
 const CarouselAuthor: React.FC<AuthorPartComponentProps<CarouselModel>> = (props) => {
   const { model } = props;
-
-  const { z = 0, width, height, fontSize = 16, images } = model;
+  const { z = 0, width, height, fontSize = 16, images, zoom: carouselZoom } = model;
   const styles: CSSProperties = {
     fontSize: `${fontSize}px`,
     zIndex: z,
     overflow: 'hidden',
     display: 'flex',
   };
-
+  const MAGIC_NUMBER = 75;
   const imgStyles: CSSProperties = {
-    maxWidth: `calc(${width}px - ${64}px)`,
-    maxHeight: `calc(${height}px - ${32}px)`,
+    maxWidth: `calc(${width}px - ${MAGIC_NUMBER}px)`,
+    maxHeight: `calc(${height} - ${MAGIC_NUMBER}px)`,
   };
 
   useEffect(() => {
@@ -31,13 +37,13 @@ const CarouselAuthor: React.FC<AuthorPartComponentProps<CarouselModel>> = (props
     <div data-janus-type={tagName} className={`janus-image-carousel`} style={styles}>
       {images.length > 0 && (
         <Swiper
-          loop
-          navigation
+          modules={[Navigation, Pagination, A11y, Keyboard, Zoom]}
           slidesPerView={1}
-          zoom={{ maxRatio: 3 }}
+          loop={true}
+          navigation={true}
+          zoom={carouselZoom ? { maxRatio: 3 } : false}
           keyboard={{ enabled: true }}
           pagination={{ clickable: true }}
-          enabled={false}
         >
           {images.map((image: any, index: number) => (
             <SwiperSlide key={index} zoom={true}>

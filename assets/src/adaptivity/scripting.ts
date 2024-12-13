@@ -343,6 +343,21 @@ export const getAssignStatements = (
   return letStatements;
 };
 
+export const setVariableWithTypeAssignStatements = (
+  state: Record<string, any>,
+  partId: string,
+): void => {
+  const variableWithTypeAssignStatements = Object.keys(state).reduce((collect: any, key) => {
+    const value = state[key];
+    collect[key] = { type: value?.type || 0, allowedValues: value?.allowedValues || null };
+    return collect;
+  }, {});
+  const myQuery = `let {stage.${partId}.variables.Type} = ${JSON.stringify(
+    variableWithTypeAssignStatements,
+  )};`;
+  evalScript(myQuery, defaultGlobalEnv);
+};
+
 export const getAssignScript = (
   state: Record<string, any>,
   env: Environment = defaultGlobalEnv,

@@ -38,7 +38,7 @@ defmodule Oli.Delivery.Audience do
   end
 
   def audience_role(%Author{} = author, _section_slug) do
-    if Accounts.is_system_admin?(author) do
+    if Accounts.is_admin?(author) do
       :instructor
     else
       :student

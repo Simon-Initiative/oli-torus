@@ -9,6 +9,9 @@ defmodule OliWeb.Features.FeaturesLive do
   alias Oli.Features
   alias Oli.Delivery
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [

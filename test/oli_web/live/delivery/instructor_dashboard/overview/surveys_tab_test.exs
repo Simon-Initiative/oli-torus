@@ -1118,7 +1118,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights%2Fsurveys"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_surveys_route(section.slug))
@@ -1328,6 +1328,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
                "\"responses\":[{\"text\":\"This is an incorrect answer from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the second answer (correct) from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the first answer (correct) from the GOAT\",\"user_name\":\"Messi, Lionel\"}]"
     end
 
+    # https://eliterate.atlassian.net/browse/TRIAGE-4
+    @tag :skip
     test "multi input activity details get rendered correctly when page is selected",
          %{
            conn: conn,

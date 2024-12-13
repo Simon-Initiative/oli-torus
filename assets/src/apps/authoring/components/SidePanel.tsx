@@ -45,7 +45,7 @@ export const SidePanel: React.FC<SidePanelProps> = (props: SidePanelProps) => {
         </span>
       </button>
       <section
-        className={`aa-panel ${position}-panel${panelState[position] ? ' open' : ''} ${
+        className={`aa-panel mt-8 ${position}-panel${panelState[position] ? ' open' : ''} ${
           !sidebarExpanded ? '' : 'ml-[135px]'
         }`}
       >

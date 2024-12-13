@@ -28,10 +28,7 @@ defmodule OliWeb.ProgressLiveTest do
       resource: resource,
       student: student
     } do
-      redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{student.id}%2F#{resource.id}&section=#{section.slug}"
-
-      {:error, {:redirect, %{to: ^redirect_path}}} =
+      {:error, {:redirect, %{to: "/users/log_in"}}} =
         live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
     end
   end
@@ -47,13 +44,10 @@ defmodule OliWeb.ProgressLiveTest do
     } do
       conn = get(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
-      redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{student.id}%2F#{resource.id}&amp;section=#{section.slug}"
-
       assert conn
              |> get(live_view_student_resource_route(section.slug, student.id, resource.id))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"#{redirect_path}\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/users/log_in\">redirected</a>.</body></html>"
     end
   end
 
@@ -261,7 +255,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+               "<a href=\"#{~p"/sections/#{section.slug}/manage"}\""
 
       assert html =~ "Manual Scoring"
     end
@@ -281,7 +275,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+               "<a href=\"#{~p"/sections/#{section.slug}/manage"}\""
 
       assert html =~ "Student Progress"
     end
@@ -299,7 +293,7 @@ defmodule OliWeb.ProgressLiveTest do
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
 
       assert html =~
-               "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive, section.slug, :manage)}\""
+               "<a href=\"#{~p"/sections/#{section.slug}/manage"}\""
 
       assert html =~
                "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
@@ -338,7 +332,7 @@ defmodule OliWeb.ProgressLiveTest do
       author: instructor.author
     })
 
-    student = insert(:user)
+    student = user_fixture()
 
     {:ok,
      section: section,
@@ -360,7 +354,7 @@ defmodule OliWeb.ProgressLiveTest do
     conn =
       conn
       |> Plug.Test.init_test_session(lti_session: nil)
-      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_user(instructor)
 
     {:ok, %{conn: conn, instructor: instructor, section: section}}
   end

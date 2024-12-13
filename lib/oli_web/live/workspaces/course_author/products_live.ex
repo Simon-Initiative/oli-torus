@@ -13,7 +13,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   alias OliWeb.Common.Check
   alias OliWeb.Common.PagedTable
   alias OliWeb.Common.Params
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Products.ProductsTableModel
 
@@ -21,14 +20,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
   @initial_offset 0
   @initial_create_form to_form(%{"product_title" => ""}, as: "product_form")
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     project = socket.assigns.project
     include_archived = Params.get_boolean_param(params, "include_archived", false)
 
     products = get_products(socket.assigns)
 
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     {:ok, table_model} = ProductsTableModel.new(products, ctx, project.slug)
     published? = Publishing.project_published?(project.slug)
 
@@ -42,8 +44,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ProductsLive do
        limit: @max_items_per_page,
        offset: @initial_offset,
        table_model: table_model,
-       create_product_form: @initial_create_form,
-       ctx: ctx
+       create_product_form: @initial_create_form
      )}
   end
 

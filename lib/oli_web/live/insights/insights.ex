@@ -11,7 +11,7 @@ defmodule OliWeb.Insights do
   alias OliWeb.Common.MultiSelectInput
   alias OliWeb.Common.MultiSelect.Option
   alias Oli.{Accounts, Publishing}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Course
@@ -19,7 +19,6 @@ defmodule OliWeb.Insights do
   alias OliWeb.Components.Project.AsyncExporter
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.SessionContext
   alias Oli.Analytics.Summary.BrowseInsights
   alias Oli.Analytics.Summary.BrowseInsightsOptions
   alias OliWeb.Insights.ActivityTableModel
@@ -28,8 +27,11 @@ defmodule OliWeb.Insights do
 
   @limit 25
 
-  def mount(%{"project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  def mount(%{"project_id" => project_slug}, _session, socket) do
+    ctx = socket.assigns.ctx
 
     project = Course.get_project_by_slug(project_slug)
 
@@ -88,8 +90,7 @@ defmodule OliWeb.Insights do
        breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})],
        active: :insights,
        sections_by_product_id: sections_by_product_id,
-       ctx: ctx,
-       is_admin?: Accounts.is_system_admin?(ctx.author),
+       is_admin?: Accounts.is_admin?(ctx.author),
        project: project,
        parent_pages: parent_pages,
        selected: :by_activity,

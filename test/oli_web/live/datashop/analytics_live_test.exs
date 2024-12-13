@@ -10,7 +10,7 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
       project = insert(:project)
 
       expected_path =
-        "/authoring/session/new?request_path=%2Fproject%2F#{project.slug}%2Fdatashop"
+        "/authors/log_in"
 
       {:error,
        {:redirect,
@@ -31,9 +31,14 @@ defmodule OliWeb.Datashop.AnalyticsLiveTest do
     } do
       make_project_author(project, author)
 
-      assert conn
-             |> get(live_view_analytics_route(project.slug))
-             |> response(403)
+      conn =
+        conn
+        |> get(live_view_analytics_route(project.slug))
+
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You must be a content admin to access this page."
     end
   end
 

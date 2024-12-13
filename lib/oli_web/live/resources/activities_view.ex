@@ -4,13 +4,11 @@ defmodule OliWeb.Resources.ActivitiesView do
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   import Oli.Authoring.Editing.Utils, except: [trap_nil: 1]
-  alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
   alias Oli.Resources.ActivityBrowse
   alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Resources.ActivityBrowseOptions
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Resources.ActivitiesTableModel
   alias Oli.Repo.{Paging, Sorting}
 
@@ -24,6 +22,9 @@ defmodule OliWeb.Resources.ActivitiesView do
     text_search: nil
   }
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def breadcrumb(project) do
     [
       Breadcrumb.new(%{
@@ -36,14 +37,14 @@ defmodule OliWeb.Resources.ActivitiesView do
 
   def mount(
         %{"project_id" => project_slug},
-        %{"current_author_id" => author_id} = session,
+        _session,
         socket
       ) do
     socket =
-      with {:ok, author} <- Accounts.get_author(author_id) |> trap_nil(),
+      with author <- socket.assigns.current_author,
            {:ok, project} <- Oli.Authoring.Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project) do
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         activities =
           ActivityBrowse.browse_activities(
@@ -68,7 +69,6 @@ defmodule OliWeb.Resources.ActivitiesView do
           ActivitiesTableModel.new(activities, project, ctx, activities_by_id, parent_pages)
 
         assign(socket,
-          ctx: ctx,
           breadcrumbs: breadcrumb(project),
           project: project,
           author: author,

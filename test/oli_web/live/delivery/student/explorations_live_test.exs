@@ -113,7 +113,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
         live(conn, ~p"/sections/#{section.slug}/explorations")
 
       assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Fexplorations&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 

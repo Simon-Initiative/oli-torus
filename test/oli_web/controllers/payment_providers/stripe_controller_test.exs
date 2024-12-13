@@ -51,7 +51,10 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fsections%2F#{section.slug}%2Fpayment%2Fnew&amp;section=#{section.slug}\">redirected"
+               "You are being <a href=\"/users/log_in\">redirected"
+
+      assert Plug.Conn.get_session(conn, :user_return_to) ==
+               "/sections/#{section.slug}/payment/new"
     end
 
     test "redirects to new session when trying to init intent", %{conn: conn, section: section} do
@@ -60,19 +63,19 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
           section_slug: section.slug
         })
 
-      assert html_response(conn, 302) =~ "You are being <a href=\"/session/new\">redirected"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/users/log_in\">redirected"
     end
 
     test "redirects to new session when trying to hit failure", %{conn: conn} do
       conn = post(conn, Routes.stripe_path(conn, :failure))
 
-      assert html_response(conn, 302) =~ "You are being <a href=\"/session/new\">redirected"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/users/log_in\">redirected"
     end
 
     test "redirects to new session when trying to hit success", %{conn: conn} do
       conn = post(conn, Routes.stripe_path(conn, :success), %{:intent => %{}})
 
-      assert html_response(conn, 302) =~ "You are being <a href=\"/session/new\">redirected"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/users/log_in\">redirected"
     end
   end
 

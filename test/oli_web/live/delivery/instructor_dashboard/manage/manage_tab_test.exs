@@ -9,12 +9,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
   alias Oli.Delivery.Sections
 
   defp live_view_manage_route(section_slug) do
-    Routes.live_path(
-      OliWeb.Endpoint,
-      OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-      section_slug,
-      :manage
-    )
+    ~p"/sections/#{section_slug}/manage"
   end
 
   describe "user" do
@@ -22,7 +17,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fmanage"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_manage_route(section.slug))
@@ -63,7 +58,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
       {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
 
       # Manage tab content gets rendered
-      assert has_element?(view, ~s{div[id="overview"]})
+      assert render(view) =~ " Overview of course section details"
 
       # Collab Space Group gets rendered
       assert render(view) =~ "Collaborative Space"
@@ -86,17 +81,30 @@ defmodule OliWeb.Delivery.InstructorDashboard.ManageTabTest do
           }
         )
 
-      refute has_element?(view, "input[name=\"toggle_agenda\"][checked]")
-
-      element(view, "form[phx-change=\"toggle_agenda\"]")
-      |> render_change(%{})
-
       assert has_element?(view, "input[name=\"toggle_agenda\"][checked]")
 
       element(view, "form[phx-change=\"toggle_agenda\"]")
       |> render_change(%{})
 
       refute has_element?(view, "input[name=\"toggle_agenda\"][checked]")
+
+      element(view, "form[phx-change=\"toggle_agenda\"]")
+      |> render_change(%{})
+
+      assert has_element?(view, "input[name=\"toggle_agenda\"][checked]")
+    end
+
+    test "agenda is enabled by default when creating a course section", %{
+      instructor: instructor,
+      section: section,
+      conn: conn
+    } do
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_manage_route(section.slug))
+
+      assert section.agenda
+      assert has_element?(view, "input[name=\"toggle_agenda\"][checked]")
     end
   end
 end

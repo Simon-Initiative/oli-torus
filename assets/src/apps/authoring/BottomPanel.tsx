@@ -158,7 +158,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
       <section
         id="aa-bottom-panel"
         ref={ref}
-        className={`aa-panel bottom-panel${panelState['bottom'] ? ' open' : ''} ${
+        className={`aa-panel mt-8 bottom-panel${panelState['bottom'] ? ' open' : ''} ${
           !sidebarExpanded ? '' : 'ml-[135px]'
         }`}
         style={{

@@ -32,27 +32,20 @@ if !Oli.Repo.get_by(Oli.Accounts.SystemRole, id: 1) do
   })
 end
 
-pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
-
 # create admin author
 if !Oli.Repo.get_by(Oli.Accounts.Author,
      email: System.get_env("ADMIN_EMAIL", "admin@example.edu")
    ) do
-  case Pow.Ecto.Context.create(
-         %{
-           email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
-           name: "Administrator",
-           given_name: "Administrator",
-           family_name: "",
-           password: System.get_env("ADMIN_PASSWORD", "changeme"),
-           password_confirmation: System.get_env("ADMIN_PASSWORD", "changeme"),
-           system_role_id: Oli.Accounts.SystemRole.role_id().system_admin
-         },
-         pow_config
-       ) do
-    {:ok, user} ->
-      PowEmailConfirmation.Ecto.Context.confirm_email(user, %{}, pow_config)
-  end
+  {:ok, _admin} =
+    %Author{}
+    |> Author.bootstrap_admin_changeset(%{
+      email: System.get_env("ADMIN_EMAIL", "admin@example.edu"),
+      name: "Administrator",
+      password: System.get_env("ADMIN_PASSWORD", "changeme"),
+      system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
+      email_confirmed_at: DateTime.utc_now()
+    })
+    |> Repo.insert()
 end
 
 # create project roles
@@ -220,9 +213,9 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
               params = %{
                 email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@example.edu",
-                email_confirmation_token: Pow.UUID.generate(),
                 name: name,
-                system_role_id: Accounts.SystemRole.role_id().author
+                system_role_id: Accounts.SystemRole.role_id().author,
+                email_confirmed_at: DateTime.utc_now()
               }
 
               {:ok, _author} =
@@ -249,7 +242,7 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 picture:
                   "https://platform.example.edu/#{Oli.Utils.Slug.slugify(name)}_#{index}.jpg",
                 email: "#{Oli.Utils.Slug.slugify(name)}_#{index}@platform.example.edu",
-                email_confirmation_token: Pow.UUID.generate(),
+                email_confirmed_at: DateTime.utc_now(),
                 locale: "en-US"
               }
 

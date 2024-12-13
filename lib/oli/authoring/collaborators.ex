@@ -4,7 +4,6 @@ defmodule Oli.Authoring.Collaborators do
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Authoring.Course
-  alias OliWeb.Router.Helpers, as: Routes
   import Oli.Utils
 
   def get_collaborator(author_id, project_id) do
@@ -55,31 +54,14 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  defp get_or_invite_author(conn, email) do
-    Accounts.get_author_by_email(email)
-    |> case do
-      nil ->
-        case PowInvitation.Plug.create_user(conn, %{email: email}) do
-          {:ok, user, _conn} -> {:ok, user, :new_user}
-          {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
-        end
-
-      author ->
-        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-          {:ok, author, :new_user}
-        else
-          {:ok, author, :existing_user}
-        end
-    end
-  end
-
   def add_collaborator(conn, email, project_slug) do
-    with {:ok, author, status} <- get_or_invite_author(conn, email),
+    with {:ok, author, status} <- get_or_create_invited_author(email),
          {:ok, results} <- add_collaborator(email, project_slug),
          {:ok, project} <-
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found."),
-         {:ok, _mail} <- deliver_invitation_email(conn, author, project, status) do
+         {:ok, _mail} <-
+           deliver_collaborator_invitation_email(conn, author, project, status) do
       {:ok, results}
     else
       {:error, message} -> {:error, message}
@@ -136,34 +118,59 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  defp deliver_invitation_email(conn, user, project, status) do
-    invited_by = Pow.Plug.current_user(conn)
+  def get_or_create_invited_author(email) do
+    Accounts.get_author_by_email(email)
+    |> case do
+      nil ->
+        case Accounts.create_invited_author(email) do
+          {:ok, author} -> {:ok, author, :new_user}
+          {:error, _changeset} -> {:error, "Unable to create invitation for new author"}
+        end
+
+      author ->
+        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
+          {:ok, author, :new_user}
+        else
+          {:ok, author, :existing_user}
+        end
+    end
+  end
+
+  defp deliver_collaborator_invitation_email(conn, collaborator_author, project, status) do
+    invited_by = conn.assigns.current_author
 
     url =
       case status do
         :new_user ->
-          token = PowInvitation.Plug.sign_invitation_token(conn, user)
-          Routes.pow_invitation_invitation_path(conn, :edit, token)
+          token = sign_invitation_token(conn, collaborator_author)
+          author_invitation_url(conn, token)
 
         :existing_user ->
           ~p"/workspaces/course_author/#{project.slug}/overview"
       end
 
-    invited_by_user_id = Map.get(invited_by, invited_by.__struct__.pow_user_id_field())
-
     email =
-      Oli.Email.invitation_email(
-        user.email,
+      Oli.Email.create_email(
+        collaborator_author.email,
+        "Collaborator Invitation",
         :collaborator_invitation,
         %{
           invited_by: invited_by,
-          invited_by_user_id: invited_by_user_id,
-          url: Routes.url(conn) <> url,
+          invited_by_user_id: invited_by.id,
+          url: url,
           project_title: project.title
         }
       )
 
-    Oli.Mailer.deliver_now(email)
+    Oli.Mailer.deliver(email)
     {:ok, "email sent"}
+  end
+
+  defp author_invitation_url(_conn, _token) do
+    throw("NOT IMPLEMENTED")
+  end
+
+  defp sign_invitation_token(_conn, _collaborator_author) do
+    throw("NOT IMPLEMENTED")
   end
 end

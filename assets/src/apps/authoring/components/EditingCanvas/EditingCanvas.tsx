@@ -186,7 +186,7 @@ const EditingCanvas: React.FC = () => {
 
   return (
     <React.Fragment>
-      <section className="aa-stage" onClick={handleStageClick}>
+      <section className="aa-stage mt-8" onClick={handleStageClick}>
         <StagePan>
           {currentActivityTree &&
             currentActivityTree.map((activity) => (

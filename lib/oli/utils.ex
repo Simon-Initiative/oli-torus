@@ -101,6 +101,15 @@ defmodule Oli.Utils do
     end
   end
 
+  def confirm_email_if_verified(changeset) do
+    if get_change(changeset, :email_verified) do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      change(changeset, email_confirmed_at: now)
+    else
+      changeset
+    end
+  end
+
   def maybe_create_unique_sub(changeset) do
     case changeset do
       # if changeset is valid and doesn't have a name in changes or data, derive name from given_name and family_name
@@ -179,7 +188,7 @@ defmodule Oli.Utils do
   end
 
   def put_email_confirmed_at(changeset) do
-    now = DateTime.truncate(DateTime.utc_now(), :second)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
     Ecto.Changeset.put_change(changeset, :email_confirmed_at, now)
   end
 

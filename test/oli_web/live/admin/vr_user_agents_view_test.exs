@@ -7,7 +7,7 @@ defmodule OliWeb.Admin.VrUserAgentsViewTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the vr_user_agents view", %{conn: conn} do
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fvr_user_agents"
+      redirect_path = "/authors/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, "/admin/vr_user_agents")
     end
@@ -17,7 +17,7 @@ defmodule OliWeb.Admin.VrUserAgentsViewTest do
     setup [:user_conn]
 
     test "redirects to authoring sign in", %{conn: conn} do
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fvr_user_agents"
+      redirect_path = "/authors/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, @live_view_route)
     end
