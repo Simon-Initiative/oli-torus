@@ -2,7 +2,7 @@
 import { registerCreationFunc } from '../creation';
 import { CreationContext, Manifest } from '../types';
 import { OrderingSchema } from './schema';
-import { defaultOrderingModel } from './utils';
+import { defaultOrderingModel, orderingModel } from './utils';
 
 // This is the entry point for the ordering authoring
 // component, as specified in the manifest.json
@@ -27,6 +27,9 @@ export { OrderingAuthoring } from './OrderingAuthoring';
 const manifest: Manifest = require('./manifest.json');
 
 function createFn(content: CreationContext): Promise<OrderingSchema> {
+  if (content && content.creationData) {
+    return Promise.resolve(Object.assign({}, orderingModel(content.creationData)));
+  }
   return Promise.resolve(Object.assign({}, defaultOrderingModel()));
 }
 
