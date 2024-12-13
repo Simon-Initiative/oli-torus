@@ -9,7 +9,7 @@ defmodule Oli.Utils.Seeder.Session do
 
     token = Oli.Accounts.generate_author_session_token(author)
 
-    conn
+    conn = conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:author_token, token)
     |> Plug.Conn.put_session(:current_author_id, author.id)
@@ -25,7 +25,7 @@ defmodule Oli.Utils.Seeder.Session do
 
     token = Oli.Accounts.generate_user_session_token(user)
 
-    conn
+    conn = conn
     |> Phoenix.ConnTest.init_test_session(%{})
     |> Plug.Conn.put_session(:user_token, token)
     |> Plug.Conn.put_session(:current_user_id, user.id)
