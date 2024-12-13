@@ -46,6 +46,10 @@ defmodule Oli.Repo.Migrations.CreateCertificatesTables do
       timestamps(type: :utc_datetime)
     end
 
+    create unique_index(:granted_certificates, [:user_id, :certificate_id],
+             name: :unique_user_certificate
+           )
+
     alter table(:sections) do
       add :certificate_enabled, :boolean, default: false
     end
