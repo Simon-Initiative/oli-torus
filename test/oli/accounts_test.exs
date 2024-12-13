@@ -205,7 +205,7 @@ defmodule Oli.AccountsTest do
     @invalid_attrs %{email: nil, given_name: nil, family_name: nil, sub: nil, picture: nil}
 
     setup do
-      author = Oli.AccountsFixtures.author_fixture()
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture()
 
       valid_attrs =
         @valid_attrs

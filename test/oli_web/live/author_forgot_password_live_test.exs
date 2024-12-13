@@ -16,7 +16,7 @@ defmodule OliWeb.AuthorForgotPasswordLiveTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_author(Oli.AccountsFixtures.author_fixture())
+        |> log_in_author(Oli.Utils.Seeder.AccountsFixtures.author_fixture())
         |> live(~p"/authors/reset_password")
         |> follow_redirect(conn, ~p"/workspaces/course_author")
 
@@ -26,7 +26,7 @@ defmodule OliWeb.AuthorForgotPasswordLiveTest do
 
   describe "Reset link" do
     setup do
-      %{author: Oli.AccountsFixtures.author_fixture()}
+      %{author: Oli.Utils.Seeder.AccountsFixtures.author_fixture()}
     end
 
     test "sends a new reset password token", %{conn: conn, author: author} do

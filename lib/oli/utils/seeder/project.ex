@@ -3,7 +3,7 @@ defmodule Oli.Utils.Seeder.Project do
 
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Repo
-  alias Oli.AccountsFixtures
+  alias Oli.Utils.Seeder.AccountsFixtures
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Project, Family}
   alias Oli.Publishing.Publications.Publication

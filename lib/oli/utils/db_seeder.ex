@@ -25,7 +25,7 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Utils.Seeder.StudentAttemptSeed
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
-  alias Oli.AccountsFixtures
+  alias Oli.Utils.Seeder.AccountsFixtures
 
   def base_project_with_resource(author) do
     {:ok, family} =

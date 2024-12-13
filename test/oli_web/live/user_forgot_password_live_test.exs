@@ -16,7 +16,7 @@ defmodule OliWeb.UserForgotPasswordLiveTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_user(Oli.AccountsFixtures.user_fixture())
+        |> log_in_user(Oli.Utils.Seeder.AccountsFixtures.user_fixture())
         |> live(~p"/users/reset_password")
         |> follow_redirect(conn, ~p"/workspaces/student")
 
@@ -26,7 +26,7 @@ defmodule OliWeb.UserForgotPasswordLiveTest do
 
   describe "Reset link" do
     setup do
-      %{user: Oli.AccountsFixtures.user_fixture()}
+      %{user: Oli.Utils.Seeder.AccountsFixtures.user_fixture()}
     end
 
     test "sends a new reset password token", %{conn: conn, user: user} do

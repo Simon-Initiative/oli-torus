@@ -13,7 +13,7 @@ defmodule OliWeb.AuthorAuthTest do
       |> Map.replace!(:secret_key_base, OliWeb.Endpoint.config(:secret_key_base))
       |> init_test_session(%{})
 
-    %{author: Oli.AccountsFixtures.author_fixture(), conn: conn}
+    %{author: Oli.Utils.Seeder.AccountsFixtures.author_fixture(), conn: conn}
   end
 
   describe "log_in_author/3" do
