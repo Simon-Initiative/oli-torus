@@ -26,6 +26,7 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
     field(:job_run_id, :string)
     field(:job_type, Ecto.Enum, values: [:datashop, :custom], default: :custom)
     field(:output_type, Ecto.Enum, values: [:csv, :parquet], default: :csv)
+    field(:notify_emails, {:array, :string}, default: [])
 
     # Runtime status information
     field(:status, Ecto.Enum, values: @emr_statuses, default: :pending)
@@ -53,6 +54,7 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
       :job_run_id,
       :job_type,
       :output_type,
+      :notify_emails,
       :status,
       :finished_on
     ])

@@ -11,6 +11,7 @@ defmodule Oli.Repo.Migrations.AddDatasetJobs do
       add :job_run_id, :string, null: true
       add :job_type, :string, null: false, default: "datashop"
       add :output_type, :string, null: false, default: "csv"
+      add :notify_emails, {:array, :string}, null: false, default: []
 
       # Runtime status information
       add :status, :string, null: false, default: "pending"
