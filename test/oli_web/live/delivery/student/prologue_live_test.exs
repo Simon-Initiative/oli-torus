@@ -11,7 +11,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Pow.PowHelpers
 
   @default_selected_view :gallery
 
@@ -414,7 +413,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprologue%2F#{page_1.slug}&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 
@@ -1033,7 +1032,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       redirect_path_1 = "/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}"
       assert redirected_to(conn, 302) =~ redirect_path_1
 
-      conn = Pow.Plug.assign_current_user(recycle(conn), user, PowHelpers.get_pow_config(:user))
+      conn = log_in_user(recycle(conn), user)
 
       conn = get(conn, redirect_path_1)
 
@@ -1042,7 +1041,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert redirected_to(conn, 302) =~ redirect_path_2
 
-      conn = Pow.Plug.assign_current_user(recycle(conn), user, PowHelpers.get_pow_config(:user))
+      conn = log_in_user(recycle(conn), user)
       {:ok, view, _html} = live(conn, redirect_path_2)
 
       [href] =

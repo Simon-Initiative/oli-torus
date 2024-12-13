@@ -17,7 +17,7 @@ defmodule OliWeb.IngestControllerTest do
       conn = get(conn, Routes.ingest_path(conn, :index))
 
       assert html_response(conn, 302) =~
-               "<html><body>You are being <a href=\"/authoring/session/new?request_path=%2Fadmin%2Fingest%2Fupload\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/authors/log_in\">redirected</a>.</body></html>"
     end
   end
 
@@ -67,7 +67,11 @@ defmodule OliWeb.IngestControllerTest do
 
       conn = get(conn, ~p"/admin/#{project.slug}/import/index")
 
-      assert response(conn, 403) == "Forbidden"
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
 
     test "can not be accessed by a user", %{conn: conn} do
@@ -78,7 +82,7 @@ defmodule OliWeb.IngestControllerTest do
       conn = get(conn, ~p"/admin/#{project.slug}/import/index")
 
       assert redirected_to(conn, 302) ==
-               "/authoring/session/new?request_path=%2Fadmin%2F#{project.slug}%2Fimport%2Findex"
+               "/authors/log_in"
     end
   end
 

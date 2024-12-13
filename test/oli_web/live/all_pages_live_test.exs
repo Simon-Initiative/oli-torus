@@ -177,7 +177,7 @@ defmodule OliWeb.AllPagesLiveTest do
       project = insert(:project)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fpages"
+        "/authors/log_in"
 
       {:error,
        {:redirect,

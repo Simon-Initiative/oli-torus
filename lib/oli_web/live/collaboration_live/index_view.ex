@@ -3,7 +3,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Resources.Collaboration
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CollaborationLive.InstructorTableModel
   alias alias OliWeb.Sections.Mount
 
@@ -11,6 +11,8 @@ defmodule OliWeb.CollaborationLive.IndexView do
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
+
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def filter_rows(socket, query, _filter) do
     query_str = String.downcase(query)
@@ -37,7 +39,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
   end
 
   def mount(params, session, socket) do
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     section_slug = params["section_slug"]
 
     case Mount.for(section_slug, session) do

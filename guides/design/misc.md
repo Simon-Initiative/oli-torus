@@ -7,9 +7,9 @@
 
 ## Access Generated Emails in Development
 
-When the system generates email in production, generally it will be handed to an email service such as Amazon SES. Any email service supported by Bamboo can be configured in config/prod.exs. Refer to the Bamboo and Pow docs to see a list of all supported email adapters and how to configure them https://hexdocs.pm/pow/configuring_mailer.html#content, https://hexdocs.pm/bamboo/readme.html
+When the system generates email in production, generally it will be handed to an email service such as Amazon SES. Any email service supported by Swoosh can be configured in config/prod.exs. Refer to the Swoosh docs to see a list of all supported email adapters and how to configure them [https://hexdocs.pm/swoosh/Swoosh.html](https://hexdocs.pm/swoosh/Swoosh.html).
 
-In development mode, the system will use the Bamboo.LocalAdapter mailer, which stores sent mail in memory and is accessible via web browser at `https://localhost/dev/sent_emails`. There is also a specific test adapter configured for unit testing.
+In development mode, the system will use the Swoosh.Adapters.Local mailer, which stores sent mail in memory and is accessible via web browser at `https://localhost/dev/mailbox`. There is also a specific test adapter configured for unit testing.
 
 ## Create Registrations from seed
 

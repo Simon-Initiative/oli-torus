@@ -21,7 +21,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
 
-    is_admin? = Accounts.has_admin_role?(author)
+    is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)

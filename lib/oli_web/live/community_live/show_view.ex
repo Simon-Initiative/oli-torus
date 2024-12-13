@@ -22,6 +22,8 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   @matches_limit 30
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def breadcrumb(community_id) do
     IndexView.breadcrumb() ++
       [
@@ -32,7 +34,7 @@ defmodule OliWeb.CommunityLive.ShowView do
       ]
   end
 
-  def mount(%{"community_id" => community_id}, %{"is_system_admin" => is_system_admin}, socket) do
+  def mount(%{"community_id" => community_id}, _session, socket) do
     socket =
       case Groups.get_community(community_id) do
         nil ->
@@ -58,7 +60,6 @@ defmodule OliWeb.CommunityLive.ShowView do
             community_id: community_id,
             community_members: community_members,
             community_institutions: community_institutions,
-            is_system_admin: is_system_admin,
             matches: %{"admin" => [], "member" => [], "institution" => []},
             available_institutions: available_institutions
           )
@@ -92,7 +93,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           placeholder="admin@example.edu"
           button_text="Add"
           collaborators={@community_admins}
-          allow_removal={@is_system_admin}
+          allow_removal={Accounts.has_admin_role?(@current_author, :content_admin)}
         />
       </ShowSection.render>
 
@@ -245,10 +246,11 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   def handle_event("add_admin", %{"email" => email}, socket) do
     socket = clear_flash(socket)
+    current_author = socket.assigns.current_author
 
     attrs = %{
       community_id: socket.assigns.community.id,
-      is_admin: true
+      is_admin: Accounts.has_admin_role?(current_author, :account_admin)
     }
 
     emails =

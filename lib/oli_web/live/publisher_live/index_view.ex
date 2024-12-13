@@ -3,12 +3,15 @@ defmodule OliWeb.PublisherLive.IndexView do
   use OliWeb.Common.SortableTable.TableHandlers
 
   alias Oli.Inventories
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.PublisherLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def filter_rows(socket, query, _filter) do
     query_str = String.downcase(query)
@@ -31,8 +34,8 @@ defmodule OliWeb.PublisherLive.IndexView do
     ]
   end
 
-  def mount(_, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(_, _session, socket) do
+    ctx = socket.assigns.ctx
     publishers = Inventories.list_publishers()
 
     {:ok, table_model} = TableModel.new(publishers, ctx)

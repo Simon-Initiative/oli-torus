@@ -477,12 +477,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       conn: conn,
       section: section
     } do
-      section_slug = section.slug
-      active_tab = "settings"
-      assessment_id = "all"
-
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_overview_route(section.slug, "settings", "all"))
@@ -493,12 +489,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            conn: conn,
            section: section
          } do
-      section_slug = section.slug
-      active_tab = "student_exceptions"
-      assessment_id = "all"
-
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(
@@ -609,7 +601,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
     end
 
     test "student_exceptions view loads correctly", %{

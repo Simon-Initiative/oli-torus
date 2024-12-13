@@ -8,8 +8,6 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
   their HTTP Header sizes are growing beyond the max configured size.
   """
 
-  alias OliWeb.Pow.SessionUtils
-
   import Plug.Conn
   require Logger
 
@@ -26,7 +24,7 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
 
   defp maybe_log_header_size(conn, opts) do
     header_size =
-      SessionUtils.calculate_headers_size(
+      calculate_headers_size(
         if opts[:type] == :request, do: conn.req_headers, else: conn.resp_headers
       )
 
@@ -62,5 +60,15 @@ defmodule OliWeb.Plugs.HeaderSizeLogger do
     |> Keyword.get(:http, [])
     |> Keyword.get(:protocol_options, [])
     |> Keyword.get(:max_header_value_length)
+  end
+
+  @doc """
+  Calculates the size of the given headers in bytes.
+  """
+  def calculate_headers_size(headers) do
+    Enum.reduce(headers, 0, fn {key, value}, acc ->
+      # +4 for ": " and "\r\n"
+      acc + byte_size(key) + byte_size(value) + 4
+    end)
   end
 end

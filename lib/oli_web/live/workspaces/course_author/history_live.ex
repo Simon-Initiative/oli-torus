@@ -30,7 +30,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLive do
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug, "revision_slug" => revision_slug}, _session, socket) do
     with {:is_admin?, true} <-
-           {:is_admin?, Accounts.has_admin_role?(socket.assigns.current_author)},
+           {:is_admin?, Accounts.has_admin_role?(socket.assigns.current_author, :content_admin)},
          {:revision, revision} when not is_nil(revision) <-
            {:revision, AuthoringResolver.from_revision_slug(project_slug, revision_slug)} do
       do_mount(revision, socket.assigns.project, socket)

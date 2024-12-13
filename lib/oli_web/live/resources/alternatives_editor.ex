@@ -10,7 +10,7 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   alias Oli.Resources.ResourceType
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.{Breadcrumb}
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
   alias OliWeb.Common.Modal.{FormModal, DeleteModal}
@@ -18,15 +18,18 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
   @alternatives_type_id ResourceType.id_for_alternatives()
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
-  def mount(%{"project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(%{"project_id" => project_slug}, _session, socket) do
+    current_author = socket.assigns.current_author
     project = Course.get_project_by_slug(project_slug)
 
     {:ok, alternatives} =
       ResourceEditor.list(
         project.slug,
-        ctx.author,
+        current_author,
         @alternatives_type_id
       )
 
@@ -37,9 +40,8 @@ defmodule OliWeb.Resources.AlternativesEditor do
 
     {:ok,
      assign(socket,
-       ctx: ctx,
        project: project,
-       author: ctx.author,
+       author: current_author,
        title: "Alternatives | " <> project.title,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives"})],
        alternatives: Enum.reverse(alternatives),

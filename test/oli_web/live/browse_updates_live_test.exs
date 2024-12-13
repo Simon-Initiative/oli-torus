@@ -20,7 +20,7 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
 
     test "redirects to new session when accessing the index view", %{conn: conn, section: section} do
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fgrades%2Flms_grade_updates&section=#{section.slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_index_route(section.slug))
@@ -32,7 +32,7 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
 
     test "redirects to new session when accessing the index view", %{conn: conn, section: section} do
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fgrades%2Flms_grade_updates&section=#{section.slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_index_route(section.slug))
@@ -49,6 +49,8 @@ defmodule OliWeb.BrowseUpdatesLiveTest do
   end
 
   describe "user cannot access when the section does not exist" do
+    setup [:user_conn, :create_section]
+
     test "returns forbidden when accessing the index view", %{conn: conn} do
       conn = get(conn, live_view_index_route("invalid"))
 

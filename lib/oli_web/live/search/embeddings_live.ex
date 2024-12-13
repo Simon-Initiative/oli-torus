@@ -6,6 +6,8 @@ defmodule OliWeb.Search.EmbeddingsLive do
   alias OliWeb.Dialogue.UserInput
   alias OliWeb.Dialogue.UserInput
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+
   def mount(
         %{"project_id" => project_slug},
         _session,
