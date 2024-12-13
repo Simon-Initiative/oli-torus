@@ -134,7 +134,7 @@ defmodule Oli.Analytics.Datasets do
     query = DatasetJob
       |> join(:left, [j], proj in Oli.Authoring.Course.Project, on: j.project_id == proj.id)
       |> distinct(true)
-      |> select([proj], {proj.id, proj.title})
+      |> select([_j, proj], {proj.id, proj.title})
 
     Repo.all(query)
   end
@@ -154,7 +154,7 @@ defmodule Oli.Analytics.Datasets do
     |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
     |> distinct(true)
     |> where(^filter_by_project_id)
-    |> select([u], {u.id, u.email})
+    |> select([_j, u], {u.id, u.email})
 
     Repo.all(query)
   end
@@ -177,6 +177,17 @@ defmodule Oli.Analytics.Datasets do
   jobs in the system (and the fact that we can only fetch 50 jobs statuses at a time) and the number
   of applications tied to these jobs.  We expect low volume of jobs, so this should result in a
   at most 1 or 2 API calls to the EMR serverless environment.
+
+  This function returns {:ok, []} if there are no jobs to update, or {:ok, [{db_id, new_status}]}
+  for all of the jobs that have been updated.
+
+  ## Examples
+
+      iex> Datasets.update_job_statuses()
+      {:ok, []}
+
+      iex> Datasets.update_job_statuses()
+      {:ok, [{1, :success}, {2, :failed}]}
   """
   def update_job_statuses() do
 
@@ -187,15 +198,15 @@ defmodule Oli.Analytics.Datasets do
     |> Enum.reduce([], fn result, all ->
       case result do
         {:ok, jobs} -> jobs ++ all
-        e ->
-          Logger.warning("Failed to fetch job statuses: #{Kernel.to_string(e)}")
+        {:error, reason} ->
+          Logger.warning("Failed to fetch job statuses: #{Kernel.to_string(reason)}")
           all
       end
     end)
     |> Enum.reduce(%{}, fn job, all -> Map.put(all, job["id"], job) end)
 
     # Pair up the jobs and their statuses, filtering to those whose have changed
-    to_update = Enum.reduce(active_jobs_by_id, [], fn jobs, all -> jobs ++ all end)
+    to_update = Enum.reduce(active_jobs_by_id, [], fn {_, jobs}, all -> jobs ++ all end)
     |> Enum.map(fn job -> {job, Map.get(statuses_by_id, job.job_run_id, nil)} end)
     |> Enum.filter(fn {job, status_job} -> status_job != nil and job.status != status_job["state"] |> from_emr_status() end)
 
@@ -203,7 +214,14 @@ defmodule Oli.Analytics.Datasets do
     case to_update do
       [] -> {:ok, []}
       _ ->
-        bulk_update_statuses(to_update)
+        case bulk_update_statuses(to_update) do
+          {:ok, _} ->
+
+            # we want to return back a list of {db_id, new_status} tuples
+            to_update = Enum.map(to_update, fn {db_job, status_job} -> {db_job.id, status_job["state"] |> from_emr_status()} end)
+            {:ok, to_update}
+          e -> e
+        end
     end
 
   end

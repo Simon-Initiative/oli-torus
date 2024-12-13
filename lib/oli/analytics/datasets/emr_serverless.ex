@@ -13,7 +13,7 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
   alias ExAws.Auth
   alias Oli.Analytics.Datasets.DatasetJob
   alias Oli.Analytics.Datasets.Settings
-
+  alias Oli.HTTP, as: HTTPClient
   alias ExAws
 
   require Logger
@@ -46,7 +46,7 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       )
 
     # Send the HTTP request
-    case HTTPoison.get(url, signed_headers) do
+    case HTTPClient.http().get(url, signed_headers) do
       {:ok, response} ->
         {:ok, Poison.decode!(response.body)}
 
@@ -86,7 +86,7 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       )
 
     # Send the HTTP request
-    case HTTPoison.get(url, signed_headers) do
+    case HTTPClient.http().get(url, signed_headers) do
       {:ok, response} ->
 
         json = Poison.decode!(response.body)
@@ -179,7 +179,7 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       )
 
     # Send the HTTP request
-    case HTTPoison.post(url, Poison.encode!(body), signed_headers) do
+    case HTTPClient.http().post(url, Poison.encode!(body), signed_headers) do
       {:ok, response} ->
         # Parse the response and extract the job run id
         json = Poison.decode!(response.body)
