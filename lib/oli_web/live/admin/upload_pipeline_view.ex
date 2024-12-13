@@ -8,6 +8,9 @@ defmodule OliWeb.Admin.UploadPipelineView do
   # ours stats a rolling window of the last @window_size stats.
   @window_size 500
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(_, _, socket) do
     PubSub.subscribe(Oli.PubSub, "xapi_upload_pipeline_stats")
 

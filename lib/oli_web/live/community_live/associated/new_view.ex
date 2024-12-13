@@ -4,13 +4,16 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
 
   alias Oli.Authoring.Course
   alias Oli.Groups
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CommunityLive.Associated.{IndexView, TableModel}
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Router.Helpers, as: Routes
 
   @table_filter_fn &__MODULE__.filter_rows/3
   @table_push_patch_path &__MODULE__.live_path/2
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def filter_rows(socket, query, _filter) do
     Enum.filter(socket.assigns.sources, fn a ->
@@ -49,14 +52,13 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
     end)
   end
 
-  def mount(%{"community_id" => community_id}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(%{"community_id" => community_id}, _session, socket) do
+    ctx = socket.assigns.ctx
     sources = retrieve_all_sources(community_id)
     {:ok, table_model} = TableModel.new(sources, ctx)
 
     {:ok,
      assign(socket,
-       ctx: ctx,
        breadcrumbs: breadcrumb(community_id),
        sources: sources,
        table_model: table_model,

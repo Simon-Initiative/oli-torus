@@ -177,7 +177,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       project = insert(:project)
 
       redirect_path =
-        "/workspaces/course_author"
+        "/authors/log_in"
 
       {:error,
        {:redirect,

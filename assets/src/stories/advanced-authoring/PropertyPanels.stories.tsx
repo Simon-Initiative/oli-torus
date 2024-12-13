@@ -117,7 +117,7 @@ export const PanelPicker = () => {
           <code>UI Schema:{JSON.stringify(panel.uiSchema, null, 2)}</code>
         </pre>
         <div className="fixed-right-panel">
-          <section className="aa-panel right-panel open part-property-editor">
+          <section className="aa-panel right-panel open part-property-editor mt-8">
             <div className="aa-panel-inner">
               <div className="tab-content">
                 <div className="fade tab-pane active show">

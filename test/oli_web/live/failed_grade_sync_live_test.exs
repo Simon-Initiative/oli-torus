@@ -37,7 +37,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       conn: conn,
       section: section
     } do
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_failed_grade_sync_view_route(section.slug))
@@ -51,7 +51,7 @@ defmodule OliWeb.FailedGradeSyncLiveTest do
       conn: conn,
       section: section
     } do
-      redirect_path = "/sections/#{section.slug}/enroll"
+      redirect_path = "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_failed_grade_sync_view_route(section.slug))

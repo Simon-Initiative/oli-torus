@@ -31,7 +31,6 @@ const populateEntries = () => {
     cashnetclient: ['./src/payment/cashnet/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
-    keepalive: ['./src/phoenix/keep-alive.ts'],
     delivery_adaptive_themes_default_light: ['./styles/adaptive/light.scss'],
     delivery_adaptive_themes_flowchart: ['./styles/adaptive/flowchart.scss'],
   };
@@ -78,9 +77,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-    2 * foundActivities.length +
-    2 * foundParts.length +
-    styleSheets.length
+      2 * foundActivities.length +
+      2 * foundParts.length +
+      styleSheets.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',

@@ -5,7 +5,7 @@ defmodule OliWeb.Products.PaymentsView do
 
   alias Oli.Delivery.Paywall
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Params, PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, Params, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Router.Helpers, as: Routes
@@ -15,12 +15,15 @@ defmodule OliWeb.Products.PaymentsView do
   Search by payment code and section title.
   """
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def live_path(socket, params) do
     Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
   end
 
-  def mount(%{"product_id" => product_slug}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(%{"product_id" => product_slug}, _session, socket) do
+    ctx = socket.assigns.ctx
 
     payments =
       browse_payments(product_slug, %Paging{offset: 0, limit: @limit}, %Sorting{
@@ -34,7 +37,6 @@ defmodule OliWeb.Products.PaymentsView do
 
     {:ok,
      assign(socket,
-       ctx: ctx,
        product: Oli.Delivery.Sections.get_section_by(slug: product_slug),
        product_slug: product_slug,
        total_count: total_count,

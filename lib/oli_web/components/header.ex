@@ -6,17 +6,15 @@ defmodule OliWeb.Components.Header do
 
   import OliWeb.Components.Delivery.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Components.Delivery.UserAccount
   alias OliWeb.Components.Delivery.Buttons
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext, required: true)
+  attr(:is_admin, :boolean, required: true)
 
   def header(assigns) do
-    assigns = assign(assigns, :is_system_admin, assigns[:is_system_admin] || false)
-
     ~H"""
     <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
@@ -76,11 +74,11 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
+              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
             </div>
           <% true -> %>
             <div class="inline-flex items-center">
-              <%= link to: Routes.pow_session_path(OliWeb.Endpoint, :new), class: "btn btn-primary btn-sm mr-2 inline-flex items-center" do %>
+              <%= link to: ~p"/users/log_in", class: "btn btn-primary btn-sm mr-2 inline-flex items-center" do %>
                 <span class="hidden sm:inline">Learner/Educator Sign In</span>
                 <span class="inline sm:hidden">Sign In</span>
               <% end %>
@@ -101,10 +99,10 @@ defmodule OliWeb.Components.Header do
       <a class="navbar-brand torus-logo my-1 mr-auto" href={~p"/"}>
         <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
       </a>
-      <.sign_in_button href="/session/new" request_path={assigns.conn.request_path}>
+      <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
         For Instructors
       </.sign_in_button>
-      <.sign_in_button href="/authoring/session/new" request_path={assigns.conn.request_path}>
+      <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
         For Course Authors
       </.sign_in_button>
       <.button

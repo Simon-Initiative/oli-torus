@@ -1,11 +1,10 @@
 defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
-  use Phoenix.LiveView
+  use OliWeb, :live_view
   use OliWeb.Common.Modal
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings.AssessmentSettings
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
@@ -24,7 +23,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
         {:ok,
          assign(socket,
-           ctx: SessionContext.init(socket, session, user: current_user),
            current_user: current_user,
            preview_mode: socket.assigns[:live_action] == :preview,
            title: "Assessment Settings",
@@ -38,13 +36,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
            breadcrumbs: [
              Breadcrumb.new(%{
                full_title: "Manage Section",
-               link:
-                 Routes.live_path(
-                   OliWeb.Endpoint,
-                   OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                   section.slug,
-                   :manage
-                 )
+               link: ~p"/sections/#{section.slug}/manage"
              }),
              Breadcrumb.new(%{
                full_title: "Assessments settings"

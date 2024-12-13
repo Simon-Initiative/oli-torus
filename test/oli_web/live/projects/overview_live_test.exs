@@ -14,7 +14,7 @@ defmodule OliWeb.Projects.OverviewLiveTest do
        {:redirect,
         %{
           flash: %{},
-          to: "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2Ftestproject"
+          to: "/authors/log_in"
         }}} = live(conn, Routes.live_path(Endpoint, OverviewLive, "testproject"))
     end
   end

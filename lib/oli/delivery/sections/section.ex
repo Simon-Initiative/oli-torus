@@ -162,7 +162,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:encouraging_subtitle, :string)
 
-    field(:agenda, :boolean, default: false)
+    field(:agenda, :boolean, default: true)
 
     timestamps(type: :utc_datetime)
   end

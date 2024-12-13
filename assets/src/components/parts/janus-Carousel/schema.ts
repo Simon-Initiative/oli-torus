@@ -33,7 +33,7 @@ export const schema: JSONSchema7Object = {
       properties: {
         url: {
           type: 'string',
-          description: 'Image URL',
+          description: '',
         },
         caption: {
           type: 'string',
@@ -48,7 +48,15 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  images: {
+    items: {
+      url: {
+        'ui:widget': 'TorusImageBrowser',
+      },
+    },
+  },
+};
 
 export const adaptivitySchema = {
   'Current Image': CapiVariableTypes.NUMBER,
@@ -60,4 +68,6 @@ export const createSchema = (): Partial<CarouselModel> => ({
   customCssClass: '',
   zoom: true,
   images: [{ url: '/images/placeholder-image.svg', caption: 'an image at night', alt: 'an image' }],
+  width: 400,
+  height: 400,
 });

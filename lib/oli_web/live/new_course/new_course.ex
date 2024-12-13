@@ -1,9 +1,11 @@
 defmodule OliWeb.Delivery.NewCourse do
   use OliWeb, :live_view
 
-  on_mount(OliWeb.LiveSessionPlugs.SetSection)
-  on_mount(OliWeb.LiveSessionPlugs.SetBrand)
-  on_mount(OliWeb.LiveSessionPlugs.SetPreviewMode)
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+  on_mount OliWeb.LiveSessionPlugs.SetSection
+  on_mount OliWeb.LiveSessionPlugs.SetBrand
+  on_mount OliWeb.LiveSessionPlugs.SetPreviewMode
 
   alias Oli.Accounts
   alias Oli.Delivery
@@ -12,7 +14,6 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
@@ -23,6 +24,9 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Phoenix.LiveView.JS
 
   import OliWeb.Components.Delivery.Layouts
+
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   @form_id "open_and_free_form"
   def mount(_params, session, socket) do
@@ -57,26 +61,24 @@ defmodule OliWeb.Delivery.NewCourse do
       }
     ]
 
-    lti_params =
-      case session["lti_params_id"] do
+    {current_user, lti_params} =
+      case socket.assigns.current_user do
         nil ->
-          nil
+          {nil, nil}
 
-        lti_params_id ->
-          %{params: lti_params} = LtiParams.get_lti_params(lti_params_id)
-          lti_params
-      end
+        current_user ->
+          current_user =
+            Accounts.load_lti_params(current_user)
+            |> Repo.preload([:author])
 
-    current_user =
-      case session["current_user_id"] do
-        nil ->
-          nil
+          lti_params =
+            if current_user.lti_params do
+              current_user.lti_params.params
+            else
+              nil
+            end
 
-        current_user_id ->
-          case session["is_system_admin"] do
-            true -> nil
-            _ -> Accounts.get_user!(current_user_id, preload: [:author])
-          end
+          {current_user, lti_params}
       end
 
     changeset =
@@ -100,18 +102,14 @@ defmodule OliWeb.Delivery.NewCourse do
   end
 
   attr(:breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Creation"})])
+  attr(:is_admin, :boolean, required: true)
 
   def render(assigns) do
     ~H"""
     <%= case @live_action do %>
       <% :admin -> %>
       <% _ -> %>
-        <.header
-          ctx={@ctx}
-          section={@section}
-          preview_mode={@preview_mode}
-          is_system_admin={@is_system_admin}
-        />
+        <.header ctx={@ctx} section={@section} preview_mode={@preview_mode} is_admin={@is_admin} />
     <% end %>
     <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component
