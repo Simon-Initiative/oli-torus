@@ -127,21 +127,21 @@ GUIDES
   </a>
   <span class="text">Access Generated Emails in Development</span>
 </h2>
-<p>When the system generates email in production, generally it will be handed to an email service such as Amazon SES. Any email service supported by Bamboo can be configured in config/prod.exs. Refer to the Bamboo and Pow docs to see a list of all supported email adapters and how to configure them <a href="https://hexdocs.pm/pow/configuring_mailer.html#content">https://hexdocs.pm/pow/configuring_mailer.html#content</a>, <a href="https://hexdocs.pm/bamboo/readme.html">https://hexdocs.pm/bamboo/readme.html</a></p><p>In development mode, the system will use the Bamboo.LocalAdapter mailer, which stores sent mail in memory and is accessible via web browser at <code class="inline">https://localhost/dev/sent_emails</code>. There is also a specific test adapter configured for unit testing.</p><h2 id="create-registrations-from-seed" class="section-heading">
+<p>When the system generates email in production, generally it will be handed to an email service such as Amazon SES. Any email service supported by Swoosh can be configured in config/prod.exs. Refer to the Swoosh docs to see a list of all supported email adapters and how to configure them <a href="https://hexdocs.pm/swoosh/Swoosh.html">https://hexdocs.pm/swoosh/Swoosh.html</a>.</p><p>In development mode, the system will use the Swoosh.Adapters.Local mailer, which stores sent mail in memory and is accessible via web browser at <code class="inline">https://localhost/dev/mailbox</code>. There is also a specific test adapter configured for unit testing.</p><h2 id="create-registrations-from-seed" class="section-heading">
   <a href="#create-registrations-from-seed" class="hover-link">
     <i class="ri-link-m" aria-hidden="true"></i>
   </a>
   <span class="text">Create Registrations from seed</span>
 </h2>
 <p>To ease the burden of creating a new registration after every database reset, there is the option to automatically create LTI registrations
-attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="1361809142-1">[</span><span class="p" data-group-id="1361809142-2">{</span><span class="w">
+attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="3706861706-1">[</span><span class="p" data-group-id="3706861706-2">{</span><span class="w">
   </span><span class="ss">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;client_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;XXXXXXXXXXXXX&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;key_set_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/security/jwks&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_token_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_login_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/authorize_redirect&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_server&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="w">
-</span><span class="p" data-group-id="1361809142-2">}</span><span class="p" data-group-id="1361809142-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
+</span><span class="p" data-group-id="3706861706-2">}</span><span class="p" data-group-id="3706861706-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
