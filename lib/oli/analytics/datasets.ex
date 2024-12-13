@@ -13,7 +13,9 @@ defmodule Oli.Analytics.Datasets do
   import Ecto.Query
   require Logger
 
-  @terminal_states [:success, :failed]
+  @terminal_emr_states ["SUCCESS", "FAILED", "CANCELLED"]
+
+
 
 
   @doc """
@@ -314,13 +316,23 @@ defmodule Oli.Analytics.Datasets do
     end
   end
 
+  # Updates the status of a collection of jobs whose statuses have changed, based on
+  # the statuses fetched from the EMR serverless environment.  Conditionally, when
+  # the status changes to a terminal state, the finished_on field is updated.
   defp bulk_update_statuses(to_update) do
     {values, params, _} =
       Enum.reduce(to_update, {[], [], 0}, fn {_db_job, status_job}, {values, params, i} ->
         {
-          values ++ ["($#{i + 1}, $#{i + 2})"],
-          params ++ [status_job["state"] |> String.downcase(), status_job["id"]],
-          i + 2
+          values ++ ["($#{i + 1}, $#{i + 2}::timestamp, $#{i + 3})"],
+          params ++ [
+            status_job["state"] |> String.downcase(),
+            if status_job["state"] in @terminal_emr_states do
+              DateTime.utc_now()
+            else
+              nil
+            end,
+            status_job["id"]],
+          i + 3
         }
       end)
 
@@ -330,11 +342,12 @@ defmodule Oli.Analytics.Datasets do
       UPDATE dataset_jobs
       SET
         status = batch_values.status,
+        finished_on = batch_values.finished_on,
         updated_at = NOW()
       FROM (
           VALUES
           #{values}
-      ) AS batch_values (status, job_run_id)
+      ) AS batch_values (status, finished_on, job_run_id)
       WHERE dataset_jobs.job_run_id = batch_values.job_run_id
     """
 

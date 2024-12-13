@@ -82,16 +82,20 @@ defmodule Oli.Analytics.Datasets.Test do
       # Read the jobs again from the DB to make sure the statuses have been updated
       job1 = Repo.get(DatasetJob, job1.id)
       assert job1.status == :running
+      assert job1.finished_on == nil
 
       job2 = Repo.get(DatasetJob, job2.id)
       assert job2.status == :failed
+      assert job2.finished_on != nil
 
       job3 = Repo.get(DatasetJob, job3.id)
       assert job3.status == :success
+      assert job3.finished_on != nil
 
       # this one hasn't changed status
       job4 = Repo.get(DatasetJob, job4.id)
       assert job4.status == :failed
+      assert job4.finished_on == nil
 
     end
 
