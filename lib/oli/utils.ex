@@ -504,4 +504,29 @@ defmodule Oli.Utils do
   """
   @spec identity(any) :: any
   def identity(x), do: x
+
+  @doc """
+  Validate the inequality between two numbers
+
+  ## Examples
+
+      validate_greater_than_or_equal(changeset, :from, :to)
+      validate_greater_than_or_equal(changeset, :from, :to, allow_equal: true)
+
+  """
+  def validate_greater_than_or_equal(changeset, from, to, opts \\ []) do
+    {_, from_value} = fetch_field(changeset, from)
+    {_, to_value} = fetch_field(changeset, to)
+    allow_equal = Keyword.get(opts, :allow_equal, false)
+
+    if compare(from_value, to_value, allow_equal) do
+      changeset
+    else
+      message = "#{to} must be greater than #{from}"
+      add_error(changeset, from, message, to_field: to)
+    end
+  end
+
+  defp compare(f, t, true), do: f <= t
+  defp compare(f, t, false), do: f < t
 end
