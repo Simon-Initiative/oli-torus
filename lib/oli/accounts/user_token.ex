@@ -16,7 +16,7 @@ defmodule Oli.Accounts.UserToken do
   schema "users_tokens" do
     field :token, :binary
     # the context is used to differentiate between different types of tokens
-    # such as "session", "confirm" (for email confirmation), "reset_password", "change:<current_email>"
+    # such as "session", "confirm" (for email confirmation), "reset_password", "change:<current_email>", "enrollment_invitation:<section_slug>".
     field :context, :string
     field :sent_to, :string
     belongs_to :user, Oli.Accounts.User
@@ -80,20 +80,22 @@ defmodule Oli.Accounts.UserToken do
   for example, by phone numbers.
   """
   def build_email_token(user, context) do
-    build_hashed_token(user, context, user.email)
-  end
+    {token, hashed_token} = build_hashed_token()
 
-  defp build_hashed_token(user, context, sent_to) do
-    token = :crypto.strong_rand_bytes(@rand_size)
-    hashed_token = :crypto.hash(@hash_algorithm, token)
-
-    {Base.url_encode64(token, padding: false),
+    {token,
      %UserToken{
        token: hashed_token,
        context: context,
-       sent_to: sent_to,
+       sent_to: user.email,
        user_id: user.id
      }}
+  end
+
+  defp build_hashed_token() do
+    token = :crypto.strong_rand_bytes(@rand_size)
+    hashed_token = :crypto.hash(@hash_algorithm, token)
+
+    {Base.url_encode64(token, padding: false), hashed_token}
   end
 
   @doc """

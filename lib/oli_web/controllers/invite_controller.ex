@@ -4,6 +4,7 @@ defmodule OliWeb.InviteController do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Accounts.UserToken
   alias Oli.Delivery.Sections
   alias Oli.{Email, Mailer}
 
@@ -38,72 +39,89 @@ defmodule OliWeb.InviteController do
     inviter_struct =
       if inviter == "author", do: conn.assigns.current_author, else: conn.assigns.current_user
 
-    # Enroll users
     Repo.transaction(fn ->
-      {_count, new_users} =
-        Accounts.bulk_create_invited_users(non_found_users, inviter_struct)
-
-      users_ids = Enum.map(new_users ++ existing_users, & &1.id)
-      do_section_enrollment(users_ids, section, role)
-
-      # Send emails to users
-      users =
-        Enum.map(existing_users, &Map.put(&1, :status, :existing_user)) ++
-          Enum.map(new_users, &Map.put(&1, :status, :new_user))
-
-      Enum.map(users, fn user ->
-        {button_label, url} =
-          case user.status do
-            :new_user ->
-              {"Join now",
-               ~p"/users/register?#{[section: section.slug, from_invitation_link?: true]}"}
-
-            :existing_user ->
-              {"Go to the course", ~p"/sections/#{section.slug}?#{[from_invitation_link?: true]}"}
-          end
-
-        Email.create_email(
-          user.email,
-          "You were invited as #{if role == "instructor", do: "an instructor", else: "a student"} to \"#{section.title}\"",
-          :enrollment_invitation,
-          %{
-            inviter: inviter_struct.name,
-            url: url,
-            role: role,
-            section_title: section.title,
-            button_label: button_label
-          }
+      with {_count, new_users} <-
+             Accounts.bulk_create_invited_users(non_found_users, inviter_struct),
+           {:ok, _enrollments} <-
+             do_section_enrollment(new_users ++ existing_users, section, role),
+           {:ok, email_data} <-
+             bulk_create_invitation_tokens(new_users ++ existing_users, section_slug),
+           :ok <- send_email_invitations(email_data, inviter_struct.name, role, section.title) do
+        conn
+        |> put_flash(:info, "Users were invited successfully")
+        |> redirect(
+          to:
+            ~p"/sections/#{section_slug}/instructor_dashboard/overview/students?filter_by=pending_confirmation"
         )
-        |> Mailer.deliver()
-      end)
+      else
+        {:error, _reason} ->
+          conn
+          |> put_flash(:error, "An error occurred while inviting users")
+          |> redirect(to: ~p"/sections/#{section_slug}/instructor_dashboard/overview/students")
+      end
     end)
-
-    redirect_after_enrollment(conn, section_slug)
   end
 
-  defp do_section_enrollment(users_ids, section, role) do
+  defp do_section_enrollment(users, section, role) do
     context_identifier = contextualize_role(role)
     context_role = ContextRoles.get_role(context_identifier)
-    Sections.enroll(users_ids, section.id, [context_role], :pending_confirmation)
+    user_ids = Enum.map(users, & &1.id)
+
+    Sections.enroll(user_ids, section.id, [context_role], :pending_confirmation)
+  end
+
+  defp bulk_create_invitation_tokens(users, section_slug) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    %{email_data: email_data, user_tokens: user_tokens} =
+      users
+      |> Enum.reduce(%{email_data: [], user_tokens: []}, fn user, acc ->
+        {non_hashed_token, user_token} =
+          UserToken.build_email_token(user, "enrollment_invitation:#{section_slug}")
+
+        user_token =
+          %{
+            user_id: user_token.user_id,
+            token: user_token.token,
+            context: user_token.context,
+            sent_to: user_token.sent_to,
+            inserted_at: now
+          }
+
+        %{
+          acc
+          | email_data: [
+              %{sent_to: user_token.sent_to, token: non_hashed_token} | acc.email_data
+            ],
+            user_tokens: [user_token | acc.user_tokens]
+        }
+      end)
+
+    {_count, _user_tokens} = Repo.insert_all(UserToken, user_tokens)
+
+    {:ok, email_data}
+  end
+
+  defp send_email_invitations(email_data, inviter_name, role, section_title) do
+    Enum.each(email_data, fn data ->
+      Email.create_email(
+        data.sent_to,
+        "You were invited as #{if role == "instructor", do: "an instructor", else: "a student"} to \"#{section_title}\"",
+        :enrollment_invitation,
+        %{
+          inviter: inviter_name,
+          url: ~p"/users/invite/#{data.token}",
+          role: role,
+          section_title: section_title,
+          button_label: "Join now"
+        }
+      )
+      |> Mailer.deliver()
+    end)
   end
 
   defp contextualize_role("instructor"), do: :context_instructor
   defp contextualize_role(_role), do: :context_learner
-
-  defp redirect_after_enrollment(conn, section_slug) do
-    path =
-      Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-        section_slug,
-        :overview,
-        :students
-      )
-
-    conn
-    |> put_flash(:info, "Users were enrolled successfully")
-    |> redirect(to: path)
-  end
 
   defp render_invite_page(conn, page, keywords) do
     render(conn, page, Keyword.put_new(keywords, :active, :invite))

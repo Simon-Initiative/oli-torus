@@ -5,6 +5,8 @@ defmodule Oli.Accounts.User do
   import Ecto.Changeset
   import Oli.Utils
 
+  alias Ecto.Changeset
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
@@ -494,13 +496,21 @@ defmodule Oli.Accounts.User do
   @doc """
   Invites user.
 
-  A unique `:invitation_token` will be generated, and `invited_by` association
-  will be set. Only the user id will be set, and the persisted user won't have
+  Only the user id will be set, and the persisted user won't have
   any password for authentication.
+  (The user will set the password in the redeem invitation flow)
   """
-  def invite_changeset(_user, _invited_by, _attrs) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  @spec invite_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
+  def invite_changeset(%Changeset{} = changeset, attrs) do
+    changeset
+    |> cast(attrs, [:email, :invited_by_id])
+    |> validate_required([:email, :invited_by_id])
+  end
+
+  def invite_changeset(user, attrs) do
+    user
+    |> Ecto.Changeset.change()
+    |> invite_changeset(attrs)
   end
 
   @doc """

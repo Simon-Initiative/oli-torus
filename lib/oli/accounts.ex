@@ -94,7 +94,7 @@ defmodule Oli.Accounts do
   @doc """
   Creates multiple invited users
   ## Examples
-      iex> bulk_create_invited_users(["email_1@test.com", "email_2@test.com"], %Author{id: 1})
+       iex> bulk_create_invited_users(["email_1@test.com", "email_2@test.com"], %User{id: 1})
       [%User{id: 3}, %User{id: 4}]
   """
   def bulk_create_invited_users(user_emails, inviter_user) do
@@ -102,12 +102,13 @@ defmodule Oli.Accounts do
 
     users =
       Enum.map(user_emails, fn email ->
-        %{changes: changes} = User.invite_changeset(%User{}, inviter_user, %{email: email})
+        %{changes: changes} =
+          User.invite_changeset(%User{}, %{email: email, invited_by_id: inviter_user.id})
 
         Enum.into(changes, %{inserted_at: now, updated_at: now})
       end)
 
-    Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
+    Repo.insert_all(User, users, returning: [:id, :email])
   end
 
   def create_invited_author(_email) do
