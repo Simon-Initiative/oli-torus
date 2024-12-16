@@ -37,5 +37,9 @@ defmodule Oli.Delivery.Sections.GrantedCertificate do
     |> validate_required(@required_fields)
     |> assoc_constraint(:certificate)
     |> assoc_constraint(:user)
+    |> unique_constraint([:user_id, :certificate_id],
+      name: :unique_user_certificate,
+      message: "has already been granted this type of certificate"
+    )
   end
 end
