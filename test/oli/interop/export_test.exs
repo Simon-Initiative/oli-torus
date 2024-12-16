@@ -1,6 +1,7 @@
 defmodule Oli.Interop.ExportTest do
   use OliWeb.ConnCase
 
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.Section
   alias Oli.Interop.Export
@@ -58,25 +59,6 @@ defmodule Oli.Interop.ExportTest do
       assert project_json["encouragingSubtitle"] == "Subtitle test"
     end
 
-    test "export a project with nil revisions does not fail", %{project: project} do
-      author = hd(project.authors)
-
-      root_revision = AuthoringResolver.root_container(project.slug)
-
-      ## Modify the root revision to have a non-revision child resource
-      params = %{children: [1000], author_id: author.id}
-      Resources.update_revision(root_revision, params)
-
-      export =
-        Export.export(project)
-        |> unzip_to_memory()
-        |> Enum.reduce(%{}, fn {f, c}, m -> Map.put(m, f, c) end)
-
-      {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
-
-      assert hierarchy_json["children"] |> Enum.filter(&(&1 == nil)) |> length() == 1
-    end
-
     test "carry over products and their settings", %{section: section, export: export} do
       product_id = section.id
 
@@ -127,6 +109,50 @@ defmodule Oli.Interop.ExportTest do
       assert %Certificate{} = imported_product.certificate
 
       assert @certificate_params = imported_product.certificate
+    end
+  end
+
+  describe "export handles nil" do
+    setup [:setup_project_with_survey]
+
+    test "success: when having nil revisions", %{project: project} do
+      author = hd(project.authors)
+
+      root_revision = AuthoringResolver.root_container(project.slug)
+
+      ## Modify the root revision to have a non-revision child resource
+      params = %{children: [1000], author_id: author.id}
+      Resources.update_revision(root_revision, params)
+
+      {:ok, export: export} = setup_export(%{project: project})
+
+      {:ok, hierarchy_json} = Jason.decode(Map.get(export, ~c"_hierarchy.json"))
+
+      assert hierarchy_json["children"] |> Enum.filter(&(&1 == nil)) |> length() == 1
+    end
+
+    test "success: when having nil certificate", ctx do
+      %{project: project, author: author, section: section} = ctx
+
+      %{certificate: %Certificate{}} = section = Oli.Repo.preload(section, :certificate)
+
+      section = Sections.update_section!(section, %{certificate: nil})
+
+      refute Oli.Repo.preload(section, :certificate).certificate
+
+      {:ok, %{id: project_id} = _imported_project} =
+        project
+        |> Export.export()
+        |> unzip_to_memory()
+        |> Oli.Interop.Ingest.process(author)
+
+      imported_product =
+        Section
+        |> where([s], s.base_project_id == ^project_id)
+        |> preload([s], :certificate)
+        |> Oli.Repo.one!()
+
+      refute imported_product.certificate
     end
   end
 
