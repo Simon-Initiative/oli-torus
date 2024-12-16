@@ -23,7 +23,7 @@ defmodule Oli.Delivery.Sections.GrantedCertificateTest do
       assert granted_certificate.issued_by_type == :user
     end
 
-    test "error: fails with invalid params" do
+    test "error: fails when doesn't have the required fields" do
       params = %{}
 
       changeset = %Ecto.Changeset{errors: errors} = GrantedCertificate.changeset(params)
