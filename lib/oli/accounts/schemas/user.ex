@@ -13,7 +13,6 @@ defmodule Oli.Accounts.User do
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
-    field :invitation_token, :string
     field :invitation_accepted_at, :utc_datetime
 
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
