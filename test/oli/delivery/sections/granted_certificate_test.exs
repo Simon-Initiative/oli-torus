@@ -23,7 +23,7 @@ defmodule Oli.Delivery.Sections.GrantedCertificateTest do
       assert granted_certificate.issued_by_type == :user
     end
 
-    test "error: fails with invalid params" do
+    test "error: fails when doesn't have the required fields" do
       params = %{}
 
       changeset = %Ecto.Changeset{errors: errors} = GrantedCertificate.changeset(params)
@@ -84,6 +84,23 @@ defmodule Oli.Delivery.Sections.GrantedCertificateTest do
       refute changeset.valid?
 
       assert %{user: ["does not exist"]} = errors_on(changeset)
+    end
+
+    test "error: duplicate certificate is not allowed", %{params: params} do
+      user = insert(:user)
+      certificate = insert(:certificate)
+
+      params = %{params | user_id: user.id, certificate_id: certificate.id}
+
+      {:ok, %GrantedCertificate{}} = GrantedCertificate.changeset(params) |> Oli.Repo.insert()
+
+      {:error, changeset = %Ecto.Changeset{}} =
+        GrantedCertificate.changeset(params) |> Oli.Repo.insert()
+
+      refute changeset.valid?
+
+      assert %{user_id: ["has already been granted this type of certificate"]} =
+               errors_on(changeset)
     end
   end
 
