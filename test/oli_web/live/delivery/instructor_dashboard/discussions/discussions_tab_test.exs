@@ -187,7 +187,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.DiscussionsTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Fdiscussions"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_discussions_route(section.slug))

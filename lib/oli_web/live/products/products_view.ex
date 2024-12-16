@@ -3,12 +3,10 @@ defmodule OliWeb.Products.ProductsView do
 
   import OliWeb.DelegatedEvents
 
-  alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, Params, TextSearch}
   alias OliWeb.Products.Create
   alias Oli.Authoring.Course
-  alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -18,6 +16,9 @@ defmodule OliWeb.Products.ProductsView do
   @text_search_tooltip """
     Search by section title, amount or base project title.
   """
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def live_path(socket, params) do
     if socket.assigns.is_admin_view do
@@ -44,10 +45,10 @@ defmodule OliWeb.Products.ProductsView do
 
   def mount(
         %{"project_id" => project_slug} = params,
-        %{"current_author_id" => author_id} = session,
+        _session,
         socket
       ) do
-    author = Repo.get(Author, author_id)
+    author = socket.assigns.current_author
 
     project = Course.get_project_by_slug(project_slug)
 
@@ -58,18 +59,17 @@ defmodule OliWeb.Products.ProductsView do
       project,
       breadcrumb([]),
       "Products | " <> project.title,
-      socket,
-      session
+      socket
     )
   end
 
-  def mount(params, %{"current_author_id" => author_id} = session, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(params, _session, socket) do
+    author = socket.assigns.current_author
 
-    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket, session)
+    mount_as(params, author, true, nil, admin_breadcrumbs(), "Products", socket)
   end
 
-  defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket, session) do
+  defp mount_as(params, author, is_admin_view, project, breadcrumbs, title, socket) do
     project_id = if project === nil, do: nil, else: project.id
 
     products =
@@ -83,7 +83,7 @@ defmodule OliWeb.Products.ProductsView do
 
     total_count = determine_total(products)
 
-    ctx = SessionContext.init(socket, session)
+    ctx = socket.assigns.ctx
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, ctx)
 
     published? =
@@ -109,8 +109,7 @@ defmodule OliWeb.Products.ProductsView do
        query: "",
        text_search: "",
        text_search_tooltip: @text_search_tooltip,
-       creation_title: "",
-       ctx: ctx
+       creation_title: ""
      )}
   end
 

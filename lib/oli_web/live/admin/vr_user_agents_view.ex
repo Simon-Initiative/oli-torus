@@ -11,6 +11,9 @@ defmodule OliWeb.Admin.VrUserAgentsView do
   @initial_sort {:asc, "user_agent"}
   @initial_paginate %{limit: @limit, offset: 0}
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   defp columns_title_data, do: [{"id", "ID"}, {"user_agent", "User agent"}, {"nil", "Delete"}]
 
   def mount(_, _session, socket) do

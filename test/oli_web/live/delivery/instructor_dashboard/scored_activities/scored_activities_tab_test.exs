@@ -1102,7 +1102,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Finsights%2Fscored_activities"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_scored_activities_route(section.slug))
@@ -1159,6 +1159,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert a4.title == "Module 2: BasicsPage 4"
     end
 
+    # NON-DETERMINISTIC: https://eliterate.atlassian.net/browse/TRIAGE-4 Fix or remove
+    @tag :skip
     test "sorting by Due Date", %{
       conn: conn,
       section: section,

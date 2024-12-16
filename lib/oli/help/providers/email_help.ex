@@ -18,8 +18,7 @@ defmodule Oli.Help.Providers.EmailHelp do
         }
       )
 
-    Oli.Mailer.deliver_now(email)
-    {:ok, "email sent"}
+    Oli.Mailer.deliver(email)
   end
 
   defp build_help_message(contents) do

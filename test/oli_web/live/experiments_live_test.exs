@@ -57,7 +57,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       project = insert(:project)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fexperiments"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
@@ -72,7 +72,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       project: project
     } do
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fexperiments"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))
@@ -87,7 +87,7 @@ defmodule OliWeb.ExperimentsLiveTest do
       project: project
     } do
       redirect_path =
-        "/authoring/session/new?request_path=%2Fauthoring%2Fproject%2F#{project.slug}%2Fexperiments"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_experiments_route(project.slug))

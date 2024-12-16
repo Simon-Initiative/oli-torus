@@ -87,7 +87,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
        active: :insights,
        sections_by_product_id: sections_by_product_id,
        ctx: ctx,
-       is_admin?: Accounts.is_system_admin?(ctx.author),
        project: project,
        parent_pages: parent_pages,
        selected: :by_activity,
@@ -148,7 +147,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <%= if @is_admin? do %>
+      <%= if Accounts.has_admin_role?(@ctx.author, :content_admin) do %>
         <div class="d-flex align-items-center my-3">
           <AsyncExporter.raw_analytics
             ctx={@ctx}

@@ -46,7 +46,10 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
 
       assert html_response(conn, 302) =~
-               "You are being <a href=\"/session/new?request_path=%2Fsections%2F#{section.slug}%2Fpayment%2Fnew&amp;section=#{section.slug}\">redirected"
+               "You are being <a href=\"/users/log_in\">redirected"
+
+      assert Plug.Conn.get_session(conn, :user_return_to) ==
+               Routes.payment_path(conn, :make_payment, section.slug)
     end
 
     test "redirects to new session when trying to init form", %{conn: conn, section: section} do
@@ -55,7 +58,7 @@ defmodule OliWeb.PaymentProviders.CashnetControllerTest do
           section_slug: section.slug
         })
 
-      assert html_response(conn, 302) =~ "You are being <a href=\"/session/new\">redirected"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/users/log_in\">redirected"
     end
   end
 

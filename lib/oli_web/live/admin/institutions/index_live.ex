@@ -12,7 +12,10 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
 
   alias Phoenix.LiveView.JS
 
-  def mount(_params, session, socket) do
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  def mount(_params, _session, socket) do
     institutions = Institutions.list_institutions()
 
     socket =
@@ -23,7 +26,6 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
         pending_registrations: Institutions.list_pending_registrations(),
         breadcrumbs: root_breadcrumbs(),
         country_codes: Predefined.country_codes(),
-        ctx: OliWeb.Common.SessionContext.init(socket, session),
         registration_changeset: nil,
         institution_id: nil,
         form_disabled?: false,
@@ -247,6 +249,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     readonly={@form_disabled?}
                     field={@registration_changeset[:name]}
                     label="Institution Name"
+                    label_position={:responsive}
                     required
                   />
                   <.input
@@ -255,6 +258,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     readonly={@form_disabled?}
                     field={@registration_changeset[:institution_url]}
                     label="Institution URL"
+                    label_position={:responsive}
                     required
                   />
                   <.input
@@ -263,6 +267,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     readonly={@form_disabled?}
                     field={@registration_changeset[:institution_email]}
                     label="Contact Email"
+                    label_position={:responsive}
                     required
                   />
                   <.input
@@ -273,6 +278,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     options={@country_codes}
                     field={@registration_changeset[:country_code]}
                     label="Select Country"
+                    label_position={:responsive}
                     required
                   />
                 </div>
@@ -287,6 +293,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:issuer]}
                     label="Issuer"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -294,6 +301,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:client_id]}
                     label="Client ID"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -301,6 +309,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:deployment_id]}
                     label="Deployment ID"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -308,6 +317,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:key_set_url]}
                     label="Keyset URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -315,6 +325,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:auth_token_url]}
                     label="Auth Token URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -322,6 +333,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:auth_login_url]}
                     label="Auth Login URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -329,6 +341,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:auth_server]}
                     label="Auth Server URL"
+                    label_position={:responsive}
                     readonly
                   />
                   <.input
@@ -336,6 +349,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                     class="read-only:bg-gray-100"
                     field={@registration_changeset[:line_items_service_domain]}
                     label="Line items service domain"
+                    label_position={:responsive}
                     readonly
                   />
                 </div>
@@ -511,7 +525,7 @@ defmodule OliWeb.Admin.Institutions.IndexLive do
                 %{institution: institution, registration: registration}
               )
 
-            Oli.Mailer.deliver_now(registration_approved_email)
+            Oli.Mailer.deliver(registration_approved_email)
 
             # send a Slack notification regarding the new registration approval
             approving_admin = socket.assigns[:current_author]

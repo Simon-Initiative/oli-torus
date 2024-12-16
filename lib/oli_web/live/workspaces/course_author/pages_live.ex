@@ -17,7 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
   alias Oli.Resources.{PageBrowse, PageBrowseOptions, Revision}
   alias OliWeb.Common.Hierarchy.MoveModal
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox, SessionContext}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
   alias OliWeb.Components.Modal
   alias OliWeb.Curriculum.Container.ContainerLiveHelpers
   alias OliWeb.Curriculum.{OptionsModalContent, HyperlinkDependencyModal}
@@ -34,11 +34,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
     text_search: nil
   }
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
-  def mount(params, session, socket) do
+  def mount(params, _session, socket) do
     project = socket.assigns.project
     project_slug = project.slug
-    %SessionContext{author: author} = ctx = SessionContext.init(socket, session)
+    author = socket.assigns.current_author
+    ctx = socket.assigns.ctx
 
     pages =
       PageBrowse.browse_pages(
@@ -69,7 +73,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
        active_workspace: :course_author,
        author: author,
        breadcrumbs: breadcrumb(project),
-       ctx: ctx,
        offset: get_int_param(params, "offset", 0),
        options: @default_options,
        options_modal_assigns: nil,

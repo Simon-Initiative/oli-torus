@@ -222,7 +222,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLiveTest do
       assert {:error,
               {:redirect,
                %{
-                 to: "/workspaces/course_author"
+                 to: "/authors/log_in"
                }}} =
                live(conn, insights_path("testproject"))
     end

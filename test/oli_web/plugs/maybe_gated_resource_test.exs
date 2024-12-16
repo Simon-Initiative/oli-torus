@@ -298,7 +298,7 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_user(user)
 
     {:ok,
      conn: conn,

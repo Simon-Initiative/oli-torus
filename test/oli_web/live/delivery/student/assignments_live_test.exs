@@ -304,7 +304,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
         live(conn, live_view_assignments_live_route(section.slug))
 
       assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Fassignments&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 

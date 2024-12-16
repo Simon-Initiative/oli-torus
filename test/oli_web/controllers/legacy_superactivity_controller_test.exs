@@ -44,7 +44,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         get(conn, Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
@@ -53,7 +53,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -72,7 +72,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -91,7 +91,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -110,7 +110,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -129,7 +129,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -160,7 +160,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -182,7 +182,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -203,7 +203,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -222,7 +222,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> log_in_user(user)
 
       conn =
         post(
@@ -332,19 +332,17 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       |> Seeder.create_section()
       |> Seeder.create_section_resources()
 
-    lti_params_id =
-      Oli.Lti.TestHelpers.all_default_claims()
-      |> put_in(
-        ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
-        map.section.context_id
-      )
-      |> cache_lti_params(user.id)
+    Oli.Lti.TestHelpers.all_default_claims()
+    |> put_in(
+      ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
+      map.section.context_id
+    )
+    |> cache_lti_params(user.id)
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     {
       :ok,

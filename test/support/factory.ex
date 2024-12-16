@@ -16,6 +16,7 @@ defmodule Oli.Factory do
 
   alias Oli.Branding.Brand
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -51,8 +52,12 @@ defmodule Oli.Factory do
   alias Oli.Search.RevisionEmbedding
 
   def author_factory() do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     %Author{
       email: "#{sequence("author")}@example.edu",
+      email_verified: true,
+      email_confirmed_at: now,
       name: "Author name",
       given_name: sequence("Author given name"),
       family_name: "Author family name",
@@ -68,8 +73,12 @@ defmodule Oli.Factory do
   end
 
   def user_factory() do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     %User{
       email: "#{sequence("user")}@example.edu",
+      email_verified: true,
+      email_confirmed_at: now,
       name: sequence("User name"),
       given_name: sequence("User given name"),
       family_name: "User family name",
@@ -636,6 +645,13 @@ defmodule Oli.Factory do
     %ResourceSummary{
       num_correct: 5,
       num_attempts: 10
+    }
+  end
+
+  def certificate_factory() do
+    %Certificate{
+      title: "#{sequence("certificate")}",
+      section: anonymous_build(:section)
     }
   end
 
