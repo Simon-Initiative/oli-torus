@@ -203,7 +203,9 @@ const Delivery: React.FC<DeliveryProps> = ({
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
     <div className={`${parentDivClasses.join(' ')} ${currentTheme}`}>
-      {previewMode && <PreviewTools model={content?.model} />}
+      {(previewMode || (reviewMode && isInstructor)) && (
+        <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
+      )}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>
