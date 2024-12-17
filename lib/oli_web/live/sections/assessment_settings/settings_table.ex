@@ -998,6 +998,11 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   defp sort_by(assessments, sort_by, sort_order) do
+    to_unix = fn
+      nil -> 0
+      datetime -> DateTime.to_unix(datetime)
+    end
+
     case sort_by do
       :late_policy ->
         Enum.sort_by(
@@ -1011,12 +1016,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         )
 
       :available_date ->
-        Enum.sort_by(assessments, fn a -> a.start_date end, sort_order)
+        Enum.sort_by(assessments, fn a -> to_unix.(a.start_date) end, sort_order)
 
       :due_date ->
         Enum.sort_by(
           assessments,
-          fn a -> if a.scheduling_type == :due_by, do: a.end_date, else: nil end,
+          fn a ->
+            if a.scheduling_type == :due_by, do: to_unix.(a.end_date), else: 0
+          end,
           sort_order
         )
 
