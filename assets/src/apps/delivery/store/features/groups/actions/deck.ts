@@ -1,7 +1,12 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { applyState, setConditionsWithExpression, templatizeText } from 'adaptivity/scripting';
+import {
+  applyState,
+  getValue,
+  setConditionsWithExpression,
+  templatizeText,
+} from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import {
   getBulkActivitiesForAuthoring,
@@ -131,16 +136,24 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttemptNumber = 1;
+    const isResumeMode = !!getValue('session.isResumeMode', defaultGlobalEnv);
+    const ongoingAttemptNumber = getValue('session.attemptNumber', defaultGlobalEnv);
+    const defaultActivityStartAttemptNumber = 1;
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
-      value: currentAttemptNumber,
+      value:
+        isResumeMode && ongoingAttemptNumber
+          ? ongoingAttemptNumber
+          : defaultActivityStartAttemptNumber,
     };
     const targettedAttemptNumberOp: ApplyStateOperation = {
       target: `${currentSequenceId}|session.attemptNumber`,
       operator: '=',
-      value: currentAttemptNumber,
+      value:
+        isResumeMode && ongoingAttemptNumber
+          ? ongoingAttemptNumber
+          : defaultActivityStartAttemptNumber,
     };
     const tutorialScoreOp: ApplyStateOperation = {
       target: 'session.tutorialScore',
