@@ -110,7 +110,7 @@ export const initializeActivity = createAsyncThunk(
           }
         }
       }
-      /* console.log('SYNC OPS' , syncOps); */
+      /* console.log('SYNC OPS', syncOps); */
       if (syncOps.length > 0) {
         await bulkApplyState(syncOps);
       }
