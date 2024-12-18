@@ -6,6 +6,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   alias Oli.Activities
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.PartComponents
+  alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.React
   alias OliWeb.Workspaces.CourseAuthor.HistoryLive
@@ -29,86 +30,83 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   end
 
   @impl true
-  def handle_params(_params, _url, socket) do
-    {:noreply, socket}
-  end
-
-  @impl true
-  def render(assigns) do
-    if assigns[:app_params], do: render_advanced(assigns), else: render_basic(assigns)
-  end
-
-  defp render_basic(assigns) do
+  def render(%{app_params: _app_params} = assigns) do
     ~H"""
-    <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/pageeditor.js")}>
-    </script>
-    <%= for script <- @scripts do %>
-      <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/#{script}")}>
-      </script>
-    <% end %>
-
-    <%= if @is_admin? do %>
-      <div
-        class="alert alert-warning alert-dismissible flex flex-row fade show container mt-2 mx-auto"
-        role="alert"
-      >
-        <div class="flex-1">
-          <strong>You are editing as an administrator</strong>
-        </div>
-
-        <div>
-          <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, HistoryLive, @project_slug, @revision_slug) do %>
-            <span style="margin-right: 5px"><i class="fas fa-history"></i></span><span>View History</span>
-          <% end %>
-        </div>
-
-        <button type="button" class="close ml-4" data-bs-dismiss="alert" aria-label="Close">
-          <i class="fa-solid fa-xmark fa-lg"></i>
-        </button>
+    <div id="eventIntercept" phx-hook="LoadSurveyScripts"></div>
+    <%= if connected?(@socket) and assigns[:maybe_scripts_loaded] do %>
+      <.maybe_show_error error={@error} />
+      <div id="editor" class="container">
+        <%= React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor") %>
       </div>
+      <%= render_prev_next_nav(assigns) %>
+    <% else %>
+      <.loader />
     <% end %>
-
-    <div id="editor" style="width: 95%;" class="container mx-auto">
-      <%= React.component(@ctx, "Components.PageEditor", @raw_context, id: "page_editor") %>
-    </div>
-
-    <div class="container mx-auto mt-5">
-      <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
-        id: "collab-space-#{@project_slug}-#{@revision_slug}",
-        session: %{
-          "collab_space_config" => @collab_space_config,
-          "project_slug" => @project_slug,
-          "resource_slug" => @revision_slug
-        }
-      ) %>
-    </div>
-
-    <%= render_prev_next_nav(assigns) %>
     """
   end
 
-  defp render_advanced(assigns) do
+  def render(assigns) do
     ~H"""
-    <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/authoring.js")}>
-    </script>
+    <div id="eventIntercept" phx-hook="LoadSurveyScripts"></div>
+    <%= if connected?(@socket) and assigns[:maybe_scripts_loaded] do %>
+      <.maybe_show_error error={@error} />
+      <%= if @is_admin? do %>
+        <div
+          class="alert alert-warning alert-dismissible flex flex-row fade show container mt-2 mx-auto"
+          role="alert"
+        >
+          <div class="flex-1">
+            <strong>You are editing as an administrator</strong>
+          </div>
 
-    <%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
-      <%= if slug == "oli_adaptive" do %>
-        <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/#{script}")}>
-        </script>
+          <div>
+            <%= link class: "toolbar-link", to: Routes.live_path(OliWeb.Endpoint, HistoryLive, @project_slug, @revision_slug) do %>
+              <span style="margin-right: 5px"><i class="fas fa-history"></i></span><span>View History</span>
+            <% end %>
+          </div>
+
+          <button type="button" class="close ml-4" data-bs-dismiss="alert" aria-label="Close">
+            <i class="fa-solid fa-xmark fa-lg"></i>
+          </button>
+        </div>
       <% end %>
-    <% end %>
 
-    <%= for script <- @part_scripts do %>
-      <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/#{script}")}>
-      </script>
-    <% end %>
+      <div id="editor" style="width: 95%;" class="container mx-auto">
+        <%= React.component(@ctx, "Components.PageEditor", @raw_context, id: "page_editor") %>
+      </div>
 
-    <div id="editor" class="container">
-      <%= React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor") %>
+      <div class="container mx-auto mt-5">
+        <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
+          id: "collab-space-#{@project_slug}-#{@revision_slug}",
+          session: %{
+            "collab_space_config" => @collab_space_config,
+            "project_slug" => @project_slug,
+            "resource_slug" => @revision_slug
+          }
+        ) %>
+      </div>
+
+      <%= render_prev_next_nav(assigns) %>
+    <% else %>
+      <.loader />
+    <% end %>
+    """
+  end
+
+  @impl true
+  def handle_event("survey_scripts_loaded", %{"error" => _}, socket) do
+    {:noreply, assign(socket, error: true, maybe_scripts_loaded: true)}
+  end
+
+  def handle_event("survey_scripts_loaded", _params, socket) do
+    {:noreply, assign(socket, maybe_scripts_loaded: true)}
+  end
+
+  defp maybe_show_error(assigns) do
+    ~H"""
+    <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
+      Something went wrong when loading the JS dependencies.
     </div>
-
-    <%= render_prev_next_nav(assigns) %>
     """
   end
 
@@ -117,52 +115,64 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     activity_types = Activities.activities_for_project(project)
     part_component_types = PartComponents.part_components_for_project(project)
 
+    breadcrumbs =
+      Breadcrumb.trail_to(project_slug, revision_slug, AuthoringResolver, project.customizations)
+
     content = %{
       active: :curriculum,
       activity_types: activity_types,
-      breadcrumbs:
-        Breadcrumb.trail_to(
-          project_slug,
-          revision_slug,
-          Oli.Publishing.AuthoringResolver,
-          project.customizations
-        ),
+      breadcrumbs: breadcrumbs,
       collab_space_config: context.collab_space_config,
       graded: context.graded,
       is_admin?: is_admin?,
       part_component_types: part_component_types,
-      part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
+      part_scripts: PartComponents.get_part_component_scripts(),
       project_slug: project_slug,
       context: context,
       raw_context: context,
       revision_slug: revision_slug,
-      scripts: Activities.get_activity_scripts(:authoring_script),
+      scripts: Activities.get_activity_scripts(),
       title: "Edit | " <> context.title,
       resource_title: project.title,
       resource_slug: project.slug
     }
 
-    content =
+    {content, target_scripts} =
       case context do
         %{content: %{"advancedAuthoring" => true}} ->
-          Map.put(content, :app_params, %{
-            isAdmin: is_admin?,
-            revisionSlug: revision_slug,
-            projectSlug: project_slug,
-            graded: context.graded,
-            content: context,
-            paths: %{
-              images: Routes.static_path(socket, "/images")
-            },
-            activityTypes: activity_types,
-            partComponentTypes: part_component_types,
-            appsignalKey: Application.get_env(:appsignal, :client_key),
-            initialSidebarExpanded: socket.assigns[:sidebar_expanded]
-          })
+          activity_type_scripts =
+            Enum.reduce(activity_types, [], fn %{slug: slug, authoring_script: authoring_script},
+                                               acc ->
+              if slug == "oli_adaptive", do: [authoring_script | acc], else: acc
+            end)
+
+          updated_content =
+            Map.put(content, :app_params, %{
+              isAdmin: is_admin?,
+              revisionSlug: revision_slug,
+              projectSlug: project_slug,
+              graded: context.graded,
+              content: context,
+              paths: %{images: Routes.static_path(socket, "/images")},
+              activityTypes: activity_types,
+              partComponentTypes: part_component_types,
+              appsignalKey: Application.get_env(:appsignal, :client_key),
+              initialSidebarExpanded: socket.assigns[:sidebar_expanded]
+            })
+
+          {updated_content, ["authoring.js"] ++ activity_type_scripts}
 
         _ ->
-          content
+          {content, ["pageeditor.js"]}
       end
+
+    all_scripts = content.part_scripts ++ content.scripts ++ target_scripts
+    all_scripts = all_scripts |> Enum.uniq() |> Enum.map(&"/js/#{&1}")
+
+    socket =
+      socket
+      |> assign(maybe_scripts_loaded: false)
+      |> push_event("load_survey_scripts", %{script_sources: all_scripts})
 
     {:ok, assign(socket, content)}
   end
@@ -171,7 +181,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     ~H"""
     <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
       <%= if @context.previous_page do %>
-        <%= link to: Routes.live_path(OliWeb.Endpoint, __MODULE__, @project_slug, @context.previous_page["slug"]), class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+        <.link
+          class="page-nav-link btn"
+          navigate={
+            ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@context.previous_page["slug"]}/edit"
+          }
+        >
           <div class="flex items-center justify-between">
             <div class="mr-4">
               <i class="fas fa-arrow-left nav-icon"></i>
@@ -181,7 +196,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
               <div class="nav-title"><%= @context.previous_page["title"] %></div>
             </div>
           </div>
-        <% end %>
+        </.link>
       <% else %>
         <div class="page-nav-link-placeholder"></div>
       <% end %>
@@ -189,7 +204,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       <div class="flex-grow-1"></div>
 
       <%= if @context.next_page do %>
-        <%= link to: Routes.live_path(OliWeb.Endpoint, __MODULE__, @project_slug, @context.next_page["slug"]), class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+        <.link
+          class="page-nav-link btn"
+          navigate={
+            ~p"/workspaces/course_author/#{@project_slug}/curriculum/#{@context.next_page["slug"]}/edit"
+          }
+        >
           <div class="flex items-center justify-between">
             <div class="flex flex-col text-left overflow-hidden">
               <div class="nav-label"><%= "Next" %></div>
@@ -199,7 +219,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
               <i class="fas fa-arrow-right nav-icon"></i>
             </div>
           </div>
-        <% end %>
+        </.link>
       <% else %>
         <div class="page-nav-link-placeholder"></div>
       <% end %>
