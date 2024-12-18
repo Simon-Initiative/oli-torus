@@ -32,24 +32,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
   @impl true
   def render(%{app_params: _app_params} = assigns) do
     ~H"""
-    <div id="eventIntercept" phx-hook="LoadSurveyScripts"></div>
-    <%= if connected?(@socket) and assigns[:maybe_scripts_loaded] do %>
-      <.maybe_show_error error={@error} />
+    <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <div id="editor" class="container">
         <%= React.component(@ctx, "Components.Authoring", @app_params, id: "authoring_editor") %>
       </div>
       <%= render_prev_next_nav(assigns) %>
-    <% else %>
-      <.loader />
-    <% end %>
+    </.scripts_wrapper>
     """
   end
 
   def render(assigns) do
     ~H"""
-    <div id="eventIntercept" phx-hook="LoadSurveyScripts"></div>
-    <%= if connected?(@socket) and assigns[:maybe_scripts_loaded] do %>
-      <.maybe_show_error error={@error} />
+    <.scripts_wrapper socket={@socket} error={@error} maybe_scripts_loaded={@maybe_scripts_loaded}>
       <%= if @is_admin? do %>
         <div
           class="alert alert-warning alert-dismissible flex flex-row fade show container mt-2 mx-auto"
@@ -87,9 +81,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
       </div>
 
       <%= render_prev_next_nav(assigns) %>
-    <% else %>
-      <.loader />
-    <% end %>
+    </.scripts_wrapper>
     """
   end
 
@@ -106,6 +98,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     ~H"""
     <div :if={@error} class="alert alert-danger m-0 flex flex-row justify-between w-full" role="alert">
       Something went wrong when loading the JS dependencies.
+    </div>
+    """
+  end
+
+  slot :inner_block, required: true
+  attr(:socket, :any, required: true)
+  attr(:error, :boolean, required: true)
+  attr(:maybe_scripts_loaded, :boolean, required: true)
+
+  def scripts_wrapper(assigns) do
+    ~H"""
+    <div id="eventIntercept" phx-hook="LoadSurveyScripts">
+      <%= if connected?(@socket) and @maybe_scripts_loaded do %>
+        <.maybe_show_error error={@error} />
+        <%= render_slot(@inner_block) %>
+      <% else %>
+        <.loader />
+      <% end %>
     </div>
     """
   end
@@ -172,6 +182,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.EditorLive do
     socket =
       socket
       |> assign(maybe_scripts_loaded: false)
+      |> assign(error: false)
       |> push_event("load_survey_scripts", %{script_sources: all_scripts})
 
     {:ok, assign(socket, content)}
