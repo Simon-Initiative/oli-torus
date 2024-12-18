@@ -33,6 +33,7 @@ defmodule OliWeb.LegacySuperactivityController do
       :activity_attempt,
       :resource_attempt,
       :resource_access,
+      :attempt_user_id,
       :save_files,
       :instructors,
       :enrollment,
@@ -116,6 +117,9 @@ defmodule OliWeb.LegacySuperactivityController do
 
     resource_access = Attempts.get_resource_access(resource_attempt.resource_access_id)
 
+    # different than current user when instructor reviews student attempt
+    attempt_user_id = resource_access.user_id
+
     section =
       Sections.get_section_preloaded!(resource_access.section_id)
       |> Repo.preload([:institution, :section_project_publications])
@@ -134,7 +138,7 @@ defmodule OliWeb.LegacySuperactivityController do
     save_files =
       ActivityLifecycle.get_activity_attempt_save_files(
         activity_attempt.attempt_guid,
-        Integer.to_string(user.id),
+        Integer.to_string(attempt_user_id),
         activity_attempt.attempt_number
       )
 
@@ -147,6 +151,7 @@ defmodule OliWeb.LegacySuperactivityController do
       activity_attempt: activity_attempt,
       resource_attempt: resource_attempt,
       resource_access: resource_access,
+      attempt_user_id: attempt_user_id,
       save_files: save_files,
       instructors: instructors,
       enrollment: enrollment,
@@ -338,19 +343,20 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp process_command(
          "loadFileRecord",
-         %LegacySuperactivityContext{} = _context,
+         %LegacySuperactivityContext{} = context,
          %{
            "activityContextGuid" => attempt_guid
          } = params
        ) do
     file_name = Map.get(params, "fileName")
     attempt_number = Map.get(params, "attemptNumber")
-    user_id = Map.get(params, "userGuid")
+    # use attempt_user from context to allow for instructor review of student work
+    attempt_user_id = context.attempt_user_id
 
     save_file =
       ActivityLifecycle.get_activity_attempt_save_file(
         attempt_guid,
-        user_id,
+        Integer.to_string(attempt_user_id),
         attempt_number,
         file_name
       )
