@@ -105,6 +105,7 @@ defmodule Oli.Analytics.Datasets do
         |> select_merge([_j, u, p], %{
           total_count: fragment("count(*) OVER()"),
           project_title: p.title,
+          project_slug: p.slug,
           initiator_email: u.email
         })
 
@@ -113,6 +114,9 @@ defmodule Oli.Analytics.Datasets do
         case field do
           :project_title ->
             order_by(query, [_, _, p], {^direction, p.title})
+
+          :project_slug ->
+            order_by(query, [_, _, p], {^direction, p.slug})
 
           :initiator_email ->
             order_by(query, [_, u, _], {^direction, u.email})

@@ -147,17 +147,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <%= if Accounts.has_admin_role?(@ctx.author, :content_admin) do %>
-        <div class="d-flex align-items-center my-3">
-          <AsyncExporter.raw_analytics
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            analytics_export_status={@analytics_export_status}
-            analytics_export_url={@analytics_export_url}
-            analytics_export_timestamp={@analytics_export_timestamp}
-          />
-        </div>
-      <% end %>
     </div>
     <ul class="nav nav-pills mb-4">
       <li class="nav-item my-2 mr-2">

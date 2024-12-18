@@ -36,6 +36,7 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
     embeds_one(:configuration, JobConfig, on_replace: :update)
 
     field(:project_title, :string, virtual: true)
+    field(:project_slug, :string, virtual: true)
     field(:total_count, :integer, virtual: true)
     field(:initiator_email, :string, virtual: true)
 

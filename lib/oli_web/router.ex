@@ -844,6 +844,7 @@ defmodule OliWeb.Router do
         live("/:project_id/products", ProductsLive)
         live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
+        live("/:project_id/datasets", DatasetsLive)
       end
     end
   end
