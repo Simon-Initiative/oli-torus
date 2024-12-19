@@ -190,7 +190,8 @@ defmodule Oli.Delivery.Settings do
       feedback_scheduled_date:
         combine_field(:feedback_scheduled_date, section_resource, student_exception),
       collab_space_config: collab_space_config,
-      explanation_strategy: explanation_strategy
+      explanation_strategy: explanation_strategy,
+      allow_hints: section_resource.allow_hints
     }
   end
 

@@ -24,22 +24,22 @@ const shouldShow = (
   graded: boolean,
   surveyId: string | null,
   shouldShow?: boolean,
+  allowHints?: boolean,
 ) => {
-  if (graded) return false;
+  if (!graded) return true;
   if (surveyId !== null) return false;
   if (shouldShow) return true;
 
-  return !isEvaluated(uiState) && !isSubmitted(uiState);
+  return !isEvaluated(uiState) && !isSubmitted(uiState) && allowHints;
 };
 
 const isRequestHintDisabled = (
   uiState: ActivityDeliveryState,
   hasMoreHints: boolean,
   correct: boolean,
-  graded: boolean,
 ) => {
   if (!hasMoreHints) return false;
-  if (isEvaluated(uiState) && graded) return true;
+  if (isEvaluated(uiState)) return true;
   if (!correct) return false;
 
   return isEvaluated(uiState) || isSubmitted(uiState);
@@ -57,14 +57,14 @@ const isRequestHintDisabled = (
 export const HintsDeliveryConnected: React.FC<Props> = (props) => {
   const { context, writerContext, onRequestHint, onResetActivity } =
     useDeliveryElementContext<HasHints>();
-  const { graded, surveyId } = context;
+  const { graded, surveyId, allowHints } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   const correct = isCorrect(uiState.attemptState);
-  const shouldShowHint = shouldShow(uiState, graded, surveyId, props.shouldShow);
+  const shouldShowHint = shouldShow(uiState, graded, surveyId, props.shouldShow, allowHints);
   const hasMoreHints = uiState.partState[props.partId]?.hasMoreHints || false;
-  const requestHintDisabled = isRequestHintDisabled(uiState, hasMoreHints, correct, graded);
+  const requestHintDisabled = isRequestHintDisabled(uiState, hasMoreHints, correct);
 
   const onHint = () => {
     if (isEvaluated(uiState)) {
