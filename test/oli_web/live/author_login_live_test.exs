@@ -15,7 +15,7 @@ defmodule OliWeb.AuthorLoginLiveTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_author(Oli.AccountsFixtures.author_fixture())
+        |> log_in_author(Oli.Utils.Seeder.AccountsFixtures.author_fixture())
         |> live(~p"/authors/log_in")
         |> follow_redirect(conn, "/workspaces/course_author")
 
@@ -26,7 +26,7 @@ defmodule OliWeb.AuthorLoginLiveTest do
   describe "author login" do
     test "redirects if author login with valid credentials", %{conn: conn} do
       password = "123456789abcd"
-      author = Oli.AccountsFixtures.author_fixture(%{password: password})
+      author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(%{password: password})
 
       {:ok, lv, _html} = live(conn, ~p"/authors/log_in")
 
