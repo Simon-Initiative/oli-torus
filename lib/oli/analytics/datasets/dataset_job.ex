@@ -69,4 +69,8 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
     ])
   end
 
+  def statuses do
+    @emr_statuses
+  end
+
 end

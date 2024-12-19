@@ -140,7 +140,7 @@ defmodule Oli.Analytics.Datasets do
     query = DatasetJob
       |> join(:left, [j], proj in Oli.Authoring.Course.Project, on: j.project_id == proj.id)
       |> distinct(true)
-      |> select([_j, proj], {proj.id, proj.title})
+      |> select([_j, proj], %{id: proj.id, title: proj.title})
 
     Repo.all(query)
   end
@@ -160,7 +160,7 @@ defmodule Oli.Analytics.Datasets do
     |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
     |> distinct(true)
     |> where(^filter_by_project_id)
-    |> select([_j, u], {u.id, u.email})
+    |> select([_j, u], %{id: u.id, email: u.email})
 
     Repo.all(query)
   end
