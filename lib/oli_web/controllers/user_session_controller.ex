@@ -8,19 +8,6 @@ defmodule OliWeb.UserSessionController do
     create(conn, params, flash_message: "Account created successfully!")
   end
 
-  def create(
-        conn,
-        %{"_action" => "invitation_accepted", "email" => email, "section_slug" => section_slug} =
-          params
-      ) do
-    params = put_in(params, ["user", "email"], email)
-
-    conn
-    |> UserAuth.clear_all_session_data()
-    |> create(params, flash_message: nil)
-    |> redirect(to: ~p"/sections/#{section_slug}")
-  end
-
   def create(conn, %{"_action" => "password_updated"} = params) do
     conn
     |> put_session(:user_return_to, ~p"/users/settings")
@@ -31,7 +18,7 @@ defmodule OliWeb.UserSessionController do
     create(conn, params, flash_message: "Welcome back!")
   end
 
-  defp create(conn, %{"user" => user_params}, opts) do
+  def create(conn, %{"user" => user_params}, opts) do
     %{"email" => email, "password" => password} = user_params
 
     if user = Accounts.get_user_by_email_and_password(email, password) do

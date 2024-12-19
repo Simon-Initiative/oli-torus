@@ -67,9 +67,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         <Components.Auth.registration_form
           title="Create Account"
           form={@form}
-          action={
-            ~p"/users/log_in?_action=invitation_accepted&email=#{@user.email}&section=#{@section.slug}"
-          }
+          action={~p"/users/accept_invitation?email=#{@user.email}&section_slug=#{@section.slug}"}
           trigger_submit={@trigger_submit}
           recaptcha_error={@recaptcha_error}
           check_errors={@check_errors}

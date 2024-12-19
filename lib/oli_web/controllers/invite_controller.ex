@@ -7,6 +7,7 @@ defmodule OliWeb.InviteController do
   alias Oli.Accounts.UserToken
   alias Oli.Delivery.Sections
   alias Oli.{Email, Mailer}
+  alias OliWeb.UserSessionController
 
   def index(conn, _params) do
     render_invite_page(conn, "index.html", title: "Invite")
@@ -24,6 +25,18 @@ defmodule OliWeb.InviteController do
         |> put_flash(:error, "reCaptcha failed, please try again")
         |> redirect(to: Routes.invite_path(conn, :index))
     end
+  end
+
+  @doc """
+  After a user accepts an intivation we log the user in and redirects him to the section.
+  """
+  def accept_user_invitation(conn, %{"email" => email, "section_slug" => section_slug} = params) do
+    params =
+      params
+      |> put_in(["user", "email"], email)
+      |> put_in(["user", "request_path"], ~p"/sections/#{section_slug}")
+
+    UserSessionController.create(conn, params, flash_message: nil)
   end
 
   def create_bulk(conn, %{

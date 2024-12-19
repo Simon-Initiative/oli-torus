@@ -1332,6 +1332,8 @@ defmodule OliWeb.Router do
     pipe_through([:browser])
 
     live "/users/invite/:token", Users.Invitations.UsersInviteView
+
+    post "/users/accept_invitation", InviteController, :accept_user_invitation
   end
 
   ### Sections - Enrollment
