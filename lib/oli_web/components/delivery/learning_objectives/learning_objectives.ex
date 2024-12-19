@@ -560,9 +560,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
   end
 
   defp apply_filters(objectives, params, :instructor_dashboard) do
-    # Only show top-level objectives on initial table
     objectives
-    |> Enum.filter(fn o -> o.resource_id == o.objective_resource_id end)
     |> do_apply_filters(params)
   end
 
