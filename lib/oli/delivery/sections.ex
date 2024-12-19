@@ -5375,6 +5375,7 @@ defmodule Oli.Delivery.Sections do
       join: ecr in EnrollmentContextRole,
       on: e.id == ecr.enrollment_id,
       where: e.user_id == ^user_id,
+      where: e.status == :enrolled,
       where: s.open_and_free == true,
       where: s.status == :active,
       where: ecr.context_role_id in ^context_role_ids
