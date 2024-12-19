@@ -3,9 +3,12 @@ defmodule Oli.Delivery.Sections.Certificate do
   import Ecto.Changeset
   import Oli.Utils, only: [validate_greater_than_or_equal: 4]
 
+  alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Sections.Section
 
   @assessments_options [:all, :custom]
+
+  @derive {Jason.Encoder, except: [:id, :section, :granted_certificate, :__meta__]}
 
   schema "certificates" do
     field :required_discussion_posts, :integer
@@ -31,6 +34,8 @@ defmodule Oli.Delivery.Sections.Certificate do
     field :logo3, :string
 
     belongs_to :section, Section
+
+    has_one :granted_certificate, GrantedCertificate
 
     timestamps(type: :utc_datetime)
   end

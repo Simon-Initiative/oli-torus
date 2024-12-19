@@ -72,6 +72,10 @@ defmodule Oli.Delivery.Sections.CertificateTest do
       assert changeset.valid?
     end
 
+    test "success: a certificate has a one-to-one association with a granted certificate" do
+      assert Map.has_key?(%Certificate{}, :granted_certificate)
+    end
+
     test "error: when distinction < completion", %{params: params} do
       params = %{params | min_percentage_for_distinction: 0.6, min_percentage_for_completion: 0.7}
 

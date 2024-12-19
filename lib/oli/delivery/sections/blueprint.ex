@@ -254,7 +254,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           cover_image: section.cover_image,
           skip_email_verification: section.skip_email_verification,
           registration_open: section.registration_open,
-          requires_enrollment: section.requires_enrollment
+          requires_enrollment: section.requires_enrollment,
+          certificate: Oli.Repo.preload(section, :certificate).certificate
         },
         attrs
       )
