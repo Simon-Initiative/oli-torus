@@ -1021,6 +1021,8 @@ defmodule Oli.Accounts do
     if User.valid_password?(user, password), do: user
   end
 
+  def get_user_by_email_and_password(_email, _password), do: nil
+
   ## User registration
 
   @doc """

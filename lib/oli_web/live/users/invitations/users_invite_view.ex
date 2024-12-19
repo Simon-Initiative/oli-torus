@@ -6,7 +6,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections
 
-  def mount(%{"token" => token}, _session, socket) do
+  def mount(%{"token" => token}, session, socket) do
     case Accounts.get_user_token_by_enrollment_invitation_token(token) do
       nil ->
         {:ok, assign(socket, user: nil)}
@@ -17,7 +17,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
         {:ok,
          assign(socket,
            user: user,
-           new_invited_user?: new_invited_user?(user),
+           # this current user refers to the one that is logged in
+           # and might be different from the user that is being invited
+           current_user:
+             session["user_token"] && Accounts.get_user_by_session_token(session["user_token"]),
            section: section,
            enrollment: Sections.get_enrollment(section.slug, user.id, filter_by_status: false),
            step: "accept_or_reject_invitation"
@@ -84,36 +87,66 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
       <h1>Invitation to <%= @section.title %></h1>
 
       <div class="w-full flex items-center justify-center dark">
-        TODO: login form here
+        <Components.Auth.login_form
+          title="Sign In"
+          form={@form}
+          action={~p"/users/accept_invitation?email=#{@user.email}&section_slug=#{@section.slug}"}
+          reset_password_link={~p"/users/reset_password"}
+          trigger_submit={@trigger_submit}
+          submit_event="log_in_existing_user"
+          disabled_inputs={[:email]}
+        />
+      </div>
+
+      <div :if={!is_nil(@current_user) && @current_user.id != @user.id} class="text-xs text-bold">
+        <p>
+          You are currently logged in as <strong><%= @current_user.email %></strong>.<br />
+          You will be automatically logged in as <strong><%= @user.email %></strong>
+          to access your invitation to <strong>"<%= @section.title %>"</strong>
+          Course.
+        </p>
       </div>
     </div>
     """
   end
 
   def handle_event("accept_invitation", _, socket) do
-    if socket.assigns.new_invited_user? do
-      # the new user must complete registration
-      changeset = Accounts.change_user_registration(socket.assigns.user)
+    %{
+      current_user: current_user,
+      user: user,
+      enrollment: enrollment,
+      section: section
+    } =
+      socket.assigns
 
-      {:noreply,
-       assign(socket,
-         step: "new_user_account_creation",
-         trigger_submit: false,
-         check_errors: false,
-         recaptcha_error: false
-       )
-       |> assign_form(changeset)}
-    else
-      # TODO:
+    case {new_invited_user?(user), current_user_is_the_invited_one?(current_user, user)} do
+      {true, _} ->
+        # the new user must complete registration
+        changeset = Accounts.change_user_registration(user)
 
-      # the user is already registered.
-      # if it is not signed in, we need to ask for the password
-      # if it is signed in, we can just mark the enrollment as :enrolled
-      # and redirect to the section
+        {:noreply,
+         assign(socket,
+           step: "new_user_account_creation",
+           trigger_submit: false,
+           check_errors: false,
+           recaptcha_error: false
+         )
+         |> assign_form(changeset)}
 
-      # Sections.update_enrollment(socket.assigns.enrollment, %{status: :enrolled})
+      {false, true} ->
+        # the already logged in user is the one being invited
+        # we can just mark the enrollment as :enrolled
+        # and redirect to the section
+        Sections.update_enrollment(enrollment, %{status: :enrolled})
 
-      {:noreply, assign(socket, step: "existing_user_login")}
+        {:noreply, redirect(socket, to: ~p"/sections/#{section.slug}")}
+
+      {false, false} ->
+        # the existing invited user is not logged in
+        # we need to ask for the password
+        form = to_form(%{"email" => user.email}, as: "user")
+
+        {:noreply, assign(socket, step: "existing_user_login", form: form, trigger_submit: false)}
     end
   end
 
@@ -181,6 +214,20 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
     end
   end
 
+  def handle_event("log_in_existing_user", params, socket) do
+    %{user: user, enrollment: enrollment} = socket.assigns
+
+    case Accounts.get_user_by_email_and_password(user.email, params["user"]["password"]) do
+      nil ->
+        {:noreply, put_flash(socket, :error, "Invalid email or password")}
+
+      _user ->
+        Sections.update_enrollment(enrollment, %{status: :enrolled})
+
+        {:noreply, assign(socket, trigger_submit: true)}
+    end
+  end
+
   defp maybe_add_email_error(changeset, email, email_param) do
     if emails_match?(email, email_param) do
       changeset
@@ -197,6 +244,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
        do: true
 
   defp new_invited_user?(_), do: false
+
+  defp current_user_is_the_invited_one?(nil, _user), do: false
+  defp current_user_is_the_invited_one?(current_user, user), do: current_user.id == user.id
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     form = to_form(changeset, as: "user")

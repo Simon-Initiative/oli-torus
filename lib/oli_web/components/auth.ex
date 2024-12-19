@@ -7,10 +7,13 @@ defmodule OliWeb.Components.Auth do
   attr :section, :string, default: nil
   attr :from_invitation_link?, :boolean, default: false
   attr :class, :string, default: ""
-  attr :authentication_providers, :list, required: true
-  attr :auth_provider_path_fn, :any, required: true
+  attr :authentication_providers, :list, default: []
+  attr :auth_provider_path_fn, :any
   attr :registration_link, :string, default: nil
   attr :reset_password_link, :string, required: true
+  attr :disabled_inputs, :list, default: []
+  attr :trigger_submit, :boolean, default: false
+  attr :submit_event, :any, default: nil
 
   def login_form(assigns) do
     ~H"""
@@ -30,7 +33,14 @@ defmodule OliWeb.Components.Auth do
         />
       </div>
 
-      <.form :let={f} id="login_form" for={@form} action={@action} phx-update="ignore">
+      <.form
+        :let={f}
+        id="login_form"
+        for={@form}
+        action={@action}
+        phx-submit={@submit_event}
+        phx-trigger-action={@trigger_submit}
+      >
         <div class="w-80 mx-auto flex flex-col gap-2 py-8">
           <div>
             <%= email_input(f, :email,
@@ -38,7 +48,8 @@ defmodule OliWeb.Components.Auth do
                 "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
               placeholder: "Email",
               required: true,
-              autofocus: true
+              autofocus: focusHelper(f, :email, default: true),
+              disabled: :email in @disabled_inputs
             ) %>
             <%= error_tag(f, :email) %>
           </div>
@@ -47,7 +58,9 @@ defmodule OliWeb.Components.Auth do
               class:
                 "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
               placeholder: "Password",
-              required: true
+              required: true,
+              autofocus: focusHelper(f, :password, default: true),
+              disabled: :password in @disabled_inputs
             ) %>
             <%= error_tag(f, :password) %>
           </div>
