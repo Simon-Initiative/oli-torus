@@ -562,15 +562,26 @@ defmodule Oli.Delivery.Sections do
     Repo.aggregate(query, :count, :id) > 0
   end
 
-  def get_enrollment(section_slug, user_id) do
+  @doc """
+  Returns the enrollment for a given section and user.
+  The `filter_by_status` boolean option is used to filter the enrollment by status
+  (enrollment status = :enrolled and section status = :active).
+  """
+  def get_enrollment(section_slug, user_id, opts \\ [filter_by_status: true]) do
+    maybe_filter_by_status =
+      if opts[:filter_by_status] do
+        dynamic([e, s], e.status == :enrolled and s.status == :active)
+      else
+        true
+      end
+
     query =
       from(
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where:
-          e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
-            e.status == :enrolled,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
+        where: ^maybe_filter_by_status,
         select: e
       )
 

@@ -1326,6 +1326,14 @@ defmodule OliWeb.Router do
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
   end
 
+  ### Invitations (to sections or projects)
+
+  scope "/", OliWeb do
+    pipe_through([:browser])
+
+    live "/users/invite/:token", Users.Invitations.UsersInviteView
+  end
+
   ### Sections - Enrollment
   scope "/sections", OliWeb do
     pipe_through([

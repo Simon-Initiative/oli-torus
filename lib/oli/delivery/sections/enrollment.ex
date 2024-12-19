@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Sections.Enrollment do
     field :state, :map, default: %{}
 
     field :status, Ecto.Enum,
-      values: [:enrolled, :suspended, :pending_confirmation],
+      values: [:enrolled, :suspended, :pending_confirmation, :rejected],
       default: :enrolled
 
     many_to_many :context_roles, Lti_1p3.DataProviders.EctoProvider.ContextRole,
@@ -25,6 +25,6 @@ defmodule Oli.Delivery.Sections.Enrollment do
     enrollment
     |> cast(attrs, [:user_id, :section_id, :state, :status, :most_recently_visited_resource_id])
     |> validate_required([:user_id, :section_id])
-    |> validate_inclusion(:payment_type, Ecto.Enum.values(__MODULE__, :payment_type))
+    |> validate_inclusion(:status, Ecto.Enum.values(__MODULE__, :status))
   end
 end

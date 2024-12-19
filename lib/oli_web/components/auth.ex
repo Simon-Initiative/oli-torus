@@ -105,13 +105,14 @@ defmodule OliWeb.Components.Auth do
   attr :section, :string, default: nil
   attr :from_invitation_link?, :boolean, default: false
   attr :class, :string, default: ""
-  attr :authentication_providers, :list, required: true
-  attr :auth_provider_path_fn, :any, required: true
+  attr :authentication_providers, :list, default: []
+  attr :auth_provider_path_fn, :any
   attr :log_in_link, :string, default: nil
   attr :link_account, :boolean, default: false
   attr :trigger_submit, :boolean, required: true
   attr :check_errors, :boolean, default: false
   attr :recaptcha_error, :any, required: true
+  attr :disabled_inputs, :list, default: []
 
   def registration_form(assigns) do
     ~H"""
@@ -157,6 +158,8 @@ defmodule OliWeb.Components.Auth do
                       error_class(f, :email, "is-invalid")}
             label_class="control-label"
             required
+            disabled={:email in @disabled_inputs}
+            phx-debounce={500}
             autofocus={focusHelper(f, :email, default: true)}
           />
 
@@ -167,6 +170,8 @@ defmodule OliWeb.Components.Auth do
             class={"dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug" <>
                   error_class(f, :given_name, "is-invalid")}
             required
+            disabled={:given_name in @disabled_inputs}
+            phx-debounce={500}
             autofocus={focusHelper(f, :given_name, default: true)}
           />
 
@@ -177,6 +182,8 @@ defmodule OliWeb.Components.Auth do
             class={"dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug" <>
                   error_class(f, :family_name, "is-invalid")}
             required
+            disabled={:family_name in @disabled_inputs}
+            phx-debounce={500}
             autofocus={focusHelper(f, :family_name, default: true)}
           />
 
@@ -186,6 +193,8 @@ defmodule OliWeb.Components.Auth do
             placeholder="Password"
             class={"dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug" <>
                   error_class(f, [:password, :password_confirmation], "is-invalid")}
+            disabled={:password in @disabled_inputs}
+            phx-debounce={500}
             required
           />
 
@@ -195,6 +204,8 @@ defmodule OliWeb.Components.Auth do
             placeholder="Confirm password"
             class={"dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug" <>
                   error_class(f, [:password_confirmation], "is-invalid")}
+            disabled={:password_confirmation in @disabled_inputs}
+            phx-debounce={500}
             required
           />
 
@@ -236,6 +247,7 @@ defmodule OliWeb.Components.Auth do
           />
 
           <.button
+            :if={@log_in_link}
             variant={:link}
             href={@log_in_link <> maybe_params([
             section: @section,

@@ -1057,6 +1057,26 @@ defmodule Oli.Accounts do
     )
   end
 
+  ## Email invitations
+
+  @doc """
+  When a new user accepts an invitation to a section, the user -student or instructor- data is updated (password for intance)
+  and the enrollment status is updated from `:pending_confirmation` to `:enrolled`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_user_invitation(user, enrollment, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      user
+      |> User.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      enrollment
+      |> Enrollment.changeset(%{status: :enrolled})
+      |> Repo.update!()
+    end)
+  end
+
   ## Settings
 
   @doc """
@@ -1349,6 +1369,27 @@ defmodule Oli.Accounts do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
          %User{} = user <- Repo.one(query) do
       user
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the user by enrollment invitation token.
+
+  ## Examples
+
+      iex> get_user_by_enrollment_invitation_token("validtoken")
+      %User{}
+
+      iex> get_user_by_enrollment_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_user_token_by_enrollment_invitation_token(token) do
+    with {:ok, query} <- UserToken.enrollment_invitation_token_query(token),
+         %UserToken{} = user_token <- Repo.one(query) |> Repo.preload(:user) do
+      user_token
     else
       _ -> nil
     end
