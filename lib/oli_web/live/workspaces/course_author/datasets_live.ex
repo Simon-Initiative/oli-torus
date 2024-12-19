@@ -18,10 +18,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   @limit 25
 
   @impl Phoenix.LiveView
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     %{ctx: ctx} = socket.assigns
 
-    project_id = Map.get(socket.assigns, :project_id)
+    project_id = case Map.get(params, "project_id") do
+      nil -> nil
+      project_slug -> Oli.Authoring.Course.get_project_by_slug(project_slug).id
+    end
 
     options = %BrowseJobOptions{
       project_id: project_id,
