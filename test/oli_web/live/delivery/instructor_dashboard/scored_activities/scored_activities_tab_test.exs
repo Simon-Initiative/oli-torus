@@ -1152,11 +1152,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
 
       assert has_element?(view, "h4", "Scored Activities")
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
-      assert a4.title == "Module 2: BasicsPage 4"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
     end
 
     # NON-DETERMINISTIC: https://eliterate.atlassian.net/browse/TRIAGE-4 Fix or remove
@@ -1222,23 +1222,22 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       section: section
     } do
       {:ok, view, _html} = live(conn, live_view_scored_activities_route(section.slug))
-      [a0, _a1, _a2, _a3, a4] = table_as_list_of_maps(view, :assessments)
 
       assert view
              |> element("tr:first-child > td:first-child > div")
-             |> render() =~ a0.order
+             |> render() =~ "1"
 
       assert view
              |> element("tr:first-child > td:nth-child(2) > div")
-             |> render() =~ a0.title
+             |> render() =~ "Page 1"
 
       assert view
              |> element("tr:last-child > td:first-child > div")
-             |> render() =~ a4.order
+             |> render() =~ "5"
 
       assert view
              |> element("tr:last-child > td:nth-child(2) > div > div")
-             |> render() =~ "Page 4"
+             |> render() =~ "Orphaned Page"
 
       view
       |> element("th[phx-value-sort_by=order]")
@@ -1246,19 +1245,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
       assert view
              |> element("tr:first-child > td:first-child > div")
-             |> render() =~ a4.order
+             |> render() =~ "5"
 
       assert view
              |> element("tr:first-child > td:nth-child(2) > div > div > a")
-             |> render() =~ "Page 4"
+             |> render() =~ "Orphaned Page"
 
       assert view
              |> element("tr:last-child > td:first-child > div")
-             |> render() =~ a0.order
+             |> render() =~ "1"
 
       assert view
              |> element("tr:last-child > td:nth-child(2) > div")
-             |> render() =~ a0.title
+             |> render() =~ "Page 1"
     end
 
     test "displays custom labels", %{
@@ -1275,11 +1274,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
 
       assert has_element?(view, "h4", "Scored Activities")
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Chapter 1: IntroductionPage 1"
-      assert a2.title == "Chapter 1: IntroductionPage 2"
-      assert a3.title == "Chapter 2: BasicsPage 3"
-      assert a4.title == "Chapter 2: BasicsPage 4"
+      assert a0.title == "Chapter 1: IntroductionPage 1"
+      assert a1.title == "Chapter 1: IntroductionPage 2"
+      assert a2.title == "Chapter 2: BasicsPage 3"
+      assert a3.title == "Chapter 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
     end
 
     test "patches url to see activity details when a row is clicked", %{
@@ -2320,11 +2319,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
       [a0, a1, a2, a3, a4] = table_as_list_of_maps(view, :assessments)
 
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
-      assert a4.title == "Module 2: BasicsPage 4"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
+      assert a4.title == "Orphaned Page"
 
       # It does not display pagination options
       refute has_element?(view, "nav[aria-label=\"Paging\"]")
@@ -2347,8 +2346,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a0, a1] = table_as_list_of_maps(view, :assessments)
 
       # Page 1
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
     end
 
     test "change page size works as expected", %{
@@ -2368,8 +2367,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a0, a1] = table_as_list_of_maps(view, :assessments)
 
       # Page 1
-      assert a0.title == "Orphaned Page"
-      assert a1.title == "Module 1: IntroductionPage 1"
+      assert a0.title == "Module 1: IntroductionPage 1"
+      assert a1.title == "Module 1: IntroductionPage 2"
 
       # Assert that the pagination options are displayed
       assert has_element?(view, "nav[aria-label=\"Paging\"]")
@@ -2382,8 +2381,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a2, a3] = table_as_list_of_maps(view, :assessments)
 
       # Page 2
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
     end
 
     test "keeps showing the same elements when changing the page size", %{
@@ -2402,8 +2401,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a2, a3] = table_as_list_of_maps(view, :assessments)
 
       # Page 2
-      assert a2.title == "Module 1: IntroductionPage 2"
-      assert a3.title == "Module 2: BasicsPage 3"
+      assert a2.title == "Module 2: BasicsPage 3"
+      assert a3.title == "Module 2: BasicsPage 4"
 
       # Change page size from 2 to 1
       view
@@ -2413,7 +2412,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       [a2] = table_as_list_of_maps(view, :assessments)
 
       # Page 3. It keeps showing the same element.
-      assert a2.title == "Module 1: IntroductionPage 2"
+      assert a2.title == "Module 2: BasicsPage 3"
     end
   end
 end

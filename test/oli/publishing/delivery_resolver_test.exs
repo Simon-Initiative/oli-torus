@@ -5,6 +5,7 @@ defmodule Oli.Publishing.DeliveryResolverTest do
 
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Sections
 
   describe "delivery resolution" do
     setup do
@@ -269,5 +270,159 @@ defmodule Oli.Publishing.DeliveryResolverTest do
       assert DeliveryResolver.targeted_via_related_to(section.slug, page_revision.resource_id) ==
                []
     end
+  end
+
+  describe "graded_pages_revisions_and_section_resources/1" do
+    setup [:create_elixir_project]
+
+    test "returns graded pages in order", %{
+      section: section
+    } do
+      pages = DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
+
+      assert length(pages) == 3
+
+      assert Enum.map(pages, fn {rev, _} -> rev.title end) == [
+               "Page 1",
+               "Page 2",
+               "Page 4"
+             ]
+    end
+  end
+
+  defp create_elixir_project(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # revisions...
+
+    ## pages...
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        graded: true
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        graded: true
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 3"
+      )
+
+    page_4_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 4",
+        graded: true
+      )
+
+    ## modules...
+    module_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_1_revision.resource_id,
+          page_2_revision.resource_id
+        ],
+        title: "Module 1"
+      })
+
+    module_2_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_3_revision.resource_id],
+        title: "Module 2"
+      })
+
+    ## units...
+    unit_1_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          module_1_revision.resource_id,
+          module_2_revision.resource_id,
+          page_4_revision.resource_id
+        ],
+        title: "Unit 1"
+      })
+
+    ## root container...
+    container_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          unit_1_revision.resource_id
+        ],
+        title: "Root Container"
+      })
+
+    all_revisions =
+      [
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        page_4_revision,
+        module_1_revision,
+        module_2_revision,
+        unit_1_revision,
+        container_revision
+      ]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: project,
+        title: "The best course ever!",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, _} = Sections.rebuild_contained_pages(section)
+    {:ok, _} = Sections.rebuild_contained_objectives(section)
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      page_4: page_4_revision,
+      module_1: module_1_revision,
+      module_2: module_2_revision,
+      unit_1: unit_1_revision
+    }
   end
 end
