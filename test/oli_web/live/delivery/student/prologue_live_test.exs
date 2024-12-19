@@ -357,7 +357,9 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
     Sections.get_section_resource(section.id, page_2_revision.resource_id)
     |> Sections.update_section_resource(%{
       start_date: ~U[2023-11-10 20:00:00Z],
-      end_date: ~U[2023-11-14 20:00:00Z]
+      end_date: ~U[2023-11-14 20:00:00Z],
+      late_submit: :disallow,
+      scheduling_type: :due_by
     })
 
     # enable collaboration spaces for all pages in the section
@@ -1061,80 +1063,67 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
            section: section,
            page_5: page_5
          } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
+      enroll_and_mark_visited(user, section)
 
       {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_5.slug))
 
-      assert view
-             |> element("#page_terms")
-             |> render() =~ "not yet scheduled."
+      assert view |> element("#page_terms") |> render() =~
+               "This assignment is <b>not yet scheduled.</b>"
     end
 
-    test "page terms are shown correctly when page is scheduled",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           page_2: page_2
-         } do
+    test "page terms render the due date when is set", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~ "This assignment was due on"
+
+      assert view |> element("#page_due_terms") |> render() =~ "Tue Nov 14, 2023 by 8:00pm."
+    end
+
+    test "page terms are shown correctly when page is scheduled", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{scoring_strategy_id: 1}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_scoring_terms") |> render() =~
+               "Your overall score for this assignment will be the average score of your attempts."
+    end
+
+    test "page terms render a time limit message", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{time_limit: 1}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_due_terms") |> render() =~
+               "This assignment was due on"
+
+      assert view |> element("#page_time_limit_term") |> render() =~
+               "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin. If you exceed this time, it will be marked as late.\n</li>"
+    end
+
+    defp enroll_and_mark_visited(user, section) do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.mark_section_visited_for_student(section, user)
+    end
 
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view
-             |> element("#page_due_terms")
-             |> render() =~
-               "This assignment is suggested by"
-
-      assert view
-             |> element("#page_due_terms")
-             |> render() =~
-               "Tue Nov 14, 2023 by 8:00pm."
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "Your work will automatically be submitted at"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "8:00pm on Tue Nov 14, 2023"
-
-      assert view
-             |> element("#page_scoring_terms")
-             |> render() =~
-               "Your overall score for this assignment will be the score of your best attempt."
-
-      Sections.get_section_resource(section.id, page_2.resource_id)
-      |> Sections.update_section_resource(%{
-        scoring_strategy_id: 1,
-        time_limit: 90
-      })
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "Your work will automatically be submitted"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "1 hour and 30 minutes"
-
-      assert view
-             |> element("#page_submission_terms")
-             |> render() =~
-               "after you click the Begin button"
-
-      assert view
-             |> element("#page_scoring_terms")
-             |> render() =~
-               "Your overall score for this assignment will be the average score of your attempts."
+    defp get_and_update_section_resource(section_id, resource_id, updated_params) do
+      Sections.get_section_resource(section_id, resource_id)
+      |> Sections.update_section_resource(updated_params)
     end
 
     test "can not see DOT AI Bot interface if it's on a scored page", %{
