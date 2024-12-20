@@ -15,6 +15,8 @@ defmodule Oli.Accounts.AuthorToken do
 
   schema "authors_tokens" do
     field :token, :binary
+    # the context is used to differentiate between different types of tokens
+    # such as "confirm" (for email confirmation), "reset_password".
     field :context, :string
     field :sent_to, :string
     belongs_to :author, Oli.Accounts.Author

@@ -653,14 +653,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           %{value: :paid, label: "Paid"},
           %{value: :not_paid, label: "Not Paid"},
           %{value: :grace_period, label: "Grace Period"},
-          %{value: :non_students, label: "Non-Students"}
+          %{value: :non_students, label: "Non-Students"},
+          %{value: :pending_confirmation, label: "Pending Confirmation"},
+          %{value: :rejected, label: "Invitation Rejected"}
         ]
 
       false ->
         [
           %{value: :enrolled, label: "Enrolled"},
           %{value: :suspended, label: "Suspended"},
-          %{value: :non_students, label: "Non-Students"}
+          %{value: :non_students, label: "Non-Students"},
+          %{value: :pending_confirmation, label: "Pending Confirmation"},
+          %{value: :rejected, label: "Invitation Rejected"}
         ]
 
       _ ->

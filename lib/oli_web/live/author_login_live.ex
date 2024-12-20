@@ -25,7 +25,7 @@ defmodule OliWeb.AuthorLoginLive do
             <div class="w-auto h-11 justify-start items-end gap-1 inline-flex">
               <div class="justify-start items-end gap-x-3 flex">
                 <div class="grow shrink basis-0 self-start py-1 justify-center items-center flex">
-                  <.pencil_writing />
+                  <.pencil_writing class="stroke-white" />
                 </div>
                 <div class="w-full h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
                   Course Author

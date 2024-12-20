@@ -116,6 +116,15 @@ defmodule OliWeb.UserAuth do
   It clears all session data for safety. See renew_session.
   """
   def log_out_user(conn) do
+    conn
+    |> clear_all_session_data()
+    |> redirect(to: ~p"/")
+  end
+
+  @doc """
+  Clears all session data for safety. See renew_session.
+  """
+  def clear_all_session_data(conn) do
     user_token = get_session(conn, :user_token)
     user_token && Accounts.delete_user_session_token(user_token)
 
@@ -126,7 +135,6 @@ defmodule OliWeb.UserAuth do
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/")
   end
 
   @doc """
