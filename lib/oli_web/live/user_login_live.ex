@@ -30,7 +30,7 @@ defmodule OliWeb.UserLoginLive do
                   <.bar_chart class="stroke-white" />
                 </div>
                 <div class="w-40 h-11 text-center text-white text-4xl font-bold font-['Open Sans']">
-                  Student
+                  Instructor
                 </div>
               </div>
             </div>
