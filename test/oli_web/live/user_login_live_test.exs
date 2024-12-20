@@ -15,7 +15,7 @@ defmodule OliWeb.UserLoginLiveTest do
     test "redirects if already logged in", %{conn: conn} do
       result =
         conn
-        |> log_in_user(Oli.AccountsFixtures.user_fixture())
+        |> log_in_user(Oli.Utils.Seeder.AccountsFixtures.user_fixture())
         |> live(~p"/users/log_in")
         |> follow_redirect(conn, "/workspaces/student")
 
@@ -26,7 +26,7 @@ defmodule OliWeb.UserLoginLiveTest do
   describe "user login" do
     test "redirects if user login with valid credentials", %{conn: conn} do
       password = "123456789abcd"
-      user = Oli.AccountsFixtures.user_fixture(%{password: password})
+      user = Oli.Utils.Seeder.AccountsFixtures.user_fixture(%{password: password})
 
       {:ok, lv, _html} = live(conn, ~p"/users/log_in")
 
