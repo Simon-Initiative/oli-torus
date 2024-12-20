@@ -126,7 +126,7 @@ defmodule OliWeb.InviteController do
           url: ~p"/users/invite/#{data.token}",
           role: role,
           section_title: section_title,
-          button_label: "Join now"
+          button_label: "Go to invitation"
         }
       )
       |> Mailer.deliver()
