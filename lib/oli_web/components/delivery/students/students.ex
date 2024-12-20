@@ -287,10 +287,10 @@ defmodule OliWeb.Components.Delivery.Students do
         end)
 
       :pending_confirmation ->
-        Enum.filter(students, fn student ->
-          student.enrollment_status == :pending_confirmation and
-            student.user_role_id == 4
-        end)
+        Enum.filter(students, fn student -> student.enrollment_status == :pending_confirmation end)
+
+      :rejected ->
+        Enum.filter(students, fn student -> student.enrollment_status == :rejected end)
 
       _ ->
         students
@@ -1229,7 +1229,8 @@ defmodule OliWeb.Components.Delivery.Students do
             :not_paid,
             :grace_period,
             :non_students,
-            :pending_confirmation
+            :pending_confirmation,
+            :rejected
           ],
           @default_params.filter_by
         ),
