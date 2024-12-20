@@ -11,11 +11,10 @@ defmodule OliWeb.InviteControllerTest do
   @invite_email "invite@example.com"
   setup [:create_admin]
 
-  describe "accept_invite" do
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
+  describe "Create invitation" do
     test "deliver new instructor invitation", %{conn: conn} do
       expect_recaptcha_http_post()
+      stub_real_current_time()
       section = insert(:section)
 
       post(
@@ -30,13 +29,15 @@ defmodule OliWeb.InviteControllerTest do
 
       assert Accounts.get_user_by(email: @invite_email)
 
-      assert_email_sent(to: @invite_email, subject: "You've been added to a course")
+      assert_email_sent(
+        to: @invite_email,
+        subject: "You were invited as an instructor to \"#{section.title}\""
+      )
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "deliver new student invitation", %{conn: conn} do
       expect_recaptcha_http_post()
+      stub_real_current_time()
       section = insert(:section)
 
       post(
@@ -59,6 +60,7 @@ defmodule OliWeb.InviteControllerTest do
 
     test "deliver existing instructor invitation", %{conn: conn} do
       expect_recaptcha_http_post()
+      stub_real_current_time()
       section = insert(:section)
       insert(:user, email: @invite_email)
 
@@ -82,6 +84,7 @@ defmodule OliWeb.InviteControllerTest do
 
     test "deliver existing student invitation", %{conn: conn} do
       expect_recaptcha_http_post()
+      stub_real_current_time()
       section = insert(:section)
       insert(:user, email: @invite_email)
 
