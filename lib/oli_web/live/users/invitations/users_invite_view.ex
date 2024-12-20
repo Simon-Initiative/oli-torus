@@ -1,10 +1,12 @@
 defmodule OliWeb.Users.Invitations.UsersInviteView do
-  alias Oli.Accounts.UserToken
   use OliWeb, :live_view
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Accounts.UserToken
   alias Oli.Delivery.Sections
+
+  import OliWeb.Backgrounds
 
   def mount(%{"token" => token}, session, socket) do
     case Accounts.get_user_token_by_enrollment_invitation_token(token) do
@@ -14,6 +16,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
       %UserToken{user: user, context: "enrollment_invitation:" <> section_slug} ->
         section = Sections.get_section_by_slug(section_slug)
 
+        enrollment =
+          Sections.get_enrollment(section.slug, user.id, filter_by_status: false)
+          |> Oli.Repo.preload([:context_roles])
+
         {:ok,
          assign(socket,
            user: user,
@@ -22,7 +28,9 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
            current_user:
              session["user_token"] && Accounts.get_user_by_session_token(session["user_token"]),
            section: section,
-           enrollment: Sections.get_enrollment(section.slug, user.id, filter_by_status: false),
+           enrollment: enrollment,
+           invitation_role:
+             if(hd(enrollment.context_roles).id == 4, do: :student, else: :instructor),
            step: "accept_or_reject_invitation"
          )}
     end
@@ -30,41 +38,49 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
 
   def render(%{user: nil} = assigns) do
     ~H"""
-    This invitation has expired or does not exist.
+    <.invite_container invitation_role={@invitation_role}>
+      <h3 class="text-white">This invitation has expired or does not exist.</h3>
+    </.invite_container>
     """
   end
 
   def render(%{enrollment: %{status: :rejected}} = assigns) do
     ~H"""
-    This invitation has already been rejected.
+    <.invite_container invitation_role={@invitation_role}>
+      <h3 class="text-white">This invitation has already been rejected.</h3>
+    </.invite_container>
     """
   end
 
   def render(%{enrollment: %{status: status}} = assigns) when status in [:enrolled, :suspended] do
     ~H"""
-    This invitation has already been redeemed.
+    <.invite_container invitation_role={@invitation_role}>
+      <h3 class="text-white">This invitation has already been redeemed.</h3>
+    </.invite_container>
     """
   end
 
   def render(%{step: "accept_or_reject_invitation"} = assigns) do
     ~H"""
-    <div class="flex flex-col w-full justify-center items-center">
-      <h1>Invitation to <%= @section.title %></h1>
+    <.invite_container invitation_role={@invitation_role}>
+      <h1 class="text-white">Invitation to <%= @section.title %></h1>
 
       <div class="flex gap-4">
-        <.button type="button" phx-click="accept_invitation" class="btn btn-primary">Accept</.button>
+        <.button type="button" phx-click="accept_invitation" class="btn btn-primary">
+          Accept
+        </.button>
         <.button type="button" phx-click="reject_invitation" class="btn btn-secondary">
           Reject invitation
         </.button>
       </div>
-    </div>
+    </.invite_container>
     """
   end
 
   def render(%{step: "new_user_account_creation"} = assigns) do
     ~H"""
-    <div class="flex flex-col w-full justify-center items-center">
-      <h1>Invitation to <%= @section.title %></h1>
+    <.invite_container invitation_role={@invitation_role}>
+      <h1 class="text-white">Invitation to <%= @section.title %></h1>
 
       <div class="w-full flex items-center justify-center dark">
         <Components.Auth.registration_form
@@ -77,14 +93,14 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
           disabled_inputs={[:email]}
         />
       </div>
-    </div>
+    </.invite_container>
     """
   end
 
   def render(%{step: "existing_user_login"} = assigns) do
     ~H"""
-    <div class="flex flex-col w-full justify-center items-center">
-      <h1>Invitation to <%= @section.title %></h1>
+    <.invite_container invitation_role={@invitation_role}>
+      <h1 class="text-white">Invitation to <%= @section.title %></h1>
 
       <div class="w-full flex items-center justify-center dark">
         <Components.Auth.login_form
@@ -99,14 +115,44 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
       </div>
 
       <div :if={!is_nil(@current_user) && @current_user.id != @user.id} class="text-xs text-bold">
-        <p>
+        <p class="text-white">
           You are currently logged in as <strong><%= @current_user.email %></strong>.<br />
           You will be automatically logged in as <strong><%= @user.email %></strong>
           to access your invitation to <strong>"<%= @section.title %>"</strong>
           Course.
         </p>
       </div>
+    </.invite_container>
+    """
+  end
+
+  slot :inner_block
+  attr :invitation_role, :atom, required: true
+
+  def invite_container(assigns) do
+    ~H"""
+    <div class="relative h-[calc(100vh-180px)] w-full flex justify-center items-center">
+      <div class="absolute h-[calc(100vh-180px)] w-full top-0 left-0">
+        <.background_by_role invitation_role={@invitation_role} />
+      </div>
+      <div class="flex flex-col justify-center items-center gap-y-10 w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
+        <%= render_slot(@inner_block) %>
+      </div>
     </div>
+    """
+  end
+
+  attr :invitation_role, :atom, required: true
+
+  def background_by_role(%{invitation_role: :student} = assigns) do
+    ~H"""
+    <.student_invitation />
+    """
+  end
+
+  def background_by_role(%{invitation_role: :instructor} = assigns) do
+    ~H"""
+    <.instructor_invitation />
     """
   end
 

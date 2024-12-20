@@ -646,4 +646,16 @@ defmodule OliWeb.Backgrounds do
     </div>
     """
   end
+
+  def student_invitation(assigns) do
+    ~H"""
+    <.student_sign_in />
+    """
+  end
+
+  def instructor_invitation(assigns) do
+    ~H"""
+    <.instructor_sign_in />
+    """
+  end
 end
