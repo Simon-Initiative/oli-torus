@@ -94,7 +94,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        do: []
 
   defp construct_attempt_prototypes(%VisitContext{
-         effective_settings: %{retake_mode: :targeted, assessment_mode: :traditional},
+         effective_settings: %{retake_mode: :targeted},
          latest_resource_attempt: latest_resource_attempt,
          page_revision: %Revision{graded: true} = page_revision
        }) do
