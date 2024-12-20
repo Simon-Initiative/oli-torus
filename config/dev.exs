@@ -30,8 +30,6 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/branding/dev/favicons")
   ],
-  always_use_persistent_login_sessions:
-    get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
   log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
 config :oli, :vendor_property,

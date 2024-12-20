@@ -116,6 +116,11 @@ defmodule Oli.Accounts do
     throw("Not implemented")
   end
 
+  def create_invited_author(_email) do
+    # MER-4068 TODO
+    throw("Not implemented")
+  end
+
   def browse_authors(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -992,15 +997,15 @@ defmodule Oli.Accounts do
 
   ## Examples
 
-      iex> get_user_by_email("foo@example.com")
+      iex> get_independent_user_by_email("foo@example.com")
       %User{}
 
-      iex> get_user_by_email("unknown@example.com")
+      iex> get_independent_user_by_email("unknown@example.com")
       nil
 
   """
-  def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+  def get_independent_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email, independent_learner: true)
   end
 
   @doc """
@@ -1022,6 +1027,23 @@ defmodule Oli.Accounts do
   end
 
   def get_user_by_email_and_password(_email, _password), do: nil
+
+  @doc """
+  Gets an independent user by email and password.
+
+  ## Examples
+      iex> get_independent_user_by_email_and_password("foo@example.com", "correct_password")
+      %User{}
+
+      iex> get_independent_user_by_email_and_password("foo@example.com", "invalid_password")
+      nil
+
+  """
+  def get_independent_user_by_email_and_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = Repo.get_by(User, email: email, independent_learner: true)
+    if User.valid_password?(user, password), do: user
+  end
 
   ## User registration
 
@@ -1377,6 +1399,7 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  <<<<<<< HEAD
   Gets the user by enrollment invitation token.
 
   ## Examples
@@ -1398,6 +1421,8 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  =======
+  >>>>>>> master
   Resets the user password.
 
   ## Examples

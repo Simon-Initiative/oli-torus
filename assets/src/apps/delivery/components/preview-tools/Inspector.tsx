@@ -91,12 +91,43 @@ const Inspector: React.FC<InspectorProps> = () => {
     return setStageState(stageSlice);
   };
 
+  const getVariablesTypeState = (allState: any) => {
+    const variableTypes: Array<any> = [];
+    Object.keys(allState).map((key) => {
+      if (key.includes('.variables.Type')) {
+        Object.keys(allState[key]).map((childKey) => {
+          const variableState = allState[key];
+          //the key will look like 'stage.partId.variables.Type'. We need an array with 'stage.partId.capivariable' so we split the key and get the first section
+          const arrVariableKey = key.split('.variables.Type');
+          if (arrVariableKey?.length > 1) {
+            const parent = key.split('.variables.Type')[0];
+            variableTypes.push({
+              key: `${parent}.${childKey}`,
+              type: variableState[childKey].type,
+              allowedValues: variableState[childKey].allowedValues,
+            });
+          }
+        }, {});
+      }
+    }, {});
+    return variableTypes;
+  };
   // change handler fires for every key, and there are often several at once
   const debounceStateChanges = useCallback(
     debounce(() => {
       const allState = getEnvState(defaultGlobalEnv);
+      const variableTypes: Array<any> = getVariablesTypeState(allState);
       const globalStateAsVars = Object.keys(allState).reduce((collect: any, key) => {
-        collect[key] = new CapiVariable({ key, value: allState[key] });
+        const result = variableTypes?.filter((part) => key.includes(part.key));
+        const variableType = result?.length ? result[0].type : 0;
+        //We need this because when the variable type is ENUM, we get the allowed  values that gets displayed in dropdown
+        const variableAllowedValues = result?.length ? result[0]?.allowedValues || null : null;
+        collect[key] = new CapiVariable({
+          key,
+          value: allState[key],
+          type: variableType,
+          allowedValues: variableAllowedValues,
+        });
         return collect;
       }, {});
       setGlobalState(globalStateAsVars);

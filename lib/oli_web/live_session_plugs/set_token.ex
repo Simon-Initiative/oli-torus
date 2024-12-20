@@ -15,10 +15,10 @@ defmodule OliWeb.LiveSessionPlugs.SetToken do
       %User{sub: sub} ->
         token = Phoenix.Token.sign(socket, "user socket", sub)
 
-      {:cont, assign(socket, user_token: token)}
+        {:cont, assign(socket, user_token: token)}
 
       _ ->
-      {:cont, socket}
+        {:cont, socket}
     end
   end
 end

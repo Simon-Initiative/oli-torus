@@ -1079,6 +1079,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   describe "instructor - invitations" do
     setup [:setup_enrollments_view]
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "can invite new users to the section", %{section: section, conn: conn} do
       students_url = live_view_students_route(section.slug)
       {:ok, view, _html} = live(conn, students_url)

@@ -142,7 +142,7 @@ defmodule Oli.Authoring.Collaborators do
     url =
       case status do
         :new_user ->
-          token = PowInvitation.Plug.sign_invitation_token(conn, collaborator_author)
+          token = sign_invitation_token(conn, collaborator_author)
           author_invitation_url(conn, token)
 
         :existing_user ->
@@ -167,6 +167,10 @@ defmodule Oli.Authoring.Collaborators do
   end
 
   defp author_invitation_url(_conn, _token) do
+    throw("NOT IMPLEMENTED")
+  end
+
+  defp sign_invitation_token(_conn, _collaborator_author) do
     throw("NOT IMPLEMENTED")
   end
 end

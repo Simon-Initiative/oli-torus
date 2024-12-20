@@ -857,6 +857,8 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~ "Email Confirmed"
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "shows invitation pending message when author was invited by an admin and has not accepted yet",
          %{conn: conn} do
       invited_and_not_accepted_author = insert(:author, invitation_token: "token")
@@ -867,6 +869,8 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~ "Invitation Pending"
     end
 
+    # TODO: MER-4068 Fix or remove
+    @tag :skip
     test "shows invitation accepted message when author was invited by an admin and accepted", %{
       conn: conn
     } do

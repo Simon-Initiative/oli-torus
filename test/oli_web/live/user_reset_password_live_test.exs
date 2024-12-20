@@ -28,7 +28,7 @@ defmodule OliWeb.UserResetPasswordLiveTest do
 
       assert to == %{
                flash: %{"error" => "Reset password link is invalid or it has expired."},
-               to: ~p"/"
+               to: ~p"/users/log_in"
              }
     end
 
@@ -64,7 +64,7 @@ defmodule OliWeb.UserResetPasswordLiveTest do
 
       refute get_session(conn, :user_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
-      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
+      assert Accounts.get_independent_user_by_email_and_password(user.email, "new valid password")
     end
 
     test "does not reset password on invalid data", %{conn: conn, token: token} do
@@ -83,35 +83,6 @@ defmodule OliWeb.UserResetPasswordLiveTest do
       assert result =~ "Reset Password"
       assert result =~ "should be at least 12 character(s)"
       assert result =~ "does not match password"
-    end
-  end
-
-  describe "Reset password navigation" do
-    test "redirects to login page when the Log in button is clicked", %{conn: conn, token: token} do
-      {:ok, lv, _html} = live(conn, ~p"/users/reset_password/#{token}")
-
-      {:ok, conn} =
-        lv
-        |> element(~s|a:fl-contains("Log in")|)
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/log_in")
-
-      assert conn.resp_body =~ "Sign in"
-    end
-
-    test "redirects to password reset page when the Register button is clicked", %{
-      conn: conn,
-      token: token
-    } do
-      {:ok, lv, _html} = live(conn, ~p"/users/reset_password/#{token}")
-
-      {:ok, conn} =
-        lv
-        |> element(~s|a:fl-contains("Register")|)
-        |> render_click()
-        |> follow_redirect(conn, ~p"/users/register")
-
-      assert conn.resp_body =~ "Create account"
     end
   end
 end

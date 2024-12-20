@@ -175,6 +175,8 @@ if config_env() == :prod do
 
   # General OLI app config
   config :oli,
+    depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
+    depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
     s3_media_bucket_name: s3_media_bucket_name,
     s3_xapi_bucket_name: s3_xapi_bucket_name,
     media_url: media_url,
@@ -198,8 +200,6 @@ if config_env() == :prod do
     node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
-    always_use_persistent_login_sessions:
-      get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
   config :oli, :xapi_upload_pipeline,
@@ -345,9 +345,6 @@ if config_env() == :prod do
         ]
       ]
   end
-
-  # Configure Mnesia directory (used by pow persistent sessions)
-  config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
 
   truncate =
     System.get_env("LOGGER_TRUNCATE", "8192")

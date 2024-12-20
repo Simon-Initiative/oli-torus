@@ -32,8 +32,5 @@ For `libcluster-ec2` to work there are some requirements. There are 4 relevant e
 
 The instances must have an additional security group that allows them to communicate to each other.
 
-The deployment process must clear out the `.mnesia` folder before a Torus instance starts up. This is not a documented requirement but was found via trial
-and error when testing the implementation.
-
 The node name is set via the app [env.sh](https://github.com/Simon-Initiative/oli-torus/blob/master/rel/env.sh.eex) (part of the release) querying the
 AWS meta-data endpoint (no special perms need to be granted). By default takes the `$HOSTNAME` var.

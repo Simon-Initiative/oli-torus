@@ -212,7 +212,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user, :require_independent_user]
 
     live_session :require_authenticated_user,
       root_layout: {OliWeb.LayoutView, :delivery},
@@ -807,13 +807,13 @@ defmodule OliWeb.Router do
 
   ### Workspaces
   scope "/workspaces", OliWeb.Workspaces do
-    pipe_through([:browser, :authoring])
+    pipe_through([:browser, :authoring_protected])
 
     live_session :authoring_workspaces,
       root_layout: {OliWeb.LayoutView, :delivery},
       layout: {OliWeb.Layouts, :workspace},
       on_mount: [
-        {OliWeb.AuthorAuth, :mount_current_author},
+        {OliWeb.AuthorAuth, :ensure_authenticated},
         OliWeb.LiveSessionPlugs.SetCtx,
         OliWeb.LiveSessionPlugs.AssignActiveMenu,
         OliWeb.LiveSessionPlugs.SetSidebar,
@@ -1037,6 +1037,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
+          OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment,
           OliWeb.LiveSessionPlugs.SetNotificationBadges,
           OliWeb.LiveSessionPlugs.SetPaywallSummary
@@ -1064,6 +1065,7 @@ defmodule OliWeb.Router do
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
+          OliWeb.LiveSessionPlugs.SetAnnotations,
           OliWeb.LiveSessionPlugs.RequireEnrollment
         ] do
         live("/", Delivery.Student.IndexLive, :preview)

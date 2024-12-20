@@ -1,29 +1,36 @@
 defmodule OliWeb.AuthorConfirmationLive do
   use OliWeb, :live_view
 
+  import OliWeb.Backgrounds
+
   alias Oli.Accounts
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
-      <.simple_header class="text-center mt-20">Confirm Account</.simple_header>
+    <div class="relative h-[calc(100vh-112px)] flex justify-center items-center">
+      <div class="absolute h-[calc(100vh-112px)] w-full top-0 left-0">
+        <.author_sign_in />
+      </div>
+      <div class="flex flex-col gap-y-10 lg:flex-row w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
+        <div class="w-full flex items-center justify-center dark">
+          <.form_box for={@form} id="confirmation_form" phx-submit="confirm_account">
+            <:title>
+              Confirm Account
+            </:title>
+            <:subtitle>
+              Please confirm your account email address by clicking the button below.
+            </:subtitle>
 
-      <.simple_form for={@form} id="confirmation_form" phx-submit="confirm_account">
-        <.input field={@form[:token]} type="hidden" />
-        <:actions>
-          <.button
-            phx-disable-with="Confirming..."
-            class="w-full bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md"
-          >
-            Confirm my account
-          </.button>
-        </:actions>
-      </.simple_form>
+            <.input field={@form[:token]} type="hidden" />
 
-      <p class="text-center mt-4">
-        <.link href={~p"/authors/register"}>Register</.link>
-        | <.link href={~p"/authors/log_in"}>Log in</.link>
-      </p>
+            <:actions>
+              <.button variant={:primary} phx-disable-with="Confirming..." class="w-full mt-4">
+                Confirm my account
+              </.button>
+            </:actions>
+          </.form_box>
+        </div>
+      </div>
     </div>
     """
   end
@@ -41,7 +48,7 @@ defmodule OliWeb.AuthorConfirmationLive do
         {:noreply,
          socket
          |> put_flash(:info, "Email successfully confirmed.")
-         |> redirect(to: ~p"/")}
+         |> redirect(to: ~p"/authors/log_in")}
 
       :error ->
         # If there is a current author and the account was already confirmed,
@@ -57,7 +64,7 @@ defmodule OliWeb.AuthorConfirmationLive do
             {:noreply,
              socket
              |> put_flash(:error, "Author confirmation link is invalid or it has expired.")
-             |> redirect(to: ~p"/")}
+             |> redirect(to: ~p"/authors/log_in")}
         end
     end
   end

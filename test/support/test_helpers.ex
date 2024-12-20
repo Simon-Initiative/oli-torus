@@ -2,11 +2,11 @@ defmodule Oli.TestHelpers do
   import Ecto.Query, warn: false
   import Mox
   import Oli.Factory
-  import Oli.AccountsFixtures
+  import Oli.Utils.Seeder.AccountsFixtures
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.{AuthorPreferences, User, UserToken}
+  alias Oli.Accounts.{AuthorPreferences}
   alias Oli.Activities
   alias Oli.Analytics.Summary
   alias Oli.Authoring.Course
@@ -252,7 +252,7 @@ defmodule Oli.TestHelpers do
   test context.
   """
   def register_and_log_in_user(%{conn: conn}, attrs \\ %{}) do
-    user = Oli.AccountsFixtures.user_fixture(attrs)
+    user = Oli.Utils.Seeder.AccountsFixtures.user_fixture(attrs)
     %{conn: log_in_user(conn, user), user: user}
   end
 
@@ -286,7 +286,7 @@ defmodule Oli.TestHelpers do
   test context.
   """
   def register_and_log_in_author(%{conn: conn}, attrs \\ %{}) do
-    author = Oli.AccountsFixtures.author_fixture(attrs)
+    author = Oli.Utils.Seeder.AccountsFixtures.author_fixture(attrs)
     %{conn: log_in_author(conn, author), author: author}
   end
 

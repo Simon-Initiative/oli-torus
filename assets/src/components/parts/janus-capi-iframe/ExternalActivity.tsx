@@ -793,6 +793,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         key: stateValueKey,
         type: msgData.values[stateValueKey] ? msgData.values[stateValueKey].type : null,
         value: msgData.values[stateValueKey] ? msgData.values[stateValueKey].value : null,
+        allowedValues: msgData.values[stateValueKey]
+          ? msgData.values[stateValueKey].allowedValues
+          : null,
       };
       return variableObj;
     }, {} as any);
