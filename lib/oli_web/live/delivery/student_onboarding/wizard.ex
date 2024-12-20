@@ -111,7 +111,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       preview_mode={@preview_mode}
       include_logo={true}
     />
-    <div id="content" class="mt-14 h-[calc(100vh-56px)] transition-all duration-100">
+    <div id="content" class="h-[calc(100vh-56px)] transition-all duration-100">
       <.live_component
         id="student-onboarding-wizard"
         module={Stepper}
