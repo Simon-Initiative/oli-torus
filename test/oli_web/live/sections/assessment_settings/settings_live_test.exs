@@ -720,7 +720,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       {:error, {:live_redirect, %{kind: :push, to: url}}} =
         element(
           view,
-          ".instructor_dashboard_table tbody tr:first-of-type td:last-of-type a",
+          ".instructor_dashboard_table tbody tr:first-of-type td:nth-last-of-type(2) a",
           "1"
         )
         |> render_click()
@@ -1658,6 +1658,45 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       ## Since we did a bulk apply and previously changed a setting for page 3, we should have 34 changes in our settings changes table.
       ## That is, 11 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
       assert length(changes) == 34
+    end
+
+    test "can change allow hints setting", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      ## Checks that there is no setting change for allow_hints
+      assert Settings.fetch_all_settings_changes() == []
+
+      ## Changes the allow_hints setting to allow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_1.resource.id}"],
+        "allow_hints-#{page_1.resource.id}" => true
+      })
+
+      ## Checks that there is a setting change for allow_hints
+      assert Settings.fetch_all_settings_changes() |> hd |> Map.get(:new_value) == "true"
+
+      ## Changes the allow_hints setting back to disallow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_1.resource.id}"],
+        "allow_hints-#{page_1.resource.id}" => false
+      })
+
+      ## Checks that now there are 2 setting changes for allow_hints (one for disallow and one for allow)
+      assert Settings.fetch_all_settings_changes() |> length() == 2
+
+      ## Checks that the last setting change for allow_hints is disallow
+      assert Settings.fetch_all_settings_changes()
+             |> Enum.sort_by(& &1.id, :desc)
+             |> hd
+             |> Map.get(:new_value) == "false"
     end
   end
 

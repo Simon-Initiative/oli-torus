@@ -120,7 +120,6 @@ export const MultipleChoiceComponent: React.FC = () => {
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
-          shouldShow
         />
         <EvaluationConnected />
       </div>
