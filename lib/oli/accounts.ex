@@ -116,11 +116,6 @@ defmodule Oli.Accounts do
     throw("Not implemented")
   end
 
-  def create_invited_author(_email) do
-    # MER-4068 TODO
-    throw("Not implemented")
-  end
-
   def browse_authors(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},

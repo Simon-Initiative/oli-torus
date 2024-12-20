@@ -297,10 +297,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   defp emails_match?(_user_email, email_param) when is_nil(email_param), do: true
   defp emails_match?(user_email, email_param), do: user_email == email_param
 
-  defp new_invited_user?(%User{password_hash: nil, invited_by: invited_by_id})
-       when not is_nil(invited_by_id),
-       do: true
-
+  defp new_invited_user?(%User{password_hash: nil}), do: true
   defp new_invited_user?(_), do: false
 
   defp current_user_is_the_invited_one?(nil, _user), do: false

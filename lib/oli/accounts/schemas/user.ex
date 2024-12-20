@@ -502,8 +502,8 @@ defmodule Oli.Accounts.User do
   @spec invite_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
   def invite_changeset(%Changeset{} = changeset, attrs) do
     changeset
-    |> cast(attrs, [:email, :invited_by_id])
-    |> validate_required([:email, :invited_by_id])
+    |> cast(attrs, [:email])
+    |> validate_required([:email])
   end
 
   def invite_changeset(user, attrs) do

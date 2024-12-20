@@ -52,27 +52,46 @@ defmodule OliWeb.InviteController do
     inviter_struct =
       if inviter == "author", do: conn.assigns.current_author, else: conn.assigns.current_user
 
-    Repo.transaction(fn ->
-      with {_count, new_users} <-
-             Accounts.bulk_create_invited_users(non_found_users, inviter_struct),
-           {:ok, _enrollments} <-
-             do_section_enrollment(new_users ++ existing_users, section, role),
-           {:ok, email_data} <-
-             bulk_create_invitation_tokens(new_users ++ existing_users, section_slug),
-           :ok <- send_email_invitations(email_data, inviter_struct.name, role, section.title) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:new_users, fn _repo, _changes ->
+      case Accounts.bulk_create_invited_users(non_found_users, inviter_struct) do
+        {:error, reason} ->
+          {:error, reason}
+
+        {count, new_users} ->
+          {:ok, {count, new_users}}
+      end
+    end)
+    |> Ecto.Multi.run(:enrollments, fn _repo, %{new_users: {_, new_users}} ->
+      do_section_enrollment(new_users ++ existing_users, section, role)
+    end)
+    |> Ecto.Multi.run(:email_data, fn _repo, %{new_users: {_, new_users}} ->
+      bulk_create_invitation_tokens(new_users ++ existing_users, section_slug)
+    end)
+    |> Ecto.Multi.run(:send_invitations, fn _repo, %{email_data: email_data} ->
+      case send_email_invitations(email_data, inviter_struct.name, role, section.title) do
+        :ok ->
+          {:ok, :ok}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
         conn
         |> put_flash(:info, "Users were invited successfully")
         |> redirect(
           to:
             ~p"/sections/#{section_slug}/instructor_dashboard/overview/students?filter_by=pending_confirmation"
         )
-      else
-        {:error, _reason} ->
-          conn
-          |> put_flash(:error, "An error occurred while inviting users")
-          |> redirect(to: ~p"/sections/#{section_slug}/instructor_dashboard/overview/students")
-      end
-    end)
+
+      {:error, _} ->
+        conn
+        |> put_flash(:error, "An error occurred while inviting users")
+        |> redirect(to: ~p"/sections/#{section_slug}/instructor_dashboard/overview/students")
+    end
   end
 
   defp do_section_enrollment(users, section, role) do
