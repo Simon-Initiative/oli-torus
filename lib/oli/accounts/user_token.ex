@@ -165,7 +165,6 @@ defmodule Oli.Accounts.UserToken do
   end
 
   @doc """
-  <<<<<<< HEAD
   Checks if the token is valid and returns its underlying lookup query.
 
   The query returns the user_token found by the token, if any.
@@ -197,8 +196,6 @@ defmodule Oli.Accounts.UserToken do
   end
 
   @doc """
-  =======
-  >>>>>>> master
   Returns the token struct for the given token value and context.
   """
   def token_and_context_query(token, context) do

@@ -1394,7 +1394,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  <<<<<<< HEAD
   Gets the user by enrollment invitation token.
 
   ## Examples
@@ -1416,8 +1415,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  =======
-  >>>>>>> master
   Resets the user password.
 
   ## Examples
