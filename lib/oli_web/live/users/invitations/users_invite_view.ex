@@ -56,6 +56,18 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
     ~H"""
     <.invite_container invitation_role={@invitation_role}>
       <h3 class="text-white">This invitation has already been redeemed.</h3>
+
+      <.link
+        class="flex items-center gap-x-1 no-underline hover:no-underline text-white hover:text-zinc-300"
+        navigate={~p"/sections/#{@section.slug}"}
+      >
+        <div class="text-xl font-normal font-['Inter'] leading-normal">
+          Go to course
+        </div>
+        <div>
+          <%= OliWeb.Icons.right_arrow_login(%{}) %>
+        </div>
+      </.link>
     </.invite_container>
     """
   end
