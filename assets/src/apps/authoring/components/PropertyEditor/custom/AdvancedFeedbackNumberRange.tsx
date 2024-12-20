@@ -96,7 +96,7 @@ const FeedbackEditor: React.FC<{
       ...value,
       answer: {
         ...value.answer,
-        correctAnswer: e.target.value && parseInt(e.target.value, 10),
+        correctAnswer: e.target.value && parseFloat(e.target.value),
       },
     });
   };
@@ -106,7 +106,7 @@ const FeedbackEditor: React.FC<{
       ...value,
       answer: {
         ...value.answer,
-        correctMin: e.target.value && parseInt(e.target.value, 10),
+        correctMin: e.target.value && parseFloat(e.target.value),
       },
     });
   };
@@ -116,7 +116,7 @@ const FeedbackEditor: React.FC<{
       ...value,
       answer: {
         ...value.answer,
-        correctMax: e.target.value && parseInt(e.target.value, 10),
+        correctMax: e.target.value && parseFloat(e.target.value),
       },
     });
   };
