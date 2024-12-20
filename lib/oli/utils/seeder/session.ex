@@ -1,8 +1,6 @@
 defmodule Oli.Utils.Seeder.Session do
   import Oli.Utils.Seeder.Utils
 
-  alias Oli.TestHelpers
-
   @doc """
   Creates an author session
   """
