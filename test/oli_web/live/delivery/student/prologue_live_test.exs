@@ -1113,7 +1113,42 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "This assignment was due on"
 
       assert view |> element("#page_time_limit_term") |> render() =~
-               "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin. If you exceed this time, it will be marked as late.\n</li>"
+               "<li id=\"page_time_limit_term\">\n  You have <b>1 minute</b>\n  to complete the assessment from the time you begin.\n</li>"
+    end
+
+    test "page terms render no time limit message when it is not set", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, "#page_time_limit_term", "<li id=\"page_time_limit_term\">")
+    end
+
+    test "page terms render a late submit message", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      params = %{late_submit: :allow}
+
+      get_and_update_section_resource(section.id, page_2.resource_id, params)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      assert view |> element("#page_submit_term") |> render() =~
+               "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
+    end
+
+    test "page terms render no message when late submit is disallowed", ctx do
+      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
+
+      enroll_and_mark_visited(user, section)
+
+      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
+
+      refute has_element?(view, "#page_submit_term", "<li id=\"page_submit_term\">")
     end
 
     defp enroll_and_mark_visited(user, section) do

@@ -190,26 +190,40 @@ defmodule OliWeb.Delivery.Student.Utils do
         <li id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <.maybe_add_time_limit_term effective_settings={@effective_settings} />
         <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
         </li>
+        <.time_limit_term effective_settings={@effective_settings} />
+        <.submit_term effective_settings={@effective_settings} />
       </ul>
     </div>
     """
   end
 
-  defp maybe_add_time_limit_term(%{effective_settings: %{time_limit: time_limit}} = assigns)
+  defp time_limit_term(%{effective_settings: %{time_limit: time_limit}} = assigns)
        when time_limit > 0 do
     ~H"""
     <li id="page_time_limit_term">
       You have <b><%= parse_minutes(@effective_settings.time_limit) %></b>
-      to complete the assessment from the time you begin. If you exceed this time, it will be marked as late.
+      to complete the assessment from the time you begin.
     </li>
     """
   end
 
-  defp maybe_add_time_limit_term(assigns) do
+  defp time_limit_term(assigns) do
+    ~H"""
+    """
+  end
+
+  defp submit_term(%{effective_settings: %{late_submit: :allow}} = assigns) do
+    ~H"""
+    <li id="page_submit_term">
+      If you exceed this time, it will be marked late.
+    </li>
+    """
+  end
+
+  defp submit_term(assigns) do
     ~H"""
     """
   end
