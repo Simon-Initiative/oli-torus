@@ -11,7 +11,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   def mount(%{"token" => token}, session, socket) do
     case Accounts.get_user_token_by_enrollment_invitation_token(token) do
       nil ->
-        {:ok, assign(socket, user: nil)}
+        {:ok, assign(socket, user: nil, invitation_role: :student)}
 
       %UserToken{user: user, context: "enrollment_invitation:" <> section_slug} ->
         section = Sections.get_section_by_slug(section_slug)
@@ -127,7 +127,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
       </div>
 
       <div :if={!is_nil(@current_user) && @current_user.id != @user.id} class="text-xs text-bold">
-        <p class="text-white">
+        <p role="account warning" class="text-white">
           You are currently logged in as <strong><%= @current_user.email %></strong>.<br />
           You will be automatically logged in as <strong><%= @user.email %></strong>
           to access your invitation to <strong>"<%= @section.title %>"</strong>

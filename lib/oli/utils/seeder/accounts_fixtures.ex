@@ -14,7 +14,7 @@ defmodule Oli.Utils.Seeder.AccountsFixtures do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     Enum.into(attrs, %{
-      email: unique_user_email(),
+      email: attrs[:email] || unique_user_email(),
       password: valid_user_password(),
       sub: UUID.uuid4(),
       given_name: "Andrew",

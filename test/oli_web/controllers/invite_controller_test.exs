@@ -117,7 +117,7 @@ defmodule OliWeb.InviteControllerTest do
       expect_recaptcha_http_post()
       stub_real_current_time()
       section = insert(:section)
-      existing_instructor = insert(:user, email: @invite_email)
+      existing_instructor = user_fixture(email: @invite_email)
 
       post(
         conn,
@@ -165,7 +165,7 @@ defmodule OliWeb.InviteControllerTest do
       expect_recaptcha_http_post()
       stub_real_current_time()
       section = insert(:section)
-      existing_student = insert(:user, email: @invite_email)
+      existing_student = user_fixture(email: @invite_email)
 
       post(
         conn,
