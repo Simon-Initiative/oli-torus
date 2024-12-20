@@ -10,6 +10,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Router.Helpers, as: Routes
 
   alias OliWeb.Workspaces.CourseAuthor.Datasets.{
     DatasetsTableModel
@@ -21,9 +22,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   def mount(params, _session, socket) do
     %{ctx: ctx} = socket.assigns
 
-    project_id = case Map.get(params, "project_id") do
-      nil -> nil
-      project_slug -> Oli.Authoring.Course.get_project_by_slug(project_slug).id
+    {project_id, project_slug} = case Map.get(params, "project_id") do
+      nil -> {nil, nil}
+      project_slug -> {Oli.Authoring.Course.get_project_by_slug(project_slug).id, project_slug}
     end
 
     options = %BrowseJobOptions{
@@ -59,6 +60,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
        filter_user: :all,
        filter_project: :all,
        filter_status: :all,
+       project_slug: project_slug,
        users: users,
        projects: projects,
        ctx: ctx,
@@ -105,7 +107,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
     <h2 id="header_id" class="pb-2">Datasets</h2>
     <div class="mb-3">
       <p>
-        View the status of dataset creation jobs and reqeust new dataset jobs.
+        View the status of dataset creation jobs
+        <%= if @project_slug do %>
+          and <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.CreateJobLive, @project_slug)}>reqeust new dataset jobs</a>
+        <% end %>
       </p>
     </div>
     <div class="mt-5 mb-3">
