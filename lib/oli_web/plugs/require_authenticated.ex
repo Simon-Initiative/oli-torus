@@ -3,7 +3,7 @@ defmodule OliWeb.Plugs.RequireAuthenticated do
   This plug ensures that a user has been authenticated. It is forked from the default
   Pow.Plug.RequireAuthenticated plug to allow system admins access to all parts of the system.
 
-  It first checks to see if an author with system admin is authenticated. If so, it allows the
+  It first checks to see if an author with admin role is authenticated. If so, it allows the
   connection to continue. If not, it checks to see if a user is logged in. If so, it allows the
   connection to continue. If not, it halts the connection with with the given error_handler.
 
@@ -26,7 +26,7 @@ defmodule OliWeb.Plugs.RequireAuthenticated do
   @doc false
   @spec call(Conn.t(), atom()) :: Conn.t()
   def call(conn, handler) do
-    case check_is_system_admin(conn) do
+    case check_admin_role(conn) do
       true ->
         conn
 
@@ -37,13 +37,13 @@ defmodule OliWeb.Plugs.RequireAuthenticated do
     end
   end
 
-  def check_is_system_admin(conn) do
+  def check_admin_role(conn) do
     case Plug.current_user(conn, OliWeb.Pow.PowHelpers.get_pow_config(:author)) do
       nil ->
         false
 
       author ->
-        Oli.Accounts.is_system_admin?(author)
+        Oli.Accounts.has_admin_role?(author)
     end
   end
 
