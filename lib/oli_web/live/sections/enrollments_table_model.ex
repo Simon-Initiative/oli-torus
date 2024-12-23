@@ -195,7 +195,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       Map.merge(assigns, %{
         type:
           if(
-            user.context_role_id == ContextRoles.get_role(:context_instructor).id,
+            user.user_role_id == ContextRoles.get_role(:context_instructor).id,
             do: "Instructor",
             else: "Student"
           )

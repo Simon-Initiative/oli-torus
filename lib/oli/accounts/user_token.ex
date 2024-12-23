@@ -12,9 +12,12 @@ defmodule Oli.Accounts.UserToken do
   @confirm_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 60
+  @enrollment_invitation_validity_in_days 30
 
   schema "users_tokens" do
     field :token, :binary
+    # the context is used to differentiate between different types of tokens
+    # such as "session", "confirm" (for email confirmation), "reset_password", "change:<current_email>", "enrollment_invitation:<section_slug>".
     field :context, :string
     field :sent_to, :string
     belongs_to :user, Oli.Accounts.User
@@ -78,20 +81,22 @@ defmodule Oli.Accounts.UserToken do
   for example, by phone numbers.
   """
   def build_email_token(user, context) do
-    build_hashed_token(user, context, user.email)
-  end
+    {token, hashed_token} = build_hashed_token()
 
-  defp build_hashed_token(user, context, sent_to) do
-    token = :crypto.strong_rand_bytes(@rand_size)
-    hashed_token = :crypto.hash(@hash_algorithm, token)
-
-    {Base.url_encode64(token, padding: false),
+    {token,
      %UserToken{
        token: hashed_token,
        context: context,
-       sent_to: sent_to,
+       sent_to: user.email,
        user_id: user.id
      }}
+  end
+
+  defp build_hashed_token() do
+    token = :crypto.strong_rand_bytes(@rand_size)
+    hashed_token = :crypto.hash(@hash_algorithm, token)
+
+    {Base.url_encode64(token, padding: false), hashed_token}
   end
 
   @doc """
@@ -151,6 +156,37 @@ defmodule Oli.Accounts.UserToken do
         query =
           from token in token_and_context_query(hashed_token, context),
             where: token.inserted_at > ago(@change_email_validity_in_days, "day")
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  @doc """
+  Checks if the token is valid and returns its underlying lookup query.
+
+  The query returns the user_token found by the token, if any.
+
+  This is used to validate requests to accept an
+  email invitation.
+
+  The given token is valid if it matches its hashed counterpart in the
+  database and if it has not expired (after @enrollment_invitation_validity_in_days).
+  The context must always start with "enrollment_invitation:".
+  """
+  def enrollment_invitation_token_query(token) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+
+        query =
+          from(ut in UserToken,
+            where:
+              ut.token == ^hashed_token and like(ut.context, "enrollment_invitation:%") and
+                ut.inserted_at > ago(@enrollment_invitation_validity_in_days, "day")
+          )
 
         {:ok, query}
 

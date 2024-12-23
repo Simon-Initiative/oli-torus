@@ -5,7 +5,7 @@
                 <tr>
                     <td style="padding: 20px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;">
                         <h1 style="margin: 0 0 10px 0; font-family: sans-serif; font-size: 25px; line-height: 30px; color: #333333; font-weight: normal;">Invitation to "<%= @section_title %>"</h1>
-                        <p style="margin: 0;">You've been added by <b><%= @inviter %></b> as <%= if @role == "instructor", do: "an instructor", else: "a student" %> to the following course:</p>
+                        <p style="margin: 0;">You've invited by <b><%= @inviter %></b> as <%= if @role == "instructor", do: "an instructor", else: "a student" %> to the following course:</p>
                         <p style="margin: 20px 0; text-align: center;"><b><%= @section_title %></b></p>
                     </td>
                 </tr>

@@ -1,4 +1,4 @@
-defmodule Oli.Utils.Seeder.AccountsFixtures do
+defmodule Oli.AccountsFixtures do
   @moduledoc """
   This module defines test helpers for creating
   entities via the `Oli.Accounts` context.
@@ -14,7 +14,7 @@ defmodule Oli.Utils.Seeder.AccountsFixtures do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     Enum.into(attrs, %{
-      email: attrs[:email] || unique_user_email(),
+      email: unique_user_email(),
       password: valid_user_password(),
       sub: UUID.uuid4(),
       given_name: "Andrew",

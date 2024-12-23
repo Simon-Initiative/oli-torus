@@ -823,6 +823,22 @@ defmodule OliWeb.Router do
       ] do
       scope "/course_author", CourseAuthor do
         live("/", IndexLive)
+      end
+    end
+
+    live_session :protected_authoring_workspaces,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.AuthorAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection,
+        OliWeb.LiveSessionPlugs.AuthorizeProject
+      ] do
+      scope "/course_author", CourseAuthor do
         live("/:project_id/overview", OverviewLive)
         live("/:project_id/alternatives", AlternativesLive)
         live("/:project_id/index_csv", IndexCsvLive)
@@ -1310,6 +1326,16 @@ defmodule OliWeb.Router do
     ])
 
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
+  end
+
+  ### Invitations (to sections or projects)
+
+  scope "/", OliWeb do
+    pipe_through([:browser])
+
+    live "/users/invite/:token", Users.Invitations.UsersInviteView
+
+    post "/users/accept_invitation", InviteController, :accept_user_invitation
   end
 
   ### Sections - Enrollment
