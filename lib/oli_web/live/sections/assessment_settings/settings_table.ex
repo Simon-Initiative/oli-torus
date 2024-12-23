@@ -932,6 +932,9 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         {key, value} when key in ~w(start_date end_date) ->
           FormatDateTime.datestring_to_utc_datetime(value, ctx)
 
+        {key, value} when key in ~w(allow_hints) ->
+          Utils.string_to_boolean(value)
+
         {_, value} ->
           value
       end
@@ -968,7 +971,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
             :feedback_mode,
             :review_submission,
             :exceptions_count,
-            :scoring_strategy_id
+            :scoring_strategy_id,
+            :allow_hints
           ],
           @default_params.sort_by
         ),

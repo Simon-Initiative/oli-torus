@@ -18,4 +18,11 @@
     top: 583px !important;
     padding-left: 14px;
   }
+  .audio-subtitles .align-items-center > div:nth-of-type(even) {
+    padding-top: 39px !important;
+    margin-left: 12px;
+  }
+  .simple-audio-subtitles .align-items-center > div:nth-of-type(even) {
+    padding-top: 64px !important;
+  }
 }
