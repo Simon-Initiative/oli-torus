@@ -580,6 +580,43 @@ defmodule OliWeb.Delivery.InstructorDashboard.ContentTabTest do
       refute has_element?(view, "table tr td div a", unit_for_tr_2)
     end
 
+    test "cards to filter works correctly when there are no containers", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      count_of_pages = 10
+      %{section: section} = create_project_with_n_scored_pages(conn, count_of_pages)
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_content_route(section.slug))
+
+      ## Assert that button to filter by unit is disabled
+      assert has_element?(view, "button[id=filter_units_button][disabled]", "Units")
+
+      ## Assert that button to filter by module is disabled
+      assert has_element?(view, "button[id=filter_modules_button][disabled]", "Modules")
+
+      ## Filtering by zero student progress card
+      element(view, "div[phx-value-selected=\"zero_student_progress\"]") |> render_click()
+
+      results =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tr a})
+        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
+
+      ## Assert that filtering by zero student progress card returns all pages
+      assert length(results) == count_of_pages
+
+      ## Filtering by High Progress, Low Proficiency card
+      element(view, "div[phx-value-selected=\"high_progress_low_proficiency\"]") |> render_click()
+
+      ## Assert that filtering by High Progress, Low Proficiency card returns no pages
+      assert has_element?(view, "p", "None exist")
+    end
+
     test "cards to filter works correctly combined with input search", %{
       conn: conn,
       instructor: instructor
