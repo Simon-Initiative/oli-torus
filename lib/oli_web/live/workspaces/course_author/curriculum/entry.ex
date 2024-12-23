@@ -53,7 +53,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Curriculum.Entry do
             <span class="ml-1 mr-1 entry-title"><%= @child.title %></span>
             <.link
               class="entry-title mx-3"
-              href={
+              navigate={
                 ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@child.slug}/edit?sidebar_expanded=#{@sidebar_expanded}"
               }
             >
