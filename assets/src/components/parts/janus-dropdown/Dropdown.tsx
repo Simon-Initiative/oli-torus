@@ -22,7 +22,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
-    // set default
+    // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
 
