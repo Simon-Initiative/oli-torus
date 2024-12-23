@@ -234,7 +234,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
                   children: [{ children: [], tag: 'text', text: `Option ${mcqItems.length + 1}` }],
                   style: {
                     backgroundColor: 'transparent',
-                    color: '#ebebeb',
+                    color: 'inherit',
                     fontSize: '16px',
                   },
                   tag: 'span',
