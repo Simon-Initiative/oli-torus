@@ -1,5 +1,5 @@
 import * as Immutable from 'immutable';
-import { ActivityModelSchema } from 'components/activities/types';
+import { ActivityModelSchema, CreationData } from 'components/activities/types';
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
@@ -172,6 +172,7 @@ export type ResourceContext = {
   allTags: Tag[]; // All available tags
   activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
   optionalContentTypes: OptionalContentTypes; // Optional content types
+  creationData?: CreationData; // Creation data for bulk import
 };
 
 export enum ResourceType {
