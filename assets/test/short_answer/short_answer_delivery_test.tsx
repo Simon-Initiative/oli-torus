@@ -34,6 +34,7 @@ describe('multiple choice delivery', () => {
         isAnnotationLevel: false,
         variables: {},
         pageLinkParams: {},
+        allowHints: false,
       },
       preview: false,
     };
