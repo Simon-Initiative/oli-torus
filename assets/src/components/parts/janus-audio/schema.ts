@@ -116,6 +116,9 @@ export const uiSchema = {
   src: {
     'ui:widget': 'TorusAudioBrowser',
   },
+  subtitles: {
+    classNames: 'col-span-12 audio-subtitles',
+  },
 };
 
 export const simpleUISchema = {
@@ -125,6 +128,9 @@ export const simpleUISchema = {
   },
   startTime: { classNames: 'col-span-6' },
   endTime: { classNames: 'col-span-6' },
+  subtitles: {
+    classNames: 'col-span-12 simple-audio-subtitles',
+  },
 };
 
 export const adaptivitySchema = {

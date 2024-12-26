@@ -34,6 +34,7 @@ describe('ordering delivery', () => {
         isAnnotationLevel: false,
         variables: {},
         pageLinkParams: {},
+        allowHints: false,
       },
       preview: false,
     };
