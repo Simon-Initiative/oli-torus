@@ -708,7 +708,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           Enum.map(containers, fn container ->
             Map.merge(container, %{
               student_proficiency:
-                Map.get(proficiency_per_container, container.id, "Not enough data")
+                if(total > 0,
+                  do: Map.get(proficiency_per_container, container.id, "Not enough data"),
+                  else: container.student_proficiency
+                )
             })
           end)
 

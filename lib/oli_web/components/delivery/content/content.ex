@@ -762,11 +762,14 @@ defmodule OliWeb.Components.Delivery.Content do
     %{
       zero_student_progress:
         Enum.count(containers, fn container ->
-          Map.get(container, :numbering_level) == container_filter_id and container.progress == 0
+          (is_nil(container_filter_id) or
+             Map.get(container, :numbering_level) == container_filter_id) and
+            container.progress == 0
         end),
       high_progress_low_proficiency:
         Enum.count(containers, fn container ->
-          Map.get(container, :numbering_level) == container_filter_id and
+          (is_nil(container_filter_id) or
+             Map.get(container, :numbering_level) == container_filter_id) and
             Metrics.progress_range(container.progress) == "High" and
             container.student_proficiency == "Low"
         end)
