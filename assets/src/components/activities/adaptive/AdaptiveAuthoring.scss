@@ -26,3 +26,188 @@
     padding-top: 64px !important;
   }
 }
+
+@import url('https://etx-nec.s3.us-west-2.amazonaws.com/css/torus/etx/fonts/Font+Awesome/FontAwesome6/css/all.css');
+
+/*-- VARIABLES --*/
+:root {
+  --color05: #cccccc11;
+  --color10: #cccccc22;
+  --color20: #cccccc33;
+  --color40: #cccccc66;
+  --color60: #cccccc99;
+  --color80: #cccccccc;
+  --color100: #cccccc;
+  --colorcross: var(--color40);
+  --colorcross-02: var(--color100);
+  --grid-size: 10px;
+  --col-size: calc((100% - 220px) / 12);
+}
+
+/*-- SHOW CENTER CROSSHAIR --*/
+.show-center .activity-content {
+  background-image: linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent calc(50% - 0.5px),
+      var(--colorcross) calc(50% - 0.5px),
+      var(--colorcross) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent calc(50% - 0.5px),
+      var(--colorcross) calc(50% - 0.5px),
+      var(--colorcross) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    );
+}
+
+/*-- SHOW 10 PIXEL GRID --*/
+.show-grid .activity-content {
+  background-image: repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) - 1px),
+      var(--color20) var(--grid-size)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) - 1px),
+      var(--color20) var(--grid-size)
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 2 - 1px),
+      var(--color40) calc(var(--grid-size) * 2)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 2 - 1px),
+      var(--color40) calc(var(--grid-size) * 2)
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 10 - 1px),
+      var(--color80) calc(var(--grid-size) * 10)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 10 - 1px),
+      var(--color80) calc(var(--grid-size) * 10)
+    );
+}
+
+/*-- SHOW CENTER CROSSHAIR WITH GRID --*/
+.show-grid.show-center .activity-content {
+  background-image: repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) - 1px),
+      var(--color20) var(--grid-size)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) - 1px),
+      var(--color20) var(--grid-size)
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 2 - 1px),
+      var(--color40) calc(var(--grid-size) * 2)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 2 - 1px),
+      var(--color40) calc(var(--grid-size) * 2)
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 10 - 1px),
+      var(--color80) calc(var(--grid-size) * 10)
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent calc(var(--grid-size) * 10 - 1px),
+      var(--color80) calc(var(--grid-size) * 10)
+    ),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      transparent calc(50% - 0.5px),
+      var(--colorcross-02) calc(50% - 0.5px),
+      var(--colorcross-02) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent calc(50% - 0.5px),
+      var(--colorcross-02) calc(50% - 0.5px),
+      var(--colorcross-02) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ) !important;
+}
+
+/*-- SHOW 12 COLUMN GUIDES --*/
+.show-column-guide .activity-content {
+  border: 2px solid white !important;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 1px var(--color100), inset 0 0 0 1px var(--color100);
+
+  /*columns*/
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--color60) 0px,
+    var(--color60) 1px,
+    var(--color05) 1px,
+    var(--color05) var(--col-size),
+    var(--color60) var(--col-size),
+    var(--color60) calc(var(--col-size) + 1px),
+    transparent calc(var(--col-size) + 1px),
+    transparent calc(var(--col-size) + calc(var(--grid-size) * 2))
+  ) !important;
+}
+
+/*-- SHOW 12 ROW GUIDES --*/
+.show-row-guide .activity-content {
+  border: 2px solid white !important;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 1px var(--color100), inset 0 0 0 1px var(--color100);
+
+  /*rows*/
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color60) 0px,
+    var(--color60) 1px,
+    var(--color05) 1px,
+    var(--color05) var(--col-size),
+    var(--color60) var(--col-size),
+    var(--color60) calc(var(--col-size) + 1px),
+    transparent calc(var(--col-size) + 1px),
+    transparent calc(var(--col-size) + calc(var(--grid-size) * 2))
+  ) !important;
+}
+
+.InterfaceSettings {
+  .form-check {
+    padding-bottom: 8px;
+  }
+  .form-check:first-child {
+    padding-top: 8px;
+  }
+  .form-check-label {
+    padding-left: 5px;
+  }
+}

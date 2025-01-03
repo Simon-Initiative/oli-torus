@@ -95,6 +95,17 @@ const lessonSchema: JSONSchema7 = {
           description: 'block of css code to be injected into style tag',
           format: 'textarea',
         },
+        InterfaceSettings: {
+          title: 'Interface Settings',
+          type: 'number',
+          oneOf: [
+            { const: 0, title: 'Default' },
+            { const: 1, title: '10px Grid' },
+            { const: 2, title: 'Centerpoint' },
+            { const: 3, title: 'Column Guides' },
+            { const: 4, title: 'Row Guides' },
+          ],
+        },
       },
     },
     CustomLogic: {
@@ -176,6 +187,17 @@ export const simpleLessonSchema: JSONSchema7 = {
           title: 'Refresh warning popup',
           default: 'true',
         },
+        InterfaceSettings: {
+          type: 'number',
+          title: 'Interface Settings',
+          oneOf: [
+            { const: 0, title: 'Default' },
+            { const: 1, title: '10px Grid' },
+            { const: 2, title: 'Centerpoint' },
+            { const: 3, title: 'Column Guides' },
+            { const: 4, title: 'Row Guides' },
+          ],
+        },
       },
     },
   },
@@ -187,6 +209,10 @@ export const simpleLessonUiSchema: UiSchema = {
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Finish Panel',
+    },
+    InterfaceSettings: {
+      'ui:widget': 'radio',
+      classNames: 'col-span-12 InterfaceSettings',
     },
   },
 };
@@ -214,6 +240,10 @@ export const lessonUiSchema: UiSchema = {
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Finish Panel',
+    },
+    InterfaceSettings: {
+      'ui:widget': 'radio',
+      classNames: 'col-span-12 InterfaceSettings',
     },
   },
   CustomLogic: {
@@ -262,6 +292,7 @@ export const transformModelToSchema = (model: any) => {
       customCSS: model.customCss,
       enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
       displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup || true,
+      InterfaceSettings: model.custom.InterfaceSettings || 0,
     },
     CustomLogic: {
       variables: model.custom.variables,
@@ -298,6 +329,7 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
       darkModeSetting: schema.Properties.Appearance.darkModeSetting,
+      InterfaceSettings: schema.Properties.InterfaceSettings || 0,
     },
     displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
     additionalStylesheets,

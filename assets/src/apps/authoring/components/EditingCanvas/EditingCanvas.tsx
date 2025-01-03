@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
+import { selectCustom } from 'apps/authoring/store/page/slice';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import { useKeyDown } from 'hooks/useKeyDown';
@@ -22,16 +23,24 @@ import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
 import StagePan from './StagePan';
 
+enum InterfaceSettings {
+  DEFAULT = 0,
+  GRID = 1,
+  CENTERPOINT = 2,
+  COLOUMNGUIDES = 3,
+  ROWGUIDES = 4,
+}
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
   const _bottomPanelState = useSelector(selectBottomPanel);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const _currentPartSelection = useSelector(selectCurrentSelection);
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
+  const _currentLessonCustom = useSelector(selectCustom);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
-
+  const [customInterfaceSettings, setCustomInterfaceSettings] = useState<string>('default');
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
   const [configPartId, setConfigPartId] = useState<string>('');
@@ -108,7 +117,19 @@ const EditingCanvas: React.FC = () => {
     }
     return true;
   };
-
+  useEffect(() => {
+    const interfaceSettingClass =
+      _currentLessonCustom.InterfaceSettings == InterfaceSettings.CENTERPOINT
+        ? 'show-grid show-center'
+        : _currentLessonCustom.InterfaceSettings == InterfaceSettings.GRID
+        ? 'show-grid'
+        : _currentLessonCustom.InterfaceSettings == InterfaceSettings.COLOUMNGUIDES
+        ? 'show-column-guide'
+        : _currentLessonCustom.InterfaceSettings == InterfaceSettings.ROWGUIDES
+        ? 'show-row-guide'
+        : 'default';
+    setCustomInterfaceSettings(interfaceSettingClass);
+  }, [_currentLessonCustom]);
   const handleStageClick = (e: any) => {
     if (e.target.className !== 'aa-stage') {
       return;
@@ -186,7 +207,7 @@ const EditingCanvas: React.FC = () => {
 
   return (
     <React.Fragment>
-      <section className="aa-stage mt-8" onClick={handleStageClick}>
+      <section className={`aa-stage mt-8 ${customInterfaceSettings}`} onClick={handleStageClick}>
         <StagePan>
           {currentActivityTree &&
             currentActivityTree.map((activity) => (
