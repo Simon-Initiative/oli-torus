@@ -353,7 +353,7 @@ defmodule Oli.Accounts do
     # using enrollment records, we can infer the user's institution. This is because
     # an LTI user can be enrolled in multiple sections, but all sections must be from
     # the same institution.
-    from(e in Enrollment,
+    results = from(e in Enrollment,
       join: s in Section,
       on: e.section_id == s.id,
       join: u in User,
@@ -361,13 +361,47 @@ defmodule Oli.Accounts do
       join: institution in Institution,
       on: s.institution_id == institution.id,
       where:
-        u.sub == ^sub and institution.id == ^institution_id and s.status == :active and
-          e.status == :enrolled,
-      limit: 1,
-      select: u
+        u.sub == ^sub and institution.id == ^institution_id,
+      select: u,
+      order_by: [desc: u.inserted_at]
     )
-    |> Repo.one()
-    |> insert_or_update_external_user(changes)
+    |> Repo.all()
+
+    case results do
+      [user | _] -> update_lms_user(user, changes)
+      [] -> create_lms_user(changes)
+    end
+
+  end
+
+  defp create_lms_user(%{sub: sub} = changes) do
+    %User{sub: sub, independent_learner: false}
+    |> User.noauth_changeset(changes)
+    |> Repo.insert()
+    |> case do
+      {:ok, %User{id: user_id}} = res ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+
+      error ->
+        error
+    end
+  end
+
+  defp update_lms_user(%User{} = user, changes) do
+    user
+    |> User.noauth_changeset(changes)
+    |> Repo.update()
+    |> case do
+      {:ok, %User{id: user_id}} = res ->
+        AccountLookupCache.delete("user_#{user_id}")
+
+        res
+
+      error ->
+        error
+    end
   end
 
   @doc """
