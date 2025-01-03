@@ -132,6 +132,16 @@ defmodule Oli.Analytics.Datasets do
 
   end
 
+  def has_active_job?(user_id, project_id) do
+
+    terminal_states = @terminal_emr_states
+    |> Enum.map(fn status -> String.downcase(status) end)
+
+    DatasetJob
+    |> where([j], j.project_id == ^project_id and j.initiated_by_id == ^user_id and j.status not in ^terminal_states)
+    |> Repo.exists?()
+  end
+
   @doc """
   Returns the values for the project filter (the distinct set of projects that have
   jobs in the system)

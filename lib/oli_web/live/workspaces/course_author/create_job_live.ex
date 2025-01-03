@@ -4,21 +4,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   import Ecto.Query
   alias Oli.Repo
 
+  import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
+
   alias Oli.{Accounts}
   alias Oli.Analytics.Datasets.{BrowseJobOptions, DatasetJob}
   alias Oli.Delivery.Sections.{BrowseOptions, SectionsProjectsPublications, Enrollment, Section, EnrollmentContextRole}
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.User
   alias Oli.Analytics.Datasets
-  alias OliWeb.Common.MultiSelect.Option
-  alias OliWeb.Common.MultiSelectInput
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-
+  alias Oli.Delivery.Sections.Browse
   alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Sections.SectionsTableModel
+  alias OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel
+  alias OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts
+  alias Oli.Repo.{Paging, Sorting}
 
+  @max_selected 5
 
   @limit 25
   @default_options %BrowseOptions{
@@ -42,7 +46,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
-    %{ctx: ctx, project: project} = socket.assigns
+    %{ctx: ctx, project: project, current_author: author} = socket.assigns
 
     options = %{@default_options | project_id: project.id}
 
@@ -54,18 +58,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       )
 
     total_count = determine_total(sections)
-    {:ok, table_model} = SectionsTableModel.new(ctx, sections)
+    {:ok, table_model} = CreationTableModel.new(ctx, sections)
+
+    is_admin? = Accounts.at_least_content_admin?(author)
+    has_active_job? = Datasets.has_active_job?(author.id, project.id)
+    can_create_job? = is_admin? or not has_active_job?
 
     {:ok,
      assign(socket,
        job_type: :datashop,
+       shortcut: JobShortcuts.get(:datashop),
+       can_create_job?: can_create_job?,
+       is_admin?: is_admin?,
        sections: sections,
        table_model: table_model,
        options: options,
        total_count: total_count,
        section_ids: [],
        emails: [],
-       emails_valid?: true
+       emails_valid?: true,
+       limit: @limit
      )}
 
   end
@@ -124,9 +136,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     ~H"""
     <h2 id="header_id" class="pb-2">Create Dataset Job</h2>
     <div class="mb-3">
-      <p>
-        Create a new dataset job
-      </p>
+      <%= if !@can_create_job? do %>
+        <div class="alert alert-warning flex flex-row justify-between" role="alert">
+          <div>
+            <strong>Warning:</strong> You already have an active job for this project,
+            until it is completed you cannot create another job.
+          </div>
+        </div>
+      <% end %>
     </div>
     <div class="mt-5 mb-3">
 
@@ -141,48 +158,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
         class="custom-select custom-select-lg mb-2"
         form="job_form"
       >
-        <option value={:datashop} selected={@job_type == :datashop}>Datashop (.xml)</option>
-        <option value={:attempts_simple} selected={@job_type == :attempts_simple}>Attempt performance data (.csv)</option>
-        <option value={:attempts_extended} selected={@job_type == :attempts_extended}>Attempt performance data, with extended fields (.csv)</option>
-        <option value={:video} selected={@job_type == :video}>Video interaction data (.csv)</option>
-        <option value={:page_viewed} selected={@job_type == :page_viewed}>Page view data (.csv)</option>
-        <option value={:required_survey} selected={@job_type == :required_survey}>Required survey data (.csv)</option>
+        <%= for shortcut <- JobShortcuts.all() do %>
+          <option value={shortcut.value} selected={@job_type == shortcut.value}>
+            <%= shortcut.label %>
+          </option>
+        <% end %>
       </select>
 
-      <p>Enter emails to be notified upon job termination:</p>
+      <small class="mb-3">
+        <%= @shortcut.description %>
+      </small>
 
-      <input
-        type="text"
-        id="emails"
-        name="emails"
-        class="form-control mb-2"
-        form="job_form"
-        phx-hook="TextInputListener"
-        placeholder="Email addresses separated by commas"/>
+      <%= if @is_admin? do %>
 
-      <p>Select the dataset source course sections:</p>
+        <p class="mt-5">Enter additional emails (besides yourself) to be notified upon job termination:</p>
 
-      <%= for section <- @sections do %>
-        <div class="flex items">
-          <input
-            type="checkbox"
-            name="section"
-            value={section.id}
-            phx-click="option_selected"
-            phx-target="section_selected"
-            phx-value-id={section.id}
-            phx-value-title={section_label(section)}
-            phx-value-selected={@section_ids |> Enum.member?(section.id)}
-          />
-          <label for={section.id} class="ml-2"><%= section_label(section) %></label>
-        </div>
+        <input
+          type="text"
+          id="emails"
+          name="emails"
+          class="form-control mb-2"
+          form="job_form"
+          phx-hook="TextInputListener"
+          placeholder="Email addresses separated by commas"/>
+
       <% end %>
+
+      <p class="mt-5">Select the dataset source course sections <%= if !@is_admin? do "(max 5)" else "" end %>:</p>
+
+      <div class="mb-5" />
+
+      <div class="sections-table">
+        <PagedTable.render
+          allow_selection={true}
+          selection_change="section_selected"
+          filter={@options.text_search}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+        />
+      </div>
 
 
       <div class="mt-5">
         <button
           phx-click="create_job"
-          disabled={@section_ids == [] or !@emails_valid?}
+          disabled={@section_ids == [] or !@emails_valid? or !@can_create_job?}
           class="btn btn-primary"
         >
           Create Job
@@ -194,38 +216,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     """
   end
 
+  def handle_event("create_job", _params, socket) do
 
-  @impl Phoenix.LiveView
-  def handle_info({:option_selected, "section_selected", selected_ids}, socket) do
-    socket =
-      assign(socket,
-        section_ids: selected_ids,
-        form_uuid_for_product: generate_uuid(),
-        product_ids: [],
-        is_product: false
-      )
+    # invoke the job, then redirect to the all jobs view
+
+
+
+
     {:noreply, socket}
   end
-
-  def handle_info({:option_selected, "product_selected", selected_ids}, socket) do
-    socket =
-      assign(socket,
-        product_ids: selected_ids,
-        form_uuid_for_section: generate_uuid(),
-        section_ids: [],
-        is_product: true
-      )
-
-    section_ids =
-      Enum.reduce(selected_ids, MapSet.new(), fn id, all ->
-        Map.get(socket.assigns.sections_by_product_id, id)
-        |> MapSet.new()
-        |> MapSet.union(all)
-      end)
-      |> Enum.to_list()
-    {:noreply, assign(socket, section_ids: section_ids)}
-  end
-
 
   def handle_event("change", %{"id" => "emails", "value" => emails}, socket) do
 
@@ -239,29 +238,50 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     {:noreply, assign(socket, emails: emails, emails_valid?: emails_valid?)}
   end
 
+  def handle_event("section_selected", %{"id" => id}, socket) do
+
+    id = String.to_integer(id)
+
+    # Toggle the selection
+    section_ids = case Enum.any?(socket.assigns.section_ids, &(&1 == id)) do
+      true -> Enum.reject(socket.assigns.section_ids, &(&1 == id))
+      false -> [id | socket.assigns.section_ids]
+    end
+
+    # Limit the number of selected sections for non-admin users
+    selection_ids = case socket.assigns.is_admin? do
+      false -> Enum.take(section_ids, @max_selected)
+      true -> section_ids
+    end
+
+    map_set = MapSet.new(section_ids)
+
+    data = Map.put(socket.assigns.table_model.data, :selected_ids, map_set)
+    table_model = %{socket.assigns.table_model | data: data}
+
+    {:noreply, assign(socket, section_ids: section_ids, table_model: table_model)}
+  end
+
   def handle_event("job_type", %{"job_type" => job_type}, socket) do
-    {:noreply, assign(socket, job_type: String.to_existing_atom(job_type))}
+
+    job_type = String.to_existing_atom(job_type)
+    shortcut = JobShortcuts.get(job_type)
+
+    {:noreply, assign(socket, job_type: job_type, shortcut: shortcut)}
   end
 
-  defp get_sections_by_product_id(project_id) do
-    query =
-      from s in Section,
-        where:
-          s.base_project_id == ^project_id and not is_nil(s.blueprint_id) and
-            s.type == :enrollable,
-        select: {s.id, s.blueprint_id}
+  def handle_event(event, params, socket),
+  do:
+    delegate_to(
+      {event, params, socket, &__MODULE__.patch_with/2},
+      [&PagedTable.handle_delegated/4]
+    )
 
-    Repo.all(query)
-    |> Enum.reduce(%{}, fn {id, blueprint_id}, m ->
-      case Map.get(m, blueprint_id) do
-        nil -> Map.put(m, blueprint_id, [id])
-        ids -> Map.put(m, blueprint_id, [id | ids])
-      end
-    end)
-  end
-
-  defp generate_uuid do
-    UUID.uuid4()
+  defp determine_total(projects) do
+    case projects do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
 
   defp is_disabled(selected, title) do
