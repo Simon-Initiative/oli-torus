@@ -21,16 +21,12 @@ defmodule Oli.AccountsTest do
   end
 
   describe "insert or update" do
-
     setup do
       Seeder.base_project_with_resource2()
       |> Seeder.create_section()
     end
 
-
-
     test "no user at all exists", %{section: section} do
-
       institution_id = section.institution_id
 
       {:ok, user1} = Accounts.insert_or_update_lms_user(make_user(institution_id), institution_id)
@@ -48,7 +44,6 @@ defmodule Oli.AccountsTest do
     end
 
     test "a user exists already with this sub, but with nil institution", %{section: section} do
-
       institution_id = section.institution_id
 
       # Insert a user with nil institution
@@ -61,8 +56,9 @@ defmodule Oli.AccountsTest do
       refute user1.id == user.id
     end
 
-    test "a user exists already with this sub, but with nil institution AND enrollment", %{section: section} do
-
+    test "a user exists already with this sub, but with nil institution AND enrollment", %{
+      section: section
+    } do
       institution_id = section.institution_id
 
       # Insert a user with nil institution and enroll it in a section
