@@ -48,19 +48,27 @@ defmodule OliWeb.LtiController do
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
-        # cache user lti params and store the id in the current session
-        case LtiParams.create_or_update_lti_params(lti_params) do
-          {:ok, %{id: lti_params_id}} ->
-            conn = LtiSession.put_session_lti_params(conn, lti_params_id)
+        result =
+          Oli.Repo.transaction(fn ->
+            # cache user lti params and store the id in the current session
+            case LtiParams.create_or_update_lti_params(lti_params) do
+              {:ok, %{id: lti_params_id}} ->
+                conn = LtiSession.put_session_lti_params(conn, lti_params_id)
 
-            # handle the valid lti launch
-            handle_valid_lti_1p3_launch(conn, lti_params)
+                # handle the valid lti launch
+                handle_valid_lti_1p3_launch(conn, lti_params)
 
-          _ ->
-            {_error_id, error_msg} =
-              log_error("An error occurred while creating/updating LTI params")
+              _ ->
+                {_error_id, error_msg} =
+                  log_error("An error occurred while creating/updating LTI params")
 
-            throw(error_msg)
+                throw(error_msg)
+            end
+          end)
+
+        case result do
+          {:ok, conn} -> conn
+          e -> e
         end
 
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
@@ -383,7 +391,8 @@ defmodule OliWeb.LtiController do
                  locale: lti_params["locale"],
                  phone_number: lti_params["phone_number"],
                  phone_number_verified: lti_params["phone_number_verified"],
-                 address: lti_params["address"]
+                 address: lti_params["address"],
+                 lti_institution_id: institution.id
                },
                institution.id
              ) do

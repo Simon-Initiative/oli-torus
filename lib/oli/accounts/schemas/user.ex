@@ -49,8 +49,9 @@ defmodule Oli.Accounts.User do
 
     pow_user_fields()
 
-    # A user may optionally be linked to an author account
+    # A user may optionally be linked to an author account and Institution
     belongs_to :author, Oli.Accounts.Author
+    field :lti_institution_id, :integer, default: nil
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment, on_delete: :delete_all
 
@@ -112,6 +113,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -156,6 +158,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -237,6 +240,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -321,7 +325,7 @@ defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
         preload: [:context_roles],
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
         select: e
 
     case Repo.one(query) do
