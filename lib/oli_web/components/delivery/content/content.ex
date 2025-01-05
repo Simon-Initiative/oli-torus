@@ -37,12 +37,11 @@ defmodule OliWeb.Components.Delivery.Content do
 
   def update(%{containers: {container_count, containers}} = assigns, socket) do
     params =
-      if container_count == 0 do
-        decode_params(assigns.params)
-        |> Map.merge(%{container_filter_by: :pages})
-      else
-        decode_params(assigns.params)
-      end
+      if container_count == 0,
+        do:
+          decode_params(assigns.params)
+          |> Map.merge(%{container_filter_by: :pages}),
+        else: decode_params(assigns.params)
 
     {total_count, column_name, rows} = apply_filters(containers, params)
 
@@ -122,7 +121,8 @@ defmodule OliWeb.Components.Delivery.Content do
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
        selected_proficiency_ids: selected_proficiency_ids,
-       params_from_url: assigns.params
+       params_from_url: assigns.params,
+       disable_containers_filter: container_count == 0
      )}
   end
 
@@ -134,6 +134,7 @@ defmodule OliWeb.Components.Delivery.Content do
   attr(:view, :atom)
   attr(:section_slug, :string)
   attr(:card_props, :list)
+  attr(:disable_containers_filter, :boolean)
 
   def render(assigns) do
     ~H"""
@@ -145,6 +146,7 @@ defmodule OliWeb.Components.Delivery.Content do
           phx-click="filter_container"
           phx-value-filter="units"
           phx-target={@myself}
+          disabled={@disable_containers_filter}
         >
           Units
         </button>
@@ -154,6 +156,7 @@ defmodule OliWeb.Components.Delivery.Content do
           phx-click="filter_container"
           phx-value-filter="modules"
           phx-target={@myself}
+          disabled={@disable_containers_filter}
         >
           Modules
         </button>
@@ -593,6 +596,9 @@ defmodule OliWeb.Components.Delivery.Content do
         pages =
           containers
           |> maybe_filter_by_text(params.text_search)
+          |> maybe_filter_by_card(params.selected_card_value)
+          |> maybe_filter_by_progress(params.progress_selector, params.progress_percentage)
+          |> maybe_filter_by_proficiency(params.selected_proficiency_ids)
           |> sort_by(params.sort_by, params.sort_order)
 
         {length(pages), "PAGES", pages |> Enum.drop(params.offset) |> Enum.take(params.limit)}
@@ -731,8 +737,12 @@ defmodule OliWeb.Components.Delivery.Content do
     )
   end
 
+  defp set_button_background(:pages, _filter), do: "bg-gray-100 dark:bg-gray-800"
+
   defp set_button_background(container_filter_by, filter),
     do: if(container_filter_by == filter, do: "bg-blue-500 dark:bg-gray-800", else: "bg-white")
+
+  defp set_button_text(:pages, _filter), do: "text-gray-700 dark:text-white cursor-not-allowed"
 
   defp set_button_text(container_filter_by, filter),
     do:
@@ -752,11 +762,14 @@ defmodule OliWeb.Components.Delivery.Content do
     %{
       zero_student_progress:
         Enum.count(containers, fn container ->
-          Map.get(container, :numbering_level) == container_filter_id and container.progress == 0
+          (is_nil(container_filter_id) or
+             Map.get(container, :numbering_level) == container_filter_id) and
+            container.progress == 0
         end),
       high_progress_low_proficiency:
         Enum.count(containers, fn container ->
-          Map.get(container, :numbering_level) == container_filter_id and
+          (is_nil(container_filter_id) or
+             Map.get(container, :numbering_level) == container_filter_id) and
             Metrics.progress_range(container.progress) == "High" and
             container.student_proficiency == "Low"
         end)
