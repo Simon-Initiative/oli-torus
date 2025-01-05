@@ -126,7 +126,6 @@ defmodule Oli.Accounts.User do
     |> cast_embed(:preferences)
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
@@ -171,7 +170,6 @@ defmodule Oli.Accounts.User do
     ])
     |> cast_embed(:preferences)
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
@@ -199,7 +197,6 @@ defmodule Oli.Accounts.User do
     |> cast(attrs, [:given_name, :family_name, :email])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
@@ -257,7 +254,6 @@ defmodule Oli.Accounts.User do
       "You must verify you are old enough to access our site in order to continue"
     )
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> validate_email_confirmation()
     |> maybe_name_from_given_and_family()
@@ -266,7 +262,6 @@ defmodule Oli.Accounts.User do
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
-    |> maybe_create_unique_sub()
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 

@@ -101,25 +101,6 @@ defmodule Oli.Utils do
     end
   end
 
-  def maybe_create_unique_sub(changeset) do
-    case changeset do
-      # if changeset is valid and doesn't have a name in changes or data, derive name from given_name and family_name
-      %Ecto.Changeset{valid?: true, changes: changes, data: data} ->
-        case {Map.get(changes, :sub), Map.get(data, :sub)} do
-          {nil, nil} ->
-            sub = UUID.uuid4()
-
-            Ecto.Changeset.put_change(changeset, :sub, sub)
-
-          _ ->
-            changeset
-        end
-
-      _ ->
-        changeset
-    end
-  end
-
   def maybe_name_from_given_and_family(changeset) do
     case changeset do
       # here we try to derive a full display name using changes or data for name
