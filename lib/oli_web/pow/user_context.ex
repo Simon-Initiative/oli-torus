@@ -92,6 +92,13 @@ defmodule OliWeb.Pow.UserContext do
             _ -> params
           end
 
+        # Ensure that we have a unique sub for this user creation. We used to
+        # do this in the changeset, but that lead to some serious issues with
+        # accidentally changing the sub during updates. So we're moving it here to
+        # make the sub generation explicit.
+        sub = UUID.uuid4()
+        params = Map.put(params, "sub", sub)
+
         %User{}
         |> User.verification_changeset(params)
         |> Repo.insert()

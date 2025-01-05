@@ -1,4 +1,4 @@
-defmodule Oli.AccountsTest do
+defmodule Oli.LtiAccountsTest do
   use Oli.DataCase
 
   alias Oli.Accounts

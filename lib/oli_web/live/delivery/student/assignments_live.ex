@@ -23,7 +23,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
          :contains_explorations,
          :contains_deliberate_practice
        ], %Section{}},
-    current_user: {[:id, :name, :email], %User{}}
+    current_user: {[:id, :name, :email, :sub], %User{}}
   }
 
   def mount(_params, _session, socket) do

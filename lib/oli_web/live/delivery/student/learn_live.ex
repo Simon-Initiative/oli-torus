@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :contains_deliberate_practice,
          :open_and_free
        ], %Sections.Section{}},
-    current_user: {[:id, :name, :email], %User{}}
+    current_user: {[:id, :name, :email, :sub], %User{}}
   }
 
   @page_resource_type_id Oli.Resources.ResourceType.get_id_by_type("page")
