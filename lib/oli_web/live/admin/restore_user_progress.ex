@@ -17,12 +17,18 @@ defmodule OliWeb.Admin.RestoreUserProgress do
        email: nil,
        result: "",
        true_user: nil,
+       all_users: [],
        changes: []
      )}
   end
 
   def render(assigns) do
     ~H"""
+
+    <div class="alert alert-danger" role="alert">
+      <strong>Warning!</strong> This is a developer tool and should only be used by developers.  This can result in data loss.
+    </div>
+
     <div>
       <input
         type="text"
@@ -41,8 +47,30 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
       <div><%= @result %></div>
 
-      <h3>True User</h3>
-      <div><%= if @true_user do @true_user.id else nil end %></div>
+      <h3>User Records</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>ID</th>
+            <th>SUB</th>
+            <th>INSTITUTION</th>
+            <th>INSERTED</th>
+          </tr>
+        </thead>
+        <tbody>
+        <%= for user <- @all_users do %>
+          <tr>
+            <td><%= if user.id == @true_user.id do "TRUE" else "" end %></td>
+            <td><%= user.id %></td>
+            <td><%= user.sub %></td>
+            <td><%= user.lti_institution_id %></td>
+            <td><%= user.inserted_at %></td>
+          </tr>
+        <% end %>
+        </tbody>
+      </table>
 
       <h3>Changes</h3>
 
@@ -60,8 +88,8 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   def handle_event("preview", _, socket) do
 
-    {true_user, changes} = preview(socket.assigns.email)
-    {:noreply, assign(socket, true_user: true_user, changes: changes)}
+    {all_users, true_user, changes} = preview(socket.assigns.email)
+    {:noreply, assign(socket, all_users: all_users, true_user: true_user, changes: changes)}
   end
 
   def handle_event("commit", _, socket) do
@@ -118,7 +146,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
     |> List.flatten()
     |> Enum.filter(& &1 != nil)
 
-    {true_user, changes}
+    {all_users, true_user, changes}
 
   end
 
@@ -126,6 +154,8 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
     Enum.group_by(resource_accesses, & &1.resource_id)
     |> Enum.map(fn {resource_id, resource_accesses} ->
+
+      # Look up in the most recent revision to see if this is graded or practice
       is_graded = is_graded?(resource_id)
 
       access_for_true = access_for(resource_accesses, true_user)
