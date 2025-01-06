@@ -96,15 +96,30 @@ const lessonSchema: JSONSchema7 = {
           format: 'textarea',
         },
         InterfaceSettings: {
+          type: 'object',
           title: 'Interface Settings',
-          type: 'number',
-          oneOf: [
-            { const: 0, title: 'Default' },
-            { const: 1, title: '10px Grid' },
-            { const: 2, title: 'Centerpoint' },
-            { const: 3, title: 'Column Guides' },
-            { const: 4, title: 'Row Guides' },
-          ],
+          properties: {
+            grid: {
+              type: 'boolean',
+              title: '10px Grid',
+              default: 'false',
+            },
+            centerpoint: {
+              type: 'boolean',
+              title: 'Centerpoint',
+              default: 'false',
+            },
+            columnGuides: {
+              type: 'boolean',
+              title: 'Column Guides',
+              default: 'false',
+            },
+            rowGuides: {
+              type: 'boolean',
+              title: 'Row Guides',
+              default: 'false',
+            },
+          },
         },
       },
     },
@@ -188,15 +203,30 @@ export const simpleLessonSchema: JSONSchema7 = {
           default: 'true',
         },
         InterfaceSettings: {
-          type: 'number',
+          type: 'object',
           title: 'Interface Settings',
-          oneOf: [
-            { const: 0, title: 'Default' },
-            { const: 1, title: '10px Grid' },
-            { const: 2, title: 'Centerpoint' },
-            { const: 3, title: 'Column Guides' },
-            { const: 4, title: 'Row Guides' },
-          ],
+          properties: {
+            grid: {
+              type: 'boolean',
+              title: '10px Grid',
+              default: 'false',
+            },
+            centerpoint: {
+              type: 'boolean',
+              title: 'Centerpoint',
+              default: 'false',
+            },
+            columnGuides: {
+              type: 'boolean',
+              title: 'Column Guides',
+              default: 'false',
+            },
+            rowGuides: {
+              type: 'boolean',
+              title: 'Row Guides',
+              default: 'false',
+            },
+          },
         },
       },
     },
@@ -211,7 +241,6 @@ export const simpleLessonUiSchema: UiSchema = {
       'ui:title': 'Finish Panel',
     },
     InterfaceSettings: {
-      'ui:widget': 'radio',
       classNames: 'col-span-12 InterfaceSettings',
     },
   },
@@ -242,7 +271,6 @@ export const lessonUiSchema: UiSchema = {
       'ui:title': 'Finish Panel',
     },
     InterfaceSettings: {
-      'ui:widget': 'radio',
       classNames: 'col-span-12 InterfaceSettings',
     },
   },
@@ -292,7 +320,12 @@ export const transformModelToSchema = (model: any) => {
       customCSS: model.customCss,
       enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
       displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup || true,
-      InterfaceSettings: model.custom.InterfaceSettings || 0,
+      InterfaceSettings: {
+        grid: model.custom.grid || false,
+        centerpoint: model.custom.centerpoint || false,
+        columnGuides: model.custom.columnGuides || false,
+        rowGuides: model.custom.rowGuides || false,
+      },
     },
     CustomLogic: {
       variables: model.custom.variables,
@@ -329,7 +362,10 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
       darkModeSetting: schema.Properties.Appearance.darkModeSetting,
-      InterfaceSettings: schema.Properties.InterfaceSettings || 0,
+      grid: schema.Properties.InterfaceSettings.grid,
+      centerpoint: schema.Properties.InterfaceSettings.centerpoint,
+      columnGuides: schema.Properties.InterfaceSettings.columnGuides,
+      rowGuides: schema.Properties.InterfaceSettings.rowGuides,
     },
     displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
     additionalStylesheets,

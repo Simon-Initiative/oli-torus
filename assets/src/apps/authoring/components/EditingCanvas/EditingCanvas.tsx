@@ -23,13 +23,6 @@ import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
 import StagePan from './StagePan';
 
-enum InterfaceSettings {
-  DEFAULT = 0,
-  GRID = 1,
-  CENTERPOINT = 2,
-  COLOUMNGUIDES = 3,
-  ROWGUIDES = 4,
-}
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
   const _bottomPanelState = useSelector(selectBottomPanel);
@@ -118,16 +111,19 @@ const EditingCanvas: React.FC = () => {
     return true;
   };
   useEffect(() => {
-    const interfaceSettingClass =
-      _currentLessonCustom.InterfaceSettings == InterfaceSettings.CENTERPOINT
-        ? 'show-grid show-center'
-        : _currentLessonCustom.InterfaceSettings == InterfaceSettings.GRID
-        ? 'show-grid'
-        : _currentLessonCustom.InterfaceSettings == InterfaceSettings.COLOUMNGUIDES
-        ? 'show-column-guide'
-        : _currentLessonCustom.InterfaceSettings == InterfaceSettings.ROWGUIDES
-        ? 'show-row-guide'
-        : 'default';
+    let interfaceSettingClass = '';
+    if (_currentLessonCustom.grid) {
+      interfaceSettingClass += ' show-grid';
+    }
+    if (_currentLessonCustom.columnGuides) {
+      interfaceSettingClass += ' show-column-guide';
+    }
+    if (_currentLessonCustom.centerpoint) {
+      interfaceSettingClass += ' show-grid show-center';
+    }
+    if (_currentLessonCustom.rowGuides) {
+      interfaceSettingClass += ' show-row-guide';
+    }
     setCustomInterfaceSettings(interfaceSettingClass);
   }, [_currentLessonCustom]);
   const handleStageClick = (e: any) => {
