@@ -95,11 +95,7 @@ defmodule OliWeb.Admin.RestoreUserProgress do
   def handle_event("commit", _, socket) do
 
     result = case Repo.transaction(fn -> process(socket.assigns.true_user, socket.assigns.changes) end) do
-      {:ok, items} ->
-        case Enum.all?(items, fn {result, _} -> result == :ok end) do
-          true -> "success!"
-          false -> "failed: #{inspect(items)}"
-        end
+      {:ok, _} -> "success"
       {_, reason} -> "failed: #{inspect(reason)}"
     end
 
