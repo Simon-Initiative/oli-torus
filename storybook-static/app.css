@@ -4839,6 +4839,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-top: 0.25rem;
 }
 
+.mt-10 {
+  margin-top: 2.5rem;
+}
+
 .mt-11 {
   margin-top: 2.75rem;
 }
@@ -5390,6 +5394,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .min-h-0 {
   min-height: 0px;
+}
+
+.min-h-\[150px\] {
+  min-height: 150px;
 }
 
 .min-h-\[300px\] {
@@ -6618,6 +6626,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(212 212 212 / var(--tw-divide-opacity));
 }
 
+.place-self-stretch {
+  place-self: stretch;
+}
+
 .self-start {
   align-self: flex-start;
 }
@@ -7180,6 +7192,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-rose-400 {
   --tw-border-opacity: 1;
   border-color: rgb(251 113 133 / var(--tw-border-opacity));
+}
+
+.border-slate-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(226 232 240 / var(--tw-border-opacity));
 }
 
 .border-slate-300 {
@@ -7751,6 +7768,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-red-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(220 38 38 / var(--tw-bg-opacity));
+}
+
+.bg-sky-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(240 249 255 / var(--tw-bg-opacity));
 }
 
 .bg-slate-200 {
@@ -15029,6 +15051,11 @@ Not supports in Firefox and IE */
 .dark .dark\:bg-red-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(220 38 38 / var(--tw-bg-opacity));
+}
+
+.dark .dark\:bg-sky-900 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(12 74 110 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-slate-700 {
