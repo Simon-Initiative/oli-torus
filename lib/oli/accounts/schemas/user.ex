@@ -49,8 +49,9 @@ defmodule Oli.Accounts.User do
 
     pow_user_fields()
 
-    # A user may optionally be linked to an author account
+    # A user may optionally be linked to an author account and Institution
     belongs_to :author, Oli.Accounts.Author
+    field :lti_institution_id, :integer, default: nil
 
     has_many :enrollments, Oli.Delivery.Sections.Enrollment, on_delete: :delete_all
 
@@ -112,6 +113,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -124,7 +126,6 @@ defmodule Oli.Accounts.User do
     |> cast_embed(:preferences)
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
@@ -156,6 +157,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -168,7 +170,6 @@ defmodule Oli.Accounts.User do
     ])
     |> cast_embed(:preferences)
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
@@ -196,7 +197,6 @@ defmodule Oli.Accounts.User do
     |> cast(attrs, [:given_name, :family_name, :email])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
   end
@@ -237,6 +237,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -253,7 +254,6 @@ defmodule Oli.Accounts.User do
       "You must verify you are old enough to access our site in order to continue"
     )
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> lowercase_email()
     |> validate_email_confirmation()
     |> maybe_name_from_given_and_family()
@@ -262,7 +262,6 @@ defmodule Oli.Accounts.User do
   def user_identity_changeset(user_or_changeset, user_identity, attrs, user_id_attrs) do
     user_or_changeset
     |> Ecto.Changeset.cast(attrs, [:name, :given_name, :family_name, :picture])
-    |> maybe_create_unique_sub()
     |> pow_assent_user_identity_changeset(user_identity, attrs, user_id_attrs)
   end
 
@@ -321,7 +320,7 @@ defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
         preload: [:context_roles],
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
         select: e
 
     case Repo.one(query) do
