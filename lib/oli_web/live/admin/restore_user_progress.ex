@@ -68,56 +68,28 @@ defmodule OliWeb.Admin.RestoreUserProgress do
     enrollments = fetch_enrollments(all_users)
 
     changes = Enum.group_by(enrollments, & &1.section_id)
-    |> Enum.map(fn {section_id, _enrollments} ->
-      resource_accesses = fetch_resource_accesses(section_id, all_users)
+    |> Enum.map(fn {section_id, enrollments} ->
 
-      Enum.group_by(resource_accesses, & &1.resource_id)
-      |> Enum.map(fn {resource_id, resource_accesses} ->
-        is_graded = is_graded?(resource_id)
+      # If the true user is not enrolled in the section OR if there is a single enrollment
+      # there is nothing to restore, as this is likely a previous semester section.
+      case Enum.any?(enrollments, fn e -> e.user_id == true_user.id end) and Enum.count(enrollments) > 1 do
+        true ->
 
-        access_for_true = access_for(resource_accesses, true_user)
-        other_accesses = Enum.filter(resource_accesses, fn ra ->
-          is_nil(access_for_true) or ra.id != access_for_true.id
-        end)
+          enrolled_user_ids = Enum.map(enrollments, & &1.user_id) |> MapSet.new()
+          enrolled_users = Enum.reduce(all_users, [], fn user, acc ->
+            if MapSet.member?(enrolled_user_ids, user.id) do
+              [user | acc]
+            else
+              acc
+            end
+          end)
 
-        if is_graded do
+          fetch_resource_accesses(section_id, enrolled_users)
+          |> preview_section_changes(true_user)
 
-          # Is there a resource access for the true user?
-          case access_for_true do
-
-            # No access for the true user, so we need to find the most recently scored access
-            # and make it the true user's access
-            nil -> get_most_recently_scored(other_accesses)
-
-            # There is an access for the true user, but there isn't a score
-            %{score: nil, id: to_nil} -> [get_most_recently_scored(other_accesses), -to_nil]
-
-            # This must be a case where there is a score on the true user's access
-            # we do nothing
-            _ -> nil
-
-          end
-
-        else
-
-          most_recent_other_id = case other_accesses do
-            [] -> nil
-            [one | _rest] -> one.id
-          end
-
-          # Is there a resource access for the true user?
-          case access_for_true do
-
-            # No access for the true user, so we take the most recent other access
-            nil -> most_recent_other_id
-
-            _ -> nil
-
-          end
-
-        end
-
-      end)
+        false ->
+          nil
+      end
 
     end)
     |> List.flatten()
@@ -128,7 +100,60 @@ defmodule OliWeb.Admin.RestoreUserProgress do
 
   end
 
+  defp preview_section_changes(resource_accesses, true_user) do
 
+    Enum.group_by(resource_accesses, & &1.resource_id)
+    |> Enum.map(fn {resource_id, resource_accesses} ->
+      is_graded = is_graded?(resource_id)
+
+      access_for_true = access_for(resource_accesses, true_user)
+      other_accesses = Enum.filter(resource_accesses, fn ra ->
+        is_nil(access_for_true) or ra.id != access_for_true.id
+      end)
+
+      if is_graded do
+
+        # Is there a resource access for the true user?
+        case access_for_true do
+
+          # No access for the true user, so we need to find the most recently scored access
+          # and make it the true user's access
+          nil -> get_most_recently_scored(other_accesses)
+
+          # There is an access for the true user, but there isn't a score.  In this case
+          # we need to find the most recently scored access and make it the true user's access,
+          # but we also need to detach the resource access from the true user.  We indicate
+          # this detachment action by returning a negative id.
+          %{score: nil, id: to_nil} -> [get_most_recently_scored(other_accesses), -to_nil]
+
+          # This must be a case where there is a score on the true user's access
+          # we do nothing
+          _ -> nil
+
+        end
+
+      else
+
+        most_recent_other_id = case other_accesses do
+          [] -> nil
+          [one | _rest] -> one.id
+        end
+
+        # Is there a resource access for the true user?
+        case access_for_true do
+
+          # No access for the true user, so we take the most recent other access
+          nil -> most_recent_other_id
+
+          _ -> nil
+
+        end
+
+      end
+
+    end)
+
+  end
 
   defp process(true_user, changes) do
 
