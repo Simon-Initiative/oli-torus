@@ -186,6 +186,7 @@ defmodule Oli.Authoring.Course do
       |> where(^filter_by_collaborator)
       |> where(^filter_by_status)
       |> where(^filter_by_text)
+      |> where([_, _, o, _], o.status == :accepted and o.author_id == ^id)
       |> limit(^limit)
       |> offset(^offset)
       |> select([_, p, _, a], %{
