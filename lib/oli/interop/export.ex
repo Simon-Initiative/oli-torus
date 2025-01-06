@@ -440,7 +440,7 @@ defmodule Oli.Interop.Export do
           Map.put(
             revision,
             :children,
-            section_resource.children
+            (Map.get(section_resource, :children) || [])
             |> Enum.map(fn id -> Map.get(resources_by_section_resources, id) end)
           )
         )
