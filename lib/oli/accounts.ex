@@ -18,6 +18,9 @@ defmodule Oli.Accounts do
     UserPreferences
   }
 
+  alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.Course.Project
+
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
   alias Oli.Institutions.Institution
@@ -111,9 +114,10 @@ defmodule Oli.Accounts do
     Repo.insert_all(User, users, returning: [:id, :email])
   end
 
-  def create_invited_author(_email) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  def create_invited_author(email) do
+    %Author{}
+    |> Author.invite_changeset(%{email: email})
+    |> Repo.insert()
   end
 
   def browse_authors(
@@ -823,29 +827,22 @@ defmodule Oli.Accounts do
 
   def project_authors(project_ids) when is_list(project_ids) do
     Repo.all(
-      from(assoc in "authors_projects",
+      from(ap in AuthorProject,
         join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id in ^project_ids and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: [author, assoc.project_id]
+        on: ap.author_id == author.id,
+        join: project in Project,
+        on: ap.project_id == project.id,
+        where: ap.project_id in ^project_ids,
+        select: %{
+          author: author,
+          author_project_status: ap.status,
+          project_slug: project.slug
+        }
       )
     )
   end
 
-  def project_authors(project) do
-    Repo.all(
-      from(assoc in "authors_projects",
-        join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id == ^project.id and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: author
-      )
-    )
-  end
+  def project_authors(project), do: project_authors([project.id])
 
   @doc """
   Get all the communities for which the author is an admin.

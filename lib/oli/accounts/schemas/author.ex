@@ -87,6 +87,27 @@ defmodule Oli.Accounts.Author do
     |> maybe_name_from_given_and_family()
   end
 
+  @doc """
+  Invites author.
+
+  Only the author id will be set, and the persisted author won't have
+  any password for authentication.
+  (The author will set the password in the redeem invitation flow)
+  """
+  @spec invite_changeset(Ecto.Schema.t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  def invite_changeset(%Ecto.Changeset{} = changeset, attrs) do
+    changeset
+    |> cast(attrs, [:email])
+    |> validate_required([:email])
+    |> put_change(:system_role_id, Oli.Accounts.SystemRole.role_id().author)
+  end
+
+  def invite_changeset(user, attrs) do
+    user
+    |> Ecto.Changeset.change()
+    |> invite_changeset(attrs)
+  end
+
   defp validate_email(changeset, opts) do
     changeset
     |> validate_required([:email])

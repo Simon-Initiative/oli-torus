@@ -52,7 +52,7 @@ defmodule OliWeb.Projects.OverviewLive do
       assign(socket,
         breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
         active: :overview,
-        collaborators: Accounts.project_authors(project),
+        collaborators: Accounts.project_authors(project) |> IO.inspect(),
         activities_enabled: Activities.advanced_activities(project, is_admin?),
         can_enable_experiments: is_admin? and Oli.Delivery.Experiments.experiments_enabled?(),
         is_admin: is_admin?,
@@ -298,7 +298,10 @@ defmodule OliWeb.Projects.OverviewLive do
               ) %>
               <%= error_tag(f, :collaborator_emails) %>
               <%= hidden_input(f, :authors,
-                value: @collaborators |> Enum.map(fn author -> author.email end) |> Enum.join(", ")
+                value:
+                  @collaborators
+                  |> Enum.map(fn author_projects -> author_projects.author.email end)
+                  |> Enum.join(", ")
               ) %>
               <div class="input-group-append">
                 <%= submit("Send Invite",
