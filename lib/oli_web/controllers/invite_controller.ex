@@ -8,6 +8,7 @@ defmodule OliWeb.InviteController do
   alias Oli.Delivery.Sections
   alias Oli.{Email, Mailer}
   alias OliWeb.UserSessionController
+  alias OliWeb.AuthorSessionController
 
   def index(conn, _params) do
     render_invite_page(conn, "index.html", title: "Invite")
@@ -37,6 +38,24 @@ defmodule OliWeb.InviteController do
       |> put_in(["user", "request_path"], ~p"/sections/#{section_slug}")
 
     UserSessionController.create(conn, params, flash_message: nil)
+  end
+
+  @doc """
+  After an author accepts a collaboration intivation we log the author in and redirect him to the project.
+  """
+  def accept_collaborator_invitation(
+        conn,
+        %{"email" => email, "project_slug" => project_slug} = params
+      ) do
+    params =
+      params
+      |> put_in(["author", "email"], email)
+      |> put_in(
+        ["author", "request_path"],
+        ~p"/workspaces/course_author/#{project_slug}/overview"
+      )
+
+    AuthorSessionController.create(conn, params, flash_message: nil)
   end
 
   def create_bulk(conn, %{

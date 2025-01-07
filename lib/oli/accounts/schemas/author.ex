@@ -355,25 +355,29 @@ defmodule Oli.Accounts.Author do
   end
 
   @doc """
-  Invites an author.
-
-  A unique `:invitation_token` will be generated, and `invited_by` association
-  will be set. Only the author id will be set, and the persisted author won't have
-  any password for authentication.
-  """
-  def invite_changeset(_author, _invited_by, _attrs) do
-    # MER-4068 TODO
-    throw("Not implemented")
-  end
-
-  @doc """
   Accepts an invitation.
 
-  `:invitation_accepted_at` will be updated. The password can be set, and the
-  user id updated.
+  `:invitation_accepted_at` and `email_confirmed_at` will be updated. The password can be set,
+  and the email will be marked as verified since this changeset is used for accepting email invitations
+  (if they recieved the email invitation and accessed the link to accept it we can conclude that the email exists and belongs to the author).
   """
-  def accept_invitation_changeset(_author, _attrs) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  def accept_invitation_changeset(author, attrs, opts \\ []) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    author
+    |> cast(attrs, [
+      :email,
+      :password,
+      :given_name,
+      :family_name
+    ])
+    |> validate_confirmation(:password, message: "does not match password")
+    |> validate_email(opts)
+    |> validate_password(opts)
+    |> put_change(:invitation_accepted_at, now)
+    |> put_change(:email_confirmed_at, now)
+    |> put_change(:email_verified, true)
+    |> default_system_role()
+    |> maybe_name_from_given_and_family()
   end
 end

@@ -1396,7 +1396,7 @@ defmodule Oli.Accounts do
   ## Examples
 
       iex> get_user_by_enrollment_invitation_token("validtoken")
-      %User{}
+      %UserToken{}
 
       iex> get_user_by_enrollment_invitation_token("invalidtoken")
       nil
@@ -1537,6 +1537,24 @@ defmodule Oli.Accounts do
       hash_password: false,
       validate_email: false
     )
+  end
+
+  @doc """
+  When a new author accepts an invitation to a project, the author's data is updated (password for intance)
+  and the author_project status is updated from `:pending_confirmation` to `:accepted`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_author_invitation(author, author_project, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      author
+      |> Author.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      author_project
+      |> AuthorProject.changeset(%{status: :accepted})
+      |> Repo.update!()
+    end)
   end
 
   ## Settings
@@ -1853,6 +1871,27 @@ defmodule Oli.Accounts do
     with {:ok, query} <- AuthorToken.verify_email_token_query(token, "reset_password"),
          %Author{} = author <- Repo.one(query) do
       author
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author by collaboration invitation token.
+
+  ## Examples
+
+      iex> get_author_by_collaboration_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_by_collaboration_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_collaboration_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.collaborator_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
     else
       _ -> nil
     end
