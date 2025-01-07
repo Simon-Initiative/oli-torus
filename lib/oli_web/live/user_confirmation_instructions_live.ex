@@ -18,7 +18,13 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
               Confirm Your Account
             </:title>
             <:subtitle>
-              No confirmation instructions received? We'll send a new confirmation link to your inbox.
+              <p>
+                You must confirm your email address before you can sign in. Check your inbox for a confirmation link.
+              </p>
+
+              <p class="mt-4">
+                No confirmation instructions received? We'll send a new confirmation link to your inbox.
+              </p>
             </:subtitle>
 
             <.input
@@ -32,6 +38,18 @@ defmodule OliWeb.UserConfirmationInstructionsLive do
             <:actions>
               <.button variant={:primary} phx-disable-with="Sending..." class="w-full mt-4">
                 Resend confirmation instructions
+              </.button>
+
+              <hr
+                class="mt-8 mb-3 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10"
+              />
+
+              <.button
+                variant={:link}
+                href={~p"/users/log_in"}
+                class="!text-white"
+              >
+                Sign in
               </.button>
             </:actions>
           </.form_box>
