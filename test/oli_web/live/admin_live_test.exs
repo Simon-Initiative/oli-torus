@@ -914,7 +914,7 @@ defmodule OliWeb.AdminLiveTest do
              |> element(
                "##{accepted_and_confirmed_with_different_email_author.id} span[data-bs-toggle=\"tooltip\""
              )
-             |> render() =~ "Email Confirmed"
+             |> render() =~ "Invitation Accepted"
     end
 
     test "renders datetimes using the local timezone", map do
