@@ -857,25 +857,23 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~ "Email Confirmed"
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "shows invitation pending message when author was invited by an admin and has not accepted yet",
          %{conn: conn} do
-      invited_and_not_accepted_author = insert(:author, invitation_token: "token")
+      invited_and_not_accepted_author =
+        insert(:author, email_confirmed_at: nil, invitation_accepted_at: nil)
+
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
              |> element("##{invited_and_not_accepted_author.id} span[data-bs-toggle=\"tooltip\"")
-             |> render() =~ "Invitation Pending"
+             |> render() =~ "Confirmation Pending"
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "shows invitation accepted message when author was invited by an admin and accepted", %{
       conn: conn
     } do
       invited_author =
-        insert(:author, invitation_accepted_at: Timex.now())
+        insert(:author, email_confirmed_at: Timex.now(), invitation_accepted_at: Timex.now())
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
