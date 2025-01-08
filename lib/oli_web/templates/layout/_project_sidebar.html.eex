@@ -10,7 +10,7 @@
       <div aria-hidden="true" class="label mt-1">Create</div>
     </button>
     <ul class="dropdown-menu">
-      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.OverviewLive, @project.slug) %>">Overview</a></li>
+      <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.OverviewLive, @project.slug) %>">Overview</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, @project.slug) %>">Objectives</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.activity_bank_path(@conn, :index, @project.slug) %>">Activity Bank</a></li>
       <li><a class="dropdown-item btn btn-lg" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Experiments.ExperimentsView, @project.slug) %>">Experiments</a></li>

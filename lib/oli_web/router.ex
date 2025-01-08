@@ -414,20 +414,6 @@ defmodule OliWeb.Router do
   scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
-    live_session :load_projects,
-      on_mount: [
-        {OliWeb.AuthorAuth, :ensure_authenticated},
-        OliWeb.LiveSessionPlugs.SetCtx,
-        OliWeb.LiveSessionPlugs.SetProject
-      ] do
-      live("/:project_id", Projects.OverviewLive)
-      live("/:project_id/overview", Projects.OverviewLive)
-    end
-  end
-
-  scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
-
     # Project display pages
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/duplicate", ProjectController, :clone_project)
