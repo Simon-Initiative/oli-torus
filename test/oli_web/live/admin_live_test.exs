@@ -875,7 +875,7 @@ defmodule OliWeb.AdminLiveTest do
       conn: conn
     } do
       invited_author =
-        insert(:author, invitation_token: "token", invitation_accepted_at: Timex.now())
+        insert(:author, invitation_accepted_at: Timex.now())
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
@@ -890,7 +890,6 @@ defmodule OliWeb.AdminLiveTest do
         insert(:author,
           email_confirmed_at: nil,
           email: "other_email",
-          invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
 
@@ -908,7 +907,6 @@ defmodule OliWeb.AdminLiveTest do
       accepted_and_confirmed_with_different_email_author =
         insert(:author,
           email_confirmed_at: Timex.now(),
-          invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
 
@@ -1085,7 +1083,7 @@ defmodule OliWeb.AdminLiveTest do
 
     test "does not show email confirmation buttons when author was invited by an admin and has not accepted yet",
          %{conn: conn} do
-      invited_and_not_accepted_author = insert(:author, invitation_token: "token")
+      invited_and_not_accepted_author = insert(:author)
 
       {:ok, view, _html} =
         live(conn, live_view_author_detail_route(invited_and_not_accepted_author.id))
@@ -1099,7 +1097,7 @@ defmodule OliWeb.AdminLiveTest do
     test "does not show email confirmation buttons when author was invited by an admin and accepted",
          %{conn: conn} do
       invited_author =
-        insert(:author, invitation_token: "token", invitation_accepted_at: Timex.now())
+        insert(:author, invitation_accepted_at: Timex.now())
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(invited_author.id))
 
@@ -1115,7 +1113,6 @@ defmodule OliWeb.AdminLiveTest do
         insert(:author,
           email_confirmed_at: nil,
           email: "other_email",
-          invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
 
@@ -1133,7 +1130,6 @@ defmodule OliWeb.AdminLiveTest do
       accepted_and_confirmed_with_different_email_author =
         insert(:author,
           email_confirmed_at: Timex.now(),
-          invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
 
