@@ -108,6 +108,10 @@ defmodule Oli.Authoring.Collaborators do
     do_add_collaborator(author.email, project.slug)
   end
 
+  def add_collaborator(email, project_slug) when is_binary(email) and is_binary(project_slug) do
+    do_add_collaborator(email, project_slug)
+  end
+
   def do_add_collaborator(email, project_slug, status \\ :accepted)
       when is_binary(email) and is_binary(project_slug) do
     changeset_or_error = change_collaborator(email, project_slug, status)
