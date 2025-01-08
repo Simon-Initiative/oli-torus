@@ -149,7 +149,7 @@ defmodule OliWeb.CollaboratorController do
         |> put_flash(:info, "Author removed from project")
         |> redirect(to: ~p"/workspaces/course_author/#{project_slug}/overview")
 
-      {:error, _} ->
+      _ ->
         conn
         |> put_flash(:error, "We couldn't remove that author from the project.")
         |> redirect(to: ~p"/workspaces/course_author/#{project_slug}/overview")
