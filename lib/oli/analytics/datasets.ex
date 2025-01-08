@@ -16,13 +16,11 @@ defmodule Oli.Analytics.Datasets do
   @terminal_emr_states ["SUCCESS", "FAILED", "CANCELLED"]
 
 
-
-
   @doc """
   Submits a new dataset creation job to the EMR serverless
   environment for processing.  This is a four step process:
 
-  1. Initiaze the job with the provided configuration, generating a unique job ID
+  1. Initialize the job with the provided configuration, generating a unique job ID
   2. Preprocess the job configuration, depending on the job type
   3. Submit the job to the EMR serverless environment
   4. Persist the job to the database
@@ -132,6 +130,10 @@ defmodule Oli.Analytics.Datasets do
 
   end
 
+  @doc """
+  Returns true if the user has at least one active job being tracked
+  in the system, false otherwise.
+  """
   def has_active_job?(user_id, project_id) do
 
     terminal_states = @terminal_emr_states

@@ -4,7 +4,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
-  alias Oli.{Accounts}
   alias Oli.Analytics.Datasets.{BrowseJobOptions, DatasetJob}
   alias Oli.Analytics.Datasets
   alias Oli.Repo.{Paging, Sorting}
@@ -193,27 +192,31 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
     """
   end
 
-
+  @impl Phoenix.LiveView
   def handle_event("filter_project", %{"filter_project" => project_id}, socket) do
     project_id = String.to_integer(project_id)
     filter_by(socket, project_id, socket.assigns.filter_status, socket.assigns.filter_type, socket.assigns.filter_user, socket.assigns.table_model)
   end
 
+  @impl Phoenix.LiveView
   def handle_event("filter_status", %{"filter_status" => status}, socket) do
     status = String.to_existing_atom(status)
     filter_by(socket, socket.assigns.filter_project, status, socket.assigns.filter_type, socket.assigns.filter_user, socket.assigns.table_model)
   end
 
+  @impl Phoenix.LiveView
   def handle_event("filter_type", %{"filter_type" => type}, socket) do
     type = String.to_existing_atom(type)
     filter_by(socket, socket.assigns.filter_project, socket.assigns.filter_status, type, socket.assigns.filter_user, socket.assigns.table_model)
   end
 
+  @impl Phoenix.LiveView
   def handle_event("filter_user", %{"filter_user" => user_id}, socket) do
     user_id = String.to_existing_atom(user_id)
     filter_by(socket, socket.assigns.filter_project, socket.assigns.filter_status, socket.assigns.filter_type, user_id, socket.assigns.table_model)
   end
 
+  @impl Phoenix.LiveView
   def handle_event(event, params, socket) do
     delegate_to(
       {event, params, socket, &patch_with/2},
@@ -226,10 +229,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
       [] -> 0
       [hd | _] -> hd.total_count
     end
-  end
-
-  defp is_loading?(assigns) do
-    is_nil(assigns.active_rows)
   end
 
   def patch_with(socket, changes) do
@@ -297,9 +296,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
      )}
   end
 
-  defp is_disabled(selected, title) do
-    if selected == title,
-      do: [disabled: true],
-      else: []
-  end
 end

@@ -64,7 +64,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
     )
   end
 
-  defp render_project(_data, row, assigns) do
+  defp render_project(_data, _row, assigns) do
     ~H"""
     <a href={Routes.live_path(OliWeb.Projects.OverviewLive, @row.project_slug)}>
       <%= @row.project_title %>

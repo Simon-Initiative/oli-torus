@@ -5,7 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
-  alias Oli.{Accounts, Activities, Publishing}
+  alias Oli.{Activities, Publishing}
   alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions}
   alias Oli.Authoring.{Broadcaster, Course}
   alias Oli.Authoring.Broadcaster.Subscriber
@@ -14,7 +14,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.ResourceType
-  alias OliWeb.Components.Project.AsyncExporter
   alias OliWeb.Common.MultiSelect.Option
   alias OliWeb.Common.MultiSelectInput
   alias OliWeb.Common.{PagedTable, TextSearch}

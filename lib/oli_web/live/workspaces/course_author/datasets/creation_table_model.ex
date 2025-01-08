@@ -21,6 +21,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
           render_fn: &__MODULE__.custom_render/3
         },
         %ColumnSpec{
+          name: :slug,
+          label: "Identifier"
+        },
+        %ColumnSpec{
           name: :type,
           label: "Type",
           render_fn: &__MODULE__.custom_render/3

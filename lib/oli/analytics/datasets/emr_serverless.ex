@@ -54,6 +54,19 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     end
   end
 
+  @doc """
+  Issues a GET request to the EMR serverless endpoint to list all available job runs for a given application.
+
+  Returns {:ok, job_runs} if the request is successful, where job_runs is a list of maps
+  representing the job runs.  Otherwise, returns the error response from the HTTPoison library.
+
+  The created_at_after parameter is a DateTime object that specifies the earliest creation date of a job run,
+  allowing the caller to filter the results.
+
+  The function is recursive and will continue to make requests to the server to fetch additional pages
+  of job runs until all job runs have been retrieved.
+
+  """
   def get_jobs(application_id, created_at_after), do: get_jobs(application_id, created_at_after, [], nil)
 
   def get_jobs(application_id, created_at_after, results, next_token) do
@@ -103,9 +116,6 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
 
   end
 
-
-
-
   @doc """
   Issues a POST request to the EMR serverless endpoint to submit a job. Returns {:ok, job} if the
   request is successful, where job is the DatasetJob struct with the job_run_id field populated.
@@ -130,6 +140,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       "#{job.job_id}",
       "--section_ids",
       "#{job.configuration.section_ids |> to_str}",
+      "--page_ids",
+      "#{if Enum.count(job.configuration.page_ids) == 0, do: "all", else: job.configuration.page_ids |> to_str}",
       "--action",
       "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}",
       "--enforce_project_id",
@@ -189,10 +201,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     end
   end
 
-
   defp to_str(list) do
     Enum.join(list, ",")
   end
-
 
 end

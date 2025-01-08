@@ -1,22 +1,16 @@
 defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   use OliWeb, :live_view
 
-  import Ecto.Query
-  alias Oli.Repo
-
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
   alias Oli.{Accounts}
-  alias Oli.Analytics.Datasets.{BrowseJobOptions, DatasetJob}
-  alias Oli.Delivery.Sections.{BrowseOptions, SectionsProjectsPublications, Enrollment, Section, EnrollmentContextRole}
-  alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Accounts.User
+  alias Oli.Analytics.Datasets.{DatasetJob}
+  alias Oli.Delivery.Sections.{BrowseOptions, Section}
   alias Oli.Analytics.Datasets
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.Browse
-  alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch}
+  alias OliWeb.Common.{PagedTable}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel
   alias OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts
@@ -45,7 +39,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   ]
 
   @impl Phoenix.LiveView
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     %{ctx: ctx, project: project, current_author: author} = socket.assigns
 
     options = %{@default_options | project_id: project.id}
@@ -82,7 +76,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
   end
 
-
+  @impl Phoenix.LiveView
   def handle_params(params, _, socket) do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = get_int_param(params, "offset", 0)
@@ -92,7 +86,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       active_today: get_boolean_param(params, "active_today", false),
       filter_status:
         get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
-      filter_type: get_atom_param(params, "filter_type", @type_opts, nil),
+      filter_type: nil,
       # This view is currently for all institutions and all root products
       institution_id: nil,
       blueprint_id: nil,
@@ -118,18 +112,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
        options: options
      )}
   end
-
-  defp section_label(section) do
-    "#{section.title} (#{section.slug}) - #{section.start_date |> format_date} to #{section.end_date |> format_date}"
-  end
-
-  defp format_date(d) do
-    case d do
-      nil -> ""
-      _ -> Timex.format!(d, "{YYYY}-{0M}-{0D}")
-    end
-  end
-
 
   @impl Phoenix.LiveView
   def render(assigns) do
@@ -216,6 +198,43 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     """
   end
 
+
+  def patch_with(socket, changes) do
+    # convert param keys from atoms to strings
+    changes = Enum.into(changes, %{}, fn {k, v} -> {Atom.to_string(k), v} end)
+    # convert atom values to string values
+    changes =
+      Enum.into(changes, %{}, fn {k, v} ->
+        case v do
+          atom when is_atom(atom) -> {k, Atom.to_string(v)}
+          _ -> {k, v}
+        end
+      end)
+
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
+
+    offset = get_param(changes, "offset", 0)
+
+    sections =
+      Browse.browse_sections(
+        %Paging{offset: offset, limit: @limit},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+        socket.assigns.options
+      )
+
+    table_model = Map.put(table_model, :rows, sections)
+    total_count = determine_total(sections)
+
+    {:noreply,
+     assign(socket,
+       sections: sections,
+       offset: offset,
+       table_model: table_model,
+       total_count: total_count
+     )}
+  end
+
+  @impl true
   def handle_event("create_job", _params, socket) do
 
     # invoke the job, then redirect to the all jobs view
@@ -226,6 +245,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     {:noreply, socket}
   end
 
+  @impl true
   def handle_event("change", %{"id" => "emails", "value" => emails}, socket) do
 
     emails = case emails do
@@ -238,6 +258,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     {:noreply, assign(socket, emails: emails, emails_valid?: emails_valid?)}
   end
 
+  @impl true
   def handle_event("section_selected", %{"id" => id}, socket) do
 
     id = String.to_integer(id)
@@ -254,7 +275,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       true -> section_ids
     end
 
-    map_set = MapSet.new(section_ids)
+    map_set = MapSet.new(selection_ids)
 
     data = Map.put(socket.assigns.table_model.data, :selected_ids, map_set)
     table_model = %{socket.assigns.table_model | data: data}
@@ -262,6 +283,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     {:noreply, assign(socket, section_ids: section_ids, table_model: table_model)}
   end
 
+  @impl Phoenix.LiveView
   def handle_event("job_type", %{"job_type" => job_type}, socket) do
 
     job_type = String.to_existing_atom(job_type)
@@ -270,6 +292,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     {:noreply, assign(socket, job_type: job_type, shortcut: shortcut)}
   end
 
+  @impl true
   def handle_event(event, params, socket),
   do:
     delegate_to(
@@ -282,12 +305,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       [] -> 0
       [hd | _] -> hd.total_count
     end
-  end
-
-  defp is_disabled(selected, title) do
-    if selected == title,
-      do: [disabled: true],
-      else: []
   end
 
 end
