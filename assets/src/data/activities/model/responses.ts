@@ -6,7 +6,13 @@ import {
   Response,
   makeResponse,
 } from 'components/activities/types';
-import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
+import {
+  containsRule,
+  eqRule,
+  equalsRule,
+  matchRule,
+  ruleValue,
+} from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 
 export const Responses = {
@@ -68,19 +74,19 @@ export const getIncorrectPoints = (model: HasParts, partId: string) => {
   return part?.incorrectScore;
 };
 
-// Does not take into account partial credit
 export const getCorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(
     getResponsesByPartId(model, partId).find((r) => r.correct) ||
-      getResponsesByPartId(model, partId).find((r) => r.score >= 1),
+      getMaxScoreResponse(model, partId),
   ).valueOrThrow(new Error('Could not find correct response'));
 };
+
 export const getIncorrectResponse = (model: HasParts, partId: string) => {
   return Maybe.maybe(
     getResponsesByPartId(model, partId).find((r) => {
       const rule: string = matchRule('.*');
-      const incorrectValue: string = rule.substring(rule.indexOf('{') + 1, rule.indexOf('}'));
-      const valueToCheck: string = r.rule.substring(r.rule.indexOf('{') + 1, r.rule.indexOf('}'));
+      const incorrectValue: string = ruleValue(rule);
+      const valueToCheck: string = ruleValue(r.rule);
 
       return valueToCheck === incorrectValue;
     }),
@@ -89,6 +95,7 @@ export const getIncorrectResponse = (model: HasParts, partId: string) => {
 
 export const getMaxScoreResponse = (model: HasParts, partId: string) => {
   return getResponsesByPartId(model, partId).reduce((prev, current) =>
+    // in case of ties, use first one found as "primary" correct answer
     prev && current.score > prev.score ? current : prev,
   );
 };
@@ -131,3 +138,12 @@ export const getTargetedResponses = (
   model.authoring.targeted.map((assoc) =>
     getResponseBy(model, (r) => r.id === getResponseId(assoc)),
   );
+
+// extract targeted from response list without any reliance on targeted mapping
+export const findTargetedResponses = (model: HasParts, partId: string) => {
+  const responses = getResponsesByPartId(model, partId);
+  const correct = getCorrectResponse(model, partId);
+  const incorrect = getIncorrectResponse(model, partId);
+
+  return responses.filter((r) => r !== correct && r !== incorrect);
+};
