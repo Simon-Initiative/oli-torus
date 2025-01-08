@@ -175,6 +175,8 @@ if config_env() == :prod do
 
   # General OLI app config
   config :oli,
+    depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
+    depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
     s3_media_bucket_name: s3_media_bucket_name,
     s3_xapi_bucket_name: s3_xapi_bucket_name,
     media_url: media_url,

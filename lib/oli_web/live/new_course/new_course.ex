@@ -321,7 +321,8 @@ defmodule OliWeb.Delivery.NewCourse do
               has_experiments: has_experiments,
               analytics_version: :v2,
               welcome_title: project.welcome_title,
-              encouraging_subtitle: project.encouraging_subtitle
+              encouraging_subtitle: project.encouraging_subtitle,
+              certificate: nil
             })
 
           case create_from_publication(socket, publication, section_params) do

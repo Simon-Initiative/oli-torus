@@ -5,13 +5,14 @@ defmodule Oli.Accounts.User do
   import Ecto.Changeset
   import Oli.Utils
 
+  alias Ecto.Changeset
+
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
     field :password_hash, :string, redact: true
     field :email_confirmed_at, :utc_datetime
 
-    field :invitation_token, :string
     field :invitation_accepted_at, :utc_datetime
 
     # user fields are based on the openid connect core standard, most of which are provided via LTI 1.3
@@ -494,24 +495,49 @@ defmodule Oli.Accounts.User do
   @doc """
   Invites user.
 
-  A unique `:invitation_token` will be generated, and `invited_by` association
-  will be set. Only the user id will be set, and the persisted user won't have
+  Only the user id will be set, and the persisted user won't have
   any password for authentication.
+  (The user will set the password in the redeem invitation flow)
   """
-  def invite_changeset(_user, _invited_by, _attrs) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  @spec invite_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
+  def invite_changeset(%Changeset{} = changeset, attrs) do
+    changeset
+    |> cast(attrs, [:email])
+    |> validate_required([:email])
+  end
+
+  def invite_changeset(user, attrs) do
+    user
+    |> Ecto.Changeset.change()
+    |> invite_changeset(attrs)
   end
 
   @doc """
   Accepts an invitation.
 
-  `:invitation_accepted_at` will be updated. The password can be set, and the
-  user id updated.
+  `:invitation_accepted_at` and `email_confirmed_at` will be updated. The password can be set,
+  and the email will be marked as verified since this changeset is used for accepting email invitations
+  (if they recieved the email invitation and accessed the link to accept it we can conclude that the email exists and belongs to the user).
   """
-  def accept_invitation_changeset(_user, _attrs) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  def accept_invitation_changeset(user, attrs, opts \\ []) do
+    now = Oli.DateTime.utc_now() |> DateTime.truncate(:second)
+
+    user
+    |> cast(attrs, [
+      :email,
+      :password,
+      :given_name,
+      :family_name
+    ])
+    |> validate_confirmation(:password, message: "does not match password")
+    |> validate_email(opts)
+    |> validate_password(opts)
+    |> put_change(:independent_learner, true)
+    |> put_change(:invitation_accepted_at, now)
+    |> put_change(:email_confirmed_at, now)
+    |> put_change(:email_verified, true)
+    |> maybe_create_unique_sub()
+    |> maybe_name_from_given_and_family()
   end
 end
 

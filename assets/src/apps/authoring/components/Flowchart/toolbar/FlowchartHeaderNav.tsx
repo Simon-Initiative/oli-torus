@@ -32,6 +32,7 @@ import { redo } from '../../../store/history/actions/redo';
 import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
+import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType } from '../paths/path-options';
@@ -123,7 +124,8 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const hasRedo = useSelector(selectHasRedo);
   const hasUndo = useSelector(selectHasUndo);
   const [invalidScreens, setInvalidScreens] = React.useState<IActivity[]>([]);
-
+  const [showPartCopyValidationWarning, setShowPartCopyValidationWarning] =
+    React.useState<boolean>(false);
   const handleUndo = () => {
     dispatch(undo(null));
   };
@@ -224,12 +226,16 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   useKeyDown(
     () => {
       if (copiedPart && _currentPartPropertyFocus) {
+        if (hasQuestion) {
+          setShowPartCopyValidationWarning(true);
+          return;
+        }
         handlePartPasteClick();
       }
     },
     ['KeyV'],
     { ctrlKey: true },
-    [copiedPart, currentActivityTree, _currentPartPropertyFocus],
+    [copiedPart, currentActivityTree, hasQuestion, _currentPartPropertyFocus],
   );
 
   const handleAddComponent = useCallback(
@@ -354,11 +360,16 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 delay={{ show: 150, hide: 150 }}
                 overlay={
                   <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                    Paste Component
+                    <strong>Paste Component</strong>
+                    {hasQuestion && <div>Only one question component per screen is allowed</div>}
                   </Tooltip>
                 }
               >
-                <button className="component-button" onClick={handlePartPasteClick}>
+                <button
+                  disabled={hasQuestion}
+                  className="component-button"
+                  onClick={handlePartPasteClick}
+                >
                   <PasteIcon size={18} color="#222439" />
                 </button>
               </OverlayTrigger>
@@ -457,6 +468,12 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
             onCancel={() => setInvalidScreens([])}
           />
         )}
+        <ShowInformationModal
+          show={showPartCopyValidationWarning}
+          title="Paste Component"
+          explanation="Only one question component per screen is allowed"
+          cancelHandler={() => setShowPartCopyValidationWarning(false)}
+        />
       </div>
     )
   );

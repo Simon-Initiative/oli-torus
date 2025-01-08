@@ -665,6 +665,31 @@ export enum Transform {
 export interface CreationContext extends ResourceContext {}
 
 /**
+ * Data supplied to a creation function .
+ */
+export interface CreationData {
+  answer: string;
+  choiceA: string;
+  choiceB: string;
+  choiceC: string;
+  choiceD: string;
+  choiceE: string;
+  choiceF: string;
+  correct_feedback: string;
+  explanation: string;
+  hint1: string;
+  hint2: string;
+  hint3: string;
+  incorrect_feedback: string;
+  objectives: string;
+  stem: string;
+  tags: string;
+  title: string;
+  type: string;
+  editorSlug: string;
+}
+
+/**
  * @ignore
  */
 export interface PartComponentDefinition {

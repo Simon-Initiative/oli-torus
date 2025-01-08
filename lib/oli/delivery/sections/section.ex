@@ -75,6 +75,9 @@ defmodule Oli.Delivery.Sections.Section do
     field(:contains_explorations, :boolean, default: false)
     field(:contains_deliberate_practice, :boolean, default: false)
 
+    field(:certificate_enabled, :boolean, default: false)
+    has_one(:certificate, Oli.Delivery.Sections.Certificate, on_replace: :delete)
+
     belongs_to(:required_survey, Oli.Resources.Resource,
       foreign_key: :required_survey_resource_id
     )
@@ -236,6 +239,7 @@ defmodule Oli.Delivery.Sections.Section do
     |> unique_constraint(:context_id, name: :sections_active_context_id_unique_index)
     |> Slug.update_never("sections")
     |> validate_length(:title, max: 255)
+    |> cast_assoc(:certificate)
   end
 
   def validate_positive_grace_period(changeset) do

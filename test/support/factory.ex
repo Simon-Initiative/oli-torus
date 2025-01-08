@@ -2,7 +2,7 @@ defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.VrUserAgent
-  alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
+  alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences, UserToken}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Analytics.Summary.ResourceSummary
 
@@ -16,6 +16,7 @@ defmodule Oli.Factory do
 
   alias Oli.Branding.Brand
   alias Oli.Delivery.Page.PageContext
+  alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -644,6 +645,27 @@ defmodule Oli.Factory do
     %ResourceSummary{
       num_correct: 5,
       num_attempts: 10
+    }
+  end
+
+  def certificate_factory() do
+    %Certificate{
+      title: "#{sequence("certificate")}",
+      section: anonymous_build(:section)
+    }
+  end
+
+  def user_token_factory(attr) do
+    token = attr[:non_hashed_token] || :crypto.strong_rand_bytes(32)
+    hashed_token = :crypto.hash(:sha256, token)
+
+    user = attr[:user] || insert(:user)
+
+    %UserToken{
+      token: hashed_token,
+      context: attr[:context] || "session",
+      sent_to: user.email,
+      user_id: user.id
     }
   end
 

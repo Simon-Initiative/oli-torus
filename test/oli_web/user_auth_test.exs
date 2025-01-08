@@ -13,7 +13,7 @@ defmodule OliWeb.UserAuthTest do
       |> Map.replace!(:secret_key_base, OliWeb.Endpoint.config(:secret_key_base))
       |> init_test_session(%{})
 
-    %{user: Oli.AccountsFixtures.user_fixture(), conn: conn}
+    %{user: Oli.Utils.Seeder.AccountsFixtures.user_fixture(), conn: conn}
   end
 
   describe "log_in_user/3" do
