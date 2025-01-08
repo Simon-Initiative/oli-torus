@@ -45,19 +45,19 @@ defmodule Oli.Delivery.Paywall do
         if section.pay_by_institution do
           AccessSummary.pay_by_institution()
         else
-          case has_paid?(enrollment) do
-            true ->
+          if has_zero_cost?(section) do
+            AccessSummary.has_zero_cost()
+          else
+            if has_paid?(enrollment) do
               AccessSummary.paid()
-
-            _ ->
-              case within_grace_period?(enrollment, section) do
-                true ->
-                  grace_period_seconds_remaining(enrollment, section)
-                  |> AccessSummary.within_grace()
-
-                _ ->
-                  AccessSummary.not_paid()
+            else
+              if within_grace_period?(enrollment, section) do
+                grace_period_seconds_remaining(enrollment, section)
+                |> AccessSummary.within_grace()
+              else
+                AccessSummary.not_paid()
               end
+            end
           end
         end
       end
@@ -90,13 +90,15 @@ defmodule Oli.Delivery.Paywall do
               AccessSummary.paid()
 
             _ ->
-              case within_grace_period?(enrollment, section) do
-                true ->
+              if has_zero_cost?(section) do
+                AccessSummary.has_zero_cost()
+              else
+                if within_grace_period?(enrollment, section) do
                   grace_period_seconds_remaining(enrollment, section)
                   |> AccessSummary.within_grace()
-
-                _ ->
+                else
                   AccessSummary.not_paid()
+                end
               end
           end
         end
@@ -119,6 +121,8 @@ defmodule Oli.Delivery.Paywall do
       _ -> true
     end
   end
+
+  defp has_zero_cost?(%Section{amount: amount}), do: Money.zero?(amount)
 
   defp within_grace_period?(nil, _), do: false
 
