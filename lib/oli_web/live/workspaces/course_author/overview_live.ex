@@ -48,7 +48,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
      assign(socket,
        ctx: ctx,
        collaborators:
-         Accounts.project_authors(project)
+         Accounts.authors_projects(project)
          |> Enum.group_by(& &1.author_project_status),
        activities_enabled: Activities.advanced_activities(project, is_admin?),
        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),

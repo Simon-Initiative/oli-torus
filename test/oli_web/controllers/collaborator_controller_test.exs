@@ -10,8 +10,8 @@ defmodule OliWeb.CollaboratorControllerTest do
   @invite_email "invite@example.com"
 
   defp get_authors(project) do
-    Accounts.project_authors(project)
-    |> Enum.map(fn author -> author.email end)
+    Accounts.authors_projects(project)
+    |> Enum.map(fn author_project -> author_project.author.email end)
     |> Enum.join(", ")
   end
 

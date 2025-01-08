@@ -825,7 +825,7 @@ defmodule Oli.Accounts do
     )
   end
 
-  def project_authors(project_ids) when is_list(project_ids) do
+  def authors_projects(project_ids) when is_list(project_ids) do
     Repo.all(
       from(ap in AuthorProject,
         join: author in Author,
@@ -842,7 +842,7 @@ defmodule Oli.Accounts do
     )
   end
 
-  def project_authors(project), do: project_authors([project.id])
+  def authors_projects(project), do: authors_projects([project.id])
 
   @doc """
   Get all the communities for which the author is an admin.
