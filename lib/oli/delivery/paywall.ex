@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Paywall do
 
   def summarize_access(
         %User{id: id} = user,
-        %Section{slug: slug, requires_payment: true} = section
+        %Section{slug: slug, requires_payment: true, amount: amount} = section
       ) do
     if Sections.is_instructor?(user, slug) or Sections.is_admin?(user, slug) do
       AccessSummary.instructor()
@@ -45,7 +45,7 @@ defmodule Oli.Delivery.Paywall do
         if section.pay_by_institution do
           AccessSummary.pay_by_institution()
         else
-          if has_zero_cost?(section) do
+          if has_zero_cost?(amount) do
             AccessSummary.has_zero_cost()
           else
             if has_paid?(enrollment) do
@@ -69,7 +69,7 @@ defmodule Oli.Delivery.Paywall do
 
   def summarize_access(
         %User{} = user,
-        %Section{slug: slug, requires_payment: true} = section,
+        %Section{slug: slug, requires_payment: true, amount: amount} = section,
         user_role_id,
         enrollment,
         payment
@@ -90,7 +90,7 @@ defmodule Oli.Delivery.Paywall do
               AccessSummary.paid()
 
             _ ->
-              if has_zero_cost?(section) do
+              if has_zero_cost?(amount) do
                 AccessSummary.has_zero_cost()
               else
                 if within_grace_period?(enrollment, section) do
@@ -122,7 +122,9 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
-  defp has_zero_cost?(%Section{amount: amount}), do: Money.zero?(amount)
+  defp has_zero_cost?(nil), do: true
+
+  defp has_zero_cost?(amount), do: Money.zero?(amount)
 
   defp within_grace_period?(nil, _), do: false
 
