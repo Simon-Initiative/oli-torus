@@ -613,15 +613,109 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         objective_map \\ %{},
         tags \\ []
       ) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil(),
+         {:ok, %{content: content} = activity} <-
+           process_create_activity(
+             project,
+             author,
+             publication,
+             scope,
+             activity_type_slug,
+             all_parts_objectives,
+             model,
+             title,
+             tags,
+             objective_map
+           ) do
+      case Transformers.apply_transforms([activity]) do
+        [{:ok, nil}] -> {:ok, {activity, content}}
+        [{:ok, transformed}] -> {:ok, {activity, transformed}}
+        _ -> {:ok, {activity, nil}}
+      end
+    else
+      error -> error
+    end
+  end
+
+  @doc """
+  Attempts to process a request to create a list of new activities.
+
+  Returns:
+
+  .`{:ok, list({String.t(), %Revision{}})}` when the creation processes succeeds
+  .`{:error, {:not_found}}` if the project, resource, or user cannot be found
+  .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
+  .`{:error, {:error}}` unknown error
+  """
+  @spec create_bulk(String.t(), %Author{}, %{}) ::
+          {:ok, list({String.t(), %Revision{}})}
+          | {:error, {:not_found}}
+          | {:error, {:error}}
+          | {:error, {:not_authorized}}
+  def create_bulk(
+        project_slug,
+        author,
+        bulk_activity_data,
+        scope \\ "embedded"
+      ) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil() do
+      activities =
+        Enum.reduce(bulk_activity_data, [], fn %{
+                                                 "activityTypeSlug" => activity_type_slug,
+                                                 "objectives" => objectives,
+                                                 "content" => model,
+                                                 "title" => title,
+                                                 "tags" => tags
+                                               },
+                                               m ->
+          case process_create_activity(
+                 project,
+                 author,
+                 publication,
+                 scope,
+                 activity_type_slug,
+                 objectives,
+                 model,
+                 title,
+                 tags
+               ) do
+            {:ok, activity} ->
+              m ++ [%{activity_type_slug: activity_type_slug, activity: activity}]
+
+            _ ->
+              m
+          end
+        end)
+
+      {:ok, activities}
+    else
+      error -> error
+    end
+  end
+
+  defp process_create_activity(
+         project,
+         author,
+         publication,
+         scope,
+         activity_type_slug,
+         objectives,
+         model,
+         title,
+         tags,
+         objective_map \\ %{}
+       ) do
     Repo.transaction(fn ->
-      with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
-           {:ok} <- authorize_user(author, project),
-           {:ok, publication} <-
-             Publishing.project_working_publication(project_slug) |> trap_nil(),
-           {:ok, activity_type} <-
+      with {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-           {:ok, objectives} <- attach_objectives(model, all_parts_objectives, objective_map),
-           {:ok, %{content: content} = activity} <-
+           {:ok, objectives} <- attach_objectives(model, objectives, objective_map),
+           {:ok, activity} <-
              Resources.create_new(
                %{
                  title: title || activity_type.title,
@@ -647,11 +741,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                resource_id: activity.resource_id,
                revision_id: activity.id
              }) do
-        case Transformers.apply_transforms([activity]) do
-          [{:ok, nil}] -> {activity, content}
-          [{:ok, transformed}] -> {activity, transformed}
-          _ -> {activity, nil}
-        end
+        activity
       else
         error -> Repo.rollback(error)
       end
