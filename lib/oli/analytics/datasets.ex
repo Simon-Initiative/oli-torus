@@ -6,6 +6,10 @@ defmodule Oli.Analytics.Datasets do
   alias Oli.Analytics.Datasets.Settings
   alias Oli.Analytics.Datasets.BrowseJobOptions
   alias Oli.Analytics.Datasets.EmrServerless
+
+  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole}
+  alias Lti_1p3.Tool.ContextRoles
+
   alias Oli.Repo.{Paging, Sorting}
   alias ExAws.S3
   alias ExAws
@@ -145,6 +149,25 @@ defmodule Oli.Analytics.Datasets do
   end
 
   @doc """
+  For a given list of section ids, return a unique list of user ids of whose data
+  should be excluded from a dataset job.  This includes non-student accounts as
+  well as any enrolled student who has opted out of data collection for research
+  purposes.
+  """
+  def user_ids_to_ignore(section_ids) do
+
+    Enrollment
+    |> join(:left, [e], u in Users, on: e.user_id == u.id)
+    |> join(:left, [e, _u], r in EnrollmentContextRole, on: e.id == r.enrollment_id)
+    |> where([e, u, r], e.section_id in ^section_ids and
+      (r.context_role_id != ^ContextRoles.get_role(:context_learner).id or u.research_opt_out == true))
+    |> select([_e, u, _r], u.id)
+    |> distinct(true)
+    |> Repo.all()
+
+  end
+
+  @doc """
   Returns the values for the project filter (the distinct set of projects that have
   jobs in the system)
   """
@@ -161,7 +184,7 @@ defmodule Oli.Analytics.Datasets do
   Returns the values for the initiator filter (the distinct set of initiators that have
   jobs in the system)
   """
-  def get_initator_values(project_id \\ nil) do
+  def get_initiator_values(project_id \\ nil) do
 
     filter_by_project_id =
       if project_id,

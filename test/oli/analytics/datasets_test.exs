@@ -347,7 +347,7 @@ defmodule Oli.Analytics.Datasets.Test do
       job(%{status: :running, job_id: "job_id_3", project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
       job(%{status: :failed, job_id: "job_id_4", project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
 
-      result = Datasets.get_initator_values()
+      result = Datasets.get_initiator_values()
       assert length(result) == 2
       result = Enum.sort(result)
       assert result == [{author1.id, author1.email}, {author2.id, author2.email}]

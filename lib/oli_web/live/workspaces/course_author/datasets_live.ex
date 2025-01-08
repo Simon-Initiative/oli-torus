@@ -43,7 +43,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
 
     total_count = determine_total(jobs)
 
-    users = Datasets.get_initator_values(project_id)
+    users = Datasets.get_initiator_values(project_id)
 
     projects = case project_id do
       nil -> Datasets.get_project_values()

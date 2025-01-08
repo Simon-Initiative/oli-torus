@@ -5,7 +5,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   import OliWeb.DelegatedEvents
 
   alias Oli.{Accounts}
-  alias Oli.Analytics.Datasets.{DatasetJob}
   alias Oli.Delivery.Sections.{BrowseOptions, Section}
   alias Oli.Analytics.Datasets
   alias Oli.Delivery.Sections.Section
@@ -29,15 +28,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     filter_type: nil
   }
 
-  @job_types [
-    :datashop,
-    :attempts_simple,
-    :attempts_extended,
-    :video,
-    :page_viewed,
-    :required_survey
-  ]
-
   @impl Phoenix.LiveView
   def mount(_params, _session, socket) do
     %{ctx: ctx, project: project, current_author: author} = socket.assigns
@@ -60,6 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
     {:ok,
      assign(socket,
+       author: author,
        job_type: :datashop,
        shortcut: JobShortcuts.get(:datashop),
        can_create_job?: can_create_job?,
@@ -67,10 +58,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
        sections: sections,
        table_model: table_model,
        options: options,
+       project: project,
        total_count: total_count,
        section_ids: [],
        emails: [],
        emails_valid?: true,
+       waiting: false,
        limit: @limit
      )}
 
@@ -186,10 +179,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       <div class="mt-5">
         <button
           phx-click="create_job"
-          disabled={@section_ids == [] or !@emails_valid? or !@can_create_job?}
+          disabled={@waiting or @section_ids == [] or !@emails_valid? or !@can_create_job?}
           class="btn btn-primary"
         >
           Create Job
+
+          <%= if @waiting do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
         </button>
       </div>
 
@@ -235,14 +232,45 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   end
 
   @impl true
+  def handle_info({:invocation_finished, result}, socket) do
+
+    case result do
+      {:ok, _job} ->
+        {:noreply, redirect(socket, to: Routes.live_path(socket, OliWeb.Workspaces.CourseAuthor.DatasetsLive, socket.assigns.project.slug))}
+
+      {:error, reason} ->
+
+        # add error to the live view flash
+        socket = put_flash(socket, :error, "Failed to create job: #{reason}")
+
+        {:noreply, assign(socket, waiting: false)}
+    end
+
+  end
+
+  @impl true
   def handle_event("create_job", _params, socket) do
 
-    # invoke the job, then redirect to the all jobs view
+    project_id = socket.assigns.project.id
+    initiated_by_id = socket.assigns.author.id
+    section_ids = socket.assigns.section_ids
 
+    # Get the true job type and a default config based on the selected job shortcut
+    {job_type, job_config} = JobShortcuts.configure(socket.assigns.job_shortcut.value, section_ids)
 
+    # Determine which user ids must be ignored and fold that into the job config
+    ignored_student_ids = Datasets.user_ids_to_ignore(socket.assigns.section_ids)
+    job_config = %{job_config | ignored_student_ids: ignored_student_ids}
 
+    # Invoke the job asynchronously
+    pid = self()
+    Task.async(fn ->
+      result = Datasets.create_job(job_type, project_id, initiated_by_id, job_config)
 
-    {:noreply, socket}
+      send(pid, {:invocation_finished, result})
+    end)
+
+    {:noreply, assign(socket, waiting: true)}
   end
 
   @impl true
