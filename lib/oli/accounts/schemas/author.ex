@@ -93,18 +93,23 @@ defmodule Oli.Accounts.Author do
   any password for authentication.
   (The author will set the password in the redeem invitation flow)
   """
-  @spec invite_changeset(Ecto.Schema.t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
-  def invite_changeset(%Ecto.Changeset{} = changeset, attrs) do
+  @spec invite_changeset(Ecto.Schema.t() | Ecto.Changeset.t(), map(), list()) ::
+          Ecto.Changeset.t()
+
+  def invite_changeset(author, attrs, opts \\ [])
+
+  def invite_changeset(%Ecto.Changeset{} = changeset, attrs, opts) do
     changeset
     |> cast(attrs, [:email])
     |> validate_required([:email])
+    |> validate_email(opts)
     |> put_change(:system_role_id, Oli.Accounts.SystemRole.role_id().author)
   end
 
-  def invite_changeset(user, attrs) do
+  def invite_changeset(user, attrs, opts) do
     user
     |> Ecto.Changeset.change()
-    |> invite_changeset(attrs)
+    |> invite_changeset(attrs, opts)
   end
 
   defp validate_email(changeset, opts) do
