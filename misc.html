@@ -5,10 +5,10 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.34.2">
-    <meta name="project" content="OLI Torus v0.29.0">
+    <meta name="project" content="OLI Torus v0.30.0">
 
 
-    <title>Miscelleanous — OLI Torus v0.29.0</title>
+    <title>Miscelleanous — OLI Torus v0.30.0</title>
     <link rel="stylesheet" href="dist/html-elixir-F2VRIOKR.css" />
 
 
@@ -54,7 +54,7 @@
 OLI Torus
         </a>
         <div class="sidebar-projectVersion" translate="no">
-          v0.29.0
+          v0.30.0
         </div>
       </div>
     </div>
@@ -134,14 +134,14 @@ GUIDES
   <span class="text">Create Registrations from seed</span>
 </h2>
 <p>To ease the burden of creating a new registration after every database reset, there is the option to automatically create LTI registrations
-attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="8537703049-1">[</span><span class="p" data-group-id="8537703049-2">{</span><span class="w">
+attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5658620772-1">[</span><span class="p" data-group-id="5658620772-2">{</span><span class="w">
   </span><span class="ss">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;client_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;XXXXXXXXXXXXX&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;key_set_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/security/jwks&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_token_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_login_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/authorize_redirect&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_server&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="w">
-</span><span class="p" data-group-id="8537703049-2">}</span><span class="p" data-group-id="8537703049-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
+</span><span class="p" data-group-id="5658620772-2">}</span><span class="p" data-group-id="5658620772-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
