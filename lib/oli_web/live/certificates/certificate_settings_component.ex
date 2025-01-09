@@ -28,7 +28,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
   def render(assigns) do
     ~H"""
     <div class="flex-col justify-start items-start gap-[30px] inline-flex">
-      <div class="self-stretch text-2xl font-normal">
+      <div role="title" class="self-stretch text-2xl font-normal">
         Certificate Settings
       </div>
       <.form
