@@ -14,6 +14,7 @@ defmodule OliWeb.Backgrounds do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
+      id="student_sign_in_background"
     >
       <g clip-path="url(#clip0_531_7671)">
         <rect width="1512" height="936" fill="#1F1F1F" />
@@ -238,6 +239,7 @@ defmodule OliWeb.Backgrounds do
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
+      id="instructor_sign_in_background"
     >
       <g clip-path="url(#clip0_539_3625)">
         <rect width="1528" height="1264" fill="#0CAF61" />
@@ -644,6 +646,18 @@ defmodule OliWeb.Backgrounds do
         </defs>
       </svg>
     </div>
+    """
+  end
+
+  def student_invitation(assigns) do
+    ~H"""
+    <.student_sign_in />
+    """
+  end
+
+  def instructor_invitation(assigns) do
+    ~H"""
+    <.instructor_sign_in />
     """
   end
 end
