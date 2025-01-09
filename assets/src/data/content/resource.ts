@@ -7,6 +7,7 @@ import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivityWithReportOption } from 'data/persistence/resource';
+import { ContentBlockTrigger, GroupTrigger, PageTrigger } from 'data/triggers';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import guid from 'utils/guid';
 import { getDefaultTextDirection } from 'utils/useDefaultTextDirection';
@@ -15,6 +16,7 @@ import { ActivityEditContext } from './activity';
 export type PageContent = {
   model: ResourceContent[];
   bibrefs?: string[];
+  trigger?: PageTrigger;
   [key: string]: any;
 };
 
@@ -288,6 +290,7 @@ export interface StructuredContent {
   children: ModelElement[];
   editor?: EditorType;
   textDirection?: TextDirection;
+  trigger?: ContentBlockTrigger;
 }
 
 export const DEFAULT_EDITOR: EditorType = 'slate';
@@ -325,6 +328,7 @@ export interface PurposeGroupContent {
   purpose: string;
   audience?: AudienceMode;
   paginationMode?: PaginationMode;
+  trigger?: GroupTrigger;
   children: Immutable.List<ResourceContent>;
 }
 
