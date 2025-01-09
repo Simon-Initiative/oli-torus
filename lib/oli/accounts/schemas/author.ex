@@ -380,7 +380,6 @@ defmodule Oli.Accounts.Author do
     |> validate_password(opts)
     |> put_change(:invitation_accepted_at, now)
     |> put_change(:email_confirmed_at, now)
-    |> put_change(:email_verified, true)
     |> default_system_role()
     |> maybe_name_from_given_and_family()
   end
