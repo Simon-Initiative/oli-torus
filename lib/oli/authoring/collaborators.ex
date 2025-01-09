@@ -58,7 +58,14 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  def invite_collaborator(conn, email, project_slug) do
+  @doc """
+  Invite a collaborator to a project.
+  It creates the author if that email does not exist in the system
+  and then creates an invitation token and sends an email to the invited author/collaborator.
+  """
+
+  @spec invite_collaborator(String.t(), String.t(), String.t()) :: {:ok, _} | {:error, _}
+  def invite_collaborator(inviter_name, email, project_slug) do
     with {:ok, author} <- get_or_create_invited_author(email),
          {:ok, results} <- do_add_collaborator(email, project_slug, :pending_confirmation),
          {:ok, email_data} <- create_invitation_token(author, project_slug),
@@ -66,7 +73,7 @@ defmodule Oli.Authoring.Collaborators do
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found."),
          {:ok, _mail} <-
-           send_email_invitation(email_data, conn.assigns.current_author.name, project.title) do
+           send_email_invitation(email_data, inviter_name, project.title) do
       {:ok, results}
     else
       {:error, message} -> {:error, message}
@@ -82,18 +89,18 @@ defmodule Oli.Authoring.Collaborators do
     {:ok, %{sent_to: author_token.sent_to, token: non_hashed_token}}
   end
 
-  def add_collaborator(conn, email, project_slug) do
-    with {:ok, author, status} <- get_or_create_invited_author(email),
-         {:ok, results} <- add_collaborator(email, project_slug),
-         {:ok, project} <-
-           Course.get_project_by_slug(project_slug)
-           |> trap_nil("The project was not found."),
-         {:ok, _mail} <-
-           deliver_collaborator_invitation_email(conn, author, project, status) do
-      {:ok, results}
-    else
-      {:error, message} -> {:error, message}
-    end
+  defp send_email_invitation(email_data, inviter_name, project_title) do
+    Email.create_email(
+      email_data.sent_to,
+      "You were invited as a collaborator to \"#{project_title}\"",
+      :collaborator_invitation,
+      %{
+        inviter: inviter_name,
+        url: ~p"/collaborators/invite/#{email_data.token}",
+        project_title: project_title
+      }
+    )
+    |> Mailer.deliver()
   end
 
   def add_collaborator(author = %Accounts.Author{}, project_slug) when is_binary(project_slug) do
@@ -163,57 +170,5 @@ defmodule Oli.Authoring.Collaborators do
       author ->
         {:ok, author}
     end
-  end
-
-  defp send_email_invitation(email_data, inviter_name, project_title) do
-    Email.create_email(
-      email_data.sent_to,
-      "You were invited as a collaborator to \"#{project_title}\"",
-      :collaborator_invitation,
-      %{
-        inviter: inviter_name,
-        url: ~p"/collaborators/invite/#{email_data.token}",
-        project_title: project_title
-      }
-    )
-    |> Mailer.deliver()
-  end
-
-  defp deliver_collaborator_invitation_email(conn, collaborator_author, project, status) do
-    invited_by = conn.assigns.current_author
-
-    url =
-      case status do
-        :new_user ->
-          token = sign_invitation_token(conn, collaborator_author)
-          author_invitation_url(conn, token)
-
-        :existing_user ->
-          ~p"/workspaces/course_author/#{project.slug}/overview"
-      end
-
-    email =
-      Oli.Email.create_email(
-        collaborator_author.email,
-        "Collaborator Invitation",
-        :collaborator_invitation,
-        %{
-          invited_by: invited_by,
-          invited_by_user_id: invited_by.id,
-          url: url,
-          project_title: project.title
-        }
-      )
-
-    Oli.Mailer.deliver(email)
-    {:ok, "email sent"}
-  end
-
-  defp author_invitation_url(_conn, _token) do
-    throw("NOT IMPLEMENTED")
-  end
-
-  defp sign_invitation_token(_conn, _collaborator_author) do
-    throw("NOT IMPLEMENTED")
   end
 end
