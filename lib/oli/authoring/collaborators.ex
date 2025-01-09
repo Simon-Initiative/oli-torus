@@ -64,7 +64,7 @@ defmodule Oli.Authoring.Collaborators do
   and then creates an invitation token and sends an email to the invited author/collaborator.
   """
 
-  @spec invite_collaborator(String.t(), String.t(), String.t()) :: {:ok, _} | {:error, _}
+  @spec invite_collaborator(String.t(), String.t(), String.t()) :: {:ok, any()} | {:error, any()}
   def invite_collaborator(inviter_name, email, project_slug) do
     with {:ok, author} <- get_or_create_invited_author(email),
          {:ok, results} <- do_add_collaborator(email, project_slug, :pending_confirmation),
