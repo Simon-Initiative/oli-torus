@@ -374,6 +374,7 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
+    live("/products/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
 
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
@@ -859,9 +860,13 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
-        live("/:project_id/products", ProductsLive)
-        live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
+
+        scope "/:project_id/products" do
+          live("/", ProductsLive)
+          live("/:product_id", Products.DetailsLive)
+          live("/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+        end
       end
     end
   end
