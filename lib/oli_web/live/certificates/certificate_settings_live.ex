@@ -14,7 +14,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
          assign(socket,
            title: "Manage Certificate Settings",
            product: product,
-           breadcrumbs: [Breadcrumb.new(%{full_title: "Manage Certificate Settings"})]
+           breadcrumbs: breadcrumbs(product_slug)
          )}
     end
   end
@@ -29,5 +29,15 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
       />
     </div>
     """
+  end
+
+  defp breadcrumbs(product_slug) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Product Overview",
+        link: ~p"/authoring/products/#{product_slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
+    ]
   end
 end
