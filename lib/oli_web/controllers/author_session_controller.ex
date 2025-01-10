@@ -15,7 +15,9 @@ defmodule OliWeb.AuthorSessionController do
   end
 
   def create(conn, params) do
-    create(conn, params, "Welcome back!")
+    conn
+    |> AuthorAuth.maybe_store_link_account_user_id(params["author"])
+    |> create(params, "Welcome back!")
   end
 
   defp create(conn, %{"author" => author_params}, info) do
