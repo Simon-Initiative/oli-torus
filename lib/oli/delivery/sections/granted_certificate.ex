@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Sections.GrantedCertificate do
     field :issued_by, :integer
     field :issued_by_type, Ecto.Enum, values: @issued_by_type_enum, default: :user
     field :issued_at, :utc_datetime
+    field :url, :string
 
     belongs_to :certificate, Certificate
     belongs_to :user, User
@@ -23,7 +24,7 @@ defmodule Oli.Delivery.Sections.GrantedCertificate do
   end
 
   @required_fields [:user_id, :certificate_id, :state, :with_distinction, :guid]
-  @optional_fields [:issued_by, :issued_by_type, :issued_at]
+  @optional_fields [:issued_by, :issued_by_type, :issued_at, :url]
 
   @all_fields @required_fields ++ @optional_fields
 
