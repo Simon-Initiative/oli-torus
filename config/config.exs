@@ -177,7 +177,7 @@ config :oli, Oban,
     {
       Oban.Plugins.Cron,
       crontab: [
-        {"*/2 * * * *", Oli.Analytics.Datasets.StatusPoller, queue: :default}
+        {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
       ]
     }
   ],

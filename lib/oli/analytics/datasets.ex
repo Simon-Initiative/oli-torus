@@ -7,6 +7,8 @@ defmodule Oli.Analytics.Datasets do
   alias Oli.Analytics.Datasets.BrowseJobOptions
   alias Oli.Analytics.Datasets.EmrServerless
 
+  alias Oli.{Email, Mailer}
+
   alias Oli.Repo.{Paging, Sorting}
   alias ExAws.S3
   alias ExAws
@@ -89,6 +91,66 @@ defmodule Oli.Analytics.Datasets do
         e
     end
 
+  end
+
+  @doc """
+  Sends notification emails to the users who initiated the jobs, and any additional
+  emails that have been specified in the job configuration.  The notification email
+  contains a link to the job details page, where the user can view the status of the
+  job and download the results.
+  """
+  def send_notification_emails(to_notify, path_builder_fn) do
+
+    {job_ids, _new_status} = Enum.unzip(to_notify)
+
+    jobs = from(j in DatasetJob,
+      join: u in Oli.Accounts.Author, on: j.initiated_by_id == u.id,
+      join: p in Oli.Authoring.Course.Project, on: j.project_id == p.id,
+      where: j.id in ^job_ids,
+      select: %{id: j.id, job_id: j.job_id, email: u.email, project_slug: p.slug, notify_emails: j.notify_emails})
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn job, all -> Map.put(all, job.id, job) end)
+
+    Enum.each(to_notify, fn {job_id, _new_status} ->
+      job = Map.get(jobs, job_id)
+
+      case job do
+        nil -> Logger.error("Job #{job_id} not found")
+        _ ->
+
+          emails = job.notify_emails ++ job.email
+
+          Enum.each(emails, fn email ->
+            # Send the notification email
+            deliver_completion_email(email, url_builder_fn.(job.project_slug, job.id))
+          end)
+      end
+    end)
+
+  end
+
+  defp send_email(email, subject, view, assigns) do
+    Email.create_email(
+      email,
+      subject,
+      view,
+      assigns
+    )
+    |> Mailer.deliver_later()
+  end
+
+  @doc """
+  Deliver instructions to confirm account.
+  """
+  def deliver_completion_email(email, url) do
+    send_email(
+      email,
+      "Dataset job completion",
+      :dataset,
+      %{
+        url: url
+      }
+    )
   end
 
   @doc """
