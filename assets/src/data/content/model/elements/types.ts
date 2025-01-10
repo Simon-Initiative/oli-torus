@@ -1,5 +1,6 @@
 import { BaseElement, Descendant, Text } from 'slate';
 import { RichText } from 'components/activities/types';
+import { BlockTrigger } from 'data/triggers';
 import { Identifiable } from '../other';
 
 interface SlateElement<Children extends Descendant[]> extends BaseElement, Identifiable {
@@ -46,7 +47,8 @@ export type Block =
   | CodeLine
   | FormulaBlock
   | DescriptionListTerm
-  | DescriptionListDefinition;
+  | DescriptionListDefinition
+  | TriggerBlock;
 
 export type Semantic = Definition | Callout | Figure | Dialog | Conjugation;
 
@@ -170,6 +172,10 @@ export interface DescriptionList extends SlateElement<VoidChildren> {
   type: 'dl';
   title: (Inline | TextBlock)[];
   items: DescriptionListChildren;
+}
+
+export interface TriggerBlock extends SlateElement<VoidChildren>, BlockTrigger {
+  type: 'trigger';
 }
 
 interface BaseImage extends SlateElement<VoidChildren> {
