@@ -94,7 +94,7 @@ defmodule Oli.Accounts do
   @doc """
   Creates multiple invited users
   ## Examples
-      iex> bulk_create_invited_users(["email_1@test.com", "email_2@test.com"], %Author{id: 1})
+       iex> bulk_create_invited_users(["email_1@test.com", "email_2@test.com"], %User{id: 1})
       [%User{id: 3}, %User{id: 4}]
   """
   def bulk_create_invited_users(user_emails, inviter_user) do
@@ -102,12 +102,13 @@ defmodule Oli.Accounts do
 
     users =
       Enum.map(user_emails, fn email ->
-        %{changes: changes} = User.invite_changeset(%User{}, inviter_user, %{email: email})
+        %{changes: changes} =
+          User.invite_changeset(%User{}, %{email: email, invited_by_id: inviter_user.id})
 
         Enum.into(changes, %{inserted_at: now, updated_at: now})
       end)
 
-    Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
+    Repo.insert_all(User, users, returning: [:id, :email])
   end
 
   def create_invited_author(_email) do
@@ -181,6 +182,8 @@ defmodule Oli.Accounts do
   def list_authors do
     Repo.all(Author)
   end
+
+  #### MER-3835 TODO: Reconcile these functions with new functions at end of module
 
   @doc """
   Gets a single user.
@@ -460,6 +463,8 @@ defmodule Oli.Accounts do
 
     Repo.exists?(query)
   end
+
+  # MER-3835 TODO: reconcile with new functions below
 
   def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().content_admin == system_role_id or
@@ -1003,6 +1008,25 @@ defmodule Oli.Accounts do
 
   ## Examples
 
+      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
+      %User{}
+
+      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
+      nil
+
+  """
+  def get_user_by_email_and_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = Repo.get_by(User, email: email)
+    if User.valid_password?(user, password), do: user
+  end
+
+  def get_user_by_email_and_password(_email, _password), do: nil
+
+  @doc """
+  Gets an independent user by email and password.
+
+  ## Examples
       iex> get_independent_user_by_email_and_password("foo@example.com", "correct_password")
       %User{}
 
@@ -1050,6 +1074,26 @@ defmodule Oli.Accounts do
       hash_password: false,
       validate_email: false
     )
+  end
+
+  ## Email invitations
+
+  @doc """
+  When a new user accepts an invitation to a section, the user -student or instructor- data is updated (password for intance)
+  and the enrollment status is updated from `:pending_confirmation` to `:enrolled`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_user_invitation(user, enrollment, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      user
+      |> User.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      enrollment
+      |> Enrollment.changeset(%{status: :enrolled})
+      |> Repo.update!()
+    end)
   end
 
   ## Settings
@@ -1344,6 +1388,27 @@ defmodule Oli.Accounts do
     with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
          %User{} = user <- Repo.one(query) do
       user
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the user by enrollment invitation token.
+
+  ## Examples
+
+      iex> get_user_by_enrollment_invitation_token("validtoken")
+      %User{}
+
+      iex> get_user_by_enrollment_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_user_token_by_enrollment_invitation_token(token) do
+    with {:ok, query} <- UserToken.enrollment_invitation_token_query(token),
+         %UserToken{} = user_token <- Repo.one(query) |> Repo.preload(:user) do
+      user_token
     else
       _ -> nil
     end
