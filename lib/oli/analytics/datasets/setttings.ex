@@ -20,6 +20,10 @@ defmodule Oli.Analytics.Datasets.Settings do
     Application.get_env(:oli, :dataset_generation)[:source_bucket]
   end
 
+  def context_bucket do
+    Application.get_env(:oli, :dataset_generation)[:context_bucket]
+  end
+
   def spark_submit_parameters do
     Application.get_env(:oli, :dataset_generation)[:spark_submit_parameters]
   end

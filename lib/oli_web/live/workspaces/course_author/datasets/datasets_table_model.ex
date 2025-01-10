@@ -9,7 +9,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
     standard_columns = [
       %ColumnSpec{
         name: :status,
-        label: "Status"
+        label: "Status",
+        render_fn: &render_status/3
       },
       %ColumnSpec{
         name: :job_type,
@@ -74,9 +75,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
     assigns = Map.merge(assigns, %{job: job})
 
     ~H"""
-    <ul>
-      <li># Sections: <%= job.configuration.section_ids |> Enum.count() %></li>
-    </ul>
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive, @job.project_slug, @job.id)}>
+      Details
+    </a>
+    """
+  end
+
+  defp render_status(assigns, job, _a) do
+
+    assigns = Map.merge(assigns, %{job: job})
+
+    ~H"""
+    <div class={badge_class(@job.status)}>
+      <%= @job.status %>
+    </div>
     """
   end
 
@@ -95,5 +107,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
     ~H"""
     <div>nothing</div>
     """
+  end
+
+  defp badge_class(status) do
+    case status do
+      :submitted -> "badge badge-info"
+      :scheduled -> "badge badge-info"
+      :running -> "badge badge-primary"
+      :success -> "badge badge-success"
+      :pending -> "badge badge-info"
+      :failed -> "badge badge-danger"
+      :cancelling -> "badge badge-warning"
+      :cancelled -> "badge badge-warning"
+      :queued -> "badge badge-info"
+    end
   end
 end

@@ -209,6 +209,7 @@ if config_env() == :prod do
     entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
     log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
     source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+    context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
     spark_submit_parameters: System.get_env("EMR_DATASET_SPARK_SUBMIT_PARAMETERS", "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2")
 
   config :oli, :xapi_upload_pipeline,

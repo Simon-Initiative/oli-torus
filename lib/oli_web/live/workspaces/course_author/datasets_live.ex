@@ -36,7 +36,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
     jobs =
       Datasets.browse_jobs(
         %Paging{offset: 0, limit: @limit},
-        %Sorting{direction: :desc, field: :inserted_at},
+        %Sorting{direction: :desc, field: :id},
         options
       )
 

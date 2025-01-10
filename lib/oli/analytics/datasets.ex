@@ -6,7 +6,6 @@ defmodule Oli.Analytics.Datasets do
   alias Oli.Analytics.Datasets.Settings
   alias Oli.Analytics.Datasets.BrowseJobOptions
   alias Oli.Analytics.Datasets.EmrServerless
-  alias Lti_1p3.Tool.ContextRoles
 
   alias Oli.Repo.{Paging, Sorting}
   alias ExAws.S3
@@ -16,6 +15,41 @@ defmodule Oli.Analytics.Datasets do
   require Logger
 
   @terminal_emr_states ["SUCCESS", "FAILED", "CANCELLED"]
+
+  @doc """
+  Retrieves a job by its id ensuring that it belongs to the asserted
+  project.  If the job does not exist, or does not belong to the project,
+  we return nil.
+  """
+  def get_job(id, project_slug) do
+
+    query = from(j in DatasetJob,
+      join: p in Oli.Authoring.Course.Project, on: j.project_id == p.id,
+      join: u in Oli.Accounts.Author, on: j.initiated_by_id == u.id,
+      where: j.id == ^id and p.slug == ^project_slug,
+      select_merge: %{
+        project_title: p.title,
+        project_slug: p.slug,
+        initiator_email: u.email
+      })
+
+    Repo.one(query)
+  end
+
+  @doc """
+  For a succesfully completed job, fetches the JSON manifest file from S3
+  and decodes it into a map.
+  """
+  def fetch_manifest(%DatasetJob{job_id: job_id, status: :success}) do
+
+    file_path = "#{job_id}/manifest.json"
+
+    case S3.get_object(Settings.context_bucket(), file_path)
+    |> ExAws.request() do
+      {:ok, result} -> {:ok, Poison.decode!(result.body)}
+      e -> e
+    end
+  end
 
 
   @doc """
@@ -313,8 +347,8 @@ defmodule Oli.Analytics.Datasets do
       |> Repo.query([project_id, project_id, project_id, project_id])
 
     case result do
-      {:ok, %Postgrex.Result{rows: rows}} ->
-        {:ok , rows}
+      {:ok, %Postgrex.Result{rows: [[context]]}} ->
+        {:ok, context}
 
       e -> e
     end
@@ -322,8 +356,10 @@ defmodule Oli.Analytics.Datasets do
 
   defp stage_json_context({:error, e}, _), do: {:error, e}
   defp stage_json_context({:ok, context}, %DatasetJob{job_id: job_id} = job) do
-    case Application.get_env(:oli, :emr_dataset_context_bucket)
-    |> S3.put_object("contexts/#{job_id}.json", context, [])
+
+    context_as_str = Poison.encode!(context)
+
+    case S3.put_object(Settings.context_bucket(), "contexts/#{job_id}.json", context_as_str, [])
     |> ExAws.request() do
       {:ok, _} -> {:ok, job}
       e -> e
