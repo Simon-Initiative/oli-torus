@@ -203,6 +203,7 @@ if config_env() == :prod do
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
   config :oli, :dataset_generation,
+    enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
     emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
     execution_role: System.get_env("EMR_DATASET_EXECUTION_ROLE", "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"),
     entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),

@@ -20,7 +20,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
-    %{ctx: ctx} = socket.assigns
 
     {project_id, project_slug} = case Map.get(params, "project_id") do
       nil -> {nil, nil}
@@ -63,13 +62,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
        project_slug: project_slug,
        users: users,
        projects: projects,
-       ctx: ctx,
        table_model: table_model,
        options: options,
        offset: 0,
        total_count: total_count,
        active_rows: jobs,
        query: "",
+       title: "Datasets",
        limit: @limit
      )}
   end

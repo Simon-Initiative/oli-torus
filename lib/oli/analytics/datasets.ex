@@ -6,8 +6,6 @@ defmodule Oli.Analytics.Datasets do
   alias Oli.Analytics.Datasets.Settings
   alias Oli.Analytics.Datasets.BrowseJobOptions
   alias Oli.Analytics.Datasets.EmrServerless
-
-  alias Oli.Delivery.Sections.{Enrollment, EnrollmentContextRole}
   alias Lti_1p3.Tool.ContextRoles
 
   alias Oli.Repo.{Paging, Sorting}
@@ -149,25 +147,6 @@ defmodule Oli.Analytics.Datasets do
   end
 
   @doc """
-  For a given list of section ids, return a unique list of user ids of whose data
-  should be excluded from a dataset job.  This includes non-student accounts as
-  well as any enrolled student who has opted out of data collection for research
-  purposes.
-  """
-  def user_ids_to_ignore(section_ids) do
-
-    Enrollment
-    |> join(:left, [e], u in Users, on: e.user_id == u.id)
-    |> join(:left, [e, _u], r in EnrollmentContextRole, on: e.id == r.enrollment_id)
-    |> where([e, u, r], e.section_id in ^section_ids and
-      (r.context_role_id != ^ContextRoles.get_role(:context_learner).id or u.research_opt_out == true))
-    |> select([_e, u, _r], u.id)
-    |> distinct(true)
-    |> Repo.all()
-
-  end
-
-  @doc """
   Returns the values for the project filter (the distinct set of projects that have
   jobs in the system)
   """
@@ -267,14 +246,40 @@ defmodule Oli.Analytics.Datasets do
 
   end
 
+  @doc """
+  Fetches the required survey ids for a given set of section ids.  This is used to determine
+  which surveys are required for a given set of sections, so that we can generate the required
+  survey dataset.
+  """
+  def fetch_required_survey_ids(section_ids) do
+    query = Oli.Delivery.Sections.Section
+      |> where([s], s.id in ^section_ids and not is_nil(s.required_survey_resource_id))
+      |> distinct(true)
+      |> select([s], s.required_survey_resource_id)
+
+    Repo.all(query)
+  end
+
   defp init(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
+
+    # The job_id will be a combination of the current timestamp and a UUID,
+    # to ensure uniqueness across all jobs and ALL servers.  The timestamp is
+    # is here to make it easier to identify the job in the AWS console (in the
+    # S3 bucket directory)
+    #
+    # We also must comply with AWS naming conventions for EMR client tokens, which
+    # must be alphanumeric and cannot contain spaces or colons.
+    readable_timestamp = String.replace("#{DateTime.utc_now()}", " ", "_")
+      |> String.replace(":", "-")
+
     job = %DatasetJob{
       project_id: project_id,
       initiated_by_id: initiated_by_id,
-      job_id: "#{DateTime.utc_now()}-#{UUID.uuid4()}",
+      job_id: "#{readable_timestamp}-#{UUID.uuid4()}",
       job_type: job_type,
       configuration: config
     }
+
     {:ok, job}
   end
 
@@ -330,7 +335,7 @@ defmodule Oli.Analytics.Datasets do
       {:ok, application_id} ->
 
         %DatasetJob{job | application_id: application_id}
-        |> EmrServerless.submit_job()
+        |> EmrServerless.submit_job() |> IO.inspect()
 
       {:error, e} -> {:error, e}
     end

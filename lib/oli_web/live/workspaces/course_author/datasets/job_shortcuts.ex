@@ -103,13 +103,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.JobShortcuts do
     }}
   end
 
-  def configure(:required_survey, section_ids, required_survey_id) do
+  def configure(:required_survey, section_ids) do
     {:custom, %JobConfig{
       section_ids: section_ids,
       chunk_size: 5_000,
       event_type: "attempt_evaluated",
       event_sub_types: ["part_attempt_evaluted"],
-      page_ids: [required_survey_id],
+      page_ids: [],
       ignored_student_ids: [],
       excluded_fields: ["feedback", "hints"]
     }}

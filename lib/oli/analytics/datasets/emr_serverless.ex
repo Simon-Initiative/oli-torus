@@ -192,7 +192,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
 
     # Send the HTTP request
     case HTTPClient.http().post(url, Poison.encode!(body), signed_headers) do
-      {:ok, response} ->
+      {:ok, %{status_code: 200} = response} ->
+
         # Parse the response and extract the job run id
         json = Poison.decode!(response.body)
         job = %DatasetJob{job | job_run_id: json["jobRunId"]}

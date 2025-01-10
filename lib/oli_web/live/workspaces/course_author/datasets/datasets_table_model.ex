@@ -8,6 +8,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
 
     standard_columns = [
       %ColumnSpec{
+        name: :status,
+        label: "Status"
+      },
+      %ColumnSpec{
         name: :job_type,
         label: "Type"
       },
@@ -25,7 +29,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
       },
       %ColumnSpec{
         name: :configuration,
-        label: "Details"
+        label: "Details",
+        render_fn: &render_config/3
       }
     ]
 
@@ -64,10 +69,24 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
     )
   end
 
-  defp render_project(_data, _row, assigns) do
+  defp render_config(assigns, job, _a) do
+
+    assigns = Map.merge(assigns, %{job: job})
+
     ~H"""
-    <a href={Routes.live_path(OliWeb.Projects.OverviewLive, @row.project_slug)}>
-      <%= @row.project_title %>
+    <ul>
+      <li># Sections: <%= job.configuration.section_ids |> Enum.count() %></li>
+    </ul>
+    """
+  end
+
+  defp render_project(assigns, job, _) do
+
+    assigns = Map.merge(assigns, %{job: job})
+
+    ~H"""
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.OverviewLive, @job.project_slug)}>
+      <%= @job.project_title %>
     </a>
     """
   end

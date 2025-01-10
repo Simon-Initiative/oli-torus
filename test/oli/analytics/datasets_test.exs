@@ -337,7 +337,7 @@ defmodule Oli.Analytics.Datasets.Test do
 
       result = Datasets.get_project_values()
       assert length(result) == 1
-      assert result == [{project.id, project.title}]
+      assert result == [%{id: project.id, title: project.title}]
     end
 
     test "initiator values", %{project: project, author: author1, author2: author2} do
@@ -350,7 +350,7 @@ defmodule Oli.Analytics.Datasets.Test do
       result = Datasets.get_initiator_values()
       assert length(result) == 2
       result = Enum.sort(result)
-      assert result == [{author1.id, author1.email}, {author2.id, author2.email}]
+      assert result == [%{id: author1.id, email: author1.email}, %{id: author2.id, email: author2.email}]
     end
   end
 

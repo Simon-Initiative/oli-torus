@@ -34,8 +34,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
           label: "# Enrolled"
         },
         %ColumnSpec{
-          name: :requires_payment,
-          label: "Cost",
+          name: :required_survey_resource_id,
+          label: "Required Survey",
           render_fn: &__MODULE__.custom_render/3
         },
         %ColumnSpec{
@@ -94,6 +94,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
       <%= @section.title %>
     </a>
     """
+  end
+
+  def custom_render(_assigns, section, %ColumnSpec{name: :required_survey_resource_id}) do
+    if section.required_survey_resource_id do
+      "Yes"
+    else
+      "None"
+    end
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}),

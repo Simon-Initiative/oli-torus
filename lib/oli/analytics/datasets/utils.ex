@@ -37,7 +37,8 @@ defmodule Oli.Analytics.Datasets.Utils do
     query = from(e in Oli.Delivery.Sections.Enrollment,
       join: u in Oli.Accounts.User, on: u.id == e.user_id,
       join: ecr in Oli.Delivery.Sections.EnrollmentContextRole, on: ecr.enrollment_id == e.id,
-      where: e.section_id in ^section_ids and (u.research_opt_out == true or ecr.role != @student_role),
+      where: e.section_id in ^section_ids and (u.research_opt_out == true or ecr.context_role_id != @student_role),
+      distinct: true,
       select: u.id)
 
     Repo.all(query)

@@ -54,6 +54,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
        job_type: :datashop,
        shortcut: JobShortcuts.get(:datashop),
        can_create_job?: can_create_job?,
+       required_survey_ids: [],
        is_admin?: is_admin?,
        sections: sections,
        table_model: table_model,
@@ -74,16 +75,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = get_int_param(params, "offset", 0)
 
+    %{project: project} = socket.assigns
+
     options = %BrowseOptions{
       text_search: "",
       active_today: get_boolean_param(params, "active_today", false),
       filter_status:
         get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
       filter_type: nil,
-      # This view is currently for all institutions and all root products
       institution_id: nil,
       blueprint_id: nil,
-      project_id: nil
+      project_id: project.id
     }
 
     sections =
@@ -179,7 +181,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       <div class="mt-5">
         <button
           phx-click="create_job"
-          disabled={@waiting or @section_ids == [] or !@emails_valid? or !@can_create_job?}
+          disabled={create_job_btn_disabled?(assigns)}
           class="btn btn-primary"
         >
           Create Job
@@ -193,6 +195,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     </div>
 
     """
+  end
+
+  defp create_job_btn_disabled?(assigns) do
+    (assigns.shortcut.value == :required_survey and assigns.required_survey_ids == []) or
+    assigns.waiting or
+    assigns.section_ids == [] or
+    !assigns.emails_valid? or
+    !assigns.can_create_job?
   end
 
 
@@ -256,11 +266,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     section_ids = socket.assigns.section_ids
 
     # Get the true job type and a default config based on the selected job shortcut
-    {job_type, job_config} = JobShortcuts.configure(socket.assigns.job_shortcut.value, section_ids)
+    {job_type, job_config} = JobShortcuts.configure(socket.assigns.shortcut.value, section_ids)
 
-    # Determine which user ids must be ignored and fold that into the job config
-    ignored_student_ids = Datasets.user_ids_to_ignore(socket.assigns.section_ids)
-    job_config = %{job_config | ignored_student_ids: ignored_student_ids}
+    # Handle the special case of the required survey shortcut, where we need to find that
+    # required survey resource id and set it in the job config
+    job_config = case socket.assigns.shortcut.value do
+      :required_survey ->
+        case Datasets.fetch_required_survey_ids(section_ids) do
+          [] -> job_config
+          required_survey_ids ->%{job_config | page_ids: required_survey_ids}
+        end
+      _ -> job_config
+    end
 
     # Invoke the job asynchronously
     pid = self()
@@ -305,10 +322,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
     map_set = MapSet.new(selection_ids)
 
+    required_survey_ids = case socket.assigns.shortcut.value do
+      :required_survey -> Datasets.fetch_required_survey_ids(selection_ids)
+      _ -> []
+    end
+
     data = Map.put(socket.assigns.table_model.data, :selected_ids, map_set)
     table_model = %{socket.assigns.table_model | data: data}
 
-    {:noreply, assign(socket, section_ids: section_ids, table_model: table_model)}
+    {:noreply, assign(socket, section_ids: section_ids, table_model: table_model, required_survey_ids: required_survey_ids)}
   end
 
   @impl Phoenix.LiveView
@@ -317,7 +339,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     job_type = String.to_existing_atom(job_type)
     shortcut = JobShortcuts.get(job_type)
 
-    {:noreply, assign(socket, job_type: job_type, shortcut: shortcut)}
+    required_survey_ids = case shortcut.value do
+      :required_survey -> Datasets.fetch_required_survey_ids(socket.assigns.section_ids)
+      _ -> []
+    end
+
+    {:noreply, assign(socket, job_type: job_type, shortcut: shortcut, required_survey_ids: required_survey_ids)}
   end
 
   @impl true

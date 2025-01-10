@@ -66,6 +66,7 @@ config :oli,
   log_incomplete_requests: true
 
 config :oli, :dataset_generation,
+  enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
   emr_application_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
   execution_role: System.get_env("EMR_DATASET_EXECUTION_ROLE", "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"),
   entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
@@ -170,7 +171,15 @@ config :oli, OliWeb.Endpoint,
 
 config :oli, Oban,
   repo: Oli.Repo,
-  plugins: [Oban.Plugins.Pruner],
+  plugins: [
+    Oban.Plugins.Pruner,
+    {
+      Oban.Plugins.Cron,
+      crontab: [
+        {"*/2 * * * *", Oli.Analytics.Datasets.StatusPoller, queue: :default}
+      ]
+    }
+  ],
   queues: [
     default: 10,
     snapshots: 20,
