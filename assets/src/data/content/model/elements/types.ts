@@ -1,6 +1,6 @@
 import { BaseElement, Descendant, Text } from 'slate';
 import { RichText } from 'components/activities/types';
-import { BlockTrigger } from 'data/triggers';
+import { ContentBlockTrigger } from 'data/triggers';
 import { Identifiable } from '../other';
 
 interface SlateElement<Children extends Descendant[]> extends BaseElement, Identifiable {
@@ -174,8 +174,10 @@ export interface DescriptionList extends SlateElement<VoidChildren> {
   items: DescriptionListChildren;
 }
 
-export interface TriggerBlock extends SlateElement<VoidChildren>, BlockTrigger {
+export interface TriggerBlock extends SlateElement<VoidChildren>, ContentBlockTrigger {
   type: 'trigger';
+  trigger_type: 'content';
+  prompt: string;
 }
 
 interface BaseImage extends SlateElement<VoidChildren> {

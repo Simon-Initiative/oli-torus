@@ -3,6 +3,7 @@
  */
 
 export interface IsTrigger {
+  type: 'trigger';
   trigger_type: string;
   prompt: string;
 }
@@ -25,7 +26,7 @@ export interface HintTrigger extends IsTrigger {
   hint_number: number; // 1-based ordinal
 }
 
-export type ContentTrigger = PageTrigger | GroupTrigger | BlockTrigger;
+export type ContentTrigger = PageTrigger | GroupTrigger | ContentBlockTrigger;
 
 export interface PageTrigger extends IsTrigger {
   trigger_type: 'page';
@@ -35,6 +36,6 @@ export interface GroupTrigger extends IsTrigger {
   trigger_type: 'group';
 }
 
-export interface BlockTrigger extends IsTrigger {
+export interface ContentBlockTrigger extends IsTrigger {
   trigger_type: 'content';
 }
