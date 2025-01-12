@@ -1,5 +1,7 @@
 defmodule Oli.Analytics.Datasets do
 
+  require Logger
+
   alias Oli.Analytics.Datasets.JobConfig
   alias Oli.Analytics.Datasets.DatasetJob
   alias Oli.Analytics.Datasets.Utils
@@ -46,10 +48,19 @@ defmodule Oli.Analytics.Datasets do
 
     file_path = "#{job_id}/manifest.json"
 
+    Logger.info("Fetching manifest for job #{job_id}")
+
     case S3.get_object(Settings.context_bucket(), file_path)
     |> ExAws.request() do
-      {:ok, result} -> {:ok, Poison.decode!(result.body)}
-      e -> e
+      {:ok, result} ->
+
+        Logger.debug("Manifest fetched for job #{job_id}")
+        {:ok, Poison.decode!(result.body)}
+
+      {:error, e} ->
+
+        Logger.error("Failed to fetch manifest for job #{job_id}: #{Kernel.to_string(e)}")
+        {:error, e}
     end
   end
 
@@ -80,17 +91,25 @@ defmodule Oli.Analytics.Datasets do
   """
   def create_job(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
 
+    Logger.info("Dataset job creation initiated for project #{project_id}, job id #{config.job_id}")
+
     with {:ok, job} <- init(job_type, project_id, initiated_by_id, config),
       {:ok, job} <- preprocess(job),
       {:ok, job} <- submit(job),
       {:ok, job} <- persist(job) do
+
+        Logger.info("Dataset job successfully created for project #{project_id}, job id #{config.job_id}")
         {:ok, job}
     else
       {:error, e} ->
-        Logger.error("Failed to create job #{Kernel.to_string(e)}")
+        Logger.error("Failed to create dataset job #{Kernel.to_string(e)}")
         e
     end
 
+  end
+
+  def is_terminal_state?(status) do
+    status in @terminal_emr_states
   end
 
   @doc """
@@ -100,6 +119,8 @@ defmodule Oli.Analytics.Datasets do
   job and download the results.
   """
   def send_notification_emails(to_notify, path_builder_fn) do
+
+    Logger.info("Sending notification emails for #{Enum.count(to_notify)} jobs")
 
     {job_ids, _new_status} = Enum.unzip(to_notify)
 
@@ -122,6 +143,7 @@ defmodule Oli.Analytics.Datasets do
 
           Enum.each(emails, fn email ->
             # Send the notification email
+            Logger.debug("Sending dataset notification email to #{email} for job id #{job.job_id}")
             deliver_completion_email(email, url_builder_fn.(job.project_slug, job.id))
           end)
       end
@@ -376,6 +398,8 @@ defmodule Oli.Analytics.Datasets do
       configuration: config
     }
 
+    Logger.debug("Initialized dataset job #{job.job_id}")
+
     {:ok, job}
   end
 
@@ -385,6 +409,9 @@ defmodule Oli.Analytics.Datasets do
 
     chunk_size = Utils.determine_chunk_size(job.configuration.excluded_fields)
     config = %JobConfig{job.configuration | chunk_size: chunk_size}
+
+    Logger.debug("Preprocessed dataset job #{job.job_id}")
+
     {:ok, %DatasetJob{job | configuration: config}}
   end
 
@@ -392,8 +419,12 @@ defmodule Oli.Analytics.Datasets do
 
     job = set_ignore_student_ids(job)
 
-    build_json_context(job)
+    result = build_json_context(job)
     |> stage_json_context(job)
+
+    Logger.debug("Preprocessed dataset job #{job.job_id}")
+
+    result
   end
 
   defp set_ignore_student_ids(%DatasetJob{configuration: config} = job) do
@@ -429,13 +460,19 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp submit(%DatasetJob{} = job) do
+
+    Logger.debug("About to submit job #{job.job_id}")
+
     case determine_application_id() do
       {:ok, application_id} ->
+        Logger.debug("Submitting job #{job.job_id} to application #{application_id}")
 
         %DatasetJob{job | application_id: application_id}
-        |> EmrServerless.submit_job() |> IO.inspect()
+        |> EmrServerless.submit_job()
 
-      {:error, e} -> {:error, e}
+      {:error, e} ->
+        Logger.error("Failed to submit job #{job.job_id}: #{Kernel.to_string(e)}")
+        {:error, e}
     end
   end
 
@@ -450,11 +487,16 @@ defmodule Oli.Analytics.Datasets do
          emr_application_name = Settings.emr_application_name()
 
          case Enum.filter(json["applications"], fn app -> app["name"] == emr_application_name end) do
-           [app] -> {:ok, app["id"]}
-           [] -> {:error, "Application not found"}
+           [app] ->
+              {:ok, app["id"]}
+           [] ->
+              Logger.warning("Dataset application not found: #{emr_application_name}")
+              {:error, "Application not found"}
          end
 
-      e -> e
+      e ->
+        Logger.error("Failed to list applications: #{Kernel.to_string(e)}")
+        e
     end
   end
 

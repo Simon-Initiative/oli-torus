@@ -1,6 +1,8 @@
 defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
   use OliWeb, :live_view
 
+  require Logger
+
   alias Oli.Analytics.Datasets
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -134,7 +136,14 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
 
   @impl true
   def handle_info({:manifest, result}, socket) do
-\
+
+    case result do
+      {:ok, manifest} ->
+        Logger.debug("Dataset job manifest fetched")
+      {:error, error} ->
+        Logger.error("Dataset job manifest fetch failed: #{error}")
+    end
+
     {:noreply,
       assign(socket,
         results_manifest: result
