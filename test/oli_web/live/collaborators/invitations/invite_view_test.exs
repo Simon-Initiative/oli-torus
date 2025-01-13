@@ -51,7 +51,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
     }
   end
 
-  describe "Authors Invite view" do
+  describe "Collaborators Invite view" do
     setup [:create_project_and_author]
 
     test "can be accessed for a non existing token", %{conn: conn} do
