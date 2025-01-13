@@ -55,8 +55,10 @@ defmodule OliWeb.LinkAccountLive do
       </div>
       <div class="flex flex-col gap-y-10 lg:flex-row w-full relative z-50 overflow-y-scroll lg:overflow-y-auto h-[calc(100vh-270px)] md:h-[calc(100vh-220px)] lg:h-auto py-4 sm:py-8 lg:py-0">
         <div class="w-full flex items-center justify-center dark">
-          <div class={["w-96 px-10 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white"]}>
-            <div class="text-center text-xl font-normal leading-7 py-8">
+          <div class={[
+            "w-96 px-10 py-8 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white"
+          ]}>
+            <div class="text-center text-xl font-normal leading-7 pb-8">
               Link Authoring Account
             </div>
             <p class="text-center">
@@ -124,10 +126,10 @@ defmodule OliWeb.LinkAccountLive do
 
             <.button
               variant={:secondary}
-              href={value_or(assigns[:cancel_path], ~p"/")}
+              href={value_or(assigns[:cancel_path], ~p"/users/settings")}
               class="w-full inline-block text-center mt-2"
             >
-              Cancel
+              Back to Account Settings
             </.button>
           </div>
         </div>

@@ -2,7 +2,7 @@ defmodule OliWeb.UserSettingsLive do
   use OliWeb, :live_view
 
   alias Oli.Accounts
-  alias Oli.Accounts.User
+  alias Oli.Accounts.{User, Author}
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.Common.Properties.{Groups, Group}
 
@@ -103,7 +103,9 @@ defmodule OliWeb.UserSettingsLive do
                 </.button>
               </div>
             </.form>
+          </div>
 
+          <div class="grid grid-cols-12 my-4">
             <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-3 mb-10">
               <h4 class="mt-3">Third Party Login Providers</h4>
 
@@ -121,6 +123,30 @@ defmodule OliWeb.UserSettingsLive do
                     href={~p"/users/auth/#{provider}/new"}
                   />
                 <% end %>
+              <% end %>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-12 my-4">
+            <div
+              :if={Accounts.can_manage_linked_account?(@current_user)}
+              class="col-span-4 flex flex-col gap-3 mb-10"
+            >
+              <h4 class="mt-3">Linked Authoring Account</h4>
+
+              <%= case Accounts.linked_author_account(@current_user) do %>
+                <% nil -> %>
+                  <.link href={~p"/users/link_account"}>
+                    Link authoring account
+                  </.link>
+                <% %Author{email: linked_author_account_email} -> %>
+                  <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
+                    <%= linked_author_account_email %>
+                  </div>
+
+                  <.link href={~p"/users/link_account"}>
+                    Manage linked account
+                  </.link>
               <% end %>
             </div>
           </div>
