@@ -127,7 +127,7 @@ defmodule OliWeb.UserSettingsLive do
             </div>
           </div>
 
-          <div class="grid grid-cols-12 my-4">
+          <div id="link-account" class="grid grid-cols-12 my-4">
             <div
               :if={Accounts.can_manage_linked_account?(@current_user)}
               class="col-span-4 flex flex-col gap-3 mb-10"

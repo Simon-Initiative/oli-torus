@@ -227,9 +227,9 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       conn = log_in_user(conn, user)
 
-      {:ok, _lv, html} = live(conn, ~p"/users/settings")
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
-      refute html =~
+      refute lv |> element("#link-account") |> render() =~
                "Linked Authoring Account"
     end
 
@@ -239,12 +239,12 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       conn = log_in_user(conn, user)
 
-      {:ok, lv, html} = live(conn, ~p"/users/settings")
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
-      assert html =~
+      assert lv |> element("#link-account") |> render() =~
                "Linked Authoring Account"
 
-      assert lv |> element("a[href='/users/link_account']") |> render() =~
+      assert lv |> element("#link-account a[href='/users/link_account']") |> render() =~
                "Link authoring account"
     end
 
@@ -259,7 +259,7 @@ defmodule OliWeb.UserSettingsLiveTest do
 
       {:ok, lv, _html} = live(conn, ~p"/users/settings")
 
-      assert lv |> element("a[href='/users/link_account']") |> render() =~
+      assert lv |> element("#link-account a[href='/users/link_account']") |> render() =~
                "Manage linked account"
     end
   end
