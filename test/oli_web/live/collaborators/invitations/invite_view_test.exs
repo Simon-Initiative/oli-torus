@@ -1,4 +1,4 @@
-defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
+defmodule OliWeb.Collaborators.Invitations.InviteViewTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
 
@@ -12,7 +12,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
     %{conn: conn, project: insert(:project), author: insert(:author)}
   end
 
-  defp authors_invite_url(token), do: ~p"/collaborators/invite/#{token}"
+  defp collaborators_invite_url(token), do: ~p"/collaborators/invite/#{token}"
 
   defp non_existing_author() do
     # non existing authors are inserted in the DB with no password
@@ -55,7 +55,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
     setup [:create_project_and_author]
 
     test "can be accessed for a non existing token", %{conn: conn} do
-      {:ok, view, _html} = live(conn, authors_invite_url("non-existing-token"))
+      {:ok, view, _html} = live(conn, collaborators_invite_url("non-existing-token"))
 
       assert has_element?(view, "h3", "This invitation has expired or does not exist")
     end
@@ -73,7 +73,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
           :rejected
         )
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       assert has_element?(view, "h3", "This invitation has already been rejected")
     end
@@ -91,7 +91,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
           :accepted
         )
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       assert has_element?(view, "h3", "This invitation has already been redeemed.")
 
@@ -114,7 +114,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
           "a_pending_invitation_token"
         )
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       assert has_element?(view, "h1", "Invitation to #{project.title}")
       assert has_element?(view, "button", "Accept")
@@ -133,7 +133,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
 
       assert initial_author_project.status == :pending_confirmation
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       view
       |> element("button", "Accept")
@@ -185,7 +185,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
 
       assert initial_author_project.status == :pending_confirmation
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       view
       |> element("button", "Accept")
@@ -218,7 +218,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
 
       assert initial_author_project.status == :pending_confirmation
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       view
       |> element("button", "Reject invitation")
@@ -245,7 +245,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
 
       assert initial_author_project.status == :pending_confirmation
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       view
       |> element("button", "Accept")
@@ -275,7 +275,7 @@ defmodule OliWeb.Collaborators.Invitations.AuthorsInviteViewTest do
 
       assert initial_author_project.status == :pending_confirmation
 
-      {:ok, view, _html} = live(conn, authors_invite_url(encode64_token))
+      {:ok, view, _html} = live(conn, collaborators_invite_url(encode64_token))
 
       view
       |> element("button", "Accept")

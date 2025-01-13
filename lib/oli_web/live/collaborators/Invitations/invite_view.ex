@@ -1,4 +1,4 @@
-defmodule OliWeb.Collaborators.Invitations.AuthorsInviteView do
+defmodule OliWeb.Collaborators.Invitations.InviteView do
   use OliWeb, :live_view
 
   alias Oli.Accounts
