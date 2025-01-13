@@ -1,8 +1,10 @@
 defmodule OliWeb.UserSettingsLiveTest do
   use OliWeb.ConnCase
 
-  alias Oli.Accounts
   import Phoenix.LiveViewTest
+  import Oli.Factory
+
+  alias Oli.Accounts
 
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do
@@ -215,6 +217,50 @@ defmodule OliWeb.UserSettingsLiveTest do
       assert path == ~p"/users/log_in"
       assert %{"error" => message} = flash
       assert message == "You must log in to access this page."
+    end
+  end
+
+  describe "manage linked author account" do
+    test "doesn't show when user can't manage linked authoring account", %{conn: conn} do
+      user =
+        insert(:user, %{independent_learner: true, can_create_sections: false})
+
+      conn = log_in_user(conn, user)
+
+      {:ok, _lv, html} = live(conn, ~p"/users/settings")
+
+      refute html =~
+               "Linked Authoring Account"
+    end
+
+    test "shows when user can manage linked authoring account", %{conn: conn} do
+      user =
+        insert(:user, %{author: nil, independent_learner: true, can_create_sections: true})
+
+      conn = log_in_user(conn, user)
+
+      {:ok, lv, html} = live(conn, ~p"/users/settings")
+
+      assert html =~
+               "Linked Authoring Account"
+
+      assert lv |> element("a[href='/users/link_account']") |> render() =~
+               "Link authoring account"
+    end
+
+    test "shows link to manage linked authoring account when an account is already linked", %{
+      conn: conn
+    } do
+      # user factory creates a linked anonymous author account by default
+      user =
+        insert(:user, %{independent_learner: true, can_create_sections: true})
+
+      conn = log_in_user(conn, user)
+
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+
+      assert lv |> element("a[href='/users/link_account']") |> render() =~
+               "Manage linked account"
     end
   end
 end
