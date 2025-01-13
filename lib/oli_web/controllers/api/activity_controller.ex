@@ -713,31 +713,6 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
-  def delete_bulk(conn, %{"project" => project_slug, "resourceIds" => resource_ids}) do
-    author = conn.assigns[:current_author]
-
-    case ActivityEditor.delete_bulk(project_slug, resource_ids, author) do
-      {:ok, _} ->
-        json(conn, %{"result" => "success"})
-
-      {:error, {:lock_not_acquired, _}} ->
-        error(conn, 423, "locked")
-
-      {:error, {:not_applicable}} ->
-        error(conn, 400, "not applicable to this resources")
-
-      {:error, {:not_found}} ->
-        error(conn, 404, "not found")
-
-      {:error, {:not_authorized}} ->
-        error(conn, 403, "unauthorized")
-
-      _ ->
-        {_, msg} = Oli.Utils.log_error("Could not delete activities", resource_ids)
-        error(conn, 500, msg)
-    end
-  end
-
   defp error(conn, code, reason) do
     conn
     |> send_resp(code, reason)
