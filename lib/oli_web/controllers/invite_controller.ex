@@ -60,6 +60,18 @@ defmodule OliWeb.InviteController do
     AuthorSessionController.create(conn, params, flash_message: nil)
   end
 
+  @doc """
+  After an author accepts an intivation we log the author in and redirect him to admin page.
+  """
+  def accept_author_invitation(conn, %{"email" => email} = params) do
+    params =
+      params
+      |> put_in(["author", "email"], email)
+      |> put_in(["author", "request_path"], ~p"/workspaces/course_author/")
+
+    AuthorSessionController.create(conn, params, flash_message: nil)
+  end
+
   def create_bulk(conn, %{
         "emails" => emails,
         "role" => role,

@@ -1330,6 +1330,7 @@ defmodule OliWeb.Router do
 
     post "/users/accept_invitation", InviteController, :accept_user_invitation
     post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
+    post "/authors/accept_invitation", InviteController, :accept_author_invitation
   end
 
   ### Sections - Enrollment

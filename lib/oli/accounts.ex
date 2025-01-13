@@ -1540,7 +1540,16 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  When a new author accepts an invitation to a project, the author's data is updated (password for intance)
+  Updates the author data after the inviter user redeems the authoring invitation.
+  """
+  def accept_author_invitation(author, attrs \\ %{}) do
+    author
+    |> Author.accept_invitation_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  When a new collaborator accepts an invitation to a project, the author's data is updated (password for intance)
   and the author_project status is updated from `:pending_confirmation` to `:accepted`.
 
   Since both operations are related, they are wrapped in a transaction.
