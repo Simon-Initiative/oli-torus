@@ -96,7 +96,7 @@ defmodule Oli.Authoring.Collaborators do
       :collaborator_invitation,
       %{
         inviter: inviter_name,
-        url: ~p"/collaborators/invite/#{email_data.token}",
+        url: url(OliWeb.Endpoint, ~p"/users/invite/#{email_data.token}"),
         project_title: project_title
       }
     )

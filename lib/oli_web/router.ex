@@ -1321,8 +1321,10 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through([:browser])
 
-    live "/users/invite/:token", Users.Invitations.UsersInviteView
-    live "/collaborators/invite/:token", Collaborators.Invitations.AuthorsInviteView
+    live "/users/invite/:token", Users.Invitations.UsersInviteView, as: :users_invite
+
+    live "/collaborators/invite/:token", Collaborators.Invitations.AuthorsInviteView,
+      as: :collaborators_invite
 
     post "/users/accept_invitation", InviteController, :accept_user_invitation
     post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
