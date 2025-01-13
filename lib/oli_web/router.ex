@@ -1326,6 +1326,8 @@ defmodule OliWeb.Router do
     live "/collaborators/invite/:token", Collaborators.Invitations.InviteView,
       as: :collaborators_invite
 
+    live "/authors/invite/:token", Authors.Invitations.InviteView, as: :authors_invite
+
     post "/users/accept_invitation", InviteController, :accept_user_invitation
     post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
   end

@@ -4,7 +4,9 @@ defmodule OliWeb.InviteController do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Accounts.AuthorToken
   alias Oli.Accounts.UserToken
+  alias Oli.Authoring.Collaborators
   alias Oli.Delivery.Sections
   alias Oli.{Email, Mailer}
   alias OliWeb.UserSessionController
@@ -179,8 +181,10 @@ defmodule OliWeb.InviteController do
   end
 
   defp invite_author(conn, email) do
-    with {:ok, author} <- get_or_create_invited_author(conn, email),
-         {:ok, _mail} <- deliver_invitation_email(conn, author) do
+    with {:ok, author} <- Collaborators.get_or_create_invited_author(email),
+         {:ok, email_data} <- create_author_invitation_token(author),
+         {:ok, _mail} <-
+           deliver_author_invitation_email(email_data, conn.assigns.current_author.name) do
       conn
       |> put_flash(:info, "Author invitation sent successfully.")
       |> redirect(to: Routes.invite_path(conn, :index))
@@ -192,31 +196,25 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  defp get_or_create_invited_author(conn, email) do
-    Accounts.get_author_by_email(email)
-    |> case do
-      nil ->
-        case create_user(conn, %{email: email}) do
-          {:ok, user, _conn} -> {:ok, user}
-          {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
-        end
+  defp create_author_invitation_token(author) do
+    {non_hashed_token, author_token} =
+      AuthorToken.build_email_token(author, "author_invitation")
 
-      author ->
-        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-          {:error, "User has a pending invitation already"}
-        else
-          {:error, "User is already an author"}
-        end
-    end
+    Oli.Repo.insert!(author_token)
+
+    {:ok, %{sent_to: author_token.sent_to, token: non_hashed_token}}
   end
 
-  defp deliver_invitation_email(_conn, _user) do
-    # TODO: MER-4068
-    throw("NOT IMPLEMENTED")
-  end
-
-  defp create_user(_conn, _params) do
-    # TODO: MER-4068
-    throw("NOT IMPLEMENTED")
+  defp deliver_author_invitation_email(email_data, invited_by) do
+    Email.create_email(
+      email_data.sent_to,
+      "You were invited to create an authoring account",
+      :author_invitation,
+      %{
+        url: url(OliWeb.Endpoint, ~p"/authors/invite/#{email_data.token}"),
+        invited_by: invited_by
+      }
+    )
+    |> Mailer.deliver()
   end
 end
