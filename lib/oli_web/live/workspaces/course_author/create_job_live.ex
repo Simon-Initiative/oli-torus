@@ -50,6 +50,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
     {:ok,
      assign(socket,
+       all_disabled: Oli.Analytics.Datasets.Settings.enabled?() == false,
        author: author,
        job_type: :datashop,
        shortcut: JobShortcuts.get(:datashop),
@@ -118,6 +119,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
           <div>
             <strong>Warning:</strong> You already have an active job for this project,
             until it is completed you cannot create another job.
+          </div>
+        </div>
+      <% end %>
+      <%= if @all_disabled do %>
+        <div class="alert alert-warning flex flex-row justify-between" role="alert">
+          <div>
+            <strong>Warning:</strong> Dataset creation is disabled.
           </div>
         </div>
       <% end %>
@@ -198,6 +206,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
   end
 
   defp create_job_btn_disabled?(assigns) do
+    assigns.all_disabled or
     (assigns.shortcut.value == :required_survey and assigns.required_survey_ids == []) or
     assigns.waiting or
     assigns.section_ids == [] or

@@ -54,6 +54,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
 
     {:ok,
      assign(socket,
+       all_disabled: Oli.Analytics.Datasets.Settings.enabled?() == false,
        active: :datasets,
        filter_type: :all,
        filter_user: :all,
@@ -105,6 +106,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
     ~H"""
     <h2 id="header_id" class="pb-2">Datasets</h2>
     <div class="mb-3">
+      <%= if @all_disabled do %>
+        <div class="alert alert-warning flex flex-row justify-between" role="alert">
+          <div>
+            <strong>Warning:</strong> Dataset creation is disabled.
+          </div>
+        </div>
+      <% end %>
       <p>
         View the status of dataset creation jobs
         <%= if @project_slug do %>
