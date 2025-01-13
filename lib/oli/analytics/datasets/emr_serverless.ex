@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Datasets.EmrServerless do
-
   @moduledoc """
   Module for interacting with the EMR serverless environment.  The ExAws library does not
   support EMR Servless, but we use some of its building blocks (specifically authorization
@@ -18,7 +17,6 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
 
   require Logger
 
-
   @doc """
   Issues a GET request to the EMR serverless endpoint to list all available applications.
 
@@ -26,8 +24,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
   parsed as a map.  Otherwise, returns the error response from the HTTPoison library.
   """
   def list_applications() do
-
-    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
+    config =
+      ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
 
     # Construct the URL for the "applications" EMR serverless endpoint
     base_url = "https://emr-serverless.#{Settings.region()}.amazonaws.com/applications"
@@ -50,7 +48,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       {:ok, response} ->
         {:ok, Poison.decode!(response.body)}
 
-      e -> e
+      e ->
+        e
     end
   end
 
@@ -67,20 +66,23 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
   of job runs until all job runs have been retrieved.
 
   """
-  def get_jobs(application_id, created_at_after), do: get_jobs(application_id, created_at_after, [], nil)
+  def get_jobs(application_id, created_at_after),
+    do: get_jobs(application_id, created_at_after, [], nil)
 
   def get_jobs(application_id, created_at_after, results, next_token) do
+    config =
+      ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
 
-    config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{Settings.region()}.amazonaws.com")
-
-    base_url = "https://emr-serverless.#{Settings.region()}.amazonaws.com/applications/#{application_id}/jobruns"
+    base_url =
+      "https://emr-serverless.#{Settings.region()}.amazonaws.com/applications/#{application_id}/jobruns"
 
     params = %{maxResults: 50, createdAtAfter: DateTime.to_iso8601(created_at_after)}
 
-    params = case next_token do
-      nil -> params
-      _ -> Map.put(params, :nextToken, next_token)
-    end
+    params =
+      case next_token do
+        nil -> params
+        _ -> Map.put(params, :nextToken, next_token)
+      end
 
     # Convert the params to a query string
     query_string = URI.encode_query(params)
@@ -101,19 +103,19 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     # Send the HTTP request
     case HTTPClient.http().get(url, signed_headers) do
       {:ok, response} ->
-
         json = Poison.decode!(response.body)
 
         case Map.get(json, "nextToken") do
-          nil -> {:ok, results ++ json["jobRuns"]}
+          nil ->
+            {:ok, results ++ json["jobRuns"]}
 
           token ->
             get_jobs(application_id, created_at_after, results ++ json["jobRuns"], token)
         end
 
-      e -> e
+      e ->
+        e
     end
-
   end
 
   @doc """
@@ -127,7 +129,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     config = ExAws.Config.new(:s3) |> Map.put(:host, "emr-serverless.#{region}.amazonaws.com")
 
     # Construct the URL for the "applications" EMR serverless endpoint
-    url = "https://emr-serverless.#{region}.amazonaws.com/applications/#{job.application_id}/jobruns"
+    url =
+      "https://emr-serverless.#{region}.amazonaws.com/applications/#{job.application_id}/jobruns"
 
     arguments = [
       "--bucket_name",
@@ -148,16 +151,22 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       "#{job.project_id}"
     ]
 
-    arguments = case {job.job_type, Enum.count(job.configuration.excluded_fields)} do
-      {:datashop, _} -> arguments
-      {_, 0} -> arguments
-      _ -> arguments ++ ["--exclude_fields", job.configuration.excluded_fields |> to_str]
-    end
+    arguments =
+      case {job.job_type, Enum.count(job.configuration.excluded_fields)} do
+        {:datashop, _} -> arguments
+        {_, 0} -> arguments
+        _ -> arguments ++ ["--exclude_fields", job.configuration.excluded_fields |> to_str]
+      end
 
-    arguments = case Enum.count(job.configuration.ignored_student_ids) do
-      0 -> arguments
-      _ -> arguments ++ ["--ignored_student_ids", "#{job.configuration.ignored_student_ids |> to_str}"]
-    end
+    arguments =
+      case Enum.count(job.configuration.ignored_student_ids) do
+        0 ->
+          arguments
+
+        _ ->
+          arguments ++
+            ["--ignored_student_ids", "#{job.configuration.ignored_student_ids |> to_str}"]
+      end
 
     body = %{
       "clientToken" => job.job_id,
@@ -193,17 +202,17 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
     # Send the HTTP request
     case HTTPClient.http().post(url, Poison.encode!(body), signed_headers) do
       {:ok, %{status_code: 200} = response} ->
-
         # Parse the response and extract the job run id
         json = Poison.decode!(response.body)
         job = %DatasetJob{job | job_run_id: json["jobRunId"]}
         {:ok, job}
-      e -> e
+
+      e ->
+        e
     end
   end
 
   defp to_str(list) do
     Enum.join(list, ",")
   end
-
 end

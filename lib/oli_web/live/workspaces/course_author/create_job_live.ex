@@ -68,7 +68,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
        waiting: false,
        limit: @limit
      )}
-
   end
 
   @impl Phoenix.LiveView
@@ -131,7 +130,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       <% end %>
     </div>
     <div class="mt-5 mb-3">
-
       <form id="job_form" />
 
       <p>Select the dataset type:</p>
@@ -155,8 +153,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       </small>
 
       <%= if @is_admin? do %>
-
-        <p class="mt-5">Enter additional emails (besides yourself) to be notified upon job termination:</p>
+        <p class="mt-5">
+          Enter additional emails (besides yourself) to be notified upon job termination:
+        </p>
 
         <input
           type="text"
@@ -165,11 +164,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
           class="form-control mb-2"
           form="job_form"
           phx-hook="TextInputListener"
-          placeholder="Email addresses separated by commas"/>
-
+          placeholder="Email addresses separated by commas"
+        />
       <% end %>
 
-      <p class="mt-5">Select the dataset source course sections <%= if !@is_admin? do "(max 5)" else "" end %>:</p>
+      <p class="mt-5">
+        Select the dataset source course sections <%= if !@is_admin? do
+          "(max 5)"
+        else
+          ""
+        end %>:
+      </p>
 
       <div class="mb-5" />
 
@@ -185,7 +190,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
         />
       </div>
 
-
       <div class="mt-5">
         <button
           phx-click="create_job"
@@ -193,27 +197,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
           class="btn btn-primary"
         >
           Create Job
-
           <%= if @waiting do %>
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
           <% end %>
         </button>
       </div>
-
     </div>
-
     """
   end
 
   defp create_job_btn_disabled?(assigns) do
     assigns.all_disabled or
-    (assigns.shortcut.value == :required_survey and assigns.required_survey_ids == []) or
-    assigns.waiting or
-    assigns.section_ids == [] or
-    !assigns.emails_valid? or
-    !assigns.can_create_job?
+      (assigns.shortcut.value == :required_survey and assigns.required_survey_ids == []) or
+      assigns.waiting or
+      assigns.section_ids == [] or
+      !assigns.emails_valid? or
+      !assigns.can_create_job?
   end
-
 
   def patch_with(socket, changes) do
     # convert param keys from atoms to strings
@@ -252,24 +252,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
   @impl true
   def handle_info({:invocation_finished, result}, socket) do
-
     case result do
       {:ok, _job} ->
-        {:noreply, redirect(socket, to: Routes.live_path(socket, OliWeb.Workspaces.CourseAuthor.DatasetsLive, socket.assigns.project.slug))}
+        {:noreply,
+         redirect(socket,
+           to:
+             Routes.live_path(
+               socket,
+               OliWeb.Workspaces.CourseAuthor.DatasetsLive,
+               socket.assigns.project.slug
+             )
+         )}
 
       {:error, reason} ->
-
         # add error to the live view flash
         socket = put_flash(socket, :error, "Failed to create job: #{reason}")
 
         {:noreply, assign(socket, waiting: false)}
     end
-
   end
 
   @impl true
   def handle_event("create_job", _params, socket) do
-
     project_id = socket.assigns.project.id
     initiated_by_id = socket.assigns.author.id
     section_ids = socket.assigns.section_ids
@@ -279,17 +283,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
     # Handle the special case of the required survey shortcut, where we need to find that
     # required survey resource id and set it in the job config
-    job_config = case socket.assigns.shortcut.value do
-      :required_survey ->
-        case Datasets.fetch_required_survey_ids(section_ids) do
-          [] -> job_config
-          required_survey_ids ->%{job_config | page_ids: required_survey_ids}
-        end
-      _ -> job_config
-    end
+    job_config =
+      case socket.assigns.shortcut.value do
+        :required_survey ->
+          case Datasets.fetch_required_survey_ids(section_ids) do
+            [] -> job_config
+            required_survey_ids -> %{job_config | page_ids: required_survey_ids}
+          end
+
+        _ ->
+          job_config
+      end
 
     # Invoke the job asynchronously
     pid = self()
+
     Task.async(fn ->
       result = Datasets.create_job(job_type, project_id, initiated_by_id, job_config)
 
@@ -301,68 +309,81 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
   @impl true
   def handle_event("change", %{"id" => "emails", "value" => emails}, socket) do
+    emails =
+      case emails do
+        "" -> []
+        _ -> String.split(emails, ",")
+      end
 
-    emails = case emails do
-      "" -> []
-      _ -> String.split(emails, ",")
-    end
-
-    emails_valid? = Enum.all?(emails, &String.match?(&1, ~r/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
+    emails_valid? =
+      Enum.all?(emails, &String.match?(&1, ~r/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
 
     {:noreply, assign(socket, emails: emails, emails_valid?: emails_valid?)}
   end
 
   @impl true
   def handle_event("section_selected", %{"id" => id}, socket) do
-
     id = String.to_integer(id)
 
     # Toggle the selection
-    section_ids = case Enum.any?(socket.assigns.section_ids, &(&1 == id)) do
-      true -> Enum.reject(socket.assigns.section_ids, &(&1 == id))
-      false -> [id | socket.assigns.section_ids]
-    end
+    section_ids =
+      case Enum.any?(socket.assigns.section_ids, &(&1 == id)) do
+        true -> Enum.reject(socket.assigns.section_ids, &(&1 == id))
+        false -> [id | socket.assigns.section_ids]
+      end
 
     # Limit the number of selected sections for non-admin users
-    selection_ids = case socket.assigns.is_admin? do
-      false -> Enum.take(section_ids, @max_selected)
-      true -> section_ids
-    end
+    selection_ids =
+      case socket.assigns.is_admin? do
+        false -> Enum.take(section_ids, @max_selected)
+        true -> section_ids
+      end
 
     map_set = MapSet.new(selection_ids)
 
-    required_survey_ids = case socket.assigns.shortcut.value do
-      :required_survey -> Datasets.fetch_required_survey_ids(selection_ids)
-      _ -> []
-    end
+    required_survey_ids =
+      case socket.assigns.shortcut.value do
+        :required_survey -> Datasets.fetch_required_survey_ids(selection_ids)
+        _ -> []
+      end
 
     data = Map.put(socket.assigns.table_model.data, :selected_ids, map_set)
     table_model = %{socket.assigns.table_model | data: data}
 
-    {:noreply, assign(socket, section_ids: section_ids, table_model: table_model, required_survey_ids: required_survey_ids)}
+    {:noreply,
+     assign(socket,
+       section_ids: section_ids,
+       table_model: table_model,
+       required_survey_ids: required_survey_ids
+     )}
   end
 
   @impl Phoenix.LiveView
   def handle_event("job_type", %{"job_type" => job_type}, socket) do
-
     job_type = String.to_existing_atom(job_type)
     shortcut = JobShortcuts.get(job_type)
 
-    required_survey_ids = case shortcut.value do
-      :required_survey -> Datasets.fetch_required_survey_ids(socket.assigns.section_ids)
-      _ -> []
-    end
+    required_survey_ids =
+      case shortcut.value do
+        :required_survey -> Datasets.fetch_required_survey_ids(socket.assigns.section_ids)
+        _ -> []
+      end
 
-    {:noreply, assign(socket, job_type: job_type, shortcut: shortcut, required_survey_ids: required_survey_ids)}
+    {:noreply,
+     assign(socket,
+       job_type: job_type,
+       shortcut: shortcut,
+       required_survey_ids: required_survey_ids
+     )}
   end
 
   @impl true
   def handle_event(event, params, socket),
-  do:
-    delegate_to(
-      {event, params, socket, &__MODULE__.patch_with/2},
-      [&PagedTable.handle_delegated/4]
-    )
+    do:
+      delegate_to(
+        {event, params, socket, &__MODULE__.patch_with/2},
+        [&PagedTable.handle_delegated/4]
+      )
 
   defp determine_total(projects) do
     case projects do
@@ -370,5 +391,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
       [hd | _] -> hd.total_count
     end
   end
-
 end

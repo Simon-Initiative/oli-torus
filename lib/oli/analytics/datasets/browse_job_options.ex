@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Datasets.BrowseJobOptions do
-
   defstruct [
     :project_id,
     :statuses,

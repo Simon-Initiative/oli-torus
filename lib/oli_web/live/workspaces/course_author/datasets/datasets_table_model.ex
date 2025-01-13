@@ -5,7 +5,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
 
   def new(rows, indclude_admin_fields? \\ false) do
-
     standard_columns = [
       %ColumnSpec{
         name: :status,
@@ -55,11 +54,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
       }
     ]
 
-    columns = if indclude_admin_fields? do
-      admin_columns ++ standard_columns
-    else
-      standard_columns
-    end
+    columns =
+      if indclude_admin_fields? do
+        admin_columns ++ standard_columns
+      else
+        standard_columns
+      end
 
     SortableTableModel.new(
       rows: rows,
@@ -71,18 +71,23 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
   end
 
   defp render_config(assigns, job, _a) do
-
     assigns = Map.merge(assigns, %{job: job})
 
     ~H"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive, @job.project_slug, @job.id)}>
+    <a href={
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive,
+        @job.project_slug,
+        @job.id
+      )
+    }>
       Details
     </a>
     """
   end
 
   defp render_status(assigns, job, _a) do
-
     assigns = Map.merge(assigns, %{job: job})
 
     ~H"""
@@ -93,11 +98,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.DatasetsTableModel do
   end
 
   defp render_project(assigns, job, _) do
-
     assigns = Map.merge(assigns, %{job: job})
 
     ~H"""
-    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.OverviewLive, @job.project_slug)}>
+    <a href={
+      Routes.live_path(
+        OliWeb.Endpoint,
+        OliWeb.Workspaces.CourseAuthor.OverviewLive,
+        @job.project_slug
+      )
+    }>
       <%= @job.project_title %>
     </a>
     """

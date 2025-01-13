@@ -68,12 +68,20 @@ config :oli,
 config :oli, :dataset_generation,
   enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
   emr_application_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
-  execution_role: System.get_env("EMR_DATASET_EXECUTION_ROLE", "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"),
+  execution_role:
+    System.get_env(
+      "EMR_DATASET_EXECUTION_ROLE",
+      "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"
+    ),
   entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
   log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
   context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
   source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
-  spark_submit_parameters: System.get_env("EMR_DATASET_SPARK_SUBMIT_PARAMETERS", "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2")
+  spark_submit_parameters:
+    System.get_env(
+      "EMR_DATASET_SPARK_SUBMIT_PARAMETERS",
+      "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+    )
 
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,

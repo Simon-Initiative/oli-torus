@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Datasets.DatasetJob do
-
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -41,7 +40,6 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
     field(:initiator_email, :string, virtual: true)
 
     timestamps(type: :utc_datetime)
-
   end
 
   @doc false
@@ -72,5 +70,4 @@ defmodule Oli.Analytics.Datasets.DatasetJob do
   def statuses do
     @emr_statuses
   end
-
 end

@@ -94,7 +94,9 @@ defmodule OliWeb.Admin.AdminView do
               </a>
             </li>
             <li>
-              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.DatasetsLive)}>Manage Dataset Jobs</a>
+              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.DatasetsLive)}>
+                Manage Dataset Jobs
+              </a>
             </li>
           </ul>
         </Group.render>
