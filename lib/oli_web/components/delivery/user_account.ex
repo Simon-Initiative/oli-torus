@@ -9,7 +9,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Delivery
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React

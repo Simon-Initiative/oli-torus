@@ -10,6 +10,7 @@ defmodule Oli.AccountsTest do
   alias Oli.Groups.CommunityAccount
   alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Accounts.SystemRole
 
   describe "authors" do
@@ -578,6 +579,46 @@ defmodule Oli.AccountsTest do
                  {"Email has already been taken by another independent learner",
                   [validation: :unsafe_unique, fields: [:email]]}
              ]
+    end
+
+    test "can_manage_linked_account?/1" do
+      # returns false when the user is an independent student
+      user =
+        insert(:user, %{independent_learner: true, can_create_sections: false})
+        |> Accounts.preload_platform_roles()
+
+      refute Accounts.can_manage_linked_account?(user)
+
+      # returns true when the user is an independent instructor
+      user =
+        insert(:user, %{independent_learner: true, can_create_sections: true})
+        |> Accounts.preload_platform_roles()
+
+      assert Accounts.can_manage_linked_account?(user)
+
+      # returns false when the user is an LTI student
+      {:ok, user} =
+        insert(:user, %{independent_learner: false, can_create_sections: false})
+        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_student)])
+
+      refute Accounts.can_manage_linked_account?(user)
+
+      # returns true when user is an institution instructor
+      {:ok, user} =
+        insert(:user)
+        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_instructor)])
+
+      assert Accounts.can_manage_linked_account?(user)
+
+      # returns true when user is an institution admin
+      {:ok, user} =
+        insert(:user)
+        |> Accounts.update_user_platform_roles([
+          PlatformRoles.get_role(:system_administrator),
+          PlatformRoles.get_role(:institution_administrator)
+        ])
+
+      assert Accounts.can_manage_linked_account?(user)
     end
   end
 
