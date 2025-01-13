@@ -209,6 +209,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
+    <.menu_item_maybe_linked_account
+      :if={Accounts.can_manage_linked_account?(@ctx.user)}
+      user={@ctx.user}
+    />
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -292,6 +296,31 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <% end %>
         """
     end
+  end
+
+  attr(:user, User, required: true)
+
+  def menu_item_maybe_linked_account(assigns) do
+    ~H"""
+    <%= case Accounts.linked_author_account(@user) do %>
+      <% nil -> %>
+        <.menu_item_link href={~p"/users/link_account"}>
+          Link authoring account
+        </.menu_item_link>
+      <% %Author{email: linked_author_account_email} -> %>
+        <.menu_item>
+          <.menu_item_label>Linked Authoring Account</.menu_item_label>
+        </.menu_item>
+
+        <.menu_item_link href={~p"/users/link_account"}>
+          <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
+            <%= linked_author_account_email %>
+          </div>
+        </.menu_item_link>
+    <% end %>
+
+    <.menu_divider />
+    """
   end
 
   attr(:href, :string, required: true)
