@@ -1545,7 +1545,7 @@ defmodule Oli.Accounts do
 
   Since both operations are related, they are wrapped in a transaction.
   """
-  def accept_author_invitation(author, author_project, attrs \\ %{}) do
+  def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
     Repo.transaction(fn ->
       author
       |> Author.accept_invitation_changeset(attrs)
@@ -1877,14 +1877,35 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Gets the author token by invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_author_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_author_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_author_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.author_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
   Gets the author by collaboration invitation token.
 
   ## Examples
 
-      iex> get_author_by_collaboration_invitation_token("validtoken")
+      iex> get_author_token_by_collaboration_invitation_token("validtoken")
       %Author{}
 
-      iex> get_author_by_collaboration_invitation_token("invalidtoken")
+      iex> get_author_token_by_collaboration_invitation_token("invalidtoken")
       nil
 
   """

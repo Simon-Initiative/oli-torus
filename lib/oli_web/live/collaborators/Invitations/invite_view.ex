@@ -225,7 +225,7 @@ defmodule OliWeb.Collaborators.Invitations.InviteView do
     with {:success, true} <- Oli.Recaptcha.verify(params["g-recaptcha-response"]),
          {:emails_match?, true} <-
            {:emails_match?, emails_match?(author.email, author_params["email"])} do
-      Accounts.accept_author_invitation(author, author_project, author_params)
+      Accounts.accept_collaborator_invitation(author, author_project, author_params)
       |> case do
         {:ok, _} ->
           {:noreply, socket |> assign(trigger_submit: true)}
