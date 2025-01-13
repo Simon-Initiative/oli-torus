@@ -175,7 +175,12 @@ defmodule OliWeb.InviteController do
         :enrollment_invitation,
         %{
           inviter: inviter_name,
-          url: ~p"/users/invite/#{data.token}",
+          url:
+            OliWeb.Router.Helpers.users_invite_path(
+              OliWeb.Endpoint,
+              OliWeb.Users.Invitations.UsersInviteView,
+              data.token
+            ),
           role: role,
           section_title: section_title,
           button_label: "Go to invitation"

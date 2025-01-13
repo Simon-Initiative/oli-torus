@@ -17,6 +17,7 @@ defmodule Oli.Factory do
   alias Oli.Branding.Brand
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections.Certificate
+  alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -653,6 +654,14 @@ defmodule Oli.Factory do
     %Certificate{
       title: "#{sequence("certificate")}",
       section: anonymous_build(:section)
+    }
+  end
+
+  def granted_certificate_factory() do
+    %GrantedCertificate{
+      guid: UUID.uuid4(),
+      user: build(:user),
+      certificate: build(:certificate)
     }
   end
 
