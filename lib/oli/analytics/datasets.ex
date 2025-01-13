@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Datasets do
-
   @moduledoc """
   Provides functionality for creating and managing dataset creation jobs
   in the system. This module provides a single, high level API encapsulating
@@ -61,16 +60,19 @@ defmodule Oli.Analytics.Datasets do
   we return nil.
   """
   def get_job(id, project_slug) do
-
-    query = from(j in DatasetJob,
-      join: p in Oli.Authoring.Course.Project, on: j.project_id == p.id,
-      join: u in Oli.Accounts.Author, on: j.initiated_by_id == u.id,
-      where: j.id == ^id and p.slug == ^project_slug,
-      select_merge: %{
-        project_title: p.title,
-        project_slug: p.slug,
-        initiator_email: u.email
-      })
+    query =
+      from(j in DatasetJob,
+        join: p in Oli.Authoring.Course.Project,
+        on: j.project_id == p.id,
+        join: u in Oli.Accounts.Author,
+        on: j.initiated_by_id == u.id,
+        where: j.id == ^id and p.slug == ^project_slug,
+        select_merge: %{
+          project_title: p.title,
+          project_slug: p.slug,
+          initiator_email: u.email
+        }
+      )
 
     Repo.one(query)
   end
@@ -80,25 +82,21 @@ defmodule Oli.Analytics.Datasets do
   and decodes it into a map.
   """
   def fetch_manifest(%DatasetJob{job_id: job_id, status: :success}) do
-
     file_path = "#{job_id}/manifest.json"
 
     Logger.info("Fetching manifest for job #{job_id}")
 
     case S3.get_object(Settings.context_bucket(), file_path)
-    |> ExAws.request() do
+         |> ExAws.request() do
       {:ok, result} ->
-
         Logger.debug("Manifest fetched for job #{job_id}")
         {:ok, Poison.decode!(result.body)}
 
       {:error, e} ->
-
         Logger.error("Failed to fetch manifest for job #{job_id}: #{Kernel.to_string(e)}")
         {:error, e}
     end
   end
-
 
   @doc """
   Submits a new dataset creation job to the EMR serverless
@@ -125,22 +123,22 @@ defmodule Oli.Analytics.Datasets do
       {:ok, %DatasetJob{...}}
   """
   def create_job(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
-
     Logger.info("Dataset job creation initiated for project #{project_id}, job type #{job_type}")
 
     with {:ok, job} <- init(job_type, project_id, initiated_by_id, config),
-      {:ok, job} <- preprocess(job),
-      {:ok, job} <- submit(job),
-      {:ok, job} <- persist(job) do
+         {:ok, job} <- preprocess(job),
+         {:ok, job} <- submit(job),
+         {:ok, job} <- persist(job) do
+      Logger.info(
+        "Dataset job successfully created for project #{project_id}, job id #{job.job_id}"
+      )
 
-        Logger.info("Dataset job successfully created for project #{project_id}, job id #{job.job_id}")
-        {:ok, job}
+      {:ok, job}
     else
       {:error, e} ->
         Logger.error("Failed to create dataset job #{Kernel.to_string(e)}")
         e
     end
-
   end
 
   def is_terminal_state?(status) do
@@ -154,17 +152,26 @@ defmodule Oli.Analytics.Datasets do
   job and download the results.
   """
   def send_notification_emails(to_notify, url_builder_fn) do
-
     Logger.info("Sending notification emails for #{Enum.count(to_notify)} jobs")
 
     # Get the database ids of the jobs to notify
     {job_ids, _new_status} = Enum.unzip(to_notify)
 
-    jobs = from(j in DatasetJob,
-      join: u in Oli.Accounts.Author, on: j.initiated_by_id == u.id,
-      join: p in Oli.Authoring.Course.Project, on: j.project_id == p.id,
-      where: j.id in ^job_ids,
-      select: %{id: j.id, job_id: j.job_id, email: u.email, project_slug: p.slug, notify_emails: j.notify_emails})
+    jobs =
+      from(j in DatasetJob,
+        join: u in Oli.Accounts.Author,
+        on: j.initiated_by_id == u.id,
+        join: p in Oli.Authoring.Course.Project,
+        on: j.project_id == p.id,
+        where: j.id in ^job_ids,
+        select: %{
+          id: j.id,
+          job_id: j.job_id,
+          email: u.email,
+          project_slug: p.slug,
+          notify_emails: j.notify_emails
+        }
+      )
       |> Repo.all()
       |> Enum.reduce(%{}, fn job, all -> Map.put(all, job.id, job) end)
 
@@ -172,19 +179,22 @@ defmodule Oli.Analytics.Datasets do
       job = Map.get(jobs, job_id)
 
       case job do
-        nil -> Logger.error("Job #{job_id} not found")
-        _ ->
+        nil ->
+          Logger.error("Job #{job_id} not found")
 
+        _ ->
           emails = job.notify_emails ++ job.email
 
           Enum.each(emails, fn email ->
             # Send the notification email
-            Logger.debug("Sending dataset notification email to #{email} for job id #{job.job_id}")
+            Logger.debug(
+              "Sending dataset notification email to #{email} for job id #{job.job_id}"
+            )
+
             deliver_completion_email(email, url_builder_fn.(job.project_slug, job.id))
           end)
       end
     end)
-
   end
 
   defp send_email(email, subject, view, assigns) do
@@ -218,10 +228,10 @@ defmodule Oli.Analytics.Datasets do
   initiator_email.
   """
   def browse_jobs(
-    %Paging{limit: limit, offset: offset},
-    %Sorting{direction: direction, field: field},
-    %BrowseJobOptions{} = options) do
-
+        %Paging{limit: limit, offset: offset},
+        %Sorting{direction: direction, field: field},
+        %BrowseJobOptions{} = options
+      ) do
     filter_by_initiated_by_id =
       if options.initiated_by_id,
         do: dynamic([j, _, _], j.initiated_by_id == ^options.initiated_by_id),
@@ -244,46 +254,43 @@ defmodule Oli.Analytics.Datasets do
         statuses -> dynamic([j, _, _], j.status in ^statuses)
       end
 
-      query =
-        DatasetJob
-        |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
-        |> join(:left, [j, _], proj in Oli.Authoring.Course.Project,
-          on: j.project_id == proj.id
-        )
-        |> where(^filter_by_initiated_by_id)
-        |> where(^filter_by_project_id)
-        |> where(^filter_by_job_type)
-        |> where(^filter_by_statuses)
-        |> limit(^limit)
-        |> offset(^offset)
-        |> select_merge([_j, u, p], %{
-          total_count: fragment("count(*) OVER()"),
-          project_title: p.title,
-          project_slug: p.slug,
-          initiator_email: u.email
-        })
+    query =
+      DatasetJob
+      |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
+      |> join(:left, [j, _], proj in Oli.Authoring.Course.Project, on: j.project_id == proj.id)
+      |> where(^filter_by_initiated_by_id)
+      |> where(^filter_by_project_id)
+      |> where(^filter_by_job_type)
+      |> where(^filter_by_statuses)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select_merge([_j, u, p], %{
+        total_count: fragment("count(*) OVER()"),
+        project_title: p.title,
+        project_slug: p.slug,
+        initiator_email: u.email
+      })
 
-      # sorting
-      query =
-        case field do
-          :project_title ->
-            order_by(query, [_, _, p], {^direction, p.title})
+    # sorting
+    query =
+      case field do
+        :project_title ->
+          order_by(query, [_, _, p], {^direction, p.title})
 
-          :project_slug ->
-            order_by(query, [_, _, p], {^direction, p.slug})
+        :project_slug ->
+          order_by(query, [_, _, p], {^direction, p.slug})
 
-          :initiator_email ->
-            order_by(query, [_, u, _], {^direction, u.email})
+        :initiator_email ->
+          order_by(query, [_, u, _], {^direction, u.email})
 
-          _ ->
-            order_by(query, [j, _, _], {^direction, field(j, ^field)})
-        end
+        _ ->
+          order_by(query, [j, _, _], {^direction, field(j, ^field)})
+      end
 
-      # ensure there is always a stable sort order based on id, in addition to the specified sort order
-      query = order_by(query, [j, _, _], j.id)
+    # ensure there is always a stable sort order based on id, in addition to the specified sort order
+    query = order_by(query, [j, _, _], j.id)
 
-      Repo.all(query)
-
+    Repo.all(query)
   end
 
   @doc """
@@ -291,12 +298,16 @@ defmodule Oli.Analytics.Datasets do
   in the system, false otherwise.
   """
   def has_active_job?(user_id, project_id) do
-
-    terminal_states = @terminal_emr_states
-    |> Enum.map(fn status -> String.downcase(status) end)
+    terminal_states =
+      @terminal_emr_states
+      |> Enum.map(fn status -> String.downcase(status) end)
 
     DatasetJob
-    |> where([j], j.project_id == ^project_id and j.initiated_by_id == ^user_id and j.status not in ^terminal_states)
+    |> where(
+      [j],
+      j.project_id == ^project_id and j.initiated_by_id == ^user_id and
+        j.status not in ^terminal_states
+    )
     |> Repo.exists?()
   end
 
@@ -305,7 +316,8 @@ defmodule Oli.Analytics.Datasets do
   jobs in the system)
   """
   def get_project_values() do
-    query = DatasetJob
+    query =
+      DatasetJob
       |> join(:left, [j], proj in Oli.Authoring.Course.Project, on: j.project_id == proj.id)
       |> distinct(true)
       |> select([_j, proj], %{id: proj.id, title: proj.title})
@@ -318,17 +330,17 @@ defmodule Oli.Analytics.Datasets do
   jobs in the system)
   """
   def get_initiator_values(project_id \\ nil) do
-
     filter_by_project_id =
       if project_id,
         do: dynamic([j, _], j.project_id == ^project_id),
         else: true
 
-    query = DatasetJob
-    |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
-    |> distinct(true)
-    |> where(^filter_by_project_id)
-    |> select([_j, u], %{id: u.id, email: u.email})
+    query =
+      DatasetJob
+      |> join(:left, [j], u in Oli.Accounts.Author, on: j.initiated_by_id == u.id)
+      |> distinct(true)
+      |> where(^filter_by_project_id)
+      |> select([_j, u], %{id: u.id, email: u.email})
 
     Repo.all(query)
   end
@@ -364,40 +376,53 @@ defmodule Oli.Analytics.Datasets do
       {:ok, [{1, :success}, {2, :failed}]}
   """
   def update_job_statuses() do
-
     # Get the application and job run ids for all jobs that are not in a terminal state
     active_jobs_by_id = fetch_app_job_ids()
 
-    statuses_by_id = Enum.map(active_jobs_by_id, fn {app_id, [earliest | _rest]} -> EmrServerless.get_jobs(app_id, earliest.inserted_at) end)
-    |> Enum.reduce([], fn result, all ->
-      case result do
-        {:ok, jobs} -> jobs ++ all
-        {:error, reason} ->
-          Logger.warning("Failed to fetch job statuses: #{Kernel.to_string(reason)}")
-          all
-      end
-    end)
-    |> Enum.reduce(%{}, fn job, all -> Map.put(all, job["id"], job) end)
+    statuses_by_id =
+      Enum.map(active_jobs_by_id, fn {app_id, [earliest | _rest]} ->
+        EmrServerless.get_jobs(app_id, earliest.inserted_at)
+      end)
+      |> Enum.reduce([], fn result, all ->
+        case result do
+          {:ok, jobs} ->
+            jobs ++ all
+
+          {:error, reason} ->
+            Logger.warning("Failed to fetch job statuses: #{Kernel.to_string(reason)}")
+            all
+        end
+      end)
+      |> Enum.reduce(%{}, fn job, all -> Map.put(all, job["id"], job) end)
 
     # Pair up the jobs and their statuses, filtering to those whose have changed
-    to_update = Enum.reduce(active_jobs_by_id, [], fn {_, jobs}, all -> jobs ++ all end)
-    |> Enum.map(fn job -> {job, Map.get(statuses_by_id, job.job_run_id, nil)} end)
-    |> Enum.filter(fn {job, status_job} -> status_job != nil and job.status != status_job["state"] |> from_emr_status() end)
+    to_update =
+      Enum.reduce(active_jobs_by_id, [], fn {_, jobs}, all -> jobs ++ all end)
+      |> Enum.map(fn job -> {job, Map.get(statuses_by_id, job.job_run_id, nil)} end)
+      |> Enum.filter(fn {job, status_job} ->
+        status_job != nil and job.status != status_job["state"] |> from_emr_status()
+      end)
 
     # Update the job status in the database
     case to_update do
-      [] -> {:ok, []}
+      [] ->
+        {:ok, []}
+
       _ ->
         case bulk_update_statuses(to_update) do
           {:ok, _} ->
-
             # we want to return back a list of {db_id, new_status} tuples
-            to_update = Enum.map(to_update, fn {db_job, status_job} -> {db_job.id, status_job["state"] |> from_emr_status()} end)
+            to_update =
+              Enum.map(to_update, fn {db_job, status_job} ->
+                {db_job.id, status_job["state"] |> from_emr_status()}
+              end)
+
             {:ok, to_update}
-          e -> e
+
+          e ->
+            e
         end
     end
-
   end
 
   @doc """
@@ -406,7 +431,8 @@ defmodule Oli.Analytics.Datasets do
   survey dataset.
   """
   def fetch_required_survey_ids(section_ids) do
-    query = Oli.Delivery.Sections.Section
+    query =
+      Oli.Delivery.Sections.Section
       |> where([s], s.id in ^section_ids and not is_nil(s.required_survey_resource_id))
       |> distinct(true)
       |> select([s], s.required_survey_resource_id)
@@ -415,7 +441,6 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp init(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
-
     # The job_id will be a combination of the current timestamp and a UUID,
     # to ensure uniqueness across all jobs and ALL servers.  The timestamp is
     # is here to make it easier to identify the job in the AWS console (in the
@@ -423,7 +448,8 @@ defmodule Oli.Analytics.Datasets do
     #
     # We also must comply with AWS naming conventions for EMR client tokens, which
     # must be alphanumeric and cannot contain spaces or colons.
-    readable_timestamp = String.replace("#{DateTime.utc_now()}", " ", "_")
+    readable_timestamp =
+      String.replace("#{DateTime.utc_now()}", " ", "_")
       |> String.replace(":", "-")
 
     job = %DatasetJob{
@@ -440,7 +466,6 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp preprocess(%DatasetJob{job_type: :custom} = job) do
-
     job = set_ignore_student_ids(job)
 
     chunk_size = Utils.determine_chunk_size(job.configuration.excluded_fields)
@@ -452,11 +477,11 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp preprocess(%DatasetJob{job_type: :datashop} = job) do
-
     job = set_ignore_student_ids(job)
 
-    result = build_json_context(job)
-    |> stage_json_context(job)
+    result =
+      build_json_context(job)
+      |> stage_json_context(job)
 
     Logger.debug("Preprocessed dataset job #{job.job_id}")
 
@@ -479,24 +504,24 @@ defmodule Oli.Analytics.Datasets do
       {:ok, %Postgrex.Result{rows: [[context]]}} ->
         {:ok, context}
 
-      e -> e
+      e ->
+        e
     end
   end
 
   defp stage_json_context({:error, e}, _), do: {:error, e}
-  defp stage_json_context({:ok, context}, %DatasetJob{job_id: job_id} = job) do
 
+  defp stage_json_context({:ok, context}, %DatasetJob{job_id: job_id} = job) do
     context_as_str = Poison.encode!(context)
 
     case S3.put_object(Settings.context_bucket(), "contexts/#{job_id}.json", context_as_str, [])
-    |> ExAws.request() do
+         |> ExAws.request() do
       {:ok, _} -> {:ok, job}
       e -> e
     end
   end
 
   defp submit(%DatasetJob{} = job) do
-
     Logger.debug("About to submit job #{job.job_id}")
 
     case determine_application_id() do
@@ -512,23 +537,21 @@ defmodule Oli.Analytics.Datasets do
     end
   end
 
-
   # Find the application id that matches the configured application name
   defp determine_application_id() do
-
     case EmrServerless.list_applications() do
-
       {:ok, json} ->
-         # Parse and find the appliction whose name matches the configured application name
-         emr_application_name = Settings.emr_application_name()
+        # Parse and find the appliction whose name matches the configured application name
+        emr_application_name = Settings.emr_application_name()
 
-         case Enum.filter(json["applications"], fn app -> app["name"] == emr_application_name end) do
-           [app] ->
-              {:ok, app["id"]}
-           [] ->
-              Logger.warning("Dataset application not found: #{emr_application_name}")
-              {:error, "Application not found"}
-         end
+        case Enum.filter(json["applications"], fn app -> app["name"] == emr_application_name end) do
+          [app] ->
+            {:ok, app["id"]}
+
+          [] ->
+            Logger.warning("Dataset application not found: #{emr_application_name}")
+            {:error, "Application not found"}
+        end
 
       e ->
         Logger.error("Failed to list applications: #{Kernel.to_string(e)}")
@@ -544,19 +567,21 @@ defmodule Oli.Analytics.Datasets do
       Enum.reduce(to_update, {[], [], 0}, fn {_db_job, status_job}, {values, params, i} ->
         {
           values ++ ["($#{i + 1}, $#{i + 2}::timestamp, $#{i + 3})"],
-          params ++ [
-            status_job["state"] |> String.downcase(),
-            if status_job["state"] in @terminal_emr_states do
-              DateTime.utc_now()
-            else
-              nil
-            end,
-            status_job["id"]],
+          params ++
+            [
+              status_job["state"] |> String.downcase(),
+              if status_job["state"] in @terminal_emr_states do
+                DateTime.utc_now()
+              else
+                nil
+              end,
+              status_job["id"]
+            ],
           i + 3
         }
       end)
 
-      values = Enum.join(values, ",")
+    values = Enum.join(values, ",")
 
     sql = """
       UPDATE dataset_jobs
@@ -584,14 +609,14 @@ defmodule Oli.Analytics.Datasets do
 
   defp fetch_app_job_ids() do
     # Get the application and job run ids for all jobs that are not in a terminal state
-    query = from(j in DatasetJob,
-      where: j.status in [:submitted, :pending, :scheduled, :running, :cancelling, :queued])
+    query =
+      from(j in DatasetJob,
+        where: j.status in [:submitted, :pending, :scheduled, :running, :cancelling, :queued]
+      )
 
     Repo.all(query)
     |> Enum.group_by(fn job -> job.application_id end)
     # now sort each DatasetJob struct  by earliest inserted_at
     |> Enum.map(fn {app_id, jobs} -> {app_id, Enum.sort_by(jobs, & &1.inserted_at)} end)
-
   end
-
 end

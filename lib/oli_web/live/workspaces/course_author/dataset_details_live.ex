@@ -8,43 +8,40 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
 
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug, "job_id" => job_id}, _session, socket) do
-
     # Get the job while verifying that it pertains to this project
     case Datasets.get_job(job_id, project_slug) do
-
       # Either this job doesn't exist or it doesn't belong to this project
       nil ->
         {:ok,
-          Phoenix.LiveView.redirect(socket,
-            to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
-        )}
+         Phoenix.LiveView.redirect(socket,
+           to: Routes.static_page_path(OliWeb.Endpoint, :not_found)
+         )}
 
       job ->
-
         # If the job status is success, we fetch and parse the job result
         # manifest in a separate task
-        results_manifest = case job.status == :success do
-          true ->
-            pid = self()
-            Task.async(fn ->
-              result = Datasets.fetch_manifest(job)
-              send(pid, {:manifest, result})
-            end)
+        results_manifest =
+          case job.status == :success do
+            true ->
+              pid = self()
 
-            :waiting
+              Task.async(fn ->
+                result = Datasets.fetch_manifest(job)
+                send(pid, {:manifest, result})
+              end)
 
-          false ->
-            nil
+              :waiting
 
-        end
+            false ->
+              nil
+          end
 
         {:ok,
-          assign(socket,
-            active: :datasets,
-            job: job,
-            results_manifest: results_manifest
-          )
-        }
+         assign(socket,
+           active: :datasets,
+           job: job,
+           results_manifest: results_manifest
+         )}
     end
   end
 
@@ -55,13 +52,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
     <div class="card mt-5 mb-5">
       <div class="card-body">
         <p class="card-text">
-          <strong>Job Id:</strong> <%= @job.job_id %><br>
-          <strong>Job Run Id:</strong> <%= @job.job_run_id %><br>
-          <strong>Job Type:</strong> <%= @job.job_type %><br>
-          <strong>Status:</strong> <%= @job.status %><br>
-          <strong>Notify:</strong> <%= @job.notify_emails |> Enum.join(" ") %><br>
-          <strong>Started:</strong> <%= @job.inserted_at %><br>
-          <strong>Finished:</strong> <%= @job.finished_on %><br>
+          <strong>Job Id:</strong> <%= @job.job_id %><br />
+          <strong>Job Run Id:</strong> <%= @job.job_run_id %><br />
+          <strong>Job Type:</strong> <%= @job.job_type %><br />
+          <strong>Status:</strong> <%= @job.status %><br />
+          <strong>Notify:</strong> <%= @job.notify_emails |> Enum.join(" ") %><br />
+          <strong>Started:</strong> <%= @job.inserted_at %><br />
+          <strong>Finished:</strong> <%= @job.finished_on %><br />
           <strong>Started By:</strong> <%= @job.initiator_email %>
         </p>
       </div>
@@ -72,7 +69,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
 
   defp render_manifest(%{results_manifest: nil} = assigns) do
     ~H"""
-
     """
   end
 
@@ -83,7 +79,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
   end
 
   defp render_manifest(%{results_manifest: {:ok, %{"chunks" => []}}} = assigns) do
-
     ~H"""
     <div class="card mt-5 mb-5">
       <div class="card-body">
@@ -96,14 +91,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
   end
 
   defp render_manifest(%{results_manifest: {:ok, manifest}} = assigns) do
-
     assigns = Map.merge(assigns, %{manifest: manifest})
 
     ~H"""
     <div class="card mt-5 mb-5">
       <div class="card-body">
         <p class="card-text">
-          <strong><%= Enum.count(@manifest["chunks"])%> file(s) total:</strong>
+          <strong><%= Enum.count(@manifest["chunks"]) %> file(s) total:</strong>
         </p>
         <table class="table table-striped">
           <thead>
@@ -132,23 +126,21 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
 
   @impl true
   def handle_info({:manifest, result}, socket) do
-
     case result do
       {:ok, _manifest} ->
         Logger.debug("Dataset job manifest fetched")
+
       {:error, error} ->
         Logger.error("Dataset job manifest fetch failed: #{error}")
     end
 
     {:noreply,
-      assign(socket,
-        results_manifest: result
-      )
-    }
+     assign(socket,
+       results_manifest: result
+     )}
   end
 
   def handle_info(_, socket) do
     {:noreply, socket}
   end
-
 end

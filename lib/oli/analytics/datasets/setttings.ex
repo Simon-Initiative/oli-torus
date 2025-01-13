@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Datasets.Settings do
-
   def emr_application_name do
     Application.get_env(:oli, :dataset_generation)[:emr_application_name]
   end

@@ -11,7 +11,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
 
-
   alias OliWeb.Workspaces.CourseAuthor.Datasets.{
     DatasetsTableModel
   }
@@ -20,11 +19,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
 
   @impl Phoenix.LiveView
   def mount(params, _session, socket) do
-
-    {project_id, project_slug} = case Map.get(params, "project_id") do
-      nil -> {nil, nil}
-      project_slug -> {Oli.Authoring.Course.get_project_by_slug(project_slug).id, project_slug}
-    end
+    {project_id, project_slug} =
+      case Map.get(params, "project_id") do
+        nil -> {nil, nil}
+        project_slug -> {Oli.Authoring.Course.get_project_by_slug(project_slug).id, project_slug}
+      end
 
     options = %BrowseJobOptions{
       project_id: project_id,
@@ -44,10 +43,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
 
     users = Datasets.get_initiator_values(project_id)
 
-    projects = case project_id do
-      nil -> Datasets.get_project_values()
-      _ -> nil
-    end
+    projects =
+      case project_id do
+        nil -> Datasets.get_project_values()
+        _ -> nil
+      end
 
     {:ok, table_model} =
       DatasetsTableModel.new(jobs, project_id == nil)
@@ -116,14 +116,22 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
       <p>
         View the status of dataset creation jobs
         <%= if @project_slug do %>
-          and <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.CreateJobLive, @project_slug)}>reqeust new dataset jobs</a>
+          and
+          <a href={
+            Routes.live_path(
+              OliWeb.Endpoint,
+              OliWeb.Workspaces.CourseAuthor.CreateJobLive,
+              @project_slug
+            )
+          }>
+            reqeust new dataset jobs
+          </a>
         <% end %>
       </p>
     </div>
     <div class="mt-5 mb-3">
       <p>Filter dataset jobs by:</p>
       <div class="d-flex justify-content-between">
-
         <form id="filter_form" />
 
         <%= if @projects do %>
@@ -184,8 +192,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
             </option>
           <% end %>
         </select>
-
-
       </div>
     </div>
 
@@ -202,25 +208,57 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
   @impl Phoenix.LiveView
   def handle_event("filter_project", %{"filter_project" => project_id}, socket) do
     project_id = String.to_integer(project_id)
-    filter_by(socket, project_id, socket.assigns.filter_status, socket.assigns.filter_type, socket.assigns.filter_user, socket.assigns.table_model)
+
+    filter_by(
+      socket,
+      project_id,
+      socket.assigns.filter_status,
+      socket.assigns.filter_type,
+      socket.assigns.filter_user,
+      socket.assigns.table_model
+    )
   end
 
   @impl Phoenix.LiveView
   def handle_event("filter_status", %{"filter_status" => status}, socket) do
     status = String.to_existing_atom(status)
-    filter_by(socket, socket.assigns.filter_project, status, socket.assigns.filter_type, socket.assigns.filter_user, socket.assigns.table_model)
+
+    filter_by(
+      socket,
+      socket.assigns.filter_project,
+      status,
+      socket.assigns.filter_type,
+      socket.assigns.filter_user,
+      socket.assigns.table_model
+    )
   end
 
   @impl Phoenix.LiveView
   def handle_event("filter_type", %{"filter_type" => type}, socket) do
     type = String.to_existing_atom(type)
-    filter_by(socket, socket.assigns.filter_project, socket.assigns.filter_status, type, socket.assigns.filter_user, socket.assigns.table_model)
+
+    filter_by(
+      socket,
+      socket.assigns.filter_project,
+      socket.assigns.filter_status,
+      type,
+      socket.assigns.filter_user,
+      socket.assigns.table_model
+    )
   end
 
   @impl Phoenix.LiveView
   def handle_event("filter_user", %{"filter_user" => user_id}, socket) do
     user_id = String.to_existing_atom(user_id)
-    filter_by(socket, socket.assigns.filter_project, socket.assigns.filter_status, socket.assigns.filter_type, user_id, socket.assigns.table_model)
+
+    filter_by(
+      socket,
+      socket.assigns.filter_project,
+      socket.assigns.filter_status,
+      socket.assigns.filter_type,
+      user_id,
+      socket.assigns.table_model
+    )
   end
 
   @impl Phoenix.LiveView
@@ -274,10 +312,30 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
 
   defp filter_by(socket, project_id, status, job_type, initiated_by_id, table_model) do
     options = %BrowseJobOptions{
-      project_id: if project_id == :all do nil else project_id end,
-      statuses: if status == :all do [] else [status] end,
-      job_type: if job_type == :all do nil else job_type end,
-      initiated_by_id: if initiated_by_id == :all do nil else initiated_by_id end
+      project_id:
+        if project_id == :all do
+          nil
+        else
+          project_id
+        end,
+      statuses:
+        if status == :all do
+          []
+        else
+          [status]
+        end,
+      job_type:
+        if job_type == :all do
+          nil
+        else
+          job_type
+        end,
+      initiated_by_id:
+        if initiated_by_id == :all do
+          nil
+        else
+          initiated_by_id
+        end
     }
 
     jobs =
@@ -302,5 +360,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
        options: options
      )}
   end
-
 end

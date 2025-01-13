@@ -1,5 +1,4 @@
 defmodule Oli.Analytics.Datasets.Test do
-
   use Oli.DataCase
 
   alias Oli.Analytics.Datasets.BrowseJobOptions
@@ -30,8 +29,9 @@ defmodule Oli.Analytics.Datasets.Test do
       }
     }
 
-    {:ok, _} = DatasetJob.changeset(template, attrs)
-    |> Repo.insert()
+    {:ok, _} =
+      DatasetJob.changeset(template, attrs)
+      |> Repo.insert()
   end
 
   describe "update job statuses" do
@@ -39,12 +39,50 @@ defmodule Oli.Analytics.Datasets.Test do
       Seeder.base_project_with_resource2()
     end
 
-    test "multiple jobs, but all from same application id", %{project: project, author: author1, author2: author2} do
+    test "multiple jobs, but all from same application id", %{
+      project: project,
+      author: author1,
+      author2: author2
+    } do
+      {:ok, %{id: id1} = job1} =
+        job(%{
+          status: :pending,
+          job_id: "job_id_1",
+          job_run_id: "1",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :datashop
+        })
 
-      {:ok, %{id: id1} = job1} = job(%{status: :pending, job_id: "job_id_1", job_run_id: "1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
-      {:ok, %{id: id2} = job2} = job(%{status: :running, job_id: "job_id_2", job_run_id: "2",project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      {:ok, %{id: id3} = job3} = job(%{status: :running, job_id: "job_id_3", job_run_id: "3",project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      {:ok, job4} = job(%{status: :failed, job_id: "job_id_4", job_run_id: "4",project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
+      {:ok, %{id: id2} = job2} =
+        job(%{
+          status: :running,
+          job_id: "job_id_2",
+          job_run_id: "2",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :custom
+        })
+
+      {:ok, %{id: id3} = job3} =
+        job(%{
+          status: :running,
+          job_id: "job_id_3",
+          job_run_id: "3",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :custom
+        })
+
+      {:ok, job4} =
+        job(%{
+          status: :failed,
+          job_id: "job_id_4",
+          job_run_id: "4",
+          project_id: project.id,
+          initiated_by_id: author2.id,
+          job_type: :custom
+        })
 
       MockHTTP
       |> expect(:get, fn _, _ ->
@@ -53,24 +91,24 @@ defmodule Oli.Analytics.Datasets.Test do
            status_code: 200,
            body:
              Jason.encode!(%{
-                "jobRuns" => [
-                  %{
-                    "id" => "1",
-                    "state"=> "RUNNING"
-                  },
-                  %{
-                    "id" => "2",
-                    "state" => "FAILED"
-                  },
-                  %{
-                    "id" => "3",
-                    "state" => "SUCCESS"
-                  },
-                  %{
-                    "id" => "4",
-                    "state" => "FAILED"
-                  }
-                ]
+               "jobRuns" => [
+                 %{
+                   "id" => "1",
+                   "state" => "RUNNING"
+                 },
+                 %{
+                   "id" => "2",
+                   "state" => "FAILED"
+                 },
+                 %{
+                   "id" => "3",
+                   "state" => "SUCCESS"
+                 },
+                 %{
+                   "id" => "4",
+                   "state" => "FAILED"
+                 }
+               ]
              })
          }}
       end)
@@ -96,47 +134,88 @@ defmodule Oli.Analytics.Datasets.Test do
       job4 = Repo.get(DatasetJob, job4.id)
       assert job4.status == :failed
       assert job4.finished_on == nil
-
     end
 
-    test "multiple jobs, and multiple application ids", %{project: project, author: author1, author2: author2} do
+    test "multiple jobs, and multiple application ids", %{
+      project: project,
+      author: author1,
+      author2: author2
+    } do
+      {:ok, %{id: id1} = job1} =
+        job(%{
+          application_id: "ONE",
+          status: :pending,
+          job_id: "job_id_1",
+          job_run_id: "1",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :datashop
+        })
 
-      {:ok, %{id: id1} = job1} = job(%{application_id: "ONE", status: :pending, job_id: "job_id_1", job_run_id: "1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
-      {:ok, %{id: id2} = job2} = job(%{application_id: "TWO", status: :running, job_id: "job_id_2", job_run_id: "2",project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      {:ok, %{id: id3} = job3} = job(%{application_id: "TWO", status: :running, job_id: "job_id_3", job_run_id: "3",project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      {:ok, job4} = job(%{application_id: "TWO", status: :failed, job_id: "job_id_4", job_run_id: "4",project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
+      {:ok, %{id: id2} = job2} =
+        job(%{
+          application_id: "TWO",
+          status: :running,
+          job_id: "job_id_2",
+          job_run_id: "2",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :custom
+        })
+
+      {:ok, %{id: id3} = job3} =
+        job(%{
+          application_id: "TWO",
+          status: :running,
+          job_id: "job_id_3",
+          job_run_id: "3",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :custom
+        })
+
+      {:ok, job4} =
+        job(%{
+          application_id: "TWO",
+          status: :failed,
+          job_id: "job_id_4",
+          job_run_id: "4",
+          project_id: project.id,
+          initiated_by_id: author2.id,
+          job_type: :custom
+        })
 
       # Mock out 2 different requests, one for each application id
       MockHTTP
       |> expect(:get, 2, fn url, _ ->
-
-        body = if String.contains?(url, "ONE") do
-          Jason.encode!(%{
-            "jobRuns" => [
-              %{
-                "id" => "1",
-                "state"=> "RUNNING"
-              }
-            ]
-         })
-        else
-          Jason.encode!(%{
-            "jobRuns" => [
-              %{
-                "id" => "2",
-                "state" => "FAILED"
-              },
-              %{
-                "id" => "3",
-                "state" => "SUCCESS"
-              },
-              %{
-                "id" => "4",
-                "state" => "FAILED"
-              }
-            ]
-         })
-        end
+        body =
+          if String.contains?(url, "ONE") do
+            Jason.encode!(%{
+              "jobRuns" => [
+                %{
+                  "id" => "1",
+                  "state" => "RUNNING"
+                }
+              ]
+            })
+          else
+            Jason.encode!(%{
+              "jobRuns" => [
+                %{
+                  "id" => "2",
+                  "state" => "FAILED"
+                },
+                %{
+                  "id" => "3",
+                  "state" => "SUCCESS"
+                },
+                %{
+                  "id" => "4",
+                  "state" => "FAILED"
+                }
+              ]
+            })
+          end
 
         {:ok,
          %HTTPoison.Response{
@@ -168,34 +247,75 @@ defmodule Oli.Analytics.Datasets.Test do
 
       job4 = Repo.get(DatasetJob, job4.id)
       assert job4.status == :failed
-
     end
 
-    test "multiple jobs, and multiple application ids WITH FAILURE", %{project: project, author: author1, author2: author2} do
+    test "multiple jobs, and multiple application ids WITH FAILURE", %{
+      project: project,
+      author: author1,
+      author2: author2
+    } do
+      {:ok, %{id: id1} = job1} =
+        job(%{
+          application_id: "ONE",
+          status: :pending,
+          job_id: "job_id_1",
+          job_run_id: "1",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :datashop
+        })
 
-      {:ok, %{id: id1} = job1} = job(%{application_id: "ONE", status: :pending, job_id: "job_id_1", job_run_id: "1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
-      {:ok, job2} = job(%{application_id: "TWO", status: :running, job_id: "job_id_2", job_run_id: "2",project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      {:ok, job3} = job(%{application_id: "TWO", status: :running, job_id: "job_id_3", job_run_id: "3",project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      {:ok, job4} = job(%{application_id: "TWO", status: :failed, job_id: "job_id_4", job_run_id: "4",project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
+      {:ok, job2} =
+        job(%{
+          application_id: "TWO",
+          status: :running,
+          job_id: "job_id_2",
+          job_run_id: "2",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :custom
+        })
+
+      {:ok, job3} =
+        job(%{
+          application_id: "TWO",
+          status: :running,
+          job_id: "job_id_3",
+          job_run_id: "3",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :custom
+        })
+
+      {:ok, job4} =
+        job(%{
+          application_id: "TWO",
+          status: :failed,
+          job_id: "job_id_4",
+          job_run_id: "4",
+          project_id: project.id,
+          initiated_by_id: author2.id,
+          job_type: :custom
+        })
 
       # Mock out 2 different requests, one for each application id,
       # but with the second request failing
       MockHTTP
       |> expect(:get, 2, fn url, _ ->
-
         if String.contains?(url, "ONE") do
-
-          {:ok, %HTTPoison.Response{
-            status_code: 200,
-            body: Jason.encode!(%{
-              "jobRuns" => [
-                %{
-                  "id" => "1",
-                  "state"=> "RUNNING"
-                }
-              ]
-            })
-          }}
+          {:ok,
+           %HTTPoison.Response{
+             status_code: 200,
+             body:
+               Jason.encode!(%{
+                 "jobRuns" => [
+                   %{
+                     "id" => "1",
+                     "state" => "RUNNING"
+                   }
+                 ]
+               })
+           }}
         else
           {:error, :timeout}
         end
@@ -219,12 +339,18 @@ defmodule Oli.Analytics.Datasets.Test do
 
       job4 = Repo.get(DatasetJob, job4.id)
       assert job4.status == :failed
-
     end
 
     test "misalignment between jobs in DB and jobs in EMR", %{project: project, author: author1} do
-
-      {:ok, job1} = job(%{status: :pending, job_id: "job_id_1", job_run_id: "1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
+      {:ok, job1} =
+        job(%{
+          status: :pending,
+          job_id: "job_id_1",
+          job_run_id: "1",
+          project_id: project.id,
+          initiated_by_id: author1.id,
+          job_type: :datashop
+        })
 
       MockHTTP
       |> expect(:get, fn _, _ ->
@@ -233,12 +359,12 @@ defmodule Oli.Analytics.Datasets.Test do
            status_code: 200,
            body:
              Jason.encode!(%{
-                "jobRuns" => [
-                  %{
-                    "id" => "2",
-                    "state"=> "RUNNING"
-                  }
-                ]
+               "jobRuns" => [
+                 %{
+                   "id" => "2",
+                   "state" => "RUNNING"
+                 }
+               ]
              })
          }}
       end)
@@ -248,8 +374,6 @@ defmodule Oli.Analytics.Datasets.Test do
       # Read the job again from the DB to make sure the status hasn't been updated
       job1 = Repo.get(DatasetJob, job1.id)
       assert job1.status == :pending
-
-
     end
   end
 
@@ -259,67 +383,109 @@ defmodule Oli.Analytics.Datasets.Test do
     end
 
     test "browse basics", %{project: project, author: author1, author2: author2} do
+      job(%{
+        status: :pending,
+        job_id: "job_id_1",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :datashop
+      })
 
-      job(%{status: :pending, job_id: "job_id_1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
-      job(%{status: :running, job_id: "job_id_2", project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      job(%{status: :running, job_id: "job_id_3", project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      job(%{status: :failed, job_id: "job_id_4", project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
+      job(%{
+        status: :running,
+        job_id: "job_id_2",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :custom
+      })
 
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id, job_type: nil}
-      )
+      job(%{
+        status: :running,
+        job_id: "job_id_3",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :custom
+      })
+
+      job(%{
+        status: :failed,
+        job_id: "job_id_4",
+        project_id: project.id,
+        initiated_by_id: author2.id,
+        job_type: :custom
+      })
+
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{project_id: project.id, job_type: nil}
+        )
 
       assert length(result) == 4
 
       # filter by job type
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id, job_type: :custom}
-      )
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{project_id: project.id, job_type: :custom}
+        )
+
       assert length(result) == 3
 
       # filter by initiator
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id, initiated_by_id: author1.id}
-      )
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{project_id: project.id, initiated_by_id: author1.id}
+        )
+
       assert length(result) == 3
 
       # filter by initiator AND job type
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id, job_type: :datashop, initiated_by_id: author1.id}
-      )
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{
+            project_id: project.id,
+            job_type: :datashop,
+            initiated_by_id: author1.id
+          }
+        )
+
       assert length(result) == 1
 
       # filter by statuses
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id, statuses: [:pending, :running]}
-      )
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{project_id: project.id, statuses: [:pending, :running]}
+        )
+
       assert length(result) == 3
 
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id, statuses: [:pending]}
-      )
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{project_id: project.id, statuses: [:pending]}
+        )
+
       assert length(result) == 1
 
       # filter by project
-      result = Datasets.browse_jobs(
-        %Paging{limit: 10, offset: 0},
-        %Sorting{field: :job_id, direction: :desc},
-        %BrowseJobOptions{project_id: project.id + 1}
-      )
-      assert length(result) == 0
+      result =
+        Datasets.browse_jobs(
+          %Paging{limit: 10, offset: 0},
+          %Sorting{field: :job_id, direction: :desc},
+          %BrowseJobOptions{project_id: project.id + 1}
+        )
 
+      assert length(result) == 0
     end
   end
 
@@ -329,11 +495,37 @@ defmodule Oli.Analytics.Datasets.Test do
     end
 
     test "project values", %{project: project, author: author1, author2: author2} do
+      job(%{
+        status: :pending,
+        job_id: "job_id_1",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :datashop
+      })
 
-      job(%{status: :pending, job_id: "job_id_1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
-      job(%{status: :running, job_id: "job_id_2", project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      job(%{status: :running, job_id: "job_id_3", project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      job(%{status: :failed, job_id: "job_id_4", project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
+      job(%{
+        status: :running,
+        job_id: "job_id_2",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :custom
+      })
+
+      job(%{
+        status: :running,
+        job_id: "job_id_3",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :custom
+      })
+
+      job(%{
+        status: :failed,
+        job_id: "job_id_4",
+        project_id: project.id,
+        initiated_by_id: author2.id,
+        job_type: :custom
+      })
 
       result = Datasets.get_project_values()
       assert length(result) == 1
@@ -341,17 +533,46 @@ defmodule Oli.Analytics.Datasets.Test do
     end
 
     test "initiator values", %{project: project, author: author1, author2: author2} do
+      job(%{
+        status: :pending,
+        job_id: "job_id_1",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :datashop
+      })
 
-      job(%{status: :pending, job_id: "job_id_1", project_id: project.id, initiated_by_id: author1.id, job_type: :datashop})
-      job(%{status: :running, job_id: "job_id_2", project_id: project.id, initiated_by_id: author1.id, job_type: :custom})
-      job(%{status: :running, job_id: "job_id_3", project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
-      job(%{status: :failed, job_id: "job_id_4", project_id: project.id, initiated_by_id: author2.id, job_type: :custom})
+      job(%{
+        status: :running,
+        job_id: "job_id_2",
+        project_id: project.id,
+        initiated_by_id: author1.id,
+        job_type: :custom
+      })
+
+      job(%{
+        status: :running,
+        job_id: "job_id_3",
+        project_id: project.id,
+        initiated_by_id: author2.id,
+        job_type: :custom
+      })
+
+      job(%{
+        status: :failed,
+        job_id: "job_id_4",
+        project_id: project.id,
+        initiated_by_id: author2.id,
+        job_type: :custom
+      })
 
       result = Datasets.get_initiator_values()
       assert length(result) == 2
       result = Enum.sort(result)
-      assert result == [%{id: author1.id, email: author1.email}, %{id: author2.id, email: author2.email}]
+
+      assert result == [
+               %{id: author1.id, email: author1.email},
+               %{id: author2.id, email: author2.email}
+             ]
     end
   end
-
 end

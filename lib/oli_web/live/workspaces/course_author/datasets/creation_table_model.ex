@@ -76,12 +76,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datasets.CreationTableModel do
     case MapSet.member?(assigns.model.data.selected_ids, section.id) do
       true ->
         ~H"""
-        <OliWeb.Icons.check/>
+        <OliWeb.Icons.check />
         """
 
       false ->
         ~H"""
-        <OliWeb.Icons.no_icon/>
+        <OliWeb.Icons.no_icon />
         """
     end
   end
