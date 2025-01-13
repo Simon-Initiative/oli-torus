@@ -1,5 +1,40 @@
 defmodule Oli.Analytics.Datasets do
 
+  @moduledoc """
+  Provides functionality for creating and managing dataset creation jobs
+  in the system. This module provides a single, high level API encapsulating
+  both the internal and external operations required for the dataset job lifecycle.
+
+  The external operations are provided through the AWS EMR serverless environment, but
+  it is intentional to hide all aspects of that environment from the caller, so that
+  it can be swapped out for a different provider or implementation in the future.
+
+  The primary operations and the functions that are exposed are:
+
+  * `create_job/4` - Submits a new dataset creation job
+  * `update_job_statuses/0` - Updates the status of all active jobs in the system
+  * `browse_jobs/3` - Browse jobs in the system, with optional filtering and sorting
+  * `send_notification_emails/2` - Sends notification emails to the users who initiated the jobs
+
+  The creation of dataset job results in a %DatasetJob{} record being persisted to the
+  database and the job being submitted to the EMR serverless environment.  The remote EMR
+  environment is polled periodically by `update_job_statuses/0`, which updates the status of
+  all active jobs in the system.  When a job reaches a terminal state, the users who initiated
+  the job are notified by email.
+
+  Jobs can be browsed in the UI using `browse_jobs/3`, which supports pagination, filtering
+  and sorting by project, initiator, job type, and status.  The results are returned as a list of
+  %DatasetJob{} records, which can be used to display a list of jobs in the UI - particularly in
+  tabular form.
+
+  Jobs executing in the current EMR serverless environment generate and store result files
+  in an S3 bucket.  These result sets typically are comprised of several files.  A manifest file
+  in JSON format is generated for each job, which contains metadata about the job and the URL locations
+  of all of the result files. This manifest file can be fetched from S3 and decoded into a map
+  by `fetch_manifest/1`.
+
+  """
+
   require Logger
 
   alias Oli.Analytics.Datasets.JobConfig
@@ -91,14 +126,14 @@ defmodule Oli.Analytics.Datasets do
   """
   def create_job(job_type, project_id, initiated_by_id, %JobConfig{} = config) do
 
-    Logger.info("Dataset job creation initiated for project #{project_id}, job id #{config.job_id}")
+    Logger.info("Dataset job creation initiated for project #{project_id}, job type #{job_type}")
 
     with {:ok, job} <- init(job_type, project_id, initiated_by_id, config),
       {:ok, job} <- preprocess(job),
       {:ok, job} <- submit(job),
       {:ok, job} <- persist(job) do
 
-        Logger.info("Dataset job successfully created for project #{project_id}, job id #{config.job_id}")
+        Logger.info("Dataset job successfully created for project #{project_id}, job id #{job.job_id}")
         {:ok, job}
     else
       {:error, e} ->
@@ -118,10 +153,11 @@ defmodule Oli.Analytics.Datasets do
   contains a link to the job details page, where the user can view the status of the
   job and download the results.
   """
-  def send_notification_emails(to_notify, path_builder_fn) do
+  def send_notification_emails(to_notify, url_builder_fn) do
 
     Logger.info("Sending notification emails for #{Enum.count(to_notify)} jobs")
 
+    # Get the database ids of the jobs to notify
     {job_ids, _new_status} = Enum.unzip(to_notify)
 
     jobs = from(j in DatasetJob,

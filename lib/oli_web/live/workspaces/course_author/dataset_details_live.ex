@@ -9,9 +9,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug, "job_id" => job_id}, _session, socket) do
 
-    # Get the job and verify that it pertains to this project
+    # Get the job while verifying that it pertains to this project
     case Datasets.get_job(job_id, project_slug) do
 
+      # Either this job doesn't exist or it doesn't belong to this project
       nil ->
         {:ok,
           Phoenix.LiveView.redirect(socket,
@@ -129,16 +130,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
     """
   end
 
-  @impl Phoenix.LiveView
-  def handle_event("download_all", _, socket) do
-    {:noreply, socket}
-  end
-
   @impl true
   def handle_info({:manifest, result}, socket) do
 
     case result do
-      {:ok, manifest} ->
+      {:ok, _manifest} ->
         Logger.debug("Dataset job manifest fetched")
       {:error, error} ->
         Logger.error("Dataset job manifest fetch failed: #{error}")
