@@ -225,7 +225,8 @@ defmodule Oli.Delivery.Sections.Section do
       :assistant_enabled,
       :welcome_title,
       :encouraging_subtitle,
-      :agenda
+      :agenda,
+      :certificate_enabled
     ])
     |> cast_embed(:customizations, required: false)
     |> validate_required(@required_fields)
