@@ -5892,6 +5892,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 300px;
 }
 
+.max-w-\[30rem\] {
+  max-width: 30rem;
+}
+
 .max-w-\[400px\] {
   max-width: 400px;
 }
@@ -6469,6 +6473,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-\[25px\] {
   gap: 25px;
+}
+
+.gap-\[30px\] {
+  gap: 30px;
 }
 
 .gap-\[31px\] {
@@ -8352,6 +8360,11 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 20px;
 }
 
+.px-\[30px\] {
+  padding-left: 30px;
+  padding-right: 30px;
+}
+
 .px-\[35px\] {
   padding-left: 35px;
   padding-right: 35px;
@@ -8485,6 +8498,11 @@ table.table-striped tbody tr:nth-child(even) {
 .py-\[4px\] {
   padding-top: 4px;
   padding-bottom: 4px;
+}
+
+.py-\[50px\] {
+  padding-top: 50px;
+  padding-bottom: 50px;
 }
 
 .py-\[60px\] {
