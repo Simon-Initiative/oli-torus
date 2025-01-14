@@ -29,6 +29,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [scriptEnv, setScriptEnv] = useState<any>();
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
+  const [uniqueLessonId, setUniqueLessonId] = useState<boolean>(false);
   const [frameX, setFrameX] = useState<number>(0);
   const [frameY, setFrameY] = useState<number>(0);
   const [frameZ, setFrameZ] = useState<number>(0);
@@ -172,6 +173,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (sVisible !== undefined) {
       setFrameVisible(parseBool(sVisible));
     }
+    const sUniqueLessonId = currentStateSnapshot[`${domain}.${id}.LESSON_ID_UNIQUE`];
+    if (sUniqueLessonId !== undefined) {
+      setUniqueLessonId(parseBool(sUniqueLessonId));
+    }
 
     const sX = currentStateSnapshot[`${domain}.${id}.IFRAME_frameX`];
     if (sX !== undefined) {
@@ -263,6 +268,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     const sVisible = currentStateSnapshot[`${domain}.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
       setFrameVisible(parseBool(sVisible));
+    }
+
+    const sUniqueLessonId = currentStateSnapshot[`${domain}.${id}.LESSON_ID_UNIQUE`];
+    if (sUniqueLessonId !== undefined) {
+      setUniqueLessonId(parseBool(sUniqueLessonId));
     }
 
     const sX = currentStateSnapshot[`${domain}.${id}.IFRAME_frameX`];
@@ -657,7 +667,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // taken from simcapi.js TODO move somewhere, use from settings
     simLife.handshake.config = {
       context: context,
-      lessonId,
+      lessonId: uniqueLessonId ? `${lessonId}_${guid()}` : lessonId,
       questionId,
       sectionSlug,
       userId: currentUserId,
@@ -915,6 +925,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (visibility) {
       setFrameVisible(parseBool(visibility.value));
     }
+
+    const sUniqueLessonId = interested.find((v) => v.key === 'LESSON_ID_UNIQUE');
+    if (sUniqueLessonId !== undefined) {
+      setUniqueLessonId(parseBool(sUniqueLessonId));
+    }
+
     const xPos = interested.find((v) => v.key === 'IFRAME_frameX');
     if (xPos) {
       setFrameX(xPos.value);
