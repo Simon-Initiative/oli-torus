@@ -13,6 +13,21 @@ defmodule OliWeb.LinkAccountLiveTest do
       {:ok, _lv, html} = live(conn, ~p"/users/link_account")
 
       assert html =~ "Link Authoring Account"
+      assert html =~ "Sign in with your authoring account credentials below to link your account."
+    end
+
+    test "suggests to link current author if already signed in", %{conn: conn} do
+      user = insert(:user)
+      author = insert(:author)
+
+      conn = conn |> log_in_user(user) |> log_in_author(author)
+
+      {:ok, _lv, html} = live(conn, ~p"/users/link_account")
+
+      assert html =~ "Link Authoring Account"
+
+      assert html =~
+               "You are currently logged in as <b>#{author.email}</b>. Would you like to link this account?"
     end
   end
 

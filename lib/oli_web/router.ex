@@ -248,7 +248,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through [:browser, :require_authenticated_user, :fetch_current_author]
 
     live "/users/link_account", LinkAccountLive, :link_account
   end

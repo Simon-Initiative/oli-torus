@@ -7,8 +7,10 @@ defmodule OliWeb.LinkAccountLive do
   import OliWeb.Components.Auth
 
   alias Oli.Accounts
+  alias Oli.Accounts.{Author, User}
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount {OliWeb.AuthorAuth, :mount_current_author}
 
   def mount(_params, _session, socket) do
     email = Phoenix.Flash.get(socket.assigns.flash, :email)
@@ -25,6 +27,29 @@ defmodule OliWeb.LinkAccountLive do
        authentication_providers: authentication_providers,
        linked_account: linked_account
      ), temporary_assigns: [form: form]}
+  end
+
+  def handle_event(
+        "link_current_author",
+        _params,
+        socket
+      ) do
+    case Accounts.link_user_author_account(
+           socket.assigns.current_user,
+           socket.assigns.current_author
+         ) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your authoring account has been linked to your user account.")
+         |> redirect(to: ~p"/users/settings")}
+
+      {:error, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to link account.")
+         |> redirect(to: ~p"/users/link_account")}
+    end
   end
 
   def handle_event(
@@ -61,56 +86,13 @@ defmodule OliWeb.LinkAccountLive do
             <div class="text-center text-xl font-normal leading-7 pb-8">
               Link Authoring Account
             </div>
-            <p class="text-center">
-              Sign in with your authoring account credentials below to link your account.
-            </p>
 
-            <div
-              :if={not Enum.empty?(@authentication_providers)}
-              class="mx-auto flex flex-col gap-2 py-8"
-            >
-              <.authorization_link
-                :for={provider <- @authentication_providers}
-                provider={provider}
-                href={~p"/authors/auth/#{provider}/new?link_account_user_id=#{@current_user.id}"}
-              />
-            </div>
-
-            <.form :let={f} id="link_account_form" for={@form} action={~p"/authors/log_in"}>
-              <div class="mx-auto flex flex-col gap-2 py-8">
-                <div>
-                  <%= email_input(f, :email,
-                    class:
-                      "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
-                    placeholder: "Email",
-                    required: true,
-                    autofocus: focusHelper(f, :email, default: true)
-                  ) %>
-                  <%= error_tag(f, :email) %>
-                </div>
-                <div>
-                  <%= password_input(f, :password,
-                    class:
-                      "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
-                    placeholder: "Password",
-                    required: true,
-                    autofocus: focusHelper(f, :password, default: true)
-                  ) %>
-                  <%= error_tag(f, :password) %>
-                </div>
-
-                <%= hidden_input(f, :link_account_user_id, value: @current_user.id) %>
-
-                <.button
-                  type="submit"
-                  variant={:primary}
-                  phx-disable-with="Processing..."
-                  class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
-                >
-                  Link Account
-                </.button>
-              </div>
-            </.form>
+            <.link_account_form
+              current_user={@current_user}
+              current_author={@current_author}
+              authentication_providers={@authentication_providers}
+              form={@form}
+            />
 
             <hr class="mt-4 mb-3 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10" />
 
@@ -134,6 +116,85 @@ defmodule OliWeb.LinkAccountLive do
           </div>
         </div>
       </div>
+    </div>
+    """
+  end
+
+  attr :current_author, Author, default: nil
+  attr :current_user, User, required: true
+  attr :authentication_providers, :list, required: true
+  attr :form, :map, required: true
+
+  def link_account_form(%{current_author: nil} = assigns) do
+    ~H"""
+    <p class="text-center">
+      Sign in with your authoring account credentials below to link your account.
+    </p>
+
+    <div :if={not Enum.empty?(@authentication_providers)} class="mx-auto flex flex-col gap-2 py-8">
+      <.authorization_link
+        :for={provider <- @authentication_providers}
+        provider={provider}
+        href={~p"/authors/auth/#{provider}/new?link_account_user_id=#{@current_user.id}"}
+      />
+    </div>
+
+    <.form :let={f} id="link_account_form" for={@form} action={~p"/authors/log_in"}>
+      <div class="mx-auto flex flex-col gap-2 py-8">
+        <div>
+          <%= email_input(f, :email,
+            class:
+              "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
+            placeholder: "Email",
+            required: true,
+            autofocus: focusHelper(f, :email, default: true)
+          ) %>
+          <%= error_tag(f, :email) %>
+        </div>
+        <div>
+          <%= password_input(f, :password,
+            class:
+              "w-full dark:placeholder:text-zinc-300 pl-6 dark:bg-stone-900 rounded-md border dark:border-zinc-300 dark:text-zinc-300 leading-snug",
+            placeholder: "Password",
+            required: true,
+            autofocus: focusHelper(f, :password, default: true)
+          ) %>
+          <%= error_tag(f, :password) %>
+        </div>
+
+        <%= hidden_input(f, :link_account_user_id, value: @current_user.id) %>
+
+        <.button
+          type="submit"
+          variant={:primary}
+          phx-disable-with="Processing..."
+          class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
+        >
+          Link Account
+        </.button>
+      </div>
+    </.form>
+    """
+  end
+
+  def link_account_form(assigns) do
+    ~H"""
+    <p class="text-center">
+      You are currently logged in as <b><%= @current_author.email %></b>. Would you like to link this account?
+    </p>
+    <p class="text-center mt-6">
+      To link a different account, please sign out of this author account and try again.
+    </p>
+
+    <div class="mx-auto flex flex-col gap-2 py-8">
+      <.button
+        variant={:primary}
+        phx-click="link_current_author"
+        phx-disable-with="Processing..."
+        class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
+      >
+        Link Account
+      </.button>
     </div>
     """
   end
