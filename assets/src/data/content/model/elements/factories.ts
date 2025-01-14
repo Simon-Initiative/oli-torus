@@ -44,6 +44,7 @@ import {
   TableData,
   TableHeader,
   TableRow,
+  TriggerBlock,
   UnorderedList,
   Video,
   Webpage,
@@ -237,4 +238,7 @@ export const Model = {
       translations: [],
       ...overrides,
     }),
+
+  trigger: (prompt = '') =>
+    create<TriggerBlock>({ type: 'trigger', trigger_type: 'content', prompt: prompt }),
 };

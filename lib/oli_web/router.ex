@@ -298,7 +298,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:skip_csrf_protection, :delivery])
+    pipe_through([:api])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
     get(
