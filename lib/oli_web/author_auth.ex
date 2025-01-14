@@ -22,13 +22,14 @@ defmodule OliWeb.AuthorAuth do
   def log_in_author(conn, author, params \\ %{}) do
     token = Accounts.generate_author_session_token(author)
 
+    conn = maybe_link_user_author_account(conn, author)
+
     author_return_to =
       params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
 
     conn
     |> create_session(author)
     |> maybe_write_remember_me_cookie(token, params)
-    |> maybe_link_user_author_account(author)
     |> redirect(to: author_return_to)
   end
 
@@ -382,7 +383,8 @@ defmodule OliWeb.AuthorAuth do
     with {user_id, ""} <- Integer.parse(link_account_user_id),
          %User{id: current_user_id} <- conn.assigns[:current_user],
          true <- current_user_id == user_id do
-      put_session(conn, :link_account_user_id, user_id)
+      conn
+      |> put_session(:link_account_user_id, user_id)
     else
       e ->
         Logger.error("Error storing link_account_user_id: #{inspect(e)}")
@@ -406,13 +408,17 @@ defmodule OliWeb.AuthorAuth do
             {:ok, _} ->
               conn
               |> delete_session(:link_account_user_id)
-              |> put_flash(:info, "Your authoring account has been linked to your user account.")
-              |> redirect(to: ~p"/users/settings")
-              |> halt()
+              # replace the author_return_to with the user settings page
+              |> put_session(:author_return_to, ~p"/users/settings")
+              |> put_flash(
+                :info,
+                "Your authoring account has been linked to your user account."
+              )
 
             {:error, _} ->
               conn
               |> delete_session(:link_account_user_id)
+              |> delete_session(:author_return_to)
               |> put_flash(:error, "Something went wrong. Please try again or contact support.")
               |> redirect(to: ~p"/users/settings")
               |> halt()
@@ -421,6 +427,7 @@ defmodule OliWeb.AuthorAuth do
         _ ->
           conn
           |> delete_session(:link_account_user_id)
+          |> delete_session(:author_return_to)
           |> put_flash(:error, "You must be logged in as a user to link your authoring account.")
           |> redirect(to: ~p"/users/log_in")
           |> halt()

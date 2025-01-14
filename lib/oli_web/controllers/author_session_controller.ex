@@ -28,11 +28,20 @@ defmodule OliWeb.AuthorSessionController do
       |> put_flash(:info, info)
       |> AuthorAuth.log_in_author(author, author_params)
     else
+      # in the case where this login originates from the link account page, the redirect_to is set
+      # to the link account page. Otherwise, it is set to the author log in page.
+      {conn, redirect_to} =
+        if get_session(conn, :link_account_user_id) do
+          {delete_session(conn, :link_account_user_id), ~p"/users/link_account"}
+        else
+          {conn, ~p"/authors/log_in"}
+        end
+
       # In order to prevent author enumeration attacks, don't disclose whether the email is registered.
       conn
       |> put_flash(:error, "Invalid email or password")
       |> put_flash(:email, String.slice(email, 0, 160))
-      |> redirect(to: ~p"/authors/log_in")
+      |> redirect(to: redirect_to)
     end
   end
 
