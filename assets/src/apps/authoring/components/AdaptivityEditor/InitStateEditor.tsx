@@ -53,7 +53,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
     onChange(state.id, 'target', val);
   };
 
-  // update adding operator if targetType changes from number
+  //update adding operator if targetType changes from number
   useEffect(() => {
     if (state.type !== CapiVariableTypes.NUMBER) {
       if (state.operator === 'adding') {
