@@ -1,0 +1,1 @@
+alias dc=docker-compose; alias reload-env='set -a;source oli.env;';cd() { builtin cd "$@" && ls; };PS1='\n\[\e[0m\]🚧 oli-dev \[\e[0;34m\][\[\e[0;34m\]\w\[\e[0;34m\]]\[\e[0m\] $ \[\e[0m\]';set -a; source oli.env;
