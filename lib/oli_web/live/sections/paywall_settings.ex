@@ -41,6 +41,7 @@ defmodule OliWeb.Sections.PaywallSettings do
         <.input
           field={@form[:amount]}
           label="Amount"
+          min="1"
           class="form-control"
           disabled={@disabled or !get_boolean_value(@form[:requires_payment])}
         />
