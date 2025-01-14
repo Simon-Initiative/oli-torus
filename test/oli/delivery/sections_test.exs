@@ -2404,4 +2404,127 @@ defmodule Oli.Delivery.SectionsTest do
       assert section_2.id in section_ids
     end
   end
+
+  describe "get_enrollment/2" do
+    test "returns the enrollment for the specified section and user when the status is :enrolled" do
+      user = insert(:user)
+      section = insert(:section)
+
+      insert(:enrollment, %{
+        user: user,
+        section: section,
+        status: :enrolled
+      })
+
+      enrollment = Sections.get_enrollment(section.slug, user.id)
+      assert enrollment.status == :enrolled
+      assert enrollment.section_id == section.id
+      assert enrollment.user_id == user.id
+
+      # enrolments with status different than :enrolled are not returned
+      user_2 = insert(:user)
+
+      insert(:enrollment, %{
+        user: user_2,
+        section: section,
+        status: :pending_confirmation
+      })
+
+      refute Sections.get_enrollment(section.slug, user_2.id)
+    end
+
+    test "returns the enrollment for the specified section when the opts is filter_by_status = false" do
+      user = insert(:user)
+      section = insert(:section)
+
+      insert(:enrollment, %{
+        user: user,
+        section: section,
+        status: :enrolled
+      })
+
+      enrollment = Sections.get_enrollment(section.slug, user.id, filter_by_status: false)
+      assert enrollment.status == :enrolled
+      assert enrollment.section_id == section.id
+      assert enrollment.user_id == user.id
+
+      user_2 = insert(:user)
+
+      insert(:enrollment, %{
+        user: user_2,
+        section: section,
+        status: :pending_confirmation
+      })
+
+      enrollment_2 = Sections.get_enrollment(section.slug, user_2.id, filter_by_status: false)
+      assert enrollment_2.status == :pending_confirmation
+      assert enrollment_2.section_id == section.id
+      assert enrollment_2.user_id == user_2.id
+    end
+  end
+
+  describe "enroll/3" do
+    test "enrolls a list of users to a section with the specified roles and status :enrolled by default" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll([user_1.id, user_2.id], section.id, [
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      user_1_enrollment =
+        Sections.get_enrollment(section.slug, user_1.id) |> Oli.Repo.preload(:context_roles)
+
+      user_2_enrollment =
+        Sections.get_enrollment(section.slug, user_2.id) |> Oli.Repo.preload(:context_roles)
+
+      assert user_1_enrollment.status == :enrolled
+      assert user_1_enrollment.section_id == section.id
+
+      assert hd(user_2_enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+
+      assert user_2_enrollment.status == :enrolled
+      assert user_2_enrollment.section_id == section.id
+
+      assert hd(user_2_enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+    end
+  end
+
+  describe "enroll/4" do
+    test "enrolls a list of users to a section with the specified roles and defined status" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(
+        [user_1.id, user_2.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :pending_confirmation
+      )
+
+      user_1_enrollment =
+        Sections.get_enrollment(section.slug, user_1.id, filter_by_status: false)
+        |> Oli.Repo.preload(:context_roles)
+
+      user_2_enrollment =
+        Sections.get_enrollment(section.slug, user_2.id, filter_by_status: false)
+        |> Oli.Repo.preload(:context_roles)
+
+      assert user_1_enrollment.status == :pending_confirmation
+      assert user_1_enrollment.section_id == section.id
+
+      assert hd(user_2_enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+
+      assert user_2_enrollment.status == :pending_confirmation
+      assert user_2_enrollment.section_id == section.id
+
+      assert hd(user_2_enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+    end
+  end
 end

@@ -175,6 +175,7 @@ defmodule OliWeb.Delivery.Student.Utils do
 
   attr :effective_settings, Oli.Delivery.Settings.Combined
   attr :ctx, SessionContext
+  attr :is_adaptive, :boolean
 
   def page_terms(assigns) do
     ~H"""
@@ -189,9 +190,7 @@ defmodule OliWeb.Delivery.Student.Utils do
         <li id="page_due_terms">
           <.page_due_term effective_settings={@effective_settings} ctx={@ctx} />
         </li>
-        <li :if={@effective_settings.end_date != nil} id="page_submission_terms">
-          <.page_submission_term effective_settings={@effective_settings} ctx={@ctx} />
-        </li>
+        <.maybe_add_time_limit_term effective_settings={@effective_settings} />
         <li :if={@effective_settings.end_date != nil} id="page_scoring_terms">
           <%= page_scoring_term(@effective_settings.scoring_strategy_id) %>
         </li>
@@ -200,147 +199,53 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  attr :effective_settings, Oli.Delivery.Settings.Combined
-  attr :ctx, SessionContext
-
-  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns)
-       when not is_nil(end_date) do
+  defp maybe_add_time_limit_term(%{effective_settings: %{time_limit: time_limit}} = assigns)
+       when time_limit > 0 do
     ~H"""
-    <div>
-      <span>
-        <%= "This assignment is #{scheduling_type(@effective_settings.scheduling_type)}" %>
-      </span>
-      <span class="font-bold">
-        <%= FormatDateTime.to_formatted_datetime(
-          @effective_settings.end_date,
-          @ctx,
-          "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
-        ) %>
-      </span>
-    </div>
+    <li id="page_time_limit_term">
+      You have <b><%= parse_minutes(@effective_settings.time_limit) %></b>
+      to complete the assessment from the time you begin. If you exceed this time, it will be marked as late.
+    </li>
     """
   end
 
+  defp maybe_add_time_limit_term(assigns) do
+    ~H"""
+    """
+  end
+
+  attr :effective_settings, Oli.Delivery.Settings.Combined
+  attr :ctx, SessionContext
+
   defp page_due_term(%{effective_settings: %{end_date: nil}} = assigns) do
     ~H"""
-    <div>
-      <span>
-        <%= "This assignment is" %>
-      </span>
-      <span class="font-bold">
-        not yet scheduled.
-      </span>
-    </div>
+    This assignment is <b>not yet scheduled.</b>
+    """
+  end
+
+  defp page_due_term(%{effective_settings: %{end_date: end_date}} = assigns) do
+    verb_form =
+      case DateTime.compare(DateTime.utc_now(), end_date) do
+        :gt -> "was"
+        :lt -> "is"
+      end
+
+    assigns = assign(assigns, verb_form: verb_form)
+
+    ~H"""
+    <%= "This assignment #{@verb_form} #{scheduling_type(@effective_settings.scheduling_type)}" %>
+    <b>
+      <%= FormatDateTime.to_formatted_datetime(
+        @effective_settings.end_date,
+        @ctx,
+        "{WDshort} {Mshort} {D}, {YYYY} by {h12}:{m}{am}."
+      ) %>
+    </b>
     """
   end
 
   defp scheduling_type(:due_by), do: "due on"
   defp scheduling_type(_scheduling_type), do: "suggested by"
-
-  defp page_submission_term(%{effective_settings: %{time_limit: 0, grace_period: 0}} = assigns) do
-    ~H"""
-    <div>
-      <span>
-        Your work will automatically be submitted at
-      </span>
-      <span class="font-bold">
-        <%= FormatDateTime.to_formatted_datetime(
-          @effective_settings.end_date,
-          @ctx,
-          "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
-        ) %>
-      </span>
-    </div>
-    """
-  end
-
-  defp page_submission_term(
-         %{effective_settings: %{time_limit: 0, grace_period: grace_period}} = assigns
-       )
-       when grace_period > 0 do
-    ~H"""
-    <div>
-      <span>
-        Your work will automatically be submitted at
-      </span>
-      <span class="font-bold">
-        <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
-        |> FormatDateTime.to_formatted_datetime(
-          @ctx,
-          "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
-        ) %>
-      </span>
-    </div>
-    """
-  end
-
-  defp page_submission_term(
-         %{effective_settings: %{time_limit: time_limit, grace_period: 0}} = assigns
-       )
-       when time_limit > 0 do
-    ~H"""
-    <div>
-      <span>
-        Your work will automatically be submitted
-      </span>
-      <span class="font-bold">
-        <%= parse_minutes(@effective_settings.time_limit) %>
-      </span>
-      <span>
-        after you click the Begin button
-      </span>
-    </div>
-    """
-  end
-
-  defp page_submission_term(
-         %{
-           effective_settings: %{
-             time_limit: time_limit,
-             grace_period: grace_period,
-             end_date: end_date
-           }
-         } = assigns
-       )
-       when time_limit > 0 and grace_period > 0 do
-    # when we have both time limit and grace period,
-    # the end date time that comes first is the one that should be considered.
-    # For calculating the start_date_with_time_limit we assume the student is about to begin the attempt
-    now = Oli.DateTime.utc_now()
-    start_date_with_time_limit = Timex.shift(now, minutes: time_limit)
-    end_date_with_grace_period = Timex.shift(end_date, minutes: grace_period)
-
-    if DateTime.compare(start_date_with_time_limit, end_date_with_grace_period) == :lt do
-      ~H"""
-      <div>
-        <span>
-          Your work will automatically be submitted
-        </span>
-        <span class="font-bold">
-          <%= parse_minutes(@effective_settings.time_limit) %>
-        </span>
-        <span>
-          after you click the Begin button
-        </span>
-      </div>
-      """
-    else
-      ~H"""
-      <div>
-        <span>
-          Your work will automatically be submitted at
-        </span>
-        <span class="font-bold">
-          <%= Timex.shift(@effective_settings.end_date, minutes: @effective_settings.grace_period)
-          |> FormatDateTime.to_formatted_datetime(
-            @ctx,
-            "{h12}:{m}{am} on {WDshort} {Mshort} {D}, {YYYY}."
-          ) %>
-        </span>
-      </div>
-      """
-    end
-  end
 
   @doc """
   Parses the minutes into a human-readable format.
@@ -1006,6 +911,9 @@ defmodule OliWeb.Delivery.Student.Utils do
       {f, _s} -> f
     end
   end
+
+  def is_adaptive_page(%Oli.Resources.Revision{content: %{"advancedDelivery" => true}}), do: true
+  def is_adaptive_page(_), do: false
 
   defp build_page_link_params(section_slug, page, request_path, selected_view) do
     current_page_path =

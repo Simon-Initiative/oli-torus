@@ -224,6 +224,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.onRegisterNewObjective = this.onRegisterNewObjective.bind(this);
     this.onRegisterNewTag = this.onRegisterNewTag.bind(this);
     this.onActivityAdd = this.onActivityAdd.bind(this);
+    this.onActivityAddBulk = this.onActivityAddBulk.bind(this);
     this.onActivityEdit = this.onActivityEdit.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
     this.onInvokeUndo = this.onInvokeUndo.bind(this);
@@ -262,6 +263,34 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         guid: 'general-error',
         canUserDismiss: true,
         content: "Your changes weren't saved: " + message,
+      }),
+    );
+  }
+
+  bulkAddErrorMessage(message: string) {
+    this.addAsUnique(
+      createMessage({
+        guid: 'general-error',
+        canUserDismiss: true,
+        content: message,
+      }),
+    );
+  }
+
+  onActivityAddBulk(contexts: ActivityEditContext[]) {
+    const activities = contexts.map((c) => [c.activitySlug, c]);
+    const inserted = [...activities, ...this.state.activityContexts.toArray()].slice(0, PAGE_SIZE);
+    this.setState({
+      activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
+      totalInBank: this.state.totalInBank + 1,
+      totalCount: this.state.totalCount + 1,
+    });
+    this.addAsUnique(
+      createMessage({
+        guid: 'general',
+        canUserDismiss: true,
+        content: `${contexts.length} questions were added successfully`,
+        severity: Severity.Information,
       }),
     );
   }
@@ -623,7 +652,11 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                   <CreateActivity
                     projectSlug={props.projectSlug}
                     editorMap={props.editorMap}
+                    allObjectives={props.allObjectives}
+                    allTags={props.allTags}
                     onAdd={this.onActivityAdd}
+                    onBulkAdd={this.onActivityAddBulk}
+                    onError={this.bulkAddErrorMessage.bind(this)}
                   />
                 </div>
                 <LogicFilter
