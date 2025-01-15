@@ -53,14 +53,13 @@ defmodule Oli.Delivery.Sections.SectionTest do
                {"must be greater than or equal to one", []}
     end
 
-    @tag :skip
     test "validates positive money" do
       section = build(:section, @valid_section_attrs)
 
-      changeset = Section.changeset(section, %{amount: Money.new(:USD, -1)})
+      changeset = Section.changeset(section, %{requires_payment: true, amount: Money.new(:USD, -1)})
 
       assert changeset.errors[:amount] ==
-               {"must be greater than or equal to zero", []}
+               {"must be greater than or equal to one", []}
     end
 
     test "validates dates consistency" do
