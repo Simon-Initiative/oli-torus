@@ -148,7 +148,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
+    IO.inspect(params)
     changeset = Sections.change_section(socket.assigns.product, params)
+    IO.inspect(changeset)
     {:noreply, assign(socket, changeset: changeset)}
   end
 

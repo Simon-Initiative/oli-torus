@@ -3,8 +3,8 @@ defmodule Oli.Delivery.Utils do
 
   def validate_positive_money(changeset, field) do
     validate_change(changeset, field, fn _, amount ->
-      case Money.compare(Money.new(:USD, 1), amount) do
-        :gt -> [{field, "must be greater than or equal to one"}]
+      case Money.compare(Money.new(:USD, 0), amount) do
+        :gt -> [{field, "must be greater than or equal to zero"}]
         _ -> []
       end
     end)
