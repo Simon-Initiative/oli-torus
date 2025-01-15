@@ -234,7 +234,7 @@ defmodule Oli.Delivery.Sections.Section do
     |> validate_required_if([:publisher_id, :apply_major_updates], &is_product?/1)
     |> foreign_key_constraint_if(:publisher_id, &is_product?/1)
     |> validate_positive_grace_period()
-    |> Oli.Delivery.Utils.validate_positive_money(:amount)
+    |> enforce_minimum_price()
     |> validate_dates_consistency(:start_date, :end_date)
     |> unique_constraint(:context_id, name: :sections_active_context_id_unique_index)
     |> Slug.update_never("sections")
@@ -253,6 +253,17 @@ defmodule Oli.Delivery.Sections.Section do
         []
       end
     end)
+  end
+
+  def enforce_minimum_price(changeset) do
+    if is_nil(get_field(changeset, :amount)) do
+      put_change(changeset, :amount, Money.new(:USD, 1))
+    else
+      case Money.compare(get_field(changeset, :amount), Money.new(:USD, 1)) do
+        :lt -> put_change(changeset, :amount, Money.new(:USD, 1))
+        _ -> changeset
+      end
+    end
   end
 
   @doc """

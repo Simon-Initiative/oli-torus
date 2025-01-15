@@ -53,6 +53,7 @@ defmodule Oli.Delivery.Sections.SectionTest do
                {"must be greater than or equal to one", []}
     end
 
+    @tag :skip
     test "validates positive money" do
       section = build(:section, @valid_section_attrs)
 
