@@ -153,7 +153,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
     {:ok, resource_access}
   end
 
-
   # We need a new attempt when:
 
   # There isn't a previous attempt
