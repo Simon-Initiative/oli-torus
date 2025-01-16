@@ -409,7 +409,6 @@ defmodule OliWeb.Components.Delivery.Layouts do
             id="mobile-user-account-menu-workspace-sidebar"
             ctx={@ctx}
             is_admin={@is_admin}
-            section={@section}
             dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
