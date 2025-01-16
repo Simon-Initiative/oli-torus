@@ -27,7 +27,7 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert html =~ "Link Authoring Account"
 
       assert html =~
-               "You are currently logged in as author <b>#{author.email}</b>. Would you like to link this account?"
+               "You are currently signed in as <b>#{author.email}</b>. You must sign out of this author account before linking an account."
     end
 
     test "shows message if an account is already linked", %{conn: conn} do

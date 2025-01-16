@@ -177,22 +177,10 @@ defmodule OliWeb.LinkAccountLive do
   def link_current_author(assigns) do
     ~H"""
     <p class="text-center">
-      You are currently logged in as author <b><%= @current_author.email %></b>. Would you like to link this account?
-    </p>
-    <p class="text-center mt-6">
-      To link a different account, please sign out of this author account and try again.
+      You are currently signed in as <b><%= @current_author.email %></b>. You must sign out of this author account before linking an account.
     </p>
 
     <div class="mx-auto flex flex-col gap-2 py-8">
-      <.button
-        variant={:primary}
-        phx-click="link_current_author"
-        phx-disable-with="Processing..."
-        class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
-      >
-        Link account
-      </.button>
-
       <%= link to: ~p"/authors/log_out?request_path=/users/link_account", method: "delete", class: "text-base px-6 py-2 rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline w-full inline-block text-center mt-2" do %>
         Sign out of author account
       <% end %>
