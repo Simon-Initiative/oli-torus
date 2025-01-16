@@ -95,7 +95,8 @@ defmodule OliWeb.UserAuth do
         "browser_timezone",
         "author_token",
         "author_live_socket_id",
-        "current_author_id"
+        "current_author_id",
+        "datashop_session_id"
       ])
 
     conn
