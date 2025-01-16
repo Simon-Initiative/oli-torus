@@ -296,7 +296,7 @@ defmodule OliWeb.DeliveryController do
         if create_guest do
           if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
         else
-          {:redirect, :enroll}
+          if requires_enrollment, do: {:redirect, nil}, else: {:redirect, :enroll}
         end
 
       %User{independent_learner: false} ->
