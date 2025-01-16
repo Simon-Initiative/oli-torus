@@ -231,7 +231,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_link href={~p"/users/log_out"}>
+    <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
     </.menu_item_link>
     """
