@@ -124,3 +124,5 @@ config :logger, truncate: truncate
 config :appsignal, :config, active: false
 
 config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher
+
+config :assent, http_adapter: Oli.Test.MockHTTP

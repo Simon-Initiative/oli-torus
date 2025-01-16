@@ -6,7 +6,7 @@ defmodule OliWeb.LinkAccountLiveTest do
 
   describe "Link account page" do
     test "renders link account page", %{conn: conn} do
-      user = insert(:user)
+      user = insert(:user, author: nil)
 
       conn = log_in_user(conn, user)
 
@@ -17,7 +17,7 @@ defmodule OliWeb.LinkAccountLiveTest do
     end
 
     test "suggests to link current author if already signed in", %{conn: conn} do
-      user = insert(:user)
+      user = insert(:user, author: nil)
       author = insert(:author)
 
       conn = conn |> log_in_user(user) |> log_in_author(author)
@@ -27,13 +27,37 @@ defmodule OliWeb.LinkAccountLiveTest do
       assert html =~ "Link Authoring Account"
 
       assert html =~
-               "You are currently logged in as <b>#{author.email}</b>. Would you like to link this account?"
+               "You are currently logged in as author <b>#{author.email}</b>. Would you like to link this account?"
+    end
+
+    test "shows message if an account is already linked", %{conn: conn} do
+      # by default, user factory will create and link an anonymous author
+      user = insert(:user)
+
+      conn = conn |> log_in_user(user)
+
+      {:ok, _lv, html} = live(conn, ~p"/users/link_account")
+
+      assert html =~ "Link Authoring Account"
+
+      assert html =~
+               "Your account is currently linked to <b>#{user.author.email}</b>."
+
+      # log in author and verify the same message is displayed
+      conn = conn |> log_in_author(user.author)
+
+      {:ok, _lv, html} = live(conn, ~p"/users/link_account")
+
+      assert html =~ "Link Authoring Account"
+
+      assert html =~
+               "Your account is currently linked to <b>#{user.author.email}</b>."
     end
   end
 
   describe "links account after author login" do
     test "redirects with valid credentials", %{conn: conn} do
-      user = insert(:user)
+      user = insert(:user, author: nil)
 
       conn = log_in_user(conn, user)
 
@@ -59,7 +83,7 @@ defmodule OliWeb.LinkAccountLiveTest do
          %{
            conn: conn
          } do
-      user = insert(:user)
+      user = insert(:user, author: nil)
 
       conn = log_in_user(conn, user)
 

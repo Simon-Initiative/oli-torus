@@ -45,9 +45,9 @@ defmodule OliWeb.AuthorSessionController do
     end
   end
 
-  def delete(conn, _params) do
+  def delete(conn, params) do
     conn
     |> put_flash(:info, "Logged out successfully.")
-    |> AuthorAuth.log_out_author()
+    |> AuthorAuth.log_out_author(params)
   end
 end

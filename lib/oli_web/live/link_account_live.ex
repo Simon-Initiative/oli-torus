@@ -87,24 +87,20 @@ defmodule OliWeb.LinkAccountLive do
               Link Authoring Account
             </div>
 
-            <.link_account_form
-              current_user={@current_user}
-              current_author={@current_author}
-              authentication_providers={@authentication_providers}
-              form={@form}
-            />
+            <%= case {@current_author, @linked_account} do %>
+              <% {_, %Author{}} -> %>
+                <.account_already_linked linked_account={@linked_account} />
+              <% {nil, _} -> %>
+                <.link_account_form
+                  current_user={@current_user}
+                  authentication_providers={@authentication_providers}
+                  form={@form}
+                />
+              <% {_, _} -> %>
+                <.link_current_author current_author={@current_author} />
+            <% end %>
 
             <hr class="mt-4 mb-3 h-0.5 w-3/4 mx-auto border-t-0 bg-neutral-100 dark:bg-white/10" />
-
-            <.button
-              :if={@linked_account}
-              variant={:tertiary}
-              phx-disable-with="Unlinking..."
-              phx-click="unlink"
-              class="w-full inline-block text-center mt-2"
-            >
-              Unlink <%= @linked_account.email %>
-            </.button>
 
             <.button
               variant={:secondary}
@@ -120,12 +116,11 @@ defmodule OliWeb.LinkAccountLive do
     """
   end
 
-  attr :current_author, Author, default: nil
   attr :current_user, User, required: true
   attr :authentication_providers, :list, required: true
   attr :form, :map, required: true
 
-  def link_account_form(%{current_author: nil} = assigns) do
+  def link_account_form(assigns) do
     ~H"""
     <p class="text-center">
       Sign in with your authoring account credentials below to link your account.
@@ -170,17 +165,19 @@ defmodule OliWeb.LinkAccountLive do
           phx-disable-with="Processing..."
           class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
         >
-          Link Account
+          Link account
         </.button>
       </div>
     </.form>
     """
   end
 
-  def link_account_form(assigns) do
+  attr :current_author, Author, default: nil
+
+  def link_current_author(assigns) do
     ~H"""
     <p class="text-center">
-      You are currently logged in as <b><%= @current_author.email %></b>. Would you like to link this account?
+      You are currently logged in as author <b><%= @current_author.email %></b>. Would you like to link this account?
     </p>
     <p class="text-center mt-6">
       To link a different account, please sign out of this author account and try again.
@@ -193,7 +190,33 @@ defmodule OliWeb.LinkAccountLive do
         phx-disable-with="Processing..."
         class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
       >
-        Link Account
+        Link account
+      </.button>
+
+      <%= link to: ~p"/authors/log_out?request_path=/users/link_account", method: "delete", class: "text-base px-6 py-2 rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline w-full inline-block text-center mt-2" do %>
+        Sign out of author account
+      <% end %>
+    </div>
+    """
+  end
+
+  attr :linked_account, Author, default: nil
+
+  def account_already_linked(assigns) do
+    ~H"""
+    <p class="text-center">
+      Your account is currently linked to <b><%= @linked_account.email %></b>.
+    </p>
+
+    <div class="mx-auto flex flex-col gap-2 py-8">
+      <.button
+        :if={@linked_account}
+        variant={:tertiary}
+        phx-disable-with="Unlinking..."
+        phx-click="unlink"
+        class="bg-[#0062f2] text-white hover:bg-[#0052cb] disabled:bg-transparent rounded-md mt-4"
+      >
+        Unlink account
       </.button>
     </div>
     """

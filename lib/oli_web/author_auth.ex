@@ -115,7 +115,7 @@ defmodule OliWeb.AuthorAuth do
 
   It clears all session data for safety. See renew_session.
   """
-  def log_out_author(conn) do
+  def log_out_author(conn, params \\ %{}) do
     author_token = get_session(conn, :author_token)
     author_token && Accounts.delete_author_session_token(author_token)
 
@@ -123,10 +123,13 @@ defmodule OliWeb.AuthorAuth do
       OliWeb.Endpoint.broadcast(author_live_socket_id, "disconnect", %{})
     end
 
+    redirect_to =
+      params["request_path"] || ~p"/authors/log_in"
+
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/authors/log_in")
+    |> redirect(to: redirect_to)
   end
 
   @doc """
