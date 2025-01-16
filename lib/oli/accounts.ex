@@ -18,6 +18,9 @@ defmodule Oli.Accounts do
     UserPreferences
   }
 
+  alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.Course.Project
+
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
   alias Oli.Institutions.Institution
@@ -111,9 +114,10 @@ defmodule Oli.Accounts do
     Repo.insert_all(User, users, returning: [:id, :email])
   end
 
-  def create_invited_author(_email) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  def create_invited_author(email) do
+    %Author{}
+    |> Author.invite_changeset(%{email: email})
+    |> Repo.insert()
   end
 
   def browse_authors(
@@ -821,31 +825,24 @@ defmodule Oli.Accounts do
     )
   end
 
-  def project_authors(project_ids) when is_list(project_ids) do
+  def authors_projects(project_ids) when is_list(project_ids) do
     Repo.all(
-      from(assoc in "authors_projects",
+      from(ap in AuthorProject,
         join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id in ^project_ids and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: [author, assoc.project_id]
+        on: ap.author_id == author.id,
+        join: project in Project,
+        on: ap.project_id == project.id,
+        where: ap.project_id in ^project_ids,
+        select: %{
+          author: author,
+          author_project_status: ap.status,
+          project_slug: project.slug
+        }
       )
     )
   end
 
-  def project_authors(project) do
-    Repo.all(
-      from(assoc in "authors_projects",
-        join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id == ^project.id and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: author
-      )
-    )
-  end
+  def authors_projects(project), do: authors_projects([project.id])
 
   @doc """
   Get all the communities for which the author is an admin.
@@ -1399,7 +1396,7 @@ defmodule Oli.Accounts do
   ## Examples
 
       iex> get_user_by_enrollment_invitation_token("validtoken")
-      %User{}
+      %UserToken{}
 
       iex> get_user_by_enrollment_invitation_token("invalidtoken")
       nil
@@ -1540,6 +1537,33 @@ defmodule Oli.Accounts do
       hash_password: false,
       validate_email: false
     )
+  end
+
+  @doc """
+  Updates the author data after the inviter user redeems the authoring invitation.
+  """
+  def accept_author_invitation(author, attrs \\ %{}) do
+    author
+    |> Author.accept_invitation_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  When a new collaborator accepts an invitation to a project, the author's data is updated (password for intance)
+  and the author_project status is updated from `:pending_confirmation` to `:accepted`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      author
+      |> Author.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      author_project
+      |> AuthorProject.changeset(%{status: :accepted})
+      |> Repo.update!()
+    end)
   end
 
   ## Settings
@@ -1856,6 +1880,48 @@ defmodule Oli.Accounts do
     with {:ok, query} <- AuthorToken.verify_email_token_query(token, "reset_password"),
          %Author{} = author <- Repo.one(query) do
       author
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author token by invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_author_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_author_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_author_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.author_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author by collaboration invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_collaboration_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_collaboration_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_collaboration_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.collaborator_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
     else
       _ -> nil
     end

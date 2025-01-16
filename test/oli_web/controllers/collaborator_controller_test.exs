@@ -10,8 +10,8 @@ defmodule OliWeb.CollaboratorControllerTest do
   @invite_email "invite@example.com"
 
   defp get_authors(project) do
-    Accounts.project_authors(project)
-    |> Enum.map(fn author -> author.email end)
+    Accounts.authors_projects(project)
+    |> Enum.map(fn author_project -> author_project.author.email end)
     |> Enum.join(", ")
   end
 
@@ -34,8 +34,6 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Collaborator invitations sent!"
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "allows multiple comma separated values", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -52,8 +50,6 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Collaborator invitations sent!"
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "allows capital letters in emails", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -70,8 +66,6 @@ defmodule OliWeb.CollaboratorControllerTest do
                "Collaborator invitations sent!"
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "some emails succeed, some fail", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 
@@ -87,13 +81,11 @@ defmodule OliWeb.CollaboratorControllerTest do
                         "/workspaces/course_author/#{project.slug}/overview"
 
                assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-                        "Failed to add some collaborators: notevenan_email"
+                        "Failed to invite some collaborators: notevenan_email"
              end) =~
-               "Failed to add some collaborators: notevenan_email"
+               "Failed to invite some collaborators: notevenan_email"
     end
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
       expect_recaptcha_http_post()
 

@@ -415,20 +415,6 @@ defmodule OliWeb.Router do
   scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
-    live_session :load_projects,
-      on_mount: [
-        {OliWeb.AuthorAuth, :ensure_authenticated},
-        OliWeb.LiveSessionPlugs.SetCtx,
-        OliWeb.LiveSessionPlugs.SetProject
-      ] do
-      live("/:project_id", Projects.OverviewLive)
-      live("/:project_id/overview", Projects.OverviewLive)
-    end
-  end
-
-  scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
-
     # Project display pages
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/duplicate", ProjectController, :clone_project)
@@ -1342,7 +1328,14 @@ defmodule OliWeb.Router do
 
     live "/users/invite/:token", Users.Invitations.UsersInviteView, as: :users_invite
 
+    live "/collaborators/invite/:token", Collaborators.Invitations.InviteView,
+      as: :collaborators_invite
+
+    live "/authors/invite/:token", Authors.Invitations.InviteView, as: :authors_invite
+
     post "/users/accept_invitation", InviteController, :accept_user_invitation
+    post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
+    post "/authors/accept_invitation", InviteController, :accept_author_invitation
   end
 
   ### Sections - Enrollment
