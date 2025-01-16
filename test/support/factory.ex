@@ -2,7 +2,7 @@ defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.VrUserAgent
-  alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences, UserToken}
+  alias Oli.Accounts.{Author, User, AuthorPreferences, AuthorToken, UserPreferences, UserToken}
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Analytics.Summary.ResourceSummary
 
@@ -17,6 +17,7 @@ defmodule Oli.Factory do
   alias Oli.Branding.Brand
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections.Certificate
+  alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Sections.ContainedObjective
 
   alias Oli.Delivery.Attempts.Core.{
@@ -164,7 +165,8 @@ defmodule Oli.Factory do
     %AuthorProject{
       author_id: author.id,
       project_id: project.id,
-      project_role_id: ProjectRole.role_id().owner
+      project_role_id: ProjectRole.role_id().owner,
+      status: :accepted
     }
   end
 
@@ -655,6 +657,14 @@ defmodule Oli.Factory do
     }
   end
 
+  def granted_certificate_factory() do
+    %GrantedCertificate{
+      guid: UUID.uuid4(),
+      user: build(:user),
+      certificate: build(:certificate)
+    }
+  end
+
   def user_token_factory(attr) do
     token = attr[:non_hashed_token] || :crypto.strong_rand_bytes(32)
     hashed_token = :crypto.hash(:sha256, token)
@@ -666,6 +676,20 @@ defmodule Oli.Factory do
       context: attr[:context] || "session",
       sent_to: user.email,
       user_id: user.id
+    }
+  end
+
+  def author_token_factory(attr) do
+    token = attr[:non_hashed_token] || :crypto.strong_rand_bytes(32)
+    hashed_token = :crypto.hash(:sha256, token)
+
+    author = attr[:author] || insert(:author)
+
+    %AuthorToken{
+      token: hashed_token,
+      context: attr[:context] || "session",
+      sent_to: author.email,
+      author_id: author.id
     }
   end
 

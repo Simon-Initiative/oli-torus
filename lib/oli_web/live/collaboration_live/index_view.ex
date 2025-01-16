@@ -5,7 +5,7 @@ defmodule OliWeb.CollaborationLive.IndexView do
   alias Oli.Resources.Collaboration
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.CollaborationLive.InstructorTableModel
-  alias alias OliWeb.Sections.Mount
+  alias OliWeb.Sections.Mount
 
   @title "Collaborative Spaces"
 

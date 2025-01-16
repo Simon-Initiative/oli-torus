@@ -304,7 +304,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:skip_csrf_protection, :delivery])
+    pipe_through([:api])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
     get(
@@ -372,6 +372,7 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
+    live("/products/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
 
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
@@ -407,20 +408,6 @@ defmodule OliWeb.Router do
   scope "/authoring/project", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace])
     post("/", ProjectController, :create)
-  end
-
-  scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
-
-    live_session :load_projects,
-      on_mount: [
-        {OliWeb.AuthorAuth, :ensure_authenticated},
-        OliWeb.LiveSessionPlugs.SetCtx,
-        OliWeb.LiveSessionPlugs.SetProject
-      ] do
-      live("/:project_id", Projects.OverviewLive)
-      live("/:project_id/overview", Projects.OverviewLive)
-    end
   end
 
   scope "/authoring/project", OliWeb do
@@ -857,9 +844,13 @@ defmodule OliWeb.Router do
         live("/:project_id/activities/activity_review", Activities.ActivityReviewLive)
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
-        live("/:project_id/products", ProductsLive)
-        live("/:project_id/products/:product_id", Products.DetailsLive)
         live("/:project_id/insights", InsightsLive)
+
+        scope "/:project_id/products" do
+          live("/", ProductsLive)
+          live("/:product_id", Products.DetailsLive)
+          live("/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+        end
       end
     end
   end
@@ -1333,9 +1324,16 @@ defmodule OliWeb.Router do
   scope "/", OliWeb do
     pipe_through([:browser])
 
-    live "/users/invite/:token", Users.Invitations.UsersInviteView
+    live "/users/invite/:token", Users.Invitations.UsersInviteView, as: :users_invite
+
+    live "/collaborators/invite/:token", Collaborators.Invitations.InviteView,
+      as: :collaborators_invite
+
+    live "/authors/invite/:token", Authors.Invitations.InviteView, as: :authors_invite
 
     post "/users/accept_invitation", InviteController, :accept_user_invitation
+    post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
+    post "/authors/accept_invitation", InviteController, :accept_author_invitation
   end
 
   ### Sections - Enrollment

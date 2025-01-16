@@ -110,6 +110,7 @@ export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug, 
 export const selectState = (state: AuthoringRootState): PageState => state[PageSlice] as PageState;
 export const selectIsGraded = createSelector(selectState, (state: PageState) => state.graded);
 export const selectTitle = createSelector(selectState, (state: PageState) => state.title);
+export const selectCustom = createSelector(selectState, (state: PageState) => state.custom);
 export const selectObjectives = createSelector(selectState, (state: PageState) => state.objectives);
 export const selectResourceId = createSelector(selectState, (state: PageState) => state.resourceId);
 export const selectRevisionSlug = createSelector(

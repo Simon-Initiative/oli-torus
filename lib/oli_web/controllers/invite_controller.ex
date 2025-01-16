@@ -4,10 +4,13 @@ defmodule OliWeb.InviteController do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Repo
   alias Oli.Accounts
+  alias Oli.Accounts.AuthorToken
   alias Oli.Accounts.UserToken
+  alias Oli.Authoring.Collaborators
   alias Oli.Delivery.Sections
   alias Oli.{Email, Mailer}
   alias OliWeb.UserSessionController
+  alias OliWeb.AuthorSessionController
 
   def index(conn, _params) do
     render_invite_page(conn, "index.html", title: "Invite")
@@ -37,6 +40,36 @@ defmodule OliWeb.InviteController do
       |> put_in(["user", "request_path"], ~p"/sections/#{section_slug}")
 
     UserSessionController.create(conn, params, flash_message: nil)
+  end
+
+  @doc """
+  After an author accepts a collaboration intivation we log the author in and redirect him to the project.
+  """
+  def accept_collaborator_invitation(
+        conn,
+        %{"email" => email, "project_slug" => project_slug} = params
+      ) do
+    params =
+      params
+      |> put_in(["author", "email"], email)
+      |> put_in(
+        ["author", "request_path"],
+        ~p"/workspaces/course_author/#{project_slug}/overview"
+      )
+
+    AuthorSessionController.create(conn, params, flash_message: nil)
+  end
+
+  @doc """
+  After an author accepts an intivation we log the author in and redirect him to admin page.
+  """
+  def accept_author_invitation(conn, %{"email" => email} = params) do
+    params =
+      params
+      |> put_in(["author", "email"], email)
+      |> put_in(["author", "request_path"], ~p"/workspaces/course_author/")
+
+    AuthorSessionController.create(conn, params, flash_message: nil)
   end
 
   def create_bulk(conn, %{
@@ -142,7 +175,7 @@ defmodule OliWeb.InviteController do
         :enrollment_invitation,
         %{
           inviter: inviter_name,
-          url: ~p"/users/invite/#{data.token}",
+          url: url(OliWeb.Endpoint, ~p"/users/invite/#{data.token}"),
           role: role,
           section_title: section_title,
           button_label: "Go to invitation"
@@ -160,8 +193,10 @@ defmodule OliWeb.InviteController do
   end
 
   defp invite_author(conn, email) do
-    with {:ok, author} <- get_or_create_invited_author(conn, email),
-         {:ok, _mail} <- deliver_invitation_email(conn, author) do
+    with {:ok, author} <- Collaborators.get_or_create_invited_author(email),
+         {:ok, email_data} <- create_author_invitation_token(author),
+         {:ok, _mail} <-
+           deliver_author_invitation_email(email_data, conn.assigns.current_author.name) do
       conn
       |> put_flash(:info, "Author invitation sent successfully.")
       |> redirect(to: Routes.invite_path(conn, :index))
@@ -173,31 +208,25 @@ defmodule OliWeb.InviteController do
     end
   end
 
-  defp get_or_create_invited_author(conn, email) do
-    Accounts.get_author_by_email(email)
-    |> case do
-      nil ->
-        case create_user(conn, %{email: email}) do
-          {:ok, user, _conn} -> {:ok, user}
-          {:error, _changeset, _conn} -> {:error, "Unable to create invitation for new author"}
-        end
+  defp create_author_invitation_token(author) do
+    {non_hashed_token, author_token} =
+      AuthorToken.build_email_token(author, "author_invitation")
 
-      author ->
-        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-          {:error, "User has a pending invitation already"}
-        else
-          {:error, "User is already an author"}
-        end
-    end
+    Oli.Repo.insert!(author_token)
+
+    {:ok, %{sent_to: author_token.sent_to, token: non_hashed_token}}
   end
 
-  defp deliver_invitation_email(_conn, _user) do
-    # TODO: MER-4068
-    throw("NOT IMPLEMENTED")
-  end
-
-  defp create_user(_conn, _params) do
-    # TODO: MER-4068
-    throw("NOT IMPLEMENTED")
+  defp deliver_author_invitation_email(email_data, invited_by) do
+    Email.create_email(
+      email_data.sent_to,
+      "You were invited to create an authoring account",
+      :author_invitation,
+      %{
+        url: url(OliWeb.Endpoint, ~p"/authors/invite/#{email_data.token}"),
+        invited_by: invited_by
+      }
+    )
+    |> Mailer.deliver()
   end
 end

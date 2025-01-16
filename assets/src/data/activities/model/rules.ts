@@ -240,8 +240,10 @@ export const makeRule = (input: Input): string => {
   throw new Error('Could not make numeric rule for input: ' + input);
 };
 
-const parseSingleRule = (rule: string) =>
-  Maybe.maybe(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}')));
+export const ruleValue = (rule: string) =>
+  rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}'));
+
+const parseSingleRule = (rule: string) => Maybe.maybe(ruleValue(rule));
 
 const parseRegex = (rule: string, regex: RegExp) => Maybe.maybe(rule.match(regex));
 
