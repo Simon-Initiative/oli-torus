@@ -95,6 +95,32 @@ const lessonSchema: JSONSchema7 = {
           description: 'block of css code to be injected into style tag',
           format: 'textarea',
         },
+        InterfaceSettings: {
+          type: 'object',
+          title: 'Interface Settings',
+          properties: {
+            grid: {
+              type: 'boolean',
+              title: '10px Grid',
+              default: 'false',
+            },
+            centerpoint: {
+              type: 'boolean',
+              title: 'Centerpoint',
+              default: 'false',
+            },
+            columnGuides: {
+              type: 'boolean',
+              title: 'Column Guides',
+              default: 'false',
+            },
+            rowGuides: {
+              type: 'boolean',
+              title: 'Row Guides',
+              default: 'false',
+            },
+          },
+        },
       },
     },
     CustomLogic: {
@@ -176,6 +202,32 @@ export const simpleLessonSchema: JSONSchema7 = {
           title: 'Refresh warning popup',
           default: 'true',
         },
+        InterfaceSettings: {
+          type: 'object',
+          title: 'Interface Settings',
+          properties: {
+            grid: {
+              type: 'boolean',
+              title: '10px Grid',
+              default: 'false',
+            },
+            centerpoint: {
+              type: 'boolean',
+              title: 'Centerpoint',
+              default: 'false',
+            },
+            columnGuides: {
+              type: 'boolean',
+              title: 'Column Guides',
+              default: 'false',
+            },
+            rowGuides: {
+              type: 'boolean',
+              title: 'Row Guides',
+              default: 'false',
+            },
+          },
+        },
       },
     },
   },
@@ -187,6 +239,9 @@ export const simpleLessonUiSchema: UiSchema = {
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Finish Panel',
+    },
+    InterfaceSettings: {
+      classNames: 'col-span-12 InterfaceSettings',
     },
   },
 };
@@ -214,6 +269,9 @@ export const lessonUiSchema: UiSchema = {
     FinishPanel: {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Finish Panel',
+    },
+    InterfaceSettings: {
+      classNames: 'col-span-12 InterfaceSettings',
     },
   },
   CustomLogic: {
@@ -262,6 +320,12 @@ export const transformModelToSchema = (model: any) => {
       customCSS: model.customCss,
       enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
       displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup || true,
+      InterfaceSettings: {
+        grid: model.custom.grid || false,
+        centerpoint: model.custom.centerpoint || false,
+        columnGuides: model.custom.columnGuides || false,
+        rowGuides: model.custom.rowGuides || false,
+      },
     },
     CustomLogic: {
       variables: model.custom.variables,
@@ -298,6 +362,10 @@ export const transformSchemaToModel = (schema: any) => {
       backgroundImageURL: schema.Properties.Appearance.backgroundImageURL,
       backgroundImageScaleContent: schema.Properties.Appearance.backgroundImageScaleContent,
       darkModeSetting: schema.Properties.Appearance.darkModeSetting,
+      grid: schema.Properties.InterfaceSettings.grid,
+      centerpoint: schema.Properties.InterfaceSettings.centerpoint,
+      columnGuides: schema.Properties.InterfaceSettings.columnGuides,
+      rowGuides: schema.Properties.InterfaceSettings.rowGuides,
     },
     displayApplicationChrome: schema.Properties.Appearance.displayApplicationChrome,
     additionalStylesheets,
