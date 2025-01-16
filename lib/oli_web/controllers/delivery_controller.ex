@@ -196,7 +196,7 @@ defmodule OliWeb.DeliveryController do
     from_invitation_link? = params["from_invitation_link?"] || false
 
     with {:available, section} <- Sections.available?(section),
-         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
+         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, false),
          {:enrolled?, false} <- {:enrolled?, Sections.is_enrolled?(user.id, section.slug)} do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
@@ -206,6 +206,13 @@ defmodule OliWeb.DeliveryController do
     else
       {:unavailable, reason} ->
         render_section_unavailable(conn, reason)
+
+      {:redirect, :enroll} ->
+        render(conn, "enroll.html",
+          section: Oli.Repo.preload(section, [:base_project]),
+          from_invitation_link?: from_invitation_link?,
+          auto_enroll_as_guest: params["auto_enroll_as_guest"] || false
+        )
 
       # redirect to course index if user is already signed in and enrolled
       {:enrolled?, true} ->
@@ -234,7 +241,7 @@ defmodule OliWeb.DeliveryController do
 
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
-           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
+           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, true),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
@@ -283,10 +290,14 @@ defmodule OliWeb.DeliveryController do
     Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
-  defp current_or_guest_user(conn, requires_enrollment) do
+  defp current_or_guest_user(conn, requires_enrollment, create_guest) do
     case conn.assigns.current_user do
       nil ->
-        if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
+        if create_guest do
+          if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
+        else
+          {:redirect, :enroll}
+        end
 
       %User{independent_learner: false} ->
         {:redirect, :non_independent_learner}
