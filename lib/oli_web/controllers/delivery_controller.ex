@@ -194,9 +194,10 @@ defmodule OliWeb.DeliveryController do
   def show_enroll(conn, params) do
     section = conn.assigns.section
     from_invitation_link? = params["from_invitation_link?"] || false
+    create_guest = false
 
     with {:available, section} <- Sections.available?(section),
-         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, false),
+         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
          {:enrolled?, false} <- {:enrolled?, Sections.is_enrolled?(user.id, section.slug)} do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
@@ -238,10 +239,11 @@ defmodule OliWeb.DeliveryController do
 
   def process_enroll(conn, params) do
     g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
+    create_guest = true
 
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
-           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, true),
+           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
