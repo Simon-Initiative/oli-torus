@@ -50,8 +50,9 @@ defmodule Oli.Accounts.User do
 
     has_one :lti_params, Oli.Lti.LtiParams, on_delete: :delete_all, on_replace: :delete
 
-    # A user may optionally be linked to an author account
+    # A user may optionally be linked to an author account and Institution
     belongs_to :author, Oli.Accounts.Author
+    field :lti_institution_id, :integer, default: nil
 
     belongs_to :invited_by, Oli.Accounts.User
     has_many :invited_users, Oli.Accounts.User, foreign_key: :invited_by_id
@@ -127,7 +128,6 @@ defmodule Oli.Accounts.User do
     |> validate_email(opts)
     |> validate_password(opts)
     |> put_change(:independent_learner, true)
-    |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
 
@@ -283,7 +283,6 @@ defmodule Oli.Accounts.User do
     |> put_change(:independent_learner, true)
     |> put_change(:guest, false)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
     |> confirm_email_if_verified()
   end
@@ -349,11 +348,11 @@ defmodule Oli.Accounts.User do
       :research_opt_out,
       :state,
       :can_create_sections,
-      :age_verified
+      :age_verified,
+      :lti_institution_id
     ])
     |> cast_embed(:preferences)
     |> validate_email_if(&is_independent_learner_and_not_guest/1)
-    |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
 
@@ -391,6 +390,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -401,7 +401,6 @@ defmodule Oli.Accounts.User do
       :age_verified
     ])
     |> cast_embed(:preferences)
-    |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
 
@@ -433,6 +432,7 @@ defmodule Oli.Accounts.User do
       :phone_number_verified,
       :address,
       :author_id,
+      :lti_institution_id,
       :guest,
       :independent_learner,
       :research_opt_out,
@@ -449,7 +449,6 @@ defmodule Oli.Accounts.User do
       "You must verify you are old enough to access our site in order to continue"
     )
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
-    |> maybe_create_unique_sub()
     |> validate_email_confirmation()
     |> maybe_name_from_given_and_family()
   end
@@ -539,7 +538,6 @@ defmodule Oli.Accounts.User do
     |> put_change(:invitation_accepted_at, now)
     |> put_change(:email_confirmed_at, now)
     |> put_change(:email_verified, true)
-    |> maybe_create_unique_sub()
     |> maybe_name_from_given_and_family()
   end
 end
@@ -564,7 +562,7 @@ defimpl Lti_1p3.Tool.Lti_1p3_User, for: Oli.Accounts.User do
         preload: [:context_roles],
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
+        where: e.user_id == ^user_id and s.slug == ^section_slug,
         select: e
 
     case Repo.one(query) do
