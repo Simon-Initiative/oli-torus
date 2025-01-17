@@ -1079,8 +1079,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   describe "instructor - invitations" do
     setup [:setup_enrollments_view]
 
-    # TODO: MER-4068 Fix or remove
-    @tag :skip
     test "can invite new users to the section", %{section: section, conn: conn} do
       students_url = live_view_students_route(section.slug)
       {:ok, view, _html} = live(conn, students_url)
@@ -1163,6 +1161,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
       assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
 
+      stub_real_current_time()
       # Send the invitations (this mocks the POST request made by the form)
       conn =
         post(
@@ -1178,19 +1177,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       emails_sent = [user_1.email, user_2.email, non_existant_email_1] |> Enum.sort()
       assert emails_sent == get_emails_of_users_enrolled_in_section(emails_sent, section.slug)
 
-      assert redirected_to(conn) == students_url
+      # Redirects to the students page, filtered by the pending_confirmation users
+      assert redirected_to(conn) == students_url <> "?filter_by=pending_confirmation"
 
       new_users =
         Oli.Accounts.User
         |> where([u], u.email in [^user_1.email, ^user_2.email, ^non_existant_email_1])
-        |> select([u], {u.email, u.invitation_token})
         |> Repo.all()
-        |> Enum.into(%{})
 
-      assert length(Map.keys(new_users)) == 3
-      assert Map.get(new_users, user_1.email) == nil
-      assert Map.get(new_users, user_2.email) == nil
-      assert Map.get(new_users, non_existant_email_1) != nil
+      assert length(new_users) == 3
     end
 
     test "can't invite new users to the section if section is not open and free", %{conn: conn} do

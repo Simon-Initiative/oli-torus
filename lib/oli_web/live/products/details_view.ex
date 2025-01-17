@@ -130,6 +130,26 @@ defmodule OliWeb.Products.DetailsView do
         </div>
       </div>
 
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Certificate Settings</h4>
+          <div class="max-w-[30rem] text-muted">
+            Design and deliver digital credentials to students that complete this course.
+          </div>
+        </div>
+        <div class="flex flex-col md:col-span-8 gap-2">
+          <div>
+            This product <b>does <%= unless @product.certificate_enabled, do: "not" %></b>
+            currently produce a certificate.
+          </div>
+          <div>
+            <a href={~p"/authoring/products/#{@product.slug}/certificate_settings"}>
+              Manage Certificate Settings
+            </a>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-12 py-5">
         <div class="md:col-span-4">
           <h4>Actions</h4>

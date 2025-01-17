@@ -186,6 +186,7 @@ defmodule Oli.Authoring.Course do
       |> where(^filter_by_collaborator)
       |> where(^filter_by_status)
       |> where(^filter_by_text)
+      |> where([_, _, o, _], o.status == :accepted and o.author_id == ^id)
       |> limit(^limit)
       |> offset(^offset)
       |> select([_, p, _, a], %{
@@ -621,5 +622,40 @@ defmodule Oli.Authoring.Course do
       nil ->
         nil
     end
+  end
+
+  @doc """
+  Returns the author_project for a given project and author.
+  The `filter_by_status` boolean option is used to filter the author_project by status
+  (author_project status = :accepted and section status = :active).
+  """
+  def get_author_project(project_slug, author_id, opts \\ [filter_by_status: true]) do
+    maybe_filter_by_status =
+      if opts[:filter_by_status] do
+        dynamic([ap, p], ap.status == :accepted and p.status == :active)
+      else
+        true
+      end
+
+    query =
+      from(
+        ap in AuthorProject,
+        join: p in Project,
+        on: ap.project_id == p.id,
+        where: ap.author_id == ^author_id and p.slug == ^project_slug,
+        where: ^maybe_filter_by_status,
+        select: ap
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Updates the author_project.
+  """
+  def update_author_project(%AuthorProject{} = ap, attrs) do
+    ap
+    |> AuthorProject.changeset(attrs)
+    |> Repo.update()
   end
 end

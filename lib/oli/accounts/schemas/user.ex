@@ -499,17 +499,20 @@ defmodule Oli.Accounts.User do
   any password for authentication.
   (The user will set the password in the redeem invitation flow)
   """
-  @spec invite_changeset(Ecto.Schema.t() | Changeset.t(), map()) :: Changeset.t()
-  def invite_changeset(%Changeset{} = changeset, attrs) do
+  @spec invite_changeset(Ecto.Schema.t() | Changeset.t(), map(), list()) :: Changeset.t()
+  def invite_changeset(user, attrs, opts \\ [])
+
+  def invite_changeset(%Changeset{} = changeset, attrs, opts) do
     changeset
     |> cast(attrs, [:email])
     |> validate_required([:email])
+    |> validate_email(opts)
   end
 
-  def invite_changeset(user, attrs) do
+  def invite_changeset(user, attrs, opts) do
     user
     |> Ecto.Changeset.change()
-    |> invite_changeset(attrs)
+    |> invite_changeset(attrs, opts)
   end
 
   @doc """

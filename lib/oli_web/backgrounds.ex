@@ -660,4 +660,10 @@ defmodule OliWeb.Backgrounds do
     <.instructor_sign_in />
     """
   end
+
+  def author_invitation(assigns) do
+    ~H"""
+    <.author_sign_in />
+    """
+  end
 end
