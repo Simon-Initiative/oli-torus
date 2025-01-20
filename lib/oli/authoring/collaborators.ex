@@ -1,6 +1,9 @@
 defmodule Oli.Authoring.Collaborators do
   use OliWeb, :verified_routes
+
+  alias Oli.Accounts.AuthorToken
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
+  alias Oli.{Email, Mailer}
   alias Oli.Repo
   alias Oli.Accounts
   alias Oli.Authoring.Course
@@ -10,7 +13,7 @@ defmodule Oli.Authoring.Collaborators do
     Repo.get_by(AuthorProject, %{author_id: author_id, project_id: project_id})
   end
 
-  def change_collaborator(email, project_slug) do
+  def change_collaborator(email, project_slug, status) do
     with {:ok, author} <-
            Accounts.get_author_by_email(email)
            |> trap_nil("An author with that email was not found."),
@@ -42,7 +45,8 @@ defmodule Oli.Authoring.Collaborators do
           |> AuthorProject.changeset(%{
             author_id: author.id,
             project_id: project.id,
-            project_role_id: project_role.id
+            project_role_id: project_role.id,
+            status: status
           })
 
         _ ->
@@ -54,34 +58,70 @@ defmodule Oli.Authoring.Collaborators do
     end
   end
 
-  def add_collaborator(conn, email, project_slug) do
-    with {:ok, author, status} <- get_or_create_invited_author(email),
-         {:ok, results} <- add_collaborator(email, project_slug),
+  @doc """
+  Invite a collaborator to a project.
+  It creates the author if that email does not exist in the system
+  and then creates an invitation token and sends an email to the invited author/collaborator.
+  """
+
+  @spec invite_collaborator(String.t(), String.t(), String.t()) :: {:ok, any()} | {:error, any()}
+  def invite_collaborator(inviter_name, email, project_slug) do
+    with {:ok, author} <- get_or_create_invited_author(email),
+         {:ok, results} <- do_add_collaborator(email, project_slug, :pending_confirmation),
+         {:ok, email_data} <- create_invitation_token(author, project_slug),
          {:ok, project} <-
            Course.get_project_by_slug(project_slug)
            |> trap_nil("The project was not found."),
          {:ok, _mail} <-
-           deliver_collaborator_invitation_email(conn, author, project, status) do
+           send_email_invitation(email_data, inviter_name, project.title) do
       {:ok, results}
     else
       {:error, message} -> {:error, message}
     end
   end
 
+  defp create_invitation_token(author, project_slug) do
+    {non_hashed_token, author_token} =
+      AuthorToken.build_email_token(author, "collaborator_invitation:#{project_slug}")
+
+    Oli.Repo.insert!(author_token)
+
+    {:ok, %{sent_to: author_token.sent_to, token: non_hashed_token}}
+  end
+
+  defp send_email_invitation(email_data, inviter_name, project_title) do
+    Email.create_email(
+      email_data.sent_to,
+      "You were invited as a collaborator to \"#{project_title}\"",
+      :collaborator_invitation,
+      %{
+        inviter: inviter_name,
+        url: url(OliWeb.Endpoint, ~p"/users/invite/#{email_data.token}"),
+        project_title: project_title
+      }
+    )
+    |> Mailer.deliver()
+  end
+
   def add_collaborator(author = %Accounts.Author{}, project_slug) when is_binary(project_slug) do
-    add_collaborator(author.email, project_slug)
+    do_add_collaborator(author.email, project_slug)
   end
 
   def add_collaborator(email, project = %Course.Project{}) when is_binary(email) do
-    add_collaborator(email, project.slug)
+    do_add_collaborator(email, project.slug)
   end
 
   def add_collaborator(author = %Accounts.Author{}, project = %Course.Project{}) do
-    add_collaborator(author.email, project.slug)
+    do_add_collaborator(author.email, project.slug)
   end
 
   def add_collaborator(email, project_slug) when is_binary(email) and is_binary(project_slug) do
-    changeset_or_error = change_collaborator(email, project_slug)
+    do_add_collaborator(email, project_slug)
+  end
+
+  def do_add_collaborator(email, project_slug, status \\ :accepted)
+      when is_binary(email) and is_binary(project_slug) do
+    changeset_or_error = change_collaborator(email, project_slug, status)
 
     case changeset_or_error do
       %Ecto.Changeset{} -> Repo.insert(changeset_or_error)
@@ -123,54 +163,12 @@ defmodule Oli.Authoring.Collaborators do
     |> case do
       nil ->
         case Accounts.create_invited_author(email) do
-          {:ok, author} -> {:ok, author, :new_user}
+          {:ok, author} -> {:ok, author}
           {:error, _changeset} -> {:error, "Unable to create invitation for new author"}
         end
 
       author ->
-        if not is_nil(author.invitation_token) and is_nil(author.invitation_accepted_at) do
-          {:ok, author, :new_user}
-        else
-          {:ok, author, :existing_user}
-        end
+        {:ok, author}
     end
-  end
-
-  defp deliver_collaborator_invitation_email(conn, collaborator_author, project, status) do
-    invited_by = conn.assigns.current_author
-
-    url =
-      case status do
-        :new_user ->
-          token = sign_invitation_token(conn, collaborator_author)
-          author_invitation_url(conn, token)
-
-        :existing_user ->
-          ~p"/workspaces/course_author/#{project.slug}/overview"
-      end
-
-    email =
-      Oli.Email.create_email(
-        collaborator_author.email,
-        "Collaborator Invitation",
-        :collaborator_invitation,
-        %{
-          invited_by: invited_by,
-          invited_by_user_id: invited_by.id,
-          url: url,
-          project_title: project.title
-        }
-      )
-
-    Oli.Mailer.deliver(email)
-    {:ok, "email sent"}
-  end
-
-  defp author_invitation_url(_conn, _token) do
-    throw("NOT IMPLEMENTED")
-  end
-
-  defp sign_invitation_token(_conn, _collaborator_author) do
-    throw("NOT IMPLEMENTED")
   end
 end

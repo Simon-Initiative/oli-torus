@@ -50,23 +50,23 @@ defmodule OliWeb.Users.Common do
               </span>
               """
 
-            not is_nil(assigns.email_confirmed_at) ->
-              ~H"""
-              <span
-                data-bs-toggle="tooltip"
-                data-bs-html="true"
-                title={"Email Confirmed on #{Utils.render_precise_date(@row, :email_confirmed_at, @ctx)}"}
-              >
-                <i class="fas fa-check text-success"></i>
-              </span>
-              """
-
             not is_nil(assigns.invitation_accepted_at) ->
               ~H"""
               <span
                 data-bs-toggle="tooltip"
                 data-bs-html="true"
                 title={"Invitation Accepted on #{Utils.render_precise_date(@row, :invitation_accepted_at, @ctx)}"}
+              >
+                <i class="fas fa-check text-success"></i>
+              </span>
+              """
+
+            not is_nil(assigns.email_confirmed_at) ->
+              ~H"""
+              <span
+                data-bs-toggle="tooltip"
+                data-bs-html="true"
+                title={"Email Confirmed on #{Utils.render_precise_date(@row, :email_confirmed_at, @ctx)}"}
               >
                 <i class="fas fa-check text-success"></i>
               </span>
