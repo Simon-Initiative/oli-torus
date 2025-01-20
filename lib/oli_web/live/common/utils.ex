@@ -233,4 +233,30 @@ defmodule OliWeb.Common.Utils do
         nil
     end
   end
+
+  @doc """
+    Extracts the text for a feedback item from an attempt.
+  """
+  def extract_feedback_text(activity_attempts) do
+    activity_attempts
+    |> Enum.flat_map(&extract_from_activity_attempt/1)
+  end
+
+  defp extract_from_activity_attempt(%{part_attempts: part_attempts}) do
+    part_attempts
+    |> Enum.flat_map(&extract_from_part_attempt/1)
+  end
+
+  defp extract_from_part_attempt(%{feedback: %{"content" => content}}) do
+    content
+    |> Enum.map(&extract_text/1)
+  end
+
+  defp extract_from_part_attempt(%{feedback: nil}), do: []
+
+  defp extract_text(%{"children" => children}) do
+    children
+    |> Enum.map(& &1["text"])
+    |> Enum.join(" ")
+  end
 end
