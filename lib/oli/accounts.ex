@@ -18,6 +18,9 @@ defmodule Oli.Accounts do
     UserPreferences
   }
 
+  alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.Course.Project
+
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
   alias Oli.Institutions.Institution
@@ -111,9 +114,10 @@ defmodule Oli.Accounts do
     Repo.insert_all(User, users, returning: [:id, :email])
   end
 
-  def create_invited_author(_email) do
-    # MER-4068 TODO
-    throw("Not implemented")
+  def create_invited_author(email) do
+    %Author{}
+    |> Author.invite_changeset(%{email: email})
+    |> Repo.insert()
   end
 
   def browse_authors(
@@ -304,24 +308,72 @@ defmodule Oli.Accounts do
   """
 
   def insert_or_update_lms_user(%{sub: sub} = changes, institution_id) do
+    # First see if we can find a user that matches the sub and institution id exactly. This
+    # will end up being the most common case (on all launches for a user beyond the first)
+    user =
+      case Repo.get_by(User, sub: sub, lti_institution_id: institution_id) do
+        # If not found directly, do another read of ALL users with this sub.  This step
+        # isn't strictly necessary (we could just call find_user_through_enrollment), but
+        # do it to make this more robust by reducing the need to rely on the enrollment.
+        nil ->
+          case get_all_users_by_sub(sub) do
+            # If no users with this sub, we can be absolutely sure that we need to create a new user
+            [] -> nil
+            # Otherwise, we now need to check to see if one of these users is enrolled in a section
+            # that is pinned to this institution
+            _ -> find_user_through_enrollment(sub, institution_id)
+          end
+
+        user ->
+          user
+      end
+
+    case user do
+      nil -> create_lms_user(changes)
+      user -> update_lms_user(user, changes)
+    end
+  end
+
+  defp get_all_users_by_sub(sub) do
+    from(u in User, where: u.sub == ^sub) |> Repo.all()
+  end
+
+  defp find_user_through_enrollment(sub, institution_id) do
     # using enrollment records, we can infer the user's institution. This is because
     # an LTI user can be enrolled in multiple sections, but all sections must be from
     # the same institution.
-    from(e in Enrollment,
-      join: s in Section,
-      on: e.section_id == s.id,
-      join: u in User,
-      on: e.user_id == u.id,
-      join: institution in Institution,
-      on: s.institution_id == institution.id,
-      where:
-        u.sub == ^sub and institution.id == ^institution_id and s.status == :active and
-          e.status == :enrolled,
-      limit: 1,
-      select: u
-    )
-    |> Repo.one()
-    |> insert_or_update_external_user(changes)
+    results =
+      from(e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: u in User,
+        on: e.user_id == u.id,
+        join: institution in Institution,
+        on: s.institution_id == institution.id,
+        where: u.sub == ^sub and institution.id == ^institution_id,
+        select: u,
+        order_by: [desc: u.inserted_at]
+      )
+      |> Repo.all()
+
+    # We must handle the fact that duplicate records can exist in the result set, in
+    # this case we select the "most recently inserted" user record
+    case results do
+      [user | _] -> user
+      [] -> nil
+    end
+  end
+
+  defp create_lms_user(%{sub: sub} = changes) do
+    %User{sub: sub, independent_learner: false}
+    |> User.noauth_changeset(changes)
+    |> Repo.insert()
+  end
+
+  defp update_lms_user(%User{} = user, changes) do
+    user
+    |> User.noauth_changeset(changes)
+    |> Repo.update()
   end
 
   @doc """
@@ -821,31 +873,24 @@ defmodule Oli.Accounts do
     )
   end
 
-  def project_authors(project_ids) when is_list(project_ids) do
+  def authors_projects(project_ids) when is_list(project_ids) do
     Repo.all(
-      from(assoc in "authors_projects",
+      from(ap in AuthorProject,
         join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id in ^project_ids and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: [author, assoc.project_id]
+        on: ap.author_id == author.id,
+        join: project in Project,
+        on: ap.project_id == project.id,
+        where: ap.project_id in ^project_ids,
+        select: %{
+          author: author,
+          author_project_status: ap.status,
+          project_slug: project.slug
+        }
       )
     )
   end
 
-  def project_authors(project) do
-    Repo.all(
-      from(assoc in "authors_projects",
-        join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id == ^project.id and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: author
-      )
-    )
-  end
+  def authors_projects(project), do: authors_projects([project.id])
 
   @doc """
   Get all the communities for which the author is an admin.
@@ -1399,7 +1444,7 @@ defmodule Oli.Accounts do
   ## Examples
 
       iex> get_user_by_enrollment_invitation_token("validtoken")
-      %User{}
+      %UserToken{}
 
       iex> get_user_by_enrollment_invitation_token("invalidtoken")
       nil
@@ -1540,6 +1585,33 @@ defmodule Oli.Accounts do
       hash_password: false,
       validate_email: false
     )
+  end
+
+  @doc """
+  Updates the author data after the inviter user redeems the authoring invitation.
+  """
+  def accept_author_invitation(author, attrs \\ %{}) do
+    author
+    |> Author.accept_invitation_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  When a new collaborator accepts an invitation to a project, the author's data is updated (password for intance)
+  and the author_project status is updated from `:pending_confirmation` to `:accepted`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      author
+      |> Author.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      author_project
+      |> AuthorProject.changeset(%{status: :accepted})
+      |> Repo.update!()
+    end)
   end
 
   ## Settings
@@ -1856,6 +1928,48 @@ defmodule Oli.Accounts do
     with {:ok, query} <- AuthorToken.verify_email_token_query(token, "reset_password"),
          %Author{} = author <- Repo.one(query) do
       author
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author token by invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_author_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_author_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_author_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.author_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author by collaboration invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_collaboration_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_collaboration_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_collaboration_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.collaborator_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
     else
       _ -> nil
     end

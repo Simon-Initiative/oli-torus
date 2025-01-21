@@ -92,8 +92,10 @@ const InspectorIcon = () => (
 // Primary Preview Tools component
 interface PreviewToolsProps {
   model: any;
+  reviewMode: boolean;
+  isInstructor: boolean;
 }
-const PreviewTools: React.FC<PreviewToolsProps> = ({ model }) => {
+const PreviewTools: React.FC<PreviewToolsProps> = ({ model, reviewMode, isInstructor }) => {
   const [opened, setOpened] = useState<boolean>(false);
   const [view, setView] = useState<string>('screens');
   const currentActivity = useSelector(selectCurrentActivity);
@@ -143,26 +145,30 @@ const PreviewTools: React.FC<PreviewToolsProps> = ({ model }) => {
       <div className="pt-body">
         {!opened && (
           <div className="action-picker">
-            <button
-              onClick={() => displayView('screens')}
-              className="mb-2"
-              style={{
-                border: 'none',
-                background: 'transparent',
-              }}
-            >
-              <ScreensIcon />
-            </button>
-            <button
-              onClick={() => displayView('adaptivity')}
-              className="mb-2"
-              style={{
-                border: 'none',
-                background: 'transparent',
-              }}
-            >
-              <AdaptivityIcon />
-            </button>
+            {!reviewMode && (
+              <>
+                <button
+                  onClick={() => displayView('screens')}
+                  className="mb-2"
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                  }}
+                >
+                  <ScreensIcon />
+                </button>
+                <button
+                  onClick={() => displayView('adaptivity')}
+                  className="mb-2"
+                  style={{
+                    border: 'none',
+                    background: 'transparent',
+                  }}
+                >
+                  <AdaptivityIcon />
+                </button>
+              </>
+            )}
             <button
               onClick={() => displayView('inspector')}
               style={{
@@ -182,7 +188,13 @@ const PreviewTools: React.FC<PreviewToolsProps> = ({ model }) => {
           />
         )}
         {opened && view === 'adaptivity' && <Adaptivity currentActivity={currentActivity} />}
-        {opened && view === 'inspector' && <Inspector currentActivity={currentActivity} />}
+        {opened && view === 'inspector' && (
+          <Inspector
+            reviewMode={reviewMode}
+            isInstructor={isInstructor}
+            currentActivity={currentActivity}
+          />
+        )}
       </div>
     </div>
   );

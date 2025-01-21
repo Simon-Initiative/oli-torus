@@ -489,12 +489,20 @@ defmodule OliWeb.DeliveryController do
               out_of = Map.get(page_enrollment, :out_of)
               Map.put(acc, page_title, safe_score(score, out_of))
             end)
-            |> Map.put(:student, OliWeb.Common.Utils.name(enrollment.user))
+            |> Map.put(:student_id, enrollment.user.id)
+            |> Map.put(:student_lms_id, enrollment.user.sub)
+            |> Map.put(:student_family_name, enrollment.user.family_name)
+            |> Map.put(:student_given_name, enrollment.user.given_name)
+            |> Map.put(:student_email, enrollment.user.email)
           end)
           |> DataTable.new()
           |> DataTable.headers(
             [
-              :student
+              :student_id,
+              :student_lms_id,
+              :student_family_name,
+              :student_given_name,
+              :student_email
             ] ++ Enum.map(pages, &elem(&1, 1))
           )
           |> DataTable.to_csv_content()

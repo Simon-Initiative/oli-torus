@@ -49,7 +49,15 @@ defmodule OliWeb.LtiController do
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
       {:ok, lti_params} ->
-        handle_valid_lti_1p3_launch(conn, lti_params)
+        case handle_valid_lti_1p3_launch(conn, lti_params) do
+          {:ok, conn} ->
+            conn
+
+          {:error, e} ->
+            Logger.error("Failed to handle valid LTI 1.3 launch: #{Kernel.inspect(e)}")
+
+            render(conn, "lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
+        end
 
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
@@ -345,80 +353,86 @@ defmodule OliWeb.LtiController do
     client_id = LtiParams.peek_client_id(lti_params)
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
-    case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
-      {institution, registration, _deployment} ->
-        lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+    Oli.Repo.transaction(fn ->
+      case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
+        {institution, registration, _deployment} ->
+          lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
 
-        # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
-        # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
-        case Accounts.insert_or_update_lms_user(
-               %{
-                 sub: lti_params["sub"],
-                 name: lti_params["name"],
-                 given_name: lti_params["given_name"],
-                 family_name: lti_params["family_name"],
-                 middle_name: lti_params["middle_name"],
-                 nickname: lti_params["nickname"],
-                 preferred_username: lti_params["preferred_username"],
-                 profile: lti_params["profile"],
-                 picture: lti_params["picture"],
-                 website: lti_params["website"],
-                 email: lti_params["email"],
-                 email_verified: true,
-                 gender: lti_params["gender"],
-                 birthdate: lti_params["birthdate"],
-                 zoneinfo: lti_params["zoneinfo"],
-                 locale: lti_params["locale"],
-                 phone_number: lti_params["phone_number"],
-                 phone_number_verified: lti_params["phone_number_verified"],
-                 address: lti_params["address"]
-               },
-               institution.id
-             ) do
-          {:ok, user} ->
-            # update lti params and session to be associated with the current lms user
-            {:ok, _} =
-              LtiParams.create_or_update_lti_params(lti_params, user.id)
+          # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
+          # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
+          case Accounts.insert_or_update_lms_user(
+                 %{
+                   sub: lti_params["sub"],
+                   name: lti_params["name"],
+                   given_name: lti_params["given_name"],
+                   family_name: lti_params["family_name"],
+                   middle_name: lti_params["middle_name"],
+                   nickname: lti_params["nickname"],
+                   preferred_username: lti_params["preferred_username"],
+                   profile: lti_params["profile"],
+                   picture: lti_params["picture"],
+                   website: lti_params["website"],
+                   email: lti_params["email"],
+                   email_verified: true,
+                   gender: lti_params["gender"],
+                   birthdate: lti_params["birthdate"],
+                   zoneinfo: lti_params["zoneinfo"],
+                   locale: lti_params["locale"],
+                   phone_number: lti_params["phone_number"],
+                   phone_number_verified: lti_params["phone_number_verified"],
+                   address: lti_params["address"],
+                   lti_institution_id: institution.id
+                 },
+                 institution.id
+               ) do
+            {:ok, user} ->
+              # update lti params and session to be associated with the current lms user
+              {:ok, _} =
+                LtiParams.create_or_update_lti_params(lti_params, user.id)
 
-            # update user platform roles
-            Accounts.update_user_platform_roles(user, PlatformRoles.get_roles_by_uris(lti_roles))
+              # update user platform roles
+              Accounts.update_user_platform_roles(
+                user,
+                PlatformRoles.get_roles_by_uris(lti_roles)
+              )
 
-            # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
-            # safeguard against the case that context is missing
-            case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
-              nil ->
-                {_error_id, error_msg} = log_error("context claim is missing from lti params")
+              # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
+              # safeguard against the case that context is missing
+              case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
+                nil ->
+                  {_error_id, error_msg} = log_error("context claim is missing from lti params")
 
-                throw(error_msg)
+                  throw(error_msg)
 
-              context ->
-                # update section specifics - if one exists. Enroll the user and also update the section details
-                with {:ok, section} <- get_existing_section(lti_params) do
-                  # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
-                  context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+                context ->
+                  # update section specifics - if one exists. Enroll the user and also update the section details
+                  with {:ok, section} <- get_existing_section(lti_params) do
+                    # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
+                    context_roles = ContextRoles.get_roles_by_uris(lti_roles)
 
-                  # if a course section exists, ensure that this user has an enrollment in this section
-                  enroll_user(user.id, section.id, context_roles)
+                    # if a course section exists, ensure that this user has an enrollment in this section
+                    enroll_user(user.id, section.id, context_roles)
 
-                  # make sure section details are up to date
-                  %{"title" => context_title} = context
+                    # make sure section details are up to date
+                    %{"title" => context_title} = context
 
-                  {:ok, _section} =
-                    update_section_details(context_title, section, lti_params, registration)
-                end
+                    {:ok, _section} =
+                      update_section_details(context_title, section, lti_params, registration)
+                  end
 
-                # sign current user in and redirect to home page
-                conn
-                |> UserAuth.create_session(user)
-                |> redirect(to: "/course")
-            end
+                  # sign current user in and redirect to home page
+                  conn
+                  |> UserAuth.create_session(user)
+                  |> redirect(to: "/course")
+              end
 
-          {:error, changeset} ->
-            {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
+            {:error, changeset} ->
+              {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
 
-            throw(error_msg)
-        end
-    end
+              throw(error_msg)
+          end
+      end
+    end)
   end
 
   defp enroll_user(user_id, section_id, context_roles) do

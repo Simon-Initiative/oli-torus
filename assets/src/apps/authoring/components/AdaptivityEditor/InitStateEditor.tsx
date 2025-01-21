@@ -5,6 +5,7 @@ import debounce from 'lodash/debounce';
 import flatten from 'lodash/flatten';
 import uniq from 'lodash/uniq';
 import { getReferencedKeysInConditions } from 'adaptivity/rules-engine';
+import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
@@ -41,7 +42,7 @@ interface InitStateItemProps {
 }
 const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
   const typeRef = useRef<HTMLSelectElement>(null);
-
+  const dispatch = useDispatch();
   const [target, setTarget] = useState(state.target);
   const [value, setValue] = useState(state.value);
 
@@ -94,7 +95,11 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           placeholder="Target"
           value={target}
           onChange={(e) => setTarget(e.target.value)}
-          onBlur={(e) => handleTargetChange(e.target.value)}
+          onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
+          onBlur={(e) => {
+            handleTargetChange(e.target.value);
+            dispatch(setCurrentPartPropertyFocus({ focus: true }));
+          }}
           title={target.toString()}
           tabIndex={0}
         />
@@ -161,7 +166,11 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           value={value}
           placeholder="Value"
           onChange={(e) => setValue(e.target.value)}
-          onBlur={(e) => onChange(state.id, 'value', e.target.value)}
+          onFocus={(e) => dispatch(setCurrentPartPropertyFocus({ focus: false }))}
+          onBlur={(e) => {
+            onChange(state.id, 'value', e.target.value);
+            dispatch(setCurrentPartPropertyFocus({ focus: true }));
+          }}
           title={state.value.toString()}
           tabIndex={0}
         />

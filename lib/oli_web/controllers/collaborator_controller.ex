@@ -61,7 +61,7 @@ defmodule OliWeb.CollaboratorController do
             else
               emails
               |> Enum.reduce({conn, []}, fn email, {conn, failures} ->
-                add_collaborator(conn, email, project_id, failures)
+                invite_collaborator(conn, email, project_id, failures)
               end)
               |> case do
                 {conn, []} ->
@@ -71,23 +71,23 @@ defmodule OliWeb.CollaboratorController do
 
                 {conn, failures} ->
                   if Enum.count(failures) == Enum.count(emails) do
-                    log_error("Failed to add collaborators", failures)
+                    log_error("Failed to invite collaborators", failures)
 
                     conn
-                    |> put_flash(:error, "Failed to add collaborators")
+                    |> put_flash(:error, "Failed to invite collaborators")
                     |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
                   else
                     failed_emails = Enum.map(failures, fn {email, _msg} -> email end)
 
                     log_error(
-                      "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}",
+                      "Failed to invite some collaborators: #{Enum.join(failed_emails, ", ")}",
                       failures
                     )
 
                     conn
                     |> put_flash(
                       :error,
-                      "Failed to add some collaborators: #{Enum.join(failed_emails, ", ")}"
+                      "Failed to invite some collaborators: #{Enum.join(failed_emails, ", ")}"
                     )
                     |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
                   end
@@ -106,20 +106,58 @@ defmodule OliWeb.CollaboratorController do
     # For later use -> change author role within project
   end
 
-  def delete(conn, %{"project_id" => project_id, "author_email" => author_email}) do
-    case Collaborators.remove_collaborator(author_email, project_id) do
-      {:ok, _} ->
-        redirect(conn, to: ~p"/workspaces/course_author/#{project_id}/overview")
+  def delete(conn, %{"project_id" => project_slug, "author_email" => author_email}) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.run(:author, fn _repo, _changes ->
+      case Oli.Accounts.get_author_by_email(author_email) do
+        nil -> {:error, "Author not found"}
+        author -> {:ok, author}
+      end
+    end)
+    |> Ecto.Multi.run(:remove_author_from_project, fn _repo, _changes ->
+      Collaborators.remove_collaborator(author_email, project_slug)
+    end)
+    |> Ecto.Multi.run(:remove_invitation, fn _repo, %{author: author} ->
+      case author.password_hash do
+        nil ->
+          # the author was invited but still did not accept the invitation
+          # We then delete the author and the correponding author_token will be deleted automatically (on delete cascade)
+          Oli.Accounts.delete_author(author)
 
-      {:error, message} ->
+        _some_hashed_password ->
+          # the author is already a member of Torus
+          # so we must manually delete the author_token created when the invitation was sent
+
+          Oli.Accounts.AuthorToken.author_and_contexts_query(
+            author,
+            ["collaborator_invitation:#{project_slug}"]
+          )
+          |> Oli.Repo.one()
+          |> case do
+            nil ->
+              {:ok, "Author token already deleted"}
+
+            author_token ->
+              Oli.Repo.delete(author_token)
+          end
+      end
+    end)
+    |> Oli.Repo.transaction()
+    |> case do
+      {:ok, _} ->
         conn
-        |> put_flash(:error, "We couldn't remove that author from the project. #{message}")
-        |> redirect(to: ~p"/workspaces/course_author/#{project_id}/overview")
+        |> put_flash(:info, "Author removed from project")
+        |> redirect(to: ~p"/workspaces/course_author/#{project_slug}/overview")
+
+      _ ->
+        conn
+        |> put_flash(:error, "We couldn't remove that author from the project.")
+        |> redirect(to: ~p"/workspaces/course_author/#{project_slug}/overview")
     end
   end
 
-  defp add_collaborator(conn, email, project_id, failures) do
-    case Collaborators.add_collaborator(conn, email, project_id) do
+  defp invite_collaborator(conn, email, project_id, failures) do
+    case Collaborators.invite_collaborator(conn.assigns.current_author.name, email, project_id) do
       {:ok, _results} ->
         {conn, failures}
 

@@ -11,10 +11,14 @@ import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringC
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
-import { orderingV1toV2 } from 'components/activities/ordering/transformations/v2';
+import {
+  OrderingSchemaV2,
+  orderingV1toV2,
+} from 'components/activities/ordering/transformations/v2';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
-import { getCorrectChoiceIds } from 'data/activities/model/responses';
+import { findTargetedResponses, getCorrectChoiceIds } from 'data/activities/model/responses';
+import { ruleValue } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
@@ -88,12 +92,25 @@ export const Ordering: React.FC = () => {
   );
 };
 
+// Owing to migration tool bug, migrated courses lack targeted feedback map for
+// ordering. Work around by constructing it as needed when migrating model version
+function ensureTargetedMappings(model: OrderingSchemaV2) {
+  if (model.authoring.targeted.length === 0) {
+    model.authoring.targeted = findTargetedResponses(model, model.authoring.parts[0].id).map(
+      (r) => [ruleValue(r.rule).split(' '), r.id],
+    );
+  }
+  return model;
+}
+
 export class OrderingAuthoring extends AuthoringElement<OrderingSchema> {
   migrateModelVersion(model: any) {
-    return Maybe.maybe(model.authoring.version).caseOf({
-      just: (_v2) => model,
-      nothing: () => orderingV1toV2(model),
-    });
+    return ensureTargetedMappings(
+      Maybe.maybe(model.authoring.version).caseOf({
+        just: (_v2) => model,
+        nothing: () => orderingV1toV2(model),
+      }),
+    );
   }
 
   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<OrderingSchema>) {

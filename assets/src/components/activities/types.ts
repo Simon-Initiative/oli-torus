@@ -3,6 +3,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
 import { EditorType, ResourceContext } from 'data/content/resource';
+import { ActivityTrigger } from 'data/triggers';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
@@ -581,6 +582,7 @@ export interface Part extends Identifiable {
   outOf?: null | number;
   incorrectScore?: null | number;
   targets?: string[];
+  triggers?: ActivityTrigger[];
 }
 
 /**

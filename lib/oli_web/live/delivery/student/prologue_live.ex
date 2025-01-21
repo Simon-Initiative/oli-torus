@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
     section:
       {[:id, :slug, :title, :brand, :lti_1p3_deployment, :resource_gating_index, :customizations],
        %Sections.Section{}},
-    current_user: {[:id, :name, :email], %User{}}
+    current_user: {[:id, :name, :email, :sub], %User{}}
   }
 
   def mount(params, _session, socket) do

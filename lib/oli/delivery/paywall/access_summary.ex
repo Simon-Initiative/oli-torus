@@ -69,4 +69,12 @@ defmodule Oli.Delivery.Paywall.AccessSummary do
       grace_period_remaining: nil
     }
   end
+
+  def has_zero_cost() do
+    %AccessSummary{
+      available: true,
+      reason: :has_zero_cost,
+      grace_period_remaining: nil
+    }
+  end
 end

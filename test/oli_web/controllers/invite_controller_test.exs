@@ -246,6 +246,76 @@ defmodule OliWeb.InviteControllerTest do
     end
   end
 
+  describe "accept_collaborator_invitation action" do
+    setup [:create_project_and_author]
+
+    test "logs in the author and redirects to the project", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      conn =
+        post(
+          conn,
+          ~p"/collaborators/accept_invitation?email=#{author.email}&project_slug=#{project.slug}",
+          %{"author" => %{"password" => "hello world!", "remember_me" => "false"}}
+        )
+
+      assert conn.resp_body ==
+               "<html><body>You are being <a href=\"/workspaces/course_author/#{project.slug}/overview\">redirected</a>.</body></html>"
+    end
+
+    test "does not log in the author and redirects to the project if the provided password is invalid",
+         %{
+           conn: conn,
+           project: project,
+           author: author
+         } do
+      conn =
+        post(
+          conn,
+          ~p"/collaborators/accept_invitation?email=#{author.email}&project_slug=#{project.slug}",
+          %{"author" => %{"password" => "invalid_password", "remember_me" => "false"}}
+        )
+
+      assert conn.private.plug_session["phoenix_flash"]["error"] == "Invalid email or password"
+    end
+  end
+
+  describe "accept_author_invitation action" do
+    setup [:create_author]
+
+    test "logs in the author and redirects to the project", %{
+      conn: conn,
+      author: author
+    } do
+      conn =
+        post(
+          conn,
+          ~p"/authors/accept_invitation?email=#{author.email}",
+          %{"author" => %{"password" => "hello world!", "remember_me" => "false"}}
+        )
+
+      assert conn.resp_body ==
+               "<html><body>You are being <a href=\"/workspaces/course_author/\">redirected</a>.</body></html>"
+    end
+
+    test "does not log in the author if the provided password is invalid",
+         %{
+           conn: conn,
+           author: author
+         } do
+      conn =
+        post(
+          conn,
+          ~p"/authors/accept_invitation?email=#{author.email}",
+          %{"author" => %{"password" => "invalid_password", "remember_me" => "false"}}
+        )
+
+      assert conn.private.plug_session["phoenix_flash"]["error"] == "Invalid email or password"
+    end
+  end
+
   defp create_admin(%{conn: conn}) do
     {:ok, author} =
       Author.noauth_changeset(%Author{}, %{
@@ -265,5 +335,13 @@ defmodule OliWeb.InviteControllerTest do
 
   defp create_section_and_user(%{conn: conn}) do
     {:ok, conn: conn, section: insert(:section), user: user_fixture()}
+  end
+
+  defp create_project_and_author(%{conn: conn}) do
+    {:ok, conn: conn, project: insert(:project), author: author_fixture()}
+  end
+
+  defp create_author(%{conn: conn}) do
+    {:ok, conn: conn, author: author_fixture()}
   end
 end
