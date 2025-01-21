@@ -16,7 +16,10 @@ defmodule OliWeb.Delivery.StudentOnboarding.Survey do
       # Just in time addition of the survey to the course section's section resources.
       # This was needed due to a hotfix bug that was causing the survey to not be added
       # to the section resources at publication application time.
-      Oli.Delivery.Sections.Updates.ensure_section_resource_exists(section.slug, section.required_survey_resource_id)
+      Oli.Delivery.Sections.Updates.ensure_section_resource_exists(
+        section.slug,
+        section.required_survey_resource_id
+      )
 
       context =
         Oli.Delivery.Page.PageContext.create_for_visit(

@@ -35,7 +35,6 @@ defmodule Oli.Plugs.ForceRequiredSurvey do
         Sections.is_instructor?(user, section_slug)
 
     if !has_completed_survey do
-
       %{slug: survey_slug} = Sections.get_survey(section_slug)
 
       # If the user is trying to access the survey, let them through

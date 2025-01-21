@@ -19,7 +19,8 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       } = ctx
 
       # Verify that when the resource exists, it doesn't get created again
-      {:ok, :exists} = Updates.ensure_section_resource_exists(section.slug, page_1_revision.resource_id)
+      {:ok, :exists} =
+        Updates.ensure_section_resource_exists(section.slug, page_1_revision.resource_id)
 
       # simulate a missing SR by deleting it
       Oli.Repo.delete_all(
@@ -29,7 +30,9 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       )
 
       # Ensure the resource gets created
-      {:ok, count_created} = Updates.ensure_section_resource_exists(section.slug, page_1_revision.resource_id)
+      {:ok, count_created} =
+        Updates.ensure_section_resource_exists(section.slug, page_1_revision.resource_id)
+
       assert count_created == 1
     end
   end
