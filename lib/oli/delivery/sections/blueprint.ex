@@ -331,12 +331,12 @@ defmodule Oli.Delivery.Sections.Blueprint do
       # Change the newly created section resources children so that they point to the correct
       # section resource
       section_resources =
-        Enum.reduce(results, [], fn sr, section_resources ->
+        Enum.reduce(results || [], [], fn sr, section_resources ->
           sr =
             Map.put(
               sr,
               :children,
-              Enum.map(sr.children, fn id -> Map.get(resource_map, id) end)
+              Enum.map(sr.children || [], fn id -> Map.get(resource_map, id) end)
             )
 
           [sr | section_resources]

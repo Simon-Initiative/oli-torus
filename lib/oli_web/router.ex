@@ -1497,6 +1497,9 @@ defmodule OliWeb.Router do
       pipe_through([:require_authenticated_system_admin])
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
+
+      live("/restore_progress", Admin.RestoreUserProgress)
+
       live("/xapi", Admin.UploadPipelineView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
