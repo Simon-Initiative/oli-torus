@@ -24,7 +24,7 @@ services:
     command: bash -c "sleep infinity"
 
   postgres:
-    image: postgres:15.2
+    image: ankane/pgvector
     restart: always
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -43,8 +43,9 @@ services:
       MINIO_ROOT_USER: your_minio_access_key
       MINIO_ROOT_PASSWORD: your_minio_secret_key
     volumes:
-      - ./data:/data
+      - minio_data:/data
     command: ["server", "--console-address", ":9001", "/data"]
 
 volumes:
   postgres_data:
+  minio_data:
