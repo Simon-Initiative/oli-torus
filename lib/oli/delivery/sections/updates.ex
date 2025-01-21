@@ -100,9 +100,6 @@ defmodule Oli.Delivery.Sections.Updates do
     end
 
     PostProcessing.apply(section, :all)
-
-    Oli.Delivery.maybe_update_section_contains_explorations(section)
-    Oli.Delivery.maybe_update_section_contains_deliberate_practice(section)
   end
 
   # Implements the logic to determine *how* to apply the update to the course section,
@@ -176,6 +173,35 @@ defmodule Oli.Delivery.Sections.Updates do
 
       {:error, _} ->
         {:error, :unexpected_count}
+    end
+  end
+
+  def ensure_section_resource_exists(_section_slug, nil), do: {:ok, :exists}
+  def ensure_section_resource_exists(section_slug, resource_id) do
+    case Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, resource_id) do
+      nil ->
+        # Fetch the published revision of this revision along with section and project id
+        query =
+          Oli.Delivery.Sections.SectionsProjectsPublications
+          |> join(:left, [spp], pr in Oli.Publishing.PublishedResource, on: pr.publication_id == spp.publication_id)
+          |> join(:left, [_, pr], rev in Oli.Resources.Revision, on: rev.id == pr.revision_id)
+          |> join(:left, [spp, _, _], s in Oli.Delivery.Sections.Section, on: s.id == spp.section_id)
+          |> where([spp, pr, rev, s], s.slug == ^section_slug and pr.resource_id == ^resource_id)
+          |> select([spp, _pr, rev, section], %{revision: rev, section: section, project_id: spp.project_id})
+          |> limit(1)
+
+        case Repo.one(query) do
+          nil ->
+            {:error, :not_found}
+
+          # Create the section resource record, using the exact same logic used in creating SR records
+          # during publication application
+          %{revision: revision, section: section, project_id: project_id} ->
+            bulk_create_section_resources([revision], section, project_id)
+        end
+
+      _ ->
+        {:ok, :exists}
     end
   end
 
@@ -373,22 +399,22 @@ defmodule Oli.Delivery.Sections.Updates do
       end)
       |> List.flatten()
 
-    unreachable_page_resource_ids =
-      case section.required_survey_resource_id do
-        nil ->
-          Oli.Delivery.Sections.determine_unreachable_pages(
-            [publication.id],
-            hierarchy_ids,
-            all_links
-          )
+    project = Oli.Authoring.Course.get_project!(publication.project_id)
 
-        id ->
-          Oli.Delivery.Sections.determine_unreachable_pages(
-            [publication.id],
-            [id | hierarchy_ids],
-            all_links
-          )
-      end
+    # Determine the unreachable page resource ids, but taking into account if
+    # EITHER the project or the section has a required survey resource id to
+    # ensure that it never gets culled.
+    additional_excluded_ids = [section.required_survey_resource_id, project.required_survey_resource_id]
+    |> Enum.filter(& &1 != nil)
+    |> MapSet.new()
+
+    # Determine the unreachable page resource ids based strictly on hierarchy navigability
+    unreachable_page_resource_ids = Oli.Delivery.Sections.determine_unreachable_pages(
+      [publication.id],
+      hierarchy_ids,
+      all_links
+    )  # But filter out any additional excluded resource ids (like required surveys)
+    |> Enum.filter(fn id -> !Enum.member?(additional_excluded_ids, id) end)
 
     project_id = publication.project_id
 

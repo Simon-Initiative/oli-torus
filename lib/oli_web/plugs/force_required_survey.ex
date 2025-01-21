@@ -26,11 +26,16 @@ defmodule Oli.Plugs.ForceRequiredSurvey do
     section_slug = conn.assigns.section.slug
     user = conn.assigns[:current_user]
 
+    # Just in time, make sure the section resource record exists
+    survey_id = conn.assigns.section.required_survey_resource_id
+    Oli.Delivery.Sections.Updates.ensure_section_resource_exists(section_slug, survey_id)
+
     has_completed_survey =
       Oli.Delivery.has_completed_survey?(section_slug, user.id) or
         Sections.is_instructor?(user, section_slug)
 
     if !has_completed_survey do
+
       %{slug: survey_slug} = Sections.get_survey(section_slug)
 
       # If the user is trying to access the survey, let them through
