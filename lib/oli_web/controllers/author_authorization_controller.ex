@@ -20,7 +20,7 @@ defmodule OliWeb.AuthorAuthorizationController do
   plug :load_session_params when action in [:callback]
   # plug :load_author_by_invitation_token when action in [:callback]
 
-  def new(conn, %{"provider" => provider}) do
+  def new(conn, %{"provider" => provider} = params) do
     config = conn.assigns.assent_auth_config
 
     provider
@@ -32,6 +32,7 @@ defmodule OliWeb.AuthorAuthorizationController do
         conn
         |> store_session_params(session_params)
         |> maybe_store_user_return_to()
+        |> AuthorAuth.maybe_store_link_account_user_id(params)
         # Redirect end-user to provider to authorize access to their account
         |> redirect(external: url)
 
@@ -95,6 +96,7 @@ defmodule OliWeb.AuthorAuthorizationController do
              ) do
           {:ok, conn} ->
             conn
+            |> AuthorAuth.maybe_link_user_author_account(conn.assigns.current_author)
             |> redirect(to: redirect_to)
 
           {:error, conn, error} ->

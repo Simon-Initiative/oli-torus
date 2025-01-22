@@ -186,11 +186,6 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def link_account(_conn, _params) do
-    # MER-4104 TODO
-    throw("NOT IMPLEMENTED")
-  end
-
   def show_enroll(conn, params) do
     section = conn.assigns.section
     from_invitation_link? = params["from_invitation_link?"] || false

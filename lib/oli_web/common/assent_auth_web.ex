@@ -96,12 +96,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
   defp normalize_username(params), do: params
 
   defp split_user_identity_params(%{"sub" => uid} = params) do
-    # users might have multiple login providers, so we need to remove the sub key
-    # so that it doesn't get used as the sub identifier for the user. A unique
-    # sub identifier will be generated for the user on creation.
-    user_params = Map.delete(params, "sub")
-
-    {%{"uid" => uid}, user_params}
+    {%{"uid" => uid}, params}
   end
 
   defp handle_user_identity_params(
@@ -228,8 +223,11 @@ defmodule OliWeb.Common.AssentAuthWeb do
     conn
     |> create_user(user_identity_params, user_params, config)
     |> case do
-      {:ok, _user, conn} ->
-        Plug.Conn.put_private(conn, :assent_callback_state, {:ok, :create_user})
+      {:ok, user, conn} ->
+        conn
+        |> Plug.Conn.put_private(:assent_callback_state, {:ok, :create_user})
+        |> create_session(user, config)
+        |> assign_current_user(user, config)
 
       {:error, changeset, conn} ->
         conn
@@ -271,11 +269,13 @@ defmodule OliWeb.Common.AssentAuthWeb do
   end
 
   defp maybe_trigger_registration_email_confirmation(conn, config) do
-    %{user: user} = conn.private[:assent_callback_params]
+    %{user: user_params} = conn.private[:assent_callback_params]
 
-    if email_verified?(user) do
+    if email_verified?(user_params) do
       conn
     else
+      user = current_user(conn, config)
+
       deliver_user_confirmation_instructions(user, config)
 
       conn

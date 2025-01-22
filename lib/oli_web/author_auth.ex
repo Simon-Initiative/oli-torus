@@ -5,6 +5,9 @@ defmodule OliWeb.AuthorAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Accounts.{User, Author}
+
+  require Logger
 
   # Make the remember me cookie valid for 60 days.
   # If you want bump or reduce this value, also change
@@ -18,6 +21,8 @@ defmodule OliWeb.AuthorAuth do
   """
   def log_in_author(conn, author, params \\ %{}) do
     token = Accounts.generate_author_session_token(author)
+
+    conn = maybe_link_user_author_account(conn, author)
 
     author_return_to =
       params["request_path"] || get_session(conn, :author_return_to) || signed_in_path(conn)
@@ -89,7 +94,8 @@ defmodule OliWeb.AuthorAuth do
         "user_token",
         "user_live_socket_id",
         "current_user_id",
-        "datashop_session_id"
+        "datashop_session_id",
+        "link_account_user_id"
       ])
 
     conn
@@ -109,7 +115,7 @@ defmodule OliWeb.AuthorAuth do
 
   It clears all session data for safety. See renew_session.
   """
-  def log_out_author(conn) do
+  def log_out_author(conn, params \\ %{}) do
     author_token = get_session(conn, :author_token)
     author_token && Accounts.delete_author_session_token(author_token)
 
@@ -117,10 +123,13 @@ defmodule OliWeb.AuthorAuth do
       OliWeb.Endpoint.broadcast(author_live_socket_id, "disconnect", %{})
     end
 
+    redirect_to =
+      params["request_path"] || ~p"/authors/log_in"
+
     conn
     |> renew_session()
     |> delete_resp_cookie(@remember_me_cookie)
-    |> redirect(to: ~p"/authors/log_in")
+    |> redirect(to: redirect_to)
   end
 
   @doc """
@@ -366,4 +375,70 @@ defmodule OliWeb.AuthorAuth do
   defp maybe_store_return_to(conn), do: conn
 
   defp signed_in_path(_conn), do: ~p"/workspaces/course_author"
+
+  @doc """
+  Stores the link_account_user_id (if specified) of the user account to link an
+  author account to after subsequent successful login.
+  """
+  def maybe_store_link_account_user_id(conn, %{"link_account_user_id" => link_account_user_id}) do
+    # Do some validation to ensure the user_id is a valid integer and that
+    # the user_id is the same as the current_user_id
+    with {user_id, ""} <- Integer.parse(link_account_user_id),
+         %User{id: current_user_id} <- conn.assigns[:current_user],
+         true <- current_user_id == user_id do
+      conn
+      |> put_session(:link_account_user_id, user_id)
+    else
+      e ->
+        Logger.error("Error storing link_account_user_id: #{inspect(e)}")
+
+        conn
+    end
+  end
+
+  def maybe_store_link_account_user_id(conn, _params), do: conn
+
+  @doc """
+  Links the author account to the user account if specified in the session after successful login.
+  """
+  def maybe_link_user_author_account(conn, %Author{} = author) do
+    if link_account_user_id = get_session(conn, :link_account_user_id) do
+      # ensure the user being linked to is logged in
+      case conn.assigns do
+        %{current_user: user = %User{id: current_user_id}}
+        when current_user_id == link_account_user_id ->
+          case Accounts.link_user_author_account(user, author) do
+            {:ok, _} ->
+              conn
+              |> delete_session(:link_account_user_id)
+              # replace the author_return_to with the user settings page
+              |> put_session(:author_return_to, ~p"/users/settings")
+              |> put_flash(
+                :info,
+                "Your authoring account has been linked to your user account."
+              )
+
+            {:error, _} ->
+              conn
+              |> delete_session(:link_account_user_id)
+              |> delete_session(:author_return_to)
+              |> put_flash(:error, "Something went wrong. Please try again or contact support.")
+              |> redirect(to: ~p"/users/settings")
+              |> halt()
+          end
+
+        _ ->
+          conn
+          |> delete_session(:link_account_user_id)
+          |> delete_session(:author_return_to)
+          |> put_flash(:error, "You must be logged in as a user to link your authoring account.")
+          |> redirect(to: ~p"/users/log_in")
+          |> halt()
+      end
+    else
+      conn
+    end
+  end
+
+  def maybe_link_user_author_account(conn, _), do: conn
 end

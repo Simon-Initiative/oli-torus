@@ -25,7 +25,7 @@ defmodule OliWeb.AuthorConfirmationLive do
 
             <:actions>
               <.button variant={:primary} phx-disable-with="Confirming..." class="w-full mt-4">
-                Confirm my account
+                Confirm
               </.button>
             </:actions>
           </.form_box>
