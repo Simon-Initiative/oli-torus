@@ -209,7 +209,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
                       },
                       "axis": {
                           "labelAngle": 0,
-                          "titleFontSize": 20,
+                          "titleFontSize": 18,
                           "titleAlign": "center"
                       },
                       "title": "<-- #{groups} -->"
@@ -233,7 +233,8 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
                       "field": "choice",
                       "type": "nominal",
                       "sort": "descending",
-                      "title": "Choice"
+                      "title": "Choice",
+                      "axis": { "orient": "right" }
                   }
               }
           }
