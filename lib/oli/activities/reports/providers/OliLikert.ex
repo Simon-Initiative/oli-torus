@@ -232,7 +232,8 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
                   "y": {
                       "field": "choice",
                       "type": "nominal",
-                      "sort": "descending"
+                      "sort": "descending",
+                      "title": "Choice"
                   }
               }
           }
