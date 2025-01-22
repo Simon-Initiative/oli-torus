@@ -4,6 +4,8 @@ defmodule Oli.Utils do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
+  import Phoenix.Naming, only: [humanize: 1]
+
   @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
 
   @doc """
@@ -503,7 +505,7 @@ defmodule Oli.Utils do
     if compare(from_value, to_value, allow_equal) do
       changeset
     else
-      message = "#{to} must be greater than #{from}"
+      message = "#{humanize(to)} must be greater than #{humanize(from)}"
       add_error(changeset, from, message, to_field: to)
     end
   end
