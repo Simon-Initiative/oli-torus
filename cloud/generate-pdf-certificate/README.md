@@ -55,6 +55,7 @@ The function expects a JSON payload with the following structure:
   "html": "<!doctype html><meta charset=utf-8><h1>Hello Certificate</h1>",
   "certificate_id": "00000000-0000-0000-0000-000000000000"
 }
+```
 
 ## S3 Path Format
 
