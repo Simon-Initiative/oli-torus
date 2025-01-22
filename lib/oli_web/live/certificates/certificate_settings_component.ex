@@ -6,14 +6,16 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
   alias Oli.Repo
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Certificate, Section}
+  alias OliWeb.Icons
 
   def update(assigns, socket) do
     certificate = assigns.product.certificate
+    custom_assessments = (certificate && certificate.custom_assessments) || []
 
     graded_pages_options =
       Enum.map(
         assigns.graded_pages,
-        &Map.put(&1, :selected, &1.resource_id in certificate.custom_assessments)
+        &Map.put(&1, :selected, &1.resource_id in custom_assessments)
       )
 
     selected_graded_pages_options =
@@ -31,7 +33,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
        certificate_changeset: certificate_changeset(certificate),
        graded_pages_options: graded_pages_options,
        selected_graded_pages_options: selected_graded_pages_options,
-       selected_ids: certificate.custom_assessments
+       selected_ids: custom_assessments
      )}
   end
 
@@ -146,10 +148,10 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         <div class="justify-start">
           <.link
             class={[
-              "text-base font-bold hover:text-[#0165da]",
+              "text-base font-bold hover:text-[#0165da] dark:hover:text-[#0165da]",
               if(@active_tab == :thresholds,
                 do: "underline text-[#0165da]",
-                else: "text-black no-underline hover:no-underline"
+                else: "text-black dark:text-white no-underline hover:no-underline"
               )
             ]}
             patch={@current_path <> "?active_tab=thresholds"}
@@ -160,10 +162,10 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         <div class="justify-center items-center inline-flex">
           <.link
             class={[
-              "text-base font-bold hover:text-[#0165da]",
+              "text-base font-bold hover:text-[#0165da] dark:hover:text-[#0165da]",
               if(@active_tab == :design,
                 do: "underline text-[#0165da]",
-                else: "text-black no-underline hover:no-underline"
+                else: "text-black dark:text-white no-underline hover:no-underline"
               )
             ]}
             patch={@current_path <> "?active_tab=design"}
@@ -174,10 +176,10 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         <div class="justify-end items-center inline-flex">
           <.link
             class={[
-              "text-base font-bold hover:text-[#0165da]",
+              "text-base font-bold hover:text-[#0165da] dark:hover:text-[#0165da]",
               if(@active_tab == :credentials_issued,
                 do: "underline text-[#0165da]",
-                else: "text-black no-underline hover:no-underline"
+                else: "text-black dark:text-white no-underline hover:no-underline"
               )
             ]}
             patch={@current_path <> "?active_tab=credentials_issued"}
@@ -223,7 +225,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         phx-target={@target}
         phx-submit="save_certificate"
         phx-change="validate"
-        class="w-full justify-start items-center gap-3 inline-flex"
+        class="w-full justify-start items-center gap-3"
       >
         <.input field={f[:section_id]} type="hidden" value={@section_id} />
         <.input
@@ -239,6 +241,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                 <div class="self-stretch flex-col justify-start items-start gap-10 flex">
                   <div class="self-stretch flex-col justify-start items-start gap-3 flex">
                     <div class="justify-start items-center gap-3 inline-flex">
+                      <Icons.discussions class="dark:stroke-white stroke-black" />
                       <div class="text-base font-bold">
                         Required Discussion Posts
                       </div>
@@ -255,6 +258,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                   </div>
                   <div class="self-stretch flex-col justify-start items-start gap-3 flex">
                     <div class="justify-start items-center gap-3 inline-flex">
+                      <Icons.message_circles />
                       <div class="text-base font-bold">
                         Required Class Notes
                       </div>
@@ -272,8 +276,10 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                 </div>
                 <div class="self-stretch flex-col justify-start items-center gap-10 flex">
                   <div class="self-stretch flex-col justify-start items-start gap-3 flex">
-                    <div class="self-stretch h-16 flex-col justify-start items-start gap-5 flex">
+                    <div class="self-stretch h-auto flex-col justify-start items-start gap-5 flex">
                       <div class="justify-start items-center gap-3 inline-flex">
+                        <Icons.transparent_flag />
+
                         <div class="text-base font-bold">
                           Required Scored Pages
                         </div>
@@ -285,7 +291,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                       </div>
                     </div>
 
-                    <div class="w-full text-base font-medium">
+                    <div class="w-full text-base font-medium relative">
                       <.input
                         type="number"
                         min="0"
@@ -295,6 +301,9 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                         errors={f.errors}
                         class="pl-6 border-[#D4D4D4] rounded"
                       />
+                      <span class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">
+                        %
+                      </span>
                     </div>
                   </div>
                   <div class="self-stretch flex-col justify-start items-start gap-3 flex">
@@ -303,7 +312,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                         To earn a <b>Certificate with Distinction</b>, students must score a minimum of:
                       </span>
                     </div>
-                    <div class="w-full text-base font-medium">
+                    <div class="w-full text-base font-medium relative">
                       <.input
                         type="number"
                         min="0"
@@ -313,6 +322,9 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                         errors={f.errors}
                         class="pl-6 border-[#D4D4D4] rounded"
                       />
+                      <span class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">
+                        %
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -322,7 +334,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                   *On the following scored pages:
                 </div>
                 <div
-                  class="w-full flex items-center text-base font-medium border border-[#D4D4D4] rounded"
+                  class="w-full flex items-center text-base font-medium border border-[#D4D4D4] rounded bg-white dark:bg-gray-800"
                   style="min-height: 2.75rem;"
                 >
                   <.multi_select
@@ -495,12 +507,12 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
     ~H"""
     <div
       :for={{id, title} <- @selected_values}
-      class="inline-flex items-center text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300 rounded-full px-2 py-0.5 m-0.5"
+      class="inline-flex items-center text-xs font-medium bg-slate-300 text-slate-800 border border-slate-400 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-400 rounded-full px-2 py-0.5 m-0.5"
     >
       <span><%= title %></span>
       <button
         type="button"
-        class="ml-1.5 text-blue-700 hover:text-blue-900 hover:bg-blue-200 rounded-full w-4 h-4 flex items-center justify-center"
+        class="ml-1.5 hover:bg-slate-400 dark:hover:bg-slate-500 rounded-full w-4 h-4 flex items-center justify-center"
         aria-label="Remove"
         phx-click="toggle_selected"
         phx-value-resource_id={id}
