@@ -46,7 +46,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   @completed_resources_css_selector ~s{[role^="resource"][data-completed="true"]}
 
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     section = socket.assigns.section
 
     # when updating to Liveview 0.20 we should replace this with assign_async/3
