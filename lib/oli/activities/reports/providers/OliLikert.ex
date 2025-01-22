@@ -168,7 +168,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
   defp color_pick(c, group) do
     colors = Map.get(c, :colors)
     color_list = Map.get(c, :color_list)
-    index = :rand.uniform(length(color_list))
+    index = :rand.uniform(length(color_list) - 1)
     col = Enum.at(color_list, index)
     color_list = List.delete_at(color_list, index)
     c = Map.put(c, :color_list, color_list)
@@ -185,6 +185,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
       end)
       |> Enum.join(" ---------- ")
 
+    IO.inspect(data)
     encoded = Jason.encode!(data)
 
     VegaLite.from_json("""
