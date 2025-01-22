@@ -185,7 +185,6 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
       end)
       |> Enum.join(" ---------- ")
 
-    IO.inspect(data)
     encoded = Jason.encode!(data)
 
     VegaLite.from_json("""
