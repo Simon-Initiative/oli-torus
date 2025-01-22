@@ -4,18 +4,6 @@ This Lambda function generates a PDF certificate from an HTML payload using Weas
 
 ---
 
-## Table of Contents
-
-1. [How It Works](#how-it-works)
-2. [Setup Instructions](#setup-instructions)
-3. [Environment Variables](#environment-variables)
-4. [Input Payload Example](#input-payload-example)
-5. [S3 Path Format](#s3-path-format)
-6. [Error Handling](#error-handling)
-7. [Dependencies and Layers](#dependencies-and-layers)
-
----
-
 ## How It Works
 
 1. **Input**: The function takes an HTML string and a `certificate_id` as input.
