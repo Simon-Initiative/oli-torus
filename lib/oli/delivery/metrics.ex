@@ -1213,12 +1213,28 @@ defmodule Oli.Delivery.Metrics do
         UPDATE
           resource_accesses
         SET
-          progress = GREATEST((SELECT
-              COUNT(aa2.id) filter (WHERE aa2.lifecycle_state = 'evaluated' OR aa2.lifecycle_state = 'submitted')::float / COUNT(aa2.id)::float
-            FROM activity_attempts as aa
-            JOIN resource_attempts as ra ON ra.id = aa.resource_attempt_id
-            JOIN activity_attempts as aa2 ON ra.id = aa2.resource_attempt_id
-            WHERE aa.attempt_guid = $1 AND aa2.scoreable = true AND aa2.attempt_number = 1), resource_accesses.progress),
+          progress = LEAST(
+            1.0,
+            GREATEST(
+              (
+                SELECT
+                  completed_count / (total_count * ((COALESCE(rev.full_progress_pct, 100) / 100) + 0.0001))
+                FROM (
+                  SELECT
+                    COUNT(aa2.id) FILTER (WHERE aa2.lifecycle_state = 'evaluated' OR aa2.lifecycle_state = 'submitted')::float AS completed_count,
+                    COUNT(aa2.id)::float AS total_count
+                  FROM activity_attempts AS aa
+                  JOIN resource_attempts AS ra ON ra.id = aa.resource_attempt_id
+                  JOIN revisions AS rev ON ra.revision_id = rev.id
+                  JOIN activity_attempts AS aa2 ON ra.id = aa2.resource_attempt_id
+                  WHERE aa.attempt_guid = $1 AND aa2.scoreable = true AND aa2.attempt_number = 1
+                ) AS counts,
+                revisions AS rev
+                WHERE rev.id = (SELECT ra.revision_id FROM resource_attempts ra JOIN activity_attempts aa ON ra.id = aa.resource_attempt_id WHERE aa.attempt_guid = $1 LIMIT 1)
+              ),
+              resource_accesses.progress
+            )
+          ),
           updated_at = NOW()
         WHERE
           id =

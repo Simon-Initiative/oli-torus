@@ -90,10 +90,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js">
     </script>
 
-    <%= if @preview_mode == true do %>
-      <!-- Preview Mode Styles -->
-      <link id="preview-theme-light" rel="stylesheet" href="/css/preview.css" />
-    <% end %>
+    <link id="preview-theme-light" rel="stylesheet" href="/css/preview.css" />
 
     <%= unless Map.get(assigns, :vr_agent_active, false) do %>
       <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6">

@@ -142,7 +142,7 @@ defmodule OliWeb.Delivery.LearningObjectives.ObjectivesTableModel do
     ~H"""
     <div class="group flex relative">
       <%= render_proficiency_data_chart(@objective_id, @proficiency_distribution) %>
-      <div class="absolute left-1/2 -translate-x-1/2 -translate-y-full bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block">
+      <div class="-translate-y-[calc(100%-90px)] absolute left-1/2 -translate-x-1/2 bg-black text-white text-sm px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap inline-block z-50">
         <%= for {label, value} <- calc_percentages(@proficiency_distribution) do %>
           <p><%= label %>: <%= value %>%</p>
         <% end %>
