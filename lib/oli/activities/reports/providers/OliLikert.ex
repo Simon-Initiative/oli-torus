@@ -190,7 +190,6 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
   end
 
   defp build_sub_chart(group, data, scale) do
-
     scale_values = 1..scale.max |> Enum.join(",")
     width = max(50 * scale.max, 600)
 
@@ -253,38 +252,41 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
   end
 
   defp spec_from_json(data, scale) do
-
     # change 'nil' group to "Results"
-    data = Enum.map(data, fn x ->
-      if is_nil(Map.get(x, :group)) do
-        Map.put(x, :group, "Results")
-      else
-        x
-      end
-    end)
+    data =
+      Enum.map(data, fn x ->
+        if is_nil(Map.get(x, :group)) do
+          Map.put(x, :group, "Results")
+        else
+          x
+        end
+      end)
 
     # Set the tooltips
-    data = Enum.map(data, fn d ->
-      Map.put(d, :tooltip, "#{d.prompt_long}: #{d.choice}")
-      |> Map.put(:lo, scale.lo)
-      |> Map.put(:hi, scale.hi)
-    end)
+    data =
+      Enum.map(data, fn d ->
+        Map.put(d, :tooltip, "#{d.prompt_long}: #{d.choice}")
+        |> Map.put(:lo, scale.lo)
+        |> Map.put(:hi, scale.hi)
+      end)
 
     # Group by group name
     distinct_groups = Enum.uniq(Enum.map(data, &Map.get(&1, :group)))
     values_by_group = Enum.group_by(data, &Map.get(&1, :group))
 
-    subcharts = Enum.map(distinct_groups, fn group ->
-      data = Map.get(values_by_group, group)
-      build_sub_chart(group, data, scale)
-    end)
-    |> Enum.join(",")
+    subcharts =
+      Enum.map(distinct_groups, fn group ->
+        data = Map.get(values_by_group, group)
+        build_sub_chart(group, data, scale)
+      end)
+      |> Enum.join(",")
 
-    datasets = Enum.reduce(distinct_groups, %{}, fn group, c ->
-      values = Map.get(values_by_group, group)
-      Map.put(c, group, values)
-    end)
-    |> Jason.encode!()
+    datasets =
+      Enum.reduce(distinct_groups, %{}, fn group, c ->
+        values = Map.get(values_by_group, group)
+        Map.put(c, group, values)
+      end)
+      |> Jason.encode!()
 
     str_spec = """
     {
