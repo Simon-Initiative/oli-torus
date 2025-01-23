@@ -848,6 +848,10 @@ defmodule OliWeb.Router do
         live("/:project_id/publish", PublishLive)
         live("/:project_id/insights", InsightsLive)
 
+        live("/:project_id/datasets", DatasetsLive)
+        live("/:project_id/datasets/create", CreateJobLive)
+        live("/:project_id/datasets/details/:job_id", DatasetDetailsLive)
+
         scope "/:project_id/products" do
           live("/", ProductsLive)
           live("/:product_id", Products.DetailsLive)
@@ -1403,6 +1407,7 @@ defmodule OliWeb.Router do
     live("/", Admin.AdminView)
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
+    live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
