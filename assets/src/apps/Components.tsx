@@ -23,6 +23,7 @@ import { OfflineDetector } from './OfflineDetector';
 import ActivityBank from './bank/ActivityBank';
 import Bibliography from './bibliography/Bibliography';
 import { References } from './bibliography/References';
+import { TriggerButton } from 'components/TriggerButton';
 
 registerApplication('Bibliography', Bibliography, globalStore);
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
@@ -47,3 +48,4 @@ registerApplication('VegaLiteRenderer', VegaLiteRenderer, globalStore);
 registerApplication('LikertReportRenderer', LikertReportRenderer, globalStore);
 registerApplication('ActivityBank', ActivityBank, globalStore);
 registerApplication('Evaluation', Evaluation, globalStore);
+registerApplication('TriggerButton', TriggerButton, globalStore);

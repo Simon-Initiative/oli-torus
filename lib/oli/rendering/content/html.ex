@@ -21,6 +21,18 @@ defmodule Oli.Rendering.Content.Html do
 
   @behaviour Oli.Rendering.Content
 
+  def trigger(%Context{} = context, _, attrs) do
+
+    {:safe, trigger} =
+      OliWeb.Common.React.component(context, "Components.TriggerButton", %{
+        "trigger" => attrs,
+        "resourceId" => context.page_id,
+        "sectionSlug" => context.section_slug
+      })
+
+    trigger
+  end
+
   def callout(%Oli.Rendering.Context{} = _context, next, _) do
     ["<span class=\"callout-block\">", next.(), "</span>\n"]
   end

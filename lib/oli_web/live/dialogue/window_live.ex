@@ -94,6 +94,7 @@ defmodule OliWeb.Dialogue.WindowLive do
          current_user: Oli.Accounts.get_user!(current_user_id),
          height: 500,
          width: 400,
+         instance_id: self(),
          section: section,
          resource_id: session["resource_id"],
          is_page: session["is_page"] == true || false
@@ -115,6 +116,8 @@ defmodule OliWeb.Dialogue.WindowLive do
     ~H"""
     <div
       :if={@enabled}
+      id="ai_bot"
+      data-instance-id={@instance_id}
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
         if(@is_page, do: "bottom-20", else: "bottom-0")

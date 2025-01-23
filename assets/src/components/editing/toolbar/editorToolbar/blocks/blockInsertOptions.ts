@@ -20,6 +20,7 @@ import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertVideo } from '../../../elements/video/videoActions';
+import { insertTrigger } from '../../../elements/trigger/TriggerEditor';
 
 export const extendedBlockInsertActions = (
   onRequestMedia: any,
@@ -40,6 +41,7 @@ export const extendedBlockInsertActions = (
     insertDialog,
     insertConjugation,
     insertDescriptionListCommand,
+    insertTrigger,
   ];
 
   if (optionalContentTypes === undefined) {
@@ -71,6 +73,7 @@ export const allBlockInsertActions = (
     insertPageLink,
     insertConjugation,
     insertDescriptionListCommand,
+    insertTrigger
   ];
 
   if (optionalContentTypes === undefined) {
