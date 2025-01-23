@@ -25,7 +25,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
     parent = determine_parent_slug(section_id, activity_id)
 
     case process_attempt_data(section_id, user_id, activity_id) do
-      {:ok, data} ->
+      {:ok, data, scale} ->
         by_group =
           Enum.reduce(data, %{}, fn a, c ->
             group = Map.get(a, :group)
@@ -46,7 +46,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
 
         %{
           type: "success",
-          spec: spec_from_json(data),
+          spec: spec_from_json(data, scale),
           prompts: prompts,
           parent: parent
         }
@@ -88,6 +88,19 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
         end)
 
       choices = Map.get(content, "choices")
+
+      get_text = fn x ->
+        case JSONPointer.get(x, "/content/0/children/0/text") do
+          {:ok, pv} -> pv
+          {:error, _} -> ""
+        end
+      end
+
+      scale = %{
+        max: Enum.count(choices),
+        lo: Enum.at(choices, 0) |> get_text.(),
+        hi: Enum.at(choices, Enum.count(choices) - 1) |> get_text.()
+      }
 
       info =
         Map.get(content, "items")
@@ -154,7 +167,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
           end
         )
 
-      {:ok, Map.get(info, :values)}
+      {:ok, Map.get(info, :values), scale}
     end
   end
 
@@ -176,57 +189,111 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
     {col, c}
   end
 
-  defp spec_from_json(data) do
-    encoded = Jason.encode!(data)
+  defp build_sub_chart(group, data, scale) do
 
-    VegaLite.from_json("""
+    scale_values = 1..scale.max |> Enum.join(",")
+    width = max(50 * scale.max, 600)
+
+    """
     {
-      "width": 500,
+      "width": #{width},
       "height": #{30 * length(data)},
       "description": "A chart with embedded data.",
       "data": {
-        "values": #{encoded}
+        "name": "#{group}"
       },
-      "mark": {
-        "type": "circle",
-        "size": "90"
-      },
+      "title": "#{group}",
       "encoding": {
-          "y": {
-              "field": "prompt",
-              "type": "ordinal",
-              "sort": {
-                  "field": "index",
-                  "order": "ascending"
-              },
-              "axis": {
-                  "labelAngle": 0,
-                  "grid": true
-              },
-              "title": "Prompts"
-          },
-          "x": {
-              "field": "response",
-              "type": "quantitative",
-              "title": "Likert Scale",
-              "axis": {"tickMinStep": 1}
-          },
-          "color": {
-              "field": "color",
-              "type": "nominal",
-              "scale": null
+        "y": {
+          "field": "prompt",
+          "type": "nominal",
+          "sort": null,
+          "axis": {
+            "domain": false,
+            "offset": 50,
+            "labelFontWeight": "bold",
+            "ticks": false,
+            "grid": true,
+            "title": null,
+            "labels": false
           }
+        },
+        "x": {
+          "type": "quantitative",
+          "scale": {"domain": [0, #{scale.max + 1}]},
+          "axis": {"grid": false, "values": [#{scale_values}], "title": null}
+        }
       },
+      "view": {"stroke": null},
       "layer": [
         {
-          "mark": {"type": "text", "x": 255, "align": "left", "size": "14"},
+          "mark": {"type": "circle", "size": 100},
+          "data": {"name": "#{group}"},
           "encoding": {
-            "text": {"field": "choice"}
+            "x": {"field": "response"},
+            "color": {"value": "#6EB4FD"},
+            "tooltip": {"field": "tooltip", "type": "nominal"}
+          }
+        },
+        {
+          "mark": {"type": "text", "x": -5, "align": "right"},
+          "encoding": {
+            "text": {"field": "lo"}
+          }
+        },
+        {
+          "mark": {"type": "text", "x": #{width}, "align": "left"},
+          "encoding": {
+            "text": {"field": "hi"}
           }
         }
       ]
     }
-    """)
+    """
+  end
+
+  defp spec_from_json(data, scale) do
+
+    # change 'nil' group to "Results"
+    data = Enum.map(data, fn x ->
+      if is_nil(Map.get(x, :group)) do
+        Map.put(x, :group, "Results")
+      else
+        x
+      end
+    end)
+
+    # Set the tooltips
+    data = Enum.map(data, fn d ->
+      Map.put(d, :tooltip, "#{d.prompt_long}: #{d.choice}")
+      |> Map.put(:lo, scale.lo)
+      |> Map.put(:hi, scale.hi)
+    end)
+
+    # Group by group name
+    distinct_groups = Enum.uniq(Enum.map(data, &Map.get(&1, :group)))
+    values_by_group = Enum.group_by(data, &Map.get(&1, :group))
+
+    subcharts = Enum.map(distinct_groups, fn group ->
+      data = Map.get(values_by_group, group)
+      build_sub_chart(group, data, scale)
+    end)
+    |> Enum.join(",")
+
+    datasets = Enum.reduce(distinct_groups, %{}, fn group, c ->
+      values = Map.get(values_by_group, group)
+      Map.put(c, group, values)
+    end)
+    |> Jason.encode!()
+
+    str_spec = """
+    {
+      "datasets": #{datasets},
+      "vconcat": [#{subcharts}]
+    }
+    """
+
+    VegaLite.from_json(str_spec)
     |> VegaLite.to_spec()
   end
 
