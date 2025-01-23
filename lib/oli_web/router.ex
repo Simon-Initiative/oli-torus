@@ -520,6 +520,7 @@ defmodule OliWeb.Router do
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
 
     post("/:project/create/activity/bulk", Api.ActivityController, :create_bulk)
+    post("/:project/delete/activity/bulk", Api.ActivityController, :delete_bulk)
 
     put("/test/evaluate", Api.ActivityController, :evaluate)
     put("/test/transform", Api.ActivityController, :transform)
