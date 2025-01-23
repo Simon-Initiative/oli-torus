@@ -152,5 +152,9 @@ The function returns the following HTTP status codes:
    - The Lambda function stores the generated PDF in the `/tmp` directory, which is cleared after execution.
 
 4. **Performance**:
-   - The Lambda function typically executes within 5000ms.
+   - The Lambda function typically executes within 20000ms.
    - It requires less than 128MB of memory to run effectively.
+  
+5. **Fonts**:
+   - In order to use fonts other than dejavu fonts correctly, you must modify the script used when creating the WeasyPrint layer. This is explained in detail [here](https://github.com/kotify/cloud-print-utils?tab=readme-ov-file#fonts).
+   - For example: `curl https://fonts.gstatic.com/s/alexbrush/v22/SZc83FzrJKuqFbwMKk6EtUL57DtOmCc.ttf -o AlexBrush-Regular.ttf && cp AlexBrush-Regular.ttf /opt/fonts`
