@@ -14,7 +14,7 @@ defmodule Oli.Conversation.Trigger do
   """
   def parse(map, section_id, user_id) do
     %__MODULE__{
-      type: map["trigger_type"],
+      type: map["trigger_type"] |> String.to_existing_atom,
       section_id: section_id,
       user_id: user_id,
       resource_id: map["resource_id"],

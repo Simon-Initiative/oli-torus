@@ -14,6 +14,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias Oli.Conversation.Message
   alias Phoenix.LiveView.JS
 
+  alias Phoenix.PubSub
+
   defp realize_prompt_template(nil, _), do: ""
 
   defp realize_prompt_template(template, bindings) do
@@ -74,7 +76,13 @@ defmodule OliWeb.Dialogue.WindowLive do
         %{"current_user_id" => current_user_id, "section_slug" => section_slug} = session,
         socket
       ) do
+
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+    resource_id = session["resource_id"]
+
+    IO.inspect("sub")
+    IO.inspect("trigger:#{current_user_id}:#{section.id}:#{resource_id}")
+    PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
     if Sections.assistant_enabled?(section) do
       project = Oli.Authoring.Course.get_project!(section.base_project_id)
@@ -94,7 +102,6 @@ defmodule OliWeb.Dialogue.WindowLive do
          current_user: Oli.Accounts.get_user!(current_user_id),
          height: 500,
          width: 400,
-         instance_id: self(),
          section: section,
          resource_id: session["resource_id"],
          is_page: session["is_page"] == true || false
@@ -116,8 +123,6 @@ defmodule OliWeb.Dialogue.WindowLive do
     ~H"""
     <div
       :if={@enabled}
-      id="ai_bot"
-      data-instance-id={@instance_id}
       class={[
         "fixed z-[10000] lg:bottom-0 right-0 ml-auto",
         if(@is_page, do: "bottom-20", else: "bottom-0")
@@ -531,6 +536,58 @@ defmodule OliWeb.Dialogue.WindowLive do
       />
     <% end %>
     """
+  end
+
+  defp augment_data_context(trigger) do
+
+    case trigger.type do
+      t when t in [:visit_page, :content_group, :content_block] -> trigger.data
+      otherwise -> trigger.data
+    end
+
+  end
+
+  def handle_info({:trigger, trigger}, socket) do
+
+    reason = Oli.Conversation.Triggers.description(trigger.type, trigger.data)
+
+    prompt = """
+    Trigger points are a feature of this platform that allow a course author to instrument
+    various points of student interaction in the course to 'trigger' your (the AI agent)
+    intervention. This is one such trigger point invocation. The author has configured this trigger
+    in response to a student action or event. Do not mention 'trigger points' ever.
+
+    In this trigger point, the student has just #{reason}
+
+    Engage by greeting the student.
+
+    VERY IMPORTANT: The author has also requested the AI agent to
+    follow these specific instructions while engaging with the student:
+
+    #{trigger.prompt}
+    """
+
+    IO.inspect(prompt)
+
+    dialogue = Dialogue.add_message(
+      socket.assigns.dialogue,
+      Message.new(:system, prompt),
+      trigger.user_id,
+      trigger.resource_id,
+      trigger.section_id
+    )
+
+    pid = self()
+
+    Task.async(fn ->
+      Dialogue.engage(dialogue, :async)
+      send(pid, {:reply_finished})
+    end)
+
+    {:noreply,
+     assign(socket,
+        dialogue: dialogue
+     )}
   end
 
   def handle_event("minimize", _, socket) do

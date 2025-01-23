@@ -14,7 +14,7 @@ export const insertTrigger = createButtonCommandDesc({
     const at = editor.selection;
     if (!at) return;
 
-    Transforms.insertNodes(editor, Model.video(), { at });
+    Transforms.insertNodes(editor, Model.trigger(), { at });
   },
 });
 
@@ -32,8 +32,12 @@ export const TriggerEditor: React.FC<Props> = ({
   return (
     <div {...attributes} contentEditable={false} className={className}>
       {children}
-      <small>Provide direction to DOT with how to engage with student when this trigger button is selected:</small>
-      <input type="text" value={model.prompt} onChange={(e) => onEdit({ prompt: e.target.value })} />
+      <div className="border-gray-200 p-4">
+        <div>
+          <small>Provide direction to DOT with how to engage with student when this trigger button is selected:</small>
+        </div>
+        <input type="text" value={model.prompt} onChange={(e) => onEdit({ prompt: e.target.value })} />
+      </div>
     </div>
   );
 };

@@ -11,21 +11,18 @@ export const TriggerButton: React.FC<{
 }> = React.memo(({ trigger, resourceId, sectionSlug }) => {
 
   const onClick = () => {
-    const instanceId = Trigger.getInstanceId();
-    if (instanceId !== null) {
-      const payload: Trigger.TriggerPayload = {
-        trigger_type: 'button',
-        resource_id: resourceId,
-        data: trigger.id,
-        prompt: trigger.prompt,
-      };
-      Trigger.invoke(sectionSlug, payload);
-    }
+    const payload: Trigger.TriggerPayload = {
+      trigger_type: 'content_block',
+      resource_id: resourceId,
+      data: trigger.id,
+      prompt: trigger.prompt,
+    };
+    Trigger.invoke(sectionSlug, payload);
   };
 
   return (
     <button
-      className="trigger-button"
+      className="btn btn-primary"
       onClick={onClick}>
         Trigger
     </button>

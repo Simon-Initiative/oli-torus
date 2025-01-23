@@ -27,7 +27,7 @@ export function invoke(
   const params = {
     url,
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({"trigger": payload}),
   };
   return makeRequest<InvocationResult>(params);
 }
