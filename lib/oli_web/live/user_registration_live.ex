@@ -59,7 +59,11 @@ defmodule OliWeb.UserRegistrationLive do
     from_invitation_link? = unsigned_params["from_invitation_link?"] == "true"
     section = unsigned_params["section"]
 
-    {:noreply, assign(socket, from_invitation_link?: from_invitation_link?, section: section)}
+    {:noreply,
+     assign(socket,
+       from_invitation_link?: from_invitation_link?,
+       section: section
+     )}
   end
 
   def handle_event(
@@ -72,7 +76,7 @@ defmodule OliWeb.UserRegistrationLive do
       {:ok, _} =
         Accounts.deliver_user_confirmation_instructions(
           user,
-          &url(~p"/users/confirm/#{&1}")
+          &url(~p"/users/confirm/#{&1}?#{maybe_section_param(user_params["section"])}")
         )
 
       changeset = Accounts.change_user_registration(user)
@@ -109,4 +113,7 @@ defmodule OliWeb.UserRegistrationLive do
       assign(socket, form: form)
     end
   end
+
+  defp maybe_section_param(nil), do: []
+  defp maybe_section_param(section), do: [section: section]
 end

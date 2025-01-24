@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Header do
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext, required: true)
+  attr(:section, Section, default: nil)
   attr(:is_admin, :boolean, required: true)
 
   def header(assigns) do
@@ -74,7 +75,12 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
+              <UserAccount.menu
+                id="user-account-menu"
+                ctx={@ctx}
+                is_admin={@is_admin}
+                section={@section}
+              />
             </div>
           <% true -> %>
             <div class="inline-flex items-center">
