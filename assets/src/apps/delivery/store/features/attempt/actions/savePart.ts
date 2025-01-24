@@ -44,7 +44,6 @@ export const savePartState = createAsyncThunk(
               updatedPartResponses = {
                 ...result.response,
                 ...updatedPartResponses,
-                partId: p.partId,
               };
               result.response = updatedPartResponses;
             }
