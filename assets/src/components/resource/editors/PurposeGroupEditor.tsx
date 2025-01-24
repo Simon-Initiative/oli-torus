@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react';
+import React, { PropsWithChildren, useState } from 'react';
 import { Purpose } from 'components/content/Purpose';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import {
@@ -21,6 +21,10 @@ import {
 } from './OutlineItem';
 import { PaginationModes } from './PaginationModes';
 import { EditorProps } from './createEditor';
+import { GroupTrigger } from 'data/triggers';
+import { Modal } from 'components/modal/Modal';
+import { modalActions } from 'actions/modal';
+import { on } from 'events';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;
@@ -158,6 +162,10 @@ export const PurposeGroupBlock = ({
           editMode={editMode}
           mode={contentItem.audience}
         />
+        <GroupTriggerEditor
+          onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
+          editMode={editMode}
+          trigger={contentItem.trigger}/>
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}
@@ -172,6 +180,91 @@ export const PurposeGroupBlock = ({
     </div>
   );
 };
+
+const TriggerEditor = ({
+    trigger,
+    onEdit,
+  }: {
+    trigger: GroupTrigger | undefined;
+    onEdit: (trigger: GroupTrigger | undefined) => void;
+  }) => {
+
+    const [editedTrigger, setEditedTrigger] = useState<GroupTrigger | undefined >(trigger);
+
+    const update = (trigger: GroupTrigger | undefined) => {
+      console.log(trigger);
+      setEditedTrigger(trigger);
+      onEdit(trigger);
+    };
+
+    const buttonOrText = editedTrigger === undefined ? (
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={() => update({ type: 'trigger', trigger_type: 'group', prompt: '' })}>
+        Enable Trigger
+      </button>
+    ) : (
+      <div>
+        <p>Enter the prompt you want DOT to follow</p>
+        <input
+          type="text"
+          value={editedTrigger.prompt}
+          onChange={(e) => update({type: 'trigger', trigger_type: 'group', prompt: e.target.value })}/>
+        <button
+          className="btn btn-primary btn-sm"
+          onClick={() => update(undefined)}>
+          Disable Trigger
+        </button>
+      </div>
+    );
+
+    return buttonOrText;
+  };
+
+
+const GroupTriggerEditor = ({
+  editMode,
+  trigger,
+  onEdit,
+}: {
+  editMode: boolean;
+  trigger: GroupTrigger | undefined;
+  onEdit: (trigger: GroupTrigger | undefined) => void;
+}) => {
+
+  if (!editMode) {
+    return null;
+  }
+
+  const showEditTrigger = () => {
+    window.oliDispatch(
+      modalActions.display(
+        <Modal
+          title="Edit Trigger"
+          onOk={() => {
+            window.oliDispatch(modalActions.dismiss());
+          }}
+          hideCancelButton={true}
+          onCancel={() => window.oliDispatch(modalActions.dismiss())}>
+          <div>
+            <TriggerEditor trigger={trigger} onEdit={onEdit} />
+          </div>
+        </Modal>,
+      ),
+    );
+  };
+
+  return (
+    <div className="form-inline">
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={showEditTrigger}
+      >
+        Trigger
+      </button>
+    </div>
+  );
+}
 
 type PurposeContainerProps = {
   contentItem: PurposeGroupContent;
