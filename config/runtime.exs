@@ -39,12 +39,6 @@ if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
   config :logger, backends: [:console, {Appsignal.Logger.Backend, [group: "phoenix"]}]
 end
 
-config :oli,
-  # default is 15 minutes
-  session_ttl_renewal: get_env_as_integer.("SESSION_TTL_RENEWAL_MINUTES", "15"),
-  # default is 30 minutes
-  credentials_cache_store_ttl: get_env_as_integer.("CREDENTIALS_CACHE_STORE_TTL_MINUTES", "30")
-
 # Production-only configurations
 if config_env() == :prod do
   database_url =
