@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.Content.Progress do
   use OliWeb, :html
 
-  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
+  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
   attr(:progress_percentage, :string, default: "100")
   attr(:params_from_url, :map, default: %{})
@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.Content.Progress do
             @progress_percentage
           ) %>
           <div class="ml-3">
-            <.instructor_dasboard_toggle_chevron id="progress" map_values={@progress_selector} />
+            <.toggle_chevron id="progress" map_values={@progress_selector} />
           </div>
         </button>
       </div>

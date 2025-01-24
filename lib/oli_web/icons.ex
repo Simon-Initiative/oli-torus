@@ -744,12 +744,13 @@ defmodule OliWeb.Icons do
   end
 
   attr :is_active, :boolean, default: false
+  attr :class, :string, default: nil
 
   def discussions(%{is_active: true} = assigns) do
     ~H"""
     <svg
       role="active discussions icon"
-      class="dark:fill-white fill-black/90"
+      class={@class || "dark:fill-white fill-black/90"}
       width="18"
       height="17"
       viewBox="0 0 18 17"
@@ -769,7 +770,7 @@ defmodule OliWeb.Icons do
     ~H"""
     <svg
       role="discussions icon"
-      class="dark:stroke-[#B8B4BF] stroke-black/70"
+      class={@class || "dark:stroke-[#B8B4BF] stroke-black/70"}
       width="18"
       height="17"
       viewBox="0 0 18 17"
@@ -1529,7 +1530,7 @@ defmodule OliWeb.Icons do
     """
   end
 
-  ########## Studend Delivery Icons (end) ##########
+  ########## Student Delivery Icons (end) ##########
 
   ########## Instructor Navigation Bar Icons (start) ##########
   def list_search(assigns) do
@@ -1627,6 +1628,19 @@ defmodule OliWeb.Icons do
         stroke-width="2"
         stroke-linecap="round"
         stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def message_circles(assigns) do
+    ~H"""
+    <svg width="19" height="20" viewBox="0 0 19 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M6.39025 13.8644C5.82467 13.7688 5.28239 13.6033 4.77288 13.3771L0.937037 14.614C0.679775 14.6969 0.397724 14.6282 0.207531 14.4361C0.0173385 14.244 -0.0486664 13.9613 0.036814 13.7049L1.30397 9.90351C0.93151 9.06141 0.724879 8.13005 0.724879 7.15211C0.724879 3.39223 3.77287 0.344238 7.53275 0.344238C11.2926 0.344238 14.3406 3.39223 14.3406 7.15211C14.3406 7.22106 14.3396 7.28976 14.3376 7.35822C16.6801 8.17991 18.3597 10.4108 18.3597 13.0339C18.3597 13.8977 18.1772 14.7204 17.8482 15.4642L18.9675 18.8218C19.043 19.0483 18.9847 19.298 18.8167 19.4677C18.6487 19.6373 18.3996 19.6981 18.1723 19.6248L14.7843 18.5323C14.0385 18.8634 13.2132 19.0471 12.3466 19.0471C9.30733 19.0471 6.79474 16.7924 6.39025 13.8644ZM2.15885 7.15211C2.15885 4.18418 4.56482 1.77821 7.53275 1.77821C10.4654 1.77821 12.8493 4.12727 12.9056 7.04642C12.7215 7.02945 12.5351 7.02077 12.3466 7.02077C9.23994 7.02077 6.68356 9.37662 6.36647 12.3993C5.93623 12.3041 5.5257 12.1574 5.14144 11.9661C4.97378 11.8827 4.78012 11.8681 4.60187 11.9256L1.84515 12.8145L2.7549 10.0853C2.81483 9.90554 2.80114 9.70932 2.71681 9.53959C2.35988 8.82117 2.15885 8.01114 2.15885 7.15211Z"
+        fill="currentColor"
       />
     </svg>
     """
