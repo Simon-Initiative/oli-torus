@@ -4,6 +4,13 @@ defmodule OliWeb.Pow.PowHelpers do
   alias Phoenix.{HTML, HTML.Link, HTML.Tag, Naming}
   alias PowAssent.Phoenix.AuthorizationController
 
+  defp get_env_as_integer(key, default) do
+    case System.get_env(key) do
+      nil -> default
+      value -> String.to_integer(value)
+    end
+  end
+
   def get_pow_config(:user) do
     [
       repo: Oli.Repo,
@@ -11,11 +18,12 @@ defmodule OliWeb.Pow.PowHelpers do
       current_user_assigns_key: :current_user,
       session_key: "user_auth",
       # default is 15 minutes
-      session_ttl_renewal: System.get_env("SESSION_TTL_RENEWAL_MS", :timer.minutes(15)),
+      session_ttl_renewal:
+        Application.get_env(:oli, :session_ttl_renewal, 15) |> :timer.minutes(),
       # default is 30 minutes
       credentials_cache_store:
         {Pow.Store.CredentialsCache,
-         ttl: System.get_env("CREDENTIALS_CACHE_STORE_TTL_MS", :timer.minutes(30))},
+         ttl: Application.get_env(:oli, :credentials_cache_store_ttl, 30) |> :timer.minutes()},
       plug: Pow.Plug.Session,
       web_module: OliWeb,
       routes_backend: OliWeb.Pow.UserRoutes,
@@ -40,11 +48,12 @@ defmodule OliWeb.Pow.PowHelpers do
       current_user_assigns_key: :current_author,
       session_key: "author_auth",
       # default is 15 minutes
-      session_ttl_renewal: System.get_env("SESSION_TTL_RENEWAL_MS", :timer.minutes(15)),
+      session_ttl_renewal:
+        Application.get_env(:oli, :session_ttl_renewal, 15) |> :timer.minutes(),
       # default is 30 minutes
       credentials_cache_store:
         {Pow.Store.CredentialsCache,
-         ttl: System.get_env("CREDENTIALS_CACHE_STORE_TTL_MS", :timer.minutes(30))},
+         ttl: Application.get_env(:oli, :credentials_cache_store_ttl, 30) |> :timer.minutes()},
       plug: Pow.Plug.Session,
       web_module: OliWeb,
       routes_backend: OliWeb.Pow.AuthorRoutes,
