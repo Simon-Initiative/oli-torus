@@ -29,6 +29,7 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { ActivitySettings } from '../common/authoring/settings/ActivitySettings';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { toggleSubmitAndCompareOption } from '../common/utils';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
@@ -176,6 +177,10 @@ const ShortAnswer = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label={TriggerLabel()}>
+          <TriggerAuthoring partId={model.authoring.parts[0].id} />
+        </TabbedNavigation.Tab>
+
         <ActivitySettings settings={[submitAndCompareSetting]} />
       </TabbedNavigation.Tabs>
     </>
