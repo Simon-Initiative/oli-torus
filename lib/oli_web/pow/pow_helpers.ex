@@ -4,13 +4,6 @@ defmodule OliWeb.Pow.PowHelpers do
   alias Phoenix.{HTML, HTML.Link, HTML.Tag, Naming}
   alias PowAssent.Phoenix.AuthorizationController
 
-  defp get_env_as_integer(key, default) do
-    case System.get_env(key) do
-      nil -> default
-      value -> String.to_integer(value)
-    end
-  end
-
   def get_pow_config(:user) do
     [
       repo: Oli.Repo,
