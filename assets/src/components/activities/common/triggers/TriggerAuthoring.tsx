@@ -111,7 +111,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
                 </li>
                 <li>&quot;Give students another question of this type&quot;</li>
                 <li>&quot;Give students an expert response to this question&quot;</li>
-                <li>&quot;Evaluate the student's answer to this question&quot;</li>
+                <li>&quot;Evaluate the student&apos;s answer to this question&quot;</li>
               </ul>
             )}
           </div>
@@ -130,7 +130,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
       {/* Existing triggers */}
       {!addMode &&
         existing_triggers.map((t, i) => (
-          <Card.Card>
+          <Card.Card key={i}>
             <Card.Title>
               {i + 1}. {describeTrigger(t, part)}
               <RemoveButtonConnected
