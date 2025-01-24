@@ -4,7 +4,6 @@ import { findTargetedResponses } from 'data/activities/model/responses';
 import { getPartById } from 'data/activities/model/utils';
 import {
   ActivityTrigger,
-  Trigger,
   makeHintTrigger,
   makeTargetedTrigger,
   makeTrigger,

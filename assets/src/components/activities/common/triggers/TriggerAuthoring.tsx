@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
-  const { model, dispatch, editMode } = useAuthoringElementContext<HasParts>();
+  const { model, dispatch } = useAuthoringElementContext<HasParts>();
   const part = getPartById(model, partId);
 
   // Add trigger is a mode of the UI
@@ -100,15 +100,18 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
             </Button>
             {showPromptHelp && (
               <ul>
-                <li>"Give the students another worked example of this question type"</li>
-                <li>"Ask the student if they need further assistance answering this question"</li>
+                <li>&quot;Give the students another worked example of this question type&quot;</li>
                 <li>
-                  "Point students towards more practice regarding this question's learning
-                  objectives"
+                  &quot;Ask the student if they need further assistance answering this
+                  question&quot;
                 </li>
-                <li>"Give students another question of this type"</li>
-                <li>"Give students an expert response to this question"</li>
-                <li>"Evaluate the student's answer to this question"</li>
+                <li>
+                  &quot;Point students towards more practice regarding this question&apos;s learning
+                  objectives&quot;
+                </li>
+                <li>&quot;Give students another question of this type&quot;</li>
+                <li>&quot;Give students an expert response to this question&quot;</li>
+                <li>&quot;Evaluate the student's answer to this question&quot;</li>
               </ul>
             )}
           </div>
