@@ -56,7 +56,7 @@ export const savePartState = createAsyncThunk(
     if (isPreviewMode && updatedPartResponses?.partId?.length) {
       setVariableWithTypeAssignStatements(updatedPartResponses, updatedPartResponses?.partId);
     }
-    // update scripting env with latest values
+    // update scripting env with latest value
     const assignScripts = getAssignStatements(updatedPartResponses);
     const scriptResult: string[] = [];
     if (Array.isArray(assignScripts)) {
