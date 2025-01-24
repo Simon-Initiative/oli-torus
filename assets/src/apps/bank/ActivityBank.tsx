@@ -231,6 +231,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     this.onChangeEditing = this.onChangeEditing.bind(this);
     this.onPageChange = this.onPageChange.bind(this);
     this.onDelete = this.onDelete.bind(this);
+    this.undoAddBulk = this.undoAddBulk.bind(this);
   }
 
   componentDidMount() {
@@ -278,21 +279,44 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
   }
 
   onActivityAddBulk(contexts: ActivityEditContext[]) {
+    const activityIds = contexts.map((c) => c.activityId);
     const activities = contexts.map((c) => [c.activitySlug, c]);
     const inserted = [...activities, ...this.state.activityContexts.toArray()].slice(0, PAGE_SIZE);
     this.setState({
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(inserted as any),
-      totalInBank: this.state.totalInBank + 1,
-      totalCount: this.state.totalCount + 1,
+      totalInBank: this.state.totalInBank + activityIds.length,
+      totalCount: this.state.totalCount + activityIds.length,
     });
+    const messageGuid = 'bulk-add';
     this.addAsUnique(
       createMessage({
-        guid: 'general',
+        guid: messageGuid,
         canUserDismiss: true,
         content: `${contexts.length} questions were added successfully`,
         severity: Severity.Information,
+        actions: [
+          {
+            label: 'Undo',
+            enabled: true,
+            execute: () => this.undoAddBulk(messageGuid, activityIds),
+            btnClass: 'btn-link',
+          },
+        ],
       }),
     );
+  }
+
+  undoAddBulk(guid: string, keys: number[]) {
+    this.setState({
+      messages: this.state.messages.filter((m) => guid !== m.guid),
+    });
+    ActivityPersistence.deleteBulk(this.props.projectSlug, keys).then((result) => {
+      if (result.result === 'success') {
+        this.fetchActivities(this.state.logic, this.state.paging);
+        this.setState({ totalInBank: this.state.totalInBank - keys.length });
+        this.persistence.lift((current) => current.destroy());
+      }
+    });
   }
 
   onActivityAdd(context: ActivityEditContext, atSlug: string | null = null) {

@@ -200,6 +200,16 @@ export function createBulk(
   return makeRequest<CreatedBulk>(params);
 }
 
+export function deleteBulk(project: ProjectSlug, resourceIds: ResourceId[]) {
+  const params = {
+    method: 'POST',
+    body: JSON.stringify({ resourceIds }),
+    url: `/project/${project}/delete/activity/bulk`,
+  };
+
+  return makeRequest<Deleted>(params);
+}
+
 export function createFull(
   project: ProjectSlug,
   activityTypeSlug: ActivityTypeSlug,

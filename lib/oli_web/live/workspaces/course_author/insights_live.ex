@@ -5,7 +5,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
-  alias Oli.{Accounts, Activities, Publishing}
+  alias Oli.{Activities, Publishing}
   alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions}
   alias Oli.Authoring.{Broadcaster, Course}
   alias Oli.Authoring.Broadcaster.Subscriber
@@ -14,7 +14,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.ResourceType
-  alias OliWeb.Components.Project.AsyncExporter
   alias OliWeb.Common.MultiSelect.Option
   alias OliWeb.Common.MultiSelectInput
   alias OliWeb.Common.{PagedTable, TextSearch}
@@ -147,17 +146,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <%= if Accounts.has_admin_role?(@ctx.author, :content_admin) do %>
-        <div class="d-flex align-items-center my-3">
-          <AsyncExporter.raw_analytics
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            analytics_export_status={@analytics_export_status}
-            analytics_export_url={@analytics_export_url}
-            analytics_export_timestamp={@analytics_export_timestamp}
-          />
-        </div>
-      <% end %>
     </div>
     <ul class="nav nav-pills mb-4">
       <li class="nav-item my-2 mr-2">

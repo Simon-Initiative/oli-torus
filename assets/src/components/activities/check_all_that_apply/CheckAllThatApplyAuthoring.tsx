@@ -23,6 +23,7 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -97,6 +98,10 @@ const CheckAllThatApply = () => {
           onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
         />
       </TabbedNavigation.Tab>
+      <TabbedNavigation.Tab label={TriggerLabel()}>
+        <TriggerAuthoring partId={model.authoring.parts[0].id} />
+      </TabbedNavigation.Tab>
+
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
     </TabbedNavigation.Tabs>
   );
