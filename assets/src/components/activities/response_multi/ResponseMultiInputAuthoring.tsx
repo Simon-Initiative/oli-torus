@@ -82,7 +82,7 @@ export const ResponseMultiInputComponent = () => {
             />
           </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label={TriggerLabel()}>
-            <TriggerAuthoring partId={model.authoring.parts[0].id} />
+            <TriggerAuthoring partId={input.partId} />
           </TabbedNavigation.Tab>
 
           <ActivitySettings

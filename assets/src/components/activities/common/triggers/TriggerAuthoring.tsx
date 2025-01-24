@@ -53,7 +53,6 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
     <>
       <h4> DOT AI Activity Trigger Point</h4>
       <p>
-        {' '}
         Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
         activity.
       </p>
