@@ -1,6 +1,7 @@
 import { HasParts } from 'components/activities/types';
 import { getPartById } from 'data/activities/model/utils';
 import { ActivityTrigger, sameTrigger } from 'data/triggers';
+import { findTrigger } from './TriggerUtils';
 
 export const TriggerActions = {
   addTrigger(trigger: ActivityTrigger, partId: string) {
@@ -22,7 +23,7 @@ export const TriggerActions = {
     return (model: HasParts) => {
       const part = getPartById(model, partId);
       if (part.triggers) {
-        const target = part.triggers.find((t) => sameTrigger(t, trigger));
+        const target = findTrigger(model, partId, trigger);
         if (target) target.prompt = prompt;
       }
     };
