@@ -26,7 +26,7 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState(0);
   return (
     <>
-      <ul className="nav nav-tabs my-2" role="tablist">
+      <ul className="nav nav-tabs my-2 flex justify-between" role="tablist">
         {React.Children.map(children, (child, index) => {
           if (React.isValidElement(child) && isValidChild(child, TabbedNavigation)) {
             return (
@@ -37,7 +37,7 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
                     e.stopPropagation();
                     setActiveTab(index);
                   }}
-                  className={'text-primary nav-link' + (index === activeTab ? ' active' : '')}
+                  className={'text-primary nav-link px-3' + (index === activeTab ? ' active' : '')}
                   data-bs-toggle="tab"
                   role="tab"
                   aria-controls={'tab-' + index}
