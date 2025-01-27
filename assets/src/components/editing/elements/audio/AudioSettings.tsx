@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { Tooltip } from 'components/common/Tooltip';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Modal, ModalSize } from 'components/modal/Modal';
@@ -19,22 +20,24 @@ interface SettingsButtonProps {
   onEdit: (attrs: Partial<ContentModel.Audio>) => void;
 }
 export const SettingsButton = (props: SettingsButtonProps) => {
+  const dispatch = useDispatch();
+
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
         icon: <i className="fa-solid fa-circle-play"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
-          window.oliDispatch(
+          dispatch(
             modalActions.display(
               <AudioSettingsModal
                 commandContext={props.commandContext}
                 model={props.model}
                 onEdit={(audio: Partial<ContentModel.Audio>) => {
-                  window.oliDispatch(modalActions.dismiss());
+                  dispatch(modalActions.dismiss());
                   props.onEdit(audio);
                 }}
-                onCancel={() => window.oliDispatch(modalActions.dismiss())}
+                onCancel={() => dispatch(modalActions.dismiss())}
               />,
             ),
           ),
