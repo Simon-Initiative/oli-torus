@@ -42,8 +42,10 @@ const SettingsButton = (props: SettingsButtonProps) => {
       description={createButtonCommandDesc({
         icon: <i className="fa-solid fa-video"></i>,
         description: 'Settings',
-        execute: (_context, _editor, _params) =>
-          dispatch(
+        execute: (_context, _editor, _params) => {
+          console.log('SettingsButton clicked');
+
+          window.oliDispatch(
             modalActions.display(
               <VideoModal
                 projectSlug={props.projectSlug}
@@ -55,7 +57,8 @@ const SettingsButton = (props: SettingsButtonProps) => {
                 onCancel={() => window.oliDispatch(modalActions.dismiss())}
               />,
             ),
-          ),
+          );
+        },
       })}
     />
   );
