@@ -9,8 +9,13 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
   alias OliWeb.Icons
 
   def update(assigns, socket) do
-    certificate = assigns.product.certificate
-    custom_assessments = (certificate && certificate.custom_assessments) || []
+    certificate = assigns.certificate
+
+    custom_assessments =
+      case certificate do
+        nil -> []
+        cert -> cert.custom_assessments
+      end
 
     graded_pages_options =
       Enum.map(

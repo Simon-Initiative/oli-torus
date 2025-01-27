@@ -4,6 +4,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Certificates
 
   @title "Manage Certificate Settings"
 
@@ -18,6 +19,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
            title: @title,
            header_title: @title,
            product: Oli.Repo.preload(product, :certificate),
+           certificate:
+             if(product.certificate_id,
+               do: Certificates.get_certificate(product.certificate_id),
+               else: nil
+             ),
            project_slug: project_slug,
            breadcrumbs: breadcrumbs(project_slug, product_slug),
            graded_pages: product_graded_pages(product_slug)
@@ -39,7 +45,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
   end
 
   def handle_info({:put_flash, [type, message]}, socket) do
-    {:noreply, put_flash(socket, type, message)}
+    {:noreply,
+     socket
+     |> clear_flash()
+     |> put_flash(type, message)}
   end
 
   def render(assigns) do
@@ -49,6 +58,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
         module={OliWeb.Certificates.CertificateSettingsComponent}
         id="certificate_settings_component"
         product={@product}
+        certificate={@certificate}
         current_path={
           ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/certificate_settings"
         }

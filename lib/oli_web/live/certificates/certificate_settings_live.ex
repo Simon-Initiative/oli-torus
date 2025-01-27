@@ -4,6 +4,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.Breadcrumb
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Certificates
 
   def mount(%{"product_id" => product_slug}, session, socket) do
     case Mount.for(product_slug, session) do
@@ -14,7 +15,12 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
         {:ok,
          assign(socket,
            title: "Manage Certificate Settings",
-           product: Oli.Repo.preload(product, :certificate),
+           product: product,
+           certificate:
+             if(product.certificate_id,
+               do: Certificates.get_certificate(product.certificate_id),
+               else: nil
+             ),
            breadcrumbs: breadcrumbs(product_slug),
            graded_pages: product_graded_pages(product_slug)
          )}
@@ -35,7 +41,10 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
   end
 
   def handle_info({:put_flash, [type, message]}, socket) do
-    {:noreply, put_flash(socket, type, message)}
+    {:noreply,
+     socket
+     |> clear_flash()
+     |> put_flash(type, message)}
   end
 
   def render(assigns) do
@@ -45,9 +54,9 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
         module={OliWeb.Certificates.CertificateSettingsComponent}
         id="certificate_settings_component"
         product={@product}
+        certificate={@certificate}
         current_path={~p"/authoring/products/#{@product.slug}/certificate_settings"}
         active_tab={@active_tab}
-        product_graded_pages(product_slug)
         graded_pages={@graded_pages}
       />
     </div>

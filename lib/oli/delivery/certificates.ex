@@ -19,4 +19,16 @@ defmodule Oli.Delivery.Certificates do
   def create(attrs) do
     attrs |> Certificate.changeset() |> Repo.insert()
   end
+
+  @doc """
+  Retrieves a certificate by the id.
+
+  ## Examples
+  iex> get_certificate(1)
+  %Certificate{}
+
+  iex> get_certificate(123)
+  nil
+  """
+  def get_certificate(certificate_id), do: Repo.get(Certificate, certificate_id)
 end

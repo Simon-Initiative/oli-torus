@@ -16,14 +16,51 @@ defmodule OliWeb.Certificates.CertificateSettingsComponentTest do
           %{title: "Test Product", certificate_enabled: false, type: :blueprint}
         )
 
-      {:ok, product: product}
+      certificate = insert(:certificate, %{section: product})
+
+      # graded pages
+      graded_page_1_resource = insert(:resource)
+      graded_page_2_resource = insert(:resource)
+
+      graded_page_1_revision =
+        insert(
+          :revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Graded page 1",
+          graded: true,
+          resource: graded_page_1_resource
+        )
+
+      graded_page_2_revision =
+        insert(
+          :revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Graded page 2",
+          graded: true,
+          purpose: :application,
+          resource: graded_page_2_resource
+        )
+
+      {:ok,
+       product: product,
+       certificate: certificate,
+       graded_pages: [graded_page_1_revision, graded_page_2_revision]}
     end
 
-    test "renders component correctly", %{conn: conn, product: product} do
+    test "renders component correctly", %{
+      conn: conn,
+      product: product,
+      certificate: certificate,
+      graded_pages: graded_pages
+    } do
       {:ok, lcd, _html} =
         live_component_isolated(conn, CertificateSettingsComponent, %{
           id: "certificate_settings_component",
-          product: product
+          product: product,
+          certificate: certificate,
+          graded_pages: graded_pages,
+          active_tab: :thresholds,
+          current_path: "/path"
         })
 
       assert has_element?(lcd, "div[role=title]", "Certificate Settings")
@@ -33,12 +70,20 @@ defmodule OliWeb.Certificates.CertificateSettingsComponentTest do
       refute has_element?(lcd, "#enable_certificates_checkbox:checked")
     end
 
-    test "toggles certificate_enabled", %{conn: conn, product: product} do
-      # Mock para `Sections.update_section/2`
+    test "toggles certificate_enabled", %{
+      conn: conn,
+      product: product,
+      certificate: certificate,
+      graded_pages: graded_pages
+    } do
       {:ok, lcd, _html} =
         live_component_isolated(conn, CertificateSettingsComponent, %{
           id: "certificate_settings_component",
-          product: product
+          product: product,
+          certificate: certificate,
+          graded_pages: graded_pages,
+          active_tab: :thresholds,
+          current_path: "/path"
         })
 
       # checkbox unchecked by default
