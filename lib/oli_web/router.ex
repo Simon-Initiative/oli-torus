@@ -196,19 +196,28 @@ defmodule OliWeb.Router do
 
   ## Authentication routes
 
+  # allow access to non-authenticated users or guest users for sign in and account creation
+  scope "/", OliWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated_and_not_guest]
+
+    live_session :redirect_if_user_is_authenticated_and_not_guest,
+      on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated_and_not_guest}] do
+      live "/users/register", UserRegistrationLive, :new
+      live "/users/log_in", UserLoginLive, :new
+    end
+
+    post "/users/log_in", UserSessionController, :create
+  end
+
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
       live "/instructors/log_in", UserLoginLive, :instructor_new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
     end
-
-    post "/users/log_in", UserSessionController, :create
   end
 
   scope "/", OliWeb do
