@@ -62,10 +62,10 @@ export const describeTrigger = (t: ActivityTrigger, part: Part) => {
     case 'explanation':
       return `Student triggers explanation (${shortText(part.explanation!.content)})`;
     case 'hint':
-      const hint = shortText(part.hints[t.hint_number - 1].content);
-      return `Student requests ${nth[t.hint_number]} hint (${hint})`;
+      const hint = shortText(part.hints[t.ref_id - 1].content);
+      return `Student requests ${nth[t.ref_id]} hint (${hint})`;
     case 'targeted_feedback':
-      const response = part.responses.find((r) => r.id == t.response_id);
+      const response = part.responses.find((r) => r.id == t.ref_id);
       const feedback = response ? shortText(response.feedback.content) : 'not found';
       return `Student triggers targeted feedback (${feedback})`;
     default:
