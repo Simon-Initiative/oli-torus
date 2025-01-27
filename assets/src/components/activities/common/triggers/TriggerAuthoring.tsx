@@ -132,7 +132,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
   const TriggerCard = (t: ActivityTrigger, i: number) => (
     <Card.Card key={'trigger-' + i}>
       <Card.Title>
-        {i + 1}. {describeTrigger(t, part, null)}
+        {i + 1}. {describeTrigger(t, part)}
         <div className="flex-grow-1"></div>
         <RemoveButtonConnected onClick={() => dispatch(TriggerActions.removeTrigger(t, partId))} />
       </Card.Title>
