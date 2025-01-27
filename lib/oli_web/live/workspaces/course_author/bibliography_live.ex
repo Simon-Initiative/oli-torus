@@ -40,12 +40,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
+    <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/bibliography.js")}>
+    </script>
+
     <h2 id="header_id" class="pb-2">Bibliography</h2>
     <div :if={!@error} id="editor" phx-update="ignore">
       <%= React.component(@ctx, "Components.Bibliography", @context, id: "bibliography") %>
     </div>
-
-    <%= React.component(@ctx, "Components.ModalDisplay", @context, id: "modal-display") %>
     """
   end
 end

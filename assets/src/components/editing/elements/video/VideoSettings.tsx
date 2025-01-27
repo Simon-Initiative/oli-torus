@@ -37,12 +37,15 @@ interface SettingsButtonProps {
 
 const SettingsButton = (props: SettingsButtonProps) => {
   const dispatch = useDispatch();
+
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
         icon: <i className="fa-solid fa-video"></i>,
         description: 'Settings',
-        execute: (_context, _editor, _params) =>
+        execute: (_context, _editor, _params) => {
+          console.log('SettingsButton clicked');
+
           dispatch(
             modalActions.display(
               <VideoModal
@@ -52,10 +55,11 @@ const SettingsButton = (props: SettingsButtonProps) => {
                   dispatch(modalActions.dismiss());
                   props.onEdit(video);
                 }}
-                onCancel={() => window.oliDispatch(modalActions.dismiss())}
+                onCancel={() => dispatch(modalActions.dismiss())}
               />,
             ),
-          ),
+          );
+        },
       })}
     />
   );
