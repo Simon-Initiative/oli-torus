@@ -128,7 +128,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        |> assign_contained_scheduling_types(full_hierarchy)
        |> maybe_assign_selected_view(selected_view)
        |> stream(:units, units, reset: true)
-       |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
+       |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)
+       |> enable_gallery_slider_buttons(units)}
     end
   end
 
