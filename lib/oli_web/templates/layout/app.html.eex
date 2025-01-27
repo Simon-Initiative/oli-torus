@@ -1,4 +1,4 @@
-<div class="flash container mx-auto px-0 top-[80px]">
+<div class="absolute flash container inset-x-0 top-0 px-0 z-[99]">
   <%= if Phoenix.Flash.get(@flash, :info) do %>
     <div>
       <p class="alert alert-info mb-3" role="alert"><%= Phoenix.Flash.get(@flash, :info) %></p>
