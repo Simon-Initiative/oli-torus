@@ -2,7 +2,6 @@ import React, { FC } from 'react';
 import { Provider } from 'react-redux';
 import { AnyAction, Store } from 'redux';
 import { Maybe } from 'tsmonad';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 
 /**
  * Creates a redux store and returns a component that wires up a <Provider>, <ModalDisplay> and <Component>
@@ -16,7 +15,6 @@ const wrapWithRedux = (Component: FC, name: string, store: Store<any, AnyAction>
     return (
       <Provider store={store}>
         <Component {...props} />
-        <ModalDisplay />
       </Provider>
     );
   });
