@@ -21,7 +21,6 @@ interface SettingsButtonProps {
 }
 export const SettingsButton = (props: SettingsButtonProps) => {
   const dispatch = useDispatch();
-
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
@@ -37,7 +36,7 @@ export const SettingsButton = (props: SettingsButtonProps) => {
                   dispatch(modalActions.dismiss());
                   props.onEdit(audio);
                 }}
-                onCancel={() => dispatch(modalActions.dismiss())}
+                onCancel={() => window.oliDispatch(modalActions.dismiss())}
               />,
             ),
           ),

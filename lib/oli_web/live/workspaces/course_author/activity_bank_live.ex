@@ -49,6 +49,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLive do
             id: "activity-bank"
           ) %>
         </div>
+        <%= React.component(@ctx, "Components.ModalDisplay", %{}, id: "modal-display") %>
       <% else %>
         <.loader />
       <% end %>
