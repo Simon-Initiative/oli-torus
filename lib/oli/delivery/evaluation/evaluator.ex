@@ -21,8 +21,14 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   end
 
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
+
+    relevant_triggers_by_type = Enum.filter(part.triggers, fn trigger ->
+      trigger.type in Oli.Conversation.Triggers.evaluation_triggers()
+    end)
+    |> Enum.group_by(&(&1.type))
+
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
-      {_, %Response{feedback: feedback, score: score, show_page: show_page}, _, out_of} ->
+      {_, %Response{feedback: feedback, score: score, show_page: show_page} = response _, out_of} ->
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",
@@ -32,7 +38,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            attempt_guid: context.part_attempt_guid,
            error: nil,
            show_page: show_page,
-           part_id: part.id
+           part_id: part.id,
+           trigger: arm_trigger(relevant_triggers_by_type, response, out_of)
          }}
 
       # No matching response found - mark incorrect
@@ -61,6 +68,35 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
       _ ->
         {:error, "Error in evaluation"}
+    end
+  end
+
+  defp arm_trigger(relevant_triggers_by_type, response, out_of) do
+
+    case find_matching_trigger(relevant_triggers_by_type, response, out_of) do
+      nil -> nil
+      trigger -> Oli.Conversation.Trigger.parse(trigger, nil, nil)
+    end
+
+  end
+
+  defp find_matching_trigger(relevant_triggers_by_type, response, out_of) do
+    # Does this response match a targeted feedback trigger?
+    targeted_feedback_trigger = Map.get(relevant_triggers_by_type, :targeted_feedback, [])
+    |> Enum.find(fn trigger ->
+      trigger.ref_id == response.id
+    end)
+
+    correct_trigger = Map.get(relevant_triggers_by_type, :correct_answer, [nil]) |> hd()
+    incorrect_trigger = Map.get(relevant_triggers_by_type, :incorrect_answer, [nil]) |> hd()
+
+    is_correct? = response.score == out_of
+
+    case {targeted_feedback_trigger, correct_trigger, incorrect_trigger, is_correct?} do
+      {trigger, _, _, _} -> trigger
+      {_, trigger, _, true} -> trigger
+      {_, _, trigger, false} -> trigger
+      _ -> nil
     end
   end
 

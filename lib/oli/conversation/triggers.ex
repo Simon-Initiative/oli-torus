@@ -17,6 +17,8 @@ defmodule Oli.Conversation.Triggers  do
     :targeted_feedback
   ]
 
+  def evaluation_triggers(), do: [:correct_answer, :incorrect_answer, :explanation, :targeted_feedback]
+
   def description(:visit_page, _), do: "Visited the learning page"
   def description(:content_group, id), do: "Clicked a button next to a content group id (id: #{id})"
   def description(:content_block, id), do: "Viewed a content block (id: #{id})"

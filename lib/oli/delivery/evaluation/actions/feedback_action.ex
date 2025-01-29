@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Evaluation.Actions.FeedbackAction do
     :attempt_guid,
     :part_id,
     :show_page,
-    :explanation
+    :explanation,
+    :trigger
   ]
 end

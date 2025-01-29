@@ -505,6 +505,9 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => part_attempt_guid
       }) do
+
+
+
     case Activity.request_hint(activity_attempt_guid, part_attempt_guid) do
       {:ok, {hint, has_more_hints}} ->
         json(conn, %{"type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints})
