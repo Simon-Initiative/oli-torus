@@ -17,7 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
   @max_selected 5
 
-  @limit 2
+  @limit 25
   @default_options %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
