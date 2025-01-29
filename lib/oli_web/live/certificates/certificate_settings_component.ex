@@ -395,6 +395,131 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
 
   defp tab_content(%{active_tab: :design} = assigns) do
     ~H"""
+    <div class="w-full flex-col">
+      <div class="mb-14 text-base font-medium">
+        Create and preview your certificate.
+      </div>
+
+      <.form
+        :let={f}
+        id="design_form"
+        for={@certificate_changeset}
+        phx-target={@target}
+        phx-submit="save_certificate"
+        class="w-full justify-start items-center gap-3"
+      >
+        <div class="w-3/4 flex-col justify-start items-start gap-10 inline-flex">
+          <!-- Title -->
+          <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+            <div class="text-base font-bold">
+              Course Title
+            </div>
+            <div class="w-full text-base">
+              <.input
+                type="text"
+                field={f[:title]}
+                value={@certificate_changeset.data.title}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+            </div>
+          </div>
+          <!-- Subtitle -->
+          <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+            <div class="text-base font-bold">
+              Subtitle
+            </div>
+            <div class="text-base font-small">
+              The description that appears under the name of the awardee
+            </div>
+            <div class="w-full text-base font-medium">
+              <.input
+                type="text"
+                field={f[:description]}
+                value={@certificate_changeset.data.description}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+            </div>
+          </div>
+          <!-- Administrators -->
+          <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+            <div class="text-base font-bold">
+              Administrators
+            </div>
+            <div class="text-base font-small">
+              Include up to three administrators on your certificate.
+            </div>
+            <div class="flex gap-3 items-center">
+              <.input
+                type="text"
+                field={f[:admin_name1]}
+                placeholder="Name 1"
+                value={@certificate_changeset.data.admin_name1}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+              <.input
+                type="text"
+                field={f[:admin_title1]}
+                placeholder="Title 1"
+                value={@certificate_changeset.data.admin_title1}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+            </div>
+            <div class="flex gap-3 items-center">
+              <.input
+                type="text"
+                field={f[:admin_name2]}
+                placeholder="Name 2"
+                value={@certificate_changeset.data.admin_name2}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+              <.input
+                type="text"
+                field={f[:admin_title2]}
+                placeholder="Title 2"
+                value={@certificate_changeset.data.admin_title2}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+            </div>
+            <div class="flex gap-3 items-center">
+              <.input
+                type="text"
+                field={f[:admin_name3]}
+                placeholder="Name 3"
+                value={@certificate_changeset.data.admin_name3}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+              <.input
+                type="text"
+                field={f[:admin_title3]}
+                placeholder="Title 3"
+                value={@certificate_changeset.data.admin_title3}
+                errors={f.errors}
+                class="pl-6 border-[#D4D4D4] rounded"
+              />
+            </div>
+          </div>
+          <!-- Logos -->
+          <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+            <div class="text-base font-bold">
+              Logos
+            </div>
+            <div class="text-sm text-gray-500">
+              Upload up to three logos for your certificate.
+            </div>
+            <!-- TODO: Display Current Logos -->
+            <!-- TODO: File Upload Input -->
+          </div>
+          <!-- TODO: Preview and Save -->
+        </div>
+      </.form>
+    </div>
     """
   end
 
