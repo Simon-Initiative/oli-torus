@@ -99,7 +99,29 @@ defmodule OliWeb.LtiController do
         current_user =
           case context do
             "author" ->
-              conn.assigns[:current_author]
+              # stub a user for the author
+              %Accounts.User{
+                id: conn.assigns[:current_author].id,
+                sub: "admin",
+                email: conn.assigns[:current_author].email,
+                email_verified: true,
+                name: conn.assigns[:current_author].name,
+                given_name: conn.assigns[:current_author].given_name,
+                family_name: conn.assigns[:current_author].family_name,
+                middle_name: "",
+                nickname: "",
+                preferred_username: "",
+                profile: "",
+                picture: conn.assigns[:current_author].picture,
+                website: "",
+                gender: "",
+                birthdate: "",
+                zoneinfo: "",
+                locale: "",
+                phone_number: "",
+                phone_number_verified: "",
+                address: ""
+              }
 
             _ ->
               conn.assigns[:current_user]
@@ -110,11 +132,23 @@ defmodule OliWeb.LtiController do
         # for now, just use a single deployment with a static deployment_id
         deployment_id = "1"
 
+        resource_link = %{
+          id: "12345"
+        }
+
+        roles = [
+          Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
+          Lti_1p3.Tool.PlatformRoles.get_role(:institution_administrator),
+          Lti_1p3.Tool.ContextRoles.get_role(:context_administrator)
+        ]
+
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,
                current_user,
                issuer,
-               deployment_id
+               deployment_id,
+               resource_link,
+               roles
              ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
@@ -228,7 +262,7 @@ defmodule OliWeb.LtiController do
     |> json(Lti_1p3.get_all_public_keys())
   end
 
-  def access_tokens(conn, _params) do
+  def auth_token(conn, params) do
     conn
     |> put_status(:not_implemented)
     |> json(%{
