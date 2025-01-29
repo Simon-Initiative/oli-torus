@@ -495,10 +495,9 @@ defmodule Oli.Analytics.Datasets do
   end
 
   defp build_json_context(%DatasetJob{project_id: project_id}) do
-    result =
-      Path.join(__DIR__, "/datasets/context.sql")
-      |> File.read!()
-      |> Repo.query([project_id, project_id, project_id, project_id])
+
+    result = Oli.Analytics.Datasets.Utils.context_sql()
+    |> Repo.query([project_id, project_id, project_id, project_id])
 
     case result do
       {:ok, %Postgrex.Result{rows: [[context]]}} ->
