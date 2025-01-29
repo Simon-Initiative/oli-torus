@@ -46,6 +46,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
     changeset =
       cast_certificate_params(
         certificate_params,
+        socket.assigns.certificate,
         socket.assigns.product,
         socket.assigns.selected_ids
       )
@@ -57,6 +58,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
     socket =
       cast_certificate_params(
         params["certificate"],
+        socket.assigns.certificate,
         socket.assigns.product,
         socket.assigns.selected_ids
       )
@@ -554,7 +556,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
      )}
   end
 
-  defp cast_certificate_params(params, section, selected_ids) do
+  defp cast_certificate_params(params, certificate, section, selected_ids) do
     params =
       Enum.reduce(params, %{}, fn {key, value}, acc ->
         case cast_value(key, value) do
@@ -568,8 +570,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         "description" => section.description || "Certificate description"
       })
 
-    Certificate.changeset(section.certificate || %Certificate{}, params)
-    |> IO.inspect(label: "cast")
+    Certificate.changeset(certificate || %Certificate{}, params)
   end
 
   defp cast_value(_, value) when value in ["", nil], do: nil
