@@ -380,7 +380,7 @@ defmodule Oli.Analytics.Datasets do
     active_jobs_by_id = fetch_app_job_ids()
 
     Logger.debug("Fetched #{Enum.count(active_jobs_by_id)} active jobs from DB")
-    Enum.each(active_jobs_by_id, fn {app_id, jobs} ->
+    Enum.each(active_jobs_by_id, fn {_app_id, jobs} ->
       Enum.each(jobs, fn job -> Logger.debug("Job #{job.job_id} is run_id #{job.job_run_id} is #{job.status}") end)
     end)
 
