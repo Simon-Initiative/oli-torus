@@ -389,7 +389,8 @@ defmodule Oli.Analytics.Datasets do
 
     statuses_by_id =
       Enum.map(active_jobs_by_id, fn {app_id, [earliest | _rest]} ->
-        EmrServerless.get_jobs(app_id, earliest.inserted_at)
+        twelve_hours_earlier = DateTime.add(earliest.inserted_at, -12, :hour)
+        EmrServerless.get_jobs(app_id, twelve_hours_earlier)
       end)
       |> Enum.reduce([], fn result, all ->
         case result do
