@@ -379,6 +379,11 @@ defmodule Oli.Analytics.Datasets do
     # Get the application and job run ids for all jobs that are not in a terminal state
     active_jobs_by_id = fetch_app_job_ids()
 
+    Logger.debug("Fetched #{Enum.count(active_jobs_by_id)} active jobs from DB")
+    Enum.each(active_jobs_by_id, fn {app_id, jobs} ->
+      Enum.each(jobs, fn job -> Logger.debug("Job #{job.job_id} is run_id #{job.job_run_id} is #{job.status}") end)
+    end)
+
     statuses_by_id =
       Enum.map(active_jobs_by_id, fn {app_id, [earliest | _rest]} ->
         EmrServerless.get_jobs(app_id, earliest.inserted_at)
@@ -394,6 +399,11 @@ defmodule Oli.Analytics.Datasets do
         end
       end)
       |> Enum.reduce(%{}, fn job, all -> Map.put(all, job["id"], job) end)
+
+    Logger.debug("Fetched #{Enum.count(statuses_by_id)} job statuses from EMR")
+    Enum.each(statuses_by_id, fn {job_id, status} ->
+      Logger.debug("Job #{job_id} is [#{Jason.encode!(status)}]")
+    end)
 
     # Pair up the jobs and their statuses, filtering to those whose have changed
     to_update =
