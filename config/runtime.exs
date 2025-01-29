@@ -423,7 +423,15 @@ if config_env() == :prod do
 
   config :oli, Oban,
     repo: Oli.Repo,
-    plugins: [Oban.Plugins.Pruner],
+    plugins: [
+      Oban.Plugins.Pruner,
+      {
+        Oban.Plugins.Cron,
+        crontab: [
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+        ]
+      }
+    ],
     queues: [
       default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
       snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),

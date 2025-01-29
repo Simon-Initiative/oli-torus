@@ -179,7 +179,6 @@ config :oli, OliWeb.Endpoint,
   pubsub_server: Oli.PubSub
 
 config :oli, Oban,
-  peer: false,
   repo: Oli.Repo,
   plugins: [
     Oban.Plugins.Pruner,
