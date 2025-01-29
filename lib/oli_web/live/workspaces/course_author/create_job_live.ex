@@ -229,7 +229,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
 
-    offset = get_param(changes, "offset", 0)
+    offset = get_int_param(changes, "offset", "0")
 
     sections =
       Browse.browse_sections(
