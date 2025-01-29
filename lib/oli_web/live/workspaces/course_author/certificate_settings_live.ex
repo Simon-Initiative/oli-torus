@@ -14,16 +14,15 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
+        product = Oli.Repo.preload(product, :certificate)
+
         {:ok,
-         assign(socket,
+         socket
+         |> assign(
            title: @title,
            header_title: @title,
-           product: Oli.Repo.preload(product, :certificate),
-           certificate:
-             if(product.certificate_id,
-               do: Certificates.get_certificate(product.certificate_id),
-               else: nil
-             ),
+           product: product,
+           certificate: product.certificate,
            project_slug: project_slug,
            breadcrumbs: breadcrumbs(project_slug, product_slug),
            graded_pages: product_graded_pages(product_slug)
