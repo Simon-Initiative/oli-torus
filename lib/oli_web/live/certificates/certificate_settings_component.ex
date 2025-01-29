@@ -35,6 +35,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
      |> assign(assigns)
      |> assign(
        product_changeset: Section.changeset(assigns.product),
+       product: assigns.product,
        certificate_changeset: certificate_changeset(certificate),
        graded_pages_options: graded_pages_options,
        selected_graded_pages_options: selected_graded_pages_options,
@@ -151,7 +152,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
           Enable certificate capabilities for this product
         </div>
       </.form>
-      <div class="flex mt-10 mb-2 gap-20">
+      <div :if={@product.certificate_enabled} class="flex mt-10 mb-2 gap-20">
         <div class="justify-start">
           <.link
             class={[
@@ -196,6 +197,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         </div>
       </div>
       <.tab_content
+        :if={@product.certificate_enabled}
         active_tab={@active_tab}
         certificate_changeset={@certificate_changeset}
         target={@myself}
@@ -514,18 +516,18 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
     ~H"""
     <div
       :for={{id, title} <- @selected_values}
-      class="inline-flex items-center text-xs font-medium bg-slate-300 text-slate-800 border border-slate-400 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-400 rounded-full px-2 py-0.5 m-0.5"
+      class="text-white inline-flex items-center text-xs font-medium bg-[#0165da] border rounded-full px-2 py-0.5 m-0.5"
     >
       <span><%= title %></span>
       <button
         type="button"
-        class="ml-1.5 hover:bg-slate-400 dark:hover:bg-slate-500 rounded-full w-4 h-4 flex items-center justify-center"
+        class="ml-1.5 text-black hover:bg-[#3383e1] rounded-full w-5 h-5 flex items-center justify-center"
         aria-label="Remove"
         phx-click="toggle_selected"
         phx-value-resource_id={id}
         phx-target={@target}
       >
-        &times;
+        <Icons.cross />
       </button>
     </div>
     """
