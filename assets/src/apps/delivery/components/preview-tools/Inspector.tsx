@@ -17,9 +17,11 @@ import { unflatten } from './inspector/utils';
 
 interface InspectorProps {
   currentActivity: any;
+  reviewMode: boolean;
+  isInstructor: boolean;
 }
 // Inspector Placeholder
-const Inspector: React.FC<InspectorProps> = () => {
+const Inspector: React.FC<InspectorProps> = ({ reviewMode, isInstructor }) => {
   const dispatch = useDispatch();
 
   const [globalState, setGlobalState] = useState<any>(null);
@@ -188,22 +190,26 @@ const Inspector: React.FC<InspectorProps> = () => {
   return (
     <div className="inspector">
       <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
-        <button
-          disabled={!hasChanges}
-          type="button"
-          className="btn btn-secondary mr-1"
-          onClick={handleCancelChanges}
-        >
-          Cancel
-        </button>
-        <button
-          disabled={!hasChanges}
-          type="button"
-          className="btn btn-primary ml-1"
-          onClick={handleApplyChanges}
-        >
-          Apply {hasChanges ? `(${changeCount})` : null}
-        </button>
+        {!reviewMode && (
+          <>
+            <button
+              disabled={!hasChanges}
+              type="button"
+              className="btn btn-secondary mr-1"
+              onClick={handleCancelChanges}
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!hasChanges}
+              type="button"
+              className="btn btn-primary ml-1"
+              onClick={handleApplyChanges}
+            >
+              Apply {hasChanges ? `(${changeCount})` : null}
+            </button>
+          </>
+        )}
       </div>
       <div className="accordion">
         <StateDisplay label="App" state={appState} onChange={handleValueChange} />

@@ -202,8 +202,14 @@ const Delivery: React.FC<DeliveryProps> = ({
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
-    <div className={`${parentDivClasses.join(' ')} ${currentTheme}`}>
-      {previewMode && <PreviewTools model={content?.model} />}
+    <div
+      className={`${parentDivClasses.join(' ')} ${currentTheme} ${
+        reviewMode && isInstructor ? 'instructor-preview' : ''
+      }`}
+    >
+      {(previewMode || (reviewMode && isInstructor)) && (
+        <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
+      )}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>

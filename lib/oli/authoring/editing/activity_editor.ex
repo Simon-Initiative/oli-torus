@@ -129,6 +129,64 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     end
   end
 
+  def delete_bulk(project_slug, activity_ids, author) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, publication} <-
+           Publishing.project_working_publication(project_slug) |> trap_nil() do
+      Repo.transaction(fn ->
+        case process_deletes(project, publication, author, activity_ids) do
+          {:ok, revisions} ->
+            {:ok, revisions}
+
+          {:error, e} ->
+            Repo.rollback(e)
+        end
+      end)
+    else
+      error -> error
+    end
+  end
+
+  defp process_deletes(_, _, _, []), do: {:ok, []}
+
+  defp process_deletes(project, publication, author, [activity_id | rest]) do
+    with {:ok, revision} <- process_or_error(project, publication, author, activity_id),
+         {:ok, processed_rest} <- process_deletes(project, publication, author, rest),
+         do: {:ok, [revision | processed_rest]}
+  end
+
+  defp process_or_error(project, publication, author, activity_id) do
+    secondary_id = Oli.Resources.ResourceType.id_for_secondary()
+    activity_resource_id = Oli.Resources.ResourceType.id_for_activity()
+
+    with {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
+         {:ok, revision} <- get_latest_revision(publication.id, activity.id) |> trap_nil() do
+      if secondary_id == revision.resource_type_id or
+           activity_resource_id == revision.resource_type_id do
+        update = %{"deleted" => true}
+
+        case Locks.acquire(project.slug, publication.id, revision.resource_id, author.id) do
+          # If we acquired the lock, we must first create a new revision
+          {:acquired} ->
+            updated =
+              create_new_revision(revision, publication, activity, author.id)
+              |> update_revision(update, project.slug)
+
+            {:ok, updated}
+
+          # error or not able to lock results in a failed edit
+          result ->
+            {:error, result}
+        end
+      else
+        {:error, {:not_applicable}}
+      end
+    else
+      error -> error
+    end
+  end
+
   @doc """
   Creates a new secondary document for an activity.
 

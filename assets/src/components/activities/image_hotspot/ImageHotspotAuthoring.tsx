@@ -22,6 +22,7 @@ import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest, makeChoice } from '../types';
 import { CircleEditor } from './Sections/CircleEditor';
@@ -288,6 +289,9 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Explanation">
           <Explanation partId={selectedPartId} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label={TriggerLabel()}>
+          <TriggerAuthoring partId={model.authoring.parts[0].id} />
         </TabbedNavigation.Tab>
       </TabbedNavigation.Tabs>
     </React.Fragment>

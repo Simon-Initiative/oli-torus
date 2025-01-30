@@ -38,7 +38,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          :contains_deliberate_practice,
          :open_and_free
        ], %Sections.Section{}},
-    current_user: {[:id, :name, :email], %User{}}
+    current_user: {[:id, :name, :email, :sub], %User{}}
   }
 
   @page_resource_type_id Oli.Resources.ResourceType.get_id_by_type("page")
@@ -128,7 +128,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        |> assign_contained_scheduling_types(full_hierarchy)
        |> maybe_assign_selected_view(selected_view)
        |> stream(:units, units, reset: true)
-       |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)}
+       |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)
+       |> enable_gallery_slider_buttons(units)}
     end
   end
 

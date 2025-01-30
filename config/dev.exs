@@ -201,11 +201,7 @@ config :ex_aws,
   access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
   secret_access_key: System.get_env("AWS_SECRET_ACCESS_KEY", "your_minio_secret_key")
 
-config :ex_aws, :s3,
-  region: System.get_env("AWS_REGION", "us-east-1"),
-  scheme: System.get_env("AWS_S3_SCHEME", "http") <> "://",
-  port: System.get_env("AWS_S3_PORT", "9000") |> String.to_integer(),
-  host: System.get_env("AWS_S3_HOST", "127.0.0.1")
+config :ex_aws, :s3, region: System.get_env("AWS_REGION", "us-east-1")
 
 config :ex_aws, :hackney_opts,
   follow_redirect: true,

@@ -119,7 +119,7 @@ const EditingCanvas: React.FC = () => {
       interfaceSettingClass += ' show-column-guide';
     }
     if (_currentLessonCustom.centerpoint) {
-      interfaceSettingClass += ' show-grid show-center';
+      interfaceSettingClass += ' show-center';
     }
     if (_currentLessonCustom.rowGuides) {
       interfaceSettingClass += ' show-row-guide';

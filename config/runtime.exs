@@ -202,6 +202,24 @@ if config_env() == :prod do
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
 
+  config :oli, :dataset_generation,
+    enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
+    emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+    execution_role:
+      System.get_env(
+        "EMR_DATASET_EXECUTION_ROLE",
+        "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"
+      ),
+    entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
+    log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
+    source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+    context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
+    spark_submit_parameters:
+      System.get_env(
+        "EMR_DATASET_SPARK_SUBMIT_PARAMETERS",
+        "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+      )
+
   config :oli, :xapi_upload_pipeline,
     batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
     batch_size: get_env_as_integer.("XAPI_BATCH_SIZE", "50"),
@@ -405,7 +423,15 @@ if config_env() == :prod do
 
   config :oli, Oban,
     repo: Oli.Repo,
-    plugins: [Oban.Plugins.Pruner],
+    plugins: [
+      Oban.Plugins.Pruner,
+      {
+        Oban.Plugins.Cron,
+        crontab: [
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+        ]
+      }
+    ],
     queues: [
       default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
       snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),

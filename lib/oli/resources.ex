@@ -346,7 +346,8 @@ defmodule Oli.Resources do
           explanation_strategy: previous_revision.explanation_strategy,
           collab_space_config: previous_revision.collab_space_config,
           purpose: previous_revision.purpose,
-          relates_to: previous_revision.relates_to
+          relates_to: previous_revision.relates_to,
+          full_progress_pct: previous_revision.full_progress_pct
         },
         convert_strings_to_atoms(attrs)
       )

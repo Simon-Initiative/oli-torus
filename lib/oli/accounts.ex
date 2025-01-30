@@ -309,24 +309,72 @@ defmodule Oli.Accounts do
   """
 
   def insert_or_update_lms_user(%{sub: sub} = changes, institution_id) do
+    # First see if we can find a user that matches the sub and institution id exactly. This
+    # will end up being the most common case (on all launches for a user beyond the first)
+    user =
+      case Repo.get_by(User, sub: sub, lti_institution_id: institution_id) do
+        # If not found directly, do another read of ALL users with this sub.  This step
+        # isn't strictly necessary (we could just call find_user_through_enrollment), but
+        # do it to make this more robust by reducing the need to rely on the enrollment.
+        nil ->
+          case get_all_users_by_sub(sub) do
+            # If no users with this sub, we can be absolutely sure that we need to create a new user
+            [] -> nil
+            # Otherwise, we now need to check to see if one of these users is enrolled in a section
+            # that is pinned to this institution
+            _ -> find_user_through_enrollment(sub, institution_id)
+          end
+
+        user ->
+          user
+      end
+
+    case user do
+      nil -> create_lms_user(changes)
+      user -> update_lms_user(user, changes)
+    end
+  end
+
+  defp get_all_users_by_sub(sub) do
+    from(u in User, where: u.sub == ^sub) |> Repo.all()
+  end
+
+  defp find_user_through_enrollment(sub, institution_id) do
     # using enrollment records, we can infer the user's institution. This is because
     # an LTI user can be enrolled in multiple sections, but all sections must be from
     # the same institution.
-    from(e in Enrollment,
-      join: s in Section,
-      on: e.section_id == s.id,
-      join: u in User,
-      on: e.user_id == u.id,
-      join: institution in Institution,
-      on: s.institution_id == institution.id,
-      where:
-        u.sub == ^sub and institution.id == ^institution_id and s.status == :active and
-          e.status == :enrolled,
-      limit: 1,
-      select: u
-    )
-    |> Repo.one()
-    |> insert_or_update_external_user(changes)
+    results =
+      from(e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: u in User,
+        on: e.user_id == u.id,
+        join: institution in Institution,
+        on: s.institution_id == institution.id,
+        where: u.sub == ^sub and institution.id == ^institution_id,
+        select: u,
+        order_by: [desc: u.inserted_at]
+      )
+      |> Repo.all()
+
+    # We must handle the fact that duplicate records can exist in the result set, in
+    # this case we select the "most recently inserted" user record
+    case results do
+      [user | _] -> user
+      [] -> nil
+    end
+  end
+
+  defp create_lms_user(%{sub: sub} = changes) do
+    %User{sub: sub, independent_learner: false}
+    |> User.noauth_changeset(changes)
+    |> Repo.insert()
+  end
+
+  defp update_lms_user(%User{} = user, changes) do
+    user
+    |> User.noauth_changeset(changes)
+    |> Repo.update()
   end
 
   @doc """

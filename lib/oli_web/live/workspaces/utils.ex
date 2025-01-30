@@ -329,6 +329,11 @@ defmodule OliWeb.Workspaces.Utils do
             text: "Insights",
             view: :insights,
             parent_view: :improve
+          },
+          %SubMenuItem{
+            text: "Datasets",
+            view: :datasets,
+            parent_view: :improve
           }
         ]
       }

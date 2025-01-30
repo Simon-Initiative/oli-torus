@@ -5,6 +5,7 @@ defmodule OliWeb.UserAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Accounts.{User}
   alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
@@ -22,7 +23,8 @@ defmodule OliWeb.UserAuth do
     token = Accounts.generate_user_session_token(user)
 
     user_return_to =
-      params["request_path"] || get_session(conn, :user_return_to) || signed_in_path(conn)
+      maybe_return_to_section(params["section"]) || params["request_path"] ||
+        get_session(conn, :user_return_to) || signed_in_path(conn)
 
     conn
     |> renew_session()
@@ -95,7 +97,8 @@ defmodule OliWeb.UserAuth do
         "browser_timezone",
         "author_token",
         "author_live_socket_id",
-        "current_author_id"
+        "current_author_id",
+        "datashop_session_id"
       ])
 
     conn
@@ -229,6 +232,18 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  def on_mount(:redirect_if_user_is_authenticated_and_not_guest, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    case socket.assigns.current_user do
+      %User{guest: false} ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
+
+      _ ->
+        {:cont, socket}
+    end
+  end
+
   defp mount_current_user(socket, session) do
     # Note: When a user first accesses an application using LiveView, the LiveView is first rendered
     # in its disconnected state, as part of a regular HTML response. By using assign_new in the
@@ -285,6 +300,22 @@ defmodule OliWeb.UserAuth do
       |> halt()
     else
       conn
+    end
+  end
+
+  @doc """
+  Used for routes that require a user to not be authenticated if they are not a guest. This will
+  allow guest users to access the page that typically cannot be accessed by authenticated users.
+  """
+  def redirect_if_user_is_authenticated_and_not_guest(conn, _opts) do
+    case conn.assigns[:current_user] do
+      %User{guest: false} ->
+        conn
+        |> redirect(to: signed_in_path(conn))
+        |> halt()
+
+      _ ->
+        conn
     end
   end
 
@@ -418,6 +449,9 @@ defmodule OliWeb.UserAuth do
   end
 
   defp maybe_store_return_to(conn), do: conn
+
+  defp maybe_return_to_section(nil), do: nil
+  defp maybe_return_to_section(section), do: ~p"/sections/#{section}"
 
   defp signed_in_path(_conn), do: ~p"/workspaces/student"
 end

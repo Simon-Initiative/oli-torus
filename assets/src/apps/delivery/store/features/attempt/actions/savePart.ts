@@ -44,8 +44,13 @@ export const savePartState = createAsyncThunk(
               updatedPartResponses = {
                 ...result.response,
                 ...updatedPartResponses,
-                partId: p.partId,
               };
+              if (isPreviewMode) {
+                updatedPartResponses = {
+                  ...updatedPartResponses,
+                  partId: p.partId,
+                };
+              }
               result.response = updatedPartResponses;
             }
             return result;

@@ -131,6 +131,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:ctx, SessionContext)
   attr(:current_user, Accounts.User, default: nil)
   attr(:current_author, Accounts.Author, default: nil)
+  attr(:section, Section, default: nil)
   attr(:is_admin, :boolean, required: true)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
@@ -155,7 +156,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <% else %>
           <%= case assigns.ctx do %>
             <% %SessionContext{user: %User{guest: true}} -> %>
-              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} section={@section} />
             <% %SessionContext{user: %User{}} -> %>
               <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
             <% %SessionContext{author: %Author{}} -> %>
@@ -221,6 +222,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
+  attr(:section, Section, default: nil)
 
   def guest_menu_items(assigns) do
     ~H"""
@@ -228,12 +230,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
-    <.menu_item_link href={~p"/users/log_in?#{[section: maybe_section_slug(assigns)]}"}>
+    <.menu_item_link href={~p"/users/register?#{maybe_section_param(@section)}"}>
       Create account or sign in
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_link href={~p"/users/log_out"}>
+    <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
     </.menu_item_link>
     """
@@ -497,15 +499,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  def maybe_section_slug(assigns) do
-    case assigns[:section] do
-      %Section{slug: slug} ->
-        slug
-
-      _ ->
-        ""
-    end
-  end
+  def maybe_section_param(%Section{slug: slug}), do: [section: slug]
+  def maybe_section_param(_), do: []
 
   defp to_initials(%{name: nil}), do: "G"
 

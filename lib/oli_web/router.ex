@@ -196,19 +196,28 @@ defmodule OliWeb.Router do
 
   ## Authentication routes
 
+  # allow access to non-authenticated users or guest users for sign in and account creation
+  scope "/", OliWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated_and_not_guest]
+
+    live_session :redirect_if_user_is_authenticated_and_not_guest,
+      on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated_and_not_guest}] do
+      live "/users/register", UserRegistrationLive, :new
+      live "/users/log_in", UserLoginLive, :new
+    end
+
+    post "/users/log_in", UserSessionController, :create
+  end
+
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
       live "/instructors/log_in", UserLoginLive, :instructor_new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
     end
-
-    post "/users/log_in", UserSessionController, :create
   end
 
   scope "/", OliWeb do
@@ -518,6 +527,7 @@ defmodule OliWeb.Router do
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
 
     post("/:project/create/activity/bulk", Api.ActivityController, :create_bulk)
+    post("/:project/delete/activity/bulk", Api.ActivityController, :delete_bulk)
 
     put("/test/evaluate", Api.ActivityController, :evaluate)
     put("/test/transform", Api.ActivityController, :transform)
@@ -845,6 +855,10 @@ defmodule OliWeb.Router do
         live("/:project_id/review", ReviewLive)
         live("/:project_id/publish", PublishLive)
         live("/:project_id/insights", InsightsLive)
+
+        live("/:project_id/datasets", DatasetsLive)
+        live("/:project_id/datasets/create", CreateJobLive)
+        live("/:project_id/datasets/details/:job_id", DatasetDetailsLive)
 
         scope "/:project_id/products" do
           live("/", ProductsLive)
@@ -1401,6 +1415,7 @@ defmodule OliWeb.Router do
     live("/", Admin.AdminView)
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
+    live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
@@ -1495,6 +1510,9 @@ defmodule OliWeb.Router do
       pipe_through([:require_authenticated_system_admin])
       get("/activity_review", ActivityReviewController, :index)
       live("/part_attempts", Admin.PartAttemptsView)
+
+      live("/restore_progress", Admin.RestoreUserProgress)
+
       live("/xapi", Admin.UploadPipelineView)
       get("/spot_check/:activity_attempt_id", SpotCheckController, :index)
 
