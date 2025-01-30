@@ -16,11 +16,7 @@ defmodule OliWeb.Certificates.CertificateSettingsLive do
          assign(socket,
            title: "Manage Certificate Settings",
            product: product,
-           certificate:
-             if(product.certificate_id,
-               do: Certificates.get_certificate(product.certificate_id),
-               else: nil
-             ),
+           certificate: Certificates.get_certificate_by(%{section_id: product.id}),
            breadcrumbs: breadcrumbs(product_slug),
            graded_pages: product_graded_pages(product_slug)
          )}

@@ -31,4 +31,14 @@ defmodule Oli.Delivery.Certificates do
   nil
   """
   def get_certificate(certificate_id), do: Repo.get(Certificate, certificate_id)
+
+  @doc """
+  Retrieves a certificate by the given params.
+
+  ## Examples
+  iex> get_certificate_by(%{title: "example"})
+  %Certificate{}
+  """
+
+  def get_certificate_by(params), do: Repo.get_by(Certificate, params)
 end

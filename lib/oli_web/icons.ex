@@ -1646,6 +1646,20 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def cross(assigns) do
+    ~H"""
+    <svg
+      width="16"
+      height="17"
+      viewBox="0 0 16 17"
+      xmlns="http://www.w3.org/2000/svg"
+      class="fill-black"
+    >
+      <path d="M4.26659 13.3026L3.33325 12.3692L7.06659 8.63591L3.33325 4.90257L4.26659 3.96924L7.99992 7.70257L11.7333 3.96924L12.6666 4.90257L8.93325 8.63591L12.6666 12.3692L11.7333 13.3026L7.99992 9.56924L4.26659 13.3026Z" />
+    </svg>
+    """
+  end
+
   ########## Instructor Navigation Bar Icons (end) ##########
 
   ########## Start of Sidebar Icons  ##########
