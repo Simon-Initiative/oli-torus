@@ -311,7 +311,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
 
     attrs = %{
       certificate_type: "Certificate of Completion",
-      student_name: "John Doe",
+      student_name: "Student Name",
       completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
       certificate_id: "00000000-0000-0000-0000-000000000000",
       course_name: assigns.form.params["title"] || assigns.product.title,
