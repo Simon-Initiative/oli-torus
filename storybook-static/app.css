@@ -4180,6 +4180,10 @@ table.table-striped tbody tr:nth-child(even) {
   right: 1.5rem;
 }
 
+.right-8 {
+  right: 2rem;
+}
+
 .right-\[-15px\] {
   right: -15px;
 }
@@ -4210,6 +4214,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .top-1\.5 {
   top: 0.375rem;
+}
+
+.top-1\/2 {
+  top: 50%;
 }
 
 .top-1\/3 {
@@ -4398,6 +4406,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .m-0 {
   margin: 0px;
+}
+
+.m-0\.5 {
+  margin: 0.125rem;
 }
 
 .m-1 {
@@ -4603,6 +4615,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 3rem;
 }
 
+.mb-14 {
+  margin-bottom: 3.5rem;
+}
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -4661,6 +4677,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .ml-1 {
   margin-left: 0.25rem;
+}
+
+.ml-1\.5 {
+  margin-left: 0.375rem;
 }
 
 .ml-10 {
@@ -5093,6 +5113,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .h-6 {
   height: 1.5rem;
+}
+
+.h-60 {
+  height: 15rem;
 }
 
 .h-64 {
@@ -6021,6 +6045,11 @@ table.table-striped tbody tr:nth-child(even) {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.-translate-y-1\/2 {
+  --tw-translate-y: -50%;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
 .-translate-y-\[73px\] {
   --tw-translate-y: -73px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -6412,6 +6441,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 0.625rem;
 }
 
+.gap-20 {
+  gap: 5rem;
+}
+
 .gap-3 {
   gap: 0.75rem;
 }
@@ -6456,6 +6489,10 @@ table.table-striped tbody tr:nth-child(even) {
   gap: 14px;
 }
 
+.gap-\[152px\] {
+  gap: 152px;
+}
+
 .gap-\[15px\] {
   gap: 15px;
 }
@@ -6498,6 +6535,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .gap-\[5px\] {
   gap: 5px;
+}
+
+.gap-\[60px\] {
+  gap: 60px;
 }
 
 .gap-\[6px\] {
@@ -7057,6 +7098,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(176 176 176 / var(--tw-border-opacity));
 }
 
+.border-\[\#D4D4D4\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(212 212 212 / var(--tw-border-opacity));
+}
+
 .border-\[\#D9D9D9\]\/75 {
   border-color: rgb(217 217 217 / 0.75);
 }
@@ -7329,6 +7375,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-\[\#0080ff\] {
   --tw-bg-opacity: 1;
   background-color: rgb(0 128 255 / var(--tw-bg-opacity));
+}
+
+.bg-\[\#0165da\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(1 101 218 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#0CAF61\] {
@@ -8581,6 +8632,10 @@ table.table-striped tbody tr:nth-child(even) {
   padding-bottom: 50px;
 }
 
+.pb-\[5px\] {
+  padding-bottom: 5px;
+}
+
 .pb-\[60px\] {
   padding-bottom: 60px;
 }
@@ -8819,6 +8874,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-\[5px\] {
   padding-top: 5px;
+}
+
+.pt-\[7px\] {
+  padding-top: 7px;
 }
 
 .text-left {
@@ -9364,6 +9423,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(191 91 19 / var(--tw-text-opacity));
 }
 
+.text-\[\#c03a2b\] {
+  --tw-text-opacity: 1;
+  color: rgb(192 58 43 / var(--tw-text-opacity));
+}
+
 .text-\[\#eeebf5\]\/75 {
   color: rgb(238 235 245 / 0.75);
 }
@@ -9562,6 +9626,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .text-inherit {
   color: inherit;
+}
+
+.text-neutral-500 {
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
 }
 
 .text-neutral-600 {
@@ -13723,6 +13792,11 @@ Not supports in Firefox and IE */
   background-color: rgb(0 128 255 / 0.75);
 }
 
+.hover\:bg-\[\#3383e1\]:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(51 131 225 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-\[\#F5F5F6\]:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 246 / var(--tw-bg-opacity));
@@ -13905,6 +13979,11 @@ Not supports in Firefox and IE */
 
 .hover\:font-medium:hover {
   font-weight: 500;
+}
+
+.hover\:text-\[\#0165da\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(1 101 218 / var(--tw-text-opacity));
 }
 
 .hover\:text-\[\#1B67B2\]:hover {
@@ -15775,6 +15854,11 @@ Not supports in Firefox and IE */
 
 .dark .hover\:dark\:stroke-white:hover {
   stroke: #fff;
+}
+
+.dark .dark\:hover\:text-\[\#0165da\]:hover {
+  --tw-text-opacity: 1;
+  color: rgb(1 101 218 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:text-\[\#99CCFF\]:hover {
