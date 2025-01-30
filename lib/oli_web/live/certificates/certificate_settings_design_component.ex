@@ -1,7 +1,9 @@
 defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
   use OliWeb, :live_component
 
+  alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.Delivery.Sections.Certificate
+  alias Oli.Repo
 
   @impl true
   def render(assigns) do
@@ -31,6 +33,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               <.input
                 type="text"
                 field={f[:title]}
+                placeholder={@product.title}
                 errors={f.errors}
                 phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
@@ -49,6 +52,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               <.input
                 type="text"
                 field={f[:description]}
+                placeholder={@product.description}
                 errors={f.errors}
                 phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
@@ -124,7 +128,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               Logos
             </div>
             <div class="text-base font-small">
-              Upload up to three logos for your certificate.
+              Upload up to three logos for your certificate (Max size: 1MB each).
             </div>
             <!-- File Input -->
             <.live_file_input upload={@uploads.logo} />
@@ -141,16 +145,6 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
             </section>
           </div>
           <!-- Preview -->
-          <button
-            type="button"
-            name="preview"
-            phx-click="preview_certificate"
-            phx-target={@myself}
-            class="px-6 py-4 bg-gray-500 text-white rounded hover:opacity-90"
-          >
-            Preview
-          </button>
-
           <%= if @show_preview do %>
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900">
               <div class="relative w-11/12 max-w-4xl bg-white rounded shadow-lg p-6">
@@ -211,7 +205,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
             phx-disable-with="Saving..."
             class="px-6 py-4 bg-[#0165da] text-white rounded opacity-90 hover:opacity-100"
           >
-            Save Design
+            Preview
           </button>
           <div></div>
         </div>
@@ -253,42 +247,42 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     {:noreply, cancel_upload(socket, :logo, ref)}
   end
 
-  def handle_event("preview_certificate", _params, socket) do
-    html1 = """
-    <div class="text-center">
-      <h1>Certificate of Completion</h1>
-      <p>This certifies that</p>
-      <p>John Doe</p>
-      <p>has successfully completed the course</p>
-      <p>Introduction to Chemistry</p>
-      <p>Date: January 2025</p>
-    </div>
-    """
-
-    html2 = """
-    <div class="text-center">
-      <h1>Certificate with Distinction</h1>
-      <p>This certifies that</p>
-      <p>John Doe</p>
-      <p>has successfully completed the course</p>
-      <p>Introduction to Chemistry</p>
-      <p>Date: January 2025</p>
-    </div>
-    """
+  def handle_event("save", _params, socket) do
+    certificate_html = generate_previews(socket)
 
     {:noreply,
      assign(socket,
        show_preview: true,
-       certificate_html: {html1, html2}
+       certificate_html: certificate_html
      )}
+
+    # TODO:
+    # - title, description if empty copy them from product
+
+    # certificate = socket.assigns.certificate || %Certificate{}
+    # certificate
+    # |> Certificate.changeset()
+    # |> Repo.insert_or_update()
+    # |> case do
+    #   {:ok, _certificate} ->
+    #     {:noreply,
+    #      assign(socket,
+    #        show_preview: true,
+    #        certificate_html: certificate_html
+    #      )}
+
+    #   {:error, %Ecto.Changeset{} = changeset} ->
+    #     {:noreply,
+    #      assign(socket,
+    #        form: to_form(changeset),
+    #        show_preview: true,
+    #        certificate_html: certificate_html
+    #      )}
+    # end
   end
 
   def handle_event("close_preview", _params, socket) do
     {:noreply, assign(socket, show_preview: false, certificate_html: nil)}
-  end
-
-  def handle_event("save", params, socket) do
-    save_certificate(socket, params)
   end
 
   def handle_event("next_preview_page", _params, socket) do
@@ -299,21 +293,38 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     {:noreply, assign(socket, preview_page: 0)}
   end
 
-  defp save_certificate(socket, params) do
-    certificate = socket.assigns.certificate || %Certificate{}
+  defp generate_previews(%{assigns: assigns} = socket) do
+    admins =
+      [
+        {assigns.form.params["admin_name1"], assigns.form.params["admin_title1"]},
+        {assigns.form.params["admin_name2"], assigns.form.params["admin_title2"]},
+        {assigns.form.params["admin_name3"], assigns.form.params["admin_title3"]}
+      ]
+      |> Enum.reject(fn {name, _} -> name == "" end)
 
-    certificate
-    |> Certificate.changeset()
-    |> Repo.insert_or_update()
-    |> case do
-      {:ok, _certificate} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Certificate saved successfully")
-         |> push_patch(to: socket.assigns.patch)}
+    logos =
+      socket
+      |> consume_uploaded_entries(:logo, fn %{path: path}, entry ->
+        b64 = path |> File.read!() |> Base.encode64()
+        {:ok, "data:#{entry.client_type};base64, #{b64}"}
+      end)
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
-    end
+    attrs = %{
+      certificate_type: "Certificate of Completion",
+      student_name: "John Doe",
+      completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
+      certificate_id: "00000000-0000-0000-0000-000000000000",
+      course_name: assigns.form.params["title"] || assigns.product.title,
+      course_description: assigns.form.params["description"] || assigns.product.description,
+      administrators: admins,
+      logos: logos
+    }
+
+    completion_cert = CertificateRenderer.render(attrs)
+
+    distinction_cert =
+      CertificateRenderer.render(%{attrs | certificate_type: "Certificate with Distinction"})
+
+    {completion_cert, distinction_cert}
   end
 end
