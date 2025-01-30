@@ -53,6 +53,7 @@ defmodule Oli.Analytics.Datasets do
   require Logger
 
   @terminal_emr_states ["SUCCESS", "FAILED", "CANCELLED"]
+  @terminal_states [:success, :failed, :cancelled]
 
   @doc """
   Retrieves a job by its id ensuring that it belongs to the asserted
@@ -142,7 +143,7 @@ defmodule Oli.Analytics.Datasets do
   end
 
   def is_terminal_state?(status) do
-    status in @terminal_emr_states
+    status in @terminal_states
   end
 
   @doc """
