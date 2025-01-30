@@ -3,12 +3,14 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
 
   alias Oli.Delivery.Sections.Certificate
 
+  @impl true
   def mount(socket) do
     {:ok,
      socket
      |> allow_upload(:logo, max_entries: 3, accept: ~w(.jpg .jpeg .png), max_file_size: 1_000_000)}
   end
 
+  @impl true
   def update(assigns, socket) do
     {:ok,
      socket
@@ -20,6 +22,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
      )}
   end
 
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="w-full flex-col">
