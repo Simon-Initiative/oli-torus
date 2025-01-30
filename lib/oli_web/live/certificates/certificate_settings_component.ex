@@ -35,7 +35,6 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
      |> assign(assigns)
      |> assign(
        product_changeset: Section.changeset(assigns.product),
-       product: assigns.product,
        certificate_changeset: certificate_changeset(certificate),
        graded_pages_options: graded_pages_options,
        selected_graded_pages_options: selected_graded_pages_options,
@@ -152,7 +151,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
           Enable certificate capabilities for this product
         </div>
       </.form>
-      <div :if={@product.certificate_enabled} class="flex mt-10 mb-2 gap-20">
+      <div class="flex mt-10 mb-2 gap-20">
         <div class="justify-start">
           <.link
             class={[
@@ -197,7 +196,6 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         </div>
       </div>
       <.tab_content
-        :if={@product.certificate_enabled}
         active_tab={@active_tab}
         certificate_changeset={@certificate_changeset}
         target={@myself}
