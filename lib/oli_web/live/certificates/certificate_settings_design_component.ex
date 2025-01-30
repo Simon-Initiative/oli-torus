@@ -133,11 +133,20 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
             <!-- File Input -->
             <.live_file_input upload={@uploads.logo} />
             <!-- Display Uploaded Previews -->
-            <section>
+            <section class="flex gap-4 flex-wrap mt-4">
               <%= for entry <- @uploads.logo.entries do %>
-                <div>
-                  <.live_img_preview entry={entry} class="preview" />
-                  <a href="#" phx-click="cancel" phx-target={@myself} phx-value-ref={entry.ref}>
+                <div class="relative w-24 h-24 flex-shrink-0">
+                  <.live_img_preview
+                    entry={entry}
+                    class="object-cover w-full h-full rounded border border-gray-300"
+                  />
+                  <a
+                    href="#"
+                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                    phx-click="cancel"
+                    phx-target={@myself}
+                    phx-value-ref={entry.ref}
+                  >
                     ✖
                   </a>
                 </div>
