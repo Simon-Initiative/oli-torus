@@ -50,17 +50,25 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
   def render(assigns) do
     ~H"""
     <div class="px-[30px] py-[50px]">
-      <.live_component
-        module={OliWeb.Certificates.CertificateSettingsComponent}
-        id="certificate_settings_component"
-        product={@product}
-        certificate={@certificate}
-        current_path={
-          ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/certificate_settings"
-        }
-        active_tab={@active_tab}
-        graded_pages={@graded_pages}
-      />
+      <%= if @active_tab == :design do %>
+        <.live_component
+          module={OliWeb.Certificates.CertificateSettingsDesignComponent}
+          id="certificate_settings_design_component"
+          certificate={@certificate}
+        />
+      <% else %>
+        <.live_component
+          module={OliWeb.Certificates.CertificateSettingsComponent}
+          id="certificate_settings_component"
+          product={@product}
+          certificate={@certificate}
+          current_path={
+            ~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/certificate_settings"
+          }
+          active_tab={@active_tab}
+          graded_pages={@graded_pages}
+        />
+      <% end %>
     </div>
     """
   end
