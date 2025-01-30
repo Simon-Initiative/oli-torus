@@ -21,7 +21,7 @@ defmodule OliWeb.DatasetStatusPoller do
           # Notify users of terminal state changes
           Enum.filter(to_notify, fn {_id, status} -> Datasets.is_terminal_state?(status) end)
           |> Datasets.send_notification_emails(fn project_slug, job_database_id ->
-            Routes.live_path(
+            Routes.live_url(
               OliWeb.Endpoint,
               OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive,
               project_slug,
