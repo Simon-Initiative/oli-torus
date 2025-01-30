@@ -4,25 +4,6 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
   alias Oli.Delivery.Sections.Certificate
 
   @impl true
-  def mount(socket) do
-    {:ok,
-     socket
-     |> allow_upload(:logo, max_entries: 3, accept: ~w(.jpg .jpeg .png), max_file_size: 1_000_000)}
-  end
-
-  @impl true
-  def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(
-       certificate_changeset: certificate_changeset(assigns.certificate),
-       show_preview: false,
-       preview_page: 0,
-       certificate_html: {nil, nil}
-     )}
-  end
-
-  @impl true
   def render(assigns) do
     ~H"""
     <div class="w-full flex-col">
@@ -33,7 +14,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
       <.form
         :let={f}
         id="certificate-settings-design-form"
-        for={@certificate_changeset}
+        for={@certificate}
         phx-change="validate"
         phx-drop-target={@uploads.logo.ref}
         phx-submit="save"
@@ -50,8 +31,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               <.input
                 type="text"
                 field={f[:title]}
-                value={@certificate_changeset.data.title}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
             </div>
@@ -68,8 +49,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               <.input
                 type="text"
                 field={f[:description]}
-                value={@certificate_changeset.data.description}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
             </div>
@@ -87,16 +68,16 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
                 type="text"
                 field={f[:admin_name1]}
                 placeholder="Name 1"
-                value={@certificate_changeset.data.admin_name1}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
               <.input
                 type="text"
                 field={f[:admin_title1]}
                 placeholder="Title 1"
-                value={@certificate_changeset.data.admin_title1}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
             </div>
@@ -105,16 +86,16 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
                 type="text"
                 field={f[:admin_name2]}
                 placeholder="Name 2"
-                value={@certificate_changeset.data.admin_name2}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
               <.input
                 type="text"
                 field={f[:admin_title2]}
                 placeholder="Title 2"
-                value={@certificate_changeset.data.admin_title2}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
             </div>
@@ -123,16 +104,16 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
                 type="text"
                 field={f[:admin_name3]}
                 placeholder="Name 3"
-                value={@certificate_changeset.data.admin_name3}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
               <.input
                 type="text"
                 field={f[:admin_title3]}
                 placeholder="Title 3"
-                value={@certificate_changeset.data.admin_title3}
                 errors={f.errors}
+                phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
               />
             </div>
@@ -162,6 +143,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
           <!-- Preview -->
           <button
             type="button"
+            name="preview"
             phx-click="preview_certificate"
             phx-target={@myself}
             class="px-6 py-4 bg-gray-500 text-white rounded hover:opacity-90"
@@ -224,7 +206,9 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
           <!-- Save -->
           <button
             type="submit"
+            name="save"
             form={f.id}
+            phx-disable-with="Saving..."
             class="px-6 py-4 bg-[#0165da] text-white rounded opacity-90 hover:opacity-100"
           >
             Save Design
@@ -237,8 +221,32 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
   end
 
   @impl true
-  def handle_event("validate", _params, socket) do
-    {:noreply, socket}
+  def mount(socket) do
+    {:ok,
+     socket
+     |> allow_upload(:logo, max_entries: 3, accept: ~w(.jpg .jpeg .png), max_file_size: 1_000_000)}
+  end
+
+  @impl true
+  def update(assigns, socket) do
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(
+       show_preview: false,
+       preview_page: 0,
+       certificate_html: {nil, nil}
+     )
+     |> assign_new(:form, fn ->
+       to_form(Certificate.changeset(assigns.certificate || %Certificate{}, %{}))
+     end)}
+  end
+
+  @impl true
+  def handle_event("validate", params, socket) do
+    certificate = socket.assigns.certificate || %Certificate{}
+    changeset = Certificate.changeset(certificate, params)
+    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
@@ -279,8 +287,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     {:noreply, assign(socket, show_preview: false, certificate_html: nil)}
   end
 
-  def handle_event("save", _params, socket) do
-    {:noreply, socket}
+  def handle_event("save", params, socket) do
+    save_certificate(socket, params)
   end
 
   def handle_event("next_preview_page", _params, socket) do
@@ -291,6 +299,21 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     {:noreply, assign(socket, preview_page: 0)}
   end
 
-  defp certificate_changeset(nil), do: Certificate.changeset()
-  defp certificate_changeset(%Certificate{} = cert), do: Certificate.changeset(cert, %{})
+  defp save_certificate(socket, params) do
+    certificate = socket.assigns.certificate || %Certificate{}
+
+    certificate
+    |> Certificate.changeset()
+    |> Repo.insert_or_update()
+    |> case do
+      {:ok, _certificate} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Certificate saved successfully")
+         |> push_patch(to: socket.assigns.patch)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
 end
