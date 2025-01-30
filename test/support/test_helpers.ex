@@ -4066,4 +4066,12 @@ defmodule Oli.TestHelpers do
       "orderDescending" => false
     }
   end
+
+  def queued_email_jobs() do
+    Ecto.Query.from(j in Oban.Job,
+      where: j.worker == "Oli.Mailer.SendEmailWorker",
+      order_by: j.id
+    )
+    |> Repo.all()
+  end
 end
