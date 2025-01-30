@@ -4292,10 +4292,6 @@ table.table-striped tbody tr:nth-child(even) {
   top: 60px;
 }
 
-.top-\[80px\] {
-  top: 80px;
-}
-
 .isolate {
   isolation: isolate;
 }
@@ -4661,6 +4657,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .mb-\[10px\] {
   margin-bottom: 10px;
+}
+
+.mb-\[28px\] {
+  margin-bottom: 28px;
 }
 
 .mb-\[9px\] {
