@@ -105,6 +105,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       {:ok, response} ->
         json = Poison.decode!(response.body)
 
+        Logger.debug("EMR serverless received jobs info: #{response.body}")
+
         case Map.get(json, "nextToken") do
           nil ->
             {:ok, results ++ json["jobRuns"]}
