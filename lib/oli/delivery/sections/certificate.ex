@@ -29,9 +29,9 @@ defmodule Oli.Delivery.Sections.Certificate do
     field :admin_name3, :string
     field :admin_title3, :string
 
-    field :logo1, :string
-    field :logo2, :string
-    field :logo3, :string
+    field :logo1, :binary
+    field :logo2, :binary
+    field :logo3, :binary
 
     belongs_to :section, Section
 
