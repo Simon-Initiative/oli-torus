@@ -18,13 +18,11 @@ defmodule OliWeb.UserSessionController do
     create(conn, params, flash_message: "Welcome back!")
   end
 
-  def create(conn, %{"user" => user_params}, opts) do
-    %{"email" => email, "password" => password} = user_params
-
+  def create(conn, %{"user" => %{"email" => email, "password" => password}} = params, opts) do
     if user = Accounts.get_user_by_email_and_password(email, password) do
       conn
       |> maybe_add_flash_message(opts[:flash_message])
-      |> UserAuth.log_in_user(user, user_params)
+      |> UserAuth.log_in_user(user, params)
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
       conn
