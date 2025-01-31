@@ -1,7 +1,7 @@
 <div
   :if={@flash not in [nil, %{}]}
   id="live_flash_container"
-  class="flash container mx-auto px-0 top-[80px]"
+  class="absolute flash container inset-x-0 top-0 px-0 z-[99]"
 >
   <%= if Phoenix.Flash.get(@flash, :info) do %>
     <div class="alert alert-info flex flex-row" role="alert">

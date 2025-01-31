@@ -184,7 +184,7 @@ defmodule Oli.Analytics.Datasets do
           Logger.error("Job #{job_id} not found")
 
         _ ->
-          emails = job.notify_emails ++ job.email
+          emails = job.notify_emails ++ [job.email]
 
           Enum.each(emails, fn email ->
             # Send the notification email

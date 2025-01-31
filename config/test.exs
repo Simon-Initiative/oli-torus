@@ -125,6 +125,8 @@ config :appsignal, :config, active: false
 
 config :oli, :section_cache, dispatcher: Oli.TestHelpers.CustomDispatcher
 
+config :assent, http_adapter: Oli.Test.MockHTTP
+
 config :ex_aws,
   region: System.get_env("AWS_REGION", "us-east-1"),
   access_key_id: System.get_env("AWS_ACCESS_KEY_ID", "your_minio_access_key"),
