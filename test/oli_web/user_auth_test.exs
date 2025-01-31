@@ -39,7 +39,11 @@ defmodule OliWeb.UserAuthTest do
     end
 
     test "writes a cookie if remember_me is configured", %{conn: conn, user: user} do
-      conn = conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+      conn =
+        conn
+        |> fetch_cookies()
+        |> UserAuth.log_in_user(user, %{"user" => %{"remember_me" => "true"}})
+
       assert get_session(conn, :user_token) == conn.cookies[@remember_me_cookie]
 
       assert %{value: signed_token, max_age: max_age} = conn.resp_cookies[@remember_me_cookie]
@@ -94,7 +98,9 @@ defmodule OliWeb.UserAuthTest do
 
     test "authenticates user from cookies", %{conn: conn, user: user} do
       logged_in_conn =
-        conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+        conn
+        |> fetch_cookies()
+        |> UserAuth.log_in_user(user, %{"user" => %{"remember_me" => "true"}})
 
       user_token = logged_in_conn.cookies[@remember_me_cookie]
       %{value: signed_token} = logged_in_conn.resp_cookies[@remember_me_cookie]

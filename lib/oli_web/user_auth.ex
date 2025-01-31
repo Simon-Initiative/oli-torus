@@ -23,7 +23,7 @@ defmodule OliWeb.UserAuth do
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
 
-    %{"user" => user_params} = params
+    user_params = Map.get(params, "user", %{})
 
     user_return_to =
       maybe_return_to_section(params["section"]) || params["request_path"] ||
@@ -122,7 +122,7 @@ defmodule OliWeb.UserAuth do
   It clears all session data for safety. See renew_session.
   """
   def log_out_user(conn) do
-    user = conn.assigns.current_user
+    user = Map.get(conn.assigns, :current_user)
 
     redirect_to =
       if !is_nil(user) && Sections.is_independent_instructor?(user) do
