@@ -33,7 +33,6 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               <.input
                 type="text"
                 field={f[:title]}
-                placeholder={@product.title}
                 errors={f.errors}
                 phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
@@ -52,7 +51,6 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               <.input
                 type="text"
                 field={f[:description]}
-                placeholder={@product.description}
                 errors={f.errors}
                 phx-debounce="blur"
                 class="pl-6 border-[#D4D4D4] rounded"
@@ -256,38 +254,40 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     {:noreply, cancel_upload(socket, :logo, ref)}
   end
 
-  def handle_event("save", _params, socket) do
-    certificate_html = generate_previews(socket)
+  def handle_event("save", _params, %{assigns: assigns} = socket) do
+    {completion_cert, distinction_cert, logos} = generate_previews(socket)
 
-    {:noreply,
-     assign(socket,
-       show_preview: true,
-       certificate_html: certificate_html
-     )}
+    attrs =
+      assigns.form.params
+      |> Enum.reject(fn {_k, v} -> v == "" end)
+      |> Enum.into(%{})
+      |> Map.put_new("title", assigns.product.title)
+      |> Map.put_new("description", assigns.product.description)
+      |> Map.put("logo1", Enum.at(logos, 0))
+      |> Map.put("logo2", Enum.at(logos, 1))
+      |> Map.put("logo3", Enum.at(logos, 2))
 
-    # TODO:
-    # - title, description if empty copy them from product
+    certificate = socket.assigns.certificate || %Certificate{}
 
-    # certificate = socket.assigns.certificate || %Certificate{}
-    # certificate
-    # |> Certificate.changeset()
-    # |> Repo.insert_or_update()
-    # |> case do
-    #   {:ok, _certificate} ->
-    #     {:noreply,
-    #      assign(socket,
-    #        show_preview: true,
-    #        certificate_html: certificate_html
-    #      )}
+    certificate
+    |> Certificate.changeset(attrs)
+    |> Repo.insert_or_update()
+    |> case do
+      {:ok, _certificate} ->
+        {:noreply,
+         assign(socket,
+           show_preview: true,
+           certificate_html: {completion_cert, distinction_cert}
+         )}
 
-    #   {:error, %Ecto.Changeset{} = changeset} ->
-    #     {:noreply,
-    #      assign(socket,
-    #        form: to_form(changeset),
-    #        show_preview: true,
-    #        certificate_html: certificate_html
-    #      )}
-    # end
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         assign(socket,
+           form: to_form(changeset),
+           show_preview: true,
+           certificate_html: {completion_cert, distinction_cert}
+         )}
+    end
   end
 
   def handle_event("close_preview", _params, socket) do
@@ -334,6 +334,6 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     distinction_cert =
       CertificateRenderer.render(%{attrs | certificate_type: "Certificate with Distinction"})
 
-    {completion_cert, distinction_cert}
+    {completion_cert, distinction_cert, logos}
   end
 end
