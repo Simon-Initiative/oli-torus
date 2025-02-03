@@ -85,7 +85,7 @@ defmodule Oli.Delivery.Sections.CertificateTest do
 
       assert %{
                min_percentage_for_completion: [
-                 "min_percentage_for_distinction must be greater than min_percentage_for_completion"
+                 "Min percentage for distinction must be greater than Min percentage for completion"
                ]
              } = errors_on(changeset)
     end
