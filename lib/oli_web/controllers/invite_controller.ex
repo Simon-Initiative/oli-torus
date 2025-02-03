@@ -38,7 +38,6 @@ defmodule OliWeb.InviteController do
       params
       |> put_in(["user", "email"], email)
       |> put_in(["user", "request_path"], ~p"/sections/#{section_slug}")
-      |> Map.put("section", section_slug)
 
     UserSessionController.create(conn, params, flash_message: nil)
   end

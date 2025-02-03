@@ -6,7 +6,6 @@ defmodule OliWeb.UserAuth do
 
   alias Oli.Accounts
   alias Oli.Accounts.{User}
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
@@ -23,8 +22,6 @@ defmodule OliWeb.UserAuth do
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
 
-    user_params = Map.get(params, "user", %{})
-
     user_return_to =
       maybe_return_to_section(params["section"]) || params["request_path"] ||
         get_session(conn, :user_return_to) || signed_in_path(conn)
@@ -36,7 +33,7 @@ defmodule OliWeb.UserAuth do
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
     |> create_datashop_session_id()
-    |> maybe_write_remember_me_cookie(token, user_params)
+    |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
   end
 
@@ -121,15 +118,9 @@ defmodule OliWeb.UserAuth do
 
   It clears all session data for safety. See renew_session.
   """
-  def log_out_user(conn) do
-    user = Map.get(conn.assigns, :current_user)
-
+  def log_out_user(conn, params \\ %{}) do
     redirect_to =
-      if !is_nil(user) && Sections.is_independent_instructor?(user) do
-        ~p"/instructors/log_in"
-      else
-        ~p"/"
-      end
+      params["redirect_to"] || ~p"/"
 
     conn
     |> clear_all_session_data()
