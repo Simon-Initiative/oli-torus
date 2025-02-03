@@ -12,6 +12,7 @@ import {
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
+  createLtiExternalTool,
   createReport,
 } from 'data/content/resource';
 import {
@@ -137,6 +138,15 @@ export const NonActivities: React.FC<Props> = ({
           disabled={ABTestDisabled}
           onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
         />
+        <ResourceChoice
+          icon="plug"
+          label="LTI 1.3 External Tool"
+          onHoverStart={() => onSetTip('Connect to external learning tools and content')}
+          onHoverEnd={() => onResetTip()}
+          key={'external-tool'}
+          disabled={false}
+          onClick={() => addLTIExternalTool(onAddItem, index, resourceContext.projectSlug)}
+        />
       </div>
     </div>
   );
@@ -252,4 +262,9 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
       }
     }
   });
+};
+
+const addLTIExternalTool = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
+  onAddItem(createLtiExternalTool('10000000001'), index);
+  document.body.click();
 };

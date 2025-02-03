@@ -1,4 +1,5 @@
 defmodule OliWeb.LtiController do
+  alias Oli.Lti
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
@@ -96,35 +97,47 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context} ->
-        current_user =
+        {current_user, roles} =
           case context do
             "author" ->
               # stub a user for the author
-              %Accounts.User{
-                id: conn.assigns[:current_author].id,
-                sub: "admin",
-                email: conn.assigns[:current_author].email,
-                email_verified: true,
-                name: conn.assigns[:current_author].name,
-                given_name: conn.assigns[:current_author].given_name,
-                family_name: conn.assigns[:current_author].family_name,
-                middle_name: "",
-                nickname: "",
-                preferred_username: "",
-                profile: "",
-                picture: conn.assigns[:current_author].picture,
-                website: "",
-                gender: "",
-                birthdate: "",
-                zoneinfo: "",
-                locale: "",
-                phone_number: "",
-                phone_number_verified: "",
-                address: ""
-              }
+              roles = [
+                Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
+                Lti_1p3.Tool.PlatformRoles.get_role(:institution_administrator),
+                Lti_1p3.Tool.ContextRoles.get_role(:context_content_developer)
+              ]
+
+              {%Accounts.User{
+                 id: conn.assigns[:current_author].id,
+                 sub: "admin",
+                 email: conn.assigns[:current_author].email,
+                 email_verified: true,
+                 name: conn.assigns[:current_author].name,
+                 given_name: conn.assigns[:current_author].given_name,
+                 family_name: conn.assigns[:current_author].family_name,
+                 middle_name: "",
+                 nickname: "",
+                 preferred_username: "",
+                 profile: "",
+                 picture: conn.assigns[:current_author].picture,
+                 website: "",
+                 gender: "",
+                 birthdate: "",
+                 zoneinfo: "",
+                 locale: "",
+                 phone_number: "",
+                 phone_number_verified: "",
+                 address: ""
+               }, roles}
 
             _ ->
-              conn.assigns[:current_user]
+              user = conn.assigns[:current_user]
+
+              # TODO: also include context roles when being called from a section
+              roles =
+                Lti_1p3.Tool.Lti_1p3_User.get_platform_roles(user)
+
+              {user, roles}
           end
 
         issuer = Oli.Utils.get_base_url()
@@ -135,12 +148,6 @@ defmodule OliWeb.LtiController do
         resource_link = %{
           id: "12345"
         }
-
-        roles = [
-          Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_administrator),
-          Lti_1p3.Tool.ContextRoles.get_role(:context_administrator)
-        ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,

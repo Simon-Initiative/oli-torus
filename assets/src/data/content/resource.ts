@@ -34,7 +34,8 @@ export type ResourceContent =
   | ReportContent
   | AlternativesContent
   | AlternativeContent
-  | Break;
+  | Break
+  | LTIExternalTool;
 
 export const isResourceContent = (content: any) =>
   [
@@ -81,6 +82,8 @@ export const getResourceContentName = (content: ResourceContent): string => {
       return 'Page Break';
     case 'selection':
       return 'Selection';
+    default:
+      return 'Unknown';
   }
 };
 
@@ -282,6 +285,13 @@ export const createDefaultSelection = () => {
   } as ActivityBankSelection;
 };
 
+export const createLtiExternalTool = (clientId: string): LTIExternalTool => ({
+  type: 'lti-external-tool',
+  id: guid(),
+  clientId,
+  children: [],
+});
+
 export type EditorType = 'slate' | 'markdown';
 
 export interface StructuredContent {
@@ -306,6 +316,13 @@ export interface ActivityReference {
   type: 'activity-reference';
   id: string;
   activitySlug: ActivitySlug;
+  children: [];
+}
+
+export interface LTIExternalTool {
+  type: 'lti-external-tool';
+  id: string;
+  clientId: string;
   children: [];
 }
 

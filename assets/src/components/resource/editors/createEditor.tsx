@@ -13,6 +13,7 @@ import { ActivityEditor } from './ActivityEditor';
 import { AlternativesEditor } from './AlternativesEditor';
 import { ContentBreakEditor } from './ContentBreak';
 import { ContentEditor } from './ContentEditor';
+import { LTIExternalToolEditor } from './LtiExternalToolEditor';
 import { PurposeGroupEditor } from './PurposeGroupEditor';
 import { ReportEditor } from './ReportEditor';
 import { SelectionEditor } from './SelectionEditor';
@@ -66,6 +67,8 @@ export const createEditor = (editorProps: EditorProps): JSX.Element => {
       return <AlternativesEditor {...editorProps} contentItem={contentItem} />;
     case 'break':
       return <ContentBreakEditor {...editorProps} contentItem={contentItem} />;
+    case 'lti-external-tool':
+      return <LTIExternalToolEditor {...editorProps} contentItem={contentItem} />;
     default:
       return <EditorError />;
   }
