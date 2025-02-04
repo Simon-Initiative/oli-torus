@@ -28,7 +28,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
     |> Enum.group_by(&(&1.type))
 
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
-      {_, %Response{feedback: feedback, score: score, show_page: show_page} = response _, out_of} ->
+      {_, %Response{feedback: feedback, score: score, show_page: show_page} = response, _, out_of} ->
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",
@@ -63,7 +63,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            attempt_guid: context.part_attempt_guid,
            error: nil,
            show_page: nil,
-           part_id: part.id
+           part_id: part.id,
+           trigger: arm_trigger(relevant_triggers_by_type, %Response{score: 0}, adjusted_out_of)
          }}
 
       _ ->
@@ -75,7 +76,9 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
     case find_matching_trigger(relevant_triggers_by_type, response, out_of) do
       nil -> nil
-      trigger -> Oli.Conversation.Trigger.parse(trigger, nil, nil)
+      trigger ->
+        {:ok, t} = Oli.Activities.Model.Trigger.parse(trigger)
+        t
     end
 
   end
@@ -92,12 +95,22 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
     is_correct? = response.score == out_of
 
-    case {targeted_feedback_trigger, correct_trigger, incorrect_trigger, is_correct?} do
-      {trigger, _, _, _} -> trigger
-      {_, trigger, _, true} -> trigger
-      {_, _, trigger, false} -> trigger
-      _ -> nil
+    IO.inspect("find_matching_trigger")
+
+    IO.inspect(relevant_triggers_by_type)
+    IO.inspect(correct_trigger)
+    IO.inspect(incorrect_trigger)
+
+    if targeted_feedback_trigger != nil do
+      targeted_feedback_trigger
+    else
+      if is_correct? do
+        correct_trigger
+      else
+        incorrect_trigger
+      end
     end
+
   end
 
   # Consider one response

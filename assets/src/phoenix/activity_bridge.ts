@@ -2,6 +2,7 @@ import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { ClientEvaluation, PartResponse } from 'components/activities/types';
 import { defaultActivityState } from 'data/activities/utils';
 import * as Persistence from 'data/persistence/activity';
+import * as Trigger from 'data/persistence/trigger';
 import { removeEmpty, valueOr } from 'utils/common';
 
 type Continuation = (success: any, error: any) => void;
@@ -38,7 +39,6 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
-      console.info('SAVE ACTIVITY');
 
       const originalContinuation = e.detail.continuation;
 
@@ -73,11 +73,28 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
+
+      const sectionSlug = e.detail.sectionSlug;
+      const originalContinuation = e.detail.continuation;
+
+      const newContinuation = (result: any, error: any) => {
+        if (!error) {
+          console.log('submitActivity', result);
+          if (result.actions && result.actions[0].trigger) {
+            Trigger.invoke(sectionSlug, result.actions[0].trigger);
+          }
+        }
+
+        if (originalContinuation) {
+          originalContinuation(result, error);
+        }
+      };
+
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
         'PUT',
         { partInputs: e.detail.payload },
-        e.detail.continuation,
+        newContinuation,
         submissionTransform.bind(this, 'actions'),
       );
     },
@@ -120,11 +137,27 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
+
+      const sectionSlug = e.detail.sectionSlug;
+      const originalContinuation = e.detail.continuation;
+
+      const newContinuation = (result: any, error: any) => {
+        if (!error) {
+          if (result.trigger) {
+            Trigger.invoke(sectionSlug, result.trigger);
+          }
+        }
+
+        if (originalContinuation) {
+          originalContinuation(result, error);
+        }
+      };
+
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
         'PUT',
         { response: e.detail.payload },
-        e.detail.continuation,
+        newContinuation,
       );
     },
     false,
