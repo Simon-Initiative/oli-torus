@@ -80,6 +80,10 @@ defmodule OliWeb.Progress.PageAttemptSummaryTest do
       revision: revision
     } do
       attempt = %{attempt | lifecycle_state: :evaluated}
+
+      attempt =
+        Oli.Repo.preload(attempt, activity_attempts: [:part_attempts])
+
       assigns = %{attempt: attempt, section: section, ctx: ctx, revision: revision}
 
       html = render_component(PageAttemptSummary, assigns)
