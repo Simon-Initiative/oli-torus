@@ -590,7 +590,10 @@ defmodule Oli.Delivery.Attempts.Core do
               where: ra.resource_access_id == ^id,
               order_by: ra.attempt_number,
               select: ra,
-              preload: [:revision]
+              preload: [
+                :revision,
+                activity_attempts: [:part_attempts]
+              ]
             )
           )
 

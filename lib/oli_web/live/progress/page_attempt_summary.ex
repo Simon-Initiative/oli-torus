@@ -1,6 +1,5 @@
 defmodule OliWeb.Progress.PageAttemptSummary do
   use OliWeb, :live_component
-  alias Oli.Repo
   alias OliWeb.Common.Utils
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
@@ -56,10 +55,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   end
 
   def do_render(%{attempt: %{lifecycle_state: :evaluated}} = assigns) do
-    activity_attempts =
-      Repo.preload(assigns.attempt, activity_attempts: [:part_attempts]).activity_attempts
-
-    feedback_texts = Utils.extract_feedback_text(activity_attempts)
+    feedback_texts = Utils.extract_feedback_text(assigns.attempt.activity_attempts)
     assigns = assign(assigns, feedback_texts: feedback_texts)
 
     ~H"""
