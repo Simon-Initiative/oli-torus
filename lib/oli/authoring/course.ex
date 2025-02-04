@@ -160,7 +160,7 @@ defmodule Oli.Authoring.Course do
        ) do
     owner_id = Oli.Authoring.Authors.ProjectRole.role_id().owner
 
-    filter_by_collaborator = dynamic([a, _, _, _], a.author_id == ^id)
+    filter_by_collaborator = dynamic([c, _, _, _], c.author_id == ^id and c.status == :accepted)
 
     filter_by_status =
       if include_deleted do
@@ -186,7 +186,6 @@ defmodule Oli.Authoring.Course do
       |> where(^filter_by_collaborator)
       |> where(^filter_by_status)
       |> where(^filter_by_text)
-      |> where([_, _, o, _], o.status == :accepted and o.author_id == ^id)
       |> limit(^limit)
       |> offset(^offset)
       |> select([_, p, _, a], %{
