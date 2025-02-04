@@ -42,39 +42,40 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   end
 
   @doc """
+  Returns true if the user's email has been confirmed.
+  """
+  def email_confirmed?(user) do
+    user.email_confirmed_at != nil
+  end
+
+  @doc """
   Upserts a user identity.
 
   If a matching user identity already exists for the user, the identity will be updated,
   otherwise a new identity is inserted.
   """
-  def upsert(user, author_identity_params) do
-    {uid_provider_params, additional_params} =
+  def upsert_identity(user, author_identity_params) do
+    {uid_provider_params, _additional_params} =
       Map.split(author_identity_params, ["uid", "provider"])
 
     get_for_user(user, uid_provider_params)
     |> case do
-      nil -> insert_identity(user, author_identity_params)
-      identity -> update_identity(identity, additional_params)
+      nil -> insert_identity(user, uid_provider_params)
+      identity -> update_identity(identity, uid_provider_params)
     end
   end
 
-  @doc """
-  Inserts a user identity for the user.
-  """
-  def insert_identity(user, author_identity_params) do
+  defp insert_identity(user, uid_provider_params) do
     author_identity = Ecto.build_assoc(user, :user_identities)
 
     author_identity
-    |> author_identity.__struct__.changeset(author_identity_params)
+    |> author_identity.__struct__.changeset(uid_provider_params)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a user identity.
-  """
-  def update_identity(author_identity, additional_params) do
+  defp update_identity(author_identity, uid_provider_params) do
     author_identity
-    |> author_identity.__struct__.changeset(additional_params)
+    |> author_identity.__struct__.changeset(uid_provider_params)
     |> Repo.update()
   end
 
@@ -87,6 +88,15 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
     %Author{}
     |> Author.author_identity_changeset(author_identity_params, user_params)
     |> Repo.insert()
+  end
+
+  @doc """
+  Updates user details.
+  """
+  def update_user_details(author, attrs) do
+    author
+    |> Author.details_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

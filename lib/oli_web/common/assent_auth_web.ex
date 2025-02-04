@@ -68,15 +68,14 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> put_private_callback_state(conn)
     |> maybe_authenticate(config)
     |> maybe_upsert_user_identity(config)
-    |> maybe_create_user(config)
+    |> create_or_update_user(config)
     |> case do
-      %{private: %{assent_callback_state: {:ok, :create_user}}} = conn ->
-        conn
-        |> maybe_trigger_registration_email_confirmation(config)
-        |> (&{:ok, &1}).()
-
+      # Regardless of whether the user was just created or updated, we will send a confirmation
+      # email if the user's email has not yet been confirmed.
       %{private: %{assent_callback_state: {:ok, _method}}} = conn ->
-        {:ok, conn}
+        conn
+        |> maybe_send_confirmation_email(config)
+        |> (&{:ok, &1}).()
 
       %{private: %{assent_callback_state: {:error, error}, assent_callback_error: changeset}} =
           conn ->
@@ -197,7 +196,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     user_identity_params = convert_params(user_identity_params)
 
     user
-    |> assent_auth_module(config).upsert(user_identity_params)
+    |> assent_auth_module(config).upsert_identity(user_identity_params)
     |> user_identity_bound_different_user_error()
     |> case do
       {:ok, user_identity} ->
@@ -208,35 +207,48 @@ defmodule OliWeb.Common.AssentAuthWeb do
     end
   end
 
-  defp maybe_create_user(conn, config),
-    do: maybe_create_user(current_user(conn, config), conn, config)
-
-  defp maybe_create_user(
-         nil,
-         %{private: %{assent_callback_state: {:ok, :strategy}, assent_callback_params: params}} =
+  defp create_or_update_user(
+         %{private: %{assent_callback_state: {:ok, _method}, assent_callback_params: params}} =
            conn,
          config
        ) do
     user_params = Map.fetch!(params, :user)
     user_identity_params = Map.fetch!(params, :user_identity)
 
-    conn
-    |> create_user(user_identity_params, user_params, config)
-    |> case do
-      {:ok, user, conn} ->
+    case current_user(conn, config) do
+      nil ->
         conn
-        |> Plug.Conn.put_private(:assent_callback_state, {:ok, :create_user})
-        |> create_session(user, config)
-        |> assign_current_user(user, config)
+        |> create_user(user_identity_params, user_params, config)
+        |> case do
+          {:ok, user, conn} ->
+            conn
+            |> Plug.Conn.put_private(:assent_callback_state, {:ok, :create_user})
+            |> create_session(user, config)
+            |> assign_current_user(user, config)
 
-      {:error, changeset, conn} ->
+          {:error, changeset, conn} ->
+            conn
+            |> Plug.Conn.put_private(:assent_callback_state, {:error, :create_user})
+            |> Plug.Conn.put_private(:assent_callback_error, changeset)
+        end
+
+      user ->
         conn
-        |> Plug.Conn.put_private(:assent_callback_state, {:error, :create_user})
-        |> Plug.Conn.put_private(:assent_callback_error, changeset)
+        |> update_user(user, user_params, config)
+        |> case do
+          {:ok, user, conn} ->
+            conn
+            |> Plug.Conn.put_private(:assent_callback_state, {:ok, :update_user})
+            |> create_session(user, config)
+            |> assign_current_user(user, config)
+
+          {:error, changeset, conn} ->
+            conn
+            |> Plug.Conn.put_private(:assent_callback_state, {:error, :update_user})
+            |> Plug.Conn.put_private(:assent_callback_error, changeset)
+        end
     end
   end
-
-  defp maybe_create_user(_user, conn, _config), do: conn
 
   ## Create a user with the provider and provider user params.
   defp create_user(conn, user_identity_params, user_params, config) do
@@ -245,6 +257,15 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> assent_auth_module(config).create_user_with_identity(user_params)
     |> user_identity_bound_different_user_error()
     |> user_with_email_already_exists_error()
+    |> case do
+      {:ok, user} -> {:ok, user, create_session(conn, user, config)}
+      {:error, error} -> {:error, error, conn}
+    end
+  end
+
+  defp update_user(conn, user, user_params, config) do
+    user
+    |> assent_auth_module(config).update_user_details(user_params)
     |> case do
       {:ok, user} -> {:ok, user, create_session(conn, user, config)}
       {:error, error} -> {:error, error, conn}
@@ -268,14 +289,12 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> assent_auth_module(config).delete_identity_providers(user)
   end
 
-  defp maybe_trigger_registration_email_confirmation(conn, config) do
-    %{user: user_params} = conn.private[:assent_callback_params]
+  defp maybe_send_confirmation_email(conn, config) do
+    user = current_user(conn, config)
 
-    if email_verified?(user_params) do
+    if assent_auth_module(config).email_confirmed?(user) do
       conn
     else
-      user = current_user(conn, config)
-
       deliver_user_confirmation_instructions(user, config)
 
       conn
@@ -352,10 +371,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
 
   defp convert_param({key, value}) when is_atom(key), do: {Atom.to_string(key), value}
   defp convert_param({key, value}) when is_binary(key), do: {key, value}
-
-  defp email_verified?(%{"email_verified" => true}), do: true
-  defp email_verified?(%{email_verified: true}), do: true
-  defp email_verified?(_params), do: false
 
   defp user_identity_bound_different_user_error({:error, %{errors: errors} = changeset}) do
     case unique_constraint_error?(errors, :uid_provider) do
