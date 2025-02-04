@@ -21,7 +21,13 @@ defmodule OliWeb.InviteController do
 
     case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
-        invite_author(conn, email)
+        if is_nil(Accounts.get_author_by_email(email)) do
+          invite_author(conn, email)
+        else
+          conn
+          |> put_flash(:error, "Author with email #{email} already exists.")
+          |> redirect(to: Routes.invite_path(conn, :index))
+        end
 
       {:success, false} ->
         conn
@@ -193,7 +199,7 @@ defmodule OliWeb.InviteController do
   end
 
   defp invite_author(conn, email) do
-    with {:ok, author} <- Collaborators.get_or_create_invited_author(email),
+    with {:ok, author} <- Accounts.create_invited_author(email),
          {:ok, email_data} <- create_author_invitation_token(author),
          {:ok, _mail} <-
            deliver_author_invitation_email(email_data, conn.assigns.current_author.name) do
