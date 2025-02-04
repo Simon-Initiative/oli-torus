@@ -257,6 +257,12 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
+    pipe_through [:browser, :require_authenticated_user, :fetch_current_author]
+
+    live "/users/link_account", LinkAccountLive, :link_account
+  end
+
+  scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_author_is_authenticated]
 
     live_session :redirect_if_author_is_authenticated,
@@ -324,14 +330,6 @@ defmodule OliWeb.Router do
 
     get("/research_consent", DeliveryController, :show_research_consent)
     post("/research_consent", DeliveryController, :research_consent)
-  end
-
-  scope "/authoring", as: :authoring do
-    pipe_through([:browser, :authoring])
-
-    # handle linking accounts when using a social account provider to login
-    get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
-    get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
   end
 
   # open access routes

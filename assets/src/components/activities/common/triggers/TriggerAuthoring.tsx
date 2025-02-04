@@ -153,7 +153,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
   return (
     <>
       <h4>
-        <img src="/images/icons/icon-ai.svg" className="inline mr-1" />
+        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
         DOT AI Activity Trigger Point
       </h4>
       <p className="mt-2">
@@ -186,7 +186,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
 export const TriggerLabel = () => {
   return (
     <span>
-      <img src="/images/icons/icon-ai.svg" className="inline" />
+      <img src="/images/icons/icon-AI.svg" className="inline" />
       DOT AI
     </span>
   );

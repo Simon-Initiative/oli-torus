@@ -141,7 +141,7 @@ defmodule OliWeb.Components.Delivery.Buttons do
   attr :id, :string, required: true
   attr :map_values, :map, default: %{}
 
-  def instructor_dasboard_toggle_chevron(assigns) do
+  def toggle_chevron(assigns) do
     ~H"""
     <div>
       <div id={"#{@id}-down-icon"}>
