@@ -307,7 +307,11 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                         field={f[:min_percentage_for_completion]}
                         class="pl-6 border-[#D4D4D4] rounded"
                       />
-                      <span class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">
+
+                      <span class={[
+                        "absolute right-8 transform -translate-y-1/2 text-gray-500 pointer-events-none ",
+                        if(f.errors != [], do: "top-1/3", else: "top-1/2")
+                      ]}>
                         %
                       </span>
                     </div>
