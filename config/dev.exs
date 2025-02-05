@@ -207,7 +207,9 @@ config :ex_aws, :hackney_opts,
   follow_redirect: true,
   recv_timeout: 200_000
 
-# Configure reCAPTCHA
+# Configure development reCAPTCHA. This is a publicly available test key and will
+# render a warning to prevent it from being used in production.
+# https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
 config :oli, :recaptcha,
   verify_url: "https://www.google.com/recaptcha/api/siteverify",
   timeout: 5000,
