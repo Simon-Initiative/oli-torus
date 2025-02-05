@@ -71,6 +71,7 @@ const questionComponents: string[] = [
   'janus_input_number',
   'janus_slider',
   'janus_multi_line_text',
+  'janus_hub_spoke',
 ];
 
 const ToolbarOption: React.FC<{ disabled?: boolean; component: string; onClick: () => void }> = ({
@@ -170,6 +171,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
       const [currentActivity] = currentActivityTree.slice(-1);
+      console.log('I M HERE', { newPartData });
       dispatch(addPart({ activityId: currentActivity.id, newPartData }));
     }
   };

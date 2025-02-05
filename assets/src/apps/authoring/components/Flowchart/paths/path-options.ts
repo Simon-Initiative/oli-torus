@@ -132,6 +132,7 @@ export type QuestionType =
   | 'slider'
   | 'input-number'
   | 'dropdown'
+  | 'hub-spoke'
   | 'none';
 
 const questionMapping: Record<string, QuestionType> = {
@@ -141,6 +142,7 @@ const questionMapping: Record<string, QuestionType> = {
   'janus-input-number': 'input-number',
   'janus-dropdown': 'dropdown',
   'janus-slider': 'slider',
+  'janus-hub-spoke': 'hub-spoke',
 };
 
 const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
@@ -151,6 +153,7 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'multi-line-text': 'Multi-line Text',
   'input-text': 'Text Input',
   'input-number': 'Number Input',
+  'hub-spoke': 'hub and spoke',
   dropdown: 'Dropdown',
   slider: 'Slider',
   none: 'No question',
