@@ -265,6 +265,7 @@ defmodule Oli.Accounts.Author do
     |> validate_required([:given_name, :family_name])
     |> default_system_role()
     |> maybe_name_from_given_and_family()
+    |> confirm_email_if_verified()
   end
 
   @doc """

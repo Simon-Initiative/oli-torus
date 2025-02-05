@@ -24,22 +24,17 @@ defmodule Oli.AssentAuth do
   @callback has_password?(any()) :: boolean()
 
   @doc """
+  Returns true if the user's email has been confirmed.
+  """
+  @callback email_confirmed?(any()) :: boolean()
+
+  @doc """
   Upserts a user identity.
 
   If a matching user identity already exists for the user, the identity will be updated,
   otherwise a new identity is inserted.
   """
-  @callback upsert(Atom.t(), map()) :: {:ok, map()} | {:error, String.t()}
-
-  @doc """
-  Inserts a user identity for the user.
-  """
-  @callback insert_identity(Atom.t(), map()) :: {:ok, map()} | {:error, String.t()}
-
-  @doc """
-  Updates a user identity.
-  """
-  @callback update_identity(any(), map()) :: {:ok, any()} | {:error, any()}
+  @callback upsert_identity(Atom.t(), map()) :: {:ok, map()} | {:error, String.t()}
 
   @doc """
   Creates a user with user identity.
@@ -47,6 +42,11 @@ defmodule Oli.AssentAuth do
   User schema module and repo module will be fetched from config.
   """
   @callback create_user_with_identity(any(), map()) :: {:ok, any()} | {:error, any()}
+
+  @doc """
+  Updates user details.
+  """
+  @callback update_user_details(any(), map()) :: {:ok, any()} | {:error, any()}
 
   @doc """
   Gets a user by identity provider and uid.
