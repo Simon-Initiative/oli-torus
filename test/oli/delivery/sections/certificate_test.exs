@@ -95,6 +95,25 @@ defmodule Oli.Delivery.Sections.CertificateTest do
 
       assert %{assessments_apply_to: ["is invalid"]} = errors_on(changeset)
     end
+
+    test "error: when assessments_apply_to is :custom but custom_assessments is empty", %{
+      params: params
+    } do
+      params =
+        params
+        |> Map.put(:assessments_apply_to, :custom)
+        |> Map.put(:custom_assessments, [])
+
+      changeset = Certificate.changeset(params)
+
+      refute changeset.valid?
+
+      assert %{
+               custom_assessments: [
+                 "scored pages must not be empty"
+               ]
+             } = errors_on(changeset)
+    end
   end
 
   describe "insert" do
