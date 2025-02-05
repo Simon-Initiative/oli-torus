@@ -18,8 +18,9 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
   @explorations_label "Let's Begin"
   @course_label "Go to course"
 
-  def mount(_params, %{"datashop_session_id" => datashop_session_id}, socket) do
+  def mount(_params, _session, socket) do
     section = socket.assigns.section
+    datashop_session_id = socket.assigns.datashop_session_id
 
     has_required_survey = has_required_survey(section)
     has_explorations = has_explorations(section)
@@ -105,12 +106,12 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
     ~H"""
     <.header
       ctx={@ctx}
-      is_system_admin={@is_system_admin}
+      is_admin={@is_admin}
       section={@section}
       preview_mode={@preview_mode}
       include_logo={true}
     />
-    <div id="content" class="mt-14 h-[calc(100vh-56px)] transition-all duration-100">
+    <div id="content" class="h-[calc(100vh-56px)] transition-all duration-100">
       <.live_component
         id="student-onboarding-wizard"
         module={Stepper}

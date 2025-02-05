@@ -1,9 +1,6 @@
 defmodule OliWeb.RegistrationControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Repo
-  alias Oli.Accounts.SystemRole
-  alias Oli.Accounts.Author
   alias Oli.Institutions
 
   @create_attrs %{
@@ -96,7 +93,7 @@ defmodule OliWeb.RegistrationControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> log_in_author(admin)
 
       conn = get(conn, Routes.registration_path(conn, :show, registration.id))
       assert html_response(conn, 200) =~ "some updated auth_login_url"
@@ -136,7 +133,7 @@ defmodule OliWeb.RegistrationControllerTest do
 
       assert_raise Ecto.NoResultsError, fn ->
         recycle(conn)
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> log_in_author(admin)
 
         Institutions.get_registration!(registration.id)
       end
@@ -144,24 +141,14 @@ defmodule OliWeb.RegistrationControllerTest do
   end
 
   defp create_fixtures(%{conn: conn}) do
-    {:ok, admin} =
-      Author.noauth_changeset(%Author{}, %{
-        email: "test@test.com",
-        given_name: "First",
-        family_name: "Last",
-        provider: "foo",
-        system_role_id: SystemRole.role_id().system_admin
-      })
-      |> Repo.insert()
+    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().system_admin})
 
     jwk = jwk_fixture()
     institution = institution_fixture()
     registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
 
     # sign admin author in
-    conn =
-      recycle(conn)
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+    conn = log_in_author(conn, admin)
 
     %{conn: conn, registration: registration, institution: institution, admin: admin}
   end

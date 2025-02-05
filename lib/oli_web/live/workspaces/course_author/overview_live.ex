@@ -21,7 +21,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
   def mount(_params, _session, socket) do
     %{project: project, current_author: author, ctx: ctx} = socket.assigns
 
-    is_admin? = Accounts.has_admin_role?(author)
+    is_admin? = Accounts.has_admin_role?(author, :content_admin)
 
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
@@ -47,7 +47,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     {:ok,
      assign(socket,
        ctx: ctx,
-       collaborators: Accounts.project_authors(project),
+       collaborators:
+         Accounts.authors_projects(project)
+         |> Enum.group_by(& &1.author_project_status),
        activities_enabled: Activities.advanced_activities(project, is_admin?),
        can_enable_experiments: is_admin? and Experiments.experiments_enabled?(),
        is_admin: is_admin?,
@@ -280,7 +282,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
               ) %>
               <%= error_tag(f, :collaborator_emails) %>
               <%= hidden_input(f, :authors,
-                value: @collaborators |> Enum.map(fn author -> author.email end) |> Enum.join(", ")
+                value:
+                  @collaborators.accepted
+                  |> Enum.map(fn author_projects -> author_projects.author.email end)
+                  |> Enum.join(", ")
               ) %>
               <div class="input-group-append">
                 <%= submit("Send Invite",
@@ -300,11 +305,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
             <%= error_tag(f, :captcha) %>
           </div>
         </.form>
-        <%= render_many(@collaborators, OliWeb.ProjectView, "_collaborator.html", %{
-          conn: @socket,
-          as: :collaborator,
-          project: @project
-        }) %>
+        <.collaborators collaborators={@collaborators} />
       </Overview.section>
 
       <Overview.section
@@ -625,6 +626,92 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   def handle_info({:project_export_status, {status}}, socket) do
     {:noreply, assign(socket, project_export_status: status)}
+  end
+
+  attr :collaborators, :map, required: true
+
+  def collaborators(assigns) do
+    ~H"""
+    <div class="flex flex-col w-full space-y-3 mb-2">
+      <div :if={!is_nil(@collaborators[:accepted])}>
+        <h5><%= "Collaborators (#{length(@collaborators.accepted)})" %></h5>
+        <div
+          :for={collaborator <- @collaborators.accepted}
+          class="d-flex justify-content-between align-items-center py-1"
+        >
+          <div class="d-flex flex-column">
+            <div><%= "#{collaborator.author.name}" %></div>
+            <div class="text-muted"><%= "#{collaborator.author.email}" %></div>
+          </div>
+          <div class="user-actions">
+            <%= link("Remove",
+              to:
+                Routes.collaborator_path(
+                  OliWeb.Endpoint,
+                  :delete,
+                  collaborator.project_slug,
+                  collaborator.author.email
+                ),
+              method: :delete,
+              class: "btn btn-link text-danger"
+            ) %>
+          </div>
+        </div>
+      </div>
+
+      <div :if={!is_nil(@collaborators[:pending_confirmation])}>
+        <h5><%= "Pending Confirmation (#{length(@collaborators.pending_confirmation)})" %></h5>
+        <div
+          :for={collaborator <- @collaborators.pending_confirmation}
+          class="d-flex justify-content-between align-items-center py-1"
+        >
+          <div class="d-flex flex-column">
+            <div><%= "#{collaborator.author.name}" %></div>
+            <div class="text-muted"><%= "#{collaborator.author.email}" %></div>
+          </div>
+          <div class="user-actions">
+            <%= link("Remove",
+              to:
+                Routes.collaborator_path(
+                  OliWeb.Endpoint,
+                  :delete,
+                  collaborator.project_slug,
+                  collaborator.author.email
+                ),
+              method: :delete,
+              class: "btn btn-link text-danger"
+            ) %>
+          </div>
+        </div>
+      </div>
+
+      <div :if={!is_nil(@collaborators[:rejected])}>
+        <h5><%= "Rejected Invitations (#{length(@collaborators.rejected)})" %></h5>
+        <div
+          :for={collaborator <- @collaborators.rejected}
+          class="d-flex justify-content-between align-items-center py-1"
+        >
+          <div class="d-flex flex-column">
+            <div><%= "#{collaborator.author.name}" %></div>
+            <div class="text-muted"><%= "#{collaborator.author.email}" %></div>
+          </div>
+          <div class="user-actions">
+            <%= link("Remove",
+              to:
+                Routes.collaborator_path(
+                  OliWeb.Endpoint,
+                  :delete,
+                  collaborator.project_slug,
+                  collaborator.author.email
+                ),
+              method: :delete,
+              class: "btn btn-link text-danger"
+            ) %>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
   end
 
   defp add_custom_license_details(%{"license" => "custom"} = project_params), do: project_params

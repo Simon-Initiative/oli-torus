@@ -213,6 +213,54 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
+  @doc false
+  def create_bulk(conn, %{
+        "project" => project_slug,
+        "bulkData" => bulk_data
+      }) do
+    author = conn.assigns[:current_author]
+
+    scope = Map.get(conn.body_params, "scope", "embedded")
+
+    case ActivityEditor.create_bulk(
+           project_slug,
+           author,
+           bulk_data,
+           scope
+         ) do
+      {:ok, activities} ->
+        revisions =
+          Enum.map(activities, fn a ->
+            activity = a.activity
+
+            %{
+              "revisionSlug" => activity.slug,
+              "resourceId" => activity.resource_id,
+              "activityTypeSlug" => a.activity_type_slug,
+              "title" => activity.title,
+              "objectives" => activity.objectives,
+              "tags" => activity.tags,
+              "content" => activity.content
+            }
+          end)
+
+        json(conn, %{
+          "type" => "success",
+          "revisions" => revisions
+        })
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not create activity", e)
+        error(conn, 500, msg)
+    end
+  end
+
   defp document_to_result(nil) do
     %{
       "result" => "failed"
@@ -661,6 +709,31 @@ defmodule OliWeb.Api.ActivityController do
 
       e ->
         {_, msg} = Oli.Utils.log_error("Could not delete activity", e)
+        error(conn, 500, msg)
+    end
+  end
+
+  def delete_bulk(conn, %{"project" => project_slug, "resourceIds" => resource_ids}) do
+    author = conn.assigns[:current_author]
+
+    case ActivityEditor.delete_bulk(project_slug, resource_ids, author) do
+      {:ok, _} ->
+        json(conn, %{"result" => "success"})
+
+      {:error, {:lock_not_acquired, _}} ->
+        error(conn, 423, "locked")
+
+      {:error, {:not_applicable}} ->
+        error(conn, 400, "not applicable to this resources")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      _ ->
+        {_, msg} = Oli.Utils.log_error("Could not delete activities", resource_ids)
         error(conn, 500, msg)
     end
   end

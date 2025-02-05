@@ -17,7 +17,7 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.History.RestoreRevisionModal
   alias Oli.Utils.SchemaResolver
   alias OliWeb.Router.Helpers, as: Routes
@@ -25,32 +25,31 @@ defmodule OliWeb.RevisionHistory do
 
   @page_size 15
 
-  @impl Phoenix.LiveView
-  def mount(%{"slug" => slug, "project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
+  @impl Phoenix.LiveView
+  def mount(%{"slug" => slug, "project_id" => project_slug}, _session, socket) do
     case AuthoringResolver.from_revision_slug(project_slug, slug) do
       nil ->
         {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       revision ->
-        do_mount(revision, project_slug, socket, ctx)
+        do_mount(revision, project_slug, socket)
     end
   end
 
-  def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, session, socket) do
-    ctx = SessionContext.init(socket, session)
-
+  def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, _session, socket) do
     case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
       nil ->
         {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       revision ->
-        do_mount(revision, project_slug, socket, ctx)
+        do_mount(revision, project_slug, socket)
     end
   end
 
-  defp do_mount(revision, project_slug, socket, ctx) do
+  defp do_mount(revision, project_slug, socket) do
     project = Course.get_project_by_slug(project_slug)
     resource_id = revision.resource_id
     slug = revision.slug
@@ -101,7 +100,6 @@ defmodule OliWeb.RevisionHistory do
     {:ok,
      socket
      |> assign(
-       ctx: ctx,
        breadcrumbs:
          Breadcrumb.trail_to(
            project_slug,

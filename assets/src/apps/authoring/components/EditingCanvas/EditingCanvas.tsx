@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
+import { selectCustom } from 'apps/authoring/store/page/slice';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { NotificationType } from 'apps/delivery/components/NotificationContext';
 import { useKeyDown } from 'hooks/useKeyDown';
@@ -28,10 +29,11 @@ const EditingCanvas: React.FC = () => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const _currentPartSelection = useSelector(selectCurrentSelection);
   const _currentPartPropertyFocus = useSelector(selectCurrentPartPropertyFocus);
+  const _currentLessonCustom = useSelector(selectCustom);
   const [_currentActivity] = (currentActivityTree || []).slice(-1);
 
   const [currentActivityId, setCurrentActivityId] = useState<EntityId>('');
-
+  const [customInterfaceSettings, setCustomInterfaceSettings] = useState<string>('default');
   const [showConfigModal, setShowConfigModal] = useState<boolean>(false);
   const [configModalFullscreen, setConfigModalFullscreen] = useState<boolean>(false);
   const [configPartId, setConfigPartId] = useState<string>('');
@@ -108,7 +110,22 @@ const EditingCanvas: React.FC = () => {
     }
     return true;
   };
-
+  useEffect(() => {
+    let interfaceSettingClass = '';
+    if (_currentLessonCustom.grid) {
+      interfaceSettingClass += ' show-grid';
+    }
+    if (_currentLessonCustom.columnGuides) {
+      interfaceSettingClass += ' show-column-guide';
+    }
+    if (_currentLessonCustom.centerpoint) {
+      interfaceSettingClass += ' show-center';
+    }
+    if (_currentLessonCustom.rowGuides) {
+      interfaceSettingClass += ' show-row-guide';
+    }
+    setCustomInterfaceSettings(interfaceSettingClass);
+  }, [_currentLessonCustom]);
   const handleStageClick = (e: any) => {
     if (e.target.className !== 'aa-stage') {
       return;
@@ -186,7 +203,7 @@ const EditingCanvas: React.FC = () => {
 
   return (
     <React.Fragment>
-      <section className="aa-stage" onClick={handleStageClick}>
+      <section className={`aa-stage mt-8 ${customInterfaceSettings}`} onClick={handleStageClick}>
         <StagePan>
           {currentActivityTree &&
             currentActivityTree.map((activity) => (

@@ -39,7 +39,49 @@ if get_env_as_boolean.("APPSIGNAL_ENABLE_LOGGING", "false") do
   config :logger, backends: [:console, {Appsignal.Logger.Backend, [group: "phoenix"]}]
 end
 
-# Production-only configurations
+config :oli, :author_auth_providers,
+  google:
+    (case System.get_env("GOOGLE_CLIENT_ID") do
+       nil ->
+         nil
+
+       client_id ->
+         [
+           client_id: client_id,
+           client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+           strategy: Assent.Strategy.Google
+         ]
+     end),
+  github:
+    (case System.get_env("AUTHOR_GITHUB_CLIENT_ID") do
+       nil ->
+         nil
+
+       client_id ->
+         [
+           client_id: client_id,
+           client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET"),
+           strategy: Assent.Strategy.Github
+         ]
+     end)
+
+config :oli, :user_auth_providers,
+  google:
+    (case System.get_env("GOOGLE_CLIENT_ID") do
+       nil ->
+         nil
+
+       client_id ->
+         [
+           client_id: client_id,
+           client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+           strategy: Assent.Strategy.Google
+         ]
+     end)
+
+####################### Production-only configurations ########################
+## Note: These configurations are only applied in production
+###############################################################################
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||
@@ -158,9 +200,25 @@ if config_env() == :prod do
     node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
-    always_use_persistent_login_sessions:
-      get_env_as_boolean.("ALWAYS_USE_PERSISTENT_LOGIN_SESSIONS", "false"),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+
+  config :oli, :dataset_generation,
+    enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
+    emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+    execution_role:
+      System.get_env(
+        "EMR_DATASET_EXECUTION_ROLE",
+        "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"
+      ),
+    entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
+    log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
+    source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+    context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
+    spark_submit_parameters:
+      System.get_env(
+        "EMR_DATASET_SPARK_SUBMIT_PARAMETERS",
+        "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+      )
 
   config :oli, :xapi_upload_pipeline,
     batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
@@ -306,9 +364,6 @@ if config_env() == :prod do
       ]
   end
 
-  # Configure Mnesia directory (used by pow persistent sessions)
-  config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
-
   truncate =
     System.get_env("LOGGER_TRUNCATE", "8192")
     |> String.downcase()
@@ -336,14 +391,6 @@ if config_env() == :prod do
 
   # Configure if age verification checkbox appears on learner account creation
   config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
-
-  config :oli, :auth_providers,
-    google_client_id: System.get_env("GOOGLE_CLIENT_ID", ""),
-    google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", ""),
-    author_github_client_id: System.get_env("AUTHOR_GITHUB_CLIENT_ID", ""),
-    author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
-    user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
-    user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
 
   # Configure libcluster for horizontal scaling
   # Take into account that different strategies could use different config options
@@ -376,7 +423,15 @@ if config_env() == :prod do
 
   config :oli, Oban,
     repo: Oli.Repo,
-    plugins: [Oban.Plugins.Pruner],
+    plugins: [
+      Oban.Plugins.Pruner,
+      {
+        Oban.Plugins.Cron,
+        crontab: [
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+        ]
+      }
+    ],
     queues: [
       default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
       snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),
@@ -388,6 +443,7 @@ if config_env() == :prod do
       analytics_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_ANALYTICS", "1")),
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
       project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
-      objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3"))
+      objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
+      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10"))
     ]
 end

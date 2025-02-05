@@ -154,13 +154,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     page_5_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 5"
+        title: "Page 5",
+        duration_minutes: 0
       )
 
     page_6_revision =
       insert(:revision,
         resource_type_id: ResourceType.get_id_by_type("page"),
-        title: "Page 6"
+        title: "Page 6",
+        duration_minutes: 0
       )
 
     page_7_revision =
@@ -232,6 +234,27 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         resource_type_id: ResourceType.get_id_by_type("page"),
         title: "Page 15 - in class activity",
         duration_minutes: 15
+      )
+
+    page_16_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 16",
+        duration_minutes: 11
+      )
+
+    page_17_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 17",
+        duration_minutes: 18
+      )
+
+    page_18_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 18",
+        duration_minutes: 1
       )
 
     # sections and sub-sections...
@@ -306,7 +329,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     unit_1_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [module_1_revision.resource_id, module_2_revision.resource_id],
+        children: [
+          module_1_revision.resource_id,
+          module_2_revision.resource_id,
+          page_16_revision.resource_id,
+          page_17_revision.resource_id,
+          page_18_revision.resource_id
+        ],
         title: "Introduction",
         poster_image: "some_image_url",
         intro_video: "youtube.com/watch?v=123456789ab",
@@ -393,6 +422,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         page_13_revision,
         page_14_revision,
         page_15_revision,
+        page_16_revision,
+        page_17_revision,
+        page_18_revision,
         section_1_revision,
         subsection_1_revision,
         module_1_revision,
@@ -510,6 +542,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       page_11: page_11_revision,
       page_12: page_12_revision,
       page_13: page_13_revision,
+      page_16: page_16_revision,
+      page_17: page_17_revision,
+      page_18: page_18_revision,
       section_1: section_1_revision,
       subsection_1: subsection_1_revision,
       module_1: module_1_revision,
@@ -776,8 +811,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:error, {:redirect, %{to: redirect_path}}} =
         live(conn, Utils.learn_live_path(section.slug))
 
-      assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Flearn&section=#{section.slug}"
+      assert redirect_path == "/users/log_in"
     end
   end
 
@@ -1296,6 +1330,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
            page_2: page_2_revision,
            page_3: page_3_revision,
            page_4: page_4_revision,
+           page_16: page_16_revision,
+           page_17: page_17_revision,
+           page_18: page_18_revision,
            project: project,
            publication: publication
          } do
@@ -1303,6 +1340,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       set_progress(section.id, page_2_revision.resource_id, user.id, 1.0, page_2_revision)
       set_progress(section.id, page_3_revision.resource_id, user.id, 1.0, page_3_revision)
       set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
+      set_progress(section.id, page_16_revision.resource_id, user.id, 1.0, page_16_revision)
+      set_progress(section.id, page_17_revision.resource_id, user.id, 1.0, page_17_revision)
+      set_progress(section.id, page_18_revision.resource_id, user.id, 1.0, page_18_revision)
 
       set_activity_attempt(
         page_4_revision,
@@ -1523,7 +1563,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
 
       # unit 1 progress is 38% ((1 + 0.5 + 0.0 + 0.0) / 4)
-      assert has_element?(view, ~s{div[role="unit_1"] div[role="unit_1_progress"]}, "38%")
+      assert has_element?(view, ~s{div[role="unit_1"] div[role="unit_1_progress"]}, "21%")
 
       # module 1 progress is 75% ((1 + 0.5) / 2)
       assert view
@@ -1532,7 +1572,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # unit 3, practice page 1 card at module level has progress 100%
       assert view
-             |> element(~s{div[role="unit_3"] div[role="card_7_progress"]})
+             |> element(~s{div[role="unit_3"] div[role="card_10_progress"]})
              |> render() =~ "style=\"width: 100%\""
     end
 
@@ -1546,7 +1586,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 7 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 7"]})
+      |> element(~s{div[role="unit_3"] div[role="resource card 10"]})
       |> render_click()
 
       request_path =
@@ -1574,7 +1614,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # click on page 8 card to navigate to that page
       view
-      |> element(~s{div[role="unit_3"] div[role="resource card 8"]})
+      |> element(~s{div[role="unit_3"] div[role="resource card 11"]})
       |> render_click()
 
       request_path =
@@ -1597,7 +1637,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card 1 progress"]})
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card 8 progress"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card 11 progress"]})
     end
 
     test "can see card progress bar for modules at level 2 of hierarchy, and even for pages at level 2",
@@ -1620,7 +1660,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(view, ~s{div[role="unit_1"] div[role="card_1_progress"]})
 
       # Progress in page 7
-      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_7_progress"]})
+      assert has_element?(view, ~s{div[role="unit_3"] div[role="card_10_progress"]})
     end
 
     test "can see card background image if provided (if not the default one is shown)",
@@ -1662,7 +1702,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> element(
                ~s{div[id="top_level_page_#{top_level_page.resource_id}"] div[role="header"]}
              )
-             |> render() =~ "PAGE 17"
+             |> render() =~ "PAGE 20"
 
       assert view
              |> element(
@@ -1829,7 +1869,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       )
 
       # The module that contains Page 6 must be expanded so we can see that page
-      assert has_element?(view, ~s{div[id="index_item_6_#{page_6.resource_id}"]}, "Page 6")
+      assert has_element?(view, ~s{div[id="index_item_9_#{page_6.resource_id}"]}, "Page 6")
     end
 
     test "can navigate to a page at section level through url params",
@@ -2010,6 +2050,38 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
 
       refute render(view) =~ "Page 7"
+    end
+
+    test "modules do not show duration minutes if duration is 0", %{
+      conn: conn,
+      section: section,
+      module_3: module_3,
+      page_5: page_5,
+      page_6: page_6
+    } do
+      {:ok, view, _html} = live(conn, Utils.learn_live_path(section.slug))
+
+      view
+      |> element(~s{div[id="module_#{module_3.resource_id}"]})
+      |> render_click()
+
+      # assert that page 5 and page 6 have duration 0
+      assert page_5.duration_minutes == 0
+      assert page_6.duration_minutes == 0
+
+      # assert that module 3 contains 2 pages (page 5 and page 6)
+      assert has_element?(
+               view,
+               ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
+               "2 pages"
+             )
+
+      # assert that module 3 does not show duration minutes (since it is 0)
+      refute has_element?(
+               view,
+               ~s{div[id="module_#{module_3.resource_id}"] div[role="card badge"]},
+               "0 minutes"
+             )
     end
   end
 
@@ -2526,6 +2598,59 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # selector text matches target view
       assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
+    end
+
+    test "arrows navigation works well when switch between views", %{
+      conn: conn,
+      section: section,
+      unit_1: unit_1
+    } do
+      {:ok, view, _html} =
+        live(conn, Utils.learn_live_path(section.slug, selected_view: :gallery))
+
+      # gallery view is the current view
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+
+      # right arrow is visible
+      assert has_element?(view, ~s{button[id=slider_right_button_#{unit_1.resource_id}]})
+
+      # change to outline view
+      view
+      |> element(~s{div[id=view_selector] button[phx-click="expand_select"]})
+      |> render_click()
+
+      view
+      |> element(~s{button[phx-value-selected_view=outline]})
+      |> render_click()
+
+      assert_patch(
+        view,
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :outline)
+      )
+
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Outline")
+
+      # change to gallery view again
+      view
+      |> element(~s{button[phx-value-selected_view=gallery]})
+      |> render_click()
+
+      assert_patch(
+        view,
+        Utils.learn_live_path(section.slug, sidebar_expanded: true, selected_view: :gallery)
+      )
+
+      assert has_element?(view, ~s{div[id=view_selector] div}, "Gallery")
+
+      # assert that the event to show the slider buttons is triggered
+      assert_push_event(view, "enable-slider-buttons", %{
+        unit_resource_ids: _unit_ids
+      })
+
+      assert_receive({_ref, {:push_event, "enable-slider-buttons", _}}, 2_000)
+
+      # right arrow is present
+      assert has_element?(view, ~s{button[id=slider_right_button_#{unit_1.resource_id}]})
     end
   end
 

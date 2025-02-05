@@ -158,7 +158,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
         |> to_epoch,
       lateSubmit: page_context.effective_settings.late_submit,
       activityGuidMapping: page_context.activities,
-      signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+      signoutUrl: ~p"/users/log_out",
       previewMode: false,
       isInstructor: true,
       reviewMode: page_context.review_mode,

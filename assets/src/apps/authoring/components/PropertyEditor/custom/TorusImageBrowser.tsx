@@ -6,7 +6,14 @@ import { selectProjectSlug } from '../../../store/app/slice';
 import { MediaPickerModal } from '../../Modal/MediaPickerModal';
 import { MediaBrowserComponent, TorusMediaBrowserWrapper } from './TorusMediaBrowserWrapper';
 
-const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange, onBlur }) => {
+const _TorusImageBrowser: MediaBrowserComponent = ({
+  id,
+  label,
+  value,
+  onChange,
+  onBlur,
+  onFocus,
+}) => {
   const [pickerOpen, , openPicker, closePicker] = useToggle();
   const projectSlug: string = useSelector(selectProjectSlug);
 
@@ -33,7 +40,10 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
       {hasImage || <div className="truncate-left">No Image</div>}
 
       <Button
-        onClick={openPicker}
+        onClick={() => {
+          if (onFocus) onFocus();
+          openPicker();
+        }}
         type="button"
         variant="secondary"
         size="sm"
@@ -42,7 +52,14 @@ const _TorusImageBrowser: MediaBrowserComponent = ({ id, label, value, onChange,
         <i className="fa-solid fa-image"></i>
       </Button>
 
-      <a href="#" style={{ marginLeft: '5px', textDecoration: 'underline' }} onClick={openPicker}>
+      <a
+        href="#"
+        style={{ marginLeft: '5px', textDecoration: 'underline' }}
+        onClick={() => {
+          if (onFocus) onFocus();
+          openPicker();
+        }}
+      >
         Upload or Link Image
       </a>
       {pickerOpen && (

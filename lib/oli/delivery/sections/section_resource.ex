@@ -91,6 +91,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
     field :poster_image, :string, default: nil
     field :objectives, :map, default: %{}
     field :relates_to, {:array, :id}, default: []
+    field :allow_hints, :boolean, default: false
     belongs_to :resource_type, Oli.Resources.ResourceType
     belongs_to :revision, Oli.Activities.ActivityRegistration
     belongs_to :activity_type, Oli.Resources.Revision
@@ -139,6 +140,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :poster_image,
       :objectives,
       :relates_to,
+      :allow_hints,
       :resource_type_id,
       :revision_id,
       :activity_type_id

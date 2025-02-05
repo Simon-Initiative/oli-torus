@@ -36,33 +36,33 @@ defmodule OliWeb.AdminLiveTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin index view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_route)
     end
 
     test "redirects to new session when accessing the admin users view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fusers"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_users_route)
     end
 
     test "redirects to new session when accessing the user detail view", %{conn: conn} do
       user_id = insert(:user).id
 
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{user_id}"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_user_detail_route(user_id))
     end
 
     test "redirects to new session when accessing the admin authors view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fauthors"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_authors_route)
     end
 
     test "redirects to new session when accessing the author detail view", %{conn: conn} do
       author_id = insert(:author).id
 
-      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fauthors%2F#{author_id}"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_author_detail_route(author_id))
@@ -75,19 +75,31 @@ defmodule OliWeb.AdminLiveTest do
     test "returns forbidden when accessing the admin index view", %{conn: conn} do
       conn = get(conn, @live_view_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the admin users view", %{conn: conn} do
       conn = get(conn, @live_view_users_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the admin authors view", %{conn: conn} do
       conn = get(conn, @live_view_authors_route)
 
-      assert response(conn, 403)
+      assert redirected_to(conn, 302) ==
+               "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
+               "You are not authorized to access this page."
     end
   end
 
@@ -748,7 +760,7 @@ defmodule OliWeb.AdminLiveTest do
     test "confirms user email", %{
       conn: conn
     } do
-      %User{id: id} = insert(:user, %{email_confirmation_token: "token"})
+      %User{id: id} = insert(:user, %{email_confirmed_at: nil})
 
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
@@ -834,17 +846,6 @@ defmodule OliWeb.AdminLiveTest do
       refute render(view) =~ first_author.given_name
     end
 
-    test "shows confirmation pending message when author account was created but not confirmed yet",
-         %{conn: conn} do
-      non_confirmed_author = insert(:author, email_confirmation_token: "token")
-
-      {:ok, view, _html} = live(conn, @live_view_authors_route)
-
-      assert view
-             |> element("##{non_confirmed_author.id} span[data-bs-toggle=\"tooltip\"")
-             |> render() =~ "Confirmation Pending"
-    end
-
     test "shows email confirmed message when author account was created and confirmed", %{
       conn: conn
     } do
@@ -858,19 +859,21 @@ defmodule OliWeb.AdminLiveTest do
 
     test "shows invitation pending message when author was invited by an admin and has not accepted yet",
          %{conn: conn} do
-      invited_and_not_accepted_author = insert(:author, invitation_token: "token")
+      invited_and_not_accepted_author =
+        insert(:author, email_confirmed_at: nil, invitation_accepted_at: nil)
+
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
       assert view
              |> element("##{invited_and_not_accepted_author.id} span[data-bs-toggle=\"tooltip\"")
-             |> render() =~ "Invitation Pending"
+             |> render() =~ "Confirmation Pending"
     end
 
     test "shows invitation accepted message when author was invited by an admin and accepted", %{
       conn: conn
     } do
       invited_author =
-        insert(:author, invitation_token: "token", invitation_accepted_at: Timex.now())
+        insert(:author, email_confirmed_at: Timex.now(), invitation_accepted_at: Timex.now())
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
@@ -883,9 +886,8 @@ defmodule OliWeb.AdminLiveTest do
          %{conn: conn} do
       accepted_with_different_email_author =
         insert(:author,
-          email_confirmation_token: "token",
-          unconfirmed_email: "other_email",
-          invitation_token: "token",
+          email_confirmed_at: nil,
+          email: "other_email",
           invitation_accepted_at: Timex.now()
         )
 
@@ -903,7 +905,6 @@ defmodule OliWeb.AdminLiveTest do
       accepted_and_confirmed_with_different_email_author =
         insert(:author,
           email_confirmed_at: Timex.now(),
-          invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
 
@@ -913,7 +914,7 @@ defmodule OliWeb.AdminLiveTest do
              |> element(
                "##{accepted_and_confirmed_with_different_email_author.id} span[data-bs-toggle=\"tooltip\""
              )
-             |> render() =~ "Email Confirmed"
+             |> render() =~ "Invitation Accepted"
     end
 
     test "renders datetimes using the local timezone", map do
@@ -950,7 +951,8 @@ defmodule OliWeb.AdminLiveTest do
     test "redirects to index view and displays error message when author does not exist", %{
       conn: conn
     } do
-      assert {:error, {:redirect, %{to: "/not_found"}}} =
+      assert {:error,
+              {:redirect, %{to: "/admin/authors", flash: %{"error" => "Author not found"}}}} =
                live(conn, live_view_author_detail_route(-1))
     end
 
@@ -1010,8 +1012,6 @@ defmodule OliWeb.AdminLiveTest do
 
       %Author{locked_at: date} = Accounts.get_author!(id)
       assert not is_nil(date)
-
-      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "unlocks the author", %{
@@ -1034,14 +1034,12 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click()
 
       assert %Author{locked_at: nil} = Accounts.get_author!(id)
-
-      assert {:ok, nil} = Cachex.get(:cache_account_lookup, "author_#{id}")
     end
 
     test "confirms author email", %{
       conn: conn
     } do
-      %Author{id: id} = insert(:author, %{email_confirmation_token: "token"})
+      %Author{id: id} = insert(:author, %{email_confirmed_at: nil})
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
@@ -1059,7 +1057,7 @@ defmodule OliWeb.AdminLiveTest do
 
     test "shows email confirmation buttons when author account was created but not confirmed yet",
          %{conn: conn} do
-      non_confirmed_author = insert(:author, email_confirmation_token: "token")
+      non_confirmed_author = insert(:author, email_confirmed_at: nil)
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(non_confirmed_author.id))
 
@@ -1083,7 +1081,7 @@ defmodule OliWeb.AdminLiveTest do
 
     test "does not show email confirmation buttons when author was invited by an admin and has not accepted yet",
          %{conn: conn} do
-      invited_and_not_accepted_author = insert(:author, invitation_token: "token")
+      invited_and_not_accepted_author = insert(:author)
 
       {:ok, view, _html} =
         live(conn, live_view_author_detail_route(invited_and_not_accepted_author.id))
@@ -1097,7 +1095,7 @@ defmodule OliWeb.AdminLiveTest do
     test "does not show email confirmation buttons when author was invited by an admin and accepted",
          %{conn: conn} do
       invited_author =
-        insert(:author, invitation_token: "token", invitation_accepted_at: Timex.now())
+        insert(:author, invitation_accepted_at: Timex.now())
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(invited_author.id))
 
@@ -1111,9 +1109,8 @@ defmodule OliWeb.AdminLiveTest do
          %{conn: conn} do
       accepted_with_different_email_author =
         insert(:author,
-          email_confirmation_token: "token",
-          unconfirmed_email: "other_email",
-          invitation_token: "token",
+          email_confirmed_at: nil,
+          email: "other_email",
           invitation_accepted_at: Timex.now()
         )
 
@@ -1131,7 +1128,6 @@ defmodule OliWeb.AdminLiveTest do
       accepted_and_confirmed_with_different_email_author =
         insert(:author,
           email_confirmed_at: Timex.now(),
-          invitation_token: "token",
           invitation_accepted_at: Timex.now()
         )
 

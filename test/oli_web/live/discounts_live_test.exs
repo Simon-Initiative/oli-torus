@@ -36,7 +36,7 @@ defmodule OliWeb.DiscountsLiveTest do
       product = insert(:section, type: :blueprint)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fadmin%2Fproducts%2F#{product.slug}%2Fdiscounts"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_products_index_route(product.slug))
@@ -46,7 +46,7 @@ defmodule OliWeb.DiscountsLiveTest do
       product = insert(:section, type: :blueprint)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fadmin%2Fproducts%2F#{product.slug}%2Fdiscounts%2Fnew"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_product_new_show_route(product.slug))
@@ -57,7 +57,7 @@ defmodule OliWeb.DiscountsLiveTest do
       discount = insert(:discount, section: product)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fadmin%2Fproducts%2F#{product.slug}%2Fdiscounts%2F#{discount.id}"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_product_show_route(product.slug, discount.id))
@@ -67,7 +67,7 @@ defmodule OliWeb.DiscountsLiveTest do
       institution = insert(:institution)
 
       redirect_path =
-        "/authoring/session/new?request_path=%2Fadmin%2Finstitutions%2F#{institution.id}%2Fdiscount"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_institution_show_route(institution.id))
@@ -82,7 +82,10 @@ defmodule OliWeb.DiscountsLiveTest do
 
       conn = get(conn, live_view_products_index_route(product.slug))
 
-      assert response(conn, 403)
+      assert redirected_to(conn) =~ "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the new show view - product", %{conn: conn} do
@@ -90,7 +93,10 @@ defmodule OliWeb.DiscountsLiveTest do
 
       conn = get(conn, live_view_product_new_show_route(product.slug))
 
-      assert response(conn, 403)
+      assert redirected_to(conn) =~ "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the show view - product", %{conn: conn} do
@@ -99,7 +105,10 @@ defmodule OliWeb.DiscountsLiveTest do
 
       conn = get(conn, live_view_product_show_route(product.slug, discount.id))
 
-      assert response(conn, 403)
+      assert redirected_to(conn) =~ "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
 
     test "returns forbidden when accessing the show view - institution", %{conn: conn} do
@@ -107,7 +116,10 @@ defmodule OliWeb.DiscountsLiveTest do
 
       conn = get(conn, live_view_institution_show_route(institution.id))
 
-      assert response(conn, 403)
+      assert redirected_to(conn) =~ "/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
   end
 

@@ -196,7 +196,8 @@ defmodule Oli.Rendering.Activity.Html do
         renderPointMarkers: render_opts.render_point_markers,
         isAnnotationLevel: true,
         variables: variables,
-        pageLinkParams: Enum.into(context.page_link_params, %{})
+        pageLinkParams: Enum.into(context.page_link_params, %{}),
+        allowHints: effective_settings && effective_settings.allow_hints
       }
       |> Poison.encode!()
       |> HtmlEntities.encode()

@@ -6,7 +6,7 @@
     <div class="workspace-top d-flex flex-row shadow">
       <div class="logo justify-content-center align-items-center">
         <% logo_url =
-          if @is_system_admin,
+          if @is_admin,
             do: ~p"/workspaces/course_author",
             else: OliWeb.Router.Helpers.static_page_path(@conn, :index) %>
         <a href={logo_url}>

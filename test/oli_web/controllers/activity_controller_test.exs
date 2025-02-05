@@ -151,6 +151,66 @@ defmodule OliWeb.ActivityControllerTest do
     end
   end
 
+  test "bulk create and then bulk delete activities", %{
+    conn: conn,
+    project: project
+  } do
+    original_conn = conn
+
+    bulk_content = %{
+      "bulkData" => [
+        %{
+          "activityTypeSlug" => "oli_multiple_choice",
+          "objectives" => [],
+          "content" => %{"stem" => "Hey there"},
+          "title" => "title1",
+          "tags" => []
+        },
+        %{
+          "activityTypeSlug" => "oli_short_answer",
+          "objectives" => [],
+          "content" => %{"stem" => "Hey there2"},
+          "title" => "title2",
+          "tags" => []
+        }
+      ]
+    }
+
+    conn =
+      post(
+        conn,
+        Routes.activity_path(conn, :create_bulk, project.slug),
+        bulk_content
+      )
+
+    assert %{"revisions" => revisions, "type" => "success"} = json_response(conn, 200)
+
+    r = AuthoringResolver.from_resource_id(project.slug, hd(revisions)["resourceId"])
+    assert r.title == "title1"
+    assert r.content["stem"] == "Hey there"
+    assert r.deleted == false
+
+    r2 = AuthoringResolver.from_resource_id(project.slug, hd(tl(revisions))["resourceId"])
+    assert r2.title == "title2"
+    assert r2.content["stem"] == "Hey there2"
+    assert r2.deleted == false
+
+    conn =
+      post(
+        original_conn,
+        Routes.activity_path(conn, :delete_bulk, project.slug),
+        %{"resourceIds" => Enum.map(revisions, & &1["resourceId"])}
+      )
+
+    assert %{"result" => "success"} = json_response(conn, 200)
+
+    r = AuthoringResolver.from_resource_id(project.slug, hd(revisions)["resourceId"])
+    assert r.deleted == true
+
+    r2 = AuthoringResolver.from_resource_id(project.slug, hd(tl(revisions))["resourceId"])
+    assert r2.deleted == true
+  end
+
   describe "get resource" do
     test "retrieves the unpublished activity", %{
       conn: conn,
@@ -408,10 +468,9 @@ defmodule OliWeb.ActivityControllerTest do
     assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
 
     conn =
-      Pow.Plug.assign_current_user(
+      log_in_author(
         conn,
-        seeds.author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        seeds.author
       )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}

@@ -1,8 +1,9 @@
 defmodule OliWeb.InviteControllerTest do
   use OliWeb.ConnCase
-  use Bamboo.Test
+  import Swoosh.TestAssertions
 
   import Oli.Factory
+  import Ecto.Query, warn: false
 
   alias Oli.Repo
   alias Oli.Accounts
@@ -11,126 +12,307 @@ defmodule OliWeb.InviteControllerTest do
   @invite_email "invite@example.com"
   setup [:create_admin]
 
-  describe "accept_invite" do
-    test "accept new author invitation", %{conn: conn} do
+  describe "`create_bulk` action" do
+    test "for a new instructor: creates new user, enrolls user to the given section, creates invitation token and delivers email invitation",
+         %{conn: conn} do
       expect_recaptcha_http_post()
+      stub_real_current_time()
+      section = insert(:section)
 
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "instructor",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      # user is created
+      new_user = Accounts.get_user_by(email: @invite_email)
+      assert new_user
+
+      # user is enrolled to the section as an instructor with :pending_confirmation status
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(section.slug, new_user.id, filter_by_status: false)
+        |> Repo.preload(:context_roles)
+
+      assert enrollment.section_id == section.id
+
+      assert enrollment.status == :pending_confirmation
+
+      assert hd(enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+
+      # invitation user_token is created
+      context = "enrollment_invitation:#{section.slug}"
+
+      assert from(ut in Oli.Accounts.UserToken,
+               where:
+                 ut.user_id == ^new_user.id and ut.context == ^context and
+                   ut.sent_to == @invite_email
+             )
+             |> Repo.one()
+
+      # and email is sent
+      assert_email_sent(
+        to: @invite_email,
+        subject: "You were invited as an instructor to \"#{section.title}\""
+      )
+    end
+
+    test "for a new student: creates new user, enrolls user to the given section, creates invitation token and delivers email invitation",
+         %{conn: conn} do
+      expect_recaptcha_http_post()
+      stub_real_current_time()
+      section = insert(:section)
+
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "student",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      # user is created
+      new_user = Accounts.get_user_by(email: @invite_email)
+      assert new_user
+
+      # user is enrolled to the section as a student with :pending_confirmation status
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(section.slug, new_user.id, filter_by_status: false)
+        |> Repo.preload(:context_roles)
+
+      assert enrollment.section_id == section.id
+
+      assert enrollment.status == :pending_confirmation
+
+      assert hd(enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+
+      # invitation user_token is created
+      context = "enrollment_invitation:#{section.slug}"
+
+      assert from(ut in Oli.Accounts.UserToken,
+               where:
+                 ut.user_id == ^new_user.id and ut.context == ^context and
+                   ut.sent_to == @invite_email
+             )
+             |> Repo.one()
+
+      # and email is sent
+
+      assert_email_sent(
+        to: @invite_email,
+        subject: "You were invited as a student to \"#{section.title}\""
+      )
+    end
+
+    test "for an existing instructor: enrolls user to the given section, creates invitation token and delivers email invitation",
+         %{conn: conn} do
+      expect_recaptcha_http_post()
+      stub_real_current_time()
+      section = insert(:section)
+      existing_instructor = user_fixture(email: @invite_email)
+
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "instructor",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      # user is enrolled to the section as an instructor with :pending_confirmation status
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(section.slug, existing_instructor.id,
+          filter_by_status: false
+        )
+        |> Repo.preload(:context_roles)
+
+      assert enrollment.section_id == section.id
+
+      assert enrollment.status == :pending_confirmation
+
+      assert hd(enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+
+      # invitation user_token is created
+      context = "enrollment_invitation:#{section.slug}"
+
+      assert from(ut in Oli.Accounts.UserToken,
+               where:
+                 ut.user_id == ^existing_instructor.id and ut.context == ^context and
+                   ut.sent_to == @invite_email
+             )
+             |> Repo.one()
+
+      # and email is sent
+      assert_email_sent(
+        to: @invite_email,
+        subject: "You were invited as an instructor to \"#{section.title}\""
+      )
+    end
+
+    test "for an existing student: enrolls user to the given section, creates invitation token and delivers email invitation",
+         %{conn: conn} do
+      expect_recaptcha_http_post()
+      stub_real_current_time()
+      section = insert(:section)
+      existing_student = user_fixture(email: @invite_email)
+
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          emails: [@invite_email],
+          role: "student",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      # user is enrolled to the section as a student with :pending_confirmation status
+      enrollment =
+        Oli.Delivery.Sections.get_enrollment(section.slug, existing_student.id,
+          filter_by_status: false
+        )
+        |> Repo.preload(:context_roles)
+
+      assert enrollment.section_id == section.id
+
+      assert enrollment.status == :pending_confirmation
+
+      assert hd(enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+
+      # invitation user_token is created
+      context = "enrollment_invitation:#{section.slug}"
+
+      assert from(ut in Oli.Accounts.UserToken,
+               where:
+                 ut.user_id == ^existing_student.id and ut.context == ^context and
+                   ut.sent_to == @invite_email
+             )
+             |> Repo.one()
+
+      # and email is sent
+
+      assert_email_sent(
+        to: @invite_email,
+        subject: "You were invited as a student to \"#{section.title}\""
+      )
+    end
+  end
+
+  describe "accept_user_invitation action" do
+    setup [:create_section_and_user]
+
+    test "logs in the user and redirects to the section", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
       conn =
-        post(conn, Routes.invite_path(conn, :create),
-          email: @invite_email,
-          "g-recaptcha-response": "any"
+        post(
+          conn,
+          ~p"/users/accept_invitation?email=#{user.email}&section_slug=#{section.slug}",
+          %{"user" => %{"password" => "hello world!", "remember_me" => "false"}}
         )
 
-      new_author = Accounts.get_author_by_email(@invite_email)
-      token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
-
-      put(
-        conn,
-        Routes.pow_invitation_invitation_path(conn, :update, token),
-        %{
-          user: %{
-            email: @invite_email,
-            given_name: "me",
-            family_name: "too",
-            password: "passingby",
-            password_confirmation: "passingby"
-          }
-        }
-      )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      assert new_author.given_name == "me"
-      assert new_author.invitation_accepted_at
+      assert conn.resp_body ==
+               "<html><body>You are being <a href=\"/sections/#{section.slug}\">redirected</a>.</body></html>"
     end
 
-    test "deliver new instructor invitation", %{conn: conn} do
-      expect_recaptcha_http_post()
-      section = insert(:section)
-
-      post(
-        conn,
-        Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
-          role: "instructor",
-          "g-recaptcha-response": "any",
-          inviter: "author"
+    test "does not log in the user and redirects to the section if the provided password is invalid",
+         %{
+           conn: conn,
+           section: section,
+           user: user
+         } do
+      conn =
+        post(
+          conn,
+          ~p"/users/accept_invitation?email=#{user.email}&section_slug=#{section.slug}",
+          %{"user" => %{"password" => "invalid_password", "remember_me" => "false"}}
         )
-      )
 
-      assert Accounts.get_user_by(email: @invite_email)
+      assert conn.private.plug_session["phoenix_flash"]["error"] == "Invalid email or password"
+    end
+  end
 
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as an instructor to the following"
-      assert text_body =~ "Join now"
-      assert text_body =~ "/registration/new?section=#{section.slug}&from_invitation_link%3F=true"
+  describe "accept_collaborator_invitation action" do
+    setup [:create_project_and_author]
+
+    test "logs in the author and redirects to the project", %{
+      conn: conn,
+      project: project,
+      author: author
+    } do
+      conn =
+        post(
+          conn,
+          ~p"/collaborators/accept_invitation?email=#{author.email}&project_slug=#{project.slug}",
+          %{"author" => %{"password" => "hello world!", "remember_me" => "false"}}
+        )
+
+      assert conn.resp_body ==
+               "<html><body>You are being <a href=\"/workspaces/course_author/#{project.slug}/overview\">redirected</a>.</body></html>"
     end
 
-    test "deliver new student invitation", %{conn: conn} do
-      expect_recaptcha_http_post()
-      section = insert(:section)
-
-      post(
-        conn,
-        Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
-          role: "student",
-          "g-recaptcha-response": "any",
-          inviter: "author"
+    test "does not log in the author and redirects to the project if the provided password is invalid",
+         %{
+           conn: conn,
+           project: project,
+           author: author
+         } do
+      conn =
+        post(
+          conn,
+          ~p"/collaborators/accept_invitation?email=#{author.email}&project_slug=#{project.slug}",
+          %{"author" => %{"password" => "invalid_password", "remember_me" => "false"}}
         )
-      )
 
-      assert Accounts.get_user_by(email: @invite_email)
+      assert conn.private.plug_session["phoenix_flash"]["error"] == "Invalid email or password"
+    end
+  end
 
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as a student to the following"
-      assert text_body =~ "Join now"
-      assert text_body =~ "/registration/new?section=#{section.slug}&from_invitation_link%3F=true"
+  describe "accept_author_invitation action" do
+    setup [:create_author]
+
+    test "logs in the author and redirects to the project", %{
+      conn: conn,
+      author: author
+    } do
+      conn =
+        post(
+          conn,
+          ~p"/authors/accept_invitation?email=#{author.email}",
+          %{"author" => %{"password" => "hello world!", "remember_me" => "false"}}
+        )
+
+      assert conn.resp_body ==
+               "<html><body>You are being <a href=\"/workspaces/course_author/\">redirected</a>.</body></html>"
     end
 
-    test "deliver existing instructor invitation", %{conn: conn} do
-      expect_recaptcha_http_post()
-      section = insert(:section)
-      insert(:user, email: @invite_email)
-
-      post(
-        conn,
-        Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
-          role: "instructor",
-          "g-recaptcha-response": "any",
-          inviter: "author"
+    test "does not log in the author if the provided password is invalid",
+         %{
+           conn: conn,
+           author: author
+         } do
+      conn =
+        post(
+          conn,
+          ~p"/authors/accept_invitation?email=#{author.email}",
+          %{"author" => %{"password" => "invalid_password", "remember_me" => "false"}}
         )
-      )
 
-      assert Accounts.get_user_by(email: @invite_email)
-
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as an instructor to the following"
-      assert text_body =~ "Go to the course"
-      assert text_body =~ "/sections/#{section.slug}?from_invitation_link%3F=true)"
-    end
-
-    test "deliver existing student invitation", %{conn: conn} do
-      expect_recaptcha_http_post()
-      section = insert(:section)
-      insert(:user, email: @invite_email)
-
-      post(
-        conn,
-        Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
-          role: "student",
-          "g-recaptcha-response": "any",
-          inviter: "author"
-        )
-      )
-
-      assert Accounts.get_user_by(email: @invite_email)
-
-      assert_delivered_email_matches(%{to: [{_, @invite_email}], text_body: text_body})
-      assert text_body =~ "You've been added by First Last as a student to the following"
-      assert text_body =~ "Go to the course"
-      assert text_body =~ "/sections/#{section.slug}?from_invitation_link%3F=true)"
+      assert conn.private.plug_session["phoenix_flash"]["error"] == "Invalid email or password"
     end
   end
 
@@ -146,8 +328,20 @@ defmodule OliWeb.InviteControllerTest do
       |> Repo.insert()
 
     conn =
-      Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      log_in_author(conn, author)
 
     {:ok, conn: conn, author: author}
+  end
+
+  defp create_section_and_user(%{conn: conn}) do
+    {:ok, conn: conn, section: insert(:section), user: user_fixture()}
+  end
+
+  defp create_project_and_author(%{conn: conn}) do
+    {:ok, conn: conn, project: insert(:project), author: author_fixture()}
+  end
+
+  defp create_author(%{conn: conn}) do
+    {:ok, conn: conn, author: author_fixture()}
   end
 end

@@ -35,7 +35,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
@@ -58,9 +58,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         :if={@include_logo}
         id="header_logo_button"
         class="w-48"
-        navigate={
-          logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_system_admin)
-        }
+        navigate={logo_link_path(@preview_mode, @section, @ctx.user, @sidebar_expanded, @is_admin)}
       >
         <.logo_img section={@section} />
       </.link>
@@ -75,7 +73,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <div class={
             if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
           }>
-            <UserAccount.menu id="user-account-menu" ctx={@ctx} is_system_admin={@is_system_admin} />
+            <UserAccount.menu
+              id="user-account-menu"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              section={@section}
+            />
           </div>
         </div>
         <div class="flex items-center p-2 ml-auto">
@@ -110,7 +113,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
   attr(:section, Section, default: nil)
   attr(:active_tab, :atom)
   attr(:sidebar_expanded, :boolean, default: true)
@@ -155,7 +158,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
                   @section,
                   @ctx.user,
                   @sidebar_expanded,
-                  @is_system_admin
+                  @is_admin
                 )
               }
             >
@@ -216,7 +219,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <UserAccount.menu
             id="mobile-user-account-menu-sidebar"
             ctx={@ctx}
-            is_system_admin={@is_system_admin}
+            is_admin={@is_admin}
+            section={@section}
             dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
@@ -276,7 +280,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   end
 
   attr(:ctx, SessionContext)
-  attr(:is_system_admin, :boolean, required: true)
+  attr(:is_admin, :boolean, required: true)
   attr(:active_workspace, :atom)
   attr(:active_view, :atom, default: nil)
   attr(:sidebar_expanded, :boolean)
@@ -320,9 +324,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           >
             <.link
               id="logo_button"
-              navigate={
-                logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_system_admin)
-              }
+              navigate={logo_link_path(@preview_mode, nil, @ctx.user, @sidebar_expanded, @is_admin)}
             >
               <.logo_img />
             </.link>
@@ -406,7 +408,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <UserAccount.menu
             id="mobile-user-account-menu-workspace-sidebar"
             ctx={@ctx}
-            is_system_admin={@is_system_admin}
+            is_admin={@is_admin}
             dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
@@ -1103,12 +1105,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
     end
   end
 
-  defp logo_link_path(preview_mode, section, user, sidebar_expanded, is_system_admin) do
+  defp logo_link_path(preview_mode, section, user, sidebar_expanded, is_admin) do
     cond do
       preview_mode ->
         "#"
 
-      is_system_admin ->
+      is_admin ->
         ~p"/workspaces/course_author"
 
       is_open_and_free_section?(section) or is_independent_learner?(user) ->

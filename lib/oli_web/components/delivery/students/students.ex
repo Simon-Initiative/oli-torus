@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Delivery.Students do
   use OliWeb, :live_component
 
-  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
+  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.{Author, User}
@@ -285,6 +285,12 @@ defmodule OliWeb.Components.Delivery.Students do
           student.enrollment_status == :enrolled and
             student.user_role_id != 4
         end)
+
+      :pending_confirmation ->
+        Enum.filter(students, fn student -> student.enrollment_status == :pending_confirmation end)
+
+      :rejected ->
+        Enum.filter(students, fn student -> student.enrollment_status == :rejected end)
 
       _ ->
         students
@@ -621,7 +627,7 @@ defmodule OliWeb.Components.Delivery.Students do
             Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
           </span>
         </div>
-        <.instructor_dasboard_toggle_chevron id={@id} map_values={@selected_values} />
+        <.toggle_chevron id={@id} map_values={@selected_values} />
       </div>
       <div class="relative">
         <div
@@ -647,7 +653,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 label={option.name}
                 checked={option.id in @selected_proficiency_ids}
                 type="checkbox"
-                class_label="text-zinc-900 text-xs font-normal leading-none dark:text-white"
+                label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
               />
             </.form>
           </div>
@@ -1216,7 +1222,16 @@ defmodule OliWeb.Components.Delivery.Students do
         Params.get_atom_param(
           params,
           "filter_by",
-          [:enrolled, :suspended, :paid, :not_paid, :grace_period, :non_students],
+          [
+            :enrolled,
+            :suspended,
+            :paid,
+            :not_paid,
+            :grace_period,
+            :non_students,
+            :pending_confirmation,
+            :rejected
+          ],
           @default_params.filter_by
         ),
       selected_card_value:

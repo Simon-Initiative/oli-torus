@@ -1,6 +1,5 @@
 defmodule OliWeb.CognitoControllerTest do
   use OliWeb.ConnCase
-  use Bamboo.Test
 
   import Oli.Factory
   import Mox
@@ -13,7 +12,7 @@ defmodule OliWeb.CognitoControllerTest do
     community = insert(:community, name: "Infiniscope")
     section = insert(:section, %{slug: "open_section", open_and_free: true})
     email = build(:user).email
-    author = insert(:author, system_role_id: Accounts.SystemRole.role_id().system_admin)
+    author = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().system_admin})
     project = insert(:project, allow_duplication: true)
     resource = insert(:resource)
     revision = insert(:revision, resource: resource)
@@ -62,7 +61,7 @@ defmodule OliWeb.CognitoControllerTest do
     } do
       author_email = "author@email.com"
 
-      {:ok, author} = Accounts.insert_or_update_author(%{email: author_email})
+      author = author_fixture(%{email: author_email})
 
       {:ok, _user} =
         Accounts.insert_or_update_sso_user(%{
@@ -145,10 +144,7 @@ defmodule OliWeb.CognitoControllerTest do
 
       conn =
         recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          author,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
-        )
+        |> log_in_author(author)
 
       new_author = Accounts.get_author_by_email(email)
       new_user = Accounts.get_user_by(%{email: email})

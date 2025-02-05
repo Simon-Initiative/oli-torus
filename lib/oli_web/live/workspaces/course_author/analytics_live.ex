@@ -13,7 +13,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.AnalyticsLive do
   alias Oli.Authoring.{Broadcaster, Course}
   alias Oli.Delivery.Sections.{Browse, BrowseOptions}
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{PagedTable, SessionContext, TextSearch}
+  alias OliWeb.Common.{PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Project.AsyncExporter
@@ -23,10 +23,12 @@ defmodule OliWeb.Workspaces.CourseAuthor.AnalyticsLive do
 
   @limit 25
 
-  on_mount(OliWeb.LiveSessionPlugs.SetProject)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+  on_mount OliWeb.LiveSessionPlugs.SetProject
 
-  def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
+  def mount(_params, _session, socket) do
+    ctx = socket.assigns.ctx
     project = socket.assigns.project
     selected_sections = MapSet.new([])
 
@@ -65,7 +67,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.AnalyticsLive do
 
     socket =
       assign(socket,
-        ctx: ctx,
         title: "Datashop Analytics | " <> project.title,
         table_model: table_model,
         total_count: total_count,

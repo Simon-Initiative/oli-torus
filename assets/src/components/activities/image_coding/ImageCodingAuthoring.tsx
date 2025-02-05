@@ -14,6 +14,7 @@ import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -211,6 +212,9 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             </TabbedNavigation.Tab>
             <TabbedNavigation.Tab label="Explanation">
               <Explanation partId={model.authoring.parts[0].id} />
+            </TabbedNavigation.Tab>
+            <TabbedNavigation.Tab label={TriggerLabel()}>
+              <TriggerAuthoring partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
           </TabbedNavigation.Tabs>
         </div>

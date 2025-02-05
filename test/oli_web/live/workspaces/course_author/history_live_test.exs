@@ -184,7 +184,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       project: project,
       container_revision: container_revision
     } do
-      redirect_path = "/workspaces/course_author"
+      redirect_path = "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
@@ -202,7 +202,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       author = insert(:author)
 
       conn =
-        Pow.Plug.assign_current_user(conn, author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        log_in_author(conn, author)
 
       {:error, {:redirect, %{flash: %{"error" => flash_message}, to: redirect_path}}} =
         live(conn, revision_history_route(project.slug, container_revision.slug))
@@ -218,10 +218,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       author: author_project_creator
     } do
       conn =
-        Pow.Plug.assign_current_user(
+        log_in_author(
           conn,
-          author_project_creator,
-          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+          author_project_creator
         )
 
       {:error, {:live_redirect, %{flash: %{"error" => flash_message}, to: redirect_path}}} =
@@ -239,12 +238,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.HistoryLiveTest do
       user = insert(:user)
 
       conn =
-        Pow.Plug.assign_current_user(
-          conn,
-          user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
-        )
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        conn
+        |> log_in_user(user)
         |> get(revision_history_route(project.slug, container_revision.slug))
 
       assert response(conn, 302)

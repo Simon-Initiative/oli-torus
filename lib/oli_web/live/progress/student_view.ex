@@ -4,7 +4,7 @@ defmodule OliWeb.Progress.StudentView do
   import OliWeb.Common.Params
   import OliWeb.Common.Utils
 
-  alias OliWeb.Common.{Breadcrumb, SessionContext, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, TextSearch}
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Progress.StudentTabelModel
@@ -36,7 +36,7 @@ defmodule OliWeb.Progress.StudentView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user} ->
-        ctx = SessionContext.init(socket, session)
+        ctx = socket.assigns.ctx
 
         case Mount.for(section_slug, session) do
           {:error, e} ->
@@ -74,7 +74,6 @@ defmodule OliWeb.Progress.StudentView do
 
             {:ok,
              assign(socket,
-               ctx: ctx,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,

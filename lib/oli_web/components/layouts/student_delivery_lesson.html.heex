@@ -10,7 +10,7 @@
           <Components.Delivery.Layouts.header
             :if={@section}
             ctx={@ctx}
-            is_system_admin={assigns[:is_system_admin] || false}
+            is_admin={@is_admin}
             section={@section}
             preview_mode={@preview_mode}
             force_show_user_menu={true}
@@ -119,7 +119,7 @@
           </div>
         </div>
 
-        <%= if @section do %>
+        <%= if @section && !@page_context.page.graded do %>
           <%= live_render(@socket, OliWeb.Dialogue.WindowLive,
             session: %{
               "section_slug" => @section.slug,

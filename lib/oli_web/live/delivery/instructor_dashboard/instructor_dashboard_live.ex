@@ -2,7 +2,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
@@ -12,10 +11,12 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   alias OliWeb.Components.Delivery.Students
   alias OliWeb.Delivery.InstructorDashboard.Helpers
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   @impl Phoenix.LiveView
-  def mount(_params, session, socket) do
-    ctx = SessionContext.init(socket, session)
-    {:ok, assign(socket, ctx: ctx)}
+  def mount(_params, _session, socket) do
+    {:ok, socket}
   end
 
   defp do_handle_students_params(%{"active_tab" => active_tab} = params, _, socket) do
@@ -309,7 +310,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       {"insights", "practice_activities"},
       {"insights", "surveys"},
       {"insights", "course_discussion"},
-      {"manage", nil},
       {"discussions", nil}
     ]
 
@@ -333,11 +333,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
          active_tab: active_tab
        )}
     else
-      {:noreply,
-       assign(socket,
-         params: params,
-         view: :not_found
-       )}
+      if params["view"] == "manage" do
+        # redirect to the manage page new route
+        {:noreply, redirect(socket, to: "/sections/#{params["section_slug"]}/manage")}
+      else
+        {:noreply,
+         assign(socket,
+           params: params,
+           view: :not_found
+         )}
+      end
     end
   end
 
@@ -619,19 +624,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
     """
   end
 
-  def render(%{view: :manage} = assigns) do
-    ~H"""
-    <div class="container mx-auto">
-      <div class="bg-white dark:bg-gray-800 p-8">
-        <%= live_render(@socket, OliWeb.Sections.OverviewView,
-          id: "overview",
-          session: %{"section_slug" => @section_slug}
-        ) %>
-      </div>
-    </div>
-    """
-  end
-
   def render(%{view: :discussions} = assigns) do
     ~H"""
     <div class="container mx-auto">
@@ -661,14 +653,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
           %{value: :paid, label: "Paid"},
           %{value: :not_paid, label: "Not Paid"},
           %{value: :grace_period, label: "Grace Period"},
-          %{value: :non_students, label: "Non-Students"}
+          %{value: :non_students, label: "Non-Students"},
+          %{value: :pending_confirmation, label: "Pending Confirmation"},
+          %{value: :rejected, label: "Invitation Rejected"}
         ]
 
       false ->
         [
           %{value: :enrolled, label: "Enrolled"},
           %{value: :suspended, label: "Suspended"},
-          %{value: :non_students, label: "Non-Students"}
+          %{value: :non_students, label: "Non-Students"},
+          %{value: :pending_confirmation, label: "Pending Confirmation"},
+          %{value: :rejected, label: "Invitation Rejected"}
         ]
 
       _ ->

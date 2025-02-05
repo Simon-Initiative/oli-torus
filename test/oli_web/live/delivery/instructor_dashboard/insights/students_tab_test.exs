@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fstudents"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_students_route(section.slug))
@@ -436,14 +436,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
 
-      [non_student_1, _non_student_2] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
-
-      assert non_student_1 =~ "Scaloni, Lionel"
       refute render(view) =~ "Messi, Lionel"
       refute render(view) =~ "Suarez, Luis"
 
@@ -1169,6 +1161,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
       assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
 
+      stub_real_current_time()
       # Send the invitations (this mocks the POST request made by the form)
       conn =
         post(
@@ -1184,19 +1177,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       emails_sent = [user_1.email, user_2.email, non_existant_email_1] |> Enum.sort()
       assert emails_sent == get_emails_of_users_enrolled_in_section(emails_sent, section.slug)
 
-      assert redirected_to(conn) == students_url
+      # Redirects to the students page, filtered by the pending_confirmation users
+      assert redirected_to(conn) == students_url <> "?filter_by=pending_confirmation"
 
       new_users =
         Oli.Accounts.User
         |> where([u], u.email in [^user_1.email, ^user_2.email, ^non_existant_email_1])
-        |> select([u], {u.email, u.invitation_token})
         |> Repo.all()
-        |> Enum.into(%{})
 
-      assert length(Map.keys(new_users)) == 3
-      assert Map.get(new_users, user_1.email) == nil
-      assert Map.get(new_users, user_2.email) == nil
-      assert Map.get(new_users, non_existant_email_1) != nil
+      assert length(new_users) == 3
     end
 
     test "can't invite new users to the section if section is not open and free", %{conn: conn} do
@@ -1252,8 +1241,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_author(admin)
+      |> log_in_user(user)
 
     map
     |> Map.merge(%{

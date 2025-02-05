@@ -17,11 +17,13 @@ defmodule OliWeb.Users.UsersDetailView do
     ConfirmEmailModal
   }
 
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias OliWeb.Pow.UserContext
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.Actions
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   defp set_breadcrumbs(user) do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -42,10 +44,9 @@ defmodule OliWeb.Users.UsersDetailView do
   @impl true
   def mount(
         %{"user_id" => user_id},
-        session,
+        _session,
         socket
       ) do
-    ctx = SessionContext.init(socket, session)
     user = user_with_platform_roles(user_id)
 
     case user do
@@ -59,10 +60,8 @@ defmodule OliWeb.Users.UsersDetailView do
 
         {:ok,
          assign(socket,
-           ctx: ctx,
            breadcrumbs: set_breadcrumbs(user),
            user: user,
-           csrf_token: Phoenix.Controller.get_csrf_token(),
            form: user_form(user),
            user_lti_params: LtiParams.all_user_lti_params(user.id),
            enrolled_sections: enrolled_sections,
@@ -78,10 +77,11 @@ defmodule OliWeb.Users.UsersDetailView do
   attr(:csrf_token, :any)
   attr(:modal, :any, default: nil)
   attr(:title, :string, default: "User Details")
-  attr(:user, :map, default: nil)
+  attr(:user, User, required: true)
   attr(:disabled_edit, :boolean, default: true)
   attr(:disabled_submit, :boolean, default: false)
   attr(:user_name, :string)
+  attr(:password_reset_link, :string)
 
   def render(assigns) do
     ~H"""
@@ -160,19 +160,20 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly.render label="Created" value={render_date(@user, :inserted_at, @ctx)} />
             <ReadOnly.render label="Last Updated" value={render_date(@user, :updated_at, @ctx)} />
             <%= unless @disabled_edit do %>
-              <button
+              <.button
+                variant={:primary}
                 type="submit"
-                class="float-right btn btn-md btn-primary mt-2"
+                class="float-right mt-2"
                 disabled={@disabled_submit}
               >
                 Save
-              </button>
+              </.button>
             <% end %>
           </.form>
           <%= if @disabled_edit do %>
-            <button class="float-right btn btn-md btn-primary mt-2" phx-click="start_edit">
+            <.button variant={:primary} class="float-right mt-2" phx-click="start_edit">
               Edit
-            </button>
+            </.button>
           <% end %>
         </Group.render>
         <%= if !Enum.empty?(@user_lti_params) do %>
@@ -208,8 +209,9 @@ defmodule OliWeb.Users.UsersDetailView do
         <Group.render label="Actions" description="Actions that can be taken for this user">
           <%= if @user.independent_learner do %>
             <Actions.render
-              user={@user}
-              csrf_token={@csrf_token}
+              user_id={@user.id}
+              account_locked={!is_nil(@user.locked_at)}
+              email_confirmation_pending={Accounts.user_confirmation_pending?(@user)}
               password_reset_link={@password_reset_link}
             />
           <% else %>
@@ -231,11 +233,17 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, socket}
   end
 
-  def handle_event("generate_reset_password_link", params, socket) do
-    {:noreply,
-     assign(socket,
-       password_reset_link: OliWeb.PowController.create_password_reset_link(params, :user)
-     )}
+  def handle_event("generate_reset_password_link", %{"id" => id}, socket) do
+    user = user_with_platform_roles(id)
+
+    encoded_token = Accounts.generate_user_reset_password_token(user)
+
+    password_reset_link =
+      url(~p"/users/reset_password/#{encoded_token}")
+
+    socket = assign(socket, password_reset_link: password_reset_link)
+
+    {:noreply, socket}
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -245,7 +253,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
     modal = fn assigns ->
       ~H"""
-      <ConfirmEmailModal.render id="confirm_email" user={assigns.modal_assigns.user} />
+      <ConfirmEmailModal.render id="confirm_email" user={@user} />
       """
     end
 
@@ -253,9 +261,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("confirm_email", _, socket) do
-    email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
-
-    case Accounts.update_user(socket.assigns.user, %{email_confirmed_at: email_confirmed_at}) do
+    case Accounts.admin_confirm_user(socket.assigns.user) do
       {:ok, user} ->
         {:noreply,
          socket
@@ -264,6 +270,36 @@ defmodule OliWeb.Users.UsersDetailView do
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Error confirming user's email")}
+    end
+  end
+
+  def handle_event("resend_confirmation_link", %{"id" => id}, socket) do
+    user = user_with_platform_roles(id)
+
+    case Accounts.deliver_user_confirmation_instructions(
+           user,
+           &url(~p"/users/confirm/#{&1}")
+         ) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Confirmation link sent.")}
+
+      {:error, :already_confirmed} ->
+        {:noreply, put_flash(socket, :info, "Email is already confirmed.")}
+    end
+  end
+
+  def handle_event("send_reset_password_link", %{"id" => id}, socket) do
+    user = user_with_platform_roles(id)
+
+    case Accounts.deliver_user_reset_password_instructions(
+           user,
+           &url(~p"/users/reset_password/#{&1}")
+         ) do
+      {:ok, _} ->
+        {:noreply, put_flash(socket, :info, "Password reset link sent.")}
+
+      {:error, error} ->
+        {:noreply, put_flash(socket, :error, "Error sending password reset link: #{error}")}
     end
   end
 
@@ -281,12 +317,19 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("lock_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
-    UserContext.lock(user)
 
-    {:noreply,
-     socket
-     |> assign(user: user_with_platform_roles(id))
-     |> hide_modal(modal_assigns: nil)}
+    case Accounts.lock_user(user) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(user: user_with_platform_roles(id))
+         |> hide_modal(modal_assigns: nil)}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(socket, :error, "Failed to lock user account.")
+         |> hide_modal(modal_assigns: nil)}
+    end
   end
 
   def handle_event("show_unlock_account_modal", _, socket) do
@@ -306,12 +349,19 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def handle_event("unlock_account", %{"id" => id}, socket) do
     user = user_with_platform_roles(id)
-    UserContext.unlock(user)
 
-    {:noreply,
-     socket
-     |> assign(user: user_with_platform_roles(id))
-     |> hide_modal(modal_assigns: nil)}
+    case Accounts.unlock_user(user) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> assign(user: user_with_platform_roles(id))
+         |> hide_modal(modal_assigns: nil)}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(socket, :error, "Failed to unlock user account.")
+         |> hide_modal(modal_assigns: nil)}
+    end
   end
 
   def handle_event("show_delete_account_modal", _, socket) do
@@ -357,7 +407,7 @@ defmodule OliWeb.Users.UsersDetailView do
   end
 
   def handle_event("submit", %{"user" => params}, socket) do
-    case Accounts.update_user_from_admin(user_form(socket.assigns.user, params).source) do
+    case Accounts.update_user(socket.assigns.user, params) do
       {:ok, user} ->
         {:noreply,
          socket
@@ -387,7 +437,7 @@ defmodule OliWeb.Users.UsersDetailView do
 
   defp user_form(user, attrs \\ %{}) do
     user
-    |> User.update_changeset_for_admin(attrs)
+    |> User.noauth_changeset(attrs)
     |> Map.put(:action, :update)
     |> to_form()
   end

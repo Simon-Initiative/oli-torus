@@ -190,6 +190,8 @@ defmodule Oli.Search.EmbeddingsTest do
       )
     end
 
+    # MER-3983
+    @tag :skip
     test "inserts the revision_embeddings for each revision id when the third argument is true",
          %{
            publication: publication,

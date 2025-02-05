@@ -23,6 +23,7 @@ const BlockElements: SchemaKey[] = [
   'code',
   'formula',
   'callout',
+  'trigger',
 ];
 
 export const SemanticElements: SchemaKey[] = [
@@ -308,6 +309,12 @@ export const schema: Schema = {
     validChildren: {},
   },
   page_link: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
+  },
+  trigger: {
     isVoid: true,
     isBlock: true,
     isTopLevel: true,

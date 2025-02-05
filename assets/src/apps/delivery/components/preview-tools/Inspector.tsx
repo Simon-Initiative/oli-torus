@@ -17,9 +17,11 @@ import { unflatten } from './inspector/utils';
 
 interface InspectorProps {
   currentActivity: any;
+  reviewMode: boolean;
+  isInstructor: boolean;
 }
 // Inspector Placeholder
-const Inspector: React.FC<InspectorProps> = () => {
+const Inspector: React.FC<InspectorProps> = ({ reviewMode, isInstructor }) => {
   const dispatch = useDispatch();
 
   const [globalState, setGlobalState] = useState<any>(null);
@@ -91,12 +93,43 @@ const Inspector: React.FC<InspectorProps> = () => {
     return setStageState(stageSlice);
   };
 
+  const getVariablesTypeState = (allState: any) => {
+    const variableTypes: Array<any> = [];
+    Object.keys(allState).map((key) => {
+      if (key.includes('.variables.Type')) {
+        Object.keys(allState[key]).map((childKey) => {
+          const variableState = allState[key];
+          //the key will look like 'stage.partId.variables.Type'. We need an array with 'stage.partId.capivariable' so we split the key and get the first section
+          const arrVariableKey = key.split('.variables.Type');
+          if (arrVariableKey?.length > 1) {
+            const parent = key.split('.variables.Type')[0];
+            variableTypes.push({
+              key: `${parent}.${childKey}`,
+              type: variableState[childKey].type,
+              allowedValues: variableState[childKey].allowedValues,
+            });
+          }
+        }, {});
+      }
+    }, {});
+    return variableTypes;
+  };
   // change handler fires for every key, and there are often several at once
   const debounceStateChanges = useCallback(
     debounce(() => {
       const allState = getEnvState(defaultGlobalEnv);
+      const variableTypes: Array<any> = getVariablesTypeState(allState);
       const globalStateAsVars = Object.keys(allState).reduce((collect: any, key) => {
-        collect[key] = new CapiVariable({ key, value: allState[key] });
+        const result = variableTypes?.filter((part) => key.includes(part.key));
+        const variableType = result?.length ? result[0].type : 0;
+        //We need this because when the variable type is ENUM, we get the allowed  values that gets displayed in dropdown
+        const variableAllowedValues = result?.length ? result[0]?.allowedValues || null : null;
+        collect[key] = new CapiVariable({
+          key,
+          value: allState[key],
+          type: variableType,
+          allowedValues: variableAllowedValues,
+        });
         return collect;
       }, {});
       setGlobalState(globalStateAsVars);
@@ -157,22 +190,26 @@ const Inspector: React.FC<InspectorProps> = () => {
   return (
     <div className="inspector">
       <div className="apply-changes btn-group-sm p-2" role="group" aria-label="Apply changes">
-        <button
-          disabled={!hasChanges}
-          type="button"
-          className="btn btn-secondary mr-1"
-          onClick={handleCancelChanges}
-        >
-          Cancel
-        </button>
-        <button
-          disabled={!hasChanges}
-          type="button"
-          className="btn btn-primary ml-1"
-          onClick={handleApplyChanges}
-        >
-          Apply {hasChanges ? `(${changeCount})` : null}
-        </button>
+        {!reviewMode && (
+          <>
+            <button
+              disabled={!hasChanges}
+              type="button"
+              className="btn btn-secondary mr-1"
+              onClick={handleCancelChanges}
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!hasChanges}
+              type="button"
+              className="btn btn-primary ml-1"
+              onClick={handleApplyChanges}
+            >
+              Apply {hasChanges ? `(${changeCount})` : null}
+            </button>
+          </>
+        )}
       </div>
       <div className="accordion">
         <StateDisplay label="App" state={appState} onChange={handleValueChange} />

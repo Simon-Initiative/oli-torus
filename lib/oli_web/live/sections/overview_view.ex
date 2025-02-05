@@ -19,6 +19,9 @@ defmodule OliWeb.Sections.OverviewView do
 
   require Logger
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
     |> breadcrumb(section)
@@ -33,13 +36,7 @@ defmodule OliWeb.Sections.OverviewView do
       [
         Breadcrumb.new(%{
           full_title: section.title,
-          link:
-            Routes.live_path(
-              OliWeb.Endpoint,
-              OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-              section.slug,
-              :manage
-            )
+          link: ~p"/sections/#{section.slug}/manage"
         })
       ]
   end
@@ -81,7 +78,6 @@ defmodule OliWeb.Sections.OverviewView do
         {:ok,
          assign(socket,
            page_prompt_template: section.page_prompt_template,
-           is_system_admin: type == :admin,
            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
@@ -143,10 +139,10 @@ defmodule OliWeb.Sections.OverviewView do
         <%= unless is_nil(@deployment) do %>
           <ReadOnly.render
             label="Institution"
-            type={if @is_system_admin, do: "link"}
+            type={if @is_admin, do: "link"}
             link_label={@deployment.institution.name}
             value={
-              if @is_system_admin,
+              if @is_admin,
                 do: Routes.institution_path(OliWeb.Endpoint, :show, @deployment.institution_id),
                 else: @deployment.institution.name
             }
@@ -379,7 +375,11 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Grades.FailedGradeSyncLive,
+                    @section.slug
+                  )
                 }
                 class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
@@ -405,7 +405,11 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Grades.BrowseUpdatesView,
+                    @section.slug
+                  )
                 }
                 class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
@@ -425,7 +429,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render
         label="Cover Image"
         description="Manage the cover image for this section. Max file size is 5 MB."
-        is_last={!@is_system_admin}
+        is_last={!@is_admin}
       >
         <section>
           <ImageUpload.render
@@ -439,7 +443,7 @@ defmodule OliWeb.Sections.OverviewView do
         </section>
       </Group.render>
 
-      <div :if={@is_system_admin} class="border-t dark:border-gray-700">
+      <div :if={@is_admin} class="border-t dark:border-gray-700">
         <Group.render
           label="AI Assistant"
           description="View and manage the AI Assistant details"
@@ -596,7 +600,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
-            is_admin = socket.assigns.is_system_admin
+            is_admin = socket.assigns.is_admin
 
             redirect_path =
               if is_admin do

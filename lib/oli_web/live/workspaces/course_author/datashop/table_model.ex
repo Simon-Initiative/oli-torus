@@ -1,9 +1,8 @@
 defmodule OliWeb.Workspaces.CourseAuthor.Datashop.SectionsTableModel do
-  use Phoenix.Component
+  use OliWeb, :html
 
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
   def new(%SessionContext{} = ctx, sections, selected_sections, max_checked \\ 5) do
@@ -106,14 +105,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.Datashop.SectionsTableModel do
     assigns = Map.merge(assigns, %{section: section})
 
     ~H"""
-    <a href={
-      Routes.live_path(
-        OliWeb.Endpoint,
-        OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-        @section.slug,
-        :manage
-      )
-    }>
+    <a href={~p"/sections/#{@section.slug}/manage"}>
       <%= @section.title %>
     </a>
     """

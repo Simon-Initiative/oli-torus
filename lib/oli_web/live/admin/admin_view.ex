@@ -1,14 +1,16 @@
 defmodule OliWeb.Admin.AdminView do
   use OliWeb, :live_view
 
-  alias Oli.{Accounts, Repo}
+  alias Oli.Accounts
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Accounts.{Author}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
+  def mount(_, _session, socket) do
+    author = socket.assigns.current_author
 
     {:ok,
      assign(socket,
@@ -28,7 +30,7 @@ defmodule OliWeb.Admin.AdminView do
         <strong>Note:</strong>
         All administrative actions taken in the system are logged for auditing purposes.
       </div>
-      <%= if Accounts.is_system_admin?(@author) || Accounts.is_account_admin?(@author) do %>
+      <%= if Accounts.has_admin_role?(@author, :account_admin) do %>
         <Group.render label="Account Management" description="Access and manage all users and authors">
           <ul class="link-list">
             <li>
@@ -63,7 +65,7 @@ defmodule OliWeb.Admin.AdminView do
           </ul>
         </Group.render>
       <% end %>
-      <%= if Accounts.has_admin_role?(@author) do %>
+      <%= if Accounts.is_admin?(@author) do %>
         <Group.render label="Content Management" description="Access and manage created content">
           <ul class="link-list">
             <li>
@@ -91,10 +93,15 @@ defmodule OliWeb.Admin.AdminView do
                 Manage Publishers
               </a>
             </li>
+            <li>
+              <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Workspaces.CourseAuthor.DatasetsLive)}>
+                Manage Dataset Jobs
+              </a>
+            </li>
           </ul>
         </Group.render>
       <% end %>
-      <%= if Accounts.is_system_admin?(@author) do %>
+      <%= if Accounts.has_admin_role?(@author, :system_admin) do %>
         <Group.render
           label="System Management"
           description="Manage and support system level functionality"

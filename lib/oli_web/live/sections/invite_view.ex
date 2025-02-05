@@ -8,7 +8,6 @@ defmodule OliWeb.Sections.InviteView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Sections.Mount
-  alias OliWeb.Common.SessionContext
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -33,7 +32,6 @@ defmodule OliWeb.Sections.InviteView do
       {type, _, section} ->
         {:ok,
          assign(socket,
-           ctx: SessionContext.init(socket, session),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            invitations: SectionInvites.list_section_invites(section.id)

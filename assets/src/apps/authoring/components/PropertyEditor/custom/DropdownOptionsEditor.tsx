@@ -16,7 +16,10 @@ export const DropdownOptionsEditor: React.FC<Props> = ({ id, value, onChange, on
       // The property editor has an interesting method of commiting changes on blur that could use a look, but think of this as a way
       // for the control to signal that it's time to commit the value. It's much more natural on controls like a text input, but even
       // then it's a bit awkward.
-      setTimeout(() => onBlur(id, newValue), 0);
+      setTimeout(() => {
+        onBlur(id, newValue);
+        onBlur('partPropertyElementFocus', []);
+      }, 0);
     },
     [id, onBlur, onChange, value],
   );
@@ -46,6 +49,7 @@ export const DropdownOptionsEditor: React.FC<Props> = ({ id, value, onChange, on
             value={option}
             onChange={editEntry(index)}
             onDelete={deleteEntry(index)}
+            onFocus={() => onBlur('partPropertyElementFocus', [])}
           />
         ))}
       </div>
@@ -61,11 +65,17 @@ const OptionsEditor: React.FC<{
   value: string;
   onChange: (v: string) => void;
   onDelete: () => void;
-}> = ({ value, onChange, onDelete }) => {
+  onFocus: () => void;
+}> = ({ value, onChange, onDelete, onFocus }) => {
   return (
     <div className="flex mb-1">
       <div className="flex-1">
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={onFocus}
+        />
       </div>
       <div className="flex-none">
         <button className="btn btn-link p-0" onClick={onDelete}>

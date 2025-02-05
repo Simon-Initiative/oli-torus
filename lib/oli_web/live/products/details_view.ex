@@ -2,19 +2,21 @@ defmodule OliWeb.Products.DetailsView do
   use OliWeb, :live_view
   use OliWeb.Common.Modal
 
-  alias Oli.{Accounts, Branding, Inventories, Repo}
-  alias Oli.Accounts.Author
+  alias Oli.{Accounts, Branding, Inventories}
   alias Oli.Authoring.Course
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Sections.{Blueprint, Section}
   alias Oli.Utils.S3Storage
-  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Confirm}
   alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
   alias OliWeb.Products.ProductsToTransferCodes
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Mount
 
   require Logger
+
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def set_breadcrumbs(section),
     do: [
@@ -26,7 +28,7 @@ defmodule OliWeb.Products.DetailsView do
 
   def mount(
         %{"product_id" => product_slug},
-        %{"current_author_id" => author_id} = session,
+        session,
         socket
       ) do
     case Mount.for(product_slug, session) do
@@ -34,9 +36,7 @@ defmodule OliWeb.Products.DetailsView do
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
-        ctx = SessionContext.init(socket, session)
-
-        author = Repo.get(Author, author_id)
+        author = socket.assigns.current_author
 
         base_project = Course.get_project!(product.base_project_id)
 
@@ -53,13 +53,12 @@ defmodule OliWeb.Products.DetailsView do
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
-           is_admin: Accounts.has_admin_role?(author),
+           is_admin: Accounts.has_admin_role?(author, :content_admin),
            changeset: Section.changeset(product, %{}),
            title: "Edit Product",
            show_confirm: false,
            breadcrumbs: [Breadcrumb.new(%{full_title: "Product Overview"})],
-           base_project: base_project,
-           ctx: ctx
+           base_project: base_project
          )
          |> Phoenix.LiveView.allow_upload(:cover_image,
            accept: ~w(.jpg .jpeg .png),
@@ -128,6 +127,26 @@ defmodule OliWeb.Products.DetailsView do
             cancel_upload="cancel_upload"
             updates={@updates}
           />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Certificate Settings</h4>
+          <div class="max-w-[30rem] text-muted">
+            Design and deliver digital credentials to students that complete this course.
+          </div>
+        </div>
+        <div class="flex flex-col md:col-span-8 gap-2">
+          <div>
+            This product <b>does <%= unless @product.certificate_enabled, do: "not" %></b>
+            currently produce a certificate.
+          </div>
+          <div>
+            <a href={~p"/authoring/products/#{@product.slug}/certificate_settings"}>
+              Manage Certificate Settings
+            </a>
+          </div>
         </div>
       </div>
 

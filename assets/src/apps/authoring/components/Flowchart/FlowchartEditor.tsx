@@ -111,7 +111,7 @@ export const FlowchartEditor: React.FC<FlowchartEditorProps> = ({ sidebarExpande
 
   return (
     <FlowchartEventContext.Provider value={events}>
-      <div className={`flowchart-editor ${!sidebarExpanded ? '' : 'ml-[135px]'}`}>
+      <div className={`flowchart-editor mt-8 ${!sidebarExpanded ? '' : 'ml-[135px]'}`}>
         <DndProvider backend={HTML5Backend}>
           <div className="flowchart-left">
             <FlowchartModeOptions activeMode="flowchart" onPageEditMode={onPageEditMode} />
