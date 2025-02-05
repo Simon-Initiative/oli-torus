@@ -24,7 +24,7 @@ defmodule OliWeb.Common.TextSearch do
         phx-target={@event_target}
         phx-value-change={@change}
       />
-      <%= if @text != "" do %>
+      <%= if @text not in [nil, ""] do %>
         <div class="input-group-append">
           <button
             class="btn btn-outline-secondary"
