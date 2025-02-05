@@ -128,7 +128,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="w-full flex-col justify-start items-start gap-[30px] inline-flex">
+    <div class="w-full flex-col justify-start items-start gap-[30px] inline-flex mb-5">
       <div role="title" class="self-stretch text-2xl font-normal">
         Certificate Settings
       </div>
@@ -197,7 +197,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   defp tabs(assigns) do
     ~H"""
-    <div :if={@certificate_enabled} class="flex mt-10 mb-2 gap-20">
+    <div :if={@certificate_enabled} class="flex my-2 gap-20">
       <div class="justify-start">
         <.tab_link
           is_tab_active={@active_tab == :thresholds}

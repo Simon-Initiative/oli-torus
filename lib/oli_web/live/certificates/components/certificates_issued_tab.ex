@@ -23,7 +23,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
     ~H"""
     <div class="grid grid-cols-12 w-full">
       <div id="certificates_issued-table" class="col-span-12">
-        <div class="my-3 flex justify-between">
+        <div class="mb-5 flex justify-between">
           <TextSearch.render id="text-search" text={@params["text_search"]} event_target={@myself} />
           <a
             href={~p"/authoring/products/#{assigns.section_slug}/downloads/granted_certificates"}
@@ -42,6 +42,8 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
           table_model={@table_model}
           show_top_paging={false}
           show_bottom_paging={true}
+          render_top_info={false}
+          render_bottom_info={true}
         />
       </div>
     </div>

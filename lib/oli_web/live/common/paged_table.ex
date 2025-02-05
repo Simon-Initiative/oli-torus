@@ -17,6 +17,7 @@ defmodule OliWeb.Common.PagedTable do
   attr :show_top_paging, :boolean, default: true
   attr :additional_table_class, :string, default: ""
   attr :render_top_info, :boolean, default: true
+  attr :render_bottom_info, :boolean, default: false
   attr :scrollable, :boolean, default: true
   attr :show_limit_change, :boolean, default: false
   attr :no_records_message, :string, default: "None exist"
@@ -29,7 +30,7 @@ defmodule OliWeb.Common.PagedTable do
       <% end %>
 
       <%= if @total_count > 0 do %>
-        <div :if={@total_count <= @limit and @render_top_info}>
+        <div :if={@total_count <= @limit and @render_top_info} class="py-2">
           Showing all results (<%= @total_count %> total)
         </div>
         <%= if @show_top_paging do %>
@@ -50,6 +51,9 @@ defmodule OliWeb.Common.PagedTable do
           selection_change: @selection_change,
           additional_table_class: @additional_table_class
         }) %>
+        <div :if={@total_count <= @limit and @render_bottom_info} class="py-2">
+          Showing all results (<%= @total_count %> total)
+        </div>
         <%= if @show_bottom_paging do %>
           <Paging.render
             id="footer_paging"
