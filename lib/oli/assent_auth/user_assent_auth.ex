@@ -14,6 +14,7 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   """
   def authentication_providers() do
     Application.get_env(:oli, :user_auth_providers)
+    |> Enum.filter(fn {_, config} -> config != nil end)
   end
 
   @doc """

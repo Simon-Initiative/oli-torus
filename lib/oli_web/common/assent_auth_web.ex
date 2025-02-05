@@ -75,7 +75,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
       %{private: %{assent_callback_state: {:ok, _method}}} = conn ->
         conn
         |> maybe_send_confirmation_email(config)
-        |> (&{:ok, &1}).()
 
       %{private: %{assent_callback_state: {:error, error}, assent_callback_error: changeset}} =
           conn ->
@@ -293,11 +292,11 @@ defmodule OliWeb.Common.AssentAuthWeb do
     user = current_user(conn, config)
 
     if assent_auth_module(config).email_confirmed?(user) do
-      conn
+      {:ok, conn}
     else
       deliver_user_confirmation_instructions(user, config)
 
-      conn
+      {:email_confirmation_required, conn}
     end
   end
 
