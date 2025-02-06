@@ -5115,10 +5115,6 @@ table.table-striped tbody tr:nth-child(even) {
   height: 1.5rem;
 }
 
-.h-60 {
-  height: 15rem;
-}
-
 .h-64 {
   height: 16rem;
 }
@@ -5390,6 +5386,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-h-56 {
   max-height: 14rem;
+}
+
+.max-h-60 {
+  max-height: 15rem;
 }
 
 .max-h-80 {
