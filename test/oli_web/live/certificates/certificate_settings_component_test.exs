@@ -209,6 +209,42 @@ defmodule OliWeb.Certificates.CertificateSettingsComponentTest do
       refute has_element?(lcd, "input[name=\"#{gp1.resource_id}\"]:checked")
       refute has_element?(lcd, "input[name=\"#{gp2.resource_id}\"]:checked")
     end
+
+    test "fails when selecting no graded pages", %{
+      conn: conn,
+      product: product,
+      certificate: certificate,
+      graded_pages: graded_pages
+    } do
+      {:ok, lcd, _html} =
+        live_component_isolated(conn, CertificateSettingsComponent, %{
+          id: "certificate_settings_component",
+          product: product,
+          certificate: certificate,
+          graded_pages: graded_pages,
+          active_tab: :thresholds,
+          current_path: "/path"
+        })
+
+      lcd
+      |> element("#certificate_form")
+      |> render_submit(%{
+        "certificate" => %{
+          "custom_assessments" => [],
+          "assessments_apply_to" => "custom"
+        }
+      })
+
+      assert has_element?(
+               lcd,
+               "div",
+               "scored pages must not be empty"
+             )
+
+      certificate = Certificates.get_certificate(certificate.id)
+
+      refute certificate.custom_assessments == [] and certificate.assessments_apply_to == :custom
+    end
   end
 
   defp setup_data(%{}) do
