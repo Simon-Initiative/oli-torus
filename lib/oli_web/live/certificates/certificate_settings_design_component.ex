@@ -130,8 +130,14 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
             </div>
             <!-- File Input -->
             <.live_file_input upload={@uploads.logo} />
-            <!-- Display Uploaded Previews -->
             <section class="flex gap-4 flex-wrap mt-4">
+              <!-- Display existing logos -->
+              <%= for logo <- saved_logos(@certificate_changeset) do %>
+                <div class="relative w-24 h-24 flex-shrink-0">
+                  <img src={logo} class="object-cover w-full h-full rounded border border-gray-300" />
+                </div>
+              <% end %>
+              <!-- Display uploaded previews -->
               <%= for entry <- @uploads.logo.entries do %>
                 <div class="relative w-24 h-24 flex-shrink-0">
                   <.live_img_preview
@@ -311,14 +317,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
         {:ok, "data:#{entry.client_type};base64, #{b64}"}
       end)
       |> case do
-        [] ->
-          Enum.reject(
-            [changeset.data.logo1, changeset.data.logo2, changeset.data.logo3],
-            fn logo -> is_nil(logo) end
-          )
-
-        new_logos ->
-          new_logos
+        [] -> saved_logos(changeset)
+        new_logos -> new_logos
       end
 
     attrs = %{
@@ -342,4 +342,9 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
 
   defp certificate_changeset(nil), do: Certificate.changeset()
   defp certificate_changeset(%Certificate{} = cert), do: Certificate.changeset(cert, %{})
+
+  defp saved_logos(changeset) do
+    [changeset.data.logo1, changeset.data.logo2, changeset.data.logo3]
+    |> Enum.reject(&is_nil/1)
+  end
 end
