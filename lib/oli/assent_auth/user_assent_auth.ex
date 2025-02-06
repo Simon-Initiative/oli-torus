@@ -14,6 +14,7 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   """
   def authentication_providers() do
     Application.get_env(:oli, :user_auth_providers)
+    |> Enum.filter(fn {_, config} -> config != nil end)
   end
 
   @doc """
@@ -42,26 +43,30 @@ defmodule Oli.AssentAuth.UserAssentAuth do
   end
 
   @doc """
+  Returns true if the user's email has been confirmed.
+  """
+  def email_confirmed?(user) do
+    user.email_confirmed_at != nil
+  end
+
+  @doc """
   Upserts a user identity.
 
   If a matching user identity already exists for the user, the identity will be updated,
   otherwise a new identity is inserted.
   """
-  def upsert(user, user_identity_params) do
-    {uid_provider_params, additional_params} =
+  def upsert_identity(user, user_identity_params) do
+    {uid_provider_params, _additional_params} =
       Map.split(user_identity_params, ["uid", "provider"])
 
     get_for_user(user, uid_provider_params)
     |> case do
-      nil -> insert_identity(user, user_identity_params)
-      identity -> update_identity(identity, additional_params)
+      nil -> insert_identity(user, uid_provider_params)
+      identity -> update_identity(identity, uid_provider_params)
     end
   end
 
-  @doc """
-  Inserts a user identity for the user.
-  """
-  def insert_identity(user, user_identity_params) do
+  defp insert_identity(user, user_identity_params) do
     user_identity = Ecto.build_assoc(user, :user_identities)
 
     user_identity
@@ -69,10 +74,7 @@ defmodule Oli.AssentAuth.UserAssentAuth do
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a user identity.
-  """
-  def update_identity(user_identity, additional_params) do
+  defp update_identity(user_identity, additional_params) do
     user_identity
     |> user_identity.__struct__.changeset(additional_params)
     |> Repo.update()
@@ -87,6 +89,15 @@ defmodule Oli.AssentAuth.UserAssentAuth do
     %User{}
     |> User.user_identity_changeset(user_identity_params, user_params)
     |> Repo.insert()
+  end
+
+  @doc """
+  Updates user details.
+  """
+  def update_user_details(user, attrs) do
+    user
+    |> User.details_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """

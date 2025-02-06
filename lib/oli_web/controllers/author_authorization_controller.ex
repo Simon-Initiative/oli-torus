@@ -99,6 +99,14 @@ defmodule OliWeb.AuthorAuthorizationController do
             |> AuthorAuth.maybe_link_user_author_account(conn.assigns.current_author)
             |> redirect(to: redirect_to)
 
+          {:email_confirmation_required, conn} ->
+            conn
+            |> put_flash(
+              :info,
+              "Please confirm your email address to continue. A confirmation email has been sent."
+            )
+            |> redirect(to: ~p"/authors/confirm")
+
           {:error, conn, error} ->
             Logger.error("Error handling authorization success: #{inspect(error)}")
 
