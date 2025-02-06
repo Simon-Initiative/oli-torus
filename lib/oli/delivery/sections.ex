@@ -609,6 +609,21 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Updates the status of the enrollments for a given section and a list of user emails.
+  """
+  def bulk_update_enrollment_status(section_slug, emails, new_status) do
+    from(
+      e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      join: u in User,
+      on: e.user_id == u.id,
+      where: s.slug == ^section_slug and u.email in ^emails
+    )
+    |> Repo.update_all(set: [status: new_status])
+  end
+
+  @doc """
   Returns a listing of all open and free sections for a given user,
   ordered by the most recently enrolled.
   """

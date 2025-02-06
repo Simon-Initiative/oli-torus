@@ -6,7 +6,6 @@ defmodule OliWeb.InviteController do
   alias Oli.Accounts
   alias Oli.Accounts.AuthorToken
   alias Oli.Accounts.UserToken
-  alias Oli.Authoring.Collaborators
   alias Oli.Delivery.Sections
   alias Oli.{Email, Mailer}
   alias OliWeb.UserSessionController
@@ -78,14 +77,28 @@ defmodule OliWeb.InviteController do
     AuthorSessionController.create(conn, params, flash_message: nil)
   end
 
+  @doc """
+  Bulk invite users to a section, considering the different cases of users:
+
+  - Users that are not in the system (non_existing_users_emails): create them, enroll them, create invitation token and send email invitation
+  - Users that are in the system but not enrolled (not_enrolled_users_emails): enroll them, create invitation token, send email invitation
+  - Users that are in the system with status "pending_confirmation", "rejected" or "suspended" (not_active_enrolled_users_emails):
+    - update their status to "pending_confirmation"
+    - create user token (remove previous ones if any - this invalidates previous email invitations)
+    - send email invitation
+  """
   def create_bulk(conn, %{
-        "emails" => emails,
+        "non_existing_users_emails" => non_existing_users_emails,
+        "not_enrolled_users_emails" => not_enrolled_users_emails,
+        "not_active_enrolled_users_emails" => not_active_enrolled_users_emails,
         "role" => role,
         "section_slug" => section_slug,
         "inviter" => inviter
       }) do
-    existing_users = Accounts.get_users_by_email(emails)
-    non_found_users = emails -- Enum.map(existing_users, & &1.email)
+    non_existing_users_emails = Jason.decode!(non_existing_users_emails)
+    not_enrolled_users_emails = Jason.decode!(not_enrolled_users_emails)
+    not_active_enrolled_users_emails = Jason.decode!(not_active_enrolled_users_emails)
+
     section = Sections.get_section_by_slug(section_slug)
 
     inviter_struct =
@@ -93,7 +106,7 @@ defmodule OliWeb.InviteController do
 
     Ecto.Multi.new()
     |> Ecto.Multi.run(:new_users, fn _repo, _changes ->
-      case Accounts.bulk_create_invited_users(non_found_users, inviter_struct) do
+      case Accounts.bulk_create_invited_users(non_existing_users_emails, inviter_struct) do
         {:error, reason} ->
           {:error, reason}
 
@@ -101,11 +114,44 @@ defmodule OliWeb.InviteController do
           {:ok, {count, new_users}}
       end
     end)
-    |> Ecto.Multi.run(:enrollments, fn _repo, %{new_users: {_, new_users}} ->
-      do_section_enrollment(new_users ++ existing_users, section, role)
+    |> Ecto.Multi.run(:not_enrolled_users, fn _repo, _changes ->
+      {:ok, Accounts.get_users_by_email(not_enrolled_users_emails)}
     end)
-    |> Ecto.Multi.run(:email_data, fn _repo, %{new_users: {_, new_users}} ->
-      bulk_create_invitation_tokens(new_users ++ existing_users, section_slug)
+    |> Ecto.Multi.run(:not_active_enrolled_users, fn _repo, _changes ->
+      {:ok, Accounts.get_users_by_email(not_active_enrolled_users_emails)}
+    end)
+    |> Ecto.Multi.run(:enroll_users, fn _repo,
+                                        %{
+                                          new_users: {_, new_users},
+                                          not_enrolled_users: not_enrolled_users
+                                        } ->
+      do_section_enrollment(new_users ++ not_enrolled_users, section, role)
+    end)
+    |> Ecto.Multi.run(:update_enrollments, fn _repo, _ ->
+      {:ok,
+       Sections.bulk_update_enrollment_status(
+         section_slug,
+         not_active_enrolled_users_emails,
+         :pending_confirmation
+       )}
+    end)
+    |> Ecto.Multi.run(:remove_previous_invitations, fn _repo, _ ->
+      {:ok,
+       Accounts.delete_enrollment_invitation_tokens(
+         section_slug,
+         not_active_enrolled_users_emails
+       )}
+    end)
+    |> Ecto.Multi.run(:email_data, fn _repo,
+                                      %{
+                                        new_users: {_, new_users},
+                                        not_enrolled_users: not_enrolled_users,
+                                        not_active_enrolled_users: not_active_enrolled_users
+                                      } ->
+      bulk_create_invitation_tokens(
+        new_users ++ not_enrolled_users ++ not_active_enrolled_users,
+        section_slug
+      )
     end)
     |> Ecto.Multi.run(:send_invitations, fn _repo, %{email_data: email_data} ->
       case send_email_invitations(email_data, inviter_struct.name, role, section.title) do
