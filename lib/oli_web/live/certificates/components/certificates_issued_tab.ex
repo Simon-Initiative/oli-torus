@@ -24,15 +24,22 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
     <div class="grid grid-cols-12 w-full">
       <div id="certificates_issued-table" class="col-span-12">
         <div class="mb-5 flex justify-between">
-          <TextSearch.render id="text-search" text={@params["text_search"]} event_target={@myself} />
+          <TextSearch.render
+            id="text-search"
+            text={@params["text_search"]}
+            event_target={@myself}
+            placeholder="Search credentials issued..."
+            class="w-[500px]"
+          />
           <a
             href={~p"/authoring/products/#{assigns.section_slug}/downloads/granted_certificates"}
             class="flex items-center justify-center gap-x-2"
           >
-            Download CSV <Icons.download />
+            <Icons.download /> Download CSV
           </a>
         </div>
         <PagedTable.render
+          additional_row_class="bg-white dark:bg-black text-[#737373]"
           page_change={JS.push("paged_table_page_change", target: @myself)}
           sort={JS.push("paged_table_sort", target: @myself)}
           total_count={determine_total(@table_model.rows)}

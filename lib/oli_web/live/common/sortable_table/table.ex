@@ -79,6 +79,8 @@ defmodule OliWeb.Common.SortableTable.Table do
         end
       end
 
+    row_class = row_class <> " #{assigns[:additional_row_class]}"
+
     assigns = Map.merge(assigns, %{row: row, row_class: row_class})
 
     ~H"""
@@ -120,6 +122,7 @@ defmodule OliWeb.Common.SortableTable.Table do
   attr :sort, :string, required: true
   attr :select, :string, default: ""
   attr :additional_table_class, :string, default: "table-sm"
+  attr :additional_row_class, :string, default: ""
 
   def render(assigns) do
     ~H"""
@@ -150,7 +153,8 @@ defmodule OliWeb.Common.SortableTable.Table do
                 model: @model,
                 sort: @sort,
                 select: @select,
-                additional_table_class: @additional_table_class
+                additional_table_class: @additional_table_class,
+                additional_row_class: @additional_row_class
               },
               @model.data
             ),

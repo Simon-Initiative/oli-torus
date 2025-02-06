@@ -21,14 +21,15 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
       },
       %ColumnSpec{
         name: :issuer,
-        label: "Issue By",
+        label: "Issued By",
         render_fn: &__MODULE__.custom_render/3
       },
       %ColumnSpec{
         name: :guid,
         label: "ID",
         render_fn: &__MODULE__.custom_render/3,
-        sortable: false
+        sortable: false,
+        th_class: "py-5"
       }
     ]
 

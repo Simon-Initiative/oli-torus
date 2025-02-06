@@ -197,7 +197,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   defp tabs(assigns) do
     ~H"""
-    <div :if={@certificate_enabled} id="certificate_settings_tabs" class="flex my-2 gap-20">
+    <div :if={@certificate_enabled} id="certificate_settings_tabs" class="flex mt-7 mb-3 gap-20">
       <div class="justify-start">
         <.tab_link
           is_tab_active={@active_tab == :thresholds}

@@ -8,10 +8,11 @@ defmodule OliWeb.Common.TextSearch do
   attr(:text, :string, default: "")
   attr(:event_target, :any, required: false, default: :live_view)
   attr(:tooltip, :string, required: false, default: nil)
+  attr(:class, :string, default: "")
 
   def render(assigns) do
     ~H"""
-    <div class="input-group" style="max-width: 350px;">
+    <div class={"input-group max-w-[350px] #{@class}"}>
       <i id={"#{@id}-icon"} class="absolute fa-solid fa-magnifying-glass pl-3 pt-3 h-4 w-4 "></i>
       <input
         id={"#{@id}-input"}

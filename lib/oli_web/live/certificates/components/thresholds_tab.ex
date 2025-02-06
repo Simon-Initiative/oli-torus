@@ -43,7 +43,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
   def render(assigns) do
     ~H"""
     <div class="w-full flex-col">
-      <div class="text-base font-medium mb-5">
+      <div class="text-base font-medium mb-12">
         Customize the conditions students must meet to receive a certificate.
       </div>
       <div class="mb-11 text-xl font-normal">Completion & Scoring</div>
