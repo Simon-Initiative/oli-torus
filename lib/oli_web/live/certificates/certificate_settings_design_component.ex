@@ -16,7 +16,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
       <.form
         :let={f}
         id="certificate-settings-design-form"
-        for={@certificate}
+        for={@certificate_changeset}
         phx-change="validate"
         phx-drop-target={@uploads.logo.ref}
         phx-submit="save"
@@ -238,16 +238,13 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
        preview_page: 0,
        certificate_html: {nil, nil}
      )
-     |> assign_new(:form, fn ->
-       to_form(Certificate.changeset(assigns.certificate || %Certificate{}, %{}))
-     end)}
+     |> assign_new(:certificate_changeset, fn -> certificate_changeset(assigns.certificate) end)}
   end
 
   @impl true
-  def handle_event("validate", params, socket) do
-    certificate = socket.assigns.certificate || %Certificate{}
-    changeset = Certificate.changeset(certificate, params)
-    {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+  def handle_event("validate", %{"certificate" => params}, socket) do
+    changeset = Certificate.changeset(socket.assigns.certificate, params)
+    {:noreply, assign(socket, certificate_changeset: changeset)}
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
@@ -267,9 +264,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
       |> Map.put("logo2", Enum.at(logos, 1))
       |> Map.put("logo3", Enum.at(logos, 2))
 
-    certificate = socket.assigns.certificate || %Certificate{}
 
-    certificate
+    socket.assigns.certificate
     |> Certificate.changeset(attrs)
     |> Repo.insert_or_update()
     |> case do
@@ -336,4 +332,7 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
 
     {completion_cert, distinction_cert, logos}
   end
+
+  defp certificate_changeset(nil), do: Certificate.changeset()
+  defp certificate_changeset(%Certificate{} = cert), do: Certificate.changeset(cert, %{})
 end
