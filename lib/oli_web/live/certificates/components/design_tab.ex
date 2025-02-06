@@ -279,8 +279,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        send(self(), {:put_flash, [:error, "Failed to save certificate design"]})
-        assign(socket, certificate_changeset: changeset)
+        {:noreply, assign(socket, certificate_changeset: changeset)}
     end
   end
 
