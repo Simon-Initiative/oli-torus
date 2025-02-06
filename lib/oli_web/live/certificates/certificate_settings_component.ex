@@ -238,7 +238,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
         <.input
           field={f[:assessments_apply_to]}
           type="hidden"
-          value={if @selected_ids == [], do: :all, else: :custom}
+          value={if length(@selected_ids) == length(@graded_pages_options), do: :all, else: :custom}
         />
 
         <div class="w-3/4 flex-col justify-start items-start gap-10 inline-flex">
@@ -305,10 +305,13 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                         max="100.0"
                         step="0.1"
                         field={f[:min_percentage_for_completion]}
-                        errors={f.errors}
                         class="pl-6 border-[#D4D4D4] rounded"
                       />
-                      <span class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">
+
+                      <span class={[
+                        "absolute right-8 transform -translate-y-1/2 text-gray-500 pointer-events-none ",
+                        if(f.errors != [], do: "top-1/3", else: "top-1/2")
+                      ]}>
                         %
                       </span>
                     </div>
@@ -353,6 +356,8 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                     selected_resource_ids={@selected_ids}
                   />
                 </div>
+                <% errors = f.errors[:custom_assessments] %>
+                <.error :if={errors}><%= elem(errors, 0) %></.error>
               </div>
             </div>
             <div class="flex flex-row justify-start items-start gap-[152px]">
@@ -446,7 +451,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
       </div>
       <div class="w-full relative">
         <div
-          class="w-full h-60 py-4 hidden z-50 absolute dark:bg-gray-800 bg-white border overflow-y-scroll top-1 rounded"
+          class="w-full max-h-60 py-4 hidden z-50 absolute dark:bg-gray-800 bg-white border overflow-y-scroll top-1 rounded"
           id={"#{@id}-options-container"}
           phx-click-away={
             JS.hide() |> JS.hide(to: "##{@id}-up-icon") |> JS.show(to: "##{@id}-down-icon")

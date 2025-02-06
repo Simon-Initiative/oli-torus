@@ -11,10 +11,10 @@ defmodule Oli.Delivery.Sections.Certificate do
   @derive {Jason.Encoder, except: [:id, :section, :granted_certificate, :__meta__]}
 
   schema "certificates" do
-    field :required_discussion_posts, :integer
-    field :required_class_notes, :integer
-    field :min_percentage_for_completion, :float
-    field :min_percentage_for_distinction, :float
+    field :required_discussion_posts, :integer, default: 0
+    field :required_class_notes, :integer, default: 0
+    field :min_percentage_for_completion, :float, default: 75.0
+    field :min_percentage_for_distinction, :float, default: 95.0
     field :assessments_apply_to, Ecto.Enum, values: @assessments_options, default: :all
     field :custom_assessments, {:array, :integer}, default: []
     field :requires_instructor_approval, :boolean, default: false
@@ -80,6 +80,21 @@ defmodule Oli.Delivery.Sections.Certificate do
       :min_percentage_for_distinction,
       allow_equal: true
     )
+    |> validate_assessments()
     |> assoc_constraint(:section)
+  end
+
+  defp validate_assessments(changeset) do
+    {_, custom_assessments} = fetch_field(changeset, :custom_assessments)
+    {_, assessments_apply_to} = fetch_field(changeset, :assessments_apply_to)
+
+    case {custom_assessments, assessments_apply_to} do
+      {[], :custom} ->
+        message = "scored pages must not be empty"
+        add_error(changeset, :custom_assessments, message, to_field: :assessments_apply_to)
+
+      _ ->
+        changeset
+    end
   end
 end
