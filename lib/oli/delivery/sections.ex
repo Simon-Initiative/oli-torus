@@ -1740,21 +1740,25 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp label_and_sort_resources_by_hierarchy(resource_map, section_slug) do
-    get_ordered_container_labels(section_slug)
-    |> Enum.reduce(
-      case resource_map[:default] do
-        nil -> []
-        default -> [{:default, default}]
-      end,
-      fn {resource_id, title}, acc ->
-        if resource_map[resource_id] do
-          [{title, resource_map[resource_id]} | acc]
-        else
-          acc
+    ordered_labels = get_ordered_container_labels(section_slug)
+
+    {grouped, orphaned} =
+      Enum.reduce(resource_map, {[], []}, fn
+        {id, pages}, {acc, orphaned} when id in [nil, :default] -> {acc, orphaned ++ pages}
+        {id, pages}, {acc, orphaned} -> {[{id, pages} | acc], orphaned}
+      end)
+
+    sorted_groups =
+      ordered_labels
+      |> Enum.reduce([], fn {id, title}, acc ->
+        case List.keyfind(grouped, id, 0) do
+          {_, pages} -> [{title, pages} | acc]
+          nil -> acc
         end
-      end
-    )
-    |> Enum.reverse()
+      end)
+      |> Enum.reverse()
+
+    if orphaned == [], do: sorted_groups, else: sorted_groups ++ [{"Other Pages", orphaned}]
   end
 
   def get_practice_pages_by_containers(section) do
