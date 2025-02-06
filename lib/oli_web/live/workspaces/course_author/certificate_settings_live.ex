@@ -48,16 +48,10 @@ defmodule OliWeb.Workspaces.CourseAuthor.Certificates.CertificateSettingsLive do
   end
 
   def render(assigns) do
-    module =
-      case assigns.active_tab do
-        :design -> OliWeb.Certificates.CertificateSettingsDesignComponent
-        _ -> OliWeb.Certificates.CertificateSettingsComponent
-      end
-
     ~H"""
     <div class="px-[30px] py-[50px]">
       <.live_component
-        module={module}
+        module={OliWeb.Certificates.CertificateSettingsComponent}
         id="certificate_settings_component"
         product={@product}
         certificate={@certificate}
