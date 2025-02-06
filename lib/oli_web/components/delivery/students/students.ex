@@ -138,8 +138,9 @@ defmodule OliWeb.Components.Delivery.Students do
          pending_confirmation: [],
          rejected: [],
          non_existing_users: [],
-         existing_users_without_an_enrollment: []
+         not_enrolled_users: []
        },
+       add_enrollments_effective_count: 0,
        inviter: if(is_nil(ctx.author), do: "user", else: "author"),
        current_user: ctx.user,
        current_author: ctx.author,
@@ -380,9 +381,20 @@ defmodule OliWeb.Components.Delivery.Students do
         title="Add enrollments"
         on_confirm={
           case @add_enrollments_step do
-            :step_1 -> JS.push("add_enrollments_go_to_step_2", target: @myself)
-            :step_2 -> JS.push("add_enrollments_go_to_step_3", target: @myself)
-            :step_3 -> JS.dispatch("click", to: "#add_enrollments_form button")
+            :step_1 ->
+              JS.push("add_enrollments_go_to_step_2", target: @myself)
+
+            :step_2 ->
+              JS.push("add_enrollments_go_to_step_3", target: @myself)
+
+            :step_3 ->
+              if(@add_enrollments_effective_count > 0,
+                do: JS.dispatch("click", to: "#add_enrollments_form button"),
+                else:
+                  JS.dispatch("click",
+                    to: "#students_table_add_enrollments_modal_backdrop button[phx-click='close']"
+                  )
+              )
           end
         }
         on_confirm_label={if @add_enrollments_step == :step_3, do: "Confirm", else: "Next"}
@@ -399,6 +411,7 @@ defmodule OliWeb.Components.Delivery.Students do
           add_enrollments_step={@add_enrollments_step}
           add_enrollments_selected_role={@add_enrollments_selected_role}
           add_enrollments_grouped_by_status={@add_enrollments_grouped_by_status}
+          add_enrollments_effective_count={@add_enrollments_effective_count}
           section_slug={@section_slug}
           target={@id}
           current_user={@current_user}
@@ -886,6 +899,18 @@ defmodule OliWeb.Components.Delivery.Students do
     """
   end
 
+  def add_enrollments(
+        %{add_enrollments_step: :step_3, add_enrollments_effective_count: 0} = assigns
+      ) do
+    ~H"""
+    <div class="px-4">
+      <p>
+        The emails you provided are already enrolled in the course. No email invitation will be sent.
+      </p>
+    </div>
+    """
+  end
+
   def add_enrollments(%{add_enrollments_step: :step_3} = assigns) do
     ~H"""
     <.form
@@ -895,9 +920,27 @@ defmodule OliWeb.Components.Delivery.Students do
       method="POST"
       action={Routes.invite_path(OliWeb.Endpoint, :create_bulk, @section_slug)}
     >
-      <%= for email <- @add_enrollments_emails do %>
-        <input name="emails[]" value={email} hidden />
-      <% end %>
+      <input
+        name="non_existing_users_emails"
+        value={Jason.encode!(List.wrap(@add_enrollments_grouped_by_status[:non_existing_users]))}
+        hidden
+      />
+      <input
+        name="not_enrolled_users_emails"
+        value={Jason.encode!(List.wrap(@add_enrollments_grouped_by_status[:not_enrolled_users]))}
+        hidden
+      />
+      <input
+        name="not_active_enrolled_users_emails"
+        value={
+          Jason.encode!(
+            List.wrap(@add_enrollments_grouped_by_status[:suspended]) ++
+              List.wrap(@add_enrollments_grouped_by_status[:pending_confirmation]) ++
+              List.wrap(@add_enrollments_grouped_by_status[:rejected])
+          )
+        }
+        hidden
+      />
       <input name="role" value={@add_enrollments_selected_role} />
       <input name="section_slug" value={@section_slug} />
       <input name="inviter" value={@inviter} />
@@ -905,7 +948,7 @@ defmodule OliWeb.Components.Delivery.Students do
     </.form>
     <div class="px-4">
       <p>
-        Are you sure you want to send an enrollment email invitation to <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}" %>?
+        Are you sure you want to send an enrollment email invitation to <%= "#{if @add_enrollments_effective_count == 1, do: "one user", else: "#{@add_enrollments_effective_count} users"}" %>?
       </p>
       <.inviter
         current_author={@current_author}
@@ -1073,7 +1116,7 @@ defmodule OliWeb.Components.Delivery.Students do
     existing_users_with_an_enrollment =
       Enum.filter(existing_users, fn email -> email in enrolled_emails end)
 
-    existing_users_without_an_enrollment = existing_users -- existing_users_with_an_enrollment
+    not_enrolled_users = existing_users -- existing_users_with_an_enrollment
 
     # we finally group all the required enrollments by status
 
@@ -1082,7 +1125,7 @@ defmodule OliWeb.Components.Delivery.Students do
       |> Enum.group_by(& &1.status, fn enrollment -> enrollment.user.email end)
       |> Map.merge(%{
         non_existing_users: non_existing_users,
-        existing_users_without_an_enrollment: existing_users_without_an_enrollment
+        not_enrolled_users: not_enrolled_users
       })
 
     if add_enrollment_warning_step_required?(
@@ -1097,7 +1140,10 @@ defmodule OliWeb.Components.Delivery.Students do
     else
       {:noreply,
        assign(socket, %{
-         add_enrollments_step: :step_3
+         add_enrollments_step: :step_3,
+         add_enrollments_grouped_by_status: add_enrollments_grouped_by_status,
+         add_enrollments_effective_count:
+           add_enrollments_effective_count(add_enrollments_grouped_by_status)
        })}
     end
   end
@@ -1105,7 +1151,9 @@ defmodule OliWeb.Components.Delivery.Students do
   def handle_event("add_enrollments_go_to_step_3", _, socket) do
     {:noreply,
      assign(socket, %{
-       add_enrollments_step: :step_3
+       add_enrollments_step: :step_3,
+       add_enrollments_effective_count:
+         add_enrollments_effective_count(socket.assigns.add_enrollments_grouped_by_status)
      })}
   end
 
@@ -1168,6 +1216,8 @@ defmodule OliWeb.Components.Delivery.Students do
      assign(socket, %{
        add_enrollments_emails: add_enrollments_emails,
        add_enrollments_grouped_by_status: add_enrollments_grouped_by_status,
+       add_enrollments_effective_count:
+         add_enrollments_effective_count(add_enrollments_grouped_by_status),
        add_enrollments_step: step
      })}
   end
@@ -1596,8 +1646,21 @@ defmodule OliWeb.Components.Delivery.Students do
          all_required_enrollments
        ),
        do:
-         length(add_enrollments_grouped_by_status[:existing_users_without_an_enrollment] || []) !=
+         length(add_enrollments_grouped_by_status[:not_enrolled_users] || []) !=
            length(all_required_enrollments)
+
+  _docp = """
+  Counts the amount of enrollments invitations that will be sent, not
+  considering the ones that are already enrolled to the course.
+  """
+
+  defp add_enrollments_effective_count(add_enrollments_grouped_by_status) do
+    add_enrollments_grouped_by_status
+    |> Map.drop([:enrolled])
+    |> Enum.reduce(0, fn {_, emails}, acc ->
+      length(emails) + acc
+    end)
+  end
 
   defp update_enrollments_grouped_by_status(
          add_enrollments_grouped_by_status,
