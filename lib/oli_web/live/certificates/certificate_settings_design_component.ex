@@ -295,11 +295,14 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
 
     admins =
       [
-        {changeset.changes[:admin_name1], changeset.changes[:admin_title1]},
-        {changeset.changes[:admin_name2], changeset.changes[:admin_title2]},
-        {changeset.changes[:admin_name3], changeset.changes[:admin_title3]}
+        {changeset.changes[:admin_name1] || changeset.data.admin_name1,
+         changeset.changes[:admin_title1] || changeset.data.admin_title1},
+        {changeset.changes[:admin_name2] || changeset.data.admin_name2,
+         changeset.changes[:admin_title2] || changeset.data.admin_title2},
+        {changeset.changes[:admin_name3] || changeset.data.admin_name3,
+         changeset.changes[:admin_title3] || changeset.data.admin_title3}
       ]
-      |> Enum.reject(fn {name, _} -> name == "" end)
+      |> Enum.reject(fn {name, _} -> name == "" || !name end)
 
     logos =
       socket
@@ -307,6 +310,16 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
         b64 = path |> File.read!() |> Base.encode64()
         {:ok, "data:#{entry.client_type};base64, #{b64}"}
       end)
+      |> case do
+        [] ->
+          Enum.reject(
+            [changeset.data.logo1, changeset.data.logo2, changeset.data.logo3],
+            fn logo -> is_nil(logo) end
+          )
+
+        new_logos ->
+          new_logos
+      end
 
     attrs = %{
       certificate_type: "Certificate of Completion",
