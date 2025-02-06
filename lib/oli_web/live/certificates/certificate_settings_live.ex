@@ -9,6 +9,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Certificates.CertificatesIssuedTableModel
   alias OliWeb.Certificates.Components.CertificatesIssuedTab
+  alias OliWeb.Certificates.Components.DesignTab
   alias OliWeb.Certificates.Components.ThresholdsTab
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Params
@@ -178,7 +179,13 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   defp render_tab(%{params: %{"active_tab" => :design}} = assigns) do
     ~H"""
-    <div>Design</div>
+    <.live_component
+      module={DesignTab}
+      id="design_component"
+      product={@product}
+      certificate={@certificate}
+      active_tab={@active_tab}
+    />
     """
   end
 
