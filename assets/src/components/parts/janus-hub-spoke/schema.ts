@@ -9,7 +9,6 @@ export interface JanusHubSpokeProperties extends JanusCustomCss, JanusAbsolutePo
 
 export interface JanusHubSpokeItemProperties extends JanusCustomCss {
   nodes: [];
-  multipleSelection: boolean;
   itemId: string;
   layoutType: string;
   totalItems: number;
@@ -28,8 +27,7 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
 
 export interface Item {
   scoreValue: number;
-  nodes: any[]; // TODO: a text flow node
-  // TODO: rest of typing
+  nodes: any[];
   [key: string]: any;
 }
 export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -38,13 +36,10 @@ export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
   layoutType: 'horizontalLayout' | 'verticalLayout';
   verticalGap: number;
   enabled: boolean;
-  showLabel: boolean;
-  showNumbering: boolean;
-  multipleSelection: boolean;
-  randomize: boolean;
   spokeItems: Item[];
   mustVisitAllSpokes: boolean;
   spokeFeedback?: string;
+  requiredSpoke?: number;
 }
 
 export const simpleSchema: JSONSchema7Object = {
@@ -70,7 +65,8 @@ export const simpleSchema: JSONSchema7Object = {
   requiredSpoke: {
     title: 'Number of required spokes',
     type: 'number',
-    default: '3',
+    enum: [0, 1, 2, 3, 4, 5],
+    default: 3,
   },
   showProgressBar: {
     title: 'Show progress bar',
@@ -129,7 +125,6 @@ export const simpleUiSchema = {
   'ui:order': [
     'layoutType',
     'spokeItems',
-    'multipleSelection',
     'mustVisitAllSpokes',
     'requiredSpoke',
     'anyCorrectAnswer',
@@ -212,18 +207,14 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     customCssClass: '',
     layoutType: 'verticalLayout',
     verticalGap: 0,
-    maxManualGrade: 0,
     showOnAnswersReport: false,
     mustVisitAllSpokes: true,
-    requiredSpoke: 0,
+    requiredSpoke: 3,
     requireManualGrading: false,
-    showLabel: true,
-    multipleSelection: false,
     showProgressBar: true,
-    showNumbering: false,
     enabled: true,
     spokeItems: [1, 2, 3].map(createSimpleOption),
-    correctAnswer: [true, false, false],
+    correctAnswer: [true, true, true],
     correctFeedback: '',
     incorrectFeedback: '',
     spokeFeedback: '',

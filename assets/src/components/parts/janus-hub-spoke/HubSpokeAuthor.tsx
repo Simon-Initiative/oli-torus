@@ -229,66 +229,70 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
         <div data-janus-type={tagName} style={styles} className={`hub-spoke spoke-${layoutType}`}>
           <style>
             {`
-            .spoke-horizontalLayout .hub-spoke-item {
-            box-sizing: border-box;
-            margin-left: 0px;
-            margin-right: 0px;
 
-        }
-          .spoke-horizontalLayout {
-            box-sizing: border-box;
-            margin-left: 0px;
-            margin-right: 0px;
-         }
-          .mcq-input>div>label {
-            margin: 0 !important;
-          }
-          .mcq-input>br {
-            display: none !important;
-          }
-          .hub-spoke  button{
-          color: white !important;
-          min-width: 100px;
-          height: auto !important;
-          min-height: 44px;
-          background-color: #006586;
-          border-radius: 3px;
-          border: none;
-          padding: 10px 20px;
-          cursor: pointer;
-          }
-  .hub-spoke {
-    border: none !important;
-    padding: 0px;
+              .spoke-horizontalLayout .hub-spoke-item {
+                box-sizing: border-box;
+                margin-left: 0px;
+                margin-right: 6px;
+              }
+              .spoke-horizontalLayout .progress-bar {
+                width: 25% !important;
+                margin-left: auto;
+                margin-right: 8px !important;
+              }
+              .spoke-horizontalLayout {
+                box-sizing: border-box;
+                margin-left: 0px;
+                margin-right: 0px;
+              }
+              .mcq-input > div > label {
+                margin: 0 !important;
+              }
+              .mcq-input > br {
+                display: none !important;
+              }
+              .hub-spoke button {
+                color: white !important;
+                min-width: 100px;
+                height: auto !important;
+                min-height: 44px;
+                background-color: #006586;
+                border-radius: 3px;
+                border: none;
+                padding: 10px 20px;
+                cursor: pointer;
+              }
+              .hub-spoke {
+                border: none !important;
+                padding: 0px;
 
-    > div {
-      display: block;
-      position: static !important;
-      margin: 0 9px 15px 0;
-      min-height: 20px;
-    }
-    > div:last-of-type {
-      margin-right: 0;
-    }
-    p {
-      margin: 0px;
-    }
-    > br {
-      display: none !important;
-    }
+                > div {
+                  display: block;
+                  position: static !important;
+                  margin: 0 9px 15px 0;
+                  min-height: 20px;
+                }
+                > div:last-of-type {
+                  margin-right: 0;
+                }
+                p {
+                  margin: 0px;
+                }
+                > br {
+                  display: none !important;
+                }
 
-
-  //Horizontal
-  .mcq-wrap > div,
-  .mcq-wrap label,
-  .mcq-wrap label div,
-  .mcq-wrap p {
-    display: inline-block !important;
-  }
-  .mcq-wrap > div {
-    margin-right: 10px !important;
-  }
-}
+                //Horizontal
+                .mcq-wrap > div,
+                .mcq-wrap label,
+                .mcq-wrap label div,
+                .mcq-wrap p {
+                  display: inline-block !important;
+                }
+                .mcq-wrap > div {
+                  margin-right: 10px !important;
+                }
+              }
         `}
           </style>
           {options?.map((item, index) => (
@@ -313,11 +317,13 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
             />
           ))}
           {showProgressBar && (
-            <div className="space-y-5" style={{ width: '96%' }}>
+            <div className="space-y-5 progress-bar" style={{ width: '96%' }}>
               <div>
                 <div className="mb-2 flex justify-between items-center">
                   <h3 className="text-sm font-semibold text-gray-800 dark:text-white">Progress</h3>
-                  <span className="text-sm text-gray-800 dark:text-white">0/{options?.length}</span>
+                  <span className="text-sm text-gray-800 dark:text-white">
+                    <b>0/{options?.length}</b>
+                  </span>
                 </div>
                 <div
                   className="flex w-full h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-neutral-700"
@@ -334,7 +340,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
           {showConfirmDelete && (
             <ConfirmDelete
               show={showConfirmDelete}
-              elementType="MCQ Option"
+              elementType="Spoke Option"
               elementName="the Option"
               deleteHandler={() => handleDeleteRule()}
               cancelHandler={() => {

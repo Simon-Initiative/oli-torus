@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Modal } from 'react-bootstrap';
+import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch } from 'react-redux';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { useToggle } from '../../../../../components/hooks/useToggle';
@@ -60,12 +60,23 @@ export const SpokeOptionsEditor: React.FC<Props> = ({ id, value, onChange, onBlu
             value={option}
             onChange={editEntry(index)}
             onDelete={deleteEntry(index)}
+            totalspoke={value}
           />
         ))}
       </div>
 
-      <button className="btn btn-primary" onClick={onAddOption}>
-        + Add Spoke
+      <button className="btn btn-primary" disabled={value.length >= 5} onClick={onAddOption}>
+        <OverlayTrigger
+          placement="bottom"
+          delay={{ show: 150, hide: 150 }}
+          overlay={
+            <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
+              {value?.length >= 5 ? <div>Maximum 5 spokes are allowed</div> : <div>Add spoke</div>}
+            </Tooltip>
+          }
+        >
+          <div>+ Add Spoke</div>
+        </OverlayTrigger>
       </button>
     </div>
   );
@@ -75,7 +86,9 @@ const OptionsEditor: React.FC<{
   value: OptionsType;
   onChange: (v: OptionsType) => void;
   onDelete: () => void;
-}> = ({ value, onChange, onDelete }) => {
+  totalspoke: OptionsType[];
+}> = ({ value, onChange, onDelete, totalspoke }) => {
+  console.log({ totalspoke });
   const [editorOpen, , openEditor, closeEditor] = useToggle(false);
   const [tempValue, setTempValue] = useState<{ value: OptionsNodes }>({ value: [] });
   const dispatch = useDispatch();
@@ -104,8 +117,20 @@ const OptionsEditor: React.FC<{
         <button className="btn btn-link p-0 mr-1" onClick={onEdit}>
           <ScreenEditIcon />
         </button>
-        <button className="btn btn-link p-0" onClick={onDelete}>
-          <ScreenDeleteIcon />
+        <button disabled={totalspoke?.length <= 2} className="btn btn-link p-0" onClick={onDelete}>
+          <OverlayTrigger
+            placement="bottom"
+            delay={{ show: 150, hide: 150 }}
+            overlay={
+              <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
+                {totalspoke?.length <= 2 ? <div>Minimum 2 spokes are required</div> : <div>Delete the spoke</div>}
+              </Tooltip>
+            }
+          >
+            <div>
+              <ScreenDeleteIcon />
+            </div>
+          </OverlayTrigger>
         </button>
       </div>
       {editorOpen && (
