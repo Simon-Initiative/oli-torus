@@ -3,6 +3,7 @@ import guid from '../../../../../utils/guid';
 import {
   AdvancedFeedbackAnswerType,
   IDropdownPartLayout,
+  IHubSpokePartLayout,
   IInputNumberPartLayout,
   IMCQPartLayout,
   ISliderPartLayout,
@@ -94,17 +95,35 @@ export const createMCQSpecificPath = (
   };
 };
 
+export const createSpokeCommonPath = (
+  spoke: IHubSpokePartLayout,
+  selectedOption: number,
+  destinationScreenId: number | null = null,
+): OptionCommonErrorPath => {
+  const optionLabel =
+    getNodeText(spoke.custom?.spokeItems[selectedOption].nodes) || `Spoke #${selectedOption + 1}`;
+
+  return {
+    ...createDestinationPathTemplate(`spoke-common-path-${selectedOption}`, destinationScreenId),
+    type: 'option-common-error',
+    selectedOption: selectedOption + 1,
+    componentId: spoke.id,
+    label: optionLabel.substring(0, 20),
+    priority: 4,
+  };
+};
+
 export const createMCQCommonErrorPath = (
   mcq: IMCQPartLayout,
   selectedOption: number,
   destinationScreenId: number | null = null,
-): OptionCommonErrorPath => {
+): OptionSpecificPath => {
   const optionLabel =
     getNodeText(mcq.custom?.mcqItems[selectedOption].nodes) || `Option #${selectedOption + 1}`;
 
   return {
     ...createDestinationPathTemplate(`mcq-common-error-${selectedOption}`, destinationScreenId),
-    type: 'option-common-error',
+    type: 'option-specific',
     selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: mcq.id,
     label: 'Incorrect option: ' + optionLabel.substring(0, 20),
@@ -131,6 +150,17 @@ export const createCorrectPath = (
   type: 'correct',
   componentId,
   label: 'Correct',
+  priority: 8,
+});
+
+export const createSpokeCorrectPath = (
+  componentId: string,
+  destinationScreenId: number | null = null,
+): CorrectPath => ({
+  ...createDestinationPathTemplate('correct', destinationScreenId),
+  type: 'correct',
+  componentId,
+  label: 'Hub Completed',
   priority: 8,
 });
 

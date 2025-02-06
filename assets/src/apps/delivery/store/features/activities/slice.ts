@@ -177,6 +177,27 @@ export interface IMCQPartLayout extends IBasePartLayout {
   } & IBasePartLayoutCustomProp;
 }
 
+export interface IHubSpokePartLayout extends IBasePartLayout {
+  type: 'janus-hub-spoke';
+  custom: {
+    maxScore: number;
+    verticalGap: number;
+    spokeItems: any[];
+    customCssClass: '';
+    layoutType: 'verticalLayout' | 'horizontalLayout';
+    enabled: boolean;
+    showProgressBar: boolean;
+    mustVisitAllSpokes: boolean;
+    requiredSpoke: number;
+    anyCorrectAnswer?: boolean;
+    correctAnswer?: boolean[];
+    correctFeedback?: string;
+    spokeFeedback?: string;
+    incorrectFeedback?: string;
+    commonErrorFeedback?: string[];
+  } & IBasePartLayoutCustomProp;
+}
+
 type KnownPartLayouts =
   | IMCQPartLayout
   | IDropdownPartLayout

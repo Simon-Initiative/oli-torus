@@ -1,6 +1,7 @@
 import {
   IActivity,
   IDropdownPartLayout,
+  IHubSpokePartLayout,
   IInputNumberPartLayout,
   IInputTextPartLayout,
   IMCQPartLayout,
@@ -16,10 +17,12 @@ import {
   createInputNumberCommonErrorPath,
   createMCQCommonErrorPath,
   createMCQSpecificPath,
+  createSpokeCommonPath,
+  createSpokeCorrectPath,
   createUnknownPathWithDestination,
 } from './path-factories';
 import { AllPaths } from './path-types';
-import { isDropdown, isInputNumber, isInputText, isMCQ, isSlider } from './path-utils';
+import { isDropdown, isHubSpoke, isInputNumber, isInputText, isMCQ, isSlider } from './path-utils';
 
 // Given a screen, return all the path types that are available for us.
 export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
@@ -35,6 +38,9 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
     case 'check-all-that-apply':
     case 'multiple-choice':
       return createMultipleChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
+    case 'hub-spoke':
+      return createHubAndSpokePathOptions(screen.content?.partsLayout.find(isHubSpoke));
+
     case 'dropdown':
       return createDropdownChoicePathOptions(screen.content?.partsLayout.find(isDropdown));
     default:
@@ -124,6 +130,16 @@ const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
   return [];
 };
 
+const createHubAndSpokePathOptions = (spoke: IHubSpokePartLayout | undefined) => {
+  if (spoke) {
+    const commonErrorOptions = (spoke.custom?.spokeItems || [])
+      .map((_, index) => index)
+      .map((index) => createSpokeCommonPath(spoke, index));
+    return [...commonErrorOptions, createSpokeCorrectPath(spoke.id)];
+  }
+  return [];
+};
+
 export type QuestionType =
   | 'multiple-choice'
   | 'check-all-that-apply'
@@ -153,7 +169,7 @@ export const questionTypeLabels: Record<QuestionType, string> = {
   'multi-line-text': 'Multi-line Text',
   'input-text': 'Text Input',
   'input-number': 'Number Input',
-  'hub-spoke': 'hub and spoke',
+  'hub-spoke': 'Hub and Spoke',
   dropdown: 'Dropdown',
   slider: 'Slider',
   none: 'No question',
