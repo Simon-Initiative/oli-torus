@@ -204,17 +204,18 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
               </div>
             </div>
           <% end %>
-          <!-- Save -->
-          <button
-            type="submit"
-            name="save"
-            form={f.id}
-            phx-disable-with="Saving..."
-            class="px-6 py-4 bg-[#0165da] text-white rounded opacity-90 hover:opacity-100"
-          >
-            Preview
-          </button>
-          <div></div>
+          <div>
+            <!-- Save -->
+            <button
+              type="submit"
+              name="save"
+              form={f.id}
+              phx-disable-with="Saving..."
+              class="px-6 py-4 bg-blue-500 text-white rounded opacity-90 hover:opacity-100"
+            >
+              Save Design
+            </button>
+          </div>
         </div>
       </.form>
     </div>
@@ -255,15 +256,10 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
     {completion_cert, distinction_cert, logos} = generate_previews(socket)
 
     attrs =
-      assigns.form.params
-      |> Enum.reject(fn {_k, v} -> v == "" end)
-      |> Enum.into(%{})
-      |> Map.put_new("title", assigns.product.title)
-      |> Map.put_new("description", assigns.product.description)
-      |> Map.put("logo1", Enum.at(logos, 0))
-      |> Map.put("logo2", Enum.at(logos, 1))
-      |> Map.put("logo3", Enum.at(logos, 2))
-
+      assigns.certificate_changeset.changes
+      |> Map.put(:logo1, Enum.at(logos, 0))
+      |> Map.put(:logo2, Enum.at(logos, 1))
+      |> Map.put(:logo3, Enum.at(logos, 2))
 
     socket.assigns.certificate
     |> Certificate.changeset(attrs)
@@ -277,12 +273,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         assign(socket,
-           form: to_form(changeset),
-           show_preview: true,
-           certificate_html: {completion_cert, distinction_cert}
-         )}
+        send(self(), {:put_flash, [:error, "Failed to save certificate design"]})
+        assign(socket, certificate_changeset: changeset)
     end
   end
 
@@ -299,11 +291,13 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
   end
 
   defp generate_previews(%{assigns: assigns} = socket) do
+    changeset = assigns.certificate_changeset
+
     admins =
       [
-        {assigns.form.params["admin_name1"], assigns.form.params["admin_title1"]},
-        {assigns.form.params["admin_name2"], assigns.form.params["admin_title2"]},
-        {assigns.form.params["admin_name3"], assigns.form.params["admin_title3"]}
+        {changeset.changes[:admin_name1], changeset.changes[:admin_title1]},
+        {changeset.changes[:admin_name2], changeset.changes[:admin_title2]},
+        {changeset.changes[:admin_name3], changeset.changes[:admin_title3]}
       ]
       |> Enum.reject(fn {name, _} -> name == "" end)
 
@@ -319,8 +313,8 @@ defmodule OliWeb.Certificates.CertificateSettingsDesignComponent do
       student_name: "Student Name",
       completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
       certificate_id: "00000000-0000-0000-0000-000000000000",
-      course_name: assigns.form.params["title"] || assigns.product.title,
-      course_description: assigns.form.params["description"] || assigns.product.description,
+      course_name: changeset.changes[:title] || changeset.data.title,
+      course_description: changeset.changes[:description] || changeset.data.description,
       administrators: admins,
       logos: logos
     }
