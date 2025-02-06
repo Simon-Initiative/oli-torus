@@ -35,7 +35,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       sorting = %Sorting{field: sort_by, direction: direction}
 
       granted_certificates =
-        Certificates.browser_granted_certificates(paging, sorting, text_search, section_id)
+        Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
 
       table_model = CertificatesIssuedTableModel.new(session_context, granted_certificates)
 

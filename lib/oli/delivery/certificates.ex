@@ -90,7 +90,7 @@ defmodule Oli.Delivery.Certificates do
   Browse granted certificate records.
   """
 
-  def browser_granted_certificates(
+  def browse_granted_certificates(
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
         text_search,

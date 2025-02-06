@@ -66,7 +66,7 @@ defmodule Oli.Delivery.CertificatesTest do
     end
   end
 
-  describe "browser_granted_certificates/4" do
+  describe "browse_granted_certificates/4" do
     setup do
       section = insert(:section)
       certificate = insert(:certificate, section: section)
@@ -132,18 +132,18 @@ defmodule Oli.Delivery.CertificatesTest do
       paging = %{ctx.paging | limit: 1}
 
       assert [%{total_count: 2}] =
-               Certificates.browser_granted_certificates(paging, sorting, "Instru", section_id)
+               Certificates.browse_granted_certificates(paging, sorting, "Instru", section_id)
     end
 
     test "filters by recipient type user", ctx do
       %{sorting: sorting, paging: paging, section_id: section_id} = ctx
-      gc = Certificates.browser_granted_certificates(paging, sorting, "Instru", section_id)
+      gc = Certificates.browse_granted_certificates(paging, sorting, "Instru", section_id)
       assert length(gc) == 2
     end
 
     test "filters by recipient type author", ctx do
       %{sorting: sorting, paging: paging, section_id: section_id} = ctx
-      gc = Certificates.browser_granted_certificates(paging, sorting, "Adm", section_id)
+      gc = Certificates.browse_granted_certificates(paging, sorting, "Adm", section_id)
       assert length(gc) == 1
     end
 
@@ -151,15 +151,15 @@ defmodule Oli.Delivery.CertificatesTest do
       %{sorting: sorting, paging: paging, section_id: section_id} = ctx
 
       [%{recipient: %{name: "Student_2"}}] =
-        Certificates.browser_granted_certificates(paging, sorting, "Student_2", section_id)
+        Certificates.browse_granted_certificates(paging, sorting, "Student_2", section_id)
     end
 
     test "gets all records when text_search is nil or an empty string", ctx do
       %{sorting: sorting, paging: paging, section_id: section_id} = ctx
-      gc = Certificates.browser_granted_certificates(paging, sorting, " ", section_id)
+      gc = Certificates.browse_granted_certificates(paging, sorting, " ", section_id)
       assert length(gc) == 3
 
-      gc = Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+      gc = Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
       assert length(gc) == 3
     end
 
@@ -172,7 +172,7 @@ defmodule Oli.Delivery.CertificatesTest do
                %{issuer: %{name: "Instructor_1"}},
                %{issuer: %{name: "Instructor_2"}}
              ] =
-               Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+               Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
 
       sorting = %{sorting | field: :issuer, direction: :desc}
 
@@ -181,7 +181,7 @@ defmodule Oli.Delivery.CertificatesTest do
                %{issuer: %{name: "Instructor_1"}},
                %{issuer: %{name: "Admin_1"}}
              ] =
-               Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+               Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
     end
 
     test "sorts by recipient", ctx do
@@ -193,7 +193,7 @@ defmodule Oli.Delivery.CertificatesTest do
                %{recipient: %{name: "Student_2"}},
                %{recipient: %{name: "Student_3"}}
              ] =
-               Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+               Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
 
       sorting = %{sorting | field: :recipient, direction: :desc}
 
@@ -202,7 +202,7 @@ defmodule Oli.Delivery.CertificatesTest do
                %{recipient: %{name: "Student_2"}},
                %{recipient: %{name: "Student_1"}}
              ] =
-               Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+               Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
     end
 
     test "sorts by issued_at", ctx do
@@ -217,7 +217,7 @@ defmodule Oli.Delivery.CertificatesTest do
                %{issued_at: ^issued_at_2},
                %{issued_at: ^issued_at_1}
              ] =
-               Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+               Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
 
       sorting = %{sorting | field: :issued_at, direction: :desc}
 
@@ -226,7 +226,7 @@ defmodule Oli.Delivery.CertificatesTest do
                %{issued_at: ^issued_at_2},
                %{issued_at: ^issued_at_3}
              ] =
-               Certificates.browser_granted_certificates(paging, sorting, nil, section_id)
+               Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
     end
   end
 end

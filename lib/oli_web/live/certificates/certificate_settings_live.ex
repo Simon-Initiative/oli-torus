@@ -103,7 +103,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     section_id = socket.assigns.product.id
 
     granted_certificates =
-      Certificates.browser_granted_certificates(paging, sorting, text_search, section_id)
+      Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
 
     table_model = socket.assigns[:table_model]
     table_model = %{table_model | rows: granted_certificates, sort_order: params["direction"]}
