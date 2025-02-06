@@ -24,6 +24,7 @@ import ActivityBank from './bank/ActivityBank';
 import Bibliography from './bibliography/Bibliography';
 import { References } from './bibliography/References';
 import { TriggerButton } from 'components/TriggerButton';
+import { TriggerGroupButton } from 'components/TriggerGroupButton';
 
 registerApplication('Bibliography', Bibliography, globalStore);
 registerApplication('ModalDisplay', ModalDisplay, globalStore);
@@ -49,3 +50,4 @@ registerApplication('LikertReportRenderer', LikertReportRenderer, globalStore);
 registerApplication('ActivityBank', ActivityBank, globalStore);
 registerApplication('Evaluation', Evaluation, globalStore);
 registerApplication('TriggerButton', TriggerButton, globalStore);
+registerApplication('TriggerGroupButton', TriggerGroupButton, globalStore);

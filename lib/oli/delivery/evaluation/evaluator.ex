@@ -4,6 +4,9 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Activities.Model.Feedback
+  alias Oli.Conversation.Trigger
+  alias Oli.Conversation.Triggers
+
 
   @doc """
   Evaluates a student input for a given activity part.  In a successful
@@ -22,10 +25,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
 
-    relevant_triggers_by_type = Enum.filter(part.triggers, fn trigger ->
-      trigger.type in Oli.Conversation.Triggers.evaluation_triggers()
-    end)
-    |> Enum.group_by(&(&1.type))
+    relevant_triggers_by_type = Triggers.relevant_triggers_by_type(part)
 
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score, show_page: show_page} = response, _, out_of} ->
@@ -39,7 +39,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            error: nil,
            show_page: show_page,
            part_id: part.id,
-           trigger: arm_trigger(relevant_triggers_by_type, response, out_of)
+           trigger: Triggers.check_for_response_trigger(relevant_triggers_by_type, response, out_of, context)
          }}
 
       # No matching response found - mark incorrect
@@ -64,53 +64,12 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            error: nil,
            show_page: nil,
            part_id: part.id,
-           trigger: arm_trigger(relevant_triggers_by_type, %Response{score: 0}, adjusted_out_of)
+           trigger: Triggers.check_for_response_trigger(relevant_triggers_by_type, %Response{score: 0}, adjusted_out_of, context)
          }}
 
       _ ->
         {:error, "Error in evaluation"}
     end
-  end
-
-  defp arm_trigger(relevant_triggers_by_type, response, out_of) do
-
-    case find_matching_trigger(relevant_triggers_by_type, response, out_of) do
-      nil -> nil
-      trigger ->
-        {:ok, t} = Oli.Activities.Model.Trigger.parse(trigger)
-        t
-    end
-
-  end
-
-  defp find_matching_trigger(relevant_triggers_by_type, response, out_of) do
-    # Does this response match a targeted feedback trigger?
-    targeted_feedback_trigger = Map.get(relevant_triggers_by_type, :targeted_feedback, [])
-    |> Enum.find(fn trigger ->
-      trigger.ref_id == response.id
-    end)
-
-    correct_trigger = Map.get(relevant_triggers_by_type, :correct_answer, [nil]) |> hd()
-    incorrect_trigger = Map.get(relevant_triggers_by_type, :incorrect_answer, [nil]) |> hd()
-
-    is_correct? = response.score == out_of
-
-    IO.inspect("find_matching_trigger")
-
-    IO.inspect(relevant_triggers_by_type)
-    IO.inspect(correct_trigger)
-    IO.inspect(incorrect_trigger)
-
-    if targeted_feedback_trigger != nil do
-      targeted_feedback_trigger
-    else
-      if is_correct? do
-        correct_trigger
-      else
-        incorrect_trigger
-      end
-    end
-
   end
 
   # Consider one response

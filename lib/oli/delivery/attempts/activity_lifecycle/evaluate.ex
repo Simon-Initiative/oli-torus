@@ -389,6 +389,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           resource_attempt_number: 1,
           activity_attempt_number: 1,
           part_attempt_number: 1,
+          page_id: 1,
+          activity_attempt_guid: "test",
           part_attempt_guid: part_id,
           input: input.input
         }
@@ -778,8 +780,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             context = %EvaluationContext{
               resource_attempt_number: resource_attempt.attempt_number,
               activity_attempt_number: attempt_number,
+              activity_attempt_guid: activity_attempt.attempt_guid,
               part_attempt_number: attempt.attempt_number,
               part_attempt_guid: attempt.attempt_guid,
+              page_id: effective_settings.resource_id,
               input: input.input
             }
 

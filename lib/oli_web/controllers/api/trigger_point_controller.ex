@@ -14,11 +14,9 @@ defmodule OliWeb.Api.TriggerPointController do
     case Oli.Conversation.Triggers.verify_access(section_slug, current_user.id) do
       {:ok, section} ->
 
-        IO.inspect(conn.body_params)
-
         trigger = conn.body_params["trigger"] |> Oli.Conversation.Trigger.parse(section.id, current_user.id)
-
-        case Oli.Conversation.Triggers.invoke(section, current_user, trigger) do
+        IO.inspect(trigger)
+        case Oli.Conversation.Triggers.invoke(section.id, current_user.id, trigger) do
           :ok ->
             json(conn, %{"type" => "submitted"})
 

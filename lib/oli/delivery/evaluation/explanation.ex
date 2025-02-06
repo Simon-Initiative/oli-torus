@@ -39,7 +39,13 @@ defmodule Oli.Delivery.Evaluation.Explanation do
       ) do
     case check_explanation_condition(context) do
       {_strategy, true} ->
-        {:ok, %FeedbackAction{feedback_action | explanation: part.explanation}}
+
+        # Possibly add a trigger based on the explanation having been added.  This
+        # will replace any other response driven trigger (thus giving explanation
+        # triggers higher priority)
+        trigger = Oli.Conversation.Triggers.check_for_explanation_trigger(part, part.explanation, context)
+
+        {:ok, %FeedbackAction{feedback_action | explanation: part.explanation, trigger: trigger}}
 
       {_strategy, false} ->
         {:ok, feedback_action}

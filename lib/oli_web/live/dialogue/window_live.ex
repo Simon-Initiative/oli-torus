@@ -81,8 +81,6 @@ defmodule OliWeb.Dialogue.WindowLive do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     resource_id = session["resource_id"]
 
-    IO.inspect("sub")
-    IO.inspect("trigger:#{current_user_id}:#{section.id}:#{resource_id}")
     PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
     if Sections.assistant_enabled?(section) do
@@ -541,7 +539,12 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def handle_info({:trigger, trigger}, socket) do
 
+    IO.inspect("trigger hit in window live")
+    IO.inspect(trigger)
+
     prompt = Triggers.assemble_trigger_prompt(trigger)
+
+    IO.inspect(prompt)
 
     dialogue = Dialogue.add_message(
       socket.assigns.dialogue,

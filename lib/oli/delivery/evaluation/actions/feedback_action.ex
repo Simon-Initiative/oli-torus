@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.Evaluation.Actions.FeedbackAction do
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:trigger]}
   defstruct [
     :type,
     :score,

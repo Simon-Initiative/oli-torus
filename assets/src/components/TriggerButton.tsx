@@ -14,18 +14,20 @@ export const TriggerButton: React.FC<{
     const payload: Trigger.TriggerPayload = {
       trigger_type: 'content_block',
       resource_id: resourceId,
-      data: trigger.id,
+      data: {ref_id: trigger.id},
       prompt: trigger.prompt,
     };
     Trigger.invoke(sectionSlug, payload);
   };
 
   return (
-    <button
-      className="btn btn-primary"
-      onClick={onClick}>
-        Trigger
-    </button>
+    <div className="flex justify-center">
+      <button
+        className="px-2 py-1 text-sm text-white active:scale-95 transition-transform rounded"
+        onClick={onClick}>
+        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+      </button>
+    </div>
   );
 });
 
