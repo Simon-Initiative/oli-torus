@@ -456,5 +456,8 @@ defmodule OliWeb.UserAuth do
   defp maybe_return_to_section(nil), do: nil
   defp maybe_return_to_section(section), do: ~p"/sections/#{section}"
 
+  defp signed_in_path(%{request_path: "/instructors/log_in"} = conn),
+    do: ~p"/workspaces/instructor"
+
   defp signed_in_path(_conn), do: ~p"/workspaces/student"
 end
