@@ -7,7 +7,7 @@ import {
 import { clone, parseBoolean } from 'utils/common';
 import ConfirmDelete from '../../../../src/apps/authoring/components/Modal/DeleteConfirmationModal';
 import { tagName as quillEditorTagName, registerEditor } from '../janus-text-flow/QuillEditor';
-import { SpokeItems } from './SpokeItems';
+import { SpokeItems } from './HubSpoke';
 import { hubSpokeModel } from './schema';
 
 const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props) => {

@@ -1,14 +1,132 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import { shuffle } from 'lodash';
+import { parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { parseBool } from '../../../utils/common';
+import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
-import { hubSpokeModel } from './schema';
+import { Item, JanusHubSpokeItemProperties, hubSpokeModel } from './schema';
+
+const SpokeItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
+      {nodes.map((subtree: any) => {
+        const style: any = {};
+        if (subtree.tag === 'p') {
+          const hasImages = subtree.children.some((child: { tag: string }) => child.tag === 'img');
+          if (hasImages) {
+            style.display = 'inline-block';
+          }
+        }
+        return renderFlow(`${itemId}-root`, subtree, style, state);
+      })}
+    </div>
+  );
+};
+
+const SpokeItemContent = React.memo(SpokeItemContentComponent);
+
+export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
+  nodes,
+  state,
+  itemId,
+  layoutType,
+  totalItems,
+  idx,
+  overrideHeight,
+  columns = 1,
+  index,
+  verticalGap = 0,
+}) => {
+  const spokeItemStyles: CSSProperties = {};
+  if (layoutType === 'horizontalLayout') {
+    if (columns === 1) {
+      spokeItemStyles.width = `calc(${Math.floor(100 / totalItems)}% - 6px)`;
+    } else {
+      spokeItemStyles.width = `calc(100% / ${columns} - 6px)`;
+    }
+    if (idx !== 0) {
+      spokeItemStyles.left = `calc(${(100 / totalItems) * idx}% - 6px)`;
+    }
+    spokeItemStyles.position = `absolute`;
+
+    spokeItemStyles.display = `inline-block`;
+  }
+  if (layoutType === 'verticalLayout' && overrideHeight) {
+    spokeItemStyles.height = `calc(${100 / totalItems}%)`;
+  }
+  if (layoutType === 'verticalLayout' && verticalGap && index > 0) {
+    spokeItemStyles.marginTop = `${verticalGap}px`;
+  }
+  return (
+    <React.Fragment>
+      <div style={spokeItemStyles} className={` hub-spoke-item`}>
+        <button type="button" style={{ width: '100%' }} className="btn btn-primary">
+          <SpokeItemContent itemId={itemId} nodes={nodes} state={state} />
+        </button>
+      </div>
+      {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px' }} />}
+    </React.Fragment>
+  );
+};
+
+interface SpokeOptionModel extends Item {
+  index: number;
+  value: number;
+}
+
+const getOptionTextFromNode = (children: any): any => {
+  let optionText = '';
+  if (children.tag === 'text') {
+    optionText = children.text;
+  } else if (children?.children?.length) {
+    optionText = getOptionTextFromNode(children.children[0]);
+  }
+  return optionText;
+};
+
+const getOptionTextById = (options: SpokeOptionModel[], optionId: number): string => {
+  const text = options
+    .map((option: any) => {
+      if (option.value === optionId) {
+        if (option.nodes[0].tag === 'text') {
+          return option.nodes[0].text;
+        } else {
+          return getOptionTextFromNode(option.nodes[0]);
+        }
+      }
+    })
+    .filter((option: any) => option !== undefined);
+  return text?.length ? text[0] : '';
+};
+
+const getOptionNumberFromText = (
+  options: SpokeOptionModel[],
+  optionText: string,
+): number | undefined => {
+  const values = options
+    .map((option) => {
+      const text = getOptionTextFromNode(option.nodes[0]);
+      if (text === optionText) {
+        return option.value;
+      }
+    })
+    .filter((option) => option !== undefined);
+
+  // even if there are multiple choices with the same text (why??) pick the first one
+  return values[0];
+};
+
+interface ItemSelectionInput {
+  value: number;
+  textValue: string;
+  checked: boolean;
+}
 
 const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -17,18 +135,54 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
   const id: string = props.id;
 
   const [enabled, setEnabled] = useState(true);
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
-  const [selectedItem, setSelectedItem] = useState<string>('');
-  const [_cssClass, setCssClass] = useState('');
+  const [randomized, setRandomized] = useState(false);
+  const [options, setOptions] = useState<SpokeOptionModel[]>([]);
+  const [multipleSelection, setMultipleSelection] = useState(false);
+
+  const [selectionState, setSelectionState] = useState<{
+    numberOfSelectedChoices: number;
+    selectedChoice: number;
+    selectedChoiceText: string;
+    selectedChoices: number[];
+    selectedChoicesText: string[];
+  }>({
+    numberOfSelectedChoices: 0,
+    selectedChoice: 0,
+    selectedChoiceText: '',
+    selectedChoices: [],
+    selectedChoicesText: [],
+  });
+
+  // converts stringfied number array to number array
+  const convertToNumberArray = (arr: string[]) =>
+    arr.map((element) => parseInt(element.toString().replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
-    // set defaults
+    /* console.log('MCQ INIT', { pModel }); */
+    // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
 
-    const dCssClass = pModel.customCssClass || '';
-    setCssClass(dCssClass);
-    console.log('On Init');
+    const dRandomized = parseBoolean(pModel.randomize);
+    setRandomized(dRandomized);
+
+    const dMultipleSelection = parseBoolean(pModel.multipleSelection);
+    setMultipleSelection(dMultipleSelection);
+
+    // we need to set up a new list so that we can shuffle while maintaining correct index/values
+    let mcqList: SpokeOptionModel[] = pModel.mcqItems?.map((item: any, index: number) => ({
+      ...item,
+      index: index,
+      value: index + 1,
+    }));
+
+    if (dRandomized) {
+      mcqList = shuffle(mcqList);
+    }
+
+    setOptions(mcqList);
+
+    // now we need to save the defaults used in adaptivity (not necessarily the same)
     const initResult = await props.onInit({
       id,
       responses: [
@@ -38,85 +192,125 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
           value: dEnabled,
         },
         {
-          key: 'customCssClass',
-          type: CapiVariableTypes.STRING,
-          value: dCssClass,
+          key: 'randomize',
+          type: CapiVariableTypes.BOOLEAN,
+          value: dRandomized,
         },
         {
-          id: `selectedIndex`,
-          key: 'selectedIndex',
+          key: 'numberOfSelectedChoices',
           type: CapiVariableTypes.NUMBER,
-          value: selectedIndex,
+          value: selectionState.numberOfSelectedChoices,
         },
         {
-          id: `selectedItem`,
-          key: 'selectedItem',
-          type: CapiVariableTypes.STRING,
-          value: selectedItem,
+          key: 'selectedChoice',
+          type: CapiVariableTypes.NUMBER,
+          value: -1,
         },
         {
-          id: `value`,
-          key: 'value',
+          key: 'selectedChoiceText',
           type: CapiVariableTypes.STRING,
-          value: 'NULL',
+          value: selectionState.selectedChoiceText,
+        },
+        {
+          key: 'selectedChoices',
+          type: CapiVariableTypes.ARRAY,
+          value: selectionState.selectedChoices,
+        },
+        {
+          key: 'selectedChoicesText',
+          type: CapiVariableTypes.ARRAY,
+          value: selectionState.selectedChoicesText,
         },
       ],
     });
 
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
+    setState(currentStateSnapshot);
 
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
 
-    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
-    if (sCssClass !== undefined) {
-      setCssClass(sCssClass);
+    const sRandomize = currentStateSnapshot[`stage.${id}.randomize`];
+    if (sRandomize !== undefined) {
+      setRandomized(sRandomize);
     }
 
-    // TODO: value ??
+    // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
+    let hasDoneMultiple = false;
+    let hasDoneSelectedChoice = false;
 
-    const sSelectedIndex = currentStateSnapshot[`stage.${id}.selectedIndex`];
-    if (sSelectedIndex !== undefined && Number(sSelectedIndex) !== -1) {
-      const stateSelection = Number(sSelectedIndex);
-      setSelectedIndex(stateSelection);
-      if (pModel.optionLabels) {
-        setSelectedItem(pModel.optionLabels[stateSelection - 1]);
-        setTimeout(() => {
-          saveState({
-            selectedIndex: stateSelection,
-            selectedItem: pModel.optionLabels[stateSelection - 1],
-            value: pModel.optionLabels[stateSelection - 1],
-            enabled,
-          });
-        });
+    // this is for setting *multiple* choices being selected by the number value
+    const sSelectedChoices: string[] = currentStateSnapshot[`stage.${id}.selectedChoices`];
+    if (dMultipleSelection && sSelectedChoices !== undefined) {
+      hasDoneMultiple = true;
+      hasDoneSelectedChoice = true;
+      // convert stringfied number array to number array
+      const selectedArray = convertToNumberArray(sSelectedChoices);
+
+      if (Array.isArray(selectedArray)) {
+        const newSelectionArray = selectedArray.map((choice) => ({
+          value: choice,
+          textValue: getOptionTextById(options, choice),
+          checked: true,
+        }));
+        handleMultipleItemSelection(newSelectionArray, true);
       }
     }
 
-    const sSelectedItem = currentStateSnapshot[`stage.${id}.selectedItem`];
-    if (sSelectedItem !== undefined && sSelectedItem !== '') {
-      const selectionIndex: number = pModel.optionLabels?.findIndex((str: string) =>
-        sSelectedItem.includes(str),
-      );
-      setSelectedItem(sSelectedItem);
-      setSelectedIndex(selectionIndex + 1);
-      setTimeout(() => {
-        saveState({
-          selectedIndex: selectionIndex + 1,
-          selectedItem: sSelectedItem,
-          value: sSelectedItem,
-          enabled,
-        });
-      });
+    // this is for setting *multiple* choices being selected by the text value
+    const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
+    if (dMultipleSelection && sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
+      hasDoneMultiple = true;
+      const selectedArray = parseArray(sSelectedChoicesText);
+      if (Array.isArray(selectedArray)) {
+        const newSelectionArray = selectedArray
+          .map((choiceText) => ({
+            value: getOptionNumberFromText(options, choiceText as string),
+            textValue: choiceText,
+            checked: true,
+          }))
+          .filter((choice) => choice.value !== undefined);
+        handleMultipleItemSelection(newSelectionArray as ItemSelectionInput[], true);
+      }
     }
-    //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
+
+    if (!hasDoneMultiple) {
+      // this is for setting a *single* seletion by the number
+      const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
+      if (sSelectedChoice !== undefined) {
+        hasDoneSelectedChoice = true;
+        const choice = parseInt(String(sSelectedChoice), 10);
+        const checked = choice > 0;
+        const textValue = checked ? getOptionTextById(options, choice) : '';
+        handleItemSelection(
+          { value: choice, textValue, checked },
+          true, // need to save pretty much every time because of related properties like count
+        );
+      }
+
+      // this is for a *single* choice being selected by the text value
+      const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
+      if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
+        const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
+        if (choiceNumber !== undefined) {
+          handleItemSelection(
+            { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
+            true, // need to save pretty much every time because of related properties like count
+          );
+        }
+      }
+    }
+
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
     setReady(true);
   }, []);
+
+  const { width, customCssClass, layoutType, height, overrideHeight = false, verticalGap } = model;
 
   useEffect(() => {
     let pModel;
@@ -150,91 +344,72 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, showLabel, label, prompt, optionLabels } = model;
-
-  useEffect(() => {
-    const styleChanges: any = {};
-    if (width !== undefined) {
-      styleChanges.width = { value: width as number };
+  // will always *replace* the selected choices (used by init & mutate)
+  const handleMultipleItemSelection = (selections: ItemSelectionInput[], shouldSave = true) => {
+    let modifiedSelections = selections;
+    const newCount = selections.length;
+    const blankValueExit =
+      (selections.length === 1 && selections.filter((item) => item.value <= 0)) || [];
+    if (blankValueExit.length) {
+      modifiedSelections = [];
     }
-    if (height != undefined) {
-      styleChanges.height = { value: height as number };
+    const newSelectedChoices = modifiedSelections
+      .sort((a, b) => a.value - b.value)
+      .map((item) => item.value);
+
+    const newSelectedChoice = newSelectedChoices.length ? newSelectedChoices[0] : -1;
+
+    const newSelectedChoicesText = modifiedSelections
+      .sort((a, b) => a.value - b.value)
+      .map((item) => item.textValue);
+
+    const newSelectedChoiceText = newSelectedChoicesText.length ? newSelectedChoicesText[0] : '';
+
+    setSelectionState({
+      numberOfSelectedChoices: newCount,
+      selectedChoice: newSelectedChoice,
+      selectedChoiceText: newSelectedChoiceText,
+      selectedChoices: newSelectedChoices,
+      selectedChoicesText: newSelectedChoicesText,
+    });
+
+    if (shouldSave) {
+      saveState({
+        numberOfSelectedChoices: newCount,
+        selectedChoice: newSelectedChoice,
+        selectedChoiceText: newSelectedChoiceText,
+        selectedChoices: newSelectedChoices,
+        selectedChoicesText: newSelectedChoicesText,
+      });
     }
-
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  }, [width, height]);
-
-  const dropdownContainerStyles: CSSProperties = {
-    width,
   };
 
-  const dropDownStyle: CSSProperties = {
-    width: 'auto',
-    height: 'auto',
-  };
-  if (!(showLabel && label)) {
-    dropDownStyle.width = `${Number(width) - 10}px`;
-  }
-  if (showLabel && label && width) {
-    //is this the best way to handle?
-    //if lable is visible then need to set the maxWidth otherwise it gets out of the container
-    dropDownStyle.maxWidth = `${Number(width)}px`;
-  }
-
-  useEffect(() => {
-    //TODO commenting for now. Need to revisit once state structure logic is in place
-    //handleStateChange(state);
-  }, [state]);
-
-  const saveState = ({
-    selectedIndex,
-    selectedItem,
-    value,
-    enabled,
-  }: {
-    selectedIndex: number;
-    selectedItem: string;
-    value: string;
-    enabled: boolean;
-  }) => {
-    props.onSave({
-      id: `${id}`,
-      responses: [
-        {
-          key: 'enabled',
-          type: CapiVariableTypes.BOOLEAN,
-          value: enabled,
-        },
-        {
-          key: 'selectedIndex',
-          type: CapiVariableTypes.NUMBER,
-          value: selectedIndex,
-        },
-        {
-          key: 'selectedItem',
-          type: CapiVariableTypes.STRING,
-          value: selectedItem,
-        },
-        {
-          key: 'value',
-          type: CapiVariableTypes.STRING,
-          value: value,
-        },
-      ],
-    });
-  };
-
-  const handleChange = (event: any) => {
-    const val = Number(event.target.value);
-    // Update/set the value
-    setSelectedIndex(val);
-    saveState({
-      selectedIndex: val,
-      selectedItem: event.target.options[event.target.selectedIndex].text,
-      value: event.target.options[event.target.selectedIndex].text,
-      enabled,
-    });
-  };
+  const handleItemSelection = useCallback(
+    ({ value, textValue, checked }: ItemSelectionInput, shouldSave = true) => {
+      // const originalValue = parseInt(value.toString(), 10);
+      // const newChoice = checked ? originalValue : 0;
+      // const newCount = checked ? 1 : 0;
+      // const newSelectedChoices = [newChoice];
+      // let updatedChoicesText = [checked ? textValue : ''];
+      // let modifiedNewSelectedChoices = newSelectedChoices;
+      // const blankValueExit =
+      //   (newSelectedChoices.length === 1 && newSelectedChoices.filter((value) => value <= 0)) || [];
+      // if (blankValueExit.length) {
+      //   modifiedNewSelectedChoices = [];
+      //   updatedChoicesText = [];
+      // }
+      // if (shouldSave) {
+      //   saveState({
+      //     numberOfSelectedChoices: newCount,
+      //     selectedChoice: newChoice,
+      //     selectedChoiceText: updatedChoiceText,
+      //     selectedChoices: modifiedNewSelectedChoices,
+      //     selectedChoicesText: updatedChoicesText,
+      //   });
+      // }
+    },
+    [multipleSelection, selectionState],
+  );
 
   useEffect(() => {
     if (!props.notify) {
@@ -248,105 +423,26 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload); */
+        /* console.log(`${notificationType.toString()} notification handled [MCQ]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            // nothing to do
+            // should disable input during check?
             break;
           case NotificationType.CHECK_COMPLETE:
-            // nothing to do
-            // TODO: highlight incorrect?
+            // if disabled above then re-enable now
             break;
           case NotificationType.STATE_CHANGED:
             {
               const { mutateChanges: changes } = payload;
-
-              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
-              if (sSelectedIndex !== undefined) {
-                const stateSelection = Number(sSelectedIndex);
-                if (selectedIndex !== stateSelection) {
-                  setSelectedIndex(stateSelection);
-                  setSelectedItem(optionLabels[stateSelection - 1]);
-                  setTimeout(() => {
-                    saveState({
-                      selectedIndex: stateSelection,
-                      selectedItem: optionLabels[stateSelection - 1],
-                      value: optionLabels[stateSelection - 1],
-                      enabled,
-                    });
-                  });
-                }
-              }
-
-              const sSelectedItem = changes[`stage.${id}.selectedItem`];
-              if (sSelectedItem !== undefined) {
-                if (selectedItem !== sSelectedItem) {
-                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
-                    sSelectedItem.includes(str),
-                  );
-                  setSelectedItem(sSelectedItem);
-                  setSelectedIndex(selectionIndex + 1);
-                  setTimeout(() => {
-                    saveState({
-                      selectedIndex: selectionIndex + 1,
-                      selectedItem: sSelectedItem,
-                      value: sSelectedItem,
-                      enabled,
-                    });
-                  });
-                }
-              }
-
-              const sEnabled = changes[`stage.${id}.enabled`];
-              if (sEnabled !== undefined) {
-                setEnabled(parseBool(sEnabled));
-              }
+              console.log({ changes });
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: changes } = payload;
+              const { snapshot: changes } = payload;
 
-              const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
-              if (sSelectedIndex !== undefined) {
-                const stateSelection = Number(sSelectedIndex);
-                if (selectedIndex !== stateSelection || stateSelection === -1) {
-                  setSelectedIndex(stateSelection);
-                  setSelectedItem(optionLabels[stateSelection - 1]);
-                  setTimeout(() => {
-                    saveState({
-                      selectedIndex: stateSelection,
-                      selectedItem: optionLabels[stateSelection - 1],
-                      value: optionLabels[stateSelection - 1],
-                      enabled,
-                    });
-                  });
-                }
-              }
+              console.log('MCQ CONTEXT CHANGED', { changes });
 
-              const sSelectedItem = changes[`stage.${id}.selectedItem`];
-              if (sSelectedItem !== undefined) {
-                if (selectedItem !== sSelectedItem) {
-                  const selectionIndex: number = optionLabels.findIndex((str: any) =>
-                    sSelectedItem.includes(str),
-                  );
-                  setSelectedItem(sSelectedItem);
-                  setSelectedIndex(selectionIndex + 1);
-                  setTimeout(() => {
-                    saveState({
-                      selectedIndex: selectionIndex + 1,
-                      selectedItem: sSelectedItem,
-                      value: sSelectedItem,
-                      enabled,
-                    });
-                  });
-                }
-              }
-
-              const sEnabled = changes[`stage.${id}.enabled`];
-              if (sEnabled !== undefined) {
-                setEnabled(parseBool(sEnabled));
-              }
               if (payload.mode === contexts.REVIEW) {
                 setEnabled(false);
               }
@@ -362,52 +458,139 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, optionLabels]);
+  }, [props.notify, options, handleItemSelection, multipleSelection]);
 
-  // Generate a list of options using optionLabels
-  const dropdownOptions = () => {
-    // use explicit Array() since we're using Elements
-    const options = [];
+  // Set up the styles
+  const styles: CSSProperties = {
+    /* position: 'absolute',
+    top: y,
+    left: x,
+    width,
+    zIndex: z, */
+    width,
+  };
+  if (overrideHeight) {
+    styles.height = height;
+    styles.marginTop = '8px';
+  }
 
-    if (prompt) {
-      // If a prompt exists and the selectedIndex is not set or is set to -1, set prompt as disabled first option
-      options.push(
-        <option key="-1" value="-1" style={{ display: 'none' }}>
-          {prompt}
-        </option>,
-      );
-    } else if (!selectedIndex || selectedIndex === -1) {
-      // If a prompt is blank and the selectedIndex is not set or is set to -1, set empty first option
-      options.push(
-        <option key="-1" value="-1" selected={true} style={{ display: 'none' }}></option>,
-      );
-    }
-    if (optionLabels) {
-      for (let i = 0; i < optionLabels.length; i++) {
-        // Set selected if selectedIndex equals current index
-        options.push(
-          <option key={i + 1} value={i + 1} selected={i + 1 === selectedIndex}>
-            {optionLabels[i]}
-          </option>,
-        );
+  useEffect(() => {
+    setOptions((currentOptions) => {
+      if (randomized) {
+        return shuffle(currentOptions);
       }
+      // TODO: return original model order??
+      return currentOptions;
+    });
+  }, [randomized]);
+
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
     }
-    return options;
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
+
+  const saveState = ({
+    numberOfSelectedChoices,
+    selectedChoice,
+    selectedChoiceText,
+    selectedChoices,
+    selectedChoicesText,
+  }: {
+    numberOfSelectedChoices: number;
+    selectedChoice: number;
+    selectedChoiceText: string;
+    selectedChoices: number[];
+    selectedChoicesText: string[];
+  }) => {
+    // props.onSave({
+    //   id: `${id}`,
+    //   responses: [
+    //     {
+    //       key: 'numberOfSelectedChoices',
+    //       type: CapiVariableTypes.NUMBER,
+    //       value: numberOfSelectedChoices,
+    //     },
+    //     {
+    //       key: 'selectedChoice',
+    //       type: CapiVariableTypes.NUMBER,
+    //       value: selectedChoice,
+    //     },
+    //     {
+    //       key: 'selectedChoiceText',
+    //       type: CapiVariableTypes.STRING,
+    //       value: selectedChoiceText,
+    //     },
+    //     {
+    //       key: 'selectedChoices',
+    //       type: CapiVariableTypes.ARRAY,
+    //       value: selectedChoices,
+    //     },
+    //     {
+    //       key: 'selectedChoicesText',
+    //       type: CapiVariableTypes.ARRAY,
+    //       value: selectedChoicesText,
+    //     },
+    //   ],
+    // });
   };
 
+  const isItemSelected = useCallback(
+    (item: SpokeOptionModel) => {
+      // checks if the item is selected to set the input's "selected" attr
+      let selected = false;
+      if (multipleSelection) {
+        selected = selectionState.selectedChoices.includes(item.index + 1);
+      } else {
+        selected = selectionState.selectedChoice === item.index + 1;
+      }
+      return selected;
+    },
+    [multipleSelection, selectionState],
+  );
+
+  let columns = 1;
+  if (customCssClass === 'two-columns') {
+    columns = 2;
+  }
+  if (customCssClass === 'three-columns') {
+    columns = 3;
+  }
+  if (customCssClass === 'four-columns') {
+    columns = 4;
+  }
+
   return ready ? (
-    <div data-janus-type={tagName} className="dropdown-input" style={dropdownContainerStyles}>
-      <label htmlFor={`${id}-select`}>{showLabel && label ? label : ''}</label>
-      <select
-        style={dropDownStyle}
-        id={`${id}-select`}
-        value={selectedIndex}
-        className={'dropdown '}
-        onChange={handleChange}
-        disabled={!enabled}
-      >
-        {dropdownOptions()}
-      </select>
+    <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
+      {options?.map((item, index) => (
+        <SpokeItems
+          idx={index}
+          key={`${id}-item-${index}`}
+          title={item.title}
+          totalItems={options.length}
+          layoutType={layoutType}
+          itemId={`${id}-item-${index}`}
+          groupId={`mcq-${id}`}
+          selected={isItemSelected(item)}
+          val={item.value}
+          onSelected={handleItemSelection}
+          state={state}
+          {...item}
+          x={0}
+          y={0}
+          overrideHeight={overrideHeight}
+          disabled={!enabled}
+          multipleSelection={multipleSelection}
+          columns={columns}
+          verticalGap={verticalGap}
+        />
+      ))}
     </div>
   ) : null;
 };

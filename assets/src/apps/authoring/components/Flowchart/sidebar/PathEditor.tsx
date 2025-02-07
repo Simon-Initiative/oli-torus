@@ -107,11 +107,13 @@ const PathEditor: React.FC<EditParams> = ({
   const onEdit = (props: Partial<AllPaths>) =>
     setWorkingPath((p: AllPaths) => ({ ...p, ...(props as any) }));
   const onDestinationChange = (screenId: string) => {
+    console.log('I M IN onDestinationChange', { screenId });
     onEdit({ destinationScreenId: parseInt(screenId, 10) });
   };
   const [showDeleteConfirm, toggleDeleteConfirm] = useToggle(false);
   const dispatch = useDispatch();
   const onIdChange = (id: string) => {
+    console.log('I M IN onIdChange', { id });
     if (id === workingPath.id) return;
     const target = availablePaths.find((p) => p.id === id);
     if (!target) return;

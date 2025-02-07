@@ -8,20 +8,17 @@ export interface JanusHubSpokeProperties extends JanusCustomCss, JanusAbsolutePo
 }
 
 export interface JanusHubSpokeItemProperties extends JanusCustomCss {
-  nodes: [];
+  nodes: any[];
   itemId: string;
   layoutType: string;
   totalItems: number;
-  groupId: string;
   selected: boolean;
   val: number;
   disabled?: boolean;
   index: number;
-  mustVisitAllSpokes: boolean;
-  overrideHeight: boolean;
   onConfigOptionClick?: any;
   configureMode?: boolean;
-  verticalGap: number;
+  verticalGap?: number;
   spokeFeedback?: string;
 }
 
@@ -41,6 +38,85 @@ export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
   spokeFeedback?: string;
   requiredSpoke?: number;
 }
+
+export const schema: JSONSchema7Object = {
+  layoutType: {
+    title: 'Layout',
+    type: 'string',
+    description: 'specifies the layout type of hub and Spoke buttons',
+    enum: ['horizontalLayout', 'verticalLayout'],
+    default: 'verticalLayout',
+  },
+  spokeItems: {
+    title: 'Number of spokes',
+    type: 'array',
+    items: {
+      type: 'object',
+    },
+  },
+  mustVisitAllSpokes: {
+    title: 'Must visit all spokes',
+    type: 'boolean',
+    default: false,
+  },
+  requiredSpoke: {
+    title: 'Number of required spokes',
+    type: 'number',
+    enum: [0, 1, 2, 3, 4, 5],
+    default: 3,
+  },
+  showProgressBar: {
+    title: 'Show progress bar',
+    type: 'boolean',
+    default: true,
+  },
+  correctFeedback: {
+    title: 'Complete Feedback',
+    description: 'Feedback shown when all the required spokes are completed',
+    type: 'string',
+    default: '',
+  },
+  incorrectFeedback: {
+    title: 'Incomplete Feedback',
+    description: 'Feedback shown when all the required spokes are not completed',
+    type: 'string',
+    default: '',
+  },
+  spokeFeedback: {
+    title: 'Spoke Feedback',
+    description: 'Feedback shown when user visits any spoke',
+    type: 'string',
+    default: '',
+  },
+  commonErrorFeedback: {
+    title: 'Advanced Feedback',
+    type: 'array',
+    default: [],
+    items: {
+      type: 'string',
+    },
+  },
+  allOf: [
+    {
+      if: {
+        properties: {
+          anyCorrectAnswer: {
+            const: false,
+          },
+        },
+      },
+      then: {
+        properties: {
+          incorrectFeedback: {
+            title: 'Incorrect Feedback',
+            type: 'string',
+            default: '',
+          },
+        },
+      },
+    },
+  ],
+};
 
 export const simpleSchema: JSONSchema7Object = {
   layoutType: {
@@ -180,6 +256,8 @@ export const getCapabilities = () => ({
 export const createSchema = (): Partial<hubSpokeModel> => {
   const createSimpleOption = (index: number, score = 1) => ({
     scoreValue: score,
+    IsCompleted: false,
+    targetScreen: '',
     nodes: [
       {
         tag: 'p',
