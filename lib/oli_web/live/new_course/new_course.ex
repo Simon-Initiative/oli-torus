@@ -1,4 +1,5 @@
 defmodule OliWeb.Delivery.NewCourse do
+  alias Oli.Lti.LtiParams
   use OliWeb, :live_view
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
@@ -61,25 +62,8 @@ defmodule OliWeb.Delivery.NewCourse do
       }
     ]
 
-    {current_user, lti_params} =
-      case socket.assigns.current_user do
-        nil ->
-          {nil, nil}
-
-        current_user ->
-          current_user =
-            Accounts.load_lti_params(current_user)
-            |> Repo.preload([:author])
-
-          lti_params =
-            if current_user.lti_params do
-              current_user.lti_params.params
-            else
-              nil
-            end
-
-          {current_user, lti_params}
-      end
+    current_user = Accounts.preload_author(socket.assigns.current_user)
+    lti_params = LtiParams.get_latest_lti_params_for_user(current_user.id)
 
     changeset =
       case lti_params["https://purl.imsglobal.org/spec/lti/claim/resource_link"] do

@@ -410,11 +410,10 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Preloads the user's LTI params.
+  Preloads the user's linked author.
   """
-  def load_lti_params(user) do
-    user
-    |> Repo.preload(:lti_params)
+  def preload_author(%User{} = user) do
+    Repo.preload(user, :author)
   end
 
   @doc """

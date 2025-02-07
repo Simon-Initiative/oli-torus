@@ -44,8 +44,7 @@ defmodule OliWeb.DeliveryController do
     if user.independent_learner do
       redirect(conn, to: ~p"/workspaces/student")
     else
-      user = Accounts.load_lti_params(user)
-      lti_params = user.lti_params.params
+      lti_params = LtiParams.get_latest_lti_params_for_user(user.id)
 
       lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
       context_roles = ContextRoles.get_roles_by_uris(lti_roles)
