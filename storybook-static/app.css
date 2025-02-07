@@ -6984,6 +6984,10 @@ table.table-striped tbody tr:nth-child(even) {
   border-right-width: 0px;
 }
 
+.\!border-b-0 {
+  border-bottom-width: 0px !important;
+}
+
 .\!border-r-0 {
   border-right-width: 0px !important;
 }
@@ -14815,6 +14819,11 @@ Not supports in Firefox and IE */
   border-color: rgb(62 63 68 / var(--tw-border-opacity));
 }
 
+.dark .dark\:border-\[\#525252\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(82 82 82 / var(--tw-border-opacity));
+}
+
 .dark .dark\:border-black {
   --tw-border-opacity: 1;
   border-color: rgb(0 0 0 / var(--tw-border-opacity));
@@ -14989,6 +14998,11 @@ Not supports in Firefox and IE */
 
 .dark .dark\:bg-\[\#1b191f\]\/50 {
   background-color: rgb(27 25 31 / 0.5);
+}
+
+.dark .dark\:bg-\[\#1e1e1e\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(30 30 30 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-\[\#222126\] {
