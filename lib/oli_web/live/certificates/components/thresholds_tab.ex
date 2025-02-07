@@ -1,11 +1,9 @@
-defmodule OliWeb.Certificates.CertificateSettingsComponent do
+defmodule OliWeb.Certificates.Components.ThresholdsTab do
   use OliWeb, :live_component
-
   import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
-  alias Oli.Repo
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.{Certificate, Section}
+  alias Oli.Repo
   alias OliWeb.Icons
 
   def update(assigns, socket) do
@@ -42,199 +40,25 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
      )}
   end
 
-  def handle_event("validate", %{"certificate" => certificate_params}, socket) do
-    changeset =
-      cast_certificate_params(
-        certificate_params,
-        socket.assigns.certificate,
-        socket.assigns.product,
-        socket.assigns.selected_ids
-      )
-
-    {:noreply, assign(socket, certificate_changeset: changeset)}
-  end
-
-  def handle_event("save_certificate", params, socket) do
-    socket =
-      cast_certificate_params(
-        params["certificate"],
-        socket.assigns.certificate,
-        socket.assigns.product,
-        socket.assigns.selected_ids
-      )
-      |> Repo.insert_or_update()
-      |> case do
-        {:ok, certificate} ->
-          send(self(), {:put_flash, [:info, "Certificate settings saved successfully"]})
-
-          assign(socket, certificate_changeset: certificate_changeset(certificate))
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          send(self(), {:put_flash, [:error, "Failed to save certificate settings"]})
-
-          assign(socket, certificate_changeset: changeset)
-      end
-
-    {:noreply, socket}
-  end
-
-  def handle_event("toggle_certificate", params, socket) do
-    certificate_enabled = params["certificate_enabled"] == "on"
-
-    case Sections.update_section(socket.assigns.product, %{
-           certificate_enabled: certificate_enabled
-         }) do
-      {:ok, product} ->
-        {:noreply,
-         assign(socket, product: product, product_changeset: Section.changeset(product))}
-
-      {:error, changeset} ->
-        {:noreply, assign(socket, product_changeset: changeset)}
-    end
-  end
-
-  def handle_event("toggle_selected", %{"_target" => [id]}, socket),
-    do: do_update_selection(socket, String.to_integer(id))
-
-  def handle_event("toggle_selected", %{"resource_id" => id}, socket),
-    do: do_update_selection(socket, String.to_integer(id))
-
-  def handle_event("toggle_selected", _params, socket), do: {:noreply, socket}
-
-  def handle_event("select_all_pages", _params, socket) do
-    graded_pages_options = Enum.map(socket.assigns.graded_pages, &Map.put(&1, :selected, true))
-
-    selected_graded_pages_options =
-      Enum.reduce(graded_pages_options, %{}, fn option, acc ->
-        Map.put(acc, option.resource_id, option.title)
-      end)
-
-    {:noreply,
-     assign(socket,
-       graded_pages_options: graded_pages_options,
-       selected_graded_pages_options: selected_graded_pages_options,
-       selected_ids: Map.keys(selected_graded_pages_options)
-     )}
-  end
-
-  def handle_event("deselect_all_pages", _params, socket) do
-    graded_pages_options = Enum.map(socket.assigns.graded_pages, &Map.put(&1, :selected, false))
-
-    {:noreply,
-     assign(socket,
-       graded_pages_options: graded_pages_options,
-       selected_graded_pages_options: %{},
-       selected_ids: []
-     )}
-  end
-
   def render(assigns) do
     ~H"""
-    <div class="w-full flex-col justify-start items-start gap-[30px] inline-flex">
-      <div role="title" class="self-stretch text-2xl font-normal">
-        Certificate Settings
-      </div>
-      <.form
-        for={@product_changeset}
-        phx-target={@myself}
-        phx-change="toggle_certificate"
-        class="self-stretch justify-start items-center gap-3 inline-flex"
-      >
-        <input
-          type="checkbox"
-          class="form-check-input w-5 h-5 p-0.5"
-          id="enable_certificates_checkbox"
-          name="certificate_enabled"
-          checked={Ecto.Changeset.get_field(@product_changeset, :certificate_enabled)}
-        />
-        <div class="grow shrink basis-0 text-base font-medium">
-          Enable certificate capabilities for this product
-        </div>
-      </.form>
-      <div class="flex mt-10 mb-2 gap-20">
-        <div class="justify-start">
-          <.link
-            class={[
-              "text-base font-bold hover:text-[#0165da] dark:hover:text-[#0165da]",
-              if(@active_tab == :thresholds,
-                do: "underline text-[#0165da]",
-                else: "text-black dark:text-white no-underline hover:no-underline"
-              )
-            ]}
-            patch={@current_path <> "?active_tab=thresholds"}
-          >
-            Thresholds
-          </.link>
-        </div>
-        <div class="justify-center items-center inline-flex">
-          <.link
-            class={[
-              "text-base font-bold hover:text-[#0165da] dark:hover:text-[#0165da]",
-              if(@active_tab == :design,
-                do: "underline text-[#0165da]",
-                else: "text-black dark:text-white no-underline hover:no-underline"
-              )
-            ]}
-            patch={@current_path <> "?active_tab=design"}
-          >
-            Design
-          </.link>
-        </div>
-        <div class="justify-end items-center inline-flex">
-          <.link
-            class={[
-              "text-base font-bold hover:text-[#0165da] dark:hover:text-[#0165da]",
-              if(@active_tab == :credentials_issued,
-                do: "underline text-[#0165da]",
-                else: "text-black dark:text-white no-underline hover:no-underline"
-              )
-            ]}
-            patch={@current_path <> "?active_tab=credentials_issued"}
-          >
-            Credentials Issued
-          </.link>
-        </div>
-      </div>
-      <.tab_content
-        active_tab={@active_tab}
-        certificate_changeset={@certificate_changeset}
-        target={@myself}
-        graded_pages_options={@graded_pages_options}
-        selected_graded_pages_options={@selected_graded_pages_options}
-        selected_ids={@selected_ids}
-        section_id={@product.id}
-      />
-    </div>
-    """
-  end
-
-  attr :active_tab, :atom, required: true
-  attr :certificate_changeset, :map, required: true
-  attr :target, :any, required: true
-  attr :graded_pages_options, :map, required: true
-  attr :selected_graded_pages_options, :map, required: true
-  attr :selected_ids, :list, required: true
-  attr :section_id, :integer, required: true
-
-  defp tab_content(%{active_tab: :thresholds} = assigns) do
-    ~H"""
     <div class="w-full flex-col">
-      <div class="mb-14 text-base font-medium">
+      <div class="text-base font-medium mb-12">
         Customize the conditions students must meet to receive a certificate.
       </div>
       <div class="mb-11 text-xl font-normal">Completion & Scoring</div>
-      <.form for={%{}} id="multiselect_form" phx-target={@target} phx-change="toggle_selected">
+      <.form for={%{}} id="multiselect_form" phx-target={@myself} phx-change="toggle_selected">
       </.form>
       <.form
         :let={f}
         id="certificate_form"
         for={@certificate_changeset}
-        phx-target={@target}
+        phx-target={@myself}
         phx-submit="save_certificate"
         phx-change="validate"
         class="w-full justify-start items-center gap-3"
       >
-        <.input field={f[:section_id]} type="hidden" value={@section_id} />
+        <.input field={f[:section_id]} type="hidden" value={@product.id} />
         <.input
           field={f[:assessments_apply_to]}
           type="hidden"
@@ -351,7 +175,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
                     id="graded_pages"
                     placeholder="Select scored pages..."
                     options={@graded_pages_options}
-                    target={@target}
+                    target={@myself}
                     selected_values={@selected_graded_pages_options}
                     selected_resource_ids={@selected_ids}
                   />
@@ -389,7 +213,7 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
               type="submit"
               form="certificate_form"
               class="text-white text-base font-bold"
-              phx-target={@target}
+              phx-target={@myself}
             >
               Save Thresholds
             </button>
@@ -400,14 +224,75 @@ defmodule OliWeb.Certificates.CertificateSettingsComponent do
     """
   end
 
-  defp tab_content(%{active_tab: :design} = assigns) do
-    ~H"""
-    """
+  def handle_event("validate", %{"certificate" => certificate_params}, socket) do
+    changeset =
+      cast_certificate_params(
+        certificate_params,
+        socket.assigns.certificate,
+        socket.assigns.product,
+        socket.assigns.selected_ids
+      )
+
+    {:noreply, assign(socket, certificate_changeset: changeset)}
   end
 
-  defp tab_content(%{active_tab: :credentials_issued} = assigns) do
-    ~H"""
-    """
+  def handle_event("save_certificate", params, socket) do
+    socket =
+      cast_certificate_params(
+        params["certificate"],
+        socket.assigns.certificate,
+        socket.assigns.product,
+        socket.assigns.selected_ids
+      )
+      |> Repo.insert_or_update()
+      |> case do
+        {:ok, certificate} ->
+          send(self(), {:put_flash, [:info, "Certificate settings saved successfully"]})
+
+          assign(socket, certificate_changeset: certificate_changeset(certificate))
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          send(self(), {:put_flash, [:error, "Failed to save certificate settings"]})
+
+          assign(socket, certificate_changeset: changeset)
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("toggle_selected", %{"_target" => [id]}, socket),
+    do: do_update_selection(socket, String.to_integer(id))
+
+  def handle_event("toggle_selected", %{"resource_id" => id}, socket),
+    do: do_update_selection(socket, String.to_integer(id))
+
+  def handle_event("toggle_selected", _params, socket), do: {:noreply, socket}
+
+  def handle_event("select_all_pages", _params, socket) do
+    graded_pages_options = Enum.map(socket.assigns.graded_pages, &Map.put(&1, :selected, true))
+
+    selected_graded_pages_options =
+      Enum.reduce(graded_pages_options, %{}, fn option, acc ->
+        Map.put(acc, option.resource_id, option.title)
+      end)
+
+    {:noreply,
+     assign(socket,
+       graded_pages_options: graded_pages_options,
+       selected_graded_pages_options: selected_graded_pages_options,
+       selected_ids: Map.keys(selected_graded_pages_options)
+     )}
+  end
+
+  def handle_event("deselect_all_pages", _params, socket) do
+    graded_pages_options = Enum.map(socket.assigns.graded_pages, &Map.put(&1, :selected, false))
+
+    {:noreply,
+     assign(socket,
+       graded_pages_options: graded_pages_options,
+       selected_graded_pages_options: %{},
+       selected_ids: []
+     )}
   end
 
   attr :id, :string
