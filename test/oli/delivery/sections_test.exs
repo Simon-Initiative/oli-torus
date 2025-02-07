@@ -2527,4 +2527,71 @@ defmodule Oli.Delivery.SectionsTest do
                "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
     end
   end
+
+  describe "get_enrollments_by_emails/2" do
+    test "returns enrollments for the specified section and emails" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      user_3 = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(
+        [user_1.id, user_2.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Sections.enroll(
+        [user_3.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :pending_confirmation
+      )
+
+      enrollments = Sections.get_enrollments_by_emails(section.slug, [user_1.email, user_2.email])
+
+      assert length(enrollments) == 2
+      assert Enum.all?(enrollments, fn e -> e.status == :enrolled end)
+    end
+  end
+
+  describe "bulk_update_enrollment_status/3" do
+    test "updates the status of enrollments for the specified section and emails" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      user_3 = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(
+        [user_1.id, user_2.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Sections.enroll(
+        [user_3.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :pending_confirmation
+      )
+
+      Sections.bulk_update_enrollment_status(
+        section.slug,
+        [user_1.email, user_2.email, user_3.email],
+        :suspended
+      )
+
+      enrollments =
+        Sections.get_enrollments_by_emails(section.slug, [
+          user_1.email,
+          user_2.email,
+          user_3.email
+        ])
+
+      assert length(enrollments) == 3
+      assert Enum.all?(enrollments, fn e -> e.status == :suspended end)
+    end
+  end
 end
