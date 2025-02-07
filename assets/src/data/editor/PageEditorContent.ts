@@ -7,20 +7,24 @@ import {
   isResourceGroup,
 } from 'data/content/resource';
 import guid from 'utils/guid';
+import { PageTrigger } from 'data/triggers';
 
 type PageEditorContentParams = {
   version: string;
   model: Immutable.List<ResourceContent>;
+  trigger: PageTrigger | undefined;
 };
 
 const defaultParams = (params: Partial<PageEditorContentParams> = {}): PageEditorContentParams => ({
   version: params.version as string,
   model: params.model ?? Immutable.List<ResourceContent>(),
+  trigger: undefined
 });
 
 export class PageEditorContent extends Immutable.Record(defaultParams()) {
   version: string;
   model: Immutable.List<ResourceContent>;
+  trigger: PageTrigger;
 
   constructor(params?: PageEditorContentParams) {
     params ? super(params) : super();
@@ -148,8 +152,8 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
    * Converts the page editor content to a plain-old js object
    * @returns persistence compatible js object
    */
-  toPersistence(): { version: string; model: ResourceContent[] } {
-    return { version: this.version, model: toPersistence(this.model) };
+  toPersistence(): { version: string; model: ResourceContent[], trigger?: PageTrigger } {
+    return { version: this.version, model: toPersistence(this.model), trigger: this.trigger };
   }
 
   /**
@@ -160,6 +164,7 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
     return new PageEditorContent({
       version: content.version,
       model: withDefaultContent(fromPersistence(content.model)),
+      trigger: content.trigger,
     });
   }
 }

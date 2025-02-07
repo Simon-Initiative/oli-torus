@@ -42,8 +42,10 @@ import { ToggleReadMore } from './toggle_read_more';
 import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
+import { FirePageTrigger } from './page_trigger';
 
 export const Hooks = {
+  FirePageTrigger,
   DelayedSubmit,
   GraphNavigation,
   DropTarget,

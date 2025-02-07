@@ -99,10 +99,13 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> assign_objectives()
         |> slim_assigns()
 
+      IO.inspect(page_context.page.resource_id)
+      possibly_fire_page_trigger(section, page_context.page)
+
       script_sources =
         Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
+     {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
        temporary_assigns: [hierarchy: thin_hierarchy]}
 
       # These temp assigns were disabled in MER-3672
@@ -696,6 +699,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     {:noreply, socket}
   end
 
+
+  def handle_info({:fire_trigger, slug, trigger}, socket) do
+    socket = push_event(socket, "fire_page_trigger", %{"slug" => slug, "trigger" => trigger})
+    {:noreply, socket}
+  end
+
   def handle_params(_params, _url, socket) do
     if Map.has_key?(socket.assigns, :attempt_expired_auto_submit) and
          socket.assigns.attempt_expired_auto_submit do
@@ -708,6 +717,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page, annotations: %{}} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
     <Annotations.delete_post_modal />
     <div id="sticky_panel" class="absolute top-4 right-0 z-40 h-full">
       <div class="sticky top-20 right-0">
@@ -817,6 +827,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(%{view: :practice_page} = assigns) do
     # For practice page the activity scripts and activity_bridge script are needed as soon as the page loads.
     ~H"""
+    <div id="fire_page_trigger" phx-hook="FirePageTrigger"></div>
     <div id="sticky_panel" class="absolute top-4 right-0 z-50 h-full">
       <div class="sticky ml-auto top-20 right-0">
         <div class={[
@@ -1543,4 +1554,24 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       Hierarchy.full_hierarchy(section)
     end)
   end
+
+  defp possibly_fire_page_trigger(section, page) do
+    case {section.assistant_enabled, page} do
+      {true, %{content: %{"trigger" => %{"trigger_type" => "page"} = trigger}}} ->
+
+        trigger = Map.put(trigger, "resource_id", page.resource_id)
+
+
+
+        pid = self()
+
+        # wait 2 seconds before firing the trigger
+        Process.send_after(pid, {:fire_trigger, section.slug, trigger}, 2000)
+
+        :ok
+      _ ->
+        :ok
+    end
+  end
+
 end

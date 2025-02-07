@@ -10,7 +10,7 @@ defmodule Oli.Conversation.Triggers  do
   alias Oli.Activities.Model.{Part, Response}
 
   @trigger_types [
-    :visit_page,
+    :page,
     :content_group,
     :content_block,
     :correct_answer,
@@ -22,7 +22,7 @@ defmodule Oli.Conversation.Triggers  do
 
   def evaluation_triggers(), do: [:correct_answer, :incorrect_answer, :explanation, :targeted_feedback]
 
-  def description(:visit_page, _), do: "Visited the learning page"
+  def description(:page, _), do: "Visited the learning page"
   def description(:content_group, data), do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
   def description(:content_block, data), do: "Viewed a content block (id: #{data["ref_id"]})"
   def description(:correct_answer, data), do: "Answered correctly question: #{data["question"]}"
@@ -101,7 +101,7 @@ defmodule Oli.Conversation.Triggers  do
 
     trigger = case trigger do
 
-      %{trigger_type: t} when t in [:visit_page, :content_group, :content_block] -> trigger
+      %{trigger_type: t} when t in [:page, :content_group, :content_block] -> trigger
 
       %{data: %{"activity_attempt_guid" => guid}} ->
 
