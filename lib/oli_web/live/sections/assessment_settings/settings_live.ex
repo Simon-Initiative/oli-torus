@@ -99,7 +99,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             </li>
           <% end %>
         </ul>
-        <div class="ml-auto"><.flash_message flash={@flash} /></div>
       </div>
       <div class="mb-5">
         <%= if @active_tab == :settings do %>
