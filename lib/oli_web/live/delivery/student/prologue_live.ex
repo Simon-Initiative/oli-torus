@@ -6,7 +6,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings
@@ -205,7 +205,8 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
-    feedback_texts = Utils.extract_feedback_text(assigns.attempt.activity_attempts)
+    attempt = Core.preload_activity_part_attempts(assigns.attempt)
+    feedback_texts = Utils.extract_feedback_text(attempt.activity_attempts)
     assigns = assign(assigns, feedback_texts: feedback_texts)
 
     ~H"""
@@ -287,7 +288,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       <div class="text-neutral-500 text-sm font-bold mb-2">Instructor Feedback:</div>
       <div class="flex flex-col gap-y-2">
         <%= for feedback <- @feedback_texts do %>
-          <p class="w-full text-black font-normal" readonly>
+          <p class="w-full text-black font-normal dark:text-neutral-500" readonly>
             <%= feedback %>
           </p>
         <% end %>

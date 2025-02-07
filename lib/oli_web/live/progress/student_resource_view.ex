@@ -106,7 +106,7 @@ defmodule OliWeb.Progress.StudentResourceView do
         nil
 
       ra ->
-        Oli.Repo.preload(ra, resource_attempts: [activity_attempts: [:part_attempts]])
+        Oli.Repo.preload(ra, :resource_attempts)
     end
   end
 

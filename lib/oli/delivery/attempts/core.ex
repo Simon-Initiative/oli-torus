@@ -590,10 +590,7 @@ defmodule Oli.Delivery.Attempts.Core do
               where: ra.resource_access_id == ^id,
               order_by: ra.attempt_number,
               select: ra,
-              preload: [
-                :revision,
-                activity_attempts: [:part_attempts]
-              ]
+              preload: [:revision]
             )
           )
 
@@ -1024,5 +1021,16 @@ defmodule Oli.Delivery.Attempts.Core do
       select: count(ra.id)
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Preloads `activity_attempts` and their associated `part_attempts` for a given resource attempt or list of attempts.
+
+  This allows fetching detailed attempt data only when needed, avoiding unnecessary preloading in other queries.
+  """
+  def preload_activity_part_attempts(resource_attempts) do
+    Repo.preload(resource_attempts,
+      activity_attempts: [:part_attempts]
+    )
   end
 end
