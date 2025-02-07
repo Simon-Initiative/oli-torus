@@ -37,7 +37,8 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       granted_certificates =
         Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
 
-      table_model = CertificatesIssuedTableModel.new(session_context, granted_certificates)
+      table_model =
+        CertificatesIssuedTableModel.new(session_context, granted_certificates, section_slug)
 
       attrs = %{
         id: id,
@@ -76,7 +77,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
         # Recipient name
         assert has_element?(
                  lcd,
-                 "table > tbody > tr:nth-child(#{i}) > td:nth-child(1) > div > a[href='/admin/users/#{recipient_id}']",
+                 "table > tbody > tr:nth-child(#{i}) > td:nth-child(1) > div > a[href='/sections/#{section_slug}/student_dashboard/#{recipient_id}/content']",
                  recipient_name
                )
 

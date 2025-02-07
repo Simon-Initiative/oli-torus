@@ -37,6 +37,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   end
 
   def handle_params(params, _uri, socket) do
+    %{product: product, ctx: ctx} = socket.assigns
     params = decode_params(params)
 
     socket =
@@ -44,7 +45,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       |> assign(params: params)
       |> assign(active_tab: params["active_tab"])
       |> assign(graded_pages: [])
-      |> assign(table_model: CertificatesIssuedTableModel.new(socket.assigns.ctx, []))
+      |> assign(table_model: CertificatesIssuedTableModel.new(ctx, [], product.slug))
       |> assigns_for(:breadcrumbs)
 
     case connected?(socket) do

@@ -7,7 +7,7 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Common.Utils
 
-  def new(%SessionContext{} = ctx, granted_certificates) do
+  def new(%SessionContext{} = ctx, granted_certificates, product_slug) do
     column_specs = [
       %ColumnSpec{
         name: :recipient,
@@ -39,7 +39,7 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
         column_specs: column_specs,
         event_suffix: "",
         id_field: [:guid],
-        data: %{ctx: ctx}
+        data: %{ctx: ctx, product_slug: product_slug}
       )
 
     table_model
@@ -49,7 +49,10 @@ defmodule OliWeb.Certificates.CertificatesIssuedTableModel do
     assigns = Map.merge(assigns, %{gc: granted_certificate})
 
     ~H"""
-    <.link navigate={~p"/admin/users/#{@gc.recipient.id}"} class="mr-3">
+    <.link
+      navigate={~p"/sections/#{@product_slug}/student_dashboard/#{@gc.recipient.id}/content"}
+      class="mr-3"
+    >
       <%= Utils.name(@gc.recipient.name, @gc.recipient.family_name, @gc.recipient.given_name) %>
     </.link>
 
