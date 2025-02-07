@@ -23,7 +23,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbTrailWorkspaceLive do
         <.link
           :if={@breadcrumbs_count > 1}
           id="curriculum-back"
-          class="btn btn-sm btn-link pr-5"
+          class="btn btn-sm btn-link pr-5 flex items-center justify-center "
           navigate={@back_link}
         >
           <i class="fas fa-arrow-left"></i>
