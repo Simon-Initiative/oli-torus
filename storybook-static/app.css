@@ -5408,6 +5408,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 80vh;
 }
 
+.max-h-\[90vh\] {
+  max-height: 90vh;
+}
+
 .max-h-\[calc\(100vh-96px\)\] {
   max-height: calc(100vh - 96px);
 }
@@ -5510,6 +5514,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-11 {
   width: 2.75rem;
+}
+
+.w-11\/12 {
+  width: 91.666667%;
 }
 
 .w-12 {
@@ -5904,6 +5912,10 @@ table.table-striped tbody tr:nth-child(even) {
   min-width: max-content;
 }
 
+.max-w-4xl {
+  max-width: 56rem;
+}
+
 .max-w-\[1040px\] {
   max-width: 1040px;
 }
@@ -5918,6 +5930,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .max-w-\[30rem\] {
   max-width: 30rem;
+}
+
+.max-w-\[350px\] {
+  max-width: 350px;
 }
 
 .max-w-\[400px\] {
@@ -8417,11 +8433,6 @@ table.table-striped tbody tr:nth-child(even) {
   padding-right: 20px;
 }
 
-.px-\[30px\] {
-  padding-left: 30px;
-  padding-right: 30px;
-}
-
 .px-\[35px\] {
   padding-left: 35px;
   padding-right: 35px;
@@ -8555,11 +8566,6 @@ table.table-striped tbody tr:nth-child(even) {
 .py-\[4px\] {
   padding-top: 4px;
   padding-bottom: 4px;
-}
-
-.py-\[50px\] {
-  padding-top: 50px;
-  padding-bottom: 50px;
 }
 
 .py-\[60px\] {
@@ -9381,6 +9387,11 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#5e5e5e\] {
   --tw-text-opacity: 1;
   color: rgb(94 94 94 / var(--tw-text-opacity));
+}
+
+.text-\[\#737373\] {
+  --tw-text-opacity: 1;
+  color: rgb(115 115 115 / var(--tw-text-opacity));
 }
 
 .text-\[\#757682\] {
@@ -13923,6 +13934,11 @@ Not supports in Firefox and IE */
 .hover\:bg-primary-600:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(39 92 175 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-red-100:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 226 226 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-red-300:hover {
