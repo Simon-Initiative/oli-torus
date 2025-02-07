@@ -156,7 +156,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
               Link your authoring account to access projects where you are a collaborator.
             </p>
             <a
-              href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}
+              href={~p"/users/link_account"}
               target="_blank"
               class="btn btn-primary link-account inline-block my-2"
             >
