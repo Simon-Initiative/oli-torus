@@ -22,7 +22,9 @@ defmodule OliWeb.InviteControllerTest do
       post(
         conn,
         Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
+          non_existing_users_emails: Jason.encode!([@invite_email]),
+          not_enrolled_users_emails: Jason.encode!([]),
+          not_active_enrolled_users_emails: Jason.encode!([]),
           role: "instructor",
           "g-recaptcha-response": "any",
           inviter: "author"
@@ -71,7 +73,9 @@ defmodule OliWeb.InviteControllerTest do
       post(
         conn,
         Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
+          non_existing_users_emails: Jason.encode!([@invite_email]),
+          not_enrolled_users_emails: Jason.encode!([]),
+          not_active_enrolled_users_emails: Jason.encode!([]),
           role: "student",
           "g-recaptcha-response": "any",
           inviter: "author"
@@ -122,7 +126,9 @@ defmodule OliWeb.InviteControllerTest do
       post(
         conn,
         Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
+          non_existing_users_emails: Jason.encode!([]),
+          not_enrolled_users_emails: Jason.encode!([@invite_email]),
+          not_active_enrolled_users_emails: Jason.encode!([]),
           role: "instructor",
           "g-recaptcha-response": "any",
           inviter: "author"
@@ -170,7 +176,9 @@ defmodule OliWeb.InviteControllerTest do
       post(
         conn,
         Routes.invite_path(conn, :create_bulk, section.slug,
-          emails: [@invite_email],
+          non_existing_users_emails: Jason.encode!([]),
+          not_enrolled_users_emails: Jason.encode!([@invite_email]),
+          not_active_enrolled_users_emails: Jason.encode!([]),
           role: "student",
           "g-recaptcha-response": "any",
           inviter: "author"
@@ -202,6 +210,95 @@ defmodule OliWeb.InviteControllerTest do
              |> Repo.one()
 
       # and email is sent
+
+      assert_email_sent(
+        to: @invite_email,
+        subject: "You were invited as a student to \"#{section.title}\""
+      )
+    end
+
+    test "a new invitation sent: updates the original enrollment to pending_confirmation, removes old invitation token, creates a new invitation token and delivers email invitation",
+         %{conn: conn} do
+      expect_recaptcha_http_post()
+      stub_real_current_time()
+      section = insert(:section)
+      existing_student = user_fixture(email: @invite_email)
+
+      # send the first invitation and mark it as rejected
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          non_existing_users_emails: Jason.encode!([]),
+          not_enrolled_users_emails: Jason.encode!([@invite_email]),
+          not_active_enrolled_users_emails: Jason.encode!([]),
+          role: "student",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      Oli.Delivery.Sections.bulk_update_enrollment_status(
+        section.slug,
+        [existing_student.email],
+        :rejected
+      )
+
+      context = "enrollment_invitation:#{section.slug}"
+
+      original_invitation_token =
+        from(ut in Oli.Accounts.UserToken,
+          where:
+            ut.user_id == ^existing_student.id and ut.context == ^context and
+              ut.sent_to == @invite_email
+        )
+        |> Repo.one()
+
+      original_enrollment =
+        Oli.Delivery.Sections.get_enrollment(section.slug, existing_student.id,
+          filter_by_status: false
+        )
+
+      assert original_enrollment.status == :rejected
+
+      # send the a new invitation to the same user
+      post(
+        conn,
+        Routes.invite_path(conn, :create_bulk, section.slug,
+          non_existing_users_emails: Jason.encode!([]),
+          not_enrolled_users_emails: Jason.encode!([]),
+          not_active_enrolled_users_emails: Jason.encode!([@invite_email]),
+          role: "student",
+          "g-recaptcha-response": "any",
+          inviter: "author"
+        )
+      )
+
+      # enrollment was updated to with :pending_confirmation status
+      updated_enrollment =
+        Repo.get!(Oli.Delivery.Sections.Enrollment, original_enrollment.id)
+        |> Repo.preload(:context_roles)
+
+      assert updated_enrollment.section_id == section.id
+
+      assert updated_enrollment.status == :pending_confirmation
+
+      assert hd(updated_enrollment.context_roles).uri ==
+               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+
+      # second invitation user_token is created (the old one is removed)
+
+      assert from(ut in Oli.Accounts.UserToken,
+               where:
+                 ut.user_id == ^existing_student.id and ut.context == ^context and
+                   ut.sent_to == @invite_email
+             )
+             |> Repo.one()
+
+      refute Repo.one(
+               from(ut in Oli.Accounts.UserToken, where: ut.id == ^original_invitation_token.id)
+             )
+
+      # and a new email is sent
 
       assert_email_sent(
         to: @invite_email,
