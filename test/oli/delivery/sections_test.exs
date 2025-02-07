@@ -1046,6 +1046,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns the correct ordered container labels for a section", %{
       section: section,
+      curriculum: curriculum,
       unit1: unit1,
       unit1_module1: unit1_module1,
       unit1_module1_section1: unit1_module1_section1,
@@ -1055,22 +1056,24 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       ordered_labels = Sections.fetch_ordered_container_labels(section.slug)
 
-      assert Enum.count(ordered_labels) == 6
+      assert Enum.count(ordered_labels) == 7
 
-      assert Enum.at(ordered_labels, 0) == {unit1.resource_id, "Unit 1: Unit 1"}
+      assert Enum.at(ordered_labels, 0) == {curriculum.resource_id, "Curriculum 1: Curriculum"}
 
-      assert Enum.at(ordered_labels, 1) ==
-               {unit1_module1.resource_id, "Module 1: Unit 1 Module 1"}
+      assert Enum.at(ordered_labels, 1) == {unit1.resource_id, "Unit 1: Unit 1"}
 
       assert Enum.at(ordered_labels, 2) ==
-               {unit1_module1_section1.resource_id, "Section 1: Unit 1 Module 1 Section 1"}
+               {unit1_module1.resource_id, "Module 1: Unit 1 Module 1"}
 
       assert Enum.at(ordered_labels, 3) ==
+               {unit1_module1_section1.resource_id, "Section 1: Unit 1 Module 1 Section 1"}
+
+      assert Enum.at(ordered_labels, 4) ==
                {unit1_module2.resource_id, "Module 2: Unit 1 Module 2"}
 
-      assert Enum.at(ordered_labels, 4) == {unit2.resource_id, "Unit 2: Unit 2"}
+      assert Enum.at(ordered_labels, 5) == {unit2.resource_id, "Unit 2: Unit 2"}
 
-      assert Enum.at(ordered_labels, 5) ==
+      assert Enum.at(ordered_labels, 6) ==
                {unit2_module3.resource_id, "Module 3: Unit 2 Module 3"}
     end
   end
