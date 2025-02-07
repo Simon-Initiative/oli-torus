@@ -588,13 +588,14 @@ defmodule OliWeb.Components.Common do
     end
   end
 
-  attr(:if, :boolean, default: true)
+  attr(:class, :string, default: nil)
+  attr(:icon_class, :string, default: nil)
 
   def loader(assigns) do
     ~H"""
-    <div :if={@if} class="h-full w-full flex items-center justify-center">
+    <div class={@class || "flex items-center justify-center"}>
       <span
-        class="spinner-border spinner-border-sm text-primary h-16 w-16"
+        class={["spinner-border spinner-border-sm text-primary", @icon_class]}
         role="status"
         aria-hidden="true"
       />
