@@ -129,7 +129,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     ~H"""
     <%= render_modal(assigns) %>
-    <div class="ml-auto"><.flash_message flash={@flash} /></div>
+
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
