@@ -1,5 +1,6 @@
 defmodule OliWeb.Progress.PageAttemptSummary do
   use OliWeb, :live_component
+  alias Oli.Delivery.Attempts.Core
   alias OliWeb.Common.Utils
   alias OliWeb.Delivery.Student.Utils, as: StudentUtils
 
@@ -23,7 +24,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           assigns
       ) do
     ~H"""
-    <div class="list-group-item list-group-action flex-column align-items-start">
+    <div class="list-group-item list-group-action flex-column align-items-start mb-8">
       <.link
         href={
           StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid,
@@ -55,8 +56,12 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   end
 
   def do_render(%{attempt: %{lifecycle_state: :evaluated}} = assigns) do
+    attempt = Core.preload_activity_part_attempts(assigns.attempt)
+    feedback_texts = Utils.extract_feedback_text(attempt.activity_attempts)
+    assigns = assign(assigns, feedback_texts: feedback_texts)
+
     ~H"""
-    <div class="list-group-item list-group-action flex-column align-items-start">
+    <div class="list-group-item list-group-action flex-column align-items-start mb-8 !border-b-0">
       <.link
         href={
           StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid,
@@ -86,13 +91,29 @@ defmodule OliWeb.Progress.PageAttemptSummary do
           Time elapsed: <%= duration(@attempt.inserted_at, @attempt.date_evaluated) %>.
         </small>
       </.link>
+
+      <div :if={@feedback_texts != []} class="mt-8">
+        <div class="text-black text-sm font-normal mb-2 dark:text-neutral-500">
+          Instructor Feedback:
+        </div>
+        <div class="flex flex-col gap-y-2">
+          <%= for feedback <- @feedback_texts do %>
+            <textarea
+              class="w-full bg-neutral-100 rounded-md border border-neutral-300 dark:bg-[#1e1e1e] dark:border-[#525252]"
+              readonly
+            >
+            <%= feedback %>
+          </textarea>
+          <% end %>
+        </div>
+      </div>
     </div>
     """
   end
 
   def do_render(%{attempt: %{lifecycle_state: :submitted}} = assigns) do
     ~H"""
-    <div class="list-group-item list-group-action flex-column align-items-start">
+    <div class="list-group-item list-group-action flex-column align-items-start mb-8">
       <.link
         href={
           StudentUtils.review_live_path(@section.slug, @revision.slug, @attempt.attempt_guid,

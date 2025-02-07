@@ -3,6 +3,7 @@ defmodule OliWeb.UserSessionController do
 
   alias Oli.Accounts
   alias OliWeb.UserAuth
+  alias Oli.Delivery.Sections
 
   def create(conn, %{"_action" => "registered"} = params) do
     create(conn, params, flash_message: "Account created successfully!")
@@ -18,8 +19,15 @@ defmodule OliWeb.UserSessionController do
     create(conn, params, flash_message: "Welcome back!")
   end
 
-  def create(conn, %{"user" => user_params}, opts) do
+  def create(conn, %{"user" => user_params} = params, opts) do
     %{"email" => email, "password" => password} = user_params
+
+    user_params =
+      if Map.get(params, "request_path") do
+        Map.put(user_params, "request_path", Map.get(params, "request_path"))
+      else
+        user_params
+      end
 
     if user = Accounts.get_user_by_email_and_password(email, password) do
       conn
@@ -38,8 +46,17 @@ defmodule OliWeb.UserSessionController do
   defp maybe_add_flash_message(conn, message), do: conn |> put_flash(:info, message)
 
   def delete(conn, _params) do
+    user = Map.get(conn.assigns, :current_user)
+
+    redirect_to =
+      if !is_nil(user) && Sections.is_independent_instructor?(user) do
+        ~p"/instructors/log_in"
+      else
+        ~p"/"
+      end
+
     conn
     |> put_flash(:info, "Logged out successfully.")
-    |> UserAuth.log_out_user()
+    |> UserAuth.log_out_user(%{"redirect_to" => redirect_to})
   end
 end

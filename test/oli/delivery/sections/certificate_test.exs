@@ -45,15 +45,11 @@ defmodule Oli.Delivery.Sections.CertificateTest do
       changeset = %Ecto.Changeset{errors: errors} = Certificate.changeset(params)
 
       refute changeset.valid?
-      assert length(errors) == 7
+      assert length(errors) == 3
 
       assert %{title: ["can't be blank"]} = errors_on(changeset)
       assert %{description: ["can't be blank"]} = errors_on(changeset)
       assert %{section_id: ["can't be blank"]} = errors_on(changeset)
-      assert %{required_discussion_posts: ["can't be blank"]} = errors_on(changeset)
-      assert %{required_class_notes: ["can't be blank"]} = errors_on(changeset)
-      assert %{min_percentage_for_completion: ["can't be blank"]} = errors_on(changeset)
-      assert %{min_percentage_for_distinction: ["can't be blank"]} = errors_on(changeset)
     end
 
     test "success: when distinction > completion", %{params: params} do
@@ -98,6 +94,25 @@ defmodule Oli.Delivery.Sections.CertificateTest do
       refute changeset.valid?
 
       assert %{assessments_apply_to: ["is invalid"]} = errors_on(changeset)
+    end
+
+    test "error: when assessments_apply_to is :custom but custom_assessments is empty", %{
+      params: params
+    } do
+      params =
+        params
+        |> Map.put(:assessments_apply_to, :custom)
+        |> Map.put(:custom_assessments, [])
+
+      changeset = Certificate.changeset(params)
+
+      refute changeset.valid?
+
+      assert %{
+               custom_assessments: [
+                 "scored pages must not be empty"
+               ]
+             } = errors_on(changeset)
     end
   end
 

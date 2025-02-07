@@ -87,13 +87,44 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       author = %{
         "email" => author_email,
         "name" => author_name,
-        "sub" => "123"
+        "sub" => "123",
+        "email_verified" => true
       }
 
       other_params = %{}
       config = test_config()
 
       {:ok, _conn} =
+        AssentAuthWeb.handle_authorization_success(
+          conn,
+          provider,
+          author,
+          other_params,
+          config
+        )
+
+      # no confirmation email is sent for an already verified email
+      TestAssertions.assert_no_email_sent()
+    end
+
+    test "handle_authorization_success/5 returns email_confirmation_required", %{
+      conn: conn
+    } do
+      provider = "google"
+
+      author_email = "new_author@example.edu"
+      author_name = "New Author"
+
+      author = %{
+        "email" => author_email,
+        "name" => author_name,
+        "sub" => "123"
+      }
+
+      other_params = %{}
+      config = test_config()
+
+      {:email_confirmation_required, _conn} =
         AssentAuthWeb.handle_authorization_success(
           conn,
           provider,
