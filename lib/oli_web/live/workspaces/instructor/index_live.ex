@@ -200,7 +200,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
         <div class="flex items-center w-full gap-3">
           <.link
-            href={if(is_independent_instructor?(@current_user), do: ~p"/sections/independent/create")}
+            href={if(is_independent_instructor?(@current_user), do: ~p"/sections/new")}
             class={[
               "h-12 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
               if(is_independent_instructor?(@current_user),

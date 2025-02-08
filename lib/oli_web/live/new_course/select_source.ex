@@ -24,22 +24,19 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   def update(
         %{
-          session: session,
+          ctx: ctx,
           on_select: on_select,
-          current_user: current_user,
-          lti_params: lti_params
+          current_user: current_user
         } = assigns,
         socket
       ) do
     if !socket.assigns[:loaded] do
-      ctx = SessionContext.init(socket, session)
       params = socket.assigns[:params] || @default_params
       view_type = socket.assigns[:view_type] || @default_view_type
 
-      # live_action is :independent_learner, :admin or :lms_instructor
-      live_action = session["live_action"]
+      {role, institution} = unpack_role_institution(assigns)
 
-      sources = retrieve_all_sources(live_action, %{user: current_user, lti_params: lti_params})
+      sources = retrieve_all_sources(role, current_user, institution)
 
       {total_count, table_model} =
         OliWeb.Delivery.NewCourse.TableModel.new(sources, ctx)
@@ -51,11 +48,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
          total_count: total_count,
          table_model: table_model,
          sources: sources,
-         live_action: live_action,
+         role: role,
          loaded: true,
          on_select: on_select,
          current_user: current_user,
-         lti_params: lti_params,
          params: params,
          view_type: view_type
        )}
@@ -89,7 +85,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
       <FilterBox.render
         table_model={@table_model}
         sort={JS.push("sort", target: @myself)}
-        show_more_opts={is_instructor?(@live_action)}
+        show_more_opts={is_instructor?(@role)}
       >
         <Filter.render
           query={@params[:query]}
@@ -145,10 +141,10 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
         sort={JS.push("sort", target: @myself)}
         page_change={JS.push("page_change", target: @myself)}
         show_bottom_paging={false}
-        cards_view={is_cards_view?(@live_action, @view_type)}
+        cards_view={is_cards_view?(@role, @view_type)}
       />
 
-      <%= if is_lms_instructor?(@live_action) and is_nil(@current_user.author) do %>
+      <%= if is_lms_instructor?(@role) and is_nil(@current_user.author) do %>
         <div class="card max-w-lg mx-auto">
           <div class="card-body text-center">
             <h5 class="card-title">Have a Course Authoring Account?</h5>
@@ -317,7 +313,7 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     {:noreply, assign(socket, total_count: total_count, table_model: table_model, params: params)}
   end
 
-  defp retrieve_all_sources(:admin, _opts) do
+  defp retrieve_all_sources(:admin, _user, _institution) do
     products = Blueprint.list()
 
     free_project_publications =
@@ -334,14 +330,9 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
     end)
   end
 
-  defp retrieve_all_sources(:independent_learner, %{user: user}),
+  defp retrieve_all_sources(_, user, institution),
     do:
-      Publishing.retrieve_visible_sources(user, nil)
-      |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
-
-  defp retrieve_all_sources(:lms_instructor, %{user: user, lti_params: lti_params}),
-    do:
-      Delivery.retrieve_visible_sources(user, lti_params)
+      Publishing.retrieve_visible_sources(user, institution)
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
   defp is_instructor?(:admin), do: false
@@ -353,4 +344,12 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   defp is_lms_instructor?(:lms_instructor), do: true
   defp is_lms_instructor?(_), do: false
+
+  defp unpack_role_institution(%{delivery_details: {:lti, _, institution, _, _}}),
+    do: {:lms_instructor, institution}
+
+  defp unpack_role_institution(%{delivery_details: {:direct}, is_admin: true}), do: {:admin, nil}
+
+  defp unpack_role_institution(%{delivery_details: {:direct}, is_admin: false, current_user: user}),
+       do: {:independent_learner, user.institution}
 end

@@ -796,6 +796,16 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  def get_section_from_latest_lti_launch(user_id) do
+    case LtiParams.get_latest_lti_params_for_user(user_id) do
+      nil ->
+        nil
+
+      %LtiParams{params: params} ->
+        get_section_from_lti_params(params)
+    end
+  end
+
   @doc """
   Gets the associated deployment and registration from the given section
 

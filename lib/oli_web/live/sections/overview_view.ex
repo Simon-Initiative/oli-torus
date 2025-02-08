@@ -9,7 +9,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias Oli.Delivery.Sections.{Section, EnrollmentBrowseOptions}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.Details.ImageUpload
-  alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
+  alias OliWeb.Sections.{Instructors, Mount}
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Collaboration
   alias OliWeb.Projects.RequiredSurvey
@@ -420,12 +420,6 @@ defmodule OliWeb.Sections.OverviewView do
         </ul>
       </Group.render>
 
-      <%= if @is_lms_or_system_admin and !@section.open_and_free do %>
-        <Group.render label="LMS Admin" description="Administrator LMS Connection">
-          <UnlinkSection.render unlink="unlink" section={@section} />
-        </Group.render>
-      <% end %>
-
       <Group.render
         label="Cover Image"
         description="Manage the cover image for this section. Max file size is 5 MB."
@@ -537,14 +531,6 @@ defmodule OliWeb.Sections.OverviewView do
       |> put_flash(:info, "Prompt successfully saved")
 
     {:noreply, socket}
-  end
-
-  def handle_event("unlink", _, socket) do
-    %{section: section} = socket.assigns
-
-    {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
-
-    {:noreply, push_navigate(socket, to: Routes.delivery_path(socket, :index))}
   end
 
   def handle_event("show_delete_modal", _params, socket) do
@@ -702,41 +688,6 @@ defmodule OliWeb.Sections.OverviewView do
       <.button variant={:primary} phx-click="toggle_assistant">
         Enable Assistant
       </.button>
-    <% end %>
-    """
-  end
-
-  defp flash_message(assigns) do
-    ~H"""
-    <%= if Phoenix.Flash.get(@flash, :info) do %>
-      <div class="alert alert-info flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :info) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
-    <%= if Phoenix.Flash.get(@flash, :error) do %>
-      <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :error) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="error"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
     <% end %>
     """
   end

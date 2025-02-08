@@ -13,6 +13,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
+  alias Oli.Delivery.ResearchConsent
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
@@ -521,8 +522,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
       # Direct delivery user
       %User{independent_learner: true} ->
-        case Delivery.get_research_consent_form_setting() do
-          :oli_form ->
+        case Delivery.get_system_research_consent_form_setting() do
+          %ResearchConsent{research_consent: :oli_form} ->
             true
 
           _ ->

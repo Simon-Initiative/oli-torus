@@ -103,6 +103,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
+  pipeline :ensure_research_consent do
+    plug(Oli.Plugs.EnsureResearchConsent)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -933,14 +937,6 @@ defmodule OliWeb.Router do
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
-  # Sections - Independent Learner Section Creation
-  scope "/sections", OliWeb do
-    pipe_through([:browser, :delivery_protected, :require_independent_instructor])
-
-    live("/independent/create", Delivery.NewCourse, :independent_learner, as: :select_source)
-    resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
-  end
-
   ### Sections - Payments
   scope "/sections", OliWeb do
     pipe_through([:browser, :require_section, :delivery_protected])
@@ -1042,6 +1038,7 @@ defmodule OliWeb.Router do
       :require_authenticated_user_or_guest,
       :student,
       :enforce_enroll_and_paywall,
+      :ensure_research_consent,
       :ensure_user_section_visit,
       :force_required_survey
     ])
@@ -1366,6 +1363,14 @@ defmodule OliWeb.Router do
     post "/authors/accept_invitation", InviteController, :accept_author_invitation
   end
 
+  ### Sections - Setup
+  scope "/sections", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    live("/new", Delivery.NewCourse, as: :select_source)
+    live("/new/:context_id", Delivery.NewCourse, as: :select_source)
+  end
+
   ### Sections - Enrollment
   scope "/sections", OliWeb do
     pipe_through([
@@ -1379,28 +1384,6 @@ defmodule OliWeb.Router do
     post("/:section_slug/enroll", DeliveryController, :process_enroll)
     get("/:section_slug/join", LaunchController, :join)
     post("/:section_slug/auto_enroll", LaunchController, :auto_enroll_as_guest)
-  end
-
-  # Delivery Auth (Signin)
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery, :delivery_layout])
-
-    get("/create_account", DeliveryController, :create_account)
-  end
-
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    get("/", DeliveryController, :index)
-
-    get("/link_account", DeliveryController, :link_account)
-    post("/link_account", DeliveryController, :process_link_account)
-  end
-
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    live("/select_project", Delivery.NewCourse, :lms_instructor, as: :select_source)
   end
 
   ### Admin Dashboard / Telemetry
