@@ -1,7 +1,5 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { shuffle } from 'lodash';
-import { parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -42,6 +40,8 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
   columns = 1,
   index,
   verticalGap = 0,
+  onSelected,
+  val,
 }) => {
   const spokeItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -66,7 +66,12 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
   return (
     <React.Fragment>
       <div style={spokeItemStyles} className={` hub-spoke-item`}>
-        <button type="button" style={{ width: '100%' }} className="btn btn-primary">
+        <button
+          type="button"
+          style={{ width: '100%' }}
+          onClick={() => onSelected(val)}
+          className="btn btn-primary"
+        >
           <SpokeItemContent itemId={itemId} nodes={nodes} state={state} />
         </button>
       </div>
@@ -80,54 +85,6 @@ interface SpokeOptionModel extends Item {
   value: number;
 }
 
-const getOptionTextFromNode = (children: any): any => {
-  let optionText = '';
-  if (children.tag === 'text') {
-    optionText = children.text;
-  } else if (children?.children?.length) {
-    optionText = getOptionTextFromNode(children.children[0]);
-  }
-  return optionText;
-};
-
-const getOptionTextById = (options: SpokeOptionModel[], optionId: number): string => {
-  const text = options
-    .map((option: any) => {
-      if (option.value === optionId) {
-        if (option.nodes[0].tag === 'text') {
-          return option.nodes[0].text;
-        } else {
-          return getOptionTextFromNode(option.nodes[0]);
-        }
-      }
-    })
-    .filter((option: any) => option !== undefined);
-  return text?.length ? text[0] : '';
-};
-
-const getOptionNumberFromText = (
-  options: SpokeOptionModel[],
-  optionText: string,
-): number | undefined => {
-  const values = options
-    .map((option) => {
-      const text = getOptionTextFromNode(option.nodes[0]);
-      if (text === optionText) {
-        return option.value;
-      }
-    })
-    .filter((option) => option !== undefined);
-
-  // even if there are multiple choices with the same text (why??) pick the first one
-  return values[0];
-};
-
-interface ItemSelectionInput {
-  value: number;
-  textValue: string;
-  checked: boolean;
-}
-
 const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -135,27 +92,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
   const id: string = props.id;
 
   const [enabled, setEnabled] = useState(true);
-  const [randomized, setRandomized] = useState(false);
   const [options, setOptions] = useState<SpokeOptionModel[]>([]);
-  const [multipleSelection, setMultipleSelection] = useState(false);
-
-  const [selectionState, setSelectionState] = useState<{
-    numberOfSelectedChoices: number;
-    selectedChoice: number;
-    selectedChoiceText: string;
-    selectedChoices: number[];
-    selectedChoicesText: string[];
-  }>({
-    numberOfSelectedChoices: 0,
-    selectedChoice: 0,
-    selectedChoiceText: '',
-    selectedChoices: [],
-    selectedChoicesText: [],
-  });
-
-  // converts stringfied number array to number array
-  const convertToNumberArray = (arr: string[]) =>
-    arr.map((element) => parseInt(element.toString().replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
     /* console.log('MCQ INIT', { pModel }); */
@@ -163,23 +100,12 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
 
-    const dRandomized = parseBoolean(pModel.randomize);
-    setRandomized(dRandomized);
-
-    const dMultipleSelection = parseBoolean(pModel.multipleSelection);
-    setMultipleSelection(dMultipleSelection);
-
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
-    let mcqList: SpokeOptionModel[] = pModel.mcqItems?.map((item: any, index: number) => ({
+    const mcqList: SpokeOptionModel[] = pModel.spokeItems?.map((item: any, index: number) => ({
       ...item,
-      index: index,
+      index: index + 1,
       value: index + 1,
     }));
-
-    if (dRandomized) {
-      mcqList = shuffle(mcqList);
-    }
-
     setOptions(mcqList);
 
     // now we need to save the defaults used in adaptivity (not necessarily the same)
@@ -191,35 +117,11 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: dEnabled,
         },
-        {
-          key: 'randomize',
-          type: CapiVariableTypes.BOOLEAN,
-          value: dRandomized,
-        },
-        {
-          key: 'numberOfSelectedChoices',
-          type: CapiVariableTypes.NUMBER,
-          value: selectionState.numberOfSelectedChoices,
-        },
+
         {
           key: 'selectedChoice',
           type: CapiVariableTypes.NUMBER,
           value: -1,
-        },
-        {
-          key: 'selectedChoiceText',
-          type: CapiVariableTypes.STRING,
-          value: selectionState.selectedChoiceText,
-        },
-        {
-          key: 'selectedChoices',
-          type: CapiVariableTypes.ARRAY,
-          value: selectionState.selectedChoices,
-        },
-        {
-          key: 'selectedChoicesText',
-          type: CapiVariableTypes.ARRAY,
-          value: selectionState.selectedChoicesText,
         },
       ],
     });
@@ -233,84 +135,21 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
       setEnabled(sEnabled);
     }
 
-    const sRandomize = currentStateSnapshot[`stage.${id}.randomize`];
-    if (sRandomize !== undefined) {
-      setRandomized(sRandomize);
-    }
-
-    // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
-    let hasDoneMultiple = false;
-    let hasDoneSelectedChoice = false;
-
-    // this is for setting *multiple* choices being selected by the number value
-    const sSelectedChoices: string[] = currentStateSnapshot[`stage.${id}.selectedChoices`];
-    if (dMultipleSelection && sSelectedChoices !== undefined) {
-      hasDoneMultiple = true;
-      hasDoneSelectedChoice = true;
-      // convert stringfied number array to number array
-      const selectedArray = convertToNumberArray(sSelectedChoices);
-
-      if (Array.isArray(selectedArray)) {
-        const newSelectionArray = selectedArray.map((choice) => ({
-          value: choice,
-          textValue: getOptionTextById(options, choice),
-          checked: true,
-        }));
-        handleMultipleItemSelection(newSelectionArray, true);
-      }
-    }
-
-    // this is for setting *multiple* choices being selected by the text value
-    const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
-    if (dMultipleSelection && sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
-      hasDoneMultiple = true;
-      const selectedArray = parseArray(sSelectedChoicesText);
-      if (Array.isArray(selectedArray)) {
-        const newSelectionArray = selectedArray
-          .map((choiceText) => ({
-            value: getOptionNumberFromText(options, choiceText as string),
-            textValue: choiceText,
-            checked: true,
-          }))
-          .filter((choice) => choice.value !== undefined);
-        handleMultipleItemSelection(newSelectionArray as ItemSelectionInput[], true);
-      }
-    }
-
-    if (!hasDoneMultiple) {
-      // this is for setting a *single* seletion by the number
-      const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
-      if (sSelectedChoice !== undefined) {
-        hasDoneSelectedChoice = true;
-        const choice = parseInt(String(sSelectedChoice), 10);
-        const checked = choice > 0;
-        const textValue = checked ? getOptionTextById(options, choice) : '';
-        handleItemSelection(
-          { value: choice, textValue, checked },
-          true, // need to save pretty much every time because of related properties like count
-        );
-      }
-
-      // this is for a *single* choice being selected by the text value
-      const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
-      if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
-        const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
-        if (choiceNumber !== undefined) {
-          handleItemSelection(
-            { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
-            true, // need to save pretty much every time because of related properties like count
-          );
-        }
-      }
-    }
-
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
     setReady(true);
   }, []);
 
-  const { width, customCssClass, layoutType, height, overrideHeight = false, verticalGap } = model;
+  const {
+    width,
+    customCssClass,
+    layoutType,
+    height,
+    showProgressBar,
+    overrideHeight = false,
+    verticalGap,
+  } = model;
 
   useEffect(() => {
     let pModel;
@@ -322,6 +161,8 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
       } catch (err) {
         // bad json, what do?
       }
+
+      console.log({ pModel });
     }
     if (typeof props?.state === 'string') {
       try {
@@ -344,73 +185,18 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  // will always *replace* the selected choices (used by init & mutate)
-  const handleMultipleItemSelection = (selections: ItemSelectionInput[], shouldSave = true) => {
-    let modifiedSelections = selections;
-    const newCount = selections.length;
-    const blankValueExit =
-      (selections.length === 1 && selections.filter((item) => item.value <= 0)) || [];
-    if (blankValueExit.length) {
-      modifiedSelections = [];
-    }
-    const newSelectedChoices = modifiedSelections
-      .sort((a, b) => a.value - b.value)
-      .map((item) => item.value);
-
-    const newSelectedChoice = newSelectedChoices.length ? newSelectedChoices[0] : -1;
-
-    const newSelectedChoicesText = modifiedSelections
-      .sort((a, b) => a.value - b.value)
-      .map((item) => item.textValue);
-
-    const newSelectedChoiceText = newSelectedChoicesText.length ? newSelectedChoicesText[0] : '';
-
-    setSelectionState({
-      numberOfSelectedChoices: newCount,
-      selectedChoice: newSelectedChoice,
-      selectedChoiceText: newSelectedChoiceText,
-      selectedChoices: newSelectedChoices,
-      selectedChoicesText: newSelectedChoicesText,
+  const handleButtonPress = (val: any) => {
+    props.onSubmit({
+      id: `${id}`,
+      responses: [
+        {
+          key: 'selectedChoice',
+          type: CapiVariableTypes.NUMBER,
+          value: val,
+        },
+      ],
     });
-
-    if (shouldSave) {
-      saveState({
-        numberOfSelectedChoices: newCount,
-        selectedChoice: newSelectedChoice,
-        selectedChoiceText: newSelectedChoiceText,
-        selectedChoices: newSelectedChoices,
-        selectedChoicesText: newSelectedChoicesText,
-      });
-    }
   };
-
-  const handleItemSelection = useCallback(
-    ({ value, textValue, checked }: ItemSelectionInput, shouldSave = true) => {
-      // const originalValue = parseInt(value.toString(), 10);
-      // const newChoice = checked ? originalValue : 0;
-      // const newCount = checked ? 1 : 0;
-      // const newSelectedChoices = [newChoice];
-      // let updatedChoicesText = [checked ? textValue : ''];
-      // let modifiedNewSelectedChoices = newSelectedChoices;
-      // const blankValueExit =
-      //   (newSelectedChoices.length === 1 && newSelectedChoices.filter((value) => value <= 0)) || [];
-      // if (blankValueExit.length) {
-      //   modifiedNewSelectedChoices = [];
-      //   updatedChoicesText = [];
-      // }
-      // if (shouldSave) {
-      //   saveState({
-      //     numberOfSelectedChoices: newCount,
-      //     selectedChoice: newChoice,
-      //     selectedChoiceText: updatedChoiceText,
-      //     selectedChoices: modifiedNewSelectedChoices,
-      //     selectedChoicesText: updatedChoicesText,
-      //   });
-      // }
-    },
-    [multipleSelection, selectionState],
-  );
-
   useEffect(() => {
     if (!props.notify) {
       return;
@@ -458,7 +244,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify, options, handleItemSelection, multipleSelection]);
+  }, [props.notify, options, handleButtonPress]);
 
   // Set up the styles
   const styles: CSSProperties = {
@@ -475,16 +261,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
   }
 
   useEffect(() => {
-    setOptions((currentOptions) => {
-      if (randomized) {
-        return shuffle(currentOptions);
-      }
-      // TODO: return original model order??
-      return currentOptions;
-    });
-  }, [randomized]);
-
-  useEffect(() => {
     const styleChanges: any = {};
     if (width !== undefined) {
       styleChanges.width = { value: width as number };
@@ -495,65 +271,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
 
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
-
-  const saveState = ({
-    numberOfSelectedChoices,
-    selectedChoice,
-    selectedChoiceText,
-    selectedChoices,
-    selectedChoicesText,
-  }: {
-    numberOfSelectedChoices: number;
-    selectedChoice: number;
-    selectedChoiceText: string;
-    selectedChoices: number[];
-    selectedChoicesText: string[];
-  }) => {
-    // props.onSave({
-    //   id: `${id}`,
-    //   responses: [
-    //     {
-    //       key: 'numberOfSelectedChoices',
-    //       type: CapiVariableTypes.NUMBER,
-    //       value: numberOfSelectedChoices,
-    //     },
-    //     {
-    //       key: 'selectedChoice',
-    //       type: CapiVariableTypes.NUMBER,
-    //       value: selectedChoice,
-    //     },
-    //     {
-    //       key: 'selectedChoiceText',
-    //       type: CapiVariableTypes.STRING,
-    //       value: selectedChoiceText,
-    //     },
-    //     {
-    //       key: 'selectedChoices',
-    //       type: CapiVariableTypes.ARRAY,
-    //       value: selectedChoices,
-    //     },
-    //     {
-    //       key: 'selectedChoicesText',
-    //       type: CapiVariableTypes.ARRAY,
-    //       value: selectedChoicesText,
-    //     },
-    //   ],
-    // });
-  };
-
-  const isItemSelected = useCallback(
-    (item: SpokeOptionModel) => {
-      // checks if the item is selected to set the input's "selected" attr
-      let selected = false;
-      if (multipleSelection) {
-        selected = selectionState.selectedChoices.includes(item.index + 1);
-      } else {
-        selected = selectionState.selectedChoice === item.index + 1;
-      }
-      return selected;
-    },
-    [multipleSelection, selectionState],
-  );
 
   let columns = 1;
   if (customCssClass === 'two-columns') {
@@ -566,33 +283,111 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     columns = 4;
   }
 
-  return ready ? (
-    <div data-janus-type={tagName} style={styles} className={`mcq-input mcq-${layoutType}`}>
-      {options?.map((item, index) => (
-        <SpokeItems
-          idx={index}
-          key={`${id}-item-${index}`}
-          title={item.title}
-          totalItems={options.length}
-          layoutType={layoutType}
-          itemId={`${id}-item-${index}`}
-          groupId={`mcq-${id}`}
-          selected={isItemSelected(item)}
-          val={item.value}
-          onSelected={handleItemSelection}
-          state={state}
-          {...item}
-          x={0}
-          y={0}
-          overrideHeight={overrideHeight}
-          disabled={!enabled}
-          multipleSelection={multipleSelection}
-          columns={columns}
-          verticalGap={verticalGap}
-        />
-      ))}
-    </div>
-  ) : null;
+  return (
+    <React.Fragment>
+      {ready ? (
+        <>
+          <style>
+            {`
+
+              .spoke-horizontalLayout .hub-spoke-item {
+                box-sizing: border-box;
+                margin-left: 0px;
+                margin-right: 6px;
+              }
+              .spoke-horizontalLayout .progress-bar {
+                width: 25% !important;
+                margin-left: auto;
+                margin-right: 8px !important;
+              }
+              .spoke-horizontalLayout {
+                box-sizing: border-box;
+                margin-left: 0px;
+                margin-right: 0px;
+              }
+              .hub-spoke button {
+                color: white !important;
+                min-width: 100px;
+                height: auto !important;
+                min-height: 44px;
+                background-color: #006586;
+                border-radius: 3px;
+                border: none;
+                padding: 0px 0px 0px 0px;
+                cursor: pointer;
+              }
+              .hub-spoke {
+                border: none !important;
+                padding: 0px;
+
+                > div {
+                  display: block;
+                  position: static !important;
+                  margin: 0 9px 15px 0;
+                  min-height: 20px;
+                }
+                > div:last-of-type {
+                  margin-right: 0;
+                }
+                p {
+                  margin: 0px;
+                }
+                > br {
+                  display: none !important;
+                }
+              }
+        `}
+          </style>
+          <div data-janus-type={tagName} style={styles} className={`hub-spoke spoke-${layoutType}`}>
+            {options?.map((item, index) => (
+              <SpokeItems
+                idx={index}
+                key={`${id}-item-${index}`}
+                title={item.title}
+                totalItems={options.length}
+                layoutType={layoutType}
+                itemId={`${id}-item-${index}`}
+                groupId={`mcq-${id}`}
+                val={item.value}
+                onSelected={handleButtonPress}
+                state={state}
+                {...item}
+                x={0}
+                y={0}
+                overrideHeight={overrideHeight}
+                disabled={!enabled}
+                columns={columns}
+                verticalGap={verticalGap}
+              />
+            ))}
+            {showProgressBar && (
+              <div className="space-y-5 progress-bar" style={{ width: '96%' }}>
+                <div>
+                  <div className="mb-2 flex justify-between items-center">
+                    <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+                      Progress
+                    </h3>
+                    <span className="text-sm text-gray-800 dark:text-white">
+                      <b>0/{options?.length}</b>
+                    </span>
+                  </div>
+                  <div
+                    className="flex w-full h-2 bg-gray-200 rounded-full overflow-hidden dark:bg-neutral-700"
+                    role="progressbar"
+                  >
+                    <div
+                      className="flex flex-col justify-center rounded-full overflow-hidden bg-body-dark-600 text-xs text-white text-center whitespace-nowrap transition duration-500 dark:bg-blue-500"
+                      style={{ width: '25%' }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
+    </React.Fragment>
+  );
 };
 
 export const tagName = 'janus-hub-spoke';

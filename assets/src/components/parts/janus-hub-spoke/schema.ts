@@ -12,7 +12,6 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
   itemId: string;
   layoutType: string;
   totalItems: number;
-  selected: boolean;
   val: number;
   disabled?: boolean;
   index: number;
@@ -24,6 +23,7 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
 
 export interface Item {
   scoreValue: number;
+  targetScreen: string;
   nodes: any[];
   [key: string]: any;
 }

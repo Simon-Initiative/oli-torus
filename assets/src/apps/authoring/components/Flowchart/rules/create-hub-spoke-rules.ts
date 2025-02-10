@@ -17,7 +17,7 @@ import {
   isOptionCommonErrorPath,
   isOptionSpecificPath,
 } from '../paths/path-utils';
-import { generateAllCorrectWorkflow } from './create-all-correct-workflow';
+import { generateMultipleCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
   DEFAULT_CORRECT_FEEDBACK,
@@ -27,7 +27,6 @@ import {
   getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
-import { generateMaxTryWorkflow } from './create-three-try-workflow';
 import { RulesAndVariables } from './rule-compilation';
 
 export const generateHubSpokeRules = (
@@ -36,22 +35,20 @@ export const generateHubSpokeRules = (
   defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IHubSpokePartLayout;
-  console.log({ question });
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
   const incorrectPath = (screen.authoring?.flowchart?.paths || []).find(isIncorrectPath);
   const commonErrorPaths = (screen.authoring?.flowchart?.paths || []).filter(
     isOptionCommonErrorPath,
   );
-  const specificConditionsFeedback = (screen.authoring?.flowchart?.paths || []).filter(
-    isOptionSpecificPath,
-  );
-
+  console.log({ commonErrorPaths, isOptionSpecificPath, correctPath, incorrectPath });
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
-  const isAlwaysCorrect = !!question.custom?.anyCorrectAnswer;
 
+  const spokedCompleteDestination: string[] = commonErrorPaths.map(
+    (path) => getSequenceIdFromDestinationPath(path, sequence) || '',
+  );
   const correct: Required<IConditionWithFeedback> = {
-    conditions: createSpokeCorrectCondition(question),
+    conditions: createSpokeCorrectCondition(spokedCompleteDestination),
     feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
     destinationId:
       getSequenceIdFromScreenResourceId(
@@ -59,23 +56,17 @@ export const generateHubSpokeRules = (
         sequence,
       ) || 'unknown',
   };
-
-  const incorrect: Required<IConditionWithFeedback> = {
-    conditions: createSpokeIncorrectCondition(question),
-    feedback: question.custom.incorrectFeedback || DEFAULT_INCORRECT_FEEDBACK,
-    destinationId:
-      getSequenceIdFromScreenResourceId(
-        incorrectPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
-        sequence,
-      ) || 'unknown',
-  };
-
   const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
-    conditions: createMCQCommonErrorCondition(path, question),
+    conditions: createSpokeCommonPathCondition(
+      path,
+      question,
+      getSequenceIdFromDestinationPath(path, sequence),
+    ),
     feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_INCORRECT_FEEDBACK,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
 
+  console.log({ commonErrorConditionsFeedback });
   const correctIndex = (question.custom?.correctAnswer || []).findIndex(
     (answer: boolean) => answer === true,
   );
@@ -84,8 +75,6 @@ export const generateHubSpokeRules = (
     if (feedback && index !== correctIndex) {
       const path = commonErrorPaths.find((path) => path.selectedOption === index + 1);
       if (!path) {
-        // So here, we had common error feedback authored, and there was NOT a common error path for it.
-        // so we only want to show the feedback, without moving to a new screen.
         commonErrorConditionsFeedback.push({
           conditions: [
             createCondition(`stage.${question.id}.selectedChoice`, String(index + 1), 'equal'),
@@ -107,60 +96,29 @@ export const generateHubSpokeRules = (
     },
   };
 
-  const setCorrect: IAction[] = [
-    {
-      // Sets the correct answer in the dropdown
-      type: 'mutateState',
-      params: {
-        value: String(correctIndex + 1),
-        target: `stage.${question.id}.selectedChoice`,
-        operator: '=',
-        targetType: 1,
-      },
-    },
-    disableAction,
-  ];
-
   const blankCondition: ICondition = createCondition(
-    `stage.${question.id}.numberOfSelectedChoices`,
-    '0',
+    `stage.${question.id}.selectedChoice`,
+    '-1',
     'equal',
   );
 
-  if (isAlwaysCorrect) {
-    return generateAllCorrectWorkflow(
-      correct,
-      specificConditionsFeedback.map((path) => ({
-        conditions: createMCQCommonErrorCondition(path, question),
-        feedback: correct.feedback || DEFAULT_CORRECT_FEEDBACK,
-        destinationId: getSequenceIdFromDestinationPath(path, sequence),
-      })),
-      disableAction,
-      blankCondition,
-    );
-  }
-
-  return generateMaxTryWorkflow(
+  return generateMultipleCorrectWorkflow(
     correct,
-    incorrect,
     commonErrorConditionsFeedback,
-    setCorrect,
-    blankCondition,
     disableAction,
-    { maxAttempt: screen?.content?.custom?.maxAttempt || '3' },
+    blankCondition,
   );
 };
 
-export const createSpokeCorrectCondition = (question: IHubSpokePartLayout): ICondition[] => {
-  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
-    (answer: boolean) => answer === true,
-  );
-  if (correctIndex !== -1) {
-    return [
-      createCondition(`stage.${question.id}.selectedChoice`, String(correctIndex + 1), 'equal'),
-    ];
+export const createSpokeCorrectCondition = (correctScreens: any): ICondition[] => {
+  const correctconditions = correctScreens
+    .filter((screen: string) => screen?.length)
+    .map((correctScreen: any) => {
+      return createCondition(`session.visits.${correctScreen}`, '1', 'equal');
+    });
+  if (correctconditions?.length) {
+    return [...correctconditions];
   }
-  console.warn("Couldn't find correct answer for dropdown question", question);
   return [];
 };
 
@@ -174,18 +132,19 @@ export const createSpokeIncorrectCondition = (question: IHubSpokePartLayout) => 
     ];
   }
   console.warn("Couldn't find correct answer for dropdown question", question);
-  return [createNeverCondition()]; // createNeverCondition() will make sure this never fires
+  return [createNeverCondition()];
 };
 
-const createMCQCommonErrorCondition = (
+const createSpokeCommonPathCondition = (
   path: OptionCommonErrorPath,
   question: IHubSpokePartLayout,
+  destinationScreenId: string | undefined,
 ) => {
   if (Number.isInteger(path.selectedOption)) {
     return [
+      createCondition(`session.visits.${destinationScreenId}`, '0', 'equal'),
       createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
     ];
   }
-  console.warn("Couldn't find incorrect answer for dropdown question", question);
   return [createNeverCondition()];
 };
