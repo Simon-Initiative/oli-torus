@@ -17,7 +17,7 @@ defmodule Oli.Activities.Model.Trigger do
     |> Oli.Activities.ParseUtils.items_or_errors()
   end
 
-  def parse(s) do
+  def parse(_) do
     {:error, "invalid trigger"}
   end
 end

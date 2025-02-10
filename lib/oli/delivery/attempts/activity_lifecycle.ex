@@ -65,7 +65,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
             {:ok, _} ->
 
-              trigger = Triggers.check_for_hint_trigger(activity_attempt, model, hint)
+              trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint)
 
               {hint, trigger, length(all_hints) > length(shown_hints) + 1}
             {:error, error} -> Repo.rollback(error)

@@ -449,6 +449,9 @@ defmodule OliWeb.Sections.OverviewView do
           description="View and manage the AI Assistant details"
           is_last={true}
         >
+          <div class="my-2">
+            <.assistant_buttons section={@section} />
+          </div>
           <div :if={Sections.assistant_enabled?(@section)}>
             <section class="flex flex-col space-y-4">
               <ul class="link-list">
@@ -505,9 +508,7 @@ defmodule OliWeb.Sections.OverviewView do
               </div>
             </section>
           </div>
-          <div class="my-2">
-            <.assistant_toggle_button section={@section} />
-          </div>
+
         </Group.render>
       </div>
     </Groups.render>
@@ -635,12 +636,29 @@ defmodule OliWeb.Sections.OverviewView do
     section = socket.assigns.section
     assistant_enabled = section.assistant_enabled
 
+    triggers_enabled = if assistant_enabled do false else section.triggers_enabled end
+
     {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{assistant_enabled: !assistant_enabled})
+      Oli.Delivery.Sections.update_section(section, %{assistant_enabled: !assistant_enabled, triggers_enabled: triggers_enabled})
 
     socket =
       socket
       |> put_flash(:info, "Assistant settings updated successfully")
+
+    {:noreply, assign(socket, section: section)}
+  end
+
+
+  def handle_event("toggle_triggers", _, socket) do
+    section = socket.assigns.section
+    triggers_enabled = section.triggers_enabled
+
+    {:ok, section} =
+      Oli.Delivery.Sections.update_section(section, %{triggers_enabled: !triggers_enabled})
+
+    socket =
+      socket
+      |> put_flash(:info, "Assistant trigger settings updated successfully")
 
     {:noreply, assign(socket, section: section)}
   end
@@ -692,17 +710,28 @@ defmodule OliWeb.Sections.OverviewView do
 
   attr :section, Section
 
-  def assistant_toggle_button(assigns) do
+  def assistant_buttons(assigns) do
     ~H"""
-    <%= if Sections.assistant_enabled?(@section) do %>
-      <.button variant={:warning} phx-click="toggle_assistant">
-        Disable Assistant
-      </.button>
-    <% else %>
-      <.button variant={:primary} phx-click="toggle_assistant">
-        Enable Assistant
-      </.button>
-    <% end %>
+    <div>
+      <div class="flex py-2 mb-2">
+        <div>Enable AI Assistant</div>
+        <.toggle_switch
+          class="ml-4"
+          checked={@section.assistant_enabled}
+          on_toggle="toggle_assistant"
+          name="toggle_assistant"
+        />
+      </div>
+      <div class="flex py-2 mb-2">
+        <div>Enable Assistant Triggers</div>
+        <.toggle_switch
+          class="ml-4"
+          checked={@section.triggers_enabled}
+          on_toggle="toggle_triggers"
+          name="toggle_triggers"
+        />
+      </div>
+    </div>
     """
   end
 

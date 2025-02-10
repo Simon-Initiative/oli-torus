@@ -19,7 +19,7 @@ defmodule Oli.Rendering.Content.Plaintext do
     next.()
   end
 
-  def trigger(%Context{} = context, _, attrs) do
+  def trigger(%Context{} = _context, _, _attrs) do
     [""]
   end
 

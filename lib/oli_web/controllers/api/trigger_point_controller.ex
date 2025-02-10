@@ -3,8 +3,6 @@ defmodule OliWeb.Api.TriggerPointController do
   Endpoints to invoke AI trigger points from the client.
   """
 
-  import OliWeb.Api.Helpers
-
   use OliWeb, :controller
 
   def invoke(conn, %{"section_slug" => section_slug}) do

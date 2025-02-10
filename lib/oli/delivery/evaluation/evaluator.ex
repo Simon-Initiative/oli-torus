@@ -4,9 +4,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Activities.Model.Feedback
-  alias Oli.Conversation.Trigger
   alias Oli.Conversation.Triggers
-
 
   @doc """
   Evaluates a student input for a given activity part.  In a successful

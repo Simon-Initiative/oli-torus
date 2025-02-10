@@ -5,9 +5,7 @@ defmodule Oli.Conversation.Triggers  do
 
   alias Phoenix.PubSub
   alias Oli.Conversation.Trigger
-
-  alias Oli.Delivery.Evaluation.{EvaluationContext}
-  alias Oli.Activities.Model.{Part, Response}
+  alias Oli.Activities.Model.{Part}
 
   @trigger_types [
     :page,
@@ -19,6 +17,8 @@ defmodule Oli.Conversation.Triggers  do
     :explanation,
     :targeted_feedback
   ]
+
+  def trigger_types(), do: @trigger_types
 
   def evaluation_triggers(), do: [:correct_answer, :incorrect_answer, :explanation, :targeted_feedback]
 
@@ -33,14 +33,14 @@ defmodule Oli.Conversation.Triggers  do
 
   @doc """
   Verify that the user is enrolled in a section with
-  with the AI agent enabled.
+  with the AI agent and triggers enabled.
   """
   def verify_access(section_slug, user_id) do
 
    case Oli.Accounts.User
       |> join(:left, [u], e in Oli.Delivery.Sections.Enrollment, on: u.id == e.user_id)
       |> join(:left, [_, e], s in Oli.Delivery.Sections.Section, on: s.id == e.section_id)
-      |> where([_, e, s], s.slug == ^section_slug and s.assistant_enabled == true and e.user_id == ^user_id)
+      |> where([_, e, s], s.slug == ^section_slug and s.triggers_enabled == true and s.assistant_enabled == true and e.user_id == ^user_id)
       |> select([_, _, s], s)
       |> limit(1)
       |> Repo.one() do
@@ -56,8 +56,6 @@ defmodule Oli.Conversation.Triggers  do
   def invoke(section_id, current_user_id, trigger) do
 
     topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
-
-    IO.inspect("broadcasting to #{topic}")
 
     PubSub.broadcast(
       Oli.PubSub,
@@ -80,7 +78,7 @@ defmodule Oli.Conversation.Triggers  do
     trigger = augment_data_context(trigger)
     reason = description(trigger.trigger_type, trigger.data)
 
-    prompt = """
+    """
     Trigger points are a feature of this platform that allow a course author to instrument
     various points of student interaction in the course to 'trigger' your (the AI agent)
     intervention. This is one such trigger point invocation. The author has configured this trigger
@@ -99,7 +97,7 @@ defmodule Oli.Conversation.Triggers  do
 
   defp augment_data_context(trigger) do
 
-    trigger = case trigger do
+    case trigger do
 
       %{trigger_type: t} when t in [:page, :content_group, :content_block] -> trigger
 
@@ -119,7 +117,7 @@ defmodule Oli.Conversation.Triggers  do
   def check_for_hint_trigger(activity_attempt, part_attempt, model, hint) do
     part = Enum.filter(model.parts, fn p -> p.id == part_attempt.part_id end) |> hd()
 
-    case Enum.filter(part.trigger, fn t -> t.trigger_type == :hint_request end) do
+    case Enum.filter(part.triggers, fn t -> t.trigger_type == :hint_request end) do
       [trigger | _other] ->
 
         %Trigger{
