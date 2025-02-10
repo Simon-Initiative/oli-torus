@@ -67,6 +67,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
     current_user = Accounts.preload_author(socket.assigns.current_user)
 
+    # Get the context id from the params if it exists. This will only be present for LTI sections.
+    context_id = Map.get(params, "context_id")
+
     # Build section delivery details. If a context id is provided as a param, then we are creating
     # an LTI section. Otherwise, we are creating a direct delivery section.
     delivery_details = section_delivery_details(current_user, params)
@@ -82,6 +85,7 @@ defmodule OliWeb.Delivery.NewCourse do
        current_step: 0,
        current_user: current_user,
        delivery_details: delivery_details,
+       context_id: context_id,
        changeset: changeset,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false

@@ -352,123 +352,120 @@ defmodule OliWeb.LtiController do
     issuer = lti_params["iss"]
     client_id = LtiParams.peek_client_id(lti_params)
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+    lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+
+    context_id =
+      case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
+        nil ->
+          nil
+
+        context ->
+          context["id"]
+      end
 
     Oli.Repo.transaction(fn ->
-      case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
-        {institution, registration, _deployment} ->
-          lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
+      with {institution, registration, _deployment} <-
+             Institutions.get_institution_registration_deployment(
+               issuer,
+               client_id,
+               deployment_id
+             ),
+           {:ok, user} <-
+             Accounts.insert_or_update_lms_user(
+               %{
+                 sub: lti_params["sub"],
+                 name: lti_params["name"],
+                 given_name: lti_params["given_name"],
+                 family_name: lti_params["family_name"],
+                 middle_name: lti_params["middle_name"],
+                 nickname: lti_params["nickname"],
+                 preferred_username: lti_params["preferred_username"],
+                 profile: lti_params["profile"],
+                 picture: lti_params["picture"],
+                 website: lti_params["website"],
+                 email: lti_params["email"],
+                 email_verified: true,
+                 gender: lti_params["gender"],
+                 birthdate: lti_params["birthdate"],
+                 zoneinfo: lti_params["zoneinfo"],
+                 locale: lti_params["locale"],
+                 phone_number: lti_params["phone_number"],
+                 phone_number_verified: lti_params["phone_number_verified"],
+                 address: lti_params["address"],
+                 lti_institution_id: institution.id
+               },
+               institution.id
+             ),
+           {:ok, _} <- LtiParams.create_or_update_lti_params(lti_params, user.id),
+           {:ok, user} <-
+             Accounts.update_user_platform_roles(
+               user,
+               PlatformRoles.get_roles_by_uris(lti_roles)
+             ),
+           # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
+           # safeguard against the case that context is missing
+           {:ok, context_id} <-
+             trap_nil(context_id, "Context ID is missing from LTI params but is required") do
+        # Attempt to find an existing section that matches this context
+        case Sections.get_section_from_lti_params(lti_params) do
+          nil ->
+            # A section has not been created for this context yet
+            if can_configure_section?(lti_roles) do
+              conn
+              |> redirect(to: ~p"/sections/new/#{context_id}")
+            else
+              conn
+              |> render("course_not_configured.html")
+            end
 
-          # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
-          # http://www.imsglobal.org/spec/lti/v1p3/#user-identity-claims
-          case Accounts.insert_or_update_lms_user(
-                 %{
-                   sub: lti_params["sub"],
-                   name: lti_params["name"],
-                   given_name: lti_params["given_name"],
-                   family_name: lti_params["family_name"],
-                   middle_name: lti_params["middle_name"],
-                   nickname: lti_params["nickname"],
-                   preferred_username: lti_params["preferred_username"],
-                   profile: lti_params["profile"],
-                   picture: lti_params["picture"],
-                   website: lti_params["website"],
-                   email: lti_params["email"],
-                   email_verified: true,
-                   gender: lti_params["gender"],
-                   birthdate: lti_params["birthdate"],
-                   zoneinfo: lti_params["zoneinfo"],
-                   locale: lti_params["locale"],
-                   phone_number: lti_params["phone_number"],
-                   phone_number_verified: lti_params["phone_number_verified"],
-                   address: lti_params["address"],
-                   lti_institution_id: institution.id
-                 },
-                 institution.id
-               ) do
-            {:ok, user} ->
-              # update lti params and session to be associated with the current lms user
-              {:ok, _} =
-                LtiParams.create_or_update_lti_params(lti_params, user.id)
+          section ->
+            # If a course section exists, ensure that this user has an enrollment in this section
+            # with the appropriate roles
+            context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+            Sections.enroll(user.id, section.id, context_roles)
 
-              # update user platform roles
-              {:ok, user} =
-                Accounts.update_user_platform_roles(
-                  user,
-                  PlatformRoles.get_roles_by_uris(lti_roles)
-                )
+            # Update section LTI details
+            Sections.update_section(section, %{
+              grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+              line_items_service_url: AGS.get_line_items_url(lti_params, registration),
+              nrps_enabled: NRPS.nrps_enabled?(lti_params),
+              nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
+            })
 
-              # allow section configuration if user has any of the allowed roles
-              allow_configure_section_roles =
-                [
-                  PlatformRoles.get_role(:system_administrator).uri,
-                  PlatformRoles.get_role(:institution_administrator).uri,
-                  ContextRoles.get_role(:context_administrator).uri,
-                  ContextRoles.get_role(:context_instructor).uri
-                ]
+            if can_configure_section?(lti_roles) do
+              # Redirect to instructor dashboard
+              conn
+              |> redirect(to: ~p"/sections/#{section.slug}/manage")
+            else
+              # Redirect to student section view
+              conn
+              |> redirect(to: ~p"/sections/#{section.slug}")
+            end
+        end
+      else
+        error ->
+          Logger.error("Failed to handle valid LTI 1.3 launch: #{Kernel.inspect(error)}")
 
-              can_configure_section =
-                MapSet.intersection(
-                  MapSet.new(lti_roles),
-                  MapSet.new(allow_configure_section_roles)
-                )
-                |> MapSet.size() > 0
-
-              # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
-              # safeguard against the case that context is missing
-              case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
-                nil ->
-                  {_error_id, error_msg} =
-                    log_error("Context claim is missing from LTI params but is required")
-
-                  throw(error_msg)
-
-                %{"id" => context_id} ->
-                  # update section specifics - if one exists. Enroll the user and also update the section details
-                  case Sections.get_section_from_lti_params(lti_params) do
-                    nil ->
-                      # A section has not been created for this context yet
-                      if can_configure_section do
-                        conn
-                        |> assign(:context_id, context_id)
-                        |> render("getting_started.html")
-                      else
-                        conn
-                        |> render("course_not_configured.html")
-                      end
-
-                    section ->
-                      # transform lti_roles to a list only containing valid context roles (exclude all system and institution roles)
-                      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-
-                      # if a course section exists, ensure that this user has an enrollment in this section
-                      Sections.enroll(user.id, section.id, context_roles)
-
-                      # update section LTI details
-                      Sections.update_section(section, %{
-                        grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-                        line_items_service_url: AGS.get_line_items_url(lti_params, registration),
-                        nrps_enabled: NRPS.nrps_enabled?(lti_params),
-                        nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
-                      })
-
-                      if can_configure_section do
-                        # Redirect to instructor dashboard
-                        conn
-                        |> redirect(to: ~p"/sections/#{section.slug}/manage")
-                      else
-                        # Redirect to student section view
-                        conn
-                        |> redirect(to: ~p"/sections/#{section.slug}")
-                      end
-                  end
-              end
-
-            {:error, changeset} ->
-              {_error_id, error_msg} = log_error("Failed to create or update user", changeset)
-
-              throw(error_msg)
-          end
+          conn
+          |> render("lti_error.html", reason: "Failed to handle valid LTI 1.3 launch")
       end
     end)
+  end
+
+  def can_configure_section?(lti_roles) do
+    # allow section configuration if user has any of the allowed roles
+    allow_configure_section_roles =
+      [
+        PlatformRoles.get_role(:system_administrator).uri,
+        PlatformRoles.get_role(:institution_administrator).uri,
+        ContextRoles.get_role(:context_administrator).uri,
+        ContextRoles.get_role(:context_instructor).uri
+      ]
+
+    MapSet.intersection(
+      MapSet.new(lti_roles),
+      MapSet.new(allow_configure_section_roles)
+    )
+    |> MapSet.size() > 0
   end
 end

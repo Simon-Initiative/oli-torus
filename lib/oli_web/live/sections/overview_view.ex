@@ -573,10 +573,11 @@ defmodule OliWeb.Sections.OverviewView do
 
   def handle_event("delete_section", _, socket) do
     socket = clear_flash(socket)
+    section = socket.assigns.section
 
     socket =
       if socket.assigns.section_has_student_data ==
-           Sections.has_student_data?(socket.assigns.section.slug) do
+           Sections.has_student_data?(section.slug) do
         {action_function, action} =
           if socket.assigns.section_has_student_data do
             {&Sections.update_section(&1, %{status: :archived}), "archived"}
@@ -584,7 +585,7 @@ defmodule OliWeb.Sections.OverviewView do
             {&Sections.update_section(&1, %{status: :deleted}), "deleted"}
           end
 
-        case action_function.(socket.assigns.section) do
+        case action_function.(section) do
           {:ok, _section} ->
             is_admin = socket.assigns.is_admin
 
@@ -592,7 +593,11 @@ defmodule OliWeb.Sections.OverviewView do
               if is_admin do
                 Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
               else
-                ~p"/workspaces/instructor"
+                if section.open_and_free do
+                  ~p"/workspaces/instructor"
+                else
+                  ~p"/sections/new/#{section.context_id}"
+                end
               end
 
             socket
