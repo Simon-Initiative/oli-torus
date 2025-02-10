@@ -162,7 +162,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     />
     <div id="home-view" class="w-full h-full bg-stone-950 dark:text-white" phx-hook="Countdown">
       <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
-        <div class="w-1/4 h-48 flex-col justify-start items-start gap-6 inline-flex">
+        <div class="w-2/5 h-48 flex-col justify-start items-start gap-6 inline-flex">
           <.assignments
             upcoming_assignments={@upcoming_assignments}
             latest_assignments={@latest_assignments}
@@ -183,7 +183,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
         <div
           :if={@section.agenda && not is_nil(@grouped_agenda_resources)}
-          class="w-3/4 h-full flex-col justify-start items-start gap-6 inline-flex"
+          class="w-3/5 h-full flex-col justify-start items-start gap-6 inline-flex"
         >
           <.agenda
             section_slug={@section_slug}
@@ -522,6 +522,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           >
             <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
           </.link>
+          <.certificate_progress />
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
             <div class="text-base font-normal tracking-tight grow">
@@ -529,6 +530,87 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </div>
           </div>
         <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  def certificate_progress(assigns) do
+    ~H"""
+    <div
+      id="certificate_progress_card"
+      class="flex flex-col bg-black/10 dark:bg-[#2b282e] rounded-xl p-6 pr-3 before:bg-[#0CAF61] dark:before:bg-[#39e581] relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:z-10"
+    >
+      <div class="flex justify-between dark:text-[#eeebf5] text-lg font-semibold leading-normal">
+        <div>Certificate Progress</div>
+        <div class="h-7 px-3 py-1 bg-[#39e581]/25 rounded-[999px] flex items-center justify-center">
+          <div class="w-6 h-6 overflow-hidden"><Icons.certificate /></div>
+        </div>
+      </div>
+      <div class="dark:text-[#e6e9f2] text-base font-normal mt-4 mb-8">
+        <span>Complete </span>
+        <span class="dark:text-white font-bold">all</span>
+        <span>of the specified requirements to achieve a certificate.</span>
+      </div>
+
+      <div class="flex flex-col space-y-8">
+        <div
+          id="certificate_discussion_posts_progress"
+          class="flex-col justify-start items-start gap-3 inline-flex"
+        >
+          <div class="justify-start items-center gap-3 inline-flex">
+            <div class="w-5 h-5 overflow-hidden">
+              <Icons.message class="dark:stroke-white stroke-black" />
+            </div>
+            <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
+              Discussion Posts
+            </div>
+          </div>
+          <div class="justify-center items-center gap-3 inline-flex">
+            <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
+            <div class="dark:text-white text-sm font-normal leading-none">
+              1 of 2 Discussion Posts
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="certificate_class_notes_progress"
+          class="flex-col justify-start items-start gap-3 inline-flex"
+        >
+          <div class="justify-start items-center gap-3 inline-flex">
+            <div class="w-5 h-5 overflow-hidden"><Icons.message_circles /></div>
+            <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
+              Class Notes
+            </div>
+          </div>
+          <div class="justify-center items-center gap-3 inline-flex">
+            <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
+            <div class="dark:text-white text-sm font-normal leading-none">
+              3 of 4 Class Notes
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="certificate_required_assignments_progress"
+          class="flex-col justify-start items-start gap-3 inline-flex"
+        >
+          <div class="justify-start items-center gap-3 inline-flex">
+            <div class="w-5 h-5 overflow-hidden dark:text-white">
+              <Icons.transparent_flag class="dark:stroke-white" />
+            </div>
+            <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
+              Required Assignments
+            </div>
+          </div>
+          <div class="justify-center items-center gap-3 inline-flex">
+            <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
+            <div class="dark:text-white text-sm font-normal leading-none">
+              10 of 12 Required Assignments
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     """
