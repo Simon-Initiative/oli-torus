@@ -8,7 +8,7 @@ defmodule Oli.Activities.Model.Trigger do
     {:ok, %Oli.Activities.Model.Trigger{id: id, trigger_type: String.to_existing_atom(type), prompt: prompt, ref_id: ref_id}}
   end
 
-  def parse(% Oli.Activities.Model.Trigger{id: _id} = t) do
+  def parse(%Oli.Activities.Model.Trigger{id: _id} = t) do
     {:ok, t}
   end
 

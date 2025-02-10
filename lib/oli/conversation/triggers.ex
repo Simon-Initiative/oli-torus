@@ -117,13 +117,18 @@ defmodule Oli.Conversation.Triggers  do
   def check_for_hint_trigger(activity_attempt, part_attempt, model, hint) do
     part = Enum.filter(model.parts, fn p -> p.id == part_attempt.part_id end) |> hd()
 
-    case Enum.filter(part.triggers, fn t -> t.trigger_type == :hint_request end) do
+    hint_ordinal = case Enum.find_index(part.hints, fn h -> h.id == hint.id end) do
+      nil -> 0
+      index -> index + 1
+    end
+
+    case Enum.filter(part.triggers, fn t -> t.trigger_type == :hint_request and t.ref_id == hint_ordinal end) do
       [trigger | _other] ->
 
         %Trigger{
           trigger_type: :hint_request,
           data: %{
-            "ref_id" => hint.id,
+            "ref_id" => hint_ordinal,
             "hint" => hint.hint,
             "activity_id" => activity_attempt.resource_id
           },
