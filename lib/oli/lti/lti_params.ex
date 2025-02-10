@@ -113,9 +113,11 @@ defmodule Oli.Lti.LtiParams do
   Returns the latest lti params for the given user
   """
   def get_latest_lti_params_for_user(user_id) do
+    # LTI Params record is updated on every launch. We can use the updated_at field to get the
+    # latest record for the user.
     from(p in LtiParams,
       where: p.user_id == ^user_id,
-      order_by: [desc: p.inserted_at],
+      order_by: [desc: p.updated_at],
       limit: 1
     )
     |> Repo.one()
