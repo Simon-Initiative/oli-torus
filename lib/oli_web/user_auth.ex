@@ -459,5 +459,13 @@ defmodule OliWeb.UserAuth do
   defp signed_in_path(%{request_path: "/instructors/log_in"} = _conn),
     do: ~p"/workspaces/instructor"
 
-  defp signed_in_path(_conn), do: ~p"/workspaces/student"
+  defp signed_in_path(conn) do
+    case conn.assigns[:current_user] do
+      %User{can_create_sections: true} ->
+        ~p"/workspaces/instructor"
+
+      _ ->
+        ~p"/workspaces/student"
+    end
+  end
 end
