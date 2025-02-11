@@ -702,6 +702,8 @@ defmodule OliWeb.PageDeliveryController do
        ) do
     section = conn.assigns.section
 
+    author = conn.assigns[:current_author]
+
     layout = "chromeless.html"
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
@@ -747,7 +749,6 @@ defmodule OliWeb.PageDeliveryController do
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
-        isInstructor: true,
         reviewMode: context.review_mode,
         overviewURL: ~p"/sections/#{section_slug}",
         finalizeGradedURL:
@@ -786,7 +787,10 @@ defmodule OliWeb.PageDeliveryController do
       section_slug: section_slug,
       slug: context.page.slug,
       scripts: Activities.get_activity_scripts(:delivery_script),
-      title: context.page.title
+      title: context.page.title,
+      isAuthor: !is_nil(author),
+      isAdmin: Accounts.is_admin?(author),
+      isInstructor: context.is_instructor
     })
   end
 
