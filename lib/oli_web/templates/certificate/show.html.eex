@@ -1,0 +1,4 @@
+<div class="container">
+  <h1>Certificate</h1>
+  <pre><%= inspect(@certificate, pretty: true) %></pre>
+</div>

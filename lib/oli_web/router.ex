@@ -254,6 +254,8 @@ defmodule OliWeb.Router do
       only: [:new, :delete]
 
     get "/users/auth/:provider/callback", UserAuthorizationController, :callback
+
+    get "/certificates/:guid", CertificateController, :show
   end
 
   scope "/", OliWeb do
