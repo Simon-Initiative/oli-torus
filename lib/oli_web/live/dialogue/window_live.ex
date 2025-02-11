@@ -638,7 +638,7 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def handle_info({:trigger, trigger}, socket) do
     Logger.info(
-      "Handlng trigger for section #{socket.assigns.section_id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
+      "Handlng trigger for section #{socket.assigns.section.id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
     )
 
     prompt = Triggers.assemble_trigger_prompt(trigger)
