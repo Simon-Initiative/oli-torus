@@ -6,8 +6,10 @@ defmodule Oli.Delivery.Certificates do
 
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
+  alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.GrantedCertificate
+  alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Repo
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
@@ -161,5 +163,172 @@ defmodule Oli.Delivery.Certificates do
       end
 
     Repo.all(query)
+  end
+
+  def raw_student_certificate_progress(user_id, section_id) do
+    certificate =
+      from(c in Certificate,
+        where: c.section_id == ^section_id,
+        left_join: gc in assoc(c, :granted_certificate),
+        on: gc.user_id == ^user_id,
+        select:
+          merge(
+            map(c, ^Certificate.__schema__(:fields)),
+            %{granted_certificate_state: gc.state}
+          )
+      )
+      |> Repo.one()
+
+    required_assignment_ids =
+      case certificate.assessments_apply_to do
+        :all ->
+          # if no assignments list is provided
+          # we use the same logic applied in OliWeb.Delivery.Student.AssignmentsLive
+          # to calculate the total count and completed count
+          raw_assignments = SectionResourceDepot.graded_pages(section_id, hidden: false)
+          Enum.map(raw_assignments, & &1.resource_id)
+
+        :custom ->
+          certificate.custom_assessments
+      end
+
+    if certificate.granted_certificate_state == :earned do
+      required_assignment_ids_count = Enum.count(required_assignment_ids)
+
+      %{
+        discussion_posts: %{
+          completed: certificate.required_discussion_posts,
+          total: certificate.required_discussion_posts
+        },
+        class_notes: %{
+          completed: certificate.required_class_notes,
+          total: certificate.required_class_notes
+        },
+        required_assignments: %{
+          completed: required_assignment_ids_count,
+          total: required_assignment_ids_count
+        }
+      }
+    else
+      %{
+        discussion_posts:
+          raw_required_discussion_posts_completion(
+            user_id,
+            section_id,
+            certificate.required_discussion_posts
+          ),
+        class_notes:
+          raw_required_class_notes_completion(
+            user_id,
+            section_id,
+            certificate.required_class_notes
+          ),
+        required_assignments:
+          raw_required_assignments_completion(
+            user_id,
+            section_id,
+            required_assignment_ids,
+            certificate.min_percentage_for_completion
+          )
+      }
+    end
+  end
+
+  @doc """
+  Count the number of discussion posts for a user in a section
+
+  Criteria:
+  Any and all discussion posts made should count toward completion despite approval/visibility/thread.
+  A second reply would count as a second discussion post.
+  """
+  def user_certificate_discussion_posts_count(user_id, section_id) do
+    from(p in Oli.Resources.Collaboration.Post,
+      where:
+        p.user_id == ^user_id and p.section_id == ^section_id and
+          is_nil(p.annotated_resource_id),
+      select: count(p.id)
+    )
+    |> Repo.one()
+    |> case do
+      nil -> 0
+      count -> count
+    end
+  end
+
+  @doc """
+  Count the number of class notes for a user in a section
+
+  Criteria:
+  Only the public “class notes” count toward completion (so not “My Notes”).
+  Multiple replies should also be considered as multiple notes.
+  """
+  def user_certificate_class_notes_count(user_id, section_id) do
+    from(p in Oli.Resources.Collaboration.Post,
+      where:
+        p.user_id == ^user_id and p.section_id == ^section_id and p.visibility == :public and
+          not is_nil(p.annotated_resource_id),
+      select: count(p.id)
+    )
+    |> Repo.one()
+    |> case do
+      nil -> 0
+      count -> count
+    end
+  end
+
+  defp raw_required_discussion_posts_completion(
+         _student_id,
+         _section_id,
+         required_discussion_posts
+       )
+       when required_discussion_posts in [nil, 0],
+       do: %{completed: 0, total: 0}
+
+  defp raw_required_discussion_posts_completion(user_id, section_id, required_discussion_posts) do
+    %{
+      completed: user_certificate_discussion_posts_count(user_id, section_id),
+      total: required_discussion_posts
+    }
+  end
+
+  defp raw_required_class_notes_completion(_user_id, _section_id, required_class_notes)
+       when required_class_notes in [nil, 0],
+       do: %{completed: 0, total: 0}
+
+  defp raw_required_class_notes_completion(user_id, section_id, required_class_notes) do
+    %{
+      completed: user_certificate_class_notes_count(user_id, section_id),
+      total: required_class_notes
+    }
+  end
+
+  defp raw_required_assignments_completion(
+         user_id,
+         section_id,
+         required_assignment_ids,
+         min_percentage_for_completion
+       ) do
+    # TODO this could be done in a single new query passing the min_percentage_for_completion
+
+    raw_avg_score_per_page_id =
+      Metrics.raw_avg_score_across_for_pages(
+        %Oli.Delivery.Sections.Section{id: section_id},
+        required_assignment_ids,
+        [user_id]
+      )
+
+    completed_assignments_count =
+      Enum.reduce(raw_avg_score_per_page_id, 0, fn {_, raw_score}, acc ->
+        completion_percentage = raw_score.score / raw_score.out_of * 100
+
+        if completion_percentage >= min_percentage_for_completion,
+          do: acc + 1,
+          else: acc
+      end)
+
+    %{
+      completed: completed_assignments_count,
+      total: Enum.count(required_assignment_ids)
+    }
   end
 end

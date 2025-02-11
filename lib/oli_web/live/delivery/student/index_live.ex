@@ -3,7 +3,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   use Appsignal.Instrumentation.Decorators
   import OliWeb.Components.Delivery.Layouts
 
-  alias Oli.Delivery.{Attempts, Hierarchy, Metrics, Sections, Settings}
+  alias Oli.Delivery.{Attempts, Certificates, Hierarchy, Metrics, Sections, Settings}
   alias Oli.Delivery.Sections.Scheduling
   alias Oli.Delivery.Sections.SectionCache
   alias Oli.Publishing.DeliveryResolver
@@ -21,6 +21,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     if connected?(socket) do
       section = socket.assigns[:section]
       current_user_id = socket.assigns[:current_user].id
+      certificate_enabled = section.certificate_enabled
 
       combined_settings =
         Appsignal.instrument("IndexLive: combined_settings", fn ->
@@ -90,26 +91,36 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           )
         end)
 
-      {:ok,
-       assign(socket,
-         active_tab: :index,
-         loaded: true,
-         grouped_agenda_resources: grouped_agenda_resources,
-         section_slug: section.slug,
-         section_start_date: section.start_date,
-         historical_graded_attempt_summary: nil,
-         has_visited_section:
-           Sections.has_visited_section(section, socket.assigns[:current_user],
-             enrollment_state: false
-           ),
-         last_open_and_unfinished_page: last_open_and_unfinished_page,
-         nearest_upcoming_lesson: nearest_upcoming_lesson,
-         upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
-         latest_assignments: combine_settings(latest_assignments, combined_settings),
-         containers_per_page: containers_per_page,
-         assignments_tab: :upcoming,
-         completed_pages: get_completed_pages(section.id, current_user_id)
-       )}
+      {
+        :ok,
+        assign(socket,
+          active_tab: :index,
+          loaded: true,
+          grouped_agenda_resources: grouped_agenda_resources,
+          section_slug: section.slug,
+          section_start_date: section.start_date,
+          historical_graded_attempt_summary: nil,
+          has_visited_section:
+            Sections.has_visited_section(section, socket.assigns[:current_user],
+              enrollment_state: false
+            ),
+          last_open_and_unfinished_page: last_open_and_unfinished_page,
+          nearest_upcoming_lesson: nearest_upcoming_lesson,
+          upcoming_assignments: combine_settings(upcoming_assignments, combined_settings),
+          latest_assignments: combine_settings(latest_assignments, combined_settings),
+          containers_per_page: containers_per_page,
+          assignments_tab: :upcoming,
+          completed_pages: get_completed_pages(section.id, current_user_id),
+          certificate_enabled: certificate_enabled
+        )
+        |> assign_async(:certificate_progress, fn ->
+          {:ok,
+           %{
+             certificate_progress:
+               maybe_get_certificate_progress(certificate_enabled, current_user_id, section.id)
+           }}
+        end)
+      }
     else
       {:ok, assign(socket, active_tab: :index, loaded: false)}
     end
@@ -178,6 +189,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               ~p"/sections/#{@section_slug}/learn?sidebar_expanded=#{@sidebar_expanded}"
             }
             completed_pages={@completed_pages}
+            certificate_enabled={@certificate_enabled}
+            certificate_progress={@certificate_progress}
           />
         </div>
 
@@ -383,6 +396,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:has_visited_section, :boolean, required: true)
   attr(:page_completed_target_path, :string, required: true)
   attr(:completed_pages, :map, required: true)
+  attr(:certificate_enabled, :boolean, required: true)
+  attr(:certificate_progress, :map, required: true)
 
   defp course_progress(assigns) do
     ~H"""
@@ -522,7 +537,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           >
             <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
           </.link>
-          <.certificate_progress />
+          <.certificate_progress
+            :if={@certificate_enabled}
+            certificate_progress={@certificate_progress}
+          />
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
             <div class="text-base font-normal tracking-tight grow">
@@ -553,67 +571,96 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <span>of the specified requirements to achieve a certificate.</span>
       </div>
 
-      <div class="flex flex-col space-y-8">
-        <div
-          id="certificate_discussion_posts_progress"
-          class="flex-col justify-start items-start gap-3 inline-flex"
-        >
-          <div class="justify-start items-center gap-3 inline-flex">
-            <div class="w-5 h-5 overflow-hidden">
-              <Icons.message class="dark:stroke-white stroke-black" />
+      <.async_result :let={certificate_progress} assign={@certificate_progress}>
+        <:loading>Loading progress...</:loading>
+        <:failed :let={_failure}>there was an error loading the certificate progress</:failed>
+        <div class="flex flex-col space-y-8">
+          <div
+            :if={certificate_progress.discussion_posts.total > 0}
+            id="certificate_discussion_posts_progress"
+            class="flex-col justify-start items-start gap-3 inline-flex"
+          >
+            <div class="justify-start items-center gap-3 inline-flex">
+              <div class="w-5 h-5 overflow-hidden">
+                <Icons.message class="dark:stroke-white stroke-black" />
+              </div>
+              <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
+                Discussion Posts
+              </div>
             </div>
-            <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
-              Discussion Posts
+            <div class="justify-center items-center gap-3 inline-flex">
+              <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
+              <div class="dark:text-white text-sm font-normal leading-none">
+                <%= certificate_progress_text(
+                  certificate_progress.discussion_posts,
+                  "Discussion Post"
+                ) %>
+              </div>
             </div>
           </div>
-          <div class="justify-center items-center gap-3 inline-flex">
-            <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
-            <div class="dark:text-white text-sm font-normal leading-none">
-              1 of 2 Discussion Posts
-            </div>
-          </div>
-        </div>
 
-        <div
-          id="certificate_class_notes_progress"
-          class="flex-col justify-start items-start gap-3 inline-flex"
-        >
-          <div class="justify-start items-center gap-3 inline-flex">
-            <div class="w-5 h-5 overflow-hidden"><Icons.message_circles /></div>
-            <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
-              Class Notes
+          <div
+            :if={certificate_progress.class_notes.total > 0}
+            id="certificate_class_notes_progress"
+            class="flex-col justify-start items-start gap-3 inline-flex"
+          >
+            <div class="justify-start items-center gap-3 inline-flex">
+              <div class="w-5 h-5 overflow-hidden"><Icons.message_circles /></div>
+              <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
+                Class Notes
+              </div>
+            </div>
+            <div class="justify-center items-center gap-3 inline-flex">
+              <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
+              <div class="dark:text-white text-sm font-normal leading-none">
+                <%= certificate_progress_text(
+                  certificate_progress.class_notes,
+                  "Class Note"
+                ) %>
+              </div>
             </div>
           </div>
-          <div class="justify-center items-center gap-3 inline-flex">
-            <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
-            <div class="dark:text-white text-sm font-normal leading-none">
-              3 of 4 Class Notes
-            </div>
-          </div>
-        </div>
 
-        <div
-          id="certificate_required_assignments_progress"
-          class="flex-col justify-start items-start gap-3 inline-flex"
-        >
-          <div class="justify-start items-center gap-3 inline-flex">
-            <div class="w-5 h-5 overflow-hidden dark:text-white">
-              <Icons.transparent_flag class="dark:stroke-white" />
+          <div
+            :if={certificate_progress.required_assignments.total > 0}
+            id="certificate_required_assignments_progress"
+            class="flex-col justify-start items-start gap-3 inline-flex"
+          >
+            <div class="justify-start items-center gap-3 inline-flex">
+              <div class="w-5 h-5 overflow-hidden dark:text-white">
+                <Icons.transparent_flag class="dark:stroke-white" />
+              </div>
+              <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
+                Required Assignments
+              </div>
             </div>
-            <div class="dark:text-[#eeebf5] text-base font-bold leading-normal">
-              Required Assignments
-            </div>
-          </div>
-          <div class="justify-center items-center gap-3 inline-flex">
-            <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
-            <div class="dark:text-white text-sm font-normal leading-none">
-              10 of 12 Required Assignments
+            <div class="justify-center items-center gap-3 inline-flex">
+              <div class="w-5 h-5 overflow-hidden"><Icons.check /></div>
+              <div class="dark:text-white text-sm font-normal leading-none">
+                <%= certificate_progress_text(
+                  certificate_progress.required_assignments,
+                  "Required Assignment"
+                ) %>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </.async_result>
     </div>
     """
+  end
+
+  defp maybe_get_certificate_progress(false, _user_id, _section_id), do: %{}
+
+  defp maybe_get_certificate_progress(true, user_id, section_id),
+    do: Certificates.raw_student_certificate_progress(user_id, section_id)
+
+  defp certificate_progress_text(%{completed: completed, total: total}, _label)
+       when completed >= total,
+       do: "Completed"
+
+  defp certificate_progress_text(%{completed: completed, total: total}, label) do
+    "#{completed} of #{total} #{label}#{if total > 1, do: "s", else: ""}"
   end
 
   attr(:upcoming_assignments, :list, required: true)
