@@ -5,6 +5,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Model } from 'data/content/model/elements/factories';
 import { Transforms } from 'slate';
+import { DeleteButton } from 'components/misc/DeleteButton';
 
 export const insertTrigger = createButtonCommandDesc({
   icon: <i className="fa-solid fa-microchip"></i>,
@@ -18,17 +19,8 @@ export const insertTrigger = createButtonCommandDesc({
   },
 });
 
-
-interface Props extends EditorProps<ContentModel.TriggerBlock> {}
-export const TriggerEditor: React.FC<Props> = ({
-  model,
-  attributes,
-  children,
-  commandContext,
-}) => {
-  const onEdit = useEditModelCallback(model);
+export const TriggerEditorCore = ({ children, instructions, onDelete, showDelete }: { showDelete: boolean, onDelete: any, children: any, instructions: any}) => {
   const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
-
 
   const ExpandablePromptHelp = () => (
     <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-600 rounded-lg' : ''}`}>
@@ -58,10 +50,13 @@ export const TriggerEditor: React.FC<Props> = ({
 
   return (
     <div className="bg-gray-100 dark:bg-gray-600 rounded-lg p-3" contentEditable={false}>
-      <h4>
-        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-        DOT AI Activity Trigger Point
-      </h4>
+      <div className="flex justify-between">
+        <h4>
+          <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+          DOT AI Activity Trigger Point
+        </h4>
+        {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
+      </div>
       <p className="mt-2">
         Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
         activity.
@@ -69,9 +64,7 @@ export const TriggerEditor: React.FC<Props> = ({
 
       <h6 className="mt-2"><strong>Trigger</strong></h6>
 
-      <p>When a student clicks the <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon
-      within this text block, our AI assistant, DOT
-      will appear and follow your custom prompt.</p>
+      {instructions}
 
       <h6 className="mt-2"><strong>Prompt</strong></h6>
 
@@ -80,10 +73,26 @@ export const TriggerEditor: React.FC<Props> = ({
 
       <ExpandablePromptHelp />
 
+      {children}
+    </div>
+  );
+};
+
+interface Props extends EditorProps<ContentModel.TriggerBlock> {}
+export const TriggerEditor: React.FC<Props> = ({
+  model
+}) => {
+  const onEdit = useEditModelCallback(model);
+  return (
+    <TriggerEditorCore
+      onDelete={() => onEdit(undefined as any)}
+      instructions={<p>When a student clicks the <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon
+      within this text block, our AI assistant, DOT
+      will appear and follow your custom prompt.</p>}>
       <textarea
           className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={model.prompt}
           onChange={(e) => onEdit({ prompt: e.target.value })} />
-    </div>
+    </TriggerEditorCore>
   );
 };

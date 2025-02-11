@@ -24,6 +24,8 @@ import { EditorProps } from './createEditor';
 import { GroupTrigger } from 'data/triggers';
 import { Modal } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
+import guid from 'utils/guid';
+import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
 import { on } from 'events';
 
 interface PurposeGroupEditorProps extends EditorProps {
@@ -149,6 +151,10 @@ export const PurposeGroupBlock = ({
     >
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
+        <GroupTriggerEditorButton
+          editMode={editMode}
+          onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
+          trigger={contentItem.trigger}/>
         {contentBreaksExist ? (
           <PaginationModes
             onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}
@@ -162,10 +168,6 @@ export const PurposeGroupBlock = ({
           editMode={editMode}
           mode={contentItem.audience}
         />
-        <GroupTriggerEditor
-          onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
-          editMode={editMode}
-          trigger={contentItem.trigger}/>
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}
@@ -174,6 +176,10 @@ export const PurposeGroupBlock = ({
         />
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
+      {contentItem.trigger !== undefined ? <GroupTriggerEditor
+          onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
+          editMode={editMode}
+          trigger={contentItem.trigger}/> : null}
       <MaybeDeliveryPurposeContainer contentItem={contentItem}>
         {children}
       </MaybeDeliveryPurposeContainer>
@@ -181,48 +187,7 @@ export const PurposeGroupBlock = ({
   );
 };
 
-const TriggerEditor = ({
-    trigger,
-    onEdit,
-  }: {
-    trigger: GroupTrigger | undefined;
-    onEdit: (trigger: GroupTrigger | undefined) => void;
-  }) => {
-
-    const [editedTrigger, setEditedTrigger] = useState<GroupTrigger | undefined >(trigger);
-
-    const update = (trigger: GroupTrigger | undefined) => {
-      console.log(trigger);
-      setEditedTrigger(trigger);
-      onEdit(trigger);
-    };
-
-    const buttonOrText = editedTrigger === undefined ? (
-      <button
-        className="btn btn-primary btn-sm"
-        onClick={() => update({ type: 'trigger', trigger_type: 'group', prompt: '' })}>
-        Enable Trigger
-      </button>
-    ) : (
-      <div>
-        <p>Enter the prompt you want DOT to follow</p>
-        <input
-          type="text"
-          value={editedTrigger.prompt}
-          onChange={(e) => update({type: 'trigger', trigger_type: 'group', prompt: e.target.value })}/>
-        <button
-          className="btn btn-primary btn-sm"
-          onClick={() => update(undefined)}>
-          Disable Trigger
-        </button>
-      </div>
-    );
-
-    return buttonOrText;
-  };
-
-
-const GroupTriggerEditor = ({
+const GroupTriggerEditorButton = ({
   editMode,
   trigger,
   onEdit,
@@ -232,38 +197,53 @@ const GroupTriggerEditor = ({
   onEdit: (trigger: GroupTrigger | undefined) => void;
 }) => {
 
-  if (!editMode) {
-    return null;
-  }
-
   const showEditTrigger = () => {
-    window.oliDispatch(
-      modalActions.display(
-        <Modal
-          title="Edit Trigger"
-          onOk={() => {
-            window.oliDispatch(modalActions.dismiss());
-          }}
-          hideCancelButton={true}
-          onCancel={() => window.oliDispatch(modalActions.dismiss())}>
-          <div>
-            <TriggerEditor trigger={trigger} onEdit={onEdit} />
-          </div>
-        </Modal>,
-      ),
-    );
+    if (trigger === undefined) {
+      onEdit({ id: guid(), type: 'trigger', trigger_type: 'group', prompt: '' });
+    }
   };
 
   return (
     <div className="form-inline">
       <button
-        className="btn btn-primary btn-sm"
+        disabled={trigger !== undefined || !editMode}
+        className="btn btn-link btn-sm"
         onClick={showEditTrigger}
       >
-        Trigger
+        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+        DOT AI
       </button>
     </div>
   );
+}
+
+
+const GroupTriggerEditor = ({
+  editMode,
+  trigger,
+  onEdit,
+}: {
+  editMode: boolean;
+  trigger: GroupTrigger;
+  onEdit: (trigger: GroupTrigger | undefined) => void;
+}) => {
+  return (
+    <div className="mt-2">
+      <TriggerEditorCore
+        showDelete={true}
+        onDelete={() => onEdit(undefined as any)}
+        instructions={<p>When a student clicks the <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon
+          within this content group, our AI assistant, DOT
+          will appear and follow your custom prompt.</p>}>
+        <textarea
+            disabled={!editMode}
+            className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={trigger.prompt}
+            onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))} />
+      </TriggerEditorCore>
+    </div>
+  );
+
 }
 
 type PurposeContainerProps = {
