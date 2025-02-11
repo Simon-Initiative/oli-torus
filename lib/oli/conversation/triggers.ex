@@ -1,5 +1,6 @@
 defmodule Oli.Conversation.Triggers  do
 
+  require Logger
   import Ecto.Query
   alias Oli.Repo
 
@@ -7,6 +8,7 @@ defmodule Oli.Conversation.Triggers  do
   alias Oli.Conversation.Trigger
   alias Oli.Activities.Model.{Part}
 
+  # The supported trigger type
   @trigger_types [
     :page,
     :content_group,
@@ -22,6 +24,8 @@ defmodule Oli.Conversation.Triggers  do
 
   def evaluation_triggers(), do: [:correct_answer, :incorrect_answer, :explanation, :targeted_feedback]
 
+  # Given a trigger type and trigger type specific data, formulate an agent readable description
+  # that we will use in creating the entire prompt.
   def description(:page, _), do: "Visited the learning page"
   def description(:content_group, data), do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
   def description(:content_block, data), do: "Viewed a content block (id: #{data["ref_id"]})"
@@ -53,9 +57,16 @@ defmodule Oli.Conversation.Triggers  do
 
   end
 
+  @doc """
+  Invoke a trigger point for a given section id and user id.  This will broadcast
+  the trigger to the PubSub system - which will be picked up by the AI agent window process
+  and displayed to the user.
+  """
   def invoke(section_id, current_user_id, trigger) do
 
     topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
+
+    Logger.info("Invoking trigger for topic: #{topic}")
 
     PubSub.broadcast(
       Oli.PubSub,
@@ -64,6 +75,10 @@ defmodule Oli.Conversation.Triggers  do
     )
   end
 
+  @doc """
+  Given a section slug, user id, and trigger data, possibly invoke the trigger
+  if the user has access to the section.
+  """
   def possibly_invoke_trigger(section_slug, user_id, trigger) do
     case verify_access(section_slug, user_id) do
       {:ok, section} ->
@@ -73,6 +88,9 @@ defmodule Oli.Conversation.Triggers  do
     end
   end
 
+  @doc """
+  Assemble the full trigger prompt for a given trigger.
+  """
   def assemble_trigger_prompt(trigger) do
 
     trigger = augment_data_context(trigger)
@@ -95,12 +113,16 @@ defmodule Oli.Conversation.Triggers  do
     """
   end
 
+  # Given certain classes of triggers, augment the data context with additional
+  # information that will be needed for the AI agent to render the trigger prompt.
   defp augment_data_context(trigger) do
 
     case trigger do
 
+      # No additional data needed for these trigger types
       %{trigger_type: t} when t in [:page, :content_group, :content_block] -> trigger
 
+      # For these trigger types, we need to fetch the question model and encode it
       %{data: %{"activity_attempt_guid" => guid}} ->
 
         activity_attempt = Oli.Delivery.Attempts.Core.get_activity_attempt_by(attempt_guid: guid)
@@ -114,6 +136,11 @@ defmodule Oli.Conversation.Triggers  do
 
   end
 
+  @doc """
+  Check for a hint trigger based on the activity attempt, part attempt, model, and hint.
+
+  If a matching trigger is found, return the trigger, otherwise return nil.
+  """
   def check_for_hint_trigger(activity_attempt, part_attempt, model, hint) do
     part = Enum.filter(model.parts, fn p -> p.id == part_attempt.part_id end) |> hd()
 
@@ -142,6 +169,11 @@ defmodule Oli.Conversation.Triggers  do
 
   end
 
+  @doc """
+  Check for an explanation trigger based on the part, explanation, and explanation context.
+
+  If a matching trigger is found, return the trigger, otherwise return nil.
+  """
   def check_for_explanation_trigger(part, explanation, explanation_context) do
 
     case Enum.filter(part.triggers, fn t -> t.trigger_type == :explanation end) do
@@ -161,6 +193,13 @@ defmodule Oli.Conversation.Triggers  do
     end
   end
 
+  @doc """
+  For a specific evaluation response, check for the presence of a matching evaluation trigger.
+
+  If a matching trigger is found, return the trigger, otherwise return nil.
+
+  Targeted feedback triggers are given priority over correct/incorrect triggers.
+  """
   def check_for_response_trigger(relevant_triggers_by_type, response, out_of, context) do
 
     case find_matching_trigger(relevant_triggers_by_type, response, out_of) do

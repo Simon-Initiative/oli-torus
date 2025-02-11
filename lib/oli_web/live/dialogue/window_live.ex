@@ -2,6 +2,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use OliWeb, :verified_routes
   use Phoenix.HTML
+
+  require Logger
   import Ecto.Query, warn: false
 
   import Phoenix.Component
@@ -640,6 +642,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_info({:trigger, trigger}, socket) do
+
+    Logger.info("Handlng trigger for section #{socket.assigns.section_id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}")
 
     prompt = Triggers.assemble_trigger_prompt(trigger)
 
