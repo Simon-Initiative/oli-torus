@@ -47,9 +47,9 @@ import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBo
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import { initAppSignal } from '../../utils/appsignal';
 import '../ResourceEditor.scss';
+import { PageTriggerEditor } from './PageTriggerEditor';
 import { registerUnload, unregisterUnload } from './listeners';
 import { FeatureFlags, PageUndoable, Undoables, empty } from './types';
-import { PageTriggerEditor } from './PageTriggerEditor';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -649,14 +649,14 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                       onDuplicate={onDuplicateActivity}
                     />
                   </AlternativesContextProvider>
-
                 </div>
                 <PageTriggerEditor
-                    onEdit={(trigger) => {
-                      const updated = this.state.content.with({ trigger });
-                      onEdit(updated);
-                    }}
-                    trigger={this.state.content.trigger}  />
+                  onEdit={(trigger) => {
+                    const updated = this.state.content.with({ trigger });
+                    onEdit(updated);
+                  }}
+                  trigger={this.state.content.trigger}
+                />
               </div>
             </div>
           </ErrorBoundary>

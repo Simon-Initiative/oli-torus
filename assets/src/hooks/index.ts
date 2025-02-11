@@ -24,6 +24,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
+import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
 import { ReactToLiveView } from './react_to_liveview';
@@ -32,6 +33,7 @@ import { ResizeListener } from './resize_listener';
 import { ReviewActivity } from './review_activity';
 import { Scroller } from './scroller';
 import { SelectListener } from './select_listener';
+import { ShowTeaser } from './show_teaser';
 import { SliderScroll } from './slider_scroll';
 import { SubmitForm } from './submit_form';
 import { SystemMessage } from './system_message';
@@ -42,8 +44,6 @@ import { ToggleReadMore } from './toggle_read_more';
 import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
-import { FirePageTrigger } from './page_trigger';
-import { ShowTeaser } from './show_teaser';
 
 export const Hooks = {
   ShowTeaser,

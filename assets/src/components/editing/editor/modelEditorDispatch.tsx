@@ -31,8 +31,8 @@ import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
 import { EditorProps } from '../elements/interfaces';
 import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { TcEditor } from '../elements/table/TcElement';
-import { VideoEditor } from '../elements/video/VideoEditor';
 import { TriggerEditor } from '../elements/trigger/TriggerEditor';
+import { VideoEditor } from '../elements/video/VideoEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,

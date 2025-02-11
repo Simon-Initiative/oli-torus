@@ -1,5 +1,6 @@
 import React, { PropsWithChildren, useState } from 'react';
 import { Purpose } from 'components/content/Purpose';
+import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import {
   PurposeGroupContent,
@@ -8,7 +9,9 @@ import {
   groupOrDescendantHasPurpose,
   isGroupWithPurpose,
 } from 'data/content/resource';
+import { GroupTrigger } from 'data/triggers';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 import { AudienceModes } from './AudienceModes';
 import styles from './ContentBlock.modules.scss';
 import { GroupEditor } from './GroupEditor';
@@ -21,9 +24,6 @@ import {
 } from './OutlineItem';
 import { PaginationModes } from './PaginationModes';
 import { EditorProps } from './createEditor';
-import { GroupTrigger } from 'data/triggers';
-import guid from 'utils/guid';
-import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;
@@ -151,7 +151,8 @@ export const PurposeGroupBlock = ({
         <GroupTriggerEditorButton
           editMode={editMode}
           onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
-          trigger={contentItem.trigger}/>
+          trigger={contentItem.trigger}
+        />
         {contentBreaksExist ? (
           <PaginationModes
             onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}
@@ -173,10 +174,13 @@ export const PurposeGroupBlock = ({
         />
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
-      {contentItem.trigger !== undefined ? <GroupTriggerEditor
+      {contentItem.trigger !== undefined ? (
+        <GroupTriggerEditor
           onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
           editMode={editMode}
-          trigger={contentItem.trigger}/> : null}
+          trigger={contentItem.trigger}
+        />
+      ) : null}
       <MaybeDeliveryPurposeContainer contentItem={contentItem}>
         {children}
       </MaybeDeliveryPurposeContainer>
@@ -193,7 +197,6 @@ const GroupTriggerEditorButton = ({
   trigger: GroupTrigger | undefined;
   onEdit: (trigger: GroupTrigger | undefined) => void;
 }) => {
-
   const showEditTrigger = () => {
     if (trigger === undefined) {
       onEdit({ id: guid(), type: 'trigger', trigger_type: 'group', prompt: '' });
@@ -212,8 +215,7 @@ const GroupTriggerEditorButton = ({
       </button>
     </div>
   );
-}
-
+};
 
 const GroupTriggerEditor = ({
   editMode,
@@ -229,19 +231,24 @@ const GroupTriggerEditor = ({
       <TriggerEditorCore
         showDelete={true}
         onDelete={() => onEdit(undefined as any)}
-        instructions={<p>When a student clicks the <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon
-          within this content group, our AI assistant, DOT
-          will appear and follow your custom prompt.</p>}>
+        instructions={
+          <p>
+            When a student clicks the{' '}
+            <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon within this
+            content group, our AI assistant, DOT will appear and follow your custom prompt.
+          </p>
+        }
+      >
         <textarea
-            disabled={!editMode}
-            className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={trigger.prompt}
-            onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))} />
+          disabled={!editMode}
+          className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={trigger.prompt}
+          onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))}
+        />
       </TriggerEditorCore>
     </div>
   );
-
-}
+};
 
 type PurposeContainerProps = {
   contentItem: PurposeGroupContent;

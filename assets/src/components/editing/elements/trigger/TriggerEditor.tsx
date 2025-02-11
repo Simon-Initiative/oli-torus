@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
+import { Transforms } from 'slate';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
-import * as ContentModel from 'data/content/model/elements/types';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Model } from 'data/content/model/elements/factories';
-import { Transforms } from 'slate';
 import { DeleteButton } from 'components/misc/DeleteButton';
+import { Model } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
 
 export const insertTrigger = createButtonCommandDesc({
   icon: <i className="fa-solid fa-microchip"></i>,
@@ -19,7 +19,17 @@ export const insertTrigger = createButtonCommandDesc({
   },
 });
 
-export const TriggerEditorCore = ({ children, instructions, onDelete, showDelete }: { showDelete: boolean, onDelete: any, children: any, instructions: any}) => {
+export const TriggerEditorCore = ({
+  children,
+  instructions,
+  onDelete,
+  showDelete,
+}: {
+  showDelete: boolean;
+  onDelete: any;
+  children: any;
+  instructions: any;
+}) => {
   const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
 
   const ExpandablePromptHelp = () => (
@@ -62,14 +72,20 @@ export const TriggerEditorCore = ({ children, instructions, onDelete, showDelete
         activity.
       </p>
 
-      <h6 className="mt-2"><strong>Trigger</strong></h6>
+      <h6 className="mt-2">
+        <strong>Trigger</strong>
+      </h6>
 
       {instructions}
 
-      <h6 className="mt-2"><strong>Prompt</strong></h6>
+      <h6 className="mt-2">
+        <strong>Prompt</strong>
+      </h6>
 
-      <p>An AI prompt is a question or instruction given to our AI assistant, DOT, to guide
-        its response, helping it generate useful feedback, explanations, or support for learners.</p>
+      <p>
+        An AI prompt is a question or instruction given to our AI assistant, DOT, to guide its
+        response, helping it generate useful feedback, explanations, or support for learners.
+      </p>
 
       <ExpandablePromptHelp />
 
@@ -79,21 +95,25 @@ export const TriggerEditorCore = ({ children, instructions, onDelete, showDelete
 };
 
 interface Props extends EditorProps<ContentModel.TriggerBlock> {}
-export const TriggerEditor: React.FC<Props> = ({
-  model
-}) => {
+export const TriggerEditor: React.FC<Props> = ({ model }) => {
   const onEdit = useEditModelCallback(model);
   return (
     <TriggerEditorCore
       showDelete={false}
       onDelete={() => onEdit(undefined as any)}
-      instructions={<p>When a student clicks the <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon
-      within this text block, our AI assistant, DOT
-      will appear and follow your custom prompt.</p>}>
+      instructions={
+        <p>
+          When a student clicks the{' '}
+          <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon within this text
+          block, our AI assistant, DOT will appear and follow your custom prompt.
+        </p>
+      }
+    >
       <textarea
-          className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={model.prompt}
-          onChange={(e) => onEdit({ prompt: e.target.value })} />
+        className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        value={model.prompt}
+        onChange={(e) => onEdit({ prompt: e.target.value })}
+      />
     </TriggerEditorCore>
   );
 };

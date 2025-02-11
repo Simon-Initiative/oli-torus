@@ -1,3 +1,5 @@
+import { TriggerButton } from 'components/TriggerButton';
+import { TriggerGroupButton } from 'components/TriggerGroupButton';
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
 import { LikertReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
@@ -23,8 +25,6 @@ import { OfflineDetector } from './OfflineDetector';
 import ActivityBank from './bank/ActivityBank';
 import Bibliography from './bibliography/Bibliography';
 import { References } from './bibliography/References';
-import { TriggerButton } from 'components/TriggerButton';
-import { TriggerGroupButton } from 'components/TriggerGroupButton';
 
 registerApplication('Bibliography', Bibliography, globalStore);
 registerApplication('ModalDisplay', ModalDisplay, globalStore);

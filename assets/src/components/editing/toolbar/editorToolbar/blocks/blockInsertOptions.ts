@@ -19,8 +19,8 @@ import { insertDialog } from '../../../elements/dialog/dialogActions';
 import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
-import { insertVideo } from '../../../elements/video/videoActions';
 import { insertTrigger } from '../../../elements/trigger/TriggerEditor';
+import { insertVideo } from '../../../elements/video/videoActions';
 
 export const extendedBlockInsertActions = (
   onRequestMedia: any,
@@ -73,7 +73,7 @@ export const allBlockInsertActions = (
     insertPageLink,
     insertConjugation,
     insertDescriptionListCommand,
-    insertTrigger
+    insertTrigger,
   ];
 
   if (optionalContentTypes === undefined) {

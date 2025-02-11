@@ -20,30 +20,29 @@ export type Failed = {
 };
 
 export function invoke(
-  section_slug: SectionSlug, payload: TriggerPayload
+  section_slug: SectionSlug,
+  payload: TriggerPayload,
 ): Promise<InvocationResult> {
   const url = `/triggers/${section_slug}`;
 
   const params = {
     url,
     method: 'POST',
-    body: JSON.stringify({"trigger": payload}),
+    body: JSON.stringify({ trigger: payload }),
   };
   return makeRequest<InvocationResult>(params);
 }
 
 export function getInstanceId(): string | null {
-
   // Fetch the dom element whose id is "ai_bot" and then
   // return the value of the "data-instance-id" attribute.
 
-  const ai_bot = document.getElementById("ai_bot");
+  const ai_bot = document.getElementById('ai_bot');
 
   // If the element does not exist, return null.
   if (!ai_bot) {
     return null;
-  }
-  else {
-    return ai_bot.getAttribute("data-instance-id");
+  } else {
+    return ai_bot.getAttribute('data-instance-id');
   }
 }
