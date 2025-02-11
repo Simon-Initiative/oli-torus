@@ -22,11 +22,8 @@ import {
 import { PaginationModes } from './PaginationModes';
 import { EditorProps } from './createEditor';
 import { GroupTrigger } from 'data/triggers';
-import { Modal } from 'components/modal/Modal';
-import { modalActions } from 'actions/modal';
 import guid from 'utils/guid';
 import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
-import { on } from 'events';
 
 interface PurposeGroupEditorProps extends EditorProps {
   contentItem: PurposeGroupContent;

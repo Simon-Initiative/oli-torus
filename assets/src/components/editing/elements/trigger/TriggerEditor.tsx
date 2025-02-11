@@ -85,6 +85,7 @@ export const TriggerEditor: React.FC<Props> = ({
   const onEdit = useEditModelCallback(model);
   return (
     <TriggerEditorCore
+      showDelete={false}
       onDelete={() => onEdit(undefined as any)}
       instructions={<p>When a student clicks the <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon
       within this text block, our AI assistant, DOT

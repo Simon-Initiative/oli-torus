@@ -43,8 +43,10 @@ import { AutoHideTooltip, TooltipInit, TooltipWithTarget } from './tooltip';
 import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 import { FirePageTrigger } from './page_trigger';
+import { ShowTeaser } from './show_teaser';
 
 export const Hooks = {
+  ShowTeaser,
   FirePageTrigger,
   DelayedSubmit,
   GraphNavigation,

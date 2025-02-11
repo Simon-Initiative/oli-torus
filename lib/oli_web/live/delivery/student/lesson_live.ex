@@ -99,7 +99,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> assign_objectives()
         |> slim_assigns()
 
-      IO.inspect(page_context.page.resource_id)
       possibly_fire_page_trigger(section, page_context.page)
 
       script_sources =

@@ -97,6 +97,8 @@ defmodule OliWeb.Dialogue.WindowLive do
          allow_submission?: true,
          active_message: nil,
          function_call: nil,
+         teaser_visible: false,
+         teaser_message: "",
          title: "Dot",
          current_user: Oli.Accounts.get_user!(current_user_id),
          height: 500,
@@ -137,6 +139,11 @@ defmodule OliWeb.Dialogue.WindowLive do
         height={@height}
         width={@width}
       />
+      <.teaser
+        message={@teaser_message}
+        visible={@teaser_visible}
+        dialogue={@dialogue}
+      />
       <.collapsed_bot is_page={@is_page} />
     </div>
     """
@@ -153,6 +160,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       <button
         phx-click={
           JS.hide(to: "#ai_bot_collapsed")
+          |> JS.hide(to: "#trigger_teaser")
           |> JS.show(
             to: "#ai_bot_conversation",
             transition:
@@ -236,6 +244,53 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :visible, :boolean
+  attr :dialogue, :list
+  attr :message, :any
+
+  def teaser(assigns) do
+    ~H"""
+    <div
+      id="trigger_teaser"
+      phx-hook="ShowTeaser"
+      phx-click={
+        JS.hide(to: "#trigger_teaser")
+        |> JS.show(
+          to: "#ai_bot_conversation",
+          transition:
+            {"ease-out duration-200", "translate-x-full translate-y-full opacity-0",
+             "translate-x-0 translate-y-0 opacity-100"}
+        )
+        |> JS.focus(to: "#ai_bot_input")
+      }
+      style={"height: 150px; width: 200px;"}
+      class="p-1 shadow-lg bg-white dark:bg-[#0A0A17] flex flex-col hidden"
+    >
+      <div class="flex flex-none justify-right">
+        <button
+          id="close_teaser_button"
+          phx-click={
+            JS.hide(
+              to: "#trigger_teaser",
+              transition:
+                {"ease-out duration-700", "translate-x-1/4 translate-y-1/4 opacity-100",
+                  "translate-x-full translate-y-full opacity-0"}
+            )
+          }
+          class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
+        >
+          <.small_close_icon />
+        </button>
+      </div>
+      <div class="mb-3 grow text-sm rounded-md overflow-hidden text-gray-500 dark:text-white"><%= @message %></div>
+      <div class="flex-none">
+        <hr/>
+        <small class="text-gray-300">Enter your message...</small>
+      </div>
+    </div>
+    """
+  end
+
   def resize_icon(assigns) do
     ~H"""
     <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
@@ -253,6 +308,17 @@ defmodule OliWeb.Dialogue.WindowLive do
       <path
         d="M6.2248 18.8248L5.1748 17.7748L10.9498 11.9998L5.1748 6.2248L6.2248 5.1748L11.9998 10.9498L17.7748 5.1748L18.8248 6.2248L13.0498 11.9998L18.8248 17.7748L17.7748 18.8248L11.9998 13.0498L6.2248 18.8248Z"
         class="fill-black dark:fill-white"
+      />
+    </svg>
+    """
+  end
+
+  def small_close_icon(assigns) do
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M6.2248 18.8248L5.1748 17.7748L10.9498 11.9998L5.1748 6.2248L6.2248 5.1748L11.9998 10.9498L17.7748 5.1748L18.8248 6.2248L13.0498 11.9998L18.8248 17.7748L17.7748 18.8248L11.9998 13.0498L6.2248 18.8248Z"
+        class="fill-gray-400"
       />
     </svg>
     """
@@ -537,35 +603,7 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-  def handle_info({:trigger, trigger}, socket) do
 
-    IO.inspect("trigger hit in window live")
-    IO.inspect(trigger)
-
-    prompt = Triggers.assemble_trigger_prompt(trigger)
-
-    IO.inspect(prompt)
-
-    dialogue = Dialogue.add_message(
-      socket.assigns.dialogue,
-      Message.new(:system, prompt),
-      trigger.user_id,
-      trigger.resource_id,
-      trigger.section_id
-    )
-
-    pid = self()
-
-    Task.async(fn ->
-      Dialogue.engage(dialogue, :async)
-      send(pid, {:reply_finished})
-    end)
-
-    {:noreply,
-     assign(socket,
-        dialogue: dialogue
-     )}
-  end
 
   def handle_event("minimize", _, socket) do
     {:noreply, assign(socket, minimized: true)}
@@ -600,6 +638,51 @@ defmodule OliWeb.Dialogue.WindowLive do
   def handle_event("resize", %{"height" => height, "width" => width}, socket) do
     {:noreply, assign(socket, height: height, width: width)}
   end
+
+  def handle_info({:trigger, trigger}, socket) do
+
+    prompt = Triggers.assemble_trigger_prompt(trigger)
+
+    dialogue = Dialogue.add_message(
+      socket.assigns.dialogue,
+      Message.new(:system, prompt),
+      trigger.user_id,
+      trigger.resource_id,
+      trigger.section_id
+    )
+
+    pid = self()
+
+    Task.async(fn ->
+      Dialogue.engage(dialogue, :async)
+      send(pid, {:reply_finished})
+      send(pid, {:trigger_finished})
+    end)
+
+    {:noreply,
+     assign(socket,
+        dialogue: dialogue
+     )}
+  end
+
+  def handle_info({:trigger_finished}, socket) do
+
+    # Get the content of the last message, stripping out any HTML tags
+    teaser_message = case Enum.reverse(socket.assigns.dialogue.rendered_messages) do
+      [] -> ""
+      [message | _] -> message.content
+    end
+    |> Floki.text()
+
+    socket = push_event(socket, "show_teaser", %{})
+
+    {:noreply,
+     assign(socket,
+        teaser_visible: true,
+        teaser_message: teaser_message
+     )}
+  end
+
 
   use Oli.Conversation.DialogueHandler
 end
