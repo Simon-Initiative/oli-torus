@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useState } from 'react';
+import React, { PropsWithChildren } from 'react';
 import { Purpose } from 'components/content/Purpose';
 import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
