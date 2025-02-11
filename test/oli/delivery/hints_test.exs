@@ -86,8 +86,7 @@ defmodule Oli.Delivery.HintsTest do
               {%Hint{
                  id: "h1",
                  content: [%{"type" => "p", "children" => [%{"text" => "hint one"}]}]
-               },
-               nil,
+               }, nil,
                true}} ==
                ActivityLifecycle.request_hint(
                  activity_attempt.attempt_guid,
@@ -98,8 +97,7 @@ defmodule Oli.Delivery.HintsTest do
               {%Hint{
                  id: "h2",
                  content: [%{"type" => "p", "children" => [%{"text" => "hint two"}]}]
-               },
-               nil,
+               }, nil,
                true}} ==
                ActivityLifecycle.request_hint(
                  activity_attempt.attempt_guid,
@@ -110,8 +108,7 @@ defmodule Oli.Delivery.HintsTest do
               {%Hint{
                  id: "h3",
                  content: [%{"type" => "p", "children" => [%{"text" => "hint three"}]}]
-               },
-               nil,
+               }, nil,
                false}} ==
                ActivityLifecycle.request_hint(
                  activity_attempt.attempt_guid,

@@ -508,7 +508,6 @@ defmodule OliWeb.Sections.OverviewView do
               </div>
             </section>
           </div>
-
         </Group.render>
       </div>
     </Groups.render>
@@ -636,10 +635,18 @@ defmodule OliWeb.Sections.OverviewView do
     section = socket.assigns.section
     assistant_enabled = section.assistant_enabled
 
-    triggers_enabled = if assistant_enabled do false else section.triggers_enabled end
+    triggers_enabled =
+      if assistant_enabled do
+        false
+      else
+        section.triggers_enabled
+      end
 
     {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{assistant_enabled: !assistant_enabled, triggers_enabled: triggers_enabled})
+      Oli.Delivery.Sections.update_section(section, %{
+        assistant_enabled: !assistant_enabled,
+        triggers_enabled: triggers_enabled
+      })
 
     socket =
       socket
@@ -647,7 +654,6 @@ defmodule OliWeb.Sections.OverviewView do
 
     {:noreply, assign(socket, section: section)}
   end
-
 
   def handle_event("toggle_triggers", _, socket) do
     section = socket.assigns.section

@@ -1,5 +1,4 @@
 defmodule Oli.Conversation.Trigger do
-
   @derive Jason.Encoder
   defstruct [
     :trigger_type,
@@ -15,7 +14,7 @@ defmodule Oli.Conversation.Trigger do
   """
   def parse(map, section_id, user_id) do
     %__MODULE__{
-      trigger_type: map["trigger_type"] |> String.to_existing_atom,
+      trigger_type: map["trigger_type"] |> String.to_existing_atom(),
       section_id: section_id,
       user_id: user_id,
       resource_id: map["resource_id"],
@@ -24,8 +23,11 @@ defmodule Oli.Conversation.Trigger do
     }
   end
 
-  def from_activity_model(%Oli.Activities.Model.Trigger{trigger_type: type, prompt: prompt, ref_id: ref_id}) do
-
+  def from_activity_model(%Oli.Activities.Model.Trigger{
+        trigger_type: type,
+        prompt: prompt,
+        ref_id: ref_id
+      }) do
     %__MODULE__{
       trigger_type: type,
       section_id: nil,
@@ -35,5 +37,4 @@ defmodule Oli.Conversation.Trigger do
       prompt: prompt
     }
   end
-
 end

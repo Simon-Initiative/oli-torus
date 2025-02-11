@@ -22,7 +22,6 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   end
 
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
-
     relevant_triggers_by_type = Triggers.relevant_triggers_by_type(part)
 
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
@@ -37,7 +36,13 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            error: nil,
            show_page: show_page,
            part_id: part.id,
-           trigger: Triggers.check_for_response_trigger(relevant_triggers_by_type, response, out_of, context)
+           trigger:
+             Triggers.check_for_response_trigger(
+               relevant_triggers_by_type,
+               response,
+               out_of,
+               context
+             )
          }}
 
       # No matching response found - mark incorrect
@@ -62,7 +67,13 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            error: nil,
            show_page: nil,
            part_id: part.id,
-           trigger: Triggers.check_for_response_trigger(relevant_triggers_by_type, %Response{score: 0}, adjusted_out_of, context)
+           trigger:
+             Triggers.check_for_response_trigger(
+               relevant_triggers_by_type,
+               %Response{score: 0},
+               adjusted_out_of,
+               context
+             )
          }}
 
       _ ->

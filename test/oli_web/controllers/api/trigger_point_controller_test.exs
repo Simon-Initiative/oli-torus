@@ -11,7 +11,6 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
       conn: conn,
       map: map
     } do
-
       trigger = %{
         "trigger_type" => "content_block",
         "resource_id" => "resource_id",
@@ -26,15 +25,16 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
           %{"trigger" => trigger}
         )
 
-      assert %{"type" => "failure", "reason" => "User does not have permission to invoke trigger point"} = json_response(conn, 200)
-
+      assert %{
+               "type" => "failure",
+               "reason" => "User does not have permission to invoke trigger point"
+             } = json_response(conn, 200)
     end
 
     test "handle when user enrolled, but triggers disabled", %{
       conn: conn,
       map: map
     } do
-
       Oli.Delivery.Sections.enroll(
         map.user1.id,
         map.section.id,
@@ -56,15 +56,16 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
           %{"trigger" => trigger}
         )
 
-      assert %{"type" => "failure", "reason" => "User does not have permission to invoke trigger point"} = json_response(conn, 200)
-
+      assert %{
+               "type" => "failure",
+               "reason" => "User does not have permission to invoke trigger point"
+             } = json_response(conn, 200)
     end
 
     test "handle when user enrolled, and triggers and agent enabled", %{
       conn: conn,
       map: map
     } do
-
       Oli.Delivery.Sections.enroll(
         map.user1.id,
         map.section.id,
@@ -72,7 +73,10 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         :enrolled
       )
 
-      Oli.Delivery.Sections.update_section!(map.section, %{triggers_enabled: true, assistant_enabled: true})
+      Oli.Delivery.Sections.update_section!(map.section, %{
+        triggers_enabled: true,
+        assistant_enabled: true
+      })
 
       trigger = %{
         "trigger_type" => "content_block",
@@ -89,13 +93,10 @@ defmodule OliWeb.Api.TriggerPointControllerTest do
         )
 
       assert %{"type" => "submitted"} = json_response(conn, 200)
-
     end
-
   end
 
   defp setup_session(%{conn: conn}) do
-
     map =
       Seeder.base_project_with_resource2()
       |> Seeder.create_section()

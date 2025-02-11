@@ -3,9 +3,15 @@ defmodule Oli.Activities.Model.Trigger do
   defstruct [:id, :trigger_type, :prompt, :ref_id]
 
   def parse(%{"id" => id, "trigger_type" => type, "prompt" => prompt} = t) do
-
     ref_id = Map.get(t, "ref_id", nil)
-    {:ok, %Oli.Activities.Model.Trigger{id: id, trigger_type: String.to_atom(type), prompt: prompt, ref_id: ref_id}}
+
+    {:ok,
+     %Oli.Activities.Model.Trigger{
+       id: id,
+       trigger_type: String.to_atom(type),
+       prompt: prompt,
+       ref_id: ref_id
+     }}
   end
 
   def parse(%Oli.Activities.Model.Trigger{id: _id} = t) do
