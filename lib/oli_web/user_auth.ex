@@ -118,10 +118,13 @@ defmodule OliWeb.UserAuth do
 
   It clears all session data for safety. See renew_session.
   """
-  def log_out_user(conn) do
+  def log_out_user(conn, params \\ %{}) do
+    redirect_to =
+      params["redirect_to"] || ~p"/"
+
     conn
     |> clear_all_session_data()
-    |> redirect(to: ~p"/")
+    |> redirect(to: redirect_to)
   end
 
   @doc """

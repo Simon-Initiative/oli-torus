@@ -38,7 +38,8 @@ defmodule OliWeb.Common.Params do
     end
   end
 
-  def get_atom_param(params, name, valid, default_value) do
+  def get_atom_param(params, name, valid, default_value)
+      when is_list(valid) and is_binary(name) do
     case params[name] do
       nil ->
         default_value

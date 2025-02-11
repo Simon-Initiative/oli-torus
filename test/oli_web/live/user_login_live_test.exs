@@ -35,7 +35,7 @@ defmodule OliWeb.UserLoginLiveTest do
 
       conn = submit_form(form, conn)
 
-      assert redirected_to(conn) == ~p"/workspaces/student"
+      assert redirected_to(conn) == ~p"/workspaces/instructor"
     end
 
     test "redirects to login page with a flash error if there are no valid credentials", %{
