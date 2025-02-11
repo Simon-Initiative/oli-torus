@@ -557,7 +557,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
     ~H"""
     <div
       id="certificate_progress_card"
-      class="flex flex-col bg-black/10 dark:bg-[#2b282e] rounded-xl p-6 pr-3 before:bg-[#0CAF61] dark:before:bg-[#39e581] relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:z-10"
+      class="flex flex-col w-full bg-black/10 dark:bg-[#2b282e] rounded-xl p-6 before:bg-[#0CAF61] dark:before:bg-[#39e581] relative overflow-hidden z-0 before:content-[''] before:absolute before:left-0 before:top-0 before:w-0.5 before:h-full before:z-10"
     >
       <div class="flex justify-between dark:text-[#eeebf5] text-lg font-semibold leading-normal">
         <div>Certificate Progress</div>
@@ -644,6 +644,14 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               </div>
             </div>
           </div>
+          <.link
+            :if={all_certificate_requirements_met?(certificate_progress)}
+            navigate="#"
+            class=" text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
+          >
+            <%!-- TODO: hidden button. Unhide and link to certificate when https://eliterate.atlassian.net/browse/MER-3809 is done --%>
+            Access my certificate
+          </.link>
         </div>
       </.async_result>
     </div>
@@ -662,6 +670,12 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   defp certificate_progress_text(%{completed: completed, total: total}, label) do
     "#{completed} of #{total} #{label}#{if total > 1, do: "s", else: ""}"
   end
+
+  defp all_certificate_requirements_met?(certificate_progress),
+    do:
+      Enum.all?(certificate_progress, fn {_criteria, result} ->
+        result.completed >= result.total
+      end)
 
   attr(:upcoming_assignments, :list, required: true)
   attr(:latest_assignments, :list, default: [])
