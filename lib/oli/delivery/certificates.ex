@@ -6,7 +6,7 @@ defmodule Oli.Delivery.Certificates do
 
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
-  alias Oli.Delivery.Metrics
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Sections.SectionResourceDepot
@@ -276,6 +276,43 @@ defmodule Oli.Delivery.Certificates do
     end
   end
 
+  @doc """
+  Counts the number of assignments that exceed the required_percentage.
+  Students must get at least that percentage on each of the required_assignment_ids to earn the specified certificate.
+
+  - if the `required_percentage` provided corresponds to the min_percentage_for_distinction,
+  we are aiming to validate if the certificate of completion should be issued.
+
+  - if the `required_percentage` provided corresponds to the min_percentage_for_completion,
+  we are aiming to validate if the certificate with distinction should be issued.
+  """
+
+  def completed_assignments_count(
+        user_id,
+        section_id,
+        required_assignment_ids,
+        required_percentage
+      ) do
+    from(ra in ResourceAccess,
+      where:
+        ra.resource_id in ^required_assignment_ids and ra.section_id == ^section_id and
+          ra.user_id == ^user_id and not is_nil(ra.score),
+      group_by: ra.resource_id,
+      select:
+        fragment(
+          "SUM(CASE WHEN ? / ? * 100 >= ? THEN 1 ELSE 0 END)",
+          ra.score,
+          ra.out_of,
+          ^required_percentage
+        )
+    )
+    |> Repo.one()
+    |> case do
+      nil -> 0
+      count -> count
+    end
+  end
+
   defp raw_required_discussion_posts_completion(
          _student_id,
          _section_id,
@@ -308,26 +345,14 @@ defmodule Oli.Delivery.Certificates do
          required_assignment_ids,
          min_percentage_for_completion
        ) do
-    # TODO this could be done in a single new query passing the min_percentage_for_completion
-
-    raw_avg_score_per_page_id =
-      Metrics.raw_avg_score_across_for_pages(
-        %Oli.Delivery.Sections.Section{id: section_id},
-        required_assignment_ids,
-        [user_id]
-      )
-
-    completed_assignments_count =
-      Enum.reduce(raw_avg_score_per_page_id, 0, fn {_, raw_score}, acc ->
-        completion_percentage = raw_score.score / raw_score.out_of * 100
-
-        if completion_percentage >= min_percentage_for_completion,
-          do: acc + 1,
-          else: acc
-      end)
-
     %{
-      completed: completed_assignments_count,
+      completed:
+        completed_assignments_count(
+          user_id,
+          section_id,
+          required_assignment_ids,
+          min_percentage_for_completion
+        ),
       total: Enum.count(required_assignment_ids)
     }
   end
