@@ -1,14 +1,12 @@
 defmodule Oli.Conversation.TriggersTest do
-
   use ExUnit.Case, async: true
 
   alias Oli.Conversation.Triggers
   alias Oli.Activities.Model.Part
 
   test "response correct" do
-
-    relevant_triggers_by_type = Triggers.relevant_triggers_by_type(
-      %Part{
+    relevant_triggers_by_type =
+      Triggers.relevant_triggers_by_type(%Part{
         id: "part_id",
         triggers: [
           %Oli.Activities.Model.Trigger{
@@ -18,28 +16,28 @@ defmodule Oli.Conversation.TriggersTest do
             ref_id: 1
           }
         ]
-      }
-    )
+      })
 
     response = %{
       id: "1",
       score: 2.0
     }
+
     context = %{
       activity_attempt_guid: "attempt_guid",
       page_id: 23
     }
 
-    trigger = Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+    trigger =
+      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+
     assert trigger.prompt == "correct prompt"
     assert trigger.trigger_type == :correct_answer
-
   end
 
   test "response incorrect" do
-
-    relevant_triggers_by_type = Triggers.relevant_triggers_by_type(
-      %Part{
+    relevant_triggers_by_type =
+      Triggers.relevant_triggers_by_type(%Part{
         id: "part_id",
         triggers: [
           %Oli.Activities.Model.Trigger{
@@ -55,28 +53,28 @@ defmodule Oli.Conversation.TriggersTest do
             ref_id: nil
           }
         ]
-      }
-    )
+      })
 
     response = %{
       id: "3",
       score: 1.0
     }
+
     context = %{
       activity_attempt_guid: "attempt_guid",
       page_id: 23
     }
 
-    trigger = Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+    trigger =
+      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+
     assert trigger.prompt == "incorrect prompt"
     assert trigger.trigger_type == :incorrect_answer
-
   end
 
   test "response targeted AND correct" do
-
-    relevant_triggers_by_type = Triggers.relevant_triggers_by_type(
-      %Part{
+    relevant_triggers_by_type =
+      Triggers.relevant_triggers_by_type(%Part{
         id: "part_id",
         triggers: [
           %Oli.Activities.Model.Trigger{
@@ -92,24 +90,24 @@ defmodule Oli.Conversation.TriggersTest do
             ref_id: "2"
           }
         ]
-      }
-    )
+      })
 
     response = %{
       id: "2",
       score: 2.0
     }
+
     context = %{
       activity_attempt_guid: "attempt_guid",
       page_id: 23
     }
 
-    trigger = Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+    trigger =
+      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+
     assert trigger.prompt == "targeted prompt"
     assert trigger.trigger_type == :targeted_feedback
-
   end
-
 
   test "explanation" do
     part = %{
@@ -123,6 +121,7 @@ defmodule Oli.Conversation.TriggersTest do
         }
       ]
     }
+
     explanation = %{
       id: "explanation_id"
     }
@@ -141,13 +140,14 @@ defmodule Oli.Conversation.TriggersTest do
   end
 
   test "check hint trigger" do
-
     activity_attempt = %{
       resource_id: "activity_id"
     }
+
     part_attempt = %{
       part_id: "part_id"
     }
+
     model = %{
       parts: [
         %{
@@ -169,6 +169,7 @@ defmodule Oli.Conversation.TriggersTest do
         }
       ]
     }
+
     hint = %{
       id: "hint_id",
       hint: "this is the hint"
@@ -181,13 +182,14 @@ defmodule Oli.Conversation.TriggersTest do
   end
 
   test "check for hint trigger when multiple present" do
-
     activity_attempt = %{
       resource_id: "activity_id"
     }
+
     part_attempt = %{
       part_id: "part_id"
     }
+
     model = %{
       parts: [
         %{
@@ -216,6 +218,7 @@ defmodule Oli.Conversation.TriggersTest do
         }
       ]
     }
+
     hint = %{
       id: "hint_id3",
       hint: "this is the hint"
@@ -234,5 +237,4 @@ defmodule Oli.Conversation.TriggersTest do
     trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint)
     assert is_nil(trigger)
   end
-
 end

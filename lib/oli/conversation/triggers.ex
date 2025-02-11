@@ -1,5 +1,4 @@
-defmodule Oli.Conversation.Triggers  do
-
+defmodule Oli.Conversation.Triggers do
   require Logger
   import Ecto.Query
   alias Oli.Repo
@@ -22,39 +21,50 @@ defmodule Oli.Conversation.Triggers  do
 
   def trigger_types(), do: @trigger_types
 
-  def evaluation_triggers(), do: [:correct_answer, :incorrect_answer, :explanation, :targeted_feedback]
+  def evaluation_triggers(),
+    do: [:correct_answer, :incorrect_answer, :explanation, :targeted_feedback]
 
   # Given a trigger type and trigger type specific data, formulate an agent readable description
   # that we will use in creating the entire prompt.
   def description(:page, _), do: "Visited the learning page"
-  def description(:content_group, data), do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
+
+  def description(:content_group, data),
+    do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
+
   def description(:content_block, data), do: "Viewed a content block (id: #{data["ref_id"]})"
   def description(:correct_answer, data), do: "Answered correctly question: #{data["question"]}"
-  def description(:incorrect_answer, data), do: "Answered incorrectly question: #{data["question"]}"
-  def description(:hint_request, data), do: "Requested a hint (id: #{data["ref_id"]}) from question: #{data["question"]}"
-  def description(:explanation, data), do: "Received the explanation (id: #{data["ref_id"]}) from question: #{data["question"]}"
-  def description(:targeted_feedback, data), do: "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}"
+
+  def description(:incorrect_answer, data),
+    do: "Answered incorrectly question: #{data["question"]}"
+
+  def description(:hint_request, data),
+    do: "Requested a hint (id: #{data["ref_id"]}) from question: #{data["question"]}"
+
+  def description(:explanation, data),
+    do: "Received the explanation (id: #{data["ref_id"]}) from question: #{data["question"]}"
+
+  def description(:targeted_feedback, data),
+    do: "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}"
 
   @doc """
   Verify that the user is enrolled in a section with
   with the AI agent and triggers enabled.
   """
   def verify_access(section_slug, user_id) do
-
-   case Oli.Accounts.User
-      |> join(:left, [u], e in Oli.Delivery.Sections.Enrollment, on: u.id == e.user_id)
-      |> join(:left, [_, e], s in Oli.Delivery.Sections.Section, on: s.id == e.section_id)
-      |> where([_, e, s], s.slug == ^section_slug and s.triggers_enabled == true and s.assistant_enabled == true and e.user_id == ^user_id)
-      |> select([_, _, s], s)
-      |> limit(1)
-      |> Repo.one() do
-
+    case Oli.Accounts.User
+         |> join(:left, [u], e in Oli.Delivery.Sections.Enrollment, on: u.id == e.user_id)
+         |> join(:left, [_, e], s in Oli.Delivery.Sections.Section, on: s.id == e.section_id)
+         |> where(
+           [_, e, s],
+           s.slug == ^section_slug and s.triggers_enabled == true and s.assistant_enabled == true and
+             e.user_id == ^user_id
+         )
+         |> select([_, _, s], s)
+         |> limit(1)
+         |> Repo.one() do
       nil -> {:error, :no_access}
-
       section -> {:ok, section}
-
     end
-
   end
 
   @doc """
@@ -63,7 +73,6 @@ defmodule Oli.Conversation.Triggers  do
   and displayed to the user.
   """
   def invoke(section_id, current_user_id, trigger) do
-
     topic = "trigger:#{current_user_id}:#{section_id}:#{trigger.resource_id}"
 
     Logger.info("Invoking trigger for topic: #{topic}")
@@ -83,6 +92,7 @@ defmodule Oli.Conversation.Triggers  do
     case verify_access(section_slug, user_id) do
       {:ok, section} ->
         invoke(section.id, user_id, trigger)
+
       e ->
         e
     end
@@ -92,7 +102,6 @@ defmodule Oli.Conversation.Triggers  do
   Assemble the full trigger prompt for a given trigger.
   """
   def assemble_trigger_prompt(trigger) do
-
     trigger = augment_data_context(trigger)
     reason = description(trigger.trigger_type, trigger.data)
 
@@ -116,15 +125,13 @@ defmodule Oli.Conversation.Triggers  do
   # Given certain classes of triggers, augment the data context with additional
   # information that will be needed for the AI agent to render the trigger prompt.
   defp augment_data_context(trigger) do
-
     case trigger do
-
       # No additional data needed for these trigger types
-      %{trigger_type: t} when t in [:page, :content_group, :content_block] -> trigger
+      %{trigger_type: t} when t in [:page, :content_group, :content_block] ->
+        trigger
 
       # For these trigger types, we need to fetch the question model and encode it
       %{data: %{"activity_attempt_guid" => guid}} ->
-
         activity_attempt = Oli.Delivery.Attempts.Core.get_activity_attempt_by(attempt_guid: guid)
         model = Oli.Delivery.Attempts.Core.select_model(activity_attempt)
 
@@ -133,7 +140,6 @@ defmodule Oli.Conversation.Triggers  do
         data = Map.put(trigger.data, "question", encoded)
         %{trigger | data: data}
     end
-
   end
 
   @doc """
@@ -144,14 +150,16 @@ defmodule Oli.Conversation.Triggers  do
   def check_for_hint_trigger(activity_attempt, part_attempt, model, hint) do
     part = Enum.filter(model.parts, fn p -> p.id == part_attempt.part_id end) |> hd()
 
-    hint_ordinal = case Enum.find_index(part.hints, fn h -> h.id == hint.id end) do
-      nil -> 0
-      index -> index + 1
-    end
+    hint_ordinal =
+      case Enum.find_index(part.hints, fn h -> h.id == hint.id end) do
+        nil -> 0
+        index -> index + 1
+      end
 
-    case Enum.filter(part.triggers, fn t -> t.trigger_type == :hint_request and t.ref_id == hint_ordinal end) do
+    case Enum.filter(part.triggers, fn t ->
+           t.trigger_type == :hint_request and t.ref_id == hint_ordinal
+         end) do
       [trigger | _other] ->
-
         %Trigger{
           trigger_type: :hint_request,
           data: %{
@@ -166,7 +174,6 @@ defmodule Oli.Conversation.Triggers  do
       _ ->
         nil
     end
-
   end
 
   @doc """
@@ -175,21 +182,26 @@ defmodule Oli.Conversation.Triggers  do
   If a matching trigger is found, return the trigger, otherwise return nil.
   """
   def check_for_explanation_trigger(part, explanation, explanation_context) do
-
     case Enum.filter(part.triggers, fn t -> t.trigger_type == :explanation end) do
-      [] -> nil
-      [trigger | _other] ->
+      [] ->
+        nil
 
+      [trigger | _other] ->
         {:ok, t} = Oli.Activities.Model.Trigger.parse(trigger)
         payload = Trigger.from_activity_model(t)
 
         data = %{
           "activity_attempt_guid" => explanation_context.activity_attempt.attempt_guid,
-          "ref_id" => explanation.id,
+          "ref_id" => explanation.id
         }
 
-        %{ payload | section_id: nil, user_id: nil, resource_id: explanation_context.resource_revision.resource_id, data: data }
-
+        %{
+          payload
+          | section_id: nil,
+            user_id: nil,
+            resource_id: explanation_context.resource_revision.resource_id,
+            data: data
+        }
     end
   end
 
@@ -201,9 +213,9 @@ defmodule Oli.Conversation.Triggers  do
   Targeted feedback triggers are given priority over correct/incorrect triggers.
   """
   def check_for_response_trigger(relevant_triggers_by_type, response, out_of, context) do
-
     case find_matching_trigger(relevant_triggers_by_type, response, out_of) do
-      nil -> nil
+      nil ->
+        nil
 
       trigger ->
         # Now convert the activity model represenattion of the trigger to the
@@ -213,20 +225,20 @@ defmodule Oli.Conversation.Triggers  do
 
         data = %{
           "activity_attempt_guid" => context.activity_attempt_guid,
-          "ref_id" => trigger.ref_id,
+          "ref_id" => trigger.ref_id
         }
 
-        %{ payload | section_id: nil, user_id: nil, resource_id: context.page_id, data: data }
+        %{payload | section_id: nil, user_id: nil, resource_id: context.page_id, data: data}
     end
-
   end
 
   defp find_matching_trigger(relevant_triggers_by_type, response, out_of) do
     # Does this response match a targeted feedback trigger?
-    targeted_feedback_trigger = Map.get(relevant_triggers_by_type, :targeted_feedback, [])
-    |> Enum.find(fn trigger ->
-      trigger.ref_id == response.id
-    end)
+    targeted_feedback_trigger =
+      Map.get(relevant_triggers_by_type, :targeted_feedback, [])
+      |> Enum.find(fn trigger ->
+        trigger.ref_id == response.id
+      end)
 
     correct_trigger = Map.get(relevant_triggers_by_type, :correct_answer, [nil]) |> hd()
     incorrect_trigger = Map.get(relevant_triggers_by_type, :incorrect_answer, [nil]) |> hd()
@@ -244,14 +256,12 @@ defmodule Oli.Conversation.Triggers  do
         incorrect_trigger
       end
     end
-
   end
 
   def relevant_triggers_by_type(%Part{} = part) do
     Enum.filter(part.triggers, fn trigger ->
       trigger.trigger_type in evaluation_triggers()
     end)
-    |> Enum.group_by(&(&1.trigger_type))
+    |> Enum.group_by(& &1.trigger_type)
   end
-
 end

@@ -22,7 +22,6 @@ defmodule Oli.Rendering.Content.Html do
   @behaviour Oli.Rendering.Content
 
   def trigger(%Context{} = context, _, attrs) do
-
     {:safe, trigger} =
       OliWeb.Common.React.component(context, "Components.TriggerButton", %{
         "trigger" => attrs,

@@ -79,7 +79,6 @@ defmodule OliWeb.Dialogue.WindowLive do
         %{"current_user_id" => current_user_id, "section_slug" => section_slug} = session,
         socket
       ) do
-
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
     resource_id = session["resource_id"]
 
@@ -141,11 +140,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         height={@height}
         width={@width}
       />
-      <.teaser
-        message={@teaser_message}
-        visible={@teaser_visible}
-        dialogue={@dialogue}
-      />
+      <.teaser message={@teaser_message} visible={@teaser_visible} dialogue={@dialogue} />
       <.collapsed_bot is_page={@is_page} />
     </div>
     """
@@ -265,7 +260,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         )
         |> JS.focus(to: "#ai_bot_input")
       }
-      style={"height: 150px; width: 200px;"}
+      style="height: 150px; width: 200px;"
       class="p-1 shadow-lg bg-white dark:bg-[#0A0A17] flex flex-col hidden"
     >
       <div class="flex flex-none justify-right">
@@ -276,7 +271,7 @@ defmodule OliWeb.Dialogue.WindowLive do
               to: "#trigger_teaser",
               transition:
                 {"ease-out duration-700", "translate-x-1/4 translate-y-1/4 opacity-100",
-                  "translate-x-full translate-y-full opacity-0"}
+                 "translate-x-full translate-y-full opacity-0"}
             )
           }
           class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
@@ -284,9 +279,11 @@ defmodule OliWeb.Dialogue.WindowLive do
           <.small_close_icon />
         </button>
       </div>
-      <div class="mb-3 grow text-sm rounded-md overflow-hidden text-gray-500 dark:text-white"><%= @message %></div>
+      <div class="mb-3 grow text-sm rounded-md overflow-hidden text-gray-500 dark:text-white">
+        <%= @message %>
+      </div>
       <div class="flex-none">
-        <hr/>
+        <hr />
         <small class="text-gray-300">Enter your message...</small>
       </div>
     </div>
@@ -605,8 +602,6 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-
-
   def handle_event("minimize", _, socket) do
     {:noreply, assign(socket, minimized: true)}
   end
@@ -642,18 +637,20 @@ defmodule OliWeb.Dialogue.WindowLive do
   end
 
   def handle_info({:trigger, trigger}, socket) do
-
-    Logger.info("Handlng trigger for section #{socket.assigns.section_id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}")
+    Logger.info(
+      "Handlng trigger for section #{socket.assigns.section_id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
+    )
 
     prompt = Triggers.assemble_trigger_prompt(trigger)
 
-    dialogue = Dialogue.add_message(
-      socket.assigns.dialogue,
-      Message.new(:system, prompt),
-      trigger.user_id,
-      trigger.resource_id,
-      trigger.section_id
-    )
+    dialogue =
+      Dialogue.add_message(
+        socket.assigns.dialogue,
+        Message.new(:system, prompt),
+        trigger.user_id,
+        trigger.resource_id,
+        trigger.section_id
+      )
 
     pid = self()
 
@@ -665,28 +662,27 @@ defmodule OliWeb.Dialogue.WindowLive do
 
     {:noreply,
      assign(socket,
-        dialogue: dialogue
+       dialogue: dialogue
      )}
   end
 
   def handle_info({:trigger_finished}, socket) do
-
     # Get the content of the last message, stripping out any HTML tags
-    teaser_message = case Enum.reverse(socket.assigns.dialogue.rendered_messages) do
-      [] -> ""
-      [message | _] -> message.content
-    end
-    |> Floki.text()
+    teaser_message =
+      case Enum.reverse(socket.assigns.dialogue.rendered_messages) do
+        [] -> ""
+        [message | _] -> message.content
+      end
+      |> Floki.text()
 
     socket = push_event(socket, "show_teaser", %{})
 
     {:noreply,
      assign(socket,
-        teaser_visible: true,
-        teaser_message: teaser_message
+       teaser_visible: true,
+       teaser_message: teaser_message
      )}
   end
-
 
   use Oli.Conversation.DialogueHandler
 end

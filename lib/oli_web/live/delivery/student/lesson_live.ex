@@ -104,7 +104,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       script_sources =
         Enum.map(socket.assigns.scripts, fn script -> "/js/#{script}" end)
 
-     {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
+      {:ok, push_event(socket, "load_survey_scripts", %{script_sources: script_sources}),
        temporary_assigns: [hierarchy: thin_hierarchy]}
 
       # These temp assigns were disabled in MER-3672
@@ -697,7 +697,6 @@ defmodule OliWeb.Delivery.Student.LessonLive do
     :erlang.garbage_collect(self())
     {:noreply, socket}
   end
-
 
   def handle_info({:fire_trigger, slug, trigger}, socket) do
     socket = push_event(socket, "fire_page_trigger", %{"slug" => slug, "trigger" => trigger})
@@ -1557,10 +1556,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   defp possibly_fire_page_trigger(section, page) do
     case {section.assistant_enabled, page} do
       {true, %{content: %{"trigger" => %{"trigger_type" => "page"} = trigger}}} ->
-
         trigger = Map.put(trigger, "resource_id", page.resource_id)
-
-
 
         pid = self()
 
@@ -1568,9 +1564,9 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         Process.send_after(pid, {:fire_trigger, section.slug, trigger}, 2000)
 
         :ok
+
       _ ->
         :ok
     end
   end
-
 end

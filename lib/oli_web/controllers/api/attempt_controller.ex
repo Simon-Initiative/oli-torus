@@ -463,8 +463,11 @@ defmodule OliWeb.Api.AttemptController do
            datashop_session_id
          ) do
       {:ok, evaluations} ->
-
-        maybe_fire_trigger(section_slug, Plug.Conn.get_session(conn, :current_user_id), evaluations)
+        maybe_fire_trigger(
+          section_slug,
+          Plug.Conn.get_session(conn, :current_user_id),
+          evaluations
+        )
 
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -476,11 +479,12 @@ defmodule OliWeb.Api.AttemptController do
 
   defp maybe_fire_trigger(_section_slug, _user_id, []), do: :ok
   defp maybe_fire_trigger(_section_slug, _user_id, nil), do: :ok
+
   defp maybe_fire_trigger(section_slug, user_id, %Trigger{} = trigger) do
     Task.start(fn -> Triggers.possibly_invoke_trigger(section_slug, user_id, trigger) end)
   end
-  defp maybe_fire_trigger(section_slug, user_id, evaluations) when is_list(evaluations) do
 
+  defp maybe_fire_trigger(section_slug, user_id, evaluations) when is_list(evaluations) do
     # Find the first trigger, as we never want to invoke multiple triggers from a single action.
     #
     # But do all of this in the most robust way possible, including invoking the trigger
@@ -489,17 +493,17 @@ defmodule OliWeb.Api.AttemptController do
 
     try do
       case Enum.map(evaluations, fn evaluation -> Map.get(evaluation, :trigger, nil) end)
-        |> Enum.filter(fn trigger -> !is_nil(trigger) end) do
-          [] -> :ok
-          [trigger | _] -> maybe_fire_trigger(section_slug, user_id, trigger)
+           |> Enum.filter(fn trigger -> !is_nil(trigger) end) do
+        [] -> :ok
+        [trigger | _] -> maybe_fire_trigger(section_slug, user_id, trigger)
       end
     rescue
       e ->
         Logger.error("Could not fire trigger for evaluations: #{inspect(e)}")
         :ok
     end
-
   end
+
   defp maybe_fire_trigger(_section_slug, _user_id, _other), do: :ok
 
   @doc """
@@ -539,10 +543,8 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => part_attempt_guid
       }) do
-
     case Activity.request_hint(activity_attempt_guid, part_attempt_guid) do
       {:ok, {hint, trigger, has_more_hints}} ->
-
         maybe_fire_trigger(section_slug, Plug.Conn.get_session(conn, :current_user_id), trigger)
 
         json(conn, %{"type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints})
@@ -615,8 +617,11 @@ defmodule OliWeb.Api.AttemptController do
            datashop_session_id
          ) do
       {:ok, evaluations} ->
-
-        maybe_fire_trigger(section_slug, Plug.Conn.get_session(conn, :current_user_id), evaluations)
+        maybe_fire_trigger(
+          section_slug,
+          Plug.Conn.get_session(conn, :current_user_id),
+          evaluations
+        )
 
         json(conn, %{"type" => "success", "actions" => evaluations})
 
