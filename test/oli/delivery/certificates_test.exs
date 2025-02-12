@@ -395,4 +395,245 @@ defmodule Oli.Delivery.CertificatesTest do
              ) == 0
     end
   end
+
+  describe "raw_student_certificate_progress/2" do
+    setup [:create_elixir_project]
+
+    test "returns the raw progress considering the student progress and the certificate configuration",
+         %{
+           section: section,
+           student: student,
+           page_1: page_1,
+           page_2: page_2
+         } do
+      certificate =
+        insert(:certificate,
+          section: section,
+          required_discussion_posts: 2,
+          required_class_notes: 10,
+          min_percentage_for_completion: 70,
+          min_percentage_for_distinction: 90,
+          assessments_apply_to: :all
+        )
+
+      ## class note
+      insert(:post, user: student, section: section, annotated_resource_id: page_1.resource_id)
+      ## course discussion
+      insert(:post, user: student, section: section, annotated_resource_id: nil)
+      ## required assessments
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: page_1.resource,
+        score: 3.0,
+        out_of: 4.0
+      )
+
+      # this one should not count since it has not acomplished the required percentage
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: page_2.resource,
+        score: 2.0,
+        out_of: 4.0
+      )
+
+      raw_progress = Certificates.raw_student_certificate_progress(student.id, section.id)
+
+      assert raw_progress.class_notes.total == certificate.required_class_notes
+      assert raw_progress.discussion_posts.total == certificate.required_discussion_posts
+
+      # matches the amount of graded pages in the curriculum (since no custom list of assignments was provided in the certificate)
+      assert raw_progress.required_assignments.total == 3
+
+      assert raw_progress.class_notes.completed == 1
+      assert raw_progress.discussion_posts.completed == 1
+      assert raw_progress.required_assignments.completed == 1
+    end
+
+    test "returns the raw progress considering the certificate configuration when a set of custom_assessments is provided",
+         %{
+           section: section,
+           student: student,
+           page_1: page_1,
+           page_2: page_2
+         } do
+      certificate =
+        insert(:certificate,
+          section: section,
+          required_discussion_posts: 2,
+          required_class_notes: 10,
+          min_percentage_for_completion: 70,
+          min_percentage_for_distinction: 90,
+          assessments_apply_to: :custom,
+          custom_assessments: [
+            page_1.resource_id,
+            page_2.resource_id
+          ]
+        )
+
+      ## class note
+      insert(:post, user: student, section: section, annotated_resource_id: page_1.resource_id)
+      ## course discussion
+      insert(:post, user: student, section: section, annotated_resource_id: nil)
+      ## required assessments
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: page_1.resource,
+        score: 3.0,
+        out_of: 4.0
+      )
+
+      # this one should not count since it has not acomplished the required percentage
+      insert(:resource_access,
+        user: student,
+        section: section,
+        resource: page_2.resource,
+        score: 2.0,
+        out_of: 4.0
+      )
+
+      raw_progress = Certificates.raw_student_certificate_progress(student.id, section.id)
+
+      assert raw_progress.class_notes.total == certificate.required_class_notes
+      assert raw_progress.discussion_posts.total == certificate.required_discussion_posts
+
+      # matches the amount of graded pages provided in the custom list of assignments
+      assert raw_progress.required_assignments.total == 2
+
+      assert raw_progress.class_notes.completed == 1
+      assert raw_progress.discussion_posts.completed == 1
+      assert raw_progress.required_assignments.completed == 1
+    end
+
+    test "returns the raw progress considering if the student has already a certificate :earned",
+         %{
+           section: section,
+           student: student
+         } do
+      certificate =
+        insert(:certificate,
+          section: section,
+          required_discussion_posts: 2,
+          required_class_notes: 10,
+          min_percentage_for_completion: 70,
+          min_percentage_for_distinction: 90,
+          assessments_apply_to: :all
+        )
+
+      insert(:granted_certificate, user: student, certificate: certificate, state: :earned)
+
+      raw_progress =
+        Certificates.raw_student_certificate_progress(student.id, section.id)
+
+      assert raw_progress.class_notes.total == certificate.required_class_notes
+      assert raw_progress.class_notes.completed == certificate.required_class_notes
+
+      assert raw_progress.discussion_posts.total == certificate.required_discussion_posts
+      assert raw_progress.discussion_posts.completed == certificate.required_discussion_posts
+
+      assert raw_progress.required_assignments.total == 3
+      assert raw_progress.required_assignments.completed == 3
+    end
+  end
+
+  defp create_elixir_project(_) do
+    author = insert(:author)
+    project = insert(:project, authors: [author])
+
+    # revisions...
+
+    ## pages...
+    page_1_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 1",
+        graded: true
+      )
+
+    page_2_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 2",
+        graded: true
+      )
+
+    page_3_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Page 3",
+        graded: true
+      )
+
+    ## root container...
+    container_revision =
+      insert(:revision, %{
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [
+          page_1_revision.resource_id,
+          page_2_revision.resource_id,
+          page_3_revision.resource_id
+        ],
+        title: "Root Container"
+      })
+
+    all_revisions =
+      [
+        page_1_revision,
+        page_2_revision,
+        page_3_revision,
+        container_revision
+      ]
+
+    # asociate resources to project
+    Enum.each(all_revisions, fn revision ->
+      insert(:project_resource, %{
+        project_id: project.id,
+        resource_id: revision.resource_id
+      })
+    end)
+
+    # publish project
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_revision.resource_id})
+
+    # publish resources
+    Enum.each(all_revisions, fn revision ->
+      insert(:published_resource, %{
+        publication: publication,
+        resource: revision.resource,
+        revision: revision,
+        author: author
+      })
+    end)
+
+    # create section...
+    section =
+      insert(:section,
+        base_project: project,
+        title: "The best course ever!",
+        start_date: ~U[2023-10-30 20:00:00Z],
+        analytics_version: :v2
+      )
+
+    {:ok, section} = Oli.Delivery.Sections.create_section_resources(section, publication)
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_pages(section)
+    {:ok, _} = Oli.Delivery.Sections.rebuild_contained_objectives(section)
+
+    # enroll a student
+    student = insert(:user)
+    enroll_user_to_section(student, section, :context_learner)
+
+    %{
+      author: author,
+      section: section,
+      project: project,
+      publication: publication,
+      page_1: page_1_revision,
+      page_2: page_2_revision,
+      page_3: page_3_revision,
+      student: student
+    }
+  end
 end

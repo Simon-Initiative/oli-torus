@@ -165,6 +165,16 @@ defmodule Oli.Delivery.Certificates do
     Repo.all(query)
   end
 
+  @doc """
+  Returns the raw progress of a student in a certificate, detailed by the completion of discussion posts, class notes, and required assignments.
+
+  Returns a map with the following keys:
+  %{discussion_posts: %{completed: integer, total: integer},
+    class_notes: %{completed: integer, total: integer},
+    required_assignments: %{completed: integer, total: integer}}
+
+  If the certificate has been earned, the total count will be equal to the completed count (to avoid doing extra queries)
+  """
   def raw_student_certificate_progress(user_id, section_id) do
     certificate =
       from(c in Certificate,
