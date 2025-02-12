@@ -1,4 +1,5 @@
 defmodule OliWeb.DeliveryController do
+  alias Oli.Lti.LtiParams
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
@@ -19,6 +20,75 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Delivery.ResearchConsent
 
   require Logger
+
+  @allow_configure_section_roles [
+    PlatformRoles.get_role(:system_administrator),
+    PlatformRoles.get_role(:institution_administrator),
+    ContextRoles.get_role(:context_administrator),
+    ContextRoles.get_role(:context_instructor)
+  ]
+
+  @roles_claims "https://purl.imsglobal.org/spec/lti/claim/roles"
+
+  @doc """
+  This is the default entry point for delivery users. It will redirect to the appropriate page based
+  on whether the user is an independent learner or an LTI user.
+
+  If the user is an independent learner, they will be redirected to the student workspace.
+
+  Otherwise, the user's LTI roles will be checked to determine if they are allowed to configure the
+  section. If they are allowed to configure the section, they will be redirected to the instructor
+  dashboard. If they are not allowed to configure the section, the student will be redirected to the
+  page delivery.
+  """
+  def index(conn, _params) do
+    user = conn.assigns.current_user
+
+    if user.independent_learner do
+      redirect(conn, to: ~p"/workspaces/student")
+    else
+      # If an LTI student has landed here then we must redirect them to the latest section they have
+      # accessed from their LMS. We can infer this from a user's latest LTI launch params.
+      with %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
+        lti_roles = lti_params[@roles_claims]
+        context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+        platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
+        roles = MapSet.new(context_roles ++ platform_roles)
+        allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
+
+        # allow section configuration if user has any of the allowed roles
+        allow_configure_section =
+          MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
+
+        section = Sections.get_section_from_lti_params(lti_params)
+
+        case section do
+          # section has not been configured, redirect to new lti course creation wizard
+          nil when allow_configure_section ->
+            conn
+            |> redirect(to: ~p"/sections/lti/new")
+
+          # section has not been configured, but student is not allowed to configure
+          nil ->
+            render_course_not_configured(conn)
+
+          # section has already been configured, redirect to manage view
+          section when allow_configure_section ->
+            conn
+            |> redirect(to: ~p"/sections/#{section.slug}/manage")
+
+          # section has been configured, redirect student to section home
+          section ->
+            conn
+            |> redirect(to: ~p"/sections/#{section.slug}")
+        end
+      end
+    end
+  end
+
+  defp render_course_not_configured(conn) do
+    render(conn, "course_not_configured.html")
+  end
 
   def show_research_consent_form(conn, _params) do
     user = conn.assigns.current_user
@@ -69,24 +139,8 @@ defmodule OliWeb.DeliveryController do
 
     case Accounts.update_user(user, %{research_opt_out: consent !== "true"}) do
       {:ok, _} ->
-        redirect_url =
-          case user do
-            %User{independent_learner: true} ->
-              ~p"/workspaces/student"
-
-            _ ->
-              case Sections.get_section_from_latest_lti_launch(user.id) do
-                nil ->
-                  # Something went wrong, gracefully recover and redirect to the index
-                  ~p"/"
-
-                section ->
-                  ~p"/sections/#{section.slug}"
-              end
-          end
-
         conn
-        |> redirect(to: redirect_url)
+        |> redirect(to: ~p"/course")
 
       {:error, _} ->
         conn

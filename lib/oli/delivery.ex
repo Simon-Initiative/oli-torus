@@ -5,6 +5,7 @@ defmodule Oli.Delivery do
   alias Oli.Delivery.Sections.PostProcessing
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
+  alias Oli.Delivery.DeliverySpecification
   alias Oli.Accounts.{User}
   alias Oli.Institutions
   alias Oli.Institutions.Institution
@@ -20,11 +21,8 @@ defmodule Oli.Delivery do
 
   @doc """
   Creates a new section from the given changeset and source identifier. Depending on the
-  delivery details provided, the section will either be created a direct delivery section
-  or an LTI section with the appropriate settings. Delivery details are expected to be in the
-  format:
-    - `{:lti, lti_params, institution, registration, deployment}` for an LTI section
-    - `{:direct}` for a direct delivery section
+  delivery spec provided, the section will either be created a direct delivery section
+  or an LTI section with the appropriate settings.
 
   A section can be created from a project, publication or product (blueprint) depending on the
   source identifier. The source identifier is expected to be in the format:
@@ -37,14 +35,14 @@ defmodule Oli.Delivery do
     - `{:error, error_msg}`: An error occurred while creating the section.
 
   Examples:
-    iex> create_section(changeset, "project:1", user, delivery_details)
+    iex> create_section(changeset, "project:1", user, delivery_spec)
     {:ok, 1, "section-slug"}
 
-    iex> create_section(changeset, "publication:1", user, delivery_details)
+    iex> create_section(changeset, "publication:1", user, delivery_spec)
     {:error, "Failed to create new section"}
 
   """
-  def create_section(changeset, source, user, delivery_details) do
+  def create_section(changeset, source, user, delivery_spec) do
     case source_info(source) do
       {project, _, :project_slug} ->
         %{id: project_id, has_experiments: has_experiments} =
@@ -75,7 +73,7 @@ defmodule Oli.Delivery do
             encouraging_subtitle: project.encouraging_subtitle,
             certificate: nil
           })
-          |> delivery_specific_params(delivery_details)
+          |> delivery_specific_section_params(delivery_spec)
 
         case create_from_publication(user, publication, section_params) do
           {:ok, section} ->
@@ -93,7 +91,7 @@ defmodule Oli.Delivery do
         amount =
           case Oli.Delivery.Paywall.section_cost_from_product(
                  blueprint,
-                 institution_from_delivery_details(delivery_details)
+                 DeliverySpecification.get_institution(delivery_spec)
                ) do
             {:ok, amount} -> amount
             _ -> blueprint.amount
@@ -123,7 +121,7 @@ defmodule Oli.Delivery do
             encouraging_subtitle: blueprint.encouraging_subtitle,
             amount: amount
           })
-          |> delivery_specific_params(delivery_details)
+          |> delivery_specific_section_params(delivery_spec)
 
         case create_from_product(user, blueprint, section_params) do
           {:ok, section} ->
@@ -137,10 +135,14 @@ defmodule Oli.Delivery do
     end
   end
 
-  # Applies delivery-specific params according to the delivery details provided.
-  defp delivery_specific_params(
+  # Applies section params according to the delivery spec provided.
+  defp delivery_specific_section_params(
          section_params,
-         {:lti, lti_params, _institution, registration, deployment}
+         %DeliverySpecification.Lti{
+           lti_params: lti_params,
+           registration: registration,
+           deployment: deployment
+         }
        ),
        do:
          section_params
@@ -154,7 +156,7 @@ defmodule Oli.Delivery do
            nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
          })
 
-  defp delivery_specific_params(section_params, {:direct}),
+  defp delivery_specific_section_params(section_params, _),
     do:
       section_params
       |> Map.merge(%{open_and_free: true})
@@ -211,13 +213,6 @@ defmodule Oli.Delivery do
         {project, "Source Project", :project_slug}
     end
   end
-
-  defp institution_from_delivery_details(
-         {:lti, _lti_params, institution, _registration, _deployment}
-       ),
-       do: institution
-
-  defp institution_from_delivery_details(_delivery_details), do: nil
 
   @doc """
   Returns true if the user is required to provide research consent

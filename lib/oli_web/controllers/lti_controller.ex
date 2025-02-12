@@ -2,8 +2,6 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
-  import Oli.Utils
-
   alias Oli.Accounts
   alias Oli.Delivery.Sections
   alias Oli.Institutions
@@ -12,7 +10,6 @@ defmodule OliWeb.LtiController do
   alias Oli.Predefined
   alias Oli.Slack
   alias OliWeb.Common.Utils
-  alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -354,15 +351,6 @@ defmodule OliWeb.LtiController do
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
     lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
 
-    context_id =
-      case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
-        nil ->
-          nil
-
-        context ->
-          context["id"]
-      end
-
     Oli.Repo.transaction(fn ->
       with {institution, registration, _deployment} <-
              Institutions.get_institution_registration_deployment(
@@ -401,18 +389,14 @@ defmodule OliWeb.LtiController do
              Accounts.update_user_platform_roles(
                user,
                PlatformRoles.get_roles_by_uris(lti_roles)
-             ),
-           # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
-           # safeguard against the case that context is missing
-           {:ok, context_id} <-
-             trap_nil(context_id, "Context ID is missing from LTI params but is required") do
+             ) do
         # Attempt to find an existing section that matches this context
         case Sections.get_section_from_lti_params(lti_params) do
           nil ->
             # A section has not been created for this context yet
             if can_configure_section?(lti_roles) do
               conn
-              |> redirect(to: ~p"/sections/new/#{context_id}")
+              |> redirect(to: ~p"/sections/lti/new")
             else
               conn
               |> render("course_not_configured.html")

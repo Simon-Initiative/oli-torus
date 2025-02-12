@@ -148,7 +148,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           </div>
         </div>
       </button>
-      <.loader if={!@table_model} />
+      <.loader :if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
           <%= if @current_assessment != nil do %>

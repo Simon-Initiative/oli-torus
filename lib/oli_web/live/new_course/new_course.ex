@@ -1,5 +1,4 @@
 defmodule OliWeb.Delivery.NewCourse do
-  alias Oli.Lti.LtiParams
   use OliWeb, :live_view
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
@@ -12,9 +11,9 @@ defmodule OliWeb.Delivery.NewCourse do
   alias Oli.Delivery
   alias Oli.Delivery.DistributedDepotCoordinator
   alias Oli.Delivery.Sections
-  alias Oli.Institutions
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
+  alias Oli.Delivery.DeliverySpecification
   alias OliWeb.Common.{Breadcrumb, Stepper, FormatDateTime}
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
@@ -26,10 +25,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
   on_mount {OliWeb.UserAuth, :ensure_authenticated}
   on_mount OliWeb.LiveSessionPlugs.SetCtx
-
-  @deployment_claims "https://purl.imsglobal.org/spec/lti/claim/deployment_id"
-  @context_claims "https://purl.imsglobal.org/spec/lti/claim/context"
-  @resource_link_claims "https://purl.imsglobal.org/spec/lti/claim/resource_link"
 
   @form_id "open_and_free_form"
 
@@ -70,12 +65,11 @@ defmodule OliWeb.Delivery.NewCourse do
     # Get the context id from the params if it exists. This will only be present for LTI sections.
     context_id = Map.get(params, "context_id")
 
-    # Build section delivery details. If a context id is provided as a param, then we are creating
-    # an LTI section. Otherwise, we are creating a direct delivery section.
-    delivery_details = section_delivery_details(current_user, params)
+    # Build section delivery spec
+    delivery_spec = DeliverySpecification.new(current_user, socket.assigns.live_action)
 
     # Suggest a title for the course based on the LTI resource link or context title
-    suggested_title = suggest_title(delivery_details)
+    suggested_title = DeliverySpecification.suggested_title(delivery_spec)
     changeset = Section.changeset(changeset, %{title: suggested_title})
 
     {:ok,
@@ -84,7 +78,7 @@ defmodule OliWeb.Delivery.NewCourse do
        steps: steps,
        current_step: 0,
        current_user: current_user,
-       delivery_details: delivery_details,
+       delivery_spec: delivery_spec,
        context_id: context_id,
        changeset: changeset,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
@@ -165,7 +159,7 @@ defmodule OliWeb.Delivery.NewCourse do
           on_select={@on_select}
           source={@source}
           current_user={@current_user}
-          delivery_details={@delivery_details}
+          delivery_spec={@delivery_spec}
         />
       </div>
     </.new_course_header>
@@ -218,7 +212,7 @@ defmodule OliWeb.Delivery.NewCourse do
           source: assigns[:source],
           on_select: JS.push("source_selection", target: "##{@form_id}"),
           current_user: assigns.current_user,
-          delivery_details: assigns.delivery_details,
+          delivery_spec: assigns.delivery_spec,
           is_admin: assigns.is_admin
         }
 
@@ -243,45 +237,12 @@ defmodule OliWeb.Delivery.NewCourse do
     end
   end
 
-  defp section_delivery_details(user, %{"context_id" => context_id}) do
-    %LtiParams{params: lti_params} =
-      LtiParams.get_lti_params_for_user_context(user.id, context_id)
-
-    issuer = lti_params["iss"]
-    client_id = LtiParams.peek_client_id(lti_params)
-    deployment_id = lti_params[@deployment_claims]
-
-    {institution, registration, deployment} =
-      case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
-        nil ->
-          {nil, nil, nil}
-
-        {institution, registration, deployment} ->
-          {institution, registration, deployment}
-      end
-
-    {:lti, lti_params, institution, registration, deployment}
-  end
-
-  defp section_delivery_details(_user, _params), do: {:direct}
-
-  # Suggests a title for the section based on the LTI params. The title is suggested based on the
-  # following order of precedence:
-  #   1. The title from the resource link claims
-  #   2. The title from the context claims
-  defp suggest_title({:lti, lti_params, _, _, _}) do
-    get_in(lti_params, [@resource_link_claims, "title"]) ||
-      get_in(lti_params, [@context_claims, "title"])
-  end
-
-  defp suggest_title(_), do: nil
-
   def create_section(socket) do
     %{
       current_user: current_user,
       source: source,
       changeset: changeset,
-      delivery_details: delivery_details
+      delivery_spec: delivery_spec
     } = socket.assigns
 
     liveview_pid = self()
@@ -292,7 +253,7 @@ defmodule OliWeb.Delivery.NewCourse do
              changeset,
              source,
              current_user,
-             delivery_details
+             delivery_spec
            ) do
         {:ok, section_id, section_slug} ->
           send(liveview_pid, {:section_created, section_id, section_slug})
@@ -325,14 +286,7 @@ defmodule OliWeb.Delivery.NewCourse do
   def handle_event("redirect_to_courses", _, socket) do
     {:noreply,
      redirect(socket,
-       to:
-         case socket.assigns.context_id do
-           nil ->
-             Routes.live_path(socket, OliWeb.Workspaces.Instructor)
-
-           context_id ->
-             ~p"/sections/new/#{context_id}"
-         end
+       to: ~p"/workspaces/student"
      )}
   end
 

@@ -596,7 +596,7 @@ defmodule OliWeb.Sections.OverviewView do
                 if section.open_and_free do
                   ~p"/workspaces/instructor"
                 else
-                  ~p"/sections/new/#{section.context_id}"
+                  ~p"/sections/lti/new"
                 end
               end
 

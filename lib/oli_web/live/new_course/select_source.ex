@@ -1,13 +1,11 @@
 defmodule OliWeb.Delivery.NewCourse.SelectSource do
+  alias Oli.Delivery.DeliverySpecification
   use OliWeb, :live_component
 
-  alias Oli.Delivery
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Publishing
-  alias OliWeb.Common.{Filter, FilterBox, Listing, SessionContext}
+  alias OliWeb.Common.{Filter, FilterBox, Listing}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Router.Helpers, as: Routes
-
   alias Phoenix.LiveView.JS
 
   @default_params %{
@@ -345,11 +343,13 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   defp is_lms_instructor?(:lms_instructor), do: true
   defp is_lms_instructor?(_), do: false
 
-  defp unpack_role_institution(%{delivery_details: {:lti, _, institution, _, _}}),
-    do: {:lms_instructor, institution}
+  defp unpack_role_institution(%{
+         delivery_spec: %DeliverySpecification.Lti{institution: institution}
+       }),
+       do: {:lms_instructor, institution}
 
-  defp unpack_role_institution(%{delivery_details: {:direct}, is_admin: true}), do: {:admin, nil}
+  defp unpack_role_institution(%{delivery_spec: _, is_admin: true}), do: {:admin, nil}
 
-  defp unpack_role_institution(%{delivery_details: {:direct}, is_admin: false, current_user: user}),
-       do: {:independent_learner, user.institution}
+  defp unpack_role_institution(%{delivery_spec: _, is_admin: false, current_user: user}),
+    do: {:independent_learner, user.institution}
 end

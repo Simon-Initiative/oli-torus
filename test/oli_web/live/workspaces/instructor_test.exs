@@ -321,7 +321,7 @@ defmodule OliWeb.Workspaces.InstructorTest do
   describe "user as instructor" do
     setup [:instructor_conn]
 
-    test "can create sections on instructor worskpace when logged in", %{
+    test "can create sections on instructor workspace when logged in", %{
       conn: conn
     } do
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
