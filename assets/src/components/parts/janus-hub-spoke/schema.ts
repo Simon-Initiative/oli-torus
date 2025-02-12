@@ -34,7 +34,6 @@ export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
   verticalGap: number;
   enabled: boolean;
   spokeItems: Item[];
-  mustVisitAllSpokes: boolean;
   spokeFeedback?: string;
   requiredSpoke?: number;
 }
@@ -53,11 +52,6 @@ export const schema: JSONSchema7Object = {
     items: {
       type: 'object',
     },
-  },
-  mustVisitAllSpokes: {
-    title: 'Must visit all spokes',
-    type: 'boolean',
-    default: false,
   },
   requiredSpoke: {
     title: 'Number of required spokes',
@@ -133,11 +127,6 @@ export const simpleSchema: JSONSchema7Object = {
       type: 'object',
     },
   },
-  mustVisitAllSpokes: {
-    title: 'Must visit all spokes',
-    type: 'boolean',
-    default: false,
-  },
   requiredSpoke: {
     title: 'Number of required spokes',
     type: 'number',
@@ -201,7 +190,6 @@ export const simpleUiSchema = {
   'ui:order': [
     'layoutType',
     'spokeItems',
-    'mustVisitAllSpokes',
     'requiredSpoke',
     'anyCorrectAnswer',
     'showProgressBar',
@@ -217,7 +205,6 @@ export const simpleUiSchema = {
 };
 
 export const adaptivitySchema = {
-  mustVisitAllSpokes: CapiVariableTypes.BOOLEAN,
   requiredSpoke: CapiVariableTypes.NUMBER,
   enabled: CapiVariableTypes.BOOLEAN,
   showProgressBar: CapiVariableTypes.BOOLEAN,
@@ -285,8 +272,6 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     customCssClass: '',
     layoutType: 'verticalLayout',
     verticalGap: 0,
-    showOnAnswersReport: false,
-    mustVisitAllSpokes: true,
     requiredSpoke: 3,
     requireManualGrading: false,
     showProgressBar: true,

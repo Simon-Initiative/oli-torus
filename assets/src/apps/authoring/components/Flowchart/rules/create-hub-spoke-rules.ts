@@ -20,8 +20,6 @@ import {
 import { generateMultipleCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
-  DEFAULT_CORRECT_FEEDBACK,
-  DEFAULT_INCORRECT_FEEDBACK,
   IConditionWithFeedback,
   createNeverCondition,
   getSequenceIdFromDestinationPath,
@@ -35,6 +33,7 @@ export const generateHubSpokeRules = (
   defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IHubSpokePartLayout;
+
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
   const incorrectPath = (screen.authoring?.flowchart?.paths || []).find(isIncorrectPath);
@@ -49,7 +48,7 @@ export const generateHubSpokeRules = (
   );
   const correct: Required<IConditionWithFeedback> = {
     conditions: createSpokeCorrectCondition(spokedCompleteDestination),
-    feedback: question.custom.correctFeedback || DEFAULT_CORRECT_FEEDBACK,
+    feedback: question.custom.correctFeedback || '',
     destinationId:
       getSequenceIdFromScreenResourceId(
         correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
@@ -62,7 +61,7 @@ export const generateHubSpokeRules = (
       question,
       getSequenceIdFromDestinationPath(path, sequence),
     ),
-    feedback: commonErrorFeedback[path.selectedOption - 1] || DEFAULT_INCORRECT_FEEDBACK,
+    feedback: commonErrorFeedback[path.selectedOption - 1] || question.custom?.spokeFeedback,
     destinationId: getSequenceIdFromDestinationPath(path, sequence),
   }));
 

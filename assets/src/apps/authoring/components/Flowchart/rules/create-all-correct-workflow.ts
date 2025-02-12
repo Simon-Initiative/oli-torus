@@ -95,7 +95,7 @@ export const generateMultipleCorrectWorkflow = (
       defaultPath.destinationId,
       true,
       10,
-      defaultPath.feedback,
+      defaultPath.feedback?.length ? defaultPath.feedback : null,
       [disableAction],
     ),
     default: true,
