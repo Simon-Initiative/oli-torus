@@ -285,6 +285,11 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     end
   end
 
+  def handle_event("toggle_anonymize", _params, socket) do
+    anonymize = socket.assigns.anonymize
+    {:noreply, assign(socket, anonymize: !anonymize)}
+  end
+
   @impl true
   def handle_event("create_job", _params, socket) do
     project_id = socket.assigns.project.id

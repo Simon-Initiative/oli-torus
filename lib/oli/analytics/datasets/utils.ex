@@ -51,17 +51,22 @@ defmodule Oli.Analytics.Datasets.Utils do
     Repo.all(query)
   end
 
-  def context_sql() do
+  def context_sql(section_ids) do
+
+    section_ids = Enum.join(section_ids, ", ")
+
     """
     SELECT jsonb_build_object(
            'users', (
-               SELECT jsonb_object_agg(u.id::text, jsonb_build_object(
-                        'email', MIN(u.email)
-                      ))
-               FROM users u
-               JOIN enrollments e ON e.user_id = u.id
-               WHERE e.section_id = ANY($1::int[])
-               GROUP BY u.id;
+                SELECT jsonb_object_agg(subquery.id::text, jsonb_build_object(
+                          'email', subquery.email
+                        ))
+                FROM (
+                      SELECT DISTINCT ON (u.id) u.id, u.email
+                      FROM users u
+                      JOIN enrollments e ON e.user_id = u.id
+                      WHERE e.section_id in (#{section_ids})
+                ) AS subquery
            ),
            'dataset_name', (SELECT slug FROM projects WHERE id = $1) || '-' || substring(md5(random()::text) from 1 for 10),
            'skill_titles', (
