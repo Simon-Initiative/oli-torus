@@ -102,6 +102,7 @@ defmodule Oli.Accounts.Author do
     changeset
     |> cast(attrs, [:email])
     |> validate_required([:email])
+    |> unique_constraint(:email)
     |> validate_email(opts)
     |> put_change(:system_role_id, Oli.Accounts.SystemRole.role_id().author)
   end

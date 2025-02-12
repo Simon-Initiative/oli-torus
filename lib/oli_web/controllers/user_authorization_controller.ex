@@ -23,6 +23,20 @@ defmodule OliWeb.UserAuthorizationController do
   def new(conn, %{"provider" => provider}) do
     config = conn.assigns.assent_auth_config
 
+    conn =
+      case List.keyfind(conn.req_headers, "referer", 0) do
+        {"referer", referer} ->
+          if String.ends_with?(referer, "/instructors/log_in") do
+            conn
+            |> put_session(:user_return_to, ~p"/instructors/log_in")
+          else
+            conn
+          end
+
+        nil ->
+          conn
+      end
+
     provider
     |> AssentAuthWeb.authorize_url(config)
     |> case do
@@ -96,14 +110,6 @@ defmodule OliWeb.UserAuthorizationController do
           {:ok, conn} ->
             conn
             |> redirect(to: redirect_to)
-
-          {:email_confirmation_required, conn} ->
-            conn
-            |> put_flash(
-              :info,
-              "Please confirm your email address to continue. A confirmation email has been sent."
-            )
-            |> redirect(to: ~p"/users/confirm")
 
           {:error, conn, error} ->
             Logger.error("Error handling authorization success: #{inspect(error)}")
