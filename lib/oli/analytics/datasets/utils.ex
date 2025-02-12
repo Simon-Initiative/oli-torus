@@ -52,7 +52,6 @@ defmodule Oli.Analytics.Datasets.Utils do
   end
 
   def context_sql(section_ids) do
-
     section_ids = Enum.join(section_ids, ", ")
 
     """

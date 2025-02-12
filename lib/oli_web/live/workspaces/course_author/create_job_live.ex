@@ -177,8 +177,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
             name="toggle_anonymize"
           />
         </div>
-
-
       <% end %>
 
       <p class="mt-5">
