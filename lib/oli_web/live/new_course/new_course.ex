@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.NewCourse do
 
   @form_id "open_and_free_form"
 
-  def mount(params, _session, socket) do
+  def mount(_params, _session, socket) do
     changeset = Sections.change_independent_learner_section(%Section{registration_open: true})
 
     steps = [
