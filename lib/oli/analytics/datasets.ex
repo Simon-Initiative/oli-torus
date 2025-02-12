@@ -502,7 +502,7 @@ defmodule Oli.Analytics.Datasets do
     {:ok, job}
   end
 
-  defp stage_lookup_data(%DatasetJob{job_type: :datashop} = job) do
+  defp stage_lookup_data(%DatasetJob{} = job) do
     Logger.debug("Staging lookup data for dataset job #{job.job_id}")
 
     build_json_context(job)
