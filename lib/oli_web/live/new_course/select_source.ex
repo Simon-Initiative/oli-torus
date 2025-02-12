@@ -6,7 +6,6 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
   alias Oli.Publishing
   alias OliWeb.Common.{Filter, FilterBox, Listing, SessionContext}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Router.Helpers, as: Routes
 
   alias Phoenix.LiveView.JS
 

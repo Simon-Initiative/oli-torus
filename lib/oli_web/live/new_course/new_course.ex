@@ -71,7 +71,11 @@ defmodule OliWeb.Delivery.NewCourse do
           current_user =
             Accounts.preload_author(current_user)
 
-          lti_params = LtiParams.get_latest_user_lti_params(current_user.id).params
+          lti_params =
+            case LtiParams.get_latest_user_lti_params(current_user.id) do
+              nil -> nil
+              %LtiParams{params: lti_params} -> lti_params
+            end
 
           {current_user, lti_params}
       end
