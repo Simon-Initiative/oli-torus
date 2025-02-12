@@ -65,6 +65,58 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
   </html>
   """
 
+  alias Oli.Delivery.Sections.GrantedCertificate
+  alias Oli.Repo
+
+  def render(%GrantedCertificate{} = gc) do
+    granted_certificate = Repo.preload(gc, [:certificate, :user])
+
+    certificate_type =
+      if granted_certificate.with_distinction,
+        do: "Certificate with Distinction",
+        else: "Certificate of Completion"
+
+    admin_fields =
+      Map.take(granted_certificate.certificate, [
+        :admin_name1,
+        :admin_title1,
+        :admin_name2,
+        :admin_title2,
+        :admin_name3,
+        :admin_title3
+      ])
+
+    admins =
+      [
+        {admin_fields.admin_name1, admin_fields.admin_title1},
+        {admin_fields.admin_name2, admin_fields.admin_title2},
+        {admin_fields.admin_name3, admin_fields.admin_title3}
+      ]
+      |> Enum.reject(fn {name, _} -> name == "" || !name end)
+
+    logos =
+      [
+        granted_certificate.certificate.logo1,
+        granted_certificate.certificate.logo2,
+        granted_certificate.certificate.logo3
+      ]
+      |> Enum.reject(fn logo -> logo == "" || !logo end)
+
+    attrs = %{
+      certificate_type: certificate_type,
+      student_name: granted_certificate.user.name,
+      completion_date:
+        granted_certificate.issued_at |> DateTime.to_date() |> Calendar.strftime("%B %d, %Y"),
+      certificate_id: granted_certificate.guid,
+      course_name: granted_certificate.certificate.title,
+      course_description: granted_certificate.certificate.description,
+      administrators: admins,
+      logos: logos
+    }
+
+    render(attrs)
+  end
+
   def render(assigns) do
     EEx.eval_string(@template, assigns: assigns, engine: Phoenix.LiveView.HTMLEngine)
   end

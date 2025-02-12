@@ -23,11 +23,8 @@ defmodule Oli.Delivery.GrantedCertificates do
       %GrantedCertificate{url: url} when not is_nil(url) ->
         {:error, :granted_certificate_already_has_url}
 
-      %GrantedCertificate{state: state} when state != :earned ->
-        {:error, :granted_certificate_is_not_earned}
-
       gc ->
-        certificate_html = generate_html(gc)
+        certificate_html = CertificateRenderer.render(gc)
 
         @generate_pdf_lambda_function
         |> Lambda.invoke(%{certificate_id: gc.guid, html: certificate_html}, %{})
@@ -46,51 +43,6 @@ defmodule Oli.Delivery.GrantedCertificates do
             end
         end
     end
-  end
-
-  def generate_html(granted_certificate) do
-    granted_certificate = Repo.preload(granted_certificate, [:certificate, :user])
-
-    certificate_type =
-      if granted_certificate.with_distinction,
-        do: "Certificate with Distinction",
-        else: "Certificate of Completion"
-
-    admin_fields =
-      Map.take(granted_certificate.certificate, [
-        :admin_name1,
-        :admin_title1,
-        :admin_name2,
-        :admin_title2,
-        :admin_name3,
-        :admin_title3
-      ])
-
-    admins =
-      [
-        {admin_fields.admin_name1, admin_fields.admin_title1},
-        {admin_fields.admin_name2, admin_fields.admin_title2},
-        {admin_fields.admin_name3, admin_fields.admin_title3}
-      ]
-      |> Enum.reject(fn {name, _} -> name == "" || !name end)
-
-    logos =
-      Map.take(granted_certificate.certificate, [:logo1, :logo2, :logo3])
-      |> Enum.reject(fn {name, _} -> name == "" || !name end)
-
-    attrs = %{
-      certificate_type: certificate_type,
-      student_name: granted_certificate.user.name,
-      completion_date:
-        granted_certificate.issued_at |> DateTime.to_date() |> Calendar.strftime("%B %d, %Y"),
-      certificate_id: granted_certificate.guid,
-      course_name: granted_certificate.certificate.title,
-      course_description: granted_certificate.certificate.description,
-      administrators: admins,
-      logos: logos
-    }
-
-    CertificateRenderer.render(attrs)
   end
 
   defp aws_request(operation), do: apply(HTTP.aws(), :request, [operation])
