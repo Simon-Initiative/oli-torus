@@ -567,7 +567,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       </div>
       <div class="dark:text-[#e6e9f2] text-base font-normal mt-4 mb-8">
         <span>Complete </span>
-        <span class="dark:text-white font-bold">all</span>
+        <span class="dark:text-white font-bold">all </span>
         <span>of the specified requirements to achieve a certificate.</span>
       </div>
 
