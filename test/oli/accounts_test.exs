@@ -1218,4 +1218,32 @@ defmodule Oli.AccountsTest do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
     end
   end
+
+  describe "delete_enrollment_invitation_tokens/2" do
+    test "deletes all invitation tokens for a list of emails in the provided section" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      user_3 = insert(:user, email: "julian_alvarez@afa.com")
+      user_4 = insert(:user, email: "lionel_messi@afa.com")
+
+      insert(:user_token, user: user_1, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_2, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_3, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_4, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_1, context: "enrollment_invitation:other_section")
+      insert(:user_token, user: user_2, context: "enrollment_invitation:other_section")
+
+      assert length(Repo.all(UserToken)) == 6
+
+      Accounts.delete_enrollment_invitation_tokens("first_section", [user_1.email, user_2.email])
+      Accounts.delete_enrollment_invitation_tokens("other_section", [user_1.email, user_2.email])
+
+      [user_token_1, user_token_2] = Repo.all(UserToken) |> Enum.sort_by(& &1.sent_to)
+
+      assert user_token_1.context == "enrollment_invitation:first_section"
+      assert user_token_1.sent_to == "julian_alvarez@afa.com"
+      assert user_token_2.context == "enrollment_invitation:first_section"
+      assert user_token_2.sent_to == "lionel_messi@afa.com"
+    end
+  end
 end

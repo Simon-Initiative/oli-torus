@@ -442,7 +442,7 @@ defmodule OliWeb.Delivery.NewCourse do
     socket
     |> put_flash(:info, "Section successfully created.")
     |> redirect(to: ~p"/sections/#{section_slug}/manage")
-    |> noreply()
+    |> noreply_wrapper()
   end
 
   def handle_info({:section_created_error, error_msg}, socket) do

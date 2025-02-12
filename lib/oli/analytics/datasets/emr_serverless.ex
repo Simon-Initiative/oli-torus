@@ -140,7 +140,7 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       "--chunk_size",
       "#{job.configuration.chunk_size}",
       "--sub_types",
-      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_sub_types}",
+      "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_sub_types |> to_str}",
       "--job_id",
       "#{job.job_id}",
       "--section_ids",
