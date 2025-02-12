@@ -48,39 +48,37 @@ defmodule OliWeb.DeliveryController do
          %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
       # If an LTI student has landed here then we must redirect them to the latest section they have
       # accessed from their LMS. We can infer this from a user's latest LTI launch params.
-      with %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
-        lti_roles = lti_params[@roles_claims]
-        context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-        platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
-        roles = MapSet.new(context_roles ++ platform_roles)
-        allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
+      lti_roles = lti_params[@roles_claims]
+      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
+      platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
+      roles = MapSet.new(context_roles ++ platform_roles)
+      allow_configure_section_roles = MapSet.new(@allow_configure_section_roles)
 
-        # allow section configuration if user has any of the allowed roles
-        allow_configure_section =
-          MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
+      # allow section configuration if user has any of the allowed roles
+      allow_configure_section =
+        MapSet.intersection(roles, allow_configure_section_roles) |> MapSet.size() > 0
 
-        section = Sections.get_section_from_lti_params(lti_params)
+      section = Sections.get_section_from_lti_params(lti_params)
 
-        case section do
-          # section has not been configured, redirect to new lti course creation wizard
-          nil when allow_configure_section ->
-            conn
-            |> redirect(to: ~p"/sections/lti/new")
+      case section do
+        # section has not been configured, redirect to new lti course creation wizard
+        nil when allow_configure_section ->
+          conn
+          |> redirect(to: ~p"/sections/lti/new")
 
-          # section has not been configured, but student is not allowed to configure
-          nil ->
-            render_course_not_configured(conn)
+        # section has not been configured, but student is not allowed to configure
+        nil ->
+          render_course_not_configured(conn)
 
-          # section has already been configured, redirect to manage view
-          section when allow_configure_section ->
-            conn
-            |> redirect(to: ~p"/sections/#{section.slug}/manage")
+        # section has already been configured, redirect to manage view
+        section when allow_configure_section ->
+          conn
+          |> redirect(to: ~p"/sections/#{section.slug}/manage")
 
-          # section has been configured, redirect student to section home
-          section ->
-            conn
-            |> redirect(to: ~p"/sections/#{section.slug}")
-        end
+        # section has been configured, redirect student to section home
+        section ->
+          conn
+          |> redirect(to: ~p"/sections/#{section.slug}")
       end
     else
       _ ->
