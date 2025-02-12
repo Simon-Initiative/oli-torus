@@ -1,0 +1,61 @@
+<script src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js"></script>
+<script>
+  var clipboard = new ClipboardJS('.clipboardjs.btn');
+
+  clipboard.on('success', function(e) {
+      const el = $(e.trigger);
+      el.html('Copied!');
+      setTimeout(() => el.html('<i class="far fa-clipboard"></i> Copy'), 5000);
+  });
+</script>
+
+<div class="container mt-3">
+  <div class="d-flex flex-row mb-2">
+    <div class="flex-grow-1"></div>
+    <div><%= link "New Open and Free", to: Routes.select_source_path(OliWeb.Endpoint, :admin), class: "btn btn-md btn-outline-primary" %></div>
+  </div>
+
+  <%= if Enum.count(@sections) == 0 do %>
+    <div class="my-5 text-center">
+      There are no open and free sections
+    </div>
+  <% else %>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Section</th>
+          <th>Registration</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for section <- @sections do %>
+          <tr>
+            <td>
+              <div>
+                <%= section.title %>
+              </div>
+              <div class="text-nowrap">
+                <%= external_link Routes.page_delivery_url(@conn, :index, section.slug), to: Routes.page_delivery_url(@conn, :index, section.slug), id: "section_link_#{section.slug}", class: "mr-2" %>
+                <button class="clipboardjs btn btn-xs btn-primary" data-clipboard-target="#<%= "section_link_#{section.slug}" %>">
+                  <i class="far fa-clipboard"></i> Copy
+                </button>
+              </div>
+            </td>
+
+            <td>
+              <%= if section.registration_open do %>
+                <i class="fa fa-check-circle text-success" aria-hidden="true"></i> Open
+              <% else %>
+                <i class="fa fa-times-circle text-danger" aria-hidden="true"></i> Closed
+              <% end %>
+            </td>
+            <td class="text-nowrap">
+              <%= link "Details", to: Routes.independent_sections_path(@conn, :show, section), class: "btn btn-sm btn-outline-primary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

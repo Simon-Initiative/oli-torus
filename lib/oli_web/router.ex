@@ -924,29 +924,7 @@ defmodule OliWeb.Router do
   # Section Routes
   ###
 
-  ### Sections - Setup
-  scope "/sections", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    live("/new", Delivery.NewCourse, as: :select_source)
-    live("/lti/new", Delivery.NewCourse, :lti, as: :select_source)
-  end
-
-  ### Sections - Enrollment
-  scope "/sections/:section_slug", OliWeb do
-    pipe_through([
-      :browser,
-      :require_section,
-      :delivery,
-      :delivery_layout
-    ])
-
-    get("/enroll", DeliveryController, :show_enroll)
-    post("/enroll", DeliveryController, :process_enroll)
-    get("/join", LaunchController, :join)
-    post("/auto_enroll", LaunchController, :auto_enroll_as_guest)
-  end
-
+  ### Sections - Invites
   scope "/sections", OliWeb do
     pipe_through([:browser])
 
@@ -962,6 +940,21 @@ defmodule OliWeb.Router do
     ])
 
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
+  end
+
+  ### Sections - Creation
+  scope "/sections", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    live("/new", Delivery.NewCourse, as: :select_source)
+    live("/lti/new", Delivery.NewCourse, :lti, as: :select_source)
+  end
+
+  ### Sections - Independent Learner Section Creation (Cognito)
+  scope "/sections", OliWeb do
+    pipe_through([:browser, :delivery_protected, :require_independent_instructor])
+
+    resources("/independent/", OpenAndFreeController, as: :independent_sections, except: [:index])
   end
 
   ### Sections - Payments
@@ -1363,13 +1356,6 @@ defmodule OliWeb.Router do
     end
   end
 
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    # Default route used to redirect an authenticated user to the appropriate view
-    get("/", DeliveryController, :index)
-  end
-
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([
       :browser,
@@ -1395,6 +1381,32 @@ defmodule OliWeb.Router do
     post "/users/accept_invitation", InviteController, :accept_user_invitation
     post "/collaborators/accept_invitation", InviteController, :accept_collaborator_invitation
     post "/authors/accept_invitation", InviteController, :accept_author_invitation
+  end
+
+  ### Sections - Enrollment
+  scope "/sections/:section_slug", OliWeb do
+    pipe_through([
+      :browser,
+      :require_section,
+      :delivery,
+      :delivery_layout
+    ])
+
+    get("/enroll", DeliveryController, :show_enroll)
+    post("/enroll", DeliveryController, :process_enroll)
+    get("/join", LaunchController, :join)
+    post("/auto_enroll", LaunchController, :auto_enroll_as_guest)
+  end
+
+  ###
+  # Delivery
+  ###
+
+  scope "/course", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    # Default route used to redirect an authenticated user to the appropriate view
+    get("/", DeliveryController, :index)
   end
 
   ### Admin Dashboard / Telemetry
