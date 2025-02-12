@@ -8,7 +8,7 @@ export interface JanusHubSpokeProperties extends JanusCustomCss, JanusAbsolutePo
 }
 
 export interface JanusHubSpokeItemProperties extends JanusCustomCss {
-  nodes: any[];
+  nodes: string;
   itemId: string;
   layoutType: string;
   totalItems: number;
@@ -24,7 +24,7 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
 export interface Item {
   scoreValue: number;
   targetScreen: string;
-  nodes: any[];
+  nodes: string;
   [key: string]: any;
 }
 export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -245,28 +245,11 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     scoreValue: score,
     IsCompleted: false,
     targetScreen: '',
-    nodes: [
-      {
-        tag: 'p',
-        children: [
-          {
-            tag: 'span',
-            style: {},
-            children: [
-              {
-                tag: 'text',
-                text: `Spoke ${index}`,
-                children: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
+    nodes: `Spoke ${index}`,
   });
 
   return {
-    width: 125,
+    width: 250,
     height: 200,
     overrideHeight: false,
     customCssClass: '',

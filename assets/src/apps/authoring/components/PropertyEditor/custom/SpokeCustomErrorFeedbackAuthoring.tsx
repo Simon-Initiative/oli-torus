@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
 import { selectCurrentActivityTree } from '../../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentSelection, setCurrentPartPropertyFocus } from '../../../store/parts/slice';
 
@@ -45,12 +44,7 @@ export const SpokeCustomErrorFeedbackAuthoring: React.FC<CorrectOptionProps> = (
   const activityTree = useSelector(selectCurrentActivityTree);
   const part = getPartDef(activityTree, currentPartSelection);
   const options = useMemo(
-    () =>
-      part?.custom?.spokeItems?.map((v: any) => getNodeText(v.nodes)) || [
-        'Spoke 1',
-        'Spoke 2',
-        'Spoke 3',
-      ],
+    () => part?.custom?.spokeItems?.map((v: any) => v.nodes) || ['Spoke 1', 'Spoke 2', 'Spoke 3'],
     [part],
   );
   const OnOptionChanged = useCallback(

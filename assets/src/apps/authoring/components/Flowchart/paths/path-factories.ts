@@ -101,7 +101,7 @@ export const createSpokeCommonPath = (
   destinationScreenId: number | null = null,
 ): OptionCommonErrorPath => {
   const optionLabel =
-    getNodeText(spoke.custom?.spokeItems[selectedOption].nodes) || `Spoke #${selectedOption + 1}`;
+    spoke.custom?.spokeItems[selectedOption].nodes || `Spoke #${selectedOption + 1}`;
 
   return {
     ...createDestinationPathTemplate(`spoke-common-path-${selectedOption}`, destinationScreenId),

@@ -6,25 +6,11 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
 import { Item, JanusHubSpokeItemProperties, hubSpokeModel } from './schema';
 
 const SpokeItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
-  return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
-      {nodes.map((subtree: any) => {
-        const style: any = {};
-        if (subtree.tag === 'p') {
-          const hasImages = subtree.children.some((child: { tag: string }) => child.tag === 'img');
-          if (hasImages) {
-            style.display = 'inline-block';
-          }
-        }
-        return renderFlow(`${itemId}-root`, subtree, style, state);
-      })}
-    </div>
-  );
+  return nodes;
 };
 
 const SpokeItemContent = React.memo(SpokeItemContentComponent);

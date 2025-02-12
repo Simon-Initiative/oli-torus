@@ -1,18 +1,16 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
+import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { useToggle } from '../../../../../components/hooks/useToggle';
-import { getNodeText } from '../../../../../components/parts/janus-mcq/mcq-util';
-import { QuillEditor } from '../../../../../components/parts/janus-text-flow/QuillEditor';
 import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteIcon';
 import { ScreenEditIcon } from '../../Flowchart/chart-components/ScreenEditIcon';
 
-type OptionsNodes = Record<string, any>[];
-
 type OptionsType = {
-  nodes: OptionsNodes;
+  nodes: string;
+  targetScreen: string;
 };
 
 interface Props {
@@ -88,31 +86,51 @@ const OptionsEditor: React.FC<{
   onDelete: () => void;
   totalspoke: OptionsType[];
 }> = ({ value, onChange, onDelete, totalspoke }) => {
-  console.log({ totalspoke });
+  const activities = useSelector(selectAllActivities);
   const [editorOpen, , openEditor, closeEditor] = useToggle(false);
-  const [tempValue, setTempValue] = useState<{ value: OptionsNodes }>({ value: [] });
+  const [tempValue, setTempValue] = useState<{ value: string }>({ value: '' });
   const dispatch = useDispatch();
+  const [currentSpokeLabel, setCurrentSpokeLabel] = useState('');
+  const [currentSpokeDestination, setCurrentSpokeDestination] = useState('');
+  const screens: Record<string, string> = useMemo(() => {
+    return activities.reduce((acc, activity) => {
+      const filterhubSpokeScreens = activity.content?.partsLayout.find(
+        (parts) => parts.type === 'janus-hub-spoke',
+      );
+      const validScreens =
+        activity.authoring?.flowchart?.screenType !== 'welcome_screen' &&
+        activity.authoring?.flowchart?.screenType !== 'end_screen';
 
+      if (!filterhubSpokeScreens && validScreens) {
+        return {
+          ...acc,
+          [activity.id]: activity.title || 'Untitled',
+        };
+      }
+      return acc;
+    }, {} as Record<string, string>);
+  }, [activities]);
   const onSave = useCallback(() => {
     closeEditor();
     const newValue = {
       ...value,
-      nodes: tempValue.value,
+      nodes: currentSpokeLabel,
+      targetScreen: currentSpokeDestination,
     };
     onChange(newValue);
-    console.info('onSave', newValue);
     dispatch(setCurrentPartPropertyFocus({ focus: true }));
-  }, [closeEditor, onChange, tempValue.value, value]);
-
+  }, [tempValue.value, value, currentSpokeLabel, currentSpokeDestination]);
   const onEdit = useCallback(() => {
     openEditor();
     setTempValue({ value: value.nodes });
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
+    setCurrentSpokeLabel(value.nodes);
+    setCurrentSpokeDestination(value.targetScreen);
   }, [openEditor, value.nodes]);
 
   return (
     <div className="flex">
-      <div className="flex-1">{getNodeText(value.nodes)}</div>
+      <div className="flex-1">{value.nodes}</div>
       <div className="flex-none">
         <button className="btn btn-link p-0 mr-1" onClick={onEdit}>
           <ScreenEditIcon />
@@ -123,7 +141,11 @@ const OptionsEditor: React.FC<{
             delay={{ show: 150, hide: 150 }}
             overlay={
               <Tooltip placement="top" id="button-tooltip" style={{ fontSize: '12px' }}>
-                {totalspoke?.length <= 2 ? <div>Minimum 2 spokes are required</div> : <div>Delete the spoke</div>}
+                {totalspoke?.length <= 2 ? (
+                  <div>Minimum 2 spokes are required</div>
+                ) : (
+                  <div>Delete the spoke</div>
+                )}
               </Tooltip>
             }
           >
@@ -135,13 +157,32 @@ const OptionsEditor: React.FC<{
       </div>
       {editorOpen && (
         <AdvancedAuthoringModal show={true}>
+          <Modal.Header closeButton={true} onClick={closeEditor}>
+            <h3 className="modal-title font-bold">Spoke Navigation</h3>
+          </Modal.Header>
           <Modal.Body>
-            <QuillEditor
-              tree={value.nodes}
-              onChange={setTempValue}
-              onSave={() => console.info('onSave')}
-              onCancel={() => console.info('onCancel')}
-            />
+            <div className="form-group">
+              <label className="font-bold">Spoke Label</label>
+              <input
+                className="form-control"
+                value={currentSpokeLabel}
+                onChange={(e) => setCurrentSpokeLabel(e.target.value)}
+              ></input>
+            </div>
+            <div className="form-group">
+              <label className="font-bold">Destination</label>
+              <select
+                style={{ width: '100%' }}
+                value={currentSpokeDestination}
+                onChange={(e) => setCurrentSpokeDestination(e.target.value)}
+              >
+                {Object.keys(screens).map((screenId) => (
+                  <option key={screenId} value={screenId}>
+                    {screens[screenId]}
+                  </option>
+                ))}
+              </select>
+            </div>
           </Modal.Body>
           <Modal.Footer>
             <button onClick={onSave} className="btn btn-primary">
@@ -155,25 +196,7 @@ const OptionsEditor: React.FC<{
 };
 
 const optionTemplate = (count: number) => ({
-  nodes: [
-    {
-      tag: 'p',
-      style: {},
-      children: [
-        {
-          tag: 'span',
-          style: {},
-          children: [
-            {
-              tag: 'text',
-              text: `Spoke ${count}`,
-              style: {},
-              children: [],
-            },
-          ],
-        },
-      ],
-    },
-  ],
+  nodes: `Spoke ${count}`,
   scoreValue: 0,
+  targetScreen: '',
 });

@@ -31,7 +31,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
   const [showConfigureMode, setShowConfigureMode] = useState<boolean>(false);
   const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
   const [deleteOptionClicked, setDeleteOptionClicked] = useState<boolean>(false);
-  const [textNodes, setTextNodes] = useState<any[]>([]);
+  const [textNodes, setTextNodes] = useState<string>('');
   const [ready, setReady] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   useEffect(() => {
@@ -188,25 +188,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
         modelClone.spokeItems.splice(index, 1);
       } else {
         modelClone.spokeItems.splice(index + 1, 0, {
-          nodes: [
-            {
-              tag: 'p',
-              style: {},
-              children: [
-                {
-                  children: [
-                    { children: [], tag: 'text', text: `Option ${spokeItems.length + 1}` },
-                  ],
-                  style: {
-                    backgroundColor: 'transparent',
-                    color: 'inherit',
-                    fontSize: '16px',
-                  },
-                  tag: 'span',
-                },
-              ],
-            },
-          ],
+          nodes: `Option ${spokeItems.length + 1}`,
           scoreValue: 0,
           index: spokeItems.length,
           value: spokeItems.length,
