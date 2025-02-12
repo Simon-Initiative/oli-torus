@@ -1,4 +1,7 @@
 <div class="container">
-  <h1>Certificate</h1>
-  <pre><%= inspect(@certificate, pretty: true) %></pre>
+  <%= if @certificate do %>
+    <pre><%= inspect(@certificate, pretty: true) %></pre>
+  <% else %>
+    <p>No certificate found.</p>
+  <% end %>
 </div>

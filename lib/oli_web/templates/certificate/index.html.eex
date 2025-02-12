@@ -1,0 +1,22 @@
+<Components.Header.header {assigns} />
+
+<div class="container">
+  <%= form_for @conn, Routes.certificate_path(@conn, :verify, %{}), [as: :guid], fn f -> %>
+    <div class="form-group" style="width: 100%;">
+      <label>Enter certificate ID...</label>
+      <%= text_input(f, :value, class: "form-control") %>
+      <%= submit("Submit", class: "btn btn-primary mt-3") %>
+    </div>
+
+    <div class="form-label-group mt-4">
+      <div class="g-recaptcha" data-sitekey={Application.fetch_env!(:oli, :recaptcha)[:site_key]}>
+      </div>
+
+      <%= case assigns[:recaptcha_error] do %>
+        <% recaptcha_error -> %>
+          <span class="help-block text-danger"><%= recaptcha_error %></span>
+      <% end %>
+    </div>
+
+  <% end %>
+</div>
