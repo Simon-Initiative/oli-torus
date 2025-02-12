@@ -18,7 +18,6 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Common.Stepper.Step
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
-
   alias Phoenix.LiveView.JS
 
   import OliWeb.Components.Delivery.Layouts
@@ -62,9 +61,6 @@ defmodule OliWeb.Delivery.NewCourse do
 
     current_user = Accounts.preload_author(socket.assigns.current_user)
 
-    # Get the context id from the params if it exists. This will only be present for LTI sections.
-    context_id = Map.get(params, "context_id")
-
     # Build section delivery spec
     delivery_spec = DeliverySpecification.new(current_user, socket.assigns.live_action)
 
@@ -79,7 +75,6 @@ defmodule OliWeb.Delivery.NewCourse do
        current_step: 0,
        current_user: current_user,
        delivery_spec: delivery_spec,
-       context_id: context_id,
        changeset: changeset,
        breadcrumbs: breadcrumbs(socket.assigns.live_action),
        loading: false

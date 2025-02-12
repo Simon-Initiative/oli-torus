@@ -44,9 +44,8 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
 
-    if user.independent_learner do
-      redirect(conn, to: ~p"/workspaces/student")
-    else
+    with false <- user.independent_learner,
+         %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
       # If an LTI student has landed here then we must redirect them to the latest section they have
       # accessed from their LMS. We can infer this from a user's latest LTI launch params.
       with %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
@@ -83,6 +82,9 @@ defmodule OliWeb.DeliveryController do
             |> redirect(to: ~p"/sections/#{section.slug}")
         end
       end
+    else
+      _ ->
+        redirect(conn, to: ~p"/workspaces/student")
     end
   end
 
