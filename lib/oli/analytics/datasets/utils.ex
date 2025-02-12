@@ -54,6 +54,15 @@ defmodule Oli.Analytics.Datasets.Utils do
   def context_sql() do
     """
     SELECT jsonb_build_object(
+           'users', (
+               SELECT jsonb_object_agg(u.id::text, jsonb_build_object(
+                        'email', MIN(u.email)
+                      ))
+               FROM users u
+               JOIN enrollments e ON e.user_id = u.id
+               WHERE e.section_id = ANY($1::int[])
+               GROUP BY u.id;
+           ),
            'dataset_name', (SELECT slug FROM projects WHERE id = $1) || '-' || substring(md5(random()::text) from 1 for 10),
            'skill_titles', (
                SELECT jsonb_object_agg(r.resource_id::text, r.title)
