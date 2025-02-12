@@ -90,7 +90,8 @@ defmodule Oli.Factory do
       can_create_sections: true,
       locked_at: nil,
       age_verified: true,
-      preferences: build(:user_preferences)
+      preferences: build(:user_preferences),
+      research_opt_out: false
     }
   end
 

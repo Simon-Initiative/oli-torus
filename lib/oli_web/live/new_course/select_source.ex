@@ -350,6 +350,5 @@ defmodule OliWeb.Delivery.NewCourse.SelectSource do
 
   defp unpack_role_institution(%{delivery_spec: _, is_admin: true}), do: {:admin, nil}
 
-  defp unpack_role_institution(%{delivery_spec: _, is_admin: false, current_user: user}),
-    do: {:independent_learner, user.institution}
+  defp unpack_role_institution(_), do: {:independent_learner, nil}
 end

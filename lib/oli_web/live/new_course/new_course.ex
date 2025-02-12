@@ -154,6 +154,7 @@ defmodule OliWeb.Delivery.NewCourse do
           on_select={@on_select}
           source={@source}
           current_user={@current_user}
+          is_admin={@is_admin}
           delivery_spec={@delivery_spec}
         />
       </div>

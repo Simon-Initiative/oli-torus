@@ -52,7 +52,7 @@ defmodule Oli.Delivery.DeliverySpecification do
     }
   end
 
-  def new(_user, :direct), do: %DeliverySpecification.Direct{}
+  def new(_user, _), do: %DeliverySpecification.Direct{}
 
   @doc """
   Suggest a title for the section based on the LTI params. The title is suggested based on the

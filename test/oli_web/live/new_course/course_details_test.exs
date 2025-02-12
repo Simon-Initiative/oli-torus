@@ -6,20 +6,13 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
   import Ecto.Query, warn: false
   import Phoenix.LiveViewTest
 
-  @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
-  @live_view_independent_learner_route Routes.select_source_path(
-                                         OliWeb.Endpoint,
-                                         :independent_learner
-                                       )
-  @live_view_lms_instructor_route Routes.select_source_path(OliWeb.Endpoint, :lms_instructor)
-
   describe "Admin - Course Details" do
     setup [:admin_conn]
 
     @tag :skip
     test "renders the \"course details\" form", %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_source(:admin, view, section)
       complete_course_name_form(view)
@@ -40,7 +33,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "doesn't render the class days if class never meets", %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_source(:admin, view, section)
       complete_course_name_form(view, %{class_modality: :never})
@@ -62,7 +55,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     test "can't go to next step unless all required fields are filled and valid",
          %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_source(:admin, view, section)
       complete_course_name_form(view)
@@ -95,7 +88,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "successfully creates a section from a project publication", %{conn: conn} = context do
       %{publication: publication} = create_source(context, %{type: :enrollable})
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_source(:admin, view, publication)
       complete_course_name_form(view, %{title: "New admin course"})
@@ -121,7 +114,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "successfully creates a section from a product", %{conn: conn} = context do
       %{section: section} = create_source(context, %{type: :blueprint})
-      {:ok, view, _html} = live(conn, @live_view_admin_route)
+      {:ok, view, _html} = live(conn, ~p"/admin/sections/create")
 
       select_source(:admin, view, section)
       complete_course_name_form(view, %{title: "New admin course"})
@@ -151,7 +144,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "renders the \"course details\" form", %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, section)
       complete_course_name_form(view)
@@ -172,7 +165,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, section)
       complete_course_name_form(view)
@@ -187,7 +180,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "successfully creates a section from a project publication", %{conn: conn} = context do
       %{publication: publication} = create_source(context, %{type: :enrollable})
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, publication)
       complete_course_name_form(view, %{title: "New instructor course"})
@@ -213,7 +206,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "successfully creates a section from a product", %{conn: conn} = context do
       %{section: section} = create_source(context, %{type: :blueprint})
-      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, section)
       complete_course_name_form(view, %{title: "New instructor course"})
@@ -243,7 +236,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "renders the \"course details\" form", %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, section)
       complete_course_name_form(view)
@@ -264,7 +257,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
       %{section: section} = create_source(context)
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, section)
       complete_course_name_form(view)
@@ -279,7 +272,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
     @tag :skip
     test "successfully creates a section from a project publication", %{conn: conn} = context do
       %{publication: publication} = create_source(context, %{type: :enrollable})
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:lms_instructor, view, publication)
       complete_course_name_form(view, %{title: "New LMS course"})
@@ -305,7 +298,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       %{section: section} =
         create_source(context, %{type: :blueprint, contains_explorations: true})
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       select_source(:instructor, view, section)
       complete_course_name_form(view, %{title: "New LMS course"})
@@ -338,7 +331,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       # Factory has a default analytics_version ==  :v1
       %{section: section} = create_source(context)
 
-      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+      {:ok, view, _html} = live(conn, ~p"/sections/new")
 
       {:ok, section} = Sections.update_section(section, %{type: :blueprint})
 
