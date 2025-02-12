@@ -10,6 +10,7 @@ defmodule Oli.Analytics.Datasets.JobConfig do
     field(:ignored_student_ids, {:array, :integer}, default: [])
     field(:page_ids, {:array, :integer}, default: [])
     field(:excluded_fields, {:array, :string}, default: [])
+    field(:anonymize, :boolean, default: true)
   end
 
   @doc false
@@ -22,7 +23,8 @@ defmodule Oli.Analytics.Datasets.JobConfig do
       :event_sub_types,
       :ignored_student_ids,
       :page_ids,
-      :excluded_fields
+      :excluded_fields,
+      :anonymize
     ])
     |> validate_required([:section_ids, :chunk_size, :event_type])
   end

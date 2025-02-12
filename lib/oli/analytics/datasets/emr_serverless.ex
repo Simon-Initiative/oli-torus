@@ -149,6 +149,8 @@ defmodule Oli.Analytics.Datasets.EmrServerless do
       "#{if Enum.count(job.configuration.page_ids) == 0, do: "all", else: job.configuration.page_ids |> to_str}",
       "--action",
       "#{if job.job_type == :datashop, do: "datashop", else: job.configuration.event_type}",
+      "--anonymize",
+      "#{if job.configuration.anonymize == false, do: "false", else: "true"}",
       "--enforce_project_id",
       "#{job.project_id}"
     ]
