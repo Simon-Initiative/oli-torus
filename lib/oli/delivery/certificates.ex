@@ -277,7 +277,7 @@ defmodule Oli.Delivery.Certificates do
   end
 
   @doc """
-  Counts the number of assignments that exceed the required_percentage.
+  Counts the number of assignments that acomplish the required_percentage.
   Students must get at least that percentage on each of the required_assignment_ids to earn the specified certificate.
 
   - if the `required_percentage` provided corresponds to the min_percentage_for_distinction,
@@ -297,7 +297,6 @@ defmodule Oli.Delivery.Certificates do
       where:
         ra.resource_id in ^required_assignment_ids and ra.section_id == ^section_id and
           ra.user_id == ^user_id and not is_nil(ra.score),
-      group_by: ra.resource_id,
       select:
         fragment(
           "SUM(CASE WHEN ? / ? * 100 >= ? THEN 1 ELSE 0 END)",

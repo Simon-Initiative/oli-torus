@@ -229,4 +229,170 @@ defmodule Oli.Delivery.CertificatesTest do
                Certificates.browse_granted_certificates(paging, sorting, nil, section_id)
     end
   end
+
+  describe "user_certificate_discussion_posts_count/2" do
+    test "returns the number of discussion posts for a user in a section" do
+      user = insert(:user)
+      section = insert(:section)
+      another_section = insert(:section)
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Other revision A"
+        )
+
+      insert(:post, user: user, section: section, annotated_resource_id: nil)
+      insert(:post, user: user, section: section, annotated_resource_id: nil)
+      insert(:post, user: user, section: section, annotated_resource_id: nil)
+      insert(:post, user: user, section: another_section, annotated_resource_id: nil)
+
+      insert(:post,
+        user: user,
+        section: section,
+        annotated_resource_id: page_revision.resource_id
+      )
+
+      assert Certificates.user_certificate_discussion_posts_count(user.id, section.id) == 3
+    end
+  end
+
+  describe "user_certificate_class_notes_count/2" do
+    test "returns the number of class notes for a user in a section" do
+      user = insert(:user)
+      section = insert(:section)
+      another_section = insert(:section)
+
+      page_revision =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Other revision A"
+        )
+
+      _student_note =
+        insert(:post,
+          user: user,
+          section: section,
+          annotated_resource_id: page_revision.resource_id,
+          visibility: :private
+        )
+
+      insert(:post,
+        user: user,
+        section: section,
+        annotated_resource_id: page_revision.resource_id,
+        visibility: :public
+      )
+
+      insert(:post,
+        user: user,
+        section: section,
+        annotated_resource_id: page_revision.resource_id,
+        visibility: :public
+      )
+
+      insert(:post,
+        user: user,
+        section: another_section,
+        annotated_resource_id: page_revision.resource_id,
+        visibility: :public
+      )
+
+      assert Certificates.user_certificate_class_notes_count(user.id, section.id) == 2
+    end
+  end
+
+  describe "completed_assignments_count/4" do
+    test "returns the number of assignments that acomplish the required_percentage" do
+      user = insert(:user)
+      section = insert(:section)
+
+      page_revision_1 =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Other revision A",
+          graded: true
+        )
+
+      page_revision_2 =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Other revision B",
+          graded: true
+        )
+
+      page_revision_3 =
+        insert(:revision,
+          resource_type_id: Oli.Resources.ResourceType.id_for_page(),
+          title: "Other revision C",
+          graded: true
+        )
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_revision_1.resource,
+        score: 3.0,
+        out_of: 4.0
+      )
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_revision_2.resource,
+        score: 2.0,
+        out_of: 4.0
+      )
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_revision_3.resource,
+        score: 4.0,
+        out_of: 4.0
+      )
+
+      assert Certificates.completed_assignments_count(
+               user.id,
+               section.id,
+               [
+                 page_revision_1.resource_id,
+                 page_revision_2.resource_id,
+                 page_revision_3.resource_id
+               ],
+               75
+             ) == 2
+
+      assert Certificates.completed_assignments_count(
+               user.id,
+               section.id,
+               [
+                 page_revision_1.resource_id,
+                 page_revision_2.resource_id,
+                 page_revision_3.resource_id
+               ],
+               80
+             ) == 1
+
+      assert Certificates.completed_assignments_count(
+               user.id,
+               section.id,
+               [
+                 page_revision_1.resource_id,
+                 page_revision_2.resource_id,
+                 page_revision_3.resource_id
+               ],
+               49
+             ) == 3
+
+      assert Certificates.completed_assignments_count(
+               user.id,
+               section.id,
+               [
+                 page_revision_2.resource_id
+               ],
+               60
+             ) == 0
+    end
+  end
 end
