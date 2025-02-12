@@ -1,4 +1,5 @@
 defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
+  alias Oli.Delivery.GrantedCertificates
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
@@ -14,7 +15,11 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def new(users, section, ctx) do
+  def new(users, section, ctx, certificate, target) do
+    pending_approvals =
+      certificate && certificate.requires_instructor_approval &&
+        GrantedCertificates.count_pending_certificates_by_section(section.id)
+
     column_specs =
       [
         %ColumnSpec{
@@ -64,6 +69,18 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           ]
         else
           []
+        end ++
+        if certificate do
+          [
+            %ColumnSpec{
+              name: :certificate_status,
+              label: render_certificate_status_label(pending_approvals),
+              render_fn: &render_certificate_status_column/3,
+              th_class: "flex items-center gap-2"
+            }
+          ]
+        else
+          []
         end
 
     SortableTableModel.new(
@@ -73,7 +90,9 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       id_field: [:id],
       data: %{
         ctx: ctx,
-        section: section
+        section: section,
+        target: target,
+        certificate: certificate
       }
     )
   end
@@ -203,6 +222,41 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
 
     ~H"""
     <div><%= @type %></div>
+    """
+  end
+
+  defp render_certificate_status_label(pending_approvals) when pending_approvals in [nil, 0],
+    do: "CERTIFICATE STATUS"
+
+  defp render_certificate_status_label(pending_approvals) do
+    assigns = %{pending_approvals: pending_approvals}
+
+    ~H"""
+    <div class="flex items-center gap-2">
+      <span class="bg-[#0165da] text-white text-xs font-semibold rounded-full px-2">
+        <%= @pending_approvals %>
+      </span>
+      CERTIFICATE STATUS
+    </div>
+    """
+  end
+
+  def render_certificate_status_column(assigns, user, _) do
+    assigns =
+      Map.merge(assigns, %{
+        certificate_status: Map.get(user, :certificate) && user.certificate.state,
+        user_id: user.id,
+        granted_certificate_id: Map.get(user, :certificate) && user.certificate.id
+      })
+
+    ~H"""
+    <.live_component
+      id={"certificate-state-component-#{@user_id}"}
+      module={OliWeb.Delivery.Sections.CertificateStateComponent}
+      certificate_status={@certificate_status}
+      requires_instructor_approval={@certificate.requires_instructor_approval}
+      granted_certificate_id={@granted_certificate_id}
+    />
     """
   end
 

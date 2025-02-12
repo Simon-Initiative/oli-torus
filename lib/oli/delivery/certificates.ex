@@ -67,6 +67,7 @@ defmodule Oli.Delivery.Certificates do
     |> select(
       [gc, c, s, u, u1, a],
       %{
+        id: gc.id,
         recipient: %{
           id: u.id,
           name: u.name,
@@ -80,7 +81,8 @@ defmodule Oli.Delivery.Certificates do
           given_name: coalesce(u1.given_name, a.given_name),
           family_name: coalesce(u1.family_name, a.family_name)
         },
-        guid: gc.guid
+        guid: gc.guid,
+        state: gc.state
       }
     )
     |> Repo.all()

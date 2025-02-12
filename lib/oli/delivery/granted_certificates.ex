@@ -2,6 +2,7 @@ defmodule Oli.Delivery.GrantedCertificates do
   @moduledoc """
   The Granted Certificates context
   """
+  import Ecto.Query
 
   alias Ecto.Changeset
   alias ExAws.Lambda
@@ -42,4 +43,18 @@ defmodule Oli.Delivery.GrantedCertificates do
   end
 
   defp aws_request(operation), do: apply(HTTP.aws(), :request, [operation])
+
+  def count_pending_certificates_by_section(section_id) do
+    from(gc in GrantedCertificate,
+      join: c in assoc(gc, :certificate),
+      where: c.section_id == ^section_id and gc.state == :pending
+    )
+    |> Repo.aggregate(:count, :id)
+  end
+
+  def update_granted_certificate(granted_certificate_id, attrs) do
+    Repo.get(GrantedCertificate, granted_certificate_id)
+    |> Changeset.change(attrs)
+    |> Repo.update()
+  end
 end

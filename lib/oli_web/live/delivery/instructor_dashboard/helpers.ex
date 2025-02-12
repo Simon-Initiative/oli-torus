@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.{Certificates, Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
 
   def get_containers(section, opts \\ [async: true]) do
@@ -118,12 +118,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_proficiency(section, params.container_id)
+        |> maybe_add_certificates(section)
 
       page_id ->
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_proficiency_for_page(section, page_id)
+        |> maybe_add_certificates(section)
     end
   end
 
@@ -179,6 +181,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         overall_proficiency:
           Map.get(proficiency_per_student_for_page, student.id, "Not enough data")
       })
+    end)
+  end
+
+  defp maybe_add_certificates(students, %{certificate_enabled: false}), do: students
+
+  defp maybe_add_certificates(students, section) do
+    certificates =
+      Certificates.get_granted_certificates_by_section_slug(section.slug)
+      |> Enum.into(%{}, fn cert -> {cert.recipient.id, cert} end)
+
+    Enum.map(students, fn student ->
+      Map.put(student, :certificate, Map.get(certificates, student.id))
     end)
   end
 end
