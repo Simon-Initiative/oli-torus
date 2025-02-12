@@ -243,39 +243,4 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
-
-  defp flash_message(assigns) do
-    ~H"""
-    <%= if Phoenix.Flash.get(@flash, :info) do %>
-      <div class="alert alert-info flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :info) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
-    <%= if Phoenix.Flash.get(@flash, :error) do %>
-      <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :error) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="error"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
-    """
-  end
 end
