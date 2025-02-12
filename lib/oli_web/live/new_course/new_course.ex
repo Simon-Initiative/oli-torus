@@ -20,6 +20,7 @@ defmodule OliWeb.Delivery.NewCourse do
   alias OliWeb.Components.Common
   alias OliWeb.Delivery.NewCourse.{CourseDetails, NameCourse, SelectSource}
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Lti.LtiParams
 
   alias Phoenix.LiveView.JS
 
@@ -68,15 +69,9 @@ defmodule OliWeb.Delivery.NewCourse do
 
         current_user ->
           current_user =
-            Accounts.load_lti_params(current_user)
-            |> Repo.preload([:author])
+            Accounts.preload_author(current_user)
 
-          lti_params =
-            if current_user.lti_params do
-              current_user.lti_params.params
-            else
-              nil
-            end
+          lti_params = LtiParams.get_latest_user_lti_params(current_user.id).params
 
           {current_user, lti_params}
       end
