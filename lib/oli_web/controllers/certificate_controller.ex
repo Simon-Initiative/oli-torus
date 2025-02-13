@@ -7,9 +7,13 @@ defmodule OliWeb.CertificateController do
 
   def verify(conn, params) do
     if recaptcha_verified?(params) do
-      certificate = GrantedCertificates.get_granted_certificate_by_guid(params["guid"]["value"])
-      certificate_url = s3_certificate_url(certificate)
-      render(conn, "show.html", certificate: certificate, certificate_url: certificate_url)
+      case GrantedCertificates.get_granted_certificate_by_guid(params["guid"]["value"]) do
+        c when c.state == :earned ->
+          render(conn, "show.html", certificate: c, certificate_url: s3_certificate_url(c))
+
+        _ ->
+          render(conn, "show.html", certificate: nil)
+      end
     else
       render(conn, "index.html", recaptcha_error: "ReCaptcha failed, please try again")
     end
