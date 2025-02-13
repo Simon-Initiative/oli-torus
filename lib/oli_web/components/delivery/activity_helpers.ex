@@ -12,6 +12,47 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.ManualGrading.RenderedActivity
 
+  @doc """
+  Returns a list of summarizing details for all activities that have been attempted for a given course
+  section and page. This function is used to render the Insights View in the instructor dashboard.
+
+  We assemmble this information in the most DB efficient way possible, making only TWO
+  total queries to the database. The first query gets the per-student performance summary for all
+  activities on the page. The second query resolves the revisions for each activity.
+
+  The returned structure is:
+
+  %{
+    id: integer,
+    title: string,
+    revision: map,
+    attempts_count: integer,
+    students_with_attempts: list,
+    students_with_attempts_count: integer,
+    total_attempts_count: integer,
+    preview_rendered: string,
+    datasets: map
+  }
+  """
+  def summarize_activity_performance(%Section{} = section, page_id) do
+
+    # Get the per-student performance summary for all activities on the page
+    student_summary = Oli.Analytics.Summary.summarize_activities_for_page(section.id, page_id)
+    grouped_by_activity_id = Enum.group_by(student_summary, & &1.resource_id)
+
+    # Then resolve their revisions
+    activity_ids = Map.keys(grouped_by_activity_id)
+    revisions = Oli.Publishing.DeliveryResolver.from_resource_ids(activity_ids)
+
+    # Then get the number of attempts for each activity
+
+
+    # Render the preview for each activity
+
+
+  end
+
+
   def get_activities(assessment_resource_id, section_id, student_ids, filter_by_survey \\ false),
     do:
       Core.get_evaluated_activities_for(
