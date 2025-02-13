@@ -268,9 +268,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       <div class="flex flex-none justify-right">
         <button
           id="close_teaser_button"
-          phx-click={
-            JS.push("hide_teaser")
-          }
+          phx-click={JS.push("hide_teaser")}
           class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
         >
           <.small_close_icon />
@@ -689,7 +687,7 @@ defmodule OliWeb.Dialogue.WindowLive do
       send(pid, {:reply_finished})
     end)
 
-    #socket = push_event(socket, "show_teaser", %{})
+    # socket = push_event(socket, "show_teaser", %{})
 
     {:noreply,
      assign(socket,

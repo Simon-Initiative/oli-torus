@@ -8,12 +8,10 @@ export const TriggerButton: React.FC<{
   sectionSlug: string;
   children?: ReactNode;
 }> = React.memo(({ trigger, resourceId, sectionSlug }) => {
-
   const [disabled, setDisabled] = useState(false);
   const [delay, setDelay] = useState(5000);
 
   const onClick = () => {
-
     // Disable the button for 5 seconds after the student invokes the
     // trigger to prevent spamming. Double the delay each time the button
     // is clicked.
@@ -34,7 +32,9 @@ export const TriggerButton: React.FC<{
     <div className="flex justify-center">
       <button
         disabled={disabled}
-        className={`px-2 py-1 text-sm text-white ${disabled ? "" : "active:scale-95 transition-transform"} rounded`}
+        className={`px-2 py-1 text-sm text-white ${
+          disabled ? '' : 'active:scale-95 transition-transform'
+        } rounded`}
         onClick={onClick}
       >
         <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
