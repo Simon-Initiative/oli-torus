@@ -98,8 +98,8 @@ defmodule OliWeb.Dialogue.WindowLive do
          allow_submission?: true,
          active_message: nil,
          function_call: nil,
+         teaser_message: nil,
          teaser_visible: false,
-         teaser_message: "",
          title: "Dot",
          current_user: Oli.Accounts.get_user!(current_user_id),
          height: 500,
@@ -140,7 +140,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         height={@height}
         width={@width}
       />
-      <.teaser message={@teaser_message} visible={@teaser_visible} dialogue={@dialogue} />
+      <.teaser teaser_message={@teaser_message} teaser_visible={@teaser_visible} />
       <.collapsed_bot is_page={@is_page} />
     </div>
     """
@@ -156,8 +156,9 @@ defmodule OliWeb.Dialogue.WindowLive do
     >
       <button
         phx-click={
-          JS.hide(to: "#ai_bot_collapsed")
-          |> JS.hide(to: "#trigger_teaser")
+          JS.dispatch("teaser_quick_hide", to: "#trigger_teaser")
+          |> JS.hide(to: "#ai_bot_collapsed")
+          |> JS.push("hide_teaser")
           |> JS.show(
             to: "#ai_bot_conversation",
             transition:
@@ -241,9 +242,9 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
-  attr :visible, :boolean
   attr :dialogue, :list
-  attr :message, :any
+  attr :teaser_message, :any
+  attr :teaser_visible, :boolean
 
   def teaser(assigns) do
     ~H"""
@@ -251,28 +252,24 @@ defmodule OliWeb.Dialogue.WindowLive do
       id="trigger_teaser"
       phx-hook="ShowTeaser"
       phx-click={
-        JS.hide(to: "#trigger_teaser")
+        JS.dispatch("teaser_quick_hide", to: "#trigger_teaser")
         |> JS.show(
           to: "#ai_bot_conversation",
           transition:
             {"ease-out duration-200", "translate-x-full translate-y-full opacity-0",
              "translate-x-0 translate-y-0 opacity-100"}
         )
+        |> JS.push("hide_teaser")
         |> JS.focus(to: "#ai_bot_input")
       }
       style="height: 150px; width: 200px;"
-      class="p-1 shadow-lg bg-white dark:bg-[#0A0A17] flex flex-col hidden"
+      class={"p-1 shadow-lg bg-white dark:bg-[#0A0A17] flex flex-col " <> if(@teaser_visible, do: "", else: "hidden")}
     >
       <div class="flex flex-none justify-right">
         <button
           id="close_teaser_button"
           phx-click={
-            JS.hide(
-              to: "#trigger_teaser",
-              transition:
-                {"ease-out duration-700", "translate-x-1/4 translate-y-1/4 opacity-100",
-                 "translate-x-full translate-y-full opacity-0"}
-            )
+            JS.push("hide_teaser")
           }
           class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
         >
@@ -280,7 +277,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         </button>
       </div>
       <div class="mb-3 grow text-sm rounded-md overflow-hidden text-gray-500 dark:text-white">
-        <%= @message %>
+        <.live_teaser_response teaser_message={@teaser_message} />
       </div>
       <div class="flex-none">
         <hr />
@@ -602,12 +599,45 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :teaser_message, :any
+
+  def live_teaser_response(assigns) do
+    ~H"""
+    <%= if is_nil(@teaser_message) do %>
+      <svg
+        class="fill-black dark:fill-white"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <style>
+          .spinner_b2T7{animation:spinner_xe7Q .8s linear infinite}.spinner_YRVV{animation-delay:-.65s}.spinner_c9oY{animation-delay:-.5s}@keyframes spinner_xe7Q{93.75%,100%{r:3px}46.875%{r:.2px}}
+        </style>
+        <circle class="spinner_b2T7" cx="4" cy="12" r="3" />
+        <circle class="spinner_b2T7 spinner_YRVV" cx="12" cy="12" r="3" /><circle
+          class="spinner_b2T7 spinner_c9oY"
+          cx="20"
+          cy="12"
+          r="3"
+        />
+      </svg>
+    <% else %>
+      <%= @teaser_message %>
+    <% end %>
+    """
+  end
+
   def handle_event("minimize", _, socket) do
     {:noreply, assign(socket, minimized: true)}
   end
 
   def handle_event("restore", _, socket) do
     {:noreply, assign(socket, minimized: false)}
+  end
+
+  def handle_event("hide_teaser", _, socket) do
+    {:noreply, assign(socket, teaser_visible: false)}
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
@@ -657,30 +687,15 @@ defmodule OliWeb.Dialogue.WindowLive do
     Task.async(fn ->
       Dialogue.engage(dialogue, :async)
       send(pid, {:reply_finished})
-      send(pid, {:trigger_finished})
     end)
 
-    {:noreply,
-     assign(socket,
-       dialogue: dialogue
-     )}
-  end
-
-  def handle_info({:trigger_finished}, socket) do
-    # Get the content of the last message, stripping out any HTML tags
-    teaser_message =
-      case Enum.reverse(socket.assigns.dialogue.rendered_messages) do
-        [] -> ""
-        [message | _] -> message.content
-      end
-      |> Floki.text()
-
-    socket = push_event(socket, "show_teaser", %{})
+    #socket = push_event(socket, "show_teaser", %{})
 
     {:noreply,
      assign(socket,
-       teaser_visible: true,
-       teaser_message: teaser_message
+       dialogue: dialogue,
+       teaser_message: nil,
+       teaser_visible: true
      )}
   end
 
