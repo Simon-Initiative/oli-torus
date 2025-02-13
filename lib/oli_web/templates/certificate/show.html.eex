@@ -5,6 +5,6 @@
     Certificate ID: <span class="font-semibold"><%= @certificate.guid %></span>
     </p>
   <% else %>
-      <h2>No certificate found.</h2>
+      <h2>A certificate with that ID does not exist</h2>
   <% end %>
 </div>
