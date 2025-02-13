@@ -157,6 +157,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     # enable/disable the ai chatbot assistant for this section
     field(:assistant_enabled, :boolean, default: false)
+    field(:triggers_enabled, :boolean, default: false)
 
     field(:welcome_title, :map, default: %{})
 
@@ -223,6 +224,7 @@ defmodule Oli.Delivery.Sections.Section do
       :page_prompt_template,
       :apply_major_updates,
       :assistant_enabled,
+      :triggers_enabled,
       :welcome_title,
       :encouraging_subtitle,
       :agenda,

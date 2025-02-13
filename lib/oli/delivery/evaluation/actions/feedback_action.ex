@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.Evaluation.Actions.FeedbackAction do
-  @derive Jason.Encoder
+  @derive {Jason.Encoder, except: [:trigger]}
   defstruct [
     :type,
     :score,
@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Evaluation.Actions.FeedbackAction do
     :attempt_guid,
     :part_id,
     :show_page,
-    :explanation
+    :explanation,
+    :trigger
   ]
 end

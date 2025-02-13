@@ -18,6 +18,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
   alias Oli.Delivery.Evaluation.{Explanation, ExplanationContext}
+  alias Oli.Conversation.Triggers
 
   import Oli.Delivery.Attempts.Core
   require Logger
@@ -25,7 +26,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   @doc """
   Retrieve a hint for an attempt.
 
-  Return value is `{:ok, %Hint{}, boolean}` where the boolean is an indication as
+  Return value is `{:ok, %Hint{}, %Trigger{} | nil, boolean}` where the boolean is an indication as
   to whether there are more hints.
 
   If there is not a hint available to fulfill this request, this function returns:
@@ -62,8 +63,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           hint = Enum.at(all_hints, length(shown_hints))
 
           case update_part_attempt(part_attempt, %{hints: part_attempt.hints ++ [hint.id]}) do
-            {:ok, _} -> {hint, length(all_hints) > length(shown_hints) + 1}
-            {:error, error} -> Repo.rollback(error)
+            {:ok, _} ->
+              trigger =
+                Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint)
+
+              {hint, trigger, length(all_hints) > length(shown_hints) + 1}
+
+            {:error, error} ->
+              Repo.rollback(error)
           end
         else
           Repo.rollback({:no_more_hints})

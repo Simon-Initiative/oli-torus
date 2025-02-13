@@ -10,6 +10,8 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
       activity_attempt_number: 1,
       part_attempt_number: 1,
       part_attempt_guid: "1",
+      activity_attempt_guid: "1",
+      page_id: 1,
       input: input
     }
 

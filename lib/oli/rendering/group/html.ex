@@ -10,9 +10,25 @@ defmodule Oli.Rendering.Group.Html do
 
   @behaviour Oli.Rendering.Group
 
-  def group(%Context{} = _context, next, %{"id" => id, "purpose" => purpose}) do
+  def group(%Context{} = context, next, %{"id" => id, "purpose" => purpose} = group) do
+    trigger_button =
+      case Map.get(group, "trigger") do
+        nil ->
+          ""
+
+        trigger ->
+          {:safe, trigger} =
+            OliWeb.Common.React.component(context, "Components.TriggerGroupButton", %{
+              "trigger" => trigger,
+              "resourceId" => context.page_id,
+              "sectionSlug" => context.section_slug
+            })
+
+          trigger
+      end
+
     [
-      ~s|<div id="#{id}" class="group content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div><div class="content-purpose-content content">|,
+      ~s|<div id="#{id}" class="group content-purpose #{purpose}"><div class="flex justify-between"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div><div>#{trigger_button}</div></div><div class="content-purpose-content content">|,
       next.(),
       "</div></div>\n"
     ]

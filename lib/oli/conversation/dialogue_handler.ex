@@ -30,8 +30,11 @@ defmodule Oli.Conversation.DialogueHandler do
             end
 
           :content ->
+            active_message = "#{socket.assigns.active_message}#{content}"
+            teaser_message = active_message |> Floki.text()
+
             {:noreply,
-             assign(socket, active_message: "#{socket.assigns.active_message}#{content}")}
+             assign(socket, active_message: active_message, teaser_message: teaser_message)}
         end
       end
 

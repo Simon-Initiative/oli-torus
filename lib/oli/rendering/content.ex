@@ -38,6 +38,7 @@ defmodule Oli.Rendering.Content do
   @callback dt(%Context{}, next, %{}) :: [any()]
   @callback dd(%Context{}, next, %{}) :: [any()]
 
+  @callback trigger(%Context{}, next, %{}) :: [any()]
   @callback command_button(%Context{}, next, %{}) :: [any()]
   @callback conjugation(%Context{}, next, next, %{}) :: [any()]
 
@@ -411,6 +412,9 @@ defmodule Oli.Rendering.Content do
 
       "command_button" ->
         writer.command_button(context, next, element)
+
+      "trigger" ->
+        writer.trigger(context, next, element)
 
       "blockquote" ->
         writer.blockquote(context, next, element)

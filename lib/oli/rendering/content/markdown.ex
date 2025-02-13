@@ -35,6 +35,10 @@ defmodule Oli.Rendering.Content.Markdown do
     next.()
   end
 
+  def trigger(%Context{} = _context, _, _attrs) do
+    [""]
+  end
+
   def p(%Context{} = _context, next, _) do
     [
       next.(),

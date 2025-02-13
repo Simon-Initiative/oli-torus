@@ -38,7 +38,6 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
-      console.info('SAVE ACTIVITY');
 
       const originalContinuation = e.detail.continuation;
 
@@ -73,6 +72,7 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
+
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
         'PUT',
@@ -120,6 +120,7 @@ export const initActivityBridge = (elementId: string) => {
     (e: any) => {
       e.preventDefault();
       e.stopPropagation();
+
       makeRequest(
         `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
         'PUT',
