@@ -40,6 +40,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
          assign(socket,
            active: :datasets,
            job: job,
+           lookup_url: Datasets.lookup_url(job),
            results_manifest: results_manifest
          )}
     end
@@ -48,9 +49,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
   @impl Phoenix.LiveView
   def render(assigns) do
     ~H"""
-    <h2 id="header_id" class="pb-2">Dataset Job Details</h2>
     <div class="card mt-5 mb-5">
       <div class="card-body">
+        <h5 class="mb-3">Dataset Job Details</h5>
         <p class="card-text">
           <strong>Job Id:</strong> <%= @job.job_id %><br />
           <strong>Job Run Id:</strong> <%= @job.job_run_id %><br />
@@ -59,7 +60,26 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
           <strong>Notify:</strong> <%= @job.notify_emails |> Enum.join(" ") %><br />
           <strong>Started:</strong> <%= @job.inserted_at %><br />
           <strong>Finished:</strong> <%= @job.finished_on %><br />
-          <strong>Started By:</strong> <%= @job.initiator_email %>
+          <strong>Started By:</strong> <%= @job.initiator_email %><br />
+        </p>
+      </div>
+    </div>
+    <div class="card mt-5 mb-5">
+      <div class="card-body">
+        <h5 class="mb-3">Lookup Data</h5>
+        <p class="mb-2">Depending upon your use case
+          some amount of post-processing may be needed to extract information such as
+          the text of a question stem from the raw data available in the dataset.</p>
+
+        <p class="mb-2">Each dataset job has an associated
+          <strong>lookup data</strong> file that can be used for this purpose. The lookup data
+          file is a JSON file that contains a mapping of the data in the dataset job to the
+          original data in the source system.
+        </p>
+        <p class="mb-2"><a href={@lookup_url}><%= @lookup_url %></a></p>
+
+        <p>Some example Python code for using the above lookup file can be found in the following
+        GitHub repository: <a href="https://github.com/Simon-Initiative/dataset">https://github.com/Simon-Initiative/dataset</a>
         </p>
       </div>
     </div>

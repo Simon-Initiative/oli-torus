@@ -100,6 +100,23 @@ defmodule Oli.Analytics.Datasets do
   end
 
   @doc """
+  Returns the full URL for the dataset job's lookup JSON file in S3.
+  """
+  def lookup_url(%DatasetJob{job_id: job_id}) do
+    file_path = "contexts/#{job_id}.json"
+
+    {:ok, url} = :s3
+    |> ExAws.Config.new([])
+    |> ExAws.S3.presigned_url(:get, Settings.context_bucket(), file_path, [])
+
+    # Now parse off the query string, as we don't want to expose the signed URL
+    case String.split(url, "?") do
+      [url | _rest] -> url
+      _ -> url
+    end
+  end
+
+  @doc """
   Submits a new dataset creation job to the EMR serverless
   environment for processing.  This is a four step process:
 
