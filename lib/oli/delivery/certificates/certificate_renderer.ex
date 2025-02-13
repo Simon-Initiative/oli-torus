@@ -31,7 +31,7 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
   <body>
     <div class="outer-container">
       <div class="inner-container">
-        <h1 style="color: #8f7b00; font-family: 'Times New Roman', Times, serif; font-weight: normal; font-size: 50px;"><%= @certificate_type %></h1>
+        <h1 style="color:#8f7b00;font-family:'DejaVu Serif', 'Times New Roman', Times, serif;font-weight:400;font-size:50px;"><%= @certificate_type %></h1>
 
         <p>This certificate is presented to</p>
         <h2 style="font-size: 24px; font-weight: bold;"><%= @student_name %></h2>
