@@ -416,6 +416,29 @@ defmodule Oli.Analytics.Summary do
   end
 
   @doc """
+  For a given course section and page, return a list of activity ids that have been answered.
+  """
+  def answered_activities_for(section_id, page_id) do
+    from(rs in ResponseSummary,
+      where: rs.project_id == -1 and rs.publication_id == -1 and rs.section_id == ^section_id and rs.page_id == ^page_id,
+      select: rs.activity_id,
+      distinct: true
+    )
+    |> Repo.all()
+  end
+
+  def summarize_activities_for_page(section_id, page_id) do
+    from(rs in ResponseSummary,
+      join: s in ResourceSummary, on: rs.activity_id == s.resource_id and rs.section_id == s.section_id,
+      where: rs.project_id == -1 and rs.publication_id == -1 and rs.section_id == ^section_id and rs.page_id == ^page_id,
+      where: s.user_id != -1 and s.project_id == -1 and s.publication_id == -1,
+      select: s
+    )
+    |> Repo.all()
+  end
+
+
+  @doc """
   Counts the number of attempts made by a list of students for a given activity in a given section.
   """
   @spec count_student_attempts(
