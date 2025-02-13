@@ -348,10 +348,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           VALUES
           #{part_input_values}
       ) AS batch_values (attempt_guid, response)
-      WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+      WHERE part_attempts.attempt_guid = batch_values.attempt_guid and lifecycle_state = 'active'
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+    case Ecto.Adapters.SQL.query(Oli.Repo, sql, params) do
+      {:ok, %Postgrex.Result{num_rows: n}} when n > 0 ->
+        {:ok, %{num_rows: n}}
+
+      {:ok, %Postgrex.Result{num_rows: 0}} ->
+        {:error, :already_submitted}
+
+      {:error, _} ->
+        {:error, "Failed to save student input"}
+    end
   end
 
   @doc """

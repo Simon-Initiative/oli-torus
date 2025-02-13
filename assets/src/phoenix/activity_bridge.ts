@@ -25,6 +25,9 @@ function makeRequest(
     .then((result) => continuation(result))
     .catch((error) => continuation(undefined, error));
 }
+const saveTransform = (result: any) => {
+  return result.error ? Promise.reject({ message: result.message }) : Promise.resolve(result);
+};
 const nothingTransform = (result: any) => Promise.resolve(result);
 const submissionTransform = (key: string, result: any) => {
   return Promise.resolve({ actions: result[key] });
@@ -63,6 +66,7 @@ export const initActivityBridge = (elementId: string) => {
         'PATCH',
         { partInputs: e.detail.payload },
         newContinuation,
+        saveTransform,
       );
     },
     false,
@@ -110,6 +114,7 @@ export const initActivityBridge = (elementId: string) => {
         'PATCH',
         { response: e.detail.payload },
         e.detail.continuation,
+        saveTransform,
       );
     },
     false,

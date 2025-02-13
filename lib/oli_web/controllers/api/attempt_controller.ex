@@ -419,6 +419,15 @@ defmodule OliWeb.Api.AttemptController do
       {:ok, _} ->
         json(conn, %{"type" => "success"})
 
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
+
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not save part", e)
         error(conn, 500, msg)
@@ -514,6 +523,15 @@ defmodule OliWeb.Api.AttemptController do
 
       {:error, {:no_more_hints}} ->
         json(conn, %{"type" => "success", "hasMoreHints" => false})
+
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
 
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not get hint", e)
