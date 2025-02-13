@@ -76,7 +76,8 @@ defmodule OliWeb.Common.AssentAuthWeb do
          {:ok, email_confirmation_required?} <-
            maybe_require_email_confirmation(user, config),
          # Create a session for the user
-         conn <- create_session(conn, user, config) do
+         conn <- create_session(conn, user, config),
+         conn <- assign_current_user(conn, user, config) do
       if email_confirmation_required? do
         {:email_confirmation_required, status, conn}
       else
@@ -223,9 +224,19 @@ defmodule OliWeb.Common.AssentAuthWeb do
   end
 
   defp current_user(%{assigns: assigns}, config) do
-    key = Map.get(config, :current_user_assigns_key, :current_user)
+    key = current_user_assigns_key(config)
 
     Map.get(assigns, key)
+  end
+
+  defp assign_current_user(conn, user, config) do
+    key = current_user_assigns_key(config)
+
+    Plug.Conn.assign(conn, key, user)
+  end
+
+  defp current_user_assigns_key(config) do
+    Map.get(config, :current_user_assigns_key, :current_user)
   end
 
   defp create_session(conn, user, %AssentAuthWeb.Config{
