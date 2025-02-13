@@ -7,11 +7,10 @@ defmodule OliWeb.Common.AssentAuthWebTest do
   alias Oli.AssentAuth.{AuthorAssentAuth, AuthorIdentity}
   alias OliWeb.AuthorAuth
   alias OliWeb.Common.AssentAuthWeb
-  alias OliWeb.Common.AssentAuthWeb.AssentAuthWebConfig
   alias Swoosh.TestAssertions
 
   defp test_config(),
-    do: %AssentAuthWebConfig{
+    do: %AssentAuthWeb.Config{
       authentication_providers: [
         google: [
           client_id: "some_client_id",

@@ -1,9 +1,11 @@
 defmodule OliWeb.Common.AssentAuthWeb do
   use OliWeb, :verified_routes
 
-  alias OliWeb.Common.AssentAuthWeb.AssentAuthWebConfig
+  require Logger
 
-  defmodule AssentAuthWebConfig do
+  alias OliWeb.Common.AssentAuthWeb
+
+  defmodule Config do
     @moduledoc """
     Configuration required for AssentAuthWeb module.
     """
@@ -60,29 +62,32 @@ defmodule OliWeb.Common.AssentAuthWeb do
   @doc """
   Handles the a successful authorization after the provider callback.
   """
-  def handle_authorization_success(conn, provider, user, other_params, config) do
-    user
-    |> normalize_username()
-    |> build_user_identity_params(other_params, provider, conn)
-    |> maybe_authenticate(config)
-    |> maybe_upsert_user_identity(config)
-    |> create_or_update_user(config)
-    # Regardless of whether the user was just created or updated, we will send a confirmation
-    # email if the user's email has not yet been confirmed.
-    |> maybe_send_confirmation_email(config)
-    |> case do
-      %{private: %{assent_callback_state: {:ok, :email_confirmation_required}}} = conn ->
-        {:email_confirmation_required, conn}
+  def handle_authorization_success(conn, provider, user_params, config) do
+    with user_params <- normalize_username(user_params),
+         # Split the user params into user identity params and user params
+         {:ok, user_identity_params} <-
+           split_user_identity_params(user_params, provider),
+         # Get the current user from the connection
+         current_user <- current_user(conn, config),
+         # Create or upsert the user identity
+         {:ok, {status, user}} <-
+           create_or_upsert_identity(current_user, user_identity_params, user_params, config),
+         # Check if email confirmation is required
+         {:ok, email_confirmation_required?} <-
+           maybe_require_email_confirmation(user, config),
+         # Create a session for the user
+         conn <- create_session(conn, user, config) do
+      if email_confirmation_required? do
+        {:email_confirmation_required, status, conn}
+      else
+        {:ok, status, conn}
+      end
+    else
+      {:error, error} ->
+        {:error, error, conn}
 
-      %{private: %{assent_callback_state: {:ok, _method}}} = conn ->
-        {:ok, conn}
-
-      %{private: %{assent_callback_state: {:error, error}, assent_callback_error: changeset}} =
-          conn ->
-        {:error, conn, {error, changeset}}
-
-      conn ->
-        {:error, conn, :unknown}
+      {:error, error, conn} ->
+        {:error, error, conn}
     end
   end
 
@@ -94,181 +99,76 @@ defmodule OliWeb.Common.AssentAuthWeb do
 
   defp normalize_username(params), do: params
 
-  defp build_user_identity_params(%{"sub" => uid} = user_params, other_params, provider, conn) do
-    # Convert other_params keys to strings
-    other_params = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
+  defp split_user_identity_params(%{"sub" => uid} = _user_params, provider) do
+    user_identity_params = %{"uid" => uid, "provider" => provider}
 
-    # Merge user params with provider and other params
-    user_identity_params =
-      %{"uid" => uid}
-      |> Map.put("provider", provider)
-      |> Map.merge(other_params)
-
-    conn
-    |> Plug.Conn.put_private(:assent_callback_state, {:ok, :strategy})
-    |> Plug.Conn.put_private(:assent_callback_params, %{
-      user_identity: user_identity_params,
-      user: user_params
-    })
+    {:ok, user_identity_params}
   end
 
-  defp build_user_identity_params(user_params, _other_params, _provider, conn) do
-    Logger.error("No sub found in user params: #{inspect(user_params)}")
+  defp split_user_identity_params(params, _provider) do
+    Logger.error("No sub found in user params: #{inspect(params)}")
 
-    conn
-    |> Plug.Conn.put_private(:assent_callback_state, {:error, :invalid_user_identity_params})
+    {:error, {:invalid_user_identity_params, {:missing_param, "sub", params}}}
   end
 
-  defp maybe_authenticate(
-         %{private: %{assent_callback_state: {:ok, :strategy}, assent_callback_params: params}} =
-           conn,
-         config
-       ) do
-    user_identity_params = Map.fetch!(params, :user_identity)
-
-    case current_user(conn, config) do
-      nil ->
-        case authenticate(conn, user_identity_params, config) do
-          {:ok, conn} -> conn
-          {:error, conn} -> conn
-        end
-
-      _user ->
-        conn
-    end
-  end
-
-  defp maybe_authenticate(conn, _config), do: conn
-
-  ## Authenticates a user with provider and provider user params. If successful, a new
-  ## session will be created and the current user will be put in the connection assigns.
-  defp authenticate(conn, %{"provider" => provider, "uid" => uid}, config) do
-    case get_user_by_provider_uid(provider, uid, config) do
-      nil ->
-        {:error, conn}
-
-      user ->
-        {:ok,
-         conn
-         |> create_session(user, config)
-         |> assign_current_user(user, config)}
-    end
-  end
-
-  defp maybe_upsert_user_identity(
-         %{private: %{assent_callback_state: {:ok, :strategy}, assent_callback_params: params}} =
-           conn,
-         config
-       ) do
-    user_identity_params = Map.fetch!(params, :user_identity)
-
-    case current_user(conn, config) do
-      nil ->
-        conn
-
-      _user ->
-        conn
-        |> upsert_identity(user_identity_params, config)
-        |> case do
-          {:ok, _user_identity, conn} ->
-            Plug.Conn.put_private(conn, :assent_callback_state, {:ok, :upsert_user_identity})
-
-          {:error, changeset, conn} ->
-            conn
-            |> Plug.Conn.put_private(:assent_callback_state, {:error, :upsert_user_identity})
-            |> Plug.Conn.put_private(:assent_callback_error, changeset)
-        end
-    end
-  end
-
-  defp maybe_upsert_user_identity(conn, _config), do: conn
-
-  ## Will upsert identity for the current user. If successful, a new session will be created.
-  defp upsert_identity(
-         conn,
+  defp create_or_upsert_identity(
+         current_user,
          user_identity_params,
+         user_params,
          config
        ) do
-    user = current_user(conn, config)
+    case {current_user, get_existing_user(user_identity_params, config)} do
+      # no current user and no user with the same provider and uid, create a new user
+      {nil, nil} ->
+        create_user(user_identity_params, user_params, config)
 
-    user_identity_params = convert_params(user_identity_params)
+      # no current user and user with the same provider and uid exists, just log in the user
+      {nil, user} ->
+        {:ok, {:authenticate, user}}
 
-    user
-    |> assent_auth_module(config).upsert_identity(user_identity_params)
-    |> user_identity_bound_different_user_error()
-    |> case do
-      {:ok, user_identity} ->
-        {:ok, user_identity, create_session(conn, user, config)}
-
-      {:error, error} ->
-        {:error, error, conn}
+      # no user with the same provider and uid, add the identity for the current user
+      {current_user, _user} ->
+        add_identity_provider(current_user, user_identity_params, config)
     end
   end
 
-  defp create_or_update_user(
-         %{private: %{assent_callback_state: {:ok, _method}, assent_callback_params: params}} =
-           conn,
-         config
-       ) do
-    user_params = Map.fetch!(params, :user)
-    user_identity_params = Map.fetch!(params, :user_identity)
-
-    case current_user(conn, config) do
-      nil ->
-        conn
-        |> create_user(user_identity_params, user_params, config)
-        |> case do
-          {:ok, user, conn} ->
-            conn
-            |> Plug.Conn.put_private(:assent_callback_state, {:ok, :create_user})
-            |> create_session(user, config)
-            |> assign_current_user(user, config)
-
-          {:error, changeset, conn} ->
-            conn
-            |> Plug.Conn.put_private(:assent_callback_state, {:error, :create_user})
-            |> Plug.Conn.put_private(:assent_callback_error, changeset)
-        end
-
-      user ->
-        conn
-        |> update_user(user, user_params, config)
-        |> case do
-          {:ok, user, conn} ->
-            conn
-            |> Plug.Conn.put_private(:assent_callback_state, {:ok, :update_user})
-            |> create_session(user, config)
-            |> assign_current_user(user, config)
-
-          {:error, changeset, conn} ->
-            conn
-            |> Plug.Conn.put_private(:assent_callback_state, {:error, :update_user})
-            |> Plug.Conn.put_private(:assent_callback_error, changeset)
-        end
-    end
+  defp get_existing_user(%{"provider" => provider, "uid" => uid}, config) do
+    get_user_by_provider_uid(provider, uid, config)
   end
-
-  defp create_or_update_user(conn, _config), do: conn
 
   ## Create a user with the provider and provider user params.
-  defp create_user(conn, user_identity_params, user_params, config) do
+  defp create_user(user_identity_params, user_params, config) do
     user_identity_params
     |> convert_params()
     |> assent_auth_module(config).create_user_with_identity(user_params)
     |> user_identity_bound_different_user_error()
     |> user_with_email_already_exists_error()
     |> case do
-      {:ok, user} -> {:ok, user, create_session(conn, user, config)}
-      {:error, error} -> {:error, error, conn}
+      {:ok, user} ->
+        {:ok, {:create_user, user}}
+
+      {:error, changeset} ->
+        {:error, {:create_user, changeset}}
     end
   end
 
-  defp update_user(conn, user, user_params, config) do
+  ## Upserts a user identity for the current user. If successful, a new session will be created.
+  defp add_identity_provider(
+         user,
+         user_identity_params,
+         config
+       ) do
+    user_identity_params = convert_params(user_identity_params)
+
     user
-    |> assent_auth_module(config).update_user_details(user_params)
+    |> assent_auth_module(config).add_identity_provider(user_identity_params)
+    |> user_identity_bound_different_user_error()
     |> case do
-      {:ok, user} -> {:ok, user, create_session(conn, user, config)}
-      {:error, error} -> {:error, error, conn}
+      {:ok, _user_identity} ->
+        {:ok, {:add_identity_provider, user}}
+
+      {:error, changeset} ->
+        {:error, {:add_identity_provider, changeset}}
     end
   end
 
@@ -289,23 +189,18 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> assent_auth_module(config).delete_identity_providers(user)
   end
 
-  defp maybe_send_confirmation_email(
-         %{private: %{assent_callback_state: {:ok, _method}}} = conn,
+  defp maybe_require_email_confirmation(
+         user,
          config
        ) do
-    user = current_user(conn, config)
-
     if assent_auth_module(config).email_confirmed?(user) do
-      conn
+      {:ok, false}
     else
       deliver_user_confirmation_instructions(user, config)
 
-      conn
-      |> Plug.Conn.put_private(:assent_callback_state, {:ok, :email_confirmation_required})
+      {:ok, true}
     end
   end
-
-  defp maybe_send_confirmation_email(conn, _config), do: conn
 
   ### Utility functions
 
@@ -328,22 +223,12 @@ defmodule OliWeb.Common.AssentAuthWeb do
   end
 
   defp current_user(%{assigns: assigns}, config) do
-    key = current_user_assigns_key(config)
+    key = Map.get(config, :current_user_assigns_key, :current_user)
 
     Map.get(assigns, key)
   end
 
-  defp assign_current_user(conn, user, config) do
-    key = current_user_assigns_key(config)
-
-    Plug.Conn.assign(conn, key, user)
-  end
-
-  defp current_user_assigns_key(config) do
-    Map.get(config, :current_user_assigns_key, :current_user)
-  end
-
-  defp create_session(conn, user, %AssentAuthWebConfig{
+  defp create_session(conn, user, %AssentAuthWeb.Config{
          create_session: create_session
        }) do
     create_session.(conn, user)

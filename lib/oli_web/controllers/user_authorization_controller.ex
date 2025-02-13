@@ -9,7 +9,6 @@ defmodule OliWeb.UserAuthorizationController do
   alias Oli.AssentAuth.UserAssentAuth
   alias OliWeb.UserAuth
   alias OliWeb.Common.AssentAuthWeb
-  alias OliWeb.Common.AssentAuthWeb.AssentAuthWebConfig
 
   require Logger
 
@@ -87,31 +86,30 @@ defmodule OliWeb.UserAuthorizationController do
 
     # The session params (used for OAuth 2.0 and OIDC strategies) stored in the
     # request phase will be used in the callback phase
-
     redirect_to = conn.assigns[:user_return_to] || ~p"/users/log_in"
 
-    provider
-    |> AssentAuthWeb.provider_callback(params, conn.assigns.session_params, config)
-    |> case do
-      {:ok, %{user: user} = response} ->
-        # Authorization successful
-        other_params =
-          response
-          |> Map.delete(:user)
-          |> Map.put(:userinfo, user)
-
+    case AssentAuthWeb.provider_callback(provider, params, conn.assigns.session_params, config) do
+      # Authorization successful
+      {:ok, %{user: user_params} = _response} ->
         case AssentAuthWeb.handle_authorization_success(
                conn,
                provider,
-               user,
-               other_params,
+               user_params,
                config
              ) do
-          {:ok, conn} ->
+          {:ok, :add_identity_provider, conn} ->
+            conn
+            |> put_flash(
+              :info,
+              "Successfully added #{String.capitalize(provider)} authentication provider."
+            )
+            |> redirect(to: redirect_to)
+
+          {:ok, _status, conn} ->
             conn
             |> redirect(to: redirect_to)
 
-          {:email_confirmation_required, conn} ->
+          {:email_confirmation_required, _status, conn} ->
             conn
             |> put_flash(
               :info,
@@ -119,11 +117,11 @@ defmodule OliWeb.UserAuthorizationController do
             )
             |> redirect(to: ~p"/users/confirm")
 
-          {:error, conn, error} ->
+          {:error, error, conn} ->
             Logger.error("Error handling authorization success: #{inspect(error)}")
 
             case error do
-              {:upsert_user_identity, {:bound_to_different_user, _changeset}} ->
+              {:add_identity_provider, {:bound_to_different_user, _changeset}} ->
                 conn
                 |> put_flash(
                   :error,
@@ -162,7 +160,7 @@ defmodule OliWeb.UserAuthorizationController do
     conn
     |> Plug.Conn.assign(
       :assent_auth_config,
-      %AssentAuthWebConfig{
+      %AssentAuthWeb.Config{
         authentication_providers: UserAssentAuth.authentication_providers(),
         redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
         current_user_assigns_key: :current_user,
