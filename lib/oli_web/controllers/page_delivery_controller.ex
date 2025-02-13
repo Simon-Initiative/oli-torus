@@ -702,6 +702,8 @@ defmodule OliWeb.PageDeliveryController do
        ) do
     section = conn.assigns.section
 
+    author = conn.assigns[:current_author]
+
     layout = "chromeless.html"
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
@@ -747,7 +749,6 @@ defmodule OliWeb.PageDeliveryController do
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
-        isInstructor: true,
         reviewMode: context.review_mode,
         overviewURL: ~p"/sections/#{section_slug}",
         finalizeGradedURL:
@@ -756,7 +757,10 @@ defmodule OliWeb.PageDeliveryController do
             :transition
           ),
         screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+        isAuthor: !is_nil(author),
+        isAdmin: Accounts.is_admin?(author),
+        isInstructor: context.is_instructor
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
