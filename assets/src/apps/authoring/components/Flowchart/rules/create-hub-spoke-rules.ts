@@ -1,5 +1,4 @@
 import {
-  IAction,
   IActivity,
   ICondition,
   IHubSpokePartLayout,
@@ -10,13 +9,7 @@ import {
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
 import { OptionCommonErrorPath } from '../paths/path-types';
-import {
-  isAlwaysPath,
-  isCorrectPath,
-  isIncorrectPath,
-  isOptionCommonErrorPath,
-  isOptionSpecificPath,
-} from '../paths/path-utils';
+import { isAlwaysPath, isCorrectPath, isOptionCommonErrorPath } from '../paths/path-utils';
 import { generateMultipleCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
@@ -36,16 +29,16 @@ export const generateHubSpokeRules = (
 
   const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
-  const incorrectPath = (screen.authoring?.flowchart?.paths || []).find(isIncorrectPath);
   const commonErrorPaths = (screen.authoring?.flowchart?.paths || []).filter(
     isOptionCommonErrorPath,
   );
-  console.log({ commonErrorPaths, isOptionSpecificPath, correctPath, incorrectPath });
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
 
   const spokedCompleteDestination: string[] = commonErrorPaths.map(
     (path) => getSequenceIdFromDestinationPath(path, sequence) || '',
   );
+  const correctCombinations = getCombinations(commonErrorPaths, 3);
+  console.log({ correctCombinations });
   const correct: Required<IConditionWithFeedback> = {
     conditions: createSpokeCorrectCondition(spokedCompleteDestination),
     feedback: question.custom.correctFeedback || '',
@@ -64,7 +57,6 @@ export const generateHubSpokeRules = (
     ),
     feedback: "You've already visited this screen. Please select another screen or click Next.",
   }));
-  console.log({ incorrect });
   const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map(
     (path) => ({
       conditions: createSpokeCommonPathCondition(
@@ -76,17 +68,6 @@ export const generateHubSpokeRules = (
       destinationId: getSequenceIdFromDestinationPath(path, sequence),
     }),
   );
-  const disableAction: IAction = {
-    // Disables the mcq so the correct answer can not be unselected
-    type: 'mutateState',
-    params: {
-      value: 'false',
-      target: `stage.${question.id}.enabled`,
-      operator: '=',
-      targetType: 4,
-    },
-  };
-
   const blankCondition: ICondition = createCondition(
     `stage.${question.id}.selectedChoice`,
     '-1',
@@ -97,12 +78,36 @@ export const generateHubSpokeRules = (
     correct,
     incorrect,
     spokeSpecificConditionsFeedback,
-    disableAction,
     blankCondition,
   );
 };
 
+const getCombinations = (arr: any[], groupSize: number) => {
+  if (groupSize > arr.length || groupSize <= 0) return [];
+
+  const result: any[][] = [];
+
+  function combine(start: number, combination: any[]) {
+    if (combination.length === groupSize) {
+      result.push([...combination]);
+      return;
+    }
+
+    for (let i = start; i < arr.length; i++) {
+      combination.push(arr[i]);
+      combine(i + 1, combination);
+      combination.pop();
+    }
+  }
+
+  combine(0, []);
+  return result;
+};
+
 export const createSpokeCorrectCondition = (correctScreens: any): ICondition[] => {
+  console.log('Number of spoke required - 1 ', getCombinations(correctScreens, 1));
+  console.log('Number of spoke required - 2 ', getCombinations(correctScreens, 2));
+  console.log('Number of spoke required - 3 ', getCombinations(correctScreens, 3));
   const correctconditions = correctScreens
     .filter((screen: string) => screen?.length)
     .map((correctScreen: any) => {
