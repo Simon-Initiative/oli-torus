@@ -6,12 +6,12 @@ defmodule Oli.Delivery.GrantedCertificates do
   alias Ecto.Changeset
   alias ExAws.Lambda
   alias Oli.Delivery.Sections.GrantedCertificate
+  alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.{HTTP, Repo}
 
-  # TODO: Change once we know where we'll generate the granted certificate HTML
-  @certificate_html ""
-
-  @generate_pdf_lambda_function "generate_certificate_pdf_from_html"
+  def get_granted_certificate_by_guid(guid) do
+    Repo.get_by(GrantedCertificate, guid: guid)
+  end
 
   def generate_pdf(granted_certificate_id) do
     case Repo.get(GrantedCertificate, granted_certificate_id) do
@@ -22,9 +22,8 @@ defmodule Oli.Delivery.GrantedCertificates do
         {:error, :granted_certificate_already_has_url}
 
       gc ->
-        @generate_pdf_lambda_function
-        |> Lambda.invoke(%{certificate_id: gc.guid, html: @certificate_html}, %{})
-        |> aws_request()
+        gc.guid
+        |> invoke_lambda(CertificateRenderer.render(gc))
         |> case do
           {:error, error} ->
             {:error, :invoke_lambda_error, error}
@@ -32,7 +31,7 @@ defmodule Oli.Delivery.GrantedCertificates do
           {:ok, result} ->
             if result["statusCode"] == 200 do
               gc
-              |> Changeset.change(url: result["body"]["s3Path"])
+              |> Changeset.change(url: certificate_s3_url(gc.guid))
               |> Repo.update()
             else
               {:error, :error_generating_pdf, result}
@@ -41,5 +40,16 @@ defmodule Oli.Delivery.GrantedCertificates do
     end
   end
 
-  defp aws_request(operation), do: apply(HTTP.aws(), :request, [operation])
+  defp certificate_s3_url(guid) do
+    s3_pdf_bucket = Application.fetch_env!(:oli, :certificates)[:s3_pdf_bucket]
+    "https://#{s3_pdf_bucket}.s3.amazonaws.com/certificates/#{guid}.pdf"
+  end
+
+  defp invoke_lambda(guid, html) do
+    :oli
+    |> Application.fetch_env!(:certificates)
+    |> Keyword.fetch!(:generate_pdf_lambda)
+    |> Lambda.invoke(%{certificate_id: guid, html: html}, %{})
+    |> HTTP.aws().request()
+  end
 end
