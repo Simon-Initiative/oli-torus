@@ -105,9 +105,10 @@ defmodule Oli.Analytics.Datasets do
   def lookup_url(%DatasetJob{job_id: job_id}) do
     file_path = "contexts/#{job_id}.json"
 
-    {:ok, url} = :s3
-    |> ExAws.Config.new([])
-    |> ExAws.S3.presigned_url(:get, Settings.context_bucket(), file_path, [])
+    {:ok, url} =
+      :s3
+      |> ExAws.Config.new([])
+      |> ExAws.S3.presigned_url(:get, Settings.context_bucket(), file_path, [])
 
     # Now parse off the query string, as we don't want to expose the signed URL
     case String.split(url, "?") do

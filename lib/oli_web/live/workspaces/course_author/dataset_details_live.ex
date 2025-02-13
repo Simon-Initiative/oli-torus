@@ -71,15 +71,20 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetDetailsLive do
           some amount of post-processing may be needed to extract information such as
           the text of a question stem from the raw data available in the dataset.</p>
 
-        <p class="mb-2">Each dataset job has an associated
-          <strong>lookup data</strong> file that can be used for this purpose. The lookup data
+        <p class="mb-2">
+          Each dataset job has an associated <strong>lookup data</strong>
+          file that can be used for this purpose. The lookup data
           file is a JSON file that contains a mapping of the data in the dataset job to the
           original data in the source system.
         </p>
         <p class="mb-2"><a href={@lookup_url}><%= @lookup_url %></a></p>
 
-        <p>Some example Python code for using the above lookup file can be found in the following
-        GitHub repository: <a href="https://github.com/Simon-Initiative/dataset">https://github.com/Simon-Initiative/dataset</a>
+        <p>
+          Some example Python code for using the above lookup file can be found in the following
+          GitHub repository:
+          <a href="https://github.com/Simon-Initiative/dataset">
+            https://github.com/Simon-Initiative/dataset
+          </a>
         </p>
       </div>
     </div>
