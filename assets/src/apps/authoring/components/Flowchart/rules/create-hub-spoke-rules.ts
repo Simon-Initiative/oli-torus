@@ -55,35 +55,27 @@ export const generateHubSpokeRules = (
         sequence,
       ) || 'unknown',
   };
-  const commonErrorConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map((path) => ({
-    conditions: createSpokeCommonPathCondition(
+
+  const incorrect: Required<IConditionWithFeedback[]> = commonErrorPaths.map((path) => ({
+    conditions: createSpokeDuplicatePathCondition(
       path,
       question,
       getSequenceIdFromDestinationPath(path, sequence),
     ),
-    feedback: commonErrorFeedback[path.selectedOption - 1] || question.custom?.spokeFeedback,
-    destinationId: getSequenceIdFromDestinationPath(path, sequence),
+    feedback: "You've already visited this screen. Please select another screen or click Next.",
   }));
-
-  console.log({ commonErrorConditionsFeedback });
-  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
-    (answer: boolean) => answer === true,
+  console.log({ incorrect });
+  const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map(
+    (path) => ({
+      conditions: createSpokeCommonPathCondition(
+        path,
+        question,
+        getSequenceIdFromDestinationPath(path, sequence),
+      ),
+      feedback: commonErrorFeedback[path.selectedOption - 1] || question.custom?.spokeFeedback,
+      destinationId: getSequenceIdFromDestinationPath(path, sequence),
+    }),
   );
-
-  commonErrorFeedback.forEach((feedback, index) => {
-    if (feedback && index !== correctIndex) {
-      const path = commonErrorPaths.find((path) => path.selectedOption === index + 1);
-      if (!path) {
-        commonErrorConditionsFeedback.push({
-          conditions: [
-            createCondition(`stage.${question.id}.selectedChoice`, String(index + 1), 'equal'),
-          ],
-          feedback,
-        });
-      }
-    }
-  });
-
   const disableAction: IAction = {
     // Disables the mcq so the correct answer can not be unselected
     type: 'mutateState',
@@ -103,7 +95,8 @@ export const generateHubSpokeRules = (
 
   return generateMultipleCorrectWorkflow(
     correct,
-    commonErrorConditionsFeedback,
+    incorrect,
+    spokeSpecificConditionsFeedback,
     disableAction,
     blankCondition,
   );
@@ -142,6 +135,20 @@ const createSpokeCommonPathCondition = (
   if (Number.isInteger(path.selectedOption)) {
     return [
       createCondition(`session.visits.${destinationScreenId}`, '0', 'equal'),
+      createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
+    ];
+  }
+  return [createNeverCondition()];
+};
+
+const createSpokeDuplicatePathCondition = (
+  path: OptionCommonErrorPath,
+  question: IHubSpokePartLayout,
+  destinationScreenId: string | undefined,
+) => {
+  if (Number.isInteger(path.selectedOption)) {
+    return [
+      createCondition(`session.visits.${destinationScreenId}`, '1', 'equal'),
       createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
     ];
   }

@@ -74,6 +74,7 @@ export const generateAllCorrectWorkflow = (
 */
 export const generateMultipleCorrectWorkflow = (
   defaultPath: Required<IConditionWithFeedback>,
+  incorrect: IConditionWithFeedback[],
   specificPaths: IConditionWithFeedback[],
   disableAction: IAction,
   blankCondition: ICondition,
@@ -108,6 +109,20 @@ export const generateMultipleCorrectWorkflow = (
         path.conditions.map(newId),
         path.destinationId || null,
         true,
+        30,
+        path.feedback,
+        [disableAction],
+      ),
+    );
+  }
+
+  for (const path of incorrect.filter((e) => !e.destinationId)) {
+    rules.push(
+      generateRule(
+        `common-error--${rules.length}`,
+        path.conditions.map(newId),
+        path.destinationId || null,
+        false,
         30,
         path.feedback,
         [disableAction],
