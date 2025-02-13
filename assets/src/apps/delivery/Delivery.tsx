@@ -84,7 +84,6 @@ const Delivery: React.FC<DeliveryProps> = ({
   const screenIdleExpirationTime = useSelector(selectScreenIdleExpirationTime);
   const screenIdleTimeOutTriggered = useSelector(selectScreenIdleTimeOutTriggered);
 
-  console.log({ isAdmin, isInstructor, isAuthor });
   const [currentTheme, setCurrentTheme] = useState('auto');
   // Gives us the deadline for this assessment to be completed by.
   // We subtract out the server time and add in our local time in case the client system clock is off.
