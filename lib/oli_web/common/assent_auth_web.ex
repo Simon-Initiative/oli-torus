@@ -63,18 +63,19 @@ defmodule OliWeb.Common.AssentAuthWeb do
   def handle_authorization_success(conn, provider, user, other_params, config) do
     user
     |> normalize_username()
-    |> split_user_identity_params()
-    |> handle_user_identity_params(other_params, provider)
-    |> put_private_callback_state(conn)
+    |> build_user_identity_params(other_params, provider, conn)
     |> maybe_authenticate(config)
     |> maybe_upsert_user_identity(config)
     |> create_or_update_user(config)
+    # Regardless of whether the user was just created or updated, we will send a confirmation
+    # email if the user's email has not yet been confirmed.
+    |> maybe_send_confirmation_email(config)
     |> case do
-      # Regardless of whether the user was just created or updated, we will send a confirmation
-      # email if the user's email has not yet been confirmed.
+      %{private: %{assent_callback_state: {:ok, :email_confirmation_required}}} = conn ->
+        {:email_confirmation_required, conn}
+
       %{private: %{assent_callback_state: {:ok, _method}}} = conn ->
-        conn
-        |> maybe_send_confirmation_email(config)
+        {:ok, conn}
 
       %{private: %{assent_callback_state: {:error, error}, assent_callback_error: changeset}} =
           conn ->
@@ -93,33 +94,29 @@ defmodule OliWeb.Common.AssentAuthWeb do
 
   defp normalize_username(params), do: params
 
-  defp split_user_identity_params(%{"sub" => uid} = params) do
-    {%{"uid" => uid}, params}
-  end
-
-  defp handle_user_identity_params(
-         {user_identity_params, user_params},
-         other_params,
-         provider
-       ) do
-    user_identity_params = Map.put(user_identity_params, "provider", provider)
+  defp build_user_identity_params(%{"sub" => uid} = user_params, other_params, provider, conn) do
+    # Convert other_params keys to strings
     other_params = for {key, value} <- other_params, into: %{}, do: {Atom.to_string(key), value}
 
+    # Merge user params with provider and other params
     user_identity_params =
-      user_identity_params
+      %{"uid" => uid}
       |> Map.put("provider", provider)
       |> Map.merge(other_params)
 
-    {user_identity_params, user_params}
-  end
-
-  defp put_private_callback_state({user_identity_params, user_params}, conn) do
     conn
     |> Plug.Conn.put_private(:assent_callback_state, {:ok, :strategy})
     |> Plug.Conn.put_private(:assent_callback_params, %{
       user_identity: user_identity_params,
       user: user_params
     })
+  end
+
+  defp build_user_identity_params(user_params, _other_params, _provider, conn) do
+    Logger.error("No sub found in user params: #{inspect(user_params)}")
+
+    conn
+    |> Plug.Conn.put_private(:assent_callback_state, {:error, :invalid_user_identity_params})
   end
 
   defp maybe_authenticate(
@@ -183,6 +180,8 @@ defmodule OliWeb.Common.AssentAuthWeb do
         end
     end
   end
+
+  defp maybe_upsert_user_identity(conn, _config), do: conn
 
   ## Will upsert identity for the current user. If successful, a new session will be created.
   defp upsert_identity(
@@ -249,6 +248,8 @@ defmodule OliWeb.Common.AssentAuthWeb do
     end
   end
 
+  defp create_or_update_user(conn, _config), do: conn
+
   ## Create a user with the provider and provider user params.
   defp create_user(conn, user_identity_params, user_params, config) do
     user_identity_params
@@ -288,17 +289,23 @@ defmodule OliWeb.Common.AssentAuthWeb do
     |> assent_auth_module(config).delete_identity_providers(user)
   end
 
-  defp maybe_send_confirmation_email(conn, config) do
+  defp maybe_send_confirmation_email(
+         %{private: %{assent_callback_state: {:ok, _method}}} = conn,
+         config
+       ) do
     user = current_user(conn, config)
 
     if assent_auth_module(config).email_confirmed?(user) do
-      {:ok, conn}
+      conn
     else
       deliver_user_confirmation_instructions(user, config)
 
-      {:email_confirmation_required, conn}
+      conn
+      |> Plug.Conn.put_private(:assent_callback_state, {:ok, :email_confirmation_required})
     end
   end
+
+  defp maybe_send_confirmation_email(conn, _config), do: conn
 
   ### Utility functions
 
