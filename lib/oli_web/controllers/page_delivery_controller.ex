@@ -757,7 +757,10 @@ defmodule OliWeb.PageDeliveryController do
             :transition
           ),
         screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+        isAuthor: !is_nil(author),
+        isAdmin: Accounts.is_admin?(author),
+        isInstructor: context.is_instructor
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions
@@ -787,10 +790,7 @@ defmodule OliWeb.PageDeliveryController do
       section_slug: section_slug,
       slug: context.page.slug,
       scripts: Activities.get_activity_scripts(:delivery_script),
-      title: context.page.title,
-      isAuthor: !is_nil(author),
-      isAdmin: Accounts.is_admin?(author),
-      isInstructor: context.is_instructor
+      title: context.page.title
     })
   end
 
