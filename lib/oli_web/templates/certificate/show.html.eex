@@ -1,7 +1,10 @@
-<div class="container">
+<div class="h-screen w-screen bg-primary-24 flex flex-col items-center">
   <%= if @certificate do %>
-    <pre><%= inspect(@certificate, pretty: true) %></pre>
+    <embed src=<%= @certificate_url %> type="application/pdf" style="width: 66vw; height: 66vh;">
+    <p class="text-blue-400 mt-4">
+    Certificate ID: <span class="font-semibold"><%= @certificate.guid %></span>
+    </p>
   <% else %>
-    <p>No certificate found.</p>
+      <h2>No certificate found.</h2>
   <% end %>
 </div>
