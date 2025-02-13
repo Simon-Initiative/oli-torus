@@ -123,7 +123,7 @@ defmodule OliWeb.AuthorAuthorizationController do
                 conn
                 |> put_flash(
                   :error,
-                  "An account associated with this email already exists. Please log in with your password to continue."
+                  "An account associated with this email already exists. Please log in with your password or a different provider to continue."
                 )
                 |> redirect(to: redirect_to)
 

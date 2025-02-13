@@ -254,8 +254,6 @@ defmodule Oli.Accounts.Author do
   def details_changeset(author, attrs \\ %{}) do
     author
     |> cast(attrs, [
-      :email,
-      :email_verified,
       :name,
       :given_name,
       :family_name,
