@@ -662,10 +662,13 @@ defmodule Oli.Factory do
   end
 
   def granted_certificate_factory() do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
     %GrantedCertificate{
       guid: UUID.uuid4(),
       user: build(:user),
-      certificate: build(:certificate)
+      certificate: build(:certificate),
+      issued_at: now
     }
   end
 

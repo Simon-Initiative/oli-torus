@@ -1467,6 +1467,22 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Deletes all the enrollment invitation tokens for a list of emails in a given section.
+  """
+
+  def delete_enrollment_invitation_tokens(section_slug, emails) do
+    from(
+      ut in UserToken,
+      join: u in User,
+      on: ut.user_id == u.id,
+      where:
+        ut.context == ^"enrollment_invitation:#{section_slug}" and
+          u.email in ^emails
+    )
+    |> Repo.delete_all()
+  end
+
+  @doc """
   Resets the user password.
 
   ## Examples

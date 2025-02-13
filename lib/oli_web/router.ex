@@ -381,10 +381,19 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+
+    live("/products/:product_id/certificate_settings", Certificates.CertificatesSettingsLive,
+      metadata: %{route_name: :authoring}
+    )
 
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
+    )
+
+    get(
+      "/products/:product_id/downloads/granted_certificates",
+      GrantedCertificatesController,
+      :download_granted_certificates
     )
 
     get(
@@ -863,7 +872,14 @@ defmodule OliWeb.Router do
         scope "/:project_id/products" do
           live("/", ProductsLive)
           live("/:product_id", Products.DetailsLive)
-          live("/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+
+          scope "/", alias: false do
+            live(
+              "/:product_id/certificate_settings",
+              OliWeb.Certificates.CertificatesSettingsLive,
+              metadata: %{route_name: :workspaces}
+            )
+          end
         end
       end
     end

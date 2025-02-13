@@ -16,7 +16,7 @@ defmodule Oli.Interop.ExportTest do
     required_class_notes: 12,
     min_percentage_for_completion: 0.9,
     min_percentage_for_distinction: 0.99,
-    assessments_apply_to: :custom,
+    assessments_apply_to: :all,
     custom_assessments: [],
     requires_instructor_approval: true,
     title: "My Certificate",

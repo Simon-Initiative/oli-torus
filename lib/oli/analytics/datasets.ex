@@ -105,13 +105,14 @@ defmodule Oli.Analytics.Datasets do
 
   1. Initialize the job with the provided configuration, generating a unique job ID
   2. Preprocess the job configuration, depending on the job type
-  3. Submit the job to the EMR serverless environment
-  4. Persist the job to the database
+  3. Stage the lookup data in S3 for the job
+  4. Submit the job to the EMR serverless environment
+  5. Persist the job to the database
 
-  Any of steps 2-4 can fail, in which case the job will not be persisted to the database
+  Any of steps 2-5 can fail, in which case the job will not be persisted to the database
   and an error will be returned.  The error will be logged to the console. If the job
-  submission fails in step 3, it is okay that the context had been successfully
-  staged in step 2, as the staging is done in a way that is idempotent for job ids, but more
+  submission fails in step 4, it is okay that the context had been successfully
+  staged in step 3, as the staging is done in a way that is idempotent for job ids, but more
   importantly, retries of the entire job creation process results in a new context
   being staged in S3 for a new job id.
 
@@ -128,6 +129,7 @@ defmodule Oli.Analytics.Datasets do
 
     with {:ok, job} <- init(job_type, project_id, initiated_by_id, config),
          {:ok, job} <- preprocess(job),
+         {:ok, job} <- stage_lookup_data(job),
          {:ok, job} <- submit(job),
          {:ok, job} <- persist(job) do
       Logger.info(
@@ -495,13 +497,16 @@ defmodule Oli.Analytics.Datasets do
   defp preprocess(%DatasetJob{job_type: :datashop} = job) do
     job = set_ignore_student_ids(job)
 
-    result =
-      build_json_context(job)
-      |> stage_json_context(job)
-
     Logger.debug("Preprocessed dataset job #{job.job_id}")
 
-    result
+    {:ok, job}
+  end
+
+  defp stage_lookup_data(%DatasetJob{} = job) do
+    Logger.debug("Staging lookup data for dataset job #{job.job_id}")
+
+    build_json_context(job)
+    |> stage_json_context(job)
   end
 
   defp set_ignore_student_ids(%DatasetJob{configuration: config} = job) do
@@ -510,9 +515,9 @@ defmodule Oli.Analytics.Datasets do
     %DatasetJob{job | configuration: config}
   end
 
-  defp build_json_context(%DatasetJob{project_id: project_id}) do
+  defp build_json_context(%DatasetJob{project_id: project_id, configuration: config}) do
     result =
-      Oli.Analytics.Datasets.Utils.context_sql()
+      Oli.Analytics.Datasets.Utils.context_sql(config.section_ids)
       |> Repo.query([project_id, project_id, project_id, project_id])
 
     case result do

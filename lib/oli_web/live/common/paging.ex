@@ -34,7 +34,7 @@ defmodule OliWeb.Common.Paging do
     ~H"""
     <div
       id={@id}
-      class={"d-flex justify-content-between items-center px-5 py-2 " <> if Map.get(@params, :rendered_pages_count) == 1, do: "justify-end", else: ""}
+      class={"d-flex justify-content-between items-center py-2 " <> if Map.get(@params, :rendered_pages_count) == 1, do: "justify-end", else: ""}
     >
       <div :if={@show_pagination}><%= @params.label %></div>
       <div :if={@should_add_empty_flex} class="flex-1"></div>

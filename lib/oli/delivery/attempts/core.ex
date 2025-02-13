@@ -1022,4 +1022,15 @@ defmodule Oli.Delivery.Attempts.Core do
     )
     |> Repo.one()
   end
+
+  @doc """
+  Preloads `activity_attempts` and their associated `part_attempts` for a given resource attempt or list of attempts.
+
+  This allows fetching detailed attempt data only when needed, avoiding unnecessary preloading in other queries.
+  """
+  def preload_activity_part_attempts(resource_attempts) do
+    Repo.preload(resource_attempts,
+      activity_attempts: [:part_attempts]
+    )
+  end
 end

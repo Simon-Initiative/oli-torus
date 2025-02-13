@@ -62,6 +62,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
        options: options,
        project: project,
        total_count: total_count,
+       anonymize: true,
        section_ids: [],
        emails: [],
        emails_valid?: true,
@@ -166,6 +167,16 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
           phx-hook="TextInputListener"
           placeholder="Email addresses separated by commas"
         />
+
+        <div class="inline-flex py-2 mb-2">
+          <span>Anonymize student identifiers</span>
+          <.toggle_switch
+            class="ml-4"
+            checked={@anonymize}
+            on_toggle="toggle_anonymize"
+            name="toggle_anonymize"
+          />
+        </div>
       <% end %>
 
       <p class="mt-5">
@@ -272,11 +283,17 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
     end
   end
 
+  def handle_event("toggle_anonymize", _params, socket) do
+    anonymize = socket.assigns.anonymize
+    {:noreply, assign(socket, anonymize: !anonymize)}
+  end
+
   @impl true
   def handle_event("create_job", _params, socket) do
     project_id = socket.assigns.project.id
     initiated_by_id = socket.assigns.author.id
     section_ids = socket.assigns.section_ids
+    anonymize = socket.assigns.anonymize
 
     # Get the true job type and a default config based on the selected job shortcut
     {job_type, job_config} = JobShortcuts.configure(socket.assigns.shortcut.value, section_ids)
@@ -294,6 +311,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
         _ ->
           job_config
       end
+
+    # Update the anonymize field in the job config
+    job_config = %{job_config | anonymize: anonymize}
 
     # Invoke the job asynchronously
     pid = self()

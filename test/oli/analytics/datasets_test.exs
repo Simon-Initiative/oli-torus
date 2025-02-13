@@ -25,7 +25,8 @@ defmodule Oli.Analytics.Datasets.Test do
         event_type: "attempt_e",
         event_sub_types: [],
         ignored_student_ids: [],
-        excluded_fields: []
+        excluded_fields: [],
+        anonymize: true
       }
     }
 
