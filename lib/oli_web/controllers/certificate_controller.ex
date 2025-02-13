@@ -21,7 +21,7 @@ defmodule OliWeb.CertificateController do
 
   defp recaptcha_verified?(params) do
     recaptcha_response = Map.get(params, "g-recaptcha-response", "")
-    Oli.Utils.Recaptcha.verify(recaptcha_response) == {:success, true}
+    Oli.Recaptcha.verify(recaptcha_response) == {:success, true}
   end
 
   defp s3_certificate_url(%{guid: guid}),
