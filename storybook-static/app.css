@@ -4615,6 +4615,10 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: 3.5rem;
 }
 
+.mb-16 {
+  margin-bottom: 4rem;
+}
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -5796,6 +5800,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 500px;
 }
 
+.w-\[50ch\] {
+  width: 50ch;
+}
+
 .w-\[56px\] {
   width: 56px;
 }
@@ -5877,6 +5885,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-px {
   width: 1px;
+}
+
+.w-screen {
+  width: 100vw;
 }
 
 .min-w-0 {
@@ -7243,6 +7255,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(115 115 115 / var(--tw-border-opacity));
 }
 
+.border-gray-600 {
+  --tw-border-opacity: 1;
+  border-color: rgb(82 82 82 / var(--tw-border-opacity));
+}
+
 .border-gray-700 {
   --tw-border-opacity: 1;
   border-color: rgb(64 64 64 / var(--tw-border-opacity));
@@ -7464,6 +7481,11 @@ table.table-striped tbody tr:nth-child(even) {
 
 .bg-\[\#3E7981\]\/\[\.25\] {
   background-color: rgb(62 121 129 / .25);
+}
+
+.bg-\[\#4CA6FF\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(76 166 255 / var(--tw-bg-opacity));
 }
 
 .bg-\[\#5798f8\] {
@@ -8863,6 +8885,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .pt-20 {
   padding-top: 5rem;
+}
+
+.pt-24 {
+  padding-top: 6rem;
 }
 
 .pt-3 {
@@ -13870,6 +13896,11 @@ Not supports in Firefox and IE */
 
 .hover\:bg-black\/\[\.2\]:hover {
   background-color: rgb(0 0 0 / .2);
+}
+
+.hover\:bg-blue-400:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(93 141 219 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-blue-500:hover {
