@@ -7,11 +7,10 @@ defmodule OliWeb.Common.AssentAuthWebTest do
   alias Oli.AssentAuth.{AuthorAssentAuth, AuthorIdentity}
   alias OliWeb.AuthorAuth
   alias OliWeb.Common.AssentAuthWeb
-  alias OliWeb.Common.AssentAuthWeb.AssentAuthWebConfig
   alias Swoosh.TestAssertions
 
   defp test_config(),
-    do: %AssentAuthWebConfig{
+    do: %AssentAuthWeb.Config{
       authentication_providers: [
         google: [
           client_id: "some_client_id",
@@ -39,7 +38,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       %{conn: conn}
     end
 
-    test "handle_authorization_success/5 handles successful authorization of existing author", %{
+    test "handle_authorization_success/4 handles successful authorization of existing author", %{
       conn: conn
     } do
       author =
@@ -57,15 +56,13 @@ defmodule OliWeb.Common.AssentAuthWebTest do
         "email_verified" => true
       }
 
-      other_params = %{}
       config = test_config()
 
-      {:ok, conn} =
+      {:ok, :authenticate, conn} =
         AssentAuthWeb.handle_authorization_success(
           conn,
           provider,
           author,
-          other_params,
           config
         )
 
@@ -76,7 +73,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       TestAssertions.assert_no_email_sent()
     end
 
-    test "handle_authorization_success/5 handles successful authorization of new author", %{
+    test "handle_authorization_success/4 handles successful authorization of new author", %{
       conn: conn
     } do
       provider = "google"
@@ -91,15 +88,13 @@ defmodule OliWeb.Common.AssentAuthWebTest do
         "email_verified" => true
       }
 
-      other_params = %{}
       config = test_config()
 
-      {:ok, _conn} =
+      {:ok, :create_user, _conn} =
         AssentAuthWeb.handle_authorization_success(
           conn,
           provider,
           author,
-          other_params,
           config
         )
 
@@ -107,7 +102,7 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       TestAssertions.assert_no_email_sent()
     end
 
-    test "handle_authorization_success/5 returns email_confirmation_required", %{
+    test "handle_authorization_success/4 returns email_confirmation_required", %{
       conn: conn
     } do
       provider = "google"
@@ -121,15 +116,13 @@ defmodule OliWeb.Common.AssentAuthWebTest do
         "sub" => "123"
       }
 
-      other_params = %{}
       config = test_config()
 
-      {:email_confirmation_required, _conn} =
+      {:email_confirmation_required, :create_user, _conn} =
         AssentAuthWeb.handle_authorization_success(
           conn,
           provider,
           author,
-          other_params,
           config
         )
 

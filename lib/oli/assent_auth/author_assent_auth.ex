@@ -50,34 +50,25 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   end
 
   @doc """
-  Upserts a user identity.
-
-  If a matching user identity already exists for the user, the identity will be updated,
-  otherwise a new identity is inserted.
+  Gets a user by identity provider and uid.
   """
-  def upsert_identity(user, author_identity_params) do
-    {uid_provider_params, _additional_params} =
-      Map.split(author_identity_params, ["uid", "provider"])
-
-    get_for_user(user, uid_provider_params)
-    |> case do
-      nil -> insert_identity(user, uid_provider_params)
-      identity -> update_identity(identity, uid_provider_params)
-    end
+  def get_user_by_provider_uid(provider, uid) do
+    from(user in Author,
+      join: author_identity in assoc(user, :user_identities),
+      where: author_identity.provider == ^provider and author_identity.uid == ^uid
+    )
+    |> Repo.one()
   end
 
-  defp insert_identity(user, uid_provider_params) do
-    author_identity = Ecto.build_assoc(user, :user_identities)
-
-    author_identity
-    |> author_identity.__struct__.changeset(uid_provider_params)
-    |> Repo.insert()
-  end
-
-  defp update_identity(author_identity, uid_provider_params) do
-    author_identity
-    |> author_identity.__struct__.changeset(uid_provider_params)
-    |> Repo.update()
+  @doc """
+  Gets a user with identities.
+  """
+  def get_user_with_identities(user_id) do
+    from(user in Author,
+      where: user.id == ^user_id,
+      preload: [:user_identities]
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -101,28 +92,17 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   end
 
   @doc """
-  Gets a user by identity provider and uid.
+  Adds an identity provider.
   """
-  def get_user_by_provider_uid(provider, uid) do
-    from(user in Author,
-      join: author_identity in assoc(user, :user_identities),
-      where: author_identity.provider == ^provider and author_identity.uid == ^uid
-    )
-    |> Repo.one()
-  end
+  def add_identity_provider(author, author_identity_params) do
+    {uid_provider_params, _additional_params} =
+      Map.split(author_identity_params, ["uid", "provider"])
 
-  defp get_for_user(author, %{"uid" => uid, "provider" => provider}) do
-    author_identity = Ecto.build_assoc(author, :user_identities).__struct__
+    author_identity = Ecto.build_assoc(author, :user_identities)
 
-    Repo.get_by(author_identity, user_id: author.id, provider: provider, uid: uid)
-  end
-
-  def get_user_with_identities(user_id) do
-    from(user in Author,
-      where: user.id == ^user_id,
-      preload: [:user_identities]
-    )
-    |> Repo.one()
+    author_identity
+    |> AuthorIdentity.changeset(uid_provider_params)
+    |> Repo.insert()
   end
 
   @doc """
