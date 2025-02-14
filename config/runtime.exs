@@ -79,6 +79,11 @@ config :oli, :user_auth_providers,
          ]
      end)
 
+config :oli, :certificates,
+  generate_pdf_lambda:
+    System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate_certificate_pdf_from_html"),
+  s3_pdf_bucket: System.get_env("CERTIFICATES_S3_PDF_URL", "torus-pdf-certificates")
+
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production
 ###############################################################################

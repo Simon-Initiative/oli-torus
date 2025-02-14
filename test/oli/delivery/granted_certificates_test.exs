@@ -19,7 +19,7 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       end)
 
       assert {:ok, _multi} = GrantedCertificates.generate_pdf(gc.id)
-      assert Repo.get(GrantedCertificate, gc.id).url == "foo/bar"
+      assert Repo.get(GrantedCertificate, gc.id).url =~ "/certificates/#{gc.guid}.pdf"
     end
 
     test "does not generate a pdf if granted certificate already has a url" do

@@ -1,0 +1,10 @@
+<div class="h-screen w-screen bg-primary-24 flex flex-col items-center">
+  <%= if @certificate do %>
+    <embed src=<%= @certificate.url %> type="application/pdf" style="width: 66vw; height: 66vh;">
+    <p class="text-blue-400 mt-4">
+    Certificate ID: <span class="font-semibold"><%= @certificate.guid %></span>
+    </p>
+  <% else %>
+      <h2>A certificate with that ID does not exist</h2>
+  <% end %>
+</div>

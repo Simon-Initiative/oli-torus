@@ -1,9 +1,18 @@
 defmodule Oli.Delivery.Certificates.CertificateRendererTest do
-  use ExUnit.Case, async: true
+  use Oli.DataCase
+  import Oli.Factory
 
   alias Oli.Delivery.Certificates.CertificateRenderer
 
-  test "renders certificate template correctly" do
+  test "renders certificate template correctly using a granted certificate" do
+    gc = insert(:granted_certificate)
+
+    rendered_html = CertificateRenderer.render(gc)
+
+    assert rendered_html =~ "Certificate ID: #{gc.guid}"
+  end
+
+  test "renders certificate template correctly using assigns map" do
     assigns = %{
       certificate_type: "Completion Certificate",
       student_name: "John Doe",
