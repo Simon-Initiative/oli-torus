@@ -9,16 +9,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   alias Oli.Analytics.Summary
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.Section
-  alias Oli.Publishing.DeliveryResolver
   alias OliWeb.ManualGrading.RenderedActivity
+  alias Oli.Delivery.Page.ActivityContext
+  alias Oli.Rendering.Context
+  alias Oli.Activities.State.ActivityState
 
   @doc """
   Returns a list of summarizing details for all activities that have been attempted for a given course
   section and page. This function is used to render the Insights View in the instructor dashboard.
 
-  We assemmble this information in the most DB efficient way possible, making only TWO
+  We assemmble this information in the most DB efficient way possible, making only THREE
   total queries to the database. The first query gets the per-student performance summary for all
-  activities on the page. The second query resolves the revisions for each activity.
+  activities on the page. The second retrieves the response summary and the final query
+  resolves the revisions for each activity.
 
   The returned structure is:
 
@@ -34,33 +37,161 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     datasets: map
   }
   """
-  def summarize_activity_performance(%Section{} = section, page_id) do
+  def summarize_activity_performance(%Section{} = section, page_revision, activity_types_map, students, only_for_activity_ids \\ nil) do
 
-    # Get the per-student performance summary for all activities on the page
-    student_summary = Oli.Analytics.Summary.summarize_activities_for_page(section.id, page_id)
+    page_id = page_revision.resource_id
+    graded = page_revision.graded
+
+    # Get the per-student performance summary for all activities on the page, then group
+    # them by the activity id (which comes back as resource_id)
+    student_summary = Summary.summarize_activities_for_page(section.id, page_id, only_for_activity_ids)
     grouped_by_activity_id = Enum.group_by(student_summary, & &1.resource_id)
 
-    # Then resolve their revisions
+    response_summaries = Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
+
+    # Then resolve the revisions for the activities
     activity_ids = Map.keys(grouped_by_activity_id)
-    revisions = Oli.Publishing.DeliveryResolver.from_resource_ids(activity_ids)
+    revisions_by_resource_id = Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
+    |> Enum.reduce(%{}, fn revision, acc -> Map.put(acc, revision.resource_id, revision) end)
 
-    # Then get the number of attempts for each activity
+    # NOTE: From this point forward, we make no more DB queries
 
+    # Now total up the attempt numbers across all students for each activity
+    attempt_totals = Enum.reduce(activity_ids, %{}, fn activity_id, acc ->
+      total = Enum.reduce(grouped_by_activity_id[activity_id], 0, fn summary, acc -> acc + summary.num_attempts end)
+      Map.put(acc, activity_id, total)
+    end)
 
-    # Render the preview for each activity
+    all_emails = Enum.map(students, & &1.email) |> MapSet.new()
+    ordinal_mapping = build_ordinal_mapping(page_revision)
 
+    # Now we can assemble the final structure for each activity
+    Enum.map(activity_ids, fn activity_id ->
+
+      students_with_attempts = grouped_by_activity_id[activity_id] |> Enum.map(& &1.user_id)
+      revision = case revisions_by_resource_id[activity_id] do
+        nil -> %{title: "Unknown Activity"}
+        revision -> revision
+      end
+
+      # Determine with students have not attempted this activity, all via set difference
+      emails_with_attempts = Enum.filter(response_summaries, fn response_summary -> response_summary.activity_id == activity_id end)
+      |> Enum.map(fn response_summary -> response_summary.user.email end)
+      |> MapSet.new()
+
+      student_emails_without_attempts = MapSet.difference(all_emails, emails_with_attempts) |> MapSet.to_list()
+
+      %{
+        id: activity_id,
+        resource_id: activity_id,
+        graded: graded,
+        title: revision.title,
+        revision: revision,
+        transformed_model: nil,
+        total_attempts_count: attempt_totals[activity_id],
+        students_with_attempts: students_with_attempts,
+        students_with_attempts_count: Enum.count(students_with_attempts),
+        student_emails_without_attempts: student_emails_without_attempts
+      }
+    end)
+    |> stage_performance_details(activity_types_map, response_summaries)
+    |> Enum.map(fn activity ->
+        ordinal = Map.get(ordinal_mapping, activity.resource_id)
+        Map.put(activity, :preview_rendered, fast_preview_render(section, activity.revision, page_id, activity_types_map, ordinal))
+      end)
+  end
+
+  defp fast_preview_render(%Section{slug: section_slug}, revision, page_id, activity_types_map, ordinal) do
+
+    type = Map.get(activity_types_map, revision.activity_type_id)
+    state = ActivityState.create_preview_state(revision.content)
+
+    summary = %Oli.Rendering.Activity.ActivitySummary{
+      id: revision.resource_id,
+      attempt_guid: "fake_attempt_guid",
+      unencoded_model: revision.content,
+      model: ActivityContext.prepare_model(revision.content, [prune: false]),
+      state: ActivityContext.prepare_state(state),
+      lifecycle_state: :evaluated,
+      delivery_element: type.delivery_element,
+      authoring_element: type.authoring_element,
+      script: type.delivery_script,
+      graded: false,
+      bib_refs: [],
+      ordinal: ordinal,
+      variables: %{}
+    }
+
+    %Context{
+      user: %Oli.Accounts.User{},
+      section_slug: section_slug,
+      revision_slug: revision.slug,
+      page_id: page_id,
+      mode: :review,
+      activity_map: Map.put(%{}, revision.resource_id, summary),
+      activity_types_map: activity_types_map,
+      resource_attempt: %Oli.Delivery.Attempts.Core.ResourceAttempt{},
+      is_liveview: true
+    }
+    |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
 
   end
 
+  defp build_ordinal_mapping(revision) do
 
-  def get_activities(assessment_resource_id, section_id, student_ids, filter_by_survey \\ false),
-    do:
-      Core.get_evaluated_activities_for(
-        assessment_resource_id,
-        section_id,
-        student_ids,
-        filter_by_survey
-      )
+    {mapping, _} = revision.content
+    |> Oli.Resources.PageContent.flat_filter(fn e -> e["type"] == "activity-reference" or e["type"] == "selection" end)
+    |> Enum.reduce({%{}, 1}, fn e, {m, ordinal} ->
+
+      case e["type"] do
+        "activity-reference" ->
+          {Map.put(m, e["activity_id"], ordinal), ordinal + 1}
+
+        "selection" ->
+          {m, ordinal + m["count"]}
+
+      end
+    end)
+
+    mapping
+  end
+
+  def stage_performance_details(activities, activity_types_map, response_summaries) do
+    multiple_choice_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
+
+    single_response_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
+
+    multi_input_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} ->
+        if v.title == "Multi Input",
+          do: k
+      end)
+
+    likert_type_id =
+      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
+
+    Enum.map(activities, fn a ->
+      case a.revision.activity_type_id do
+        ^multiple_choice_type_id ->
+          add_choices_frequencies(a, response_summaries)
+
+        ^single_response_type_id ->
+          add_single_response_details(a, response_summaries)
+
+        ^multi_input_type_id ->
+          add_multi_input_details(a, response_summaries)
+
+        ^likert_type_id ->
+          add_likert_details(a, response_summaries)
+
+        _ ->
+          a
+      end
+    end)
+
+  end
 
   @spec get_activities_details(
           any(),
@@ -300,45 +431,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     """
   end
 
-  def add_activity_attempts_info(activity, students, student_ids, section) do
-    students_with_attempts =
-      DeliveryResolver.students_with_attempts_for_page(
-        activity,
-        section,
-        student_ids
-      )
-
-    student_emails_without_attempts =
-      Enum.reduce(students, [], fn s, acc ->
-        if s.id in students_with_attempts do
-          acc
-        else
-          [s.email | acc]
-        end
-      end)
-
-    activity
-    |> Map.put(:students_with_attempts_count, Enum.count(students_with_attempts))
-    |> Map.put(:student_emails_without_attempts, student_emails_without_attempts)
-    |> Map.put(
-      :total_attempts_count,
-      count_student_attempts(activity.resource_id, section, student_ids) || 0
-    )
-  end
-
-  def get_preview_rendered(nil, _activity_types_map, _section), do: nil
-
-  def get_preview_rendered(activity_attempt, activity_types_map, section) do
-    OliWeb.ManualGrading.Rendering.create_rendering_context(
-      activity_attempt,
-      Core.get_latest_part_attempts(activity_attempt.attempt_guid),
-      activity_types_map,
-      section
-    )
-    |> Map.merge(%{is_liveview: true})
-    |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
-  end
-
   defp add_single_response_details(activity_attempt, response_summaries) do
     responses =
       Enum.reduce(response_summaries, [], fn response_summary, acc ->
@@ -569,10 +661,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   end
 
   defp add_multi_input_details(activity_attempt, response_summaries) do
-    mapper = build_input_mapper(activity_attempt.transformed_model["inputs"])
+    mapper = build_input_mapper(activity_attempt.revision.content["inputs"])
 
     Enum.reduce(
-      activity_attempt.transformed_model["inputs"],
+      activity_attempt.revision.content["inputs"],
       activity_attempt,
       fn input, acc2 ->
         case input["inputType"] do
@@ -594,7 +686,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     add_choices_frequencies(acc, response_summaries)
     |> update_in(
       [
-        Access.key!(:transformed_model),
+        Access.key!(:revision),
+        Access.key!(:content),
         Access.key!("inputs"),
         Access.filter(&(&1["inputType"] == "dropdown")),
         Access.key!("choiceIds")
@@ -609,7 +702,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     update_in(
       acumulator,
-      [Access.key!(:transformed_model), Access.key!("authoring")],
+      [Access.key!(:revision), Access.key!(:content), Access.key!("authoring")],
       &Map.put(&1, "responses", responses)
     )
   end
@@ -637,20 +730,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       {input["partId"], input["inputType"]}
     end)
   end
-
-  defp count_student_attempts(
-         activity_resource_id,
-         %Section{analytics_version: :v2, id: section_id},
-         student_ids
-       ),
-       do: Summary.count_student_attempts(activity_resource_id, section_id, student_ids)
-
-  defp count_student_attempts(
-         activity_resource_id,
-         section,
-         student_ids
-       ),
-       do: Core.count_student_attempts(activity_resource_id, section.id, student_ids)
 
   defp likert_dynamic_height(questions_count), do: 60 + 30 * questions_count
 
