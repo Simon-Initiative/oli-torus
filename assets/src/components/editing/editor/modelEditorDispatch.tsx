@@ -31,6 +31,7 @@ import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
 import { EditorProps } from '../elements/interfaces';
 import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { TcEditor } from '../elements/table/TcElement';
+import { TriggerEditor } from '../elements/trigger/TriggerEditor';
 import { VideoEditor } from '../elements/video/VideoEditor';
 
 export function editorFor(
@@ -119,6 +120,8 @@ export function editorFor(
       return <span {...attributes}>{props.children}</span>;
     case 'conjugation':
       return <ConjugationEditor {...(editorProps as EditorProps<ContentModel.Conjugation>)} />;
+    case 'trigger':
+      return <TriggerEditor {...(editorProps as EditorProps<ContentModel.TriggerBlock>)} />;
     case 'dialog':
       return <DialogEditor {...(editorProps as EditorProps<ContentModel.Dialog>)} />;
     case 'table':

@@ -13,6 +13,7 @@ describe('PageEditorContent', () => {
     const content = new PageEditorContent({
       version: '1',
       model: withDefaultContent(Immutable.List()),
+      trigger: undefined,
     });
     expect(() => (content.version = '2')).toThrow();
     const child: ActivityBankSelection = {
@@ -48,6 +49,7 @@ describe('PageEditorContent', () => {
     const content = new PageEditorContent({
       version: '1',
       model: withDefaultContent(Immutable.List()),
+      trigger: undefined,
     });
     expect(() => (content.version = '2')).toThrow();
     const child: ActivityBankSelection = {
@@ -86,6 +88,7 @@ describe('PageEditorContent', () => {
     const content = new PageEditorContent({
       version: '1',
       model: withDefaultContent(Immutable.List()),
+      trigger: undefined,
     });
     expect(() => (content.version = '2')).toThrow();
 
