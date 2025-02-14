@@ -69,9 +69,9 @@ defmodule OliWeb.Common.AssentAuthWeb do
            split_user_identity_params(user_params, provider),
          # Get the current user from the connection
          current_user <- current_user(conn, config),
-         # Create or upsert the user identity
+         # Create or add new user identity
          {:ok, {status, user}} <-
-           create_or_upsert_identity(current_user, user_identity_params, user_params, config),
+           create_or_add_identity(current_user, user_identity_params, user_params, config),
          # Check if email confirmation is required
          {:ok, email_confirmation_required?} <-
            maybe_require_email_confirmation(user, config),
@@ -112,7 +112,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
     {:error, {:invalid_user_identity_params, {:missing_param, "sub", params}}}
   end
 
-  defp create_or_upsert_identity(
+  defp create_or_add_identity(
          current_user,
          user_identity_params,
          user_params,
