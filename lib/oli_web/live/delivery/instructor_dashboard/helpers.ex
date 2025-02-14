@@ -66,6 +66,42 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     return_page(graded_pages_and_section_resources, section, students)
   end
 
+  def maybe_assign_certificate_data(
+        %{assigns: %{section: %{certificate_enabled: false}}} = socket
+      ),
+      do:
+        Phoenix.Component.assign(
+          socket,
+          %{certificate: nil, certificate_pending_approval_count: nil}
+        )
+
+  def maybe_assign_certificate_data(socket) do
+    section = socket.assigns.section
+
+    certificate = Certificates.get_certificate_by(%{section_id: section.id})
+    pending_count = certificate_pending_approval_count(socket.assigns.users, certificate)
+
+    Phoenix.Component.assign(
+      socket,
+      %{certificate: certificate, certificate_pending_approval_count: pending_count}
+    )
+  end
+
+  def certificate_pending_approval_count(
+        students,
+        %{requires_instructor_approval: true} = _certificate
+      ) do
+    Enum.reduce(students, 0, fn student, acc ->
+      if student.certificate && student.certificate.state == :pending do
+        acc + 1
+      else
+        acc
+      end
+    end)
+  end
+
+  def certificate_pending_approval_count(_students, _certificate), do: nil
+
   defp return_page(graded_pages_and_section_resources, section, students) do
     student_ids = Enum.map(students, & &1.id)
     page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)

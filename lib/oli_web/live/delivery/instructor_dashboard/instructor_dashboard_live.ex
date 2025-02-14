@@ -32,6 +32,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
+      |> Helpers.maybe_assign_certificate_data()
 
     socket =
       if params.container_id do
@@ -440,6 +441,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         section={@section}
         view={@view}
         students={@users}
+        certificate={@certificate}
+        certificate_pending_approval_count={@certificate_pending_approval_count}
         dropdown_options={@dropdown_options}
       />
     </div>
@@ -768,6 +771,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
        to:
          ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/overview/students?#{params}"
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:flash_message, {type, message}}, socket) when type in [:error, :info] do
+    {:noreply, put_flash(socket, type, message)}
   end
 
   @impl Phoenix.LiveView

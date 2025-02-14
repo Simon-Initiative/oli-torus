@@ -5,7 +5,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.{Author, User}
-  alias Oli.Delivery.{Certificates, Metrics}
+  alias Oli.Delivery.Metrics
   alias OliWeb.Common.{SearchInput, Params, Utils}
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Components.Delivery.CardHighlights
@@ -47,17 +47,23 @@ defmodule OliWeb.Components.Delivery.Students do
           section: section,
           ctx: ctx,
           students: students,
+          certificate: certificate,
+          certificate_pending_approval_count: initial_certificate_pending_approval_count,
           dropdown_options: dropdown_options
         } = assigns,
         socket
       ) do
     {total_count, rows} = apply_filters(students, params)
 
-    certificate =
-      section.certificate_enabled && Certificates.get_certificate_by(%{section_id: section.id})
-
     {:ok, table_model} =
-      EnrollmentsTableModel.new(rows, section, ctx, certificate, socket.assigns.myself)
+      EnrollmentsTableModel.new(
+        rows,
+        section,
+        ctx,
+        certificate,
+        initial_certificate_pending_approval_count,
+        socket.assigns.myself
+      )
 
     navigation_data = Jason.decode!(params.navigation_data)
 

@@ -1,6 +1,11 @@
 defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
-  alias Oli.Delivery.GrantedCertificates
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+
+  alias OliWeb.Components.Delivery.Students.Certificates.{
+    PendingApprovalComponent,
+    StateApprovalComponent
+  }
+
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
   alias OliWeb.Common.FormatDateTime
@@ -15,11 +20,14 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def new(users, section, ctx, certificate, target) do
-    pending_approvals =
-      certificate && certificate.requires_instructor_approval &&
-        GrantedCertificates.count_pending_certificates_by_section(section.id)
-
+  def new(
+        users,
+        section,
+        ctx,
+        certificate,
+        certificate_pending_approval_count,
+        target
+      ) do
     column_specs =
       [
         %ColumnSpec{
@@ -74,7 +82,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
           [
             %ColumnSpec{
               name: :certificate_status,
-              label: render_certificate_status_label(pending_approvals),
+              label: render_certificate_status_label(certificate_pending_approval_count),
               render_fn: &render_certificate_status_column/3,
               th_class: "flex items-center gap-2"
             }
@@ -225,18 +233,20 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  defp render_certificate_status_label(pending_approvals) when pending_approvals in [nil, 0],
-    do: "CERTIFICATE STATUS"
+  defp render_certificate_status_label(pending_approvals)
+       when pending_approvals in [nil, 0],
+       do: "CERTIFICATE STATUS"
 
   defp render_certificate_status_label(pending_approvals) do
     assigns = %{pending_approvals: pending_approvals}
 
     ~H"""
     <div class="flex items-center gap-2">
-      <span class="bg-[#0165da] text-white text-xs font-semibold rounded-full px-2">
-        <%= @pending_approvals %>
-      </span>
-      CERTIFICATE STATUS
+      <.live_component
+        id="certificate_pending_approval_count_badge"
+        module={PendingApprovalComponent}
+        pending_approvals={@pending_approvals}
+      /> CERTIFICATE STATUS
     </div>
     """
   end
@@ -252,7 +262,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     ~H"""
     <.live_component
       id={"certificate-state-component-#{@user_id}"}
-      module={OliWeb.Delivery.Sections.CertificateStateComponent}
+      module={StateApprovalComponent}
       certificate_status={@certificate_status}
       requires_instructor_approval={@certificate.requires_instructor_approval}
       granted_certificate_id={@granted_certificate_id}
