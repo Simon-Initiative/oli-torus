@@ -415,23 +415,19 @@ defmodule Oli.Analytics.Summary do
     |> Oli.Repo.insert()
   end
 
-  @doc """
-  For a given course section and page, return a list of activity ids that have been answered.
-  """
-  def answered_activities_for(section_id, page_id) do
-    from(rs in ResponseSummary,
-      where: rs.project_id == -1 and rs.publication_id == -1 and rs.section_id == ^section_id and rs.page_id == ^page_id,
-      select: rs.activity_id,
-      distinct: true
-    )
-    |> Repo.all()
-  end
+  def summarize_activities_for_page(section_id, page_id, only_for_activity_ids) do
 
-  def summarize_activities_for_page(section_id, page_id) do
+    activity_constraint =
+      case only_for_activity_ids do
+        nil -> true
+        _ -> dynamic([rs, _], rs.activity_id in ^only_for_activity_ids)
+      end
+
     from(rs in ResponseSummary,
       join: s in ResourceSummary, on: rs.activity_id == s.resource_id and rs.section_id == s.section_id,
       where: rs.project_id == -1 and rs.publication_id == -1 and rs.section_id == ^section_id and rs.page_id == ^page_id,
       where: s.user_id != -1 and s.project_id == -1 and s.publication_id == -1,
+      where: ^activity_constraint,
       select: s
     )
     |> Repo.all()
@@ -467,7 +463,14 @@ defmodule Oli.Analytics.Summary do
           section_id :: integer(),
           activity_resource_ids :: [integer()]
         ) :: [map()]
-  def get_response_summary_for(page_resource_id, section_id, activity_resource_ids) do
+  def get_response_summary_for(page_resource_id, section_id, only_for_activity_ids \\ nil) do
+
+    activity_constraint =
+      case only_for_activity_ids do
+        nil -> true
+        _ -> dynamic([s, _], s.activity_id in ^only_for_activity_ids)
+      end
+
     from(rs in ResponseSummary,
       join: rpp in ResourcePartResponse,
       on: rs.resource_part_response_id == rpp.id,
@@ -479,8 +482,8 @@ defmodule Oli.Analytics.Summary do
       on: sr.user_id == u.id,
       where:
         rs.section_id == ^section_id and rs.page_id == ^page_resource_id and
-          rs.publication_id == -1 and rs.project_id == -1 and
-          rs.activity_id in ^activity_resource_ids,
+          rs.publication_id == -1 and rs.project_id == -1,
+      where: ^activity_constraint,
       select: %{
         part_id: rpp.part_id,
         response: rpp.response,
@@ -491,4 +494,5 @@ defmodule Oli.Analytics.Summary do
     )
     |> Repo.all()
   end
+
 end
