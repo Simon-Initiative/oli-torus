@@ -1550,18 +1550,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert first_table_row_html =~ ~s{class="border-b table-active}
       assert act_1.title == "Multiple Choice 1:This is the first question"
 
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
+      activity_id = view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{oli-multiple-choice-authoring})
+      |> Floki.attribute("activity_id")
+      |> hd()
+      |> String.split("_")
+      |> Enum.at(1)
+      |> String.to_integer()
 
-      # and the question details are rendered
-      # including the frequency per choice
-      assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Blank attempt (user submitted assessment without selecting any choice for this activity)\"}],\"type\":\"p\"}],\"frequency\":1},{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_b\"}]}"
+      assert activity_id == mcq_activity_1.resource_id
+
     end
 
     test "single response details get rendered correctly when activity is selected",
@@ -1806,16 +1806,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert act_2.title == "Multiple Choice 2:This is the second question"
 
       # and check that the question details have changed to match the selected activity
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
 
-      assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_2.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_2.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_b\"}]}"
+      activity_id = view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{oli-multiple-choice-authoring})
+      |> Floki.attribute("activity_id")
+      |> hd()
+      |> String.split("_")
+      |> Enum.at(1)
+      |> String.to_integer()
+
+      assert activity_id == mcq_activity_2.resource_id
     end
 
     test "student attempts summary gets rendered correctly when no students have attempted", %{

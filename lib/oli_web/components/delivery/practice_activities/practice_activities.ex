@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
-                  <ActivityHelpers.rendered_activity activity={activity} />
+                  <ActivityHelpers.rendered_activity activity={activity} activity_types_map={@activity_types_map} />
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
