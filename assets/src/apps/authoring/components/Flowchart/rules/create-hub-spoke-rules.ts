@@ -40,7 +40,7 @@ export const generateHubSpokeRules = (
   const correctCombinations = getCombinations(commonErrorPaths, 3);
   console.log({ correctCombinations });
   const correct: Required<IConditionWithFeedback> = {
-    conditions: createSpokeCorrectCondition(spokedCompleteDestination),
+    conditions: createSpokeCorrectCondition(spokedCompleteDestination, question),
     feedback: question.custom.correctFeedback || '',
     destinationId:
       getSequenceIdFromScreenResourceId(
@@ -49,7 +49,7 @@ export const generateHubSpokeRules = (
       ) || 'unknown',
   };
 
-  const incorrect: Required<IConditionWithFeedback[]> = commonErrorPaths.map((path) => ({
+  const commanErrors: Required<IConditionWithFeedback[]> = commonErrorPaths.map((path) => ({
     conditions: createSpokeDuplicatePathCondition(
       path,
       question,
@@ -57,6 +57,31 @@ export const generateHubSpokeRules = (
     ),
     feedback: "You've already visited this screen. Please select another screen or click Next.",
   }));
+
+  // const incorrects: Required<IConditionWithFeedback[]> = [
+  //   {
+  //     conditions: [
+  //       createCondition(
+  //         `stage.${question.id}.totalCompletedSpoke`,
+  //         `${question?.custom?.requiredSpoke}`,
+  //         'lessThan',
+  //       ),
+  //     ],
+
+  //     feedback:
+  //       question.custom.incorrectFeedback ??
+  //       'Please visit the required number of spokes before clicking Next.',
+  //   },
+  // ];
+  const incorrect: Required<IConditionWithFeedback[]> = [
+    {
+      conditions: createSpokeIncorrectCondition(spokedCompleteDestination, question),
+      feedback: question?.custom?.incorrectFeedback?.trim()?.length
+        ? question?.custom?.incorrectFeedback
+        : 'Please visit the required number of spokes before clicking Next.',
+    },
+  ];
+
   const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map(
     (path) => ({
       conditions: createSpokeCommonPathCondition(
@@ -68,17 +93,22 @@ export const generateHubSpokeRules = (
       destinationId: getSequenceIdFromDestinationPath(path, sequence),
     }),
   );
-  const blankCondition: ICondition = createCondition(
-    `stage.${question.id}.selectedChoice`,
-    '-1',
-    'equal',
-  );
-
   return generateMultipleCorrectWorkflow(
     correct,
     incorrect,
     spokeSpecificConditionsFeedback,
-    blankCondition,
+    commanErrors,
+    [
+      {
+        type: 'mutateState',
+        params: {
+          value: '1',
+          target: `stage.${question.id}.totalCompletedSpoke`,
+          operator: 'adding',
+          targetType: 1,
+        },
+      },
+    ],
   );
 };
 
@@ -104,10 +134,18 @@ const getCombinations = (arr: any[], groupSize: number) => {
   return result;
 };
 
-export const createSpokeCorrectCondition = (correctScreens: any): ICondition[] => {
-  console.log('Number of spoke required - 1 ', getCombinations(correctScreens, 1));
-  console.log('Number of spoke required - 2 ', getCombinations(correctScreens, 2));
-  console.log('Number of spoke required - 3 ', getCombinations(correctScreens, 3));
+export const createSpokeCorrectCondition = (correctScreens: any, question: any): ICondition[] => {
+  const requiredSpoke = question?.custom?.requiredSpoke;
+  console.log({ requiredSpoke, correctScreenslength: correctScreens?.length });
+  if (correctScreens?.length > requiredSpoke) {
+    return [
+      createCondition(
+        `stage.${question.id}.totalCompletedSpoke`,
+        `${requiredSpoke}`,
+        'greaterThanInclusive',
+      ),
+    ];
+  }
   const correctconditions = correctScreens
     .filter((screen: string) => screen?.length)
     .map((correctScreen: any) => {
@@ -119,17 +157,26 @@ export const createSpokeCorrectCondition = (correctScreens: any): ICondition[] =
   return [];
 };
 
-export const createSpokeIncorrectCondition = (question: IHubSpokePartLayout) => {
-  const correctIndex = (question.custom?.correctAnswer || []).findIndex(
-    (answer: boolean) => answer === true,
-  );
-  if (correctIndex !== -1) {
-    return [
-      createCondition(`stage.${question.id}.selectedChoice`, String(correctIndex + 1), 'notEqual'),
-    ];
+export const createSpokeIncorrectCondition = (correctScreens: any, question: any) => {
+  // const requiredSpoke = question?.custom?.requiredSpoke;
+  // if (correctScreens?.length > requiredSpoke) {
+  //   return [
+  //     createCondition(
+  //       `stage.${question.id}.totalCompletedSpoke`,
+  //       `${requiredSpoke}`,
+  //       'lessThanInclusive',
+  //     ),
+  //   ];
+  // }
+  const correctconditions = correctScreens
+    .filter((screen: string) => screen?.length)
+    .map((correctScreen: any) => {
+      return createCondition(`session.visits.${correctScreen}`, '0', 'equal');
+    });
+  if (correctconditions?.length) {
+    return [...correctconditions];
   }
-  console.warn("Couldn't find correct answer for dropdown question", question);
-  return [createNeverCondition()];
+  return [];
 };
 
 const createSpokeCommonPathCondition = (

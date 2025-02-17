@@ -193,6 +193,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
           index: spokeItems.length,
           value: spokeItems.length,
           targetScreen: '',
+          destinationActivityId: '',
         });
       }
       onSaveConfigure({ id, snapshot: modelClone });

@@ -28,6 +28,7 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
   verticalGap = 0,
   onSelected,
   val,
+  IsCompleted,
 }) => {
   const spokeItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -58,6 +59,11 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
           onClick={() => onSelected(val)}
           className="btn btn-primary"
         >
+          {IsCompleted && (
+            <span style={{ float: 'left', paddingLeft: '10px' }} className={'fa fa-check-circle'}>
+              &nbsp;
+            </span>
+          )}
           <SpokeItemContent itemId={itemId} nodes={nodes} state={state} />
         </button>
       </div>
@@ -79,20 +85,11 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
 
   const [enabled, setEnabled] = useState(true);
   const [options, setOptions] = useState<SpokeOptionModel[]>([]);
-
+  const [completedSpokeCount, setCompletedSpokeCount] = useState<number>(0);
   const initialize = useCallback(async (pModel) => {
-    /* console.log('MCQ INIT', { pModel }); */
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
-
-    // we need to set up a new list so that we can shuffle while maintaining correct index/values
-    const mcqList: SpokeOptionModel[] = pModel.spokeItems?.map((item: any, index: number) => ({
-      ...item,
-      index: index + 1,
-      value: index + 1,
-    }));
-    setOptions(mcqList);
 
     // now we need to save the defaults used in adaptivity (not necessarily the same)
     const initResult = await props.onInit({
@@ -103,7 +100,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
           type: CapiVariableTypes.BOOLEAN,
           value: dEnabled,
         },
-
         {
           key: 'selectedChoice',
           type: CapiVariableTypes.NUMBER,
@@ -116,6 +112,20 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
 
+    // we need to set up a new list so that we can shuffle while maintaining correct index/values
+    const spokeItems: SpokeOptionModel[] = pModel.spokeItems?.map((item: any, index: number) => ({
+      ...item,
+      index: index + 1,
+      value: index + 1,
+    }));
+
+    spokeItems.forEach((spoke: any) => {
+      spoke.IsCompleted = !!currentStateSnapshot[`session.visits.${spoke.destinationActivityId}`];
+    });
+
+    setOptions(spokeItems);
+    const spokeCount = spokeItems.filter((spoke) => spoke.IsCompleted) ?? 0;
+    setCompletedSpokeCount(spokeCount?.length || 0);
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
@@ -147,8 +157,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
       } catch (err) {
         // bad json, what do?
       }
-
-      console.log({ pModel });
     }
     if (typeof props?.state === 'string') {
       try {
@@ -211,10 +219,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { snapshot: changes } = payload;
-
-              console.log('MCQ CONTEXT CHANGED', { changes });
-
               if (payload.mode === contexts.REVIEW) {
                 setEnabled(false);
               }
@@ -354,7 +358,9 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
                       Progress
                     </h3>
                     <span className="text-sm text-gray-800 dark:text-white">
-                      <b>0/{options?.length}</b>
+                      <b>
+                        {completedSpokeCount}/{options?.length}
+                      </b>
                     </span>
                   </div>
                   <div

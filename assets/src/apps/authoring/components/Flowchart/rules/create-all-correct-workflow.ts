@@ -76,18 +76,10 @@ export const generateMultipleCorrectWorkflow = (
   defaultPath: Required<IConditionWithFeedback>,
   incorrect: IConditionWithFeedback[],
   specificPaths: IConditionWithFeedback[],
-  disableAction: IAction,
-  blankCondition: ICondition,
+  commanErrors: IConditionWithFeedback[],
+  extras: IAction[],
 ): RulesAndVariables => {
   const rules: IAdaptiveRule[] = [];
-
-  // [A rule to catch an empty response]
-  blankCondition &&
-    rules.push(
-      generateRule('blank', [newId(blankCondition)], null, false, 20, DEFAULT_BLANK_FEEDBACK, [
-        resetTries(),
-      ]),
-    );
 
   rules.push({
     ...generateRule(
@@ -97,7 +89,7 @@ export const generateMultipleCorrectWorkflow = (
       true,
       10,
       defaultPath.feedback?.length ? defaultPath.feedback : null,
-      [disableAction],
+      [],
     ),
     default: true,
   });
@@ -111,12 +103,12 @@ export const generateMultipleCorrectWorkflow = (
         true,
         30,
         path.feedback,
-        [disableAction],
+        extras,
       ),
     );
   }
 
-  for (const path of incorrect.filter((e) => !e.destinationId)) {
+  for (const path of commanErrors.filter((e) => !e.destinationId)) {
     rules.push(
       generateRule(
         `common-error--${rules.length}`,
@@ -125,7 +117,25 @@ export const generateMultipleCorrectWorkflow = (
         false,
         30,
         path.feedback,
-        [disableAction],
+        [],
+        undefined,
+        'any',
+      ),
+    );
+  }
+
+  for (const path of incorrect.filter((e) => !e.destinationId)) {
+    rules.push(
+      generateRule(
+        `incorrect--${rules.length}`,
+        path.conditions.map(newId),
+        path.destinationId || null,
+        false,
+        30,
+        path.feedback,
+        [],
+        undefined,
+        'any',
       ),
     );
   }

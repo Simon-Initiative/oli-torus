@@ -3,6 +3,7 @@ import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { setCurrentPartPropertyFocus } from 'apps/authoring/store/parts/slice';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { useToggle } from '../../../../../components/hooks/useToggle';
 import { AdvancedAuthoringModal } from '../../AdvancedAuthoringModal';
 import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteIcon';
@@ -11,6 +12,8 @@ import { ScreenEditIcon } from '../../Flowchart/chart-components/ScreenEditIcon'
 type OptionsType = {
   nodes: string;
   targetScreen: string;
+  destinationActivityId: string;
+  IsCompleted: boolean;
 };
 
 interface Props {
@@ -86,12 +89,14 @@ const OptionsEditor: React.FC<{
   onDelete: () => void;
   totalspoke: OptionsType[];
 }> = ({ value, onChange, onDelete, totalspoke }) => {
+  const sequence = useSelector(selectSequence);
   const activities = useSelector(selectAllActivities);
   const [editorOpen, , openEditor, closeEditor] = useToggle(false);
   const [tempValue, setTempValue] = useState<{ value: string }>({ value: '' });
   const dispatch = useDispatch();
   const [currentSpokeLabel, setCurrentSpokeLabel] = useState('');
   const [currentSpokeDestination, setCurrentSpokeDestination] = useState('');
+  const [currentSpokeDestinationActivityId, setCurrentSpokeDestinationActivityId] = useState('');
   const screens: Record<string, string> = useMemo(() => {
     return activities.reduce((acc, activity) => {
       const filterhubSpokeScreens = activity.content?.partsLayout.find(
@@ -112,10 +117,14 @@ const OptionsEditor: React.FC<{
   }, [activities]);
   const onSave = useCallback(() => {
     closeEditor();
+
+    const sequenceEntry = sequence.find((s) => s.resourceId == currentSpokeDestination);
+    const activityId = sequenceEntry?.custom.sequenceId ?? currentSpokeDestinationActivityId;
     const newValue = {
       ...value,
       nodes: currentSpokeLabel,
       targetScreen: currentSpokeDestination,
+      destinationActivityId: activityId,
     };
     onChange(newValue);
     dispatch(setCurrentPartPropertyFocus({ focus: true }));
@@ -126,6 +135,7 @@ const OptionsEditor: React.FC<{
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
     setCurrentSpokeLabel(value.nodes);
     setCurrentSpokeDestination(value.targetScreen);
+    setCurrentSpokeDestinationActivityId(value.destinationActivityId);
   }, [openEditor, value.nodes]);
 
   return (
@@ -199,4 +209,6 @@ const optionTemplate = (count: number) => ({
   nodes: `Spoke ${count}`,
   scoreValue: 0,
   targetScreen: '',
+  destinationActivityId: '',
+  IsCompleted: false,
 });

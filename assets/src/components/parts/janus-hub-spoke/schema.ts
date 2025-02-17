@@ -24,6 +24,8 @@ export interface JanusHubSpokeItemProperties extends JanusCustomCss {
 export interface Item {
   scoreValue: number;
   targetScreen: string;
+  destinationActivityId: string;
+  IsCompleted: boolean;
   nodes: string;
   [key: string]: any;
 }
@@ -246,6 +248,7 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     IsCompleted: false,
     targetScreen: '',
     nodes: `Spoke ${index}`,
+    destinationActivityId: '',
   });
 
   return {
