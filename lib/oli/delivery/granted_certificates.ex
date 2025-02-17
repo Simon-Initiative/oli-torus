@@ -2,7 +2,6 @@ defmodule Oli.Delivery.GrantedCertificates do
   @moduledoc """
   The Granted Certificates context
   """
-  import Ecto.Query
 
   alias Ecto.Changeset
   alias ExAws.Lambda
@@ -54,6 +53,7 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> case do
       {:ok, %{state: :earned, id: id} = granted_certificate} ->
         # This oban job will create the pdf and update the granted_certificate.url
+        # only for certificates with the :earned state (:denied ones do not need a .pdf)
         Oli.Delivery.Sections.Certificates.Workers.GeneratePdf.new(%{
           granted_certificate_id: id
         })

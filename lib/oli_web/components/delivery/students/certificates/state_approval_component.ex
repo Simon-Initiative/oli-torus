@@ -143,9 +143,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       ) do
     required_state = String.to_existing_atom(required_state)
 
+    # we set the url to nil to invalidate any previous .pdf (if any)
     case GrantedCertificates.update_granted_certificate(
            socket.assigns.granted_certificate_id,
-           %{state: required_state}
+           %{state: required_state, url: nil}
          ) do
       {:ok, _} ->
         if socket.assigns.requires_instructor_approval and current_state == "pending",
