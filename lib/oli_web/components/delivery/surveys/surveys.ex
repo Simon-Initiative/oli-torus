@@ -159,7 +159,10 @@ defmodule OliWeb.Components.Delivery.Surveys do
                   phx-hook="LoadSurveyScripts"
                 >
                   <%= if Map.get(activity, :preview_rendered) != nil do %>
-                    <ActivityHelpers.rendered_activity activity={activity} activity_types_map={@activity_types_map} />
+                    <ActivityHelpers.rendered_activity
+                      activity={activity}
+                      activity_types_map={@activity_types_map}
+                    />
                   <% else %>
                     <p class="pt-9 pb-5">No attempt registered for this question</p>
                   <% end %>
@@ -187,16 +190,22 @@ defmodule OliWeb.Components.Delivery.Surveys do
 
     current_assessment = find_current_assessment(socket, survey_id)
 
-    page_revision = Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, current_assessment.resource_id)
+    page_revision =
+      Oli.Publishing.DeliveryResolver.from_resource_id(
+        section.slug,
+        current_assessment.resource_id
+      )
+
     survey_activity_ids = get_survey_activity_ids(page_revision)
 
-    current_activities = ActivityHelpers.summarize_activity_performance(
-      section,
-      page_revision,
-      activity_types_map,
-      students,
-      survey_activity_ids
-    )
+    current_activities =
+      ActivityHelpers.summarize_activity_performance(
+        section,
+        page_revision,
+        activity_types_map,
+        students,
+        survey_activity_ids
+      )
 
     assign_assessments_activities_table_model(
       socket,
@@ -310,7 +319,6 @@ defmodule OliWeb.Components.Delivery.Surveys do
   end
 
   defp get_survey_activity_ids(revision) do
-
     # Find all survey groups in the page conent, and collect all
     # reference ids of the activities in the survey groups
     Oli.Resources.PageContent.survey_activities(revision.content)

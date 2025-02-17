@@ -1551,18 +1551,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
       assert first_table_row_html =~ ~s{class="border-b table-active}
       assert act_1.title == "Multiple Choice 1:This is the first question"
 
-      activity_id = view
-      |> render()
-      |> Floki.parse_fragment!()
-      |> Floki.find(~s{oli-multiple-choice-authoring})
-      |> Floki.attribute("activity_id")
-      |> hd()
-      |> String.split("_")
-      |> Enum.at(1)
-      |> String.to_integer()
+      activity_id =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multiple-choice-authoring})
+        |> Floki.attribute("activity_id")
+        |> hd()
+        |> String.split("_")
+        |> Enum.at(1)
+        |> String.to_integer()
 
       assert activity_id == mcq_activity_1.resource_id
-
     end
 
     test "single response details get rendered correctly when activity is selected",
@@ -1808,15 +1808,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.ScoredActivitiesTabTest do
 
       # and check that the question details have changed to match the selected activity
 
-      activity_id = view
-      |> render()
-      |> Floki.parse_fragment!()
-      |> Floki.find(~s{oli-multiple-choice-authoring})
-      |> Floki.attribute("activity_id")
-      |> hd()
-      |> String.split("_")
-      |> Enum.at(1)
-      |> String.to_integer()
+      activity_id =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multiple-choice-authoring})
+        |> Floki.attribute("activity_id")
+        |> hd()
+        |> String.split("_")
+        |> Enum.at(1)
+        |> String.to_integer()
 
       assert activity_id == mcq_activity_2.resource_id
     end

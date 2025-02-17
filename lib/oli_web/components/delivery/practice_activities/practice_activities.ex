@@ -190,7 +190,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
-                  <ActivityHelpers.rendered_activity activity={activity} activity_types_map={@activity_types_map} />
+                  <ActivityHelpers.rendered_activity
+                    activity={activity}
+                    activity_types_map={@activity_types_map}
+                  />
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
@@ -220,14 +223,19 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         assessment.id == String.to_integer(selected_assessment_id)
       end)
 
-    page_revision = Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, current_assessment.resource_id)
+    page_revision =
+      Oli.Publishing.DeliveryResolver.from_resource_id(
+        section.slug,
+        current_assessment.resource_id
+      )
 
-    current_activities = ActivityHelpers.summarize_activity_performance(
-      section,
-      page_revision,
-      activity_types_map,
-      students
-    )
+    current_activities =
+      ActivityHelpers.summarize_activity_performance(
+        section,
+        page_revision,
+        activity_types_map,
+        students
+      )
 
     {:noreply,
      assign(

@@ -108,7 +108,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             {:ok,
              assign(socket,
                current_assessment: current_assessment,
-               page_revision: DeliveryResolver.from_resource_id(assigns.section.slug, current_assessment.resource_id),
+               page_revision:
+                 DeliveryResolver.from_resource_id(
+                   assigns.section.slug,
+                   current_assessment.resource_id
+                 ),
                activities: activities,
                table_model: table_model,
                total_count: total_count,
@@ -242,7 +246,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           phx-hook="LoadSurveyScripts"
         >
           <%= if Map.get(@selected_activity, :preview_rendered) != nil do %>
-            <ActivityHelpers.rendered_activity activity={@selected_activity} activity_types_map={@activity_types_map} />
+            <ActivityHelpers.rendered_activity
+              activity={@selected_activity}
+              activity_types_map={@activity_types_map}
+            />
           <% else %>
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
@@ -375,16 +382,17 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       activity_types_map: activity_types_map
     } = socket.assigns
 
-    selected_activity = case ActivityHelpers.summarize_activity_performance(
-      section,
-      page_revision,
-      activity_types_map,
-      students,
-      [selected_activity.resource_id]
-    ) do
-      [current_activity | _rest] -> current_activity
-      _ -> nil
-    end
+    selected_activity =
+      case ActivityHelpers.summarize_activity_performance(
+             section,
+             page_revision,
+             activity_types_map,
+             students,
+             [selected_activity.resource_id]
+           ) do
+        [current_activity | _rest] -> current_activity
+        _ -> nil
+      end
 
     socket
     |> assign(table_model: table_model, selected_activity: selected_activity)
@@ -397,7 +405,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           script_sources: socket.assigns.scripts
         })
     end
-
   end
 
   defp apply_filters(assessments, params) do

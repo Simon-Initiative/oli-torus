@@ -1259,18 +1259,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
                "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
              )
 
-      activity_id = view
-      |> render()
-      |> Floki.parse_fragment!()
-      |> Floki.find(~s{oli-multiple-choice-authoring})
-      |> Floki.attribute("activity_id")
-      |> hd()
-      |> String.split("_")
-      |> Enum.at(1)
-      |> String.to_integer()
+      activity_id =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{oli-multiple-choice-authoring})
+        |> Floki.attribute("activity_id")
+        |> hd()
+        |> String.split("_")
+        |> Enum.at(1)
+        |> String.to_integer()
 
       assert mcq_activity_1.resource_id == activity_id
-
     end
 
     test "single response details get rendered correctly when page is selected",
