@@ -254,6 +254,9 @@ defmodule OliWeb.Router do
       only: [:new, :delete]
 
     get "/users/auth/:provider/callback", UserAuthorizationController, :callback
+
+    get "/certificates/", CertificateController, :index
+    post "/certificates/verify", CertificateController, :verify
   end
 
   scope "/", OliWeb do
@@ -685,6 +688,13 @@ defmodule OliWeb.Router do
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
     delete("/", SchedulingController, :clear)
+  end
+
+  # AI trigger point endpoints
+  scope "/api/v1/triggers/:section_slug", OliWeb.Api do
+    pipe_through([:api, :delivery_protected])
+
+    post("/", TriggerPointController, :invoke)
   end
 
   # User State Service, instrinsic state

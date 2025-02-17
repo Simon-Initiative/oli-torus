@@ -5,6 +5,7 @@ defmodule Oli.Activities.Model.Part do
     :responses,
     :hints,
     :parts,
+    :triggers,
     :grading_approach,
     :out_of,
     :explanation,
@@ -22,6 +23,7 @@ defmodule Oli.Activities.Model.Part do
     responses = Map.get(part, "responses", [])
     explanation = Map.get(part, "explanation")
     targets = Map.get(part, "targets", [])
+    triggers = Map.get(part, "triggers", [])
 
     grading_approach_str =
       Map.get(part, "gradingApproach", "automatic")
@@ -37,12 +39,14 @@ defmodule Oli.Activities.Model.Part do
     with {:ok, responses} <- Oli.Activities.Model.Response.parse(responses),
          {:ok, hints} <- Oli.Activities.Model.Hint.parse(hints),
          {:ok, parts} <- Oli.Activities.Model.Part.parse(parts),
+         {:ok, triggers} <- Oli.Activities.Model.Trigger.parse(triggers),
          {:ok, explanation} <- Oli.Activities.Model.Explanation.parse(explanation) do
       {:ok,
        %Oli.Activities.Model.Part{
          responses: responses,
          hints: hints,
          parts: parts,
+         triggers: triggers,
          id: id,
          scoring_strategy: scoring_strategy,
          grading_approach: grading_approach,

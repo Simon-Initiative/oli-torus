@@ -319,7 +319,7 @@ export const transformModelToSchema = (model: any) => {
       title: model.title,
       customCSS: model.customCss,
       enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
-      displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup || true,
+      displayRefreshWarningPopup: model.custom.displayRefreshWarningPopup ?? true,
       InterfaceSettings: {
         grid: model.custom.grid || false,
         centerpoint: model.custom.centerpoint || false,

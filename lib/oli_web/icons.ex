@@ -1599,6 +1599,8 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-[#757682] dark:stroke-[#BAB8BF]"
+
   def message(assigns) do
     ~H"""
     <svg
@@ -1607,7 +1609,7 @@ defmodule OliWeb.Icons do
       viewBox="0 0 20 20"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      class="stroke-[#757682] dark:stroke-[#BAB8BF]"
+      class={@class}
     >
       <path
         d="M6 6H14M6 10H12M7 15H4C3.20435 15 2.44129 14.6839 1.87868 14.1213C1.31607 13.5587 1 12.7956 1 12V4C1 3.20435 1.31607 2.44129 1.87868 1.87868C2.44129 1.31607 3.20435 1 4 1H16C16.7956 1 17.5587 1.31607 18.1213 1.87868C18.6839 2.44129 19 3.20435 19 4V12C19 12.7956 18.6839 13.5587 18.1213 14.1213C17.5587 14.6839 16.7956 15 16 15H13L10 18L7 15Z"
@@ -1669,6 +1671,22 @@ defmodule OliWeb.Icons do
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  attr :class, :string, default: "stroke-[#0CAF61] dark:stroke-[#39E581]"
+
+  def certificate(assigns) do
+    ~H"""
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M13 17.5V22L15 20.5L17 22V17.5M10 19H5C4.46957 19 3.96086 18.7893 3.58579 18.4142C3.21071 18.0391 3 17.5304 3 17V7C3 5.9 3.9 5 5 5H19C19.5304 5 20.0391 5.21071 20.4142 5.58579C20.7893 5.96086 21 6.46957 21 7V17C20.9996 17.3507 20.9071 17.6952 20.7315 17.9988C20.556 18.3025 20.3037 18.5546 20 18.73M6 9H18M6 12H9M6 15H8M12 15C12 15.7956 12.3161 16.5587 12.8787 17.1213C13.4413 17.6839 14.2044 18 15 18C15.7956 18 16.5587 17.6839 17.1213 17.1213C17.6839 16.5587 18 15.7956 18 15C18 14.2044 17.6839 13.4413 17.1213 12.8787C16.5587 12.3161 15.7956 12 15 12C14.2044 12 13.4413 12.3161 12.8787 12.8787C12.3161 13.4413 12 14.2044 12 15Z"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class={@class}
       />
     </svg>
     """
