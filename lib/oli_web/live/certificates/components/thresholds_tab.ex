@@ -32,7 +32,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
      socket
      |> assign(assigns)
      |> assign(
-       product_changeset: Section.changeset(assigns.product),
+       section_changeset: Section.changeset(assigns.section),
        certificate_changeset: certificate_changeset(certificate),
        graded_pages_options: graded_pages_options,
        selected_graded_pages_options: selected_graded_pages_options,
@@ -42,11 +42,14 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
 
   def render(assigns) do
     ~H"""
-    <div class="w-full flex-col">
+    <div class={["w-full flex-col", if(@read_only, do: "opacity-70")]}>
       <div class="text-base font-medium mb-12">
         Customize the conditions students must meet to receive a certificate.
       </div>
-      <div class="mb-11 text-xl font-normal">Completion & Scoring</div>
+      <div class="flex flex-row items-center gap-4 mb-11">
+        <Icons.lock :if={@read_only} />
+        <div class="text-xl font-normal ">Completion & Scoring</div>
+      </div>
       <.form for={%{}} id="multiselect_form" phx-target={@myself} phx-change="toggle_selected">
       </.form>
       <.form
@@ -58,167 +61,182 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
         phx-change="validate"
         class="w-full justify-start items-center gap-3"
       >
-        <.input field={f[:section_id]} type="hidden" value={@product.id} />
-        <.input
-          field={f[:assessments_apply_to]}
-          type="hidden"
-          value={if length(@selected_ids) == length(@graded_pages_options), do: :all, else: :custom}
-        />
+        <fieldset disabled={@read_only}>
+          <.input field={f[:section_id]} type="hidden" value={@section.id} />
+          <.input
+            field={f[:assessments_apply_to]}
+            type="hidden"
+            value={if length(@selected_ids) == length(@graded_pages_options), do: :all, else: :custom}
+          />
 
-        <div class="w-3/4 flex-col justify-start items-start gap-10 inline-flex">
-          <div class="self-stretch flex-col justify-start items-start gap-[60px] flex">
-            <div class="w-full flex-col justify-start items-start gap-10 flex">
-              <div class="self-stretch flex-col justify-start items-start gap-10 flex">
+          <div class="w-3/4 flex-col justify-start items-start gap-10 inline-flex">
+            <div class="self-stretch flex-col justify-start items-start gap-[60px] flex">
+              <div class="w-full flex-col justify-start items-start gap-10 flex">
                 <div class="self-stretch flex-col justify-start items-start gap-10 flex">
-                  <div class="self-stretch flex-col justify-start items-start gap-3 flex">
-                    <div class="justify-start items-center gap-3 inline-flex">
-                      <Icons.discussions class="dark:stroke-white stroke-black" />
-                      <div class="text-base font-bold">
-                        Required Discussion Posts
-                      </div>
-                    </div>
-                    <div class="w-full text-base font-medium">
-                      <.input
-                        type="number"
-                        min="0"
-                        field={f[:required_discussion_posts]}
-                        errors={f.errors}
-                        class="pl-6 border-[#D4D4D4] rounded"
-                      />
-                    </div>
-                  </div>
-                  <div class="self-stretch flex-col justify-start items-start gap-3 flex">
-                    <div class="justify-start items-center gap-3 inline-flex">
-                      <Icons.message_circles />
-                      <div class="text-base font-bold">
-                        Required Class Notes
-                      </div>
-                    </div>
-                    <div class="w-full text-base font-medium">
-                      <.input
-                        type="number"
-                        min="0"
-                        field={f[:required_class_notes]}
-                        errors={f.errors}
-                        class="pl-6 border-[#D4D4D4] rounded"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div class="self-stretch flex-col justify-start items-center gap-10 flex">
-                  <div class="self-stretch flex-col justify-start items-start gap-3 flex">
-                    <div class="self-stretch h-auto flex-col justify-start items-start gap-5 flex">
+                  <div class="self-stretch flex-col justify-start items-start gap-10 flex">
+                    <div class="self-stretch flex-col justify-start items-start gap-3 flex">
                       <div class="justify-start items-center gap-3 inline-flex">
-                        <Icons.transparent_flag />
-
+                        <Icons.discussions class={
+                          if(@read_only,
+                            do: "stroke-[#757682]",
+                            else: "dark:stroke-white stroke-black"
+                          )
+                        } />
                         <div class="text-base font-bold">
-                          Required Scored Pages
+                          Required Discussion Posts
                         </div>
                       </div>
-                      <div class="self-stretch">
-                        <span class="text-base font-medium">
-                          To earn a <b>Certificate of Completion</b>, students must score a minimum of:
+                      <div class="w-full text-base font-medium">
+                        <.input
+                          type="number"
+                          min="0"
+                          field={f[:required_discussion_posts]}
+                          errors={f.errors}
+                          class="pl-6 border-[#D4D4D4] rounded"
+                        />
+                      </div>
+                    </div>
+                    <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+                      <div class="justify-start items-center gap-3 inline-flex">
+                        <Icons.message_circles />
+                        <div class="text-base font-bold">
+                          Required Class Notes
+                        </div>
+                      </div>
+                      <div class="w-full text-base font-medium">
+                        <.input
+                          type="number"
+                          min="0"
+                          field={f[:required_class_notes]}
+                          errors={f.errors}
+                          class="pl-6 border-[#D4D4D4] rounded"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="self-stretch flex-col justify-start items-center gap-10 flex">
+                    <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+                      <div class="self-stretch h-auto flex-col justify-start items-start gap-5 flex">
+                        <div class="justify-start items-center gap-3 inline-flex">
+                          <Icons.transparent_flag />
+
+                          <div class="text-base font-bold">
+                            Required Scored Pages
+                          </div>
+                        </div>
+                        <div class="self-stretch">
+                          <span class="text-base font-medium">
+                            To earn a <b>Certificate of Completion</b>, students must score a minimum of:
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="w-full text-base font-medium relative">
+                        <.input
+                          type="number"
+                          min="0"
+                          max="100.0"
+                          step="0.1"
+                          field={f[:min_percentage_for_completion]}
+                          class="pl-6 border-[#D4D4D4] rounded"
+                        />
+
+                        <span class={[
+                          "absolute right-8 transform -translate-y-1/2 text-gray-500 pointer-events-none ",
+                          if(f.errors != [], do: "top-1/3", else: "top-1/2")
+                        ]}>
+                          %
                         </span>
                       </div>
                     </div>
-
-                    <div class="w-full text-base font-medium relative">
-                      <.input
-                        type="number"
-                        min="0"
-                        max="100.0"
-                        step="0.1"
-                        field={f[:min_percentage_for_completion]}
-                        class="pl-6 border-[#D4D4D4] rounded"
-                      />
-
-                      <span class={[
-                        "absolute right-8 transform -translate-y-1/2 text-gray-500 pointer-events-none ",
-                        if(f.errors != [], do: "top-1/3", else: "top-1/2")
-                      ]}>
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  <div class="self-stretch flex-col justify-start items-start gap-3 flex">
-                    <div class="self-stretch">
-                      <span class="text-base font-medium">
-                        To earn a <b>Certificate with Distinction</b>, students must score a minimum of:
-                      </span>
-                    </div>
-                    <div class="w-full text-base font-medium relative">
-                      <.input
-                        type="number"
-                        min="0"
-                        max="100.0"
-                        step="0.1"
-                        field={f[:min_percentage_for_distinction]}
-                        errors={f.errors}
-                        class="pl-6 border-[#D4D4D4] rounded"
-                      />
-                      <span class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">
-                        %
-                      </span>
+                    <div class="self-stretch flex-col justify-start items-start gap-3 flex">
+                      <div class="self-stretch">
+                        <span class="text-base font-medium">
+                          To earn a <b>Certificate with Distinction</b>, students must score a minimum of:
+                        </span>
+                      </div>
+                      <div class="w-full text-base font-medium relative">
+                        <.input
+                          type="number"
+                          min="0"
+                          max="100.0"
+                          step="0.1"
+                          field={f[:min_percentage_for_distinction]}
+                          errors={f.errors}
+                          class="pl-6 border-[#D4D4D4] rounded"
+                        />
+                        <span class="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none">
+                          %
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div class="w-full flex-col justify-start items-start gap-3 flex">
-                <div class="self-stretch text-[#c03a2b] text-base font-medium">
-                  *On the following scored pages:
-                </div>
-                <div
-                  class="w-full flex items-center text-base font-medium border border-[#D4D4D4] rounded bg-white dark:bg-gray-800"
-                  style="min-height: 2.75rem;"
-                >
-                  <.multi_select
-                    id="graded_pages"
-                    placeholder="Select scored pages..."
-                    options={@graded_pages_options}
-                    target={@myself}
-                    selected_values={@selected_graded_pages_options}
-                    selected_resource_ids={@selected_ids}
-                  />
-                </div>
-                <% errors = f.errors[:custom_assessments] %>
-                <.error :if={errors}><%= elem(errors, 0) %></.error>
-              </div>
-            </div>
-            <div class="flex flex-row justify-start items-start gap-[152px]">
-              <div class="pt-[7px] pb-[5px] flex-col justify-center items-start gap-1 inline-flex">
-                <div class="text-xl font-normal">
-                  Certificate Approval
-                </div>
-                <div class="w-96 h-14 text-neutral-500 text-base font-medium">
-                  Require instructor approval before registering credentials to students.
+                <div class="w-full flex-col justify-start items-start gap-3 flex">
+                  <div class="self-stretch text-[#c03a2b] text-base font-medium">
+                    *On the following scored pages:
+                  </div>
+                  <div
+                    class="w-full flex items-center text-base font-medium border border-[#D4D4D4] rounded bg-white dark:bg-gray-800"
+                    style="min-height: 2.75rem;"
+                  >
+                    <.multi_select
+                      id="graded_pages"
+                      placeholder="Select scored pages..."
+                      options={@graded_pages_options}
+                      target={@myself}
+                      selected_values={@selected_graded_pages_options}
+                      selected_resource_ids={@selected_ids}
+                      disabled={@read_only}
+                    />
+                  </div>
+                  <% errors = f.errors[:custom_assessments] %>
+                  <.error :if={errors}><%= elem(errors, 0) %></.error>
                 </div>
               </div>
-              <div class="h-6 justify-start items-center gap-3 flex">
+              <div class="flex flex-row justify-start items-start gap-[152px]">
+                <div class="pt-[7px] pb-[5px] flex-col justify-center items-start gap-1 inline-flex">
+                  <div class="flex flex-row items-center gap-4">
+                    <Icons.lock :if={@read_only} />
+                    <div class="text-xl font-normal">
+                      Certificate Approval
+                    </div>
+                  </div>
+
+                  <div class="w-96 h-14 text-neutral-500 text-base font-medium">
+                    Require instructor approval before registering credentials to students.
+                  </div>
+                </div>
                 <div class="h-6 justify-start items-center gap-3 flex">
-                  <.input
-                    type="checkbox"
-                    field={f[:requires_instructor_approval]}
-                    errors={f.errors}
-                    class="form-check-input w-5 h-5 p-0.5"
-                  />
-                  <div class="grow shrink basis-0 text-base font-medium">
-                    Require instructor approval
+                  <div class="h-6 justify-start items-center gap-3 flex">
+                    <.input
+                      type="checkbox"
+                      field={f[:requires_instructor_approval]}
+                      errors={f.errors}
+                      class="form-check-input w-5 h-5 p-0.5"
+                    />
+                    <div class="grow shrink basis-0 text-base font-medium">
+                      Require instructor approval
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="px-6 py-4 bg-[#0165da] rounded-[3px] justify-center items-center gap-2 inline-flex overflow-hidden opacity-90 hover:opacity-100 cursor-pointer">
-            <button
-              type="submit"
-              form="certificate_form"
-              class="text-white text-base font-bold"
-              phx-target={@myself}
+            <div
+              :if={!@read_only}
+              class="px-6 py-4 bg-[#0165da] rounded-[3px] justify-center items-center gap-2 inline-flex overflow-hidden opacity-90 hover:opacity-100 cursor-pointer"
             >
-              Save Thresholds
-            </button>
+              <button
+                type="submit"
+                form="certificate_form"
+                class="text-white text-base font-bold"
+                phx-target={@myself}
+              >
+                Save Thresholds
+              </button>
+            </div>
           </div>
-        </div>
+        </fieldset>
       </.form>
     </div>
     """
@@ -229,7 +247,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
       cast_certificate_params(
         certificate_params,
         socket.assigns.certificate,
-        socket.assigns.product,
+        socket.assigns.section,
         socket.assigns.selected_ids
       )
 
@@ -241,7 +259,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
       cast_certificate_params(
         params["certificate"],
         socket.assigns.certificate,
-        socket.assigns.product,
+        socket.assigns.section,
         socket.assigns.selected_ids
       )
       |> Repo.insert_or_update()
@@ -317,7 +335,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
         }
         class={[
           "flex gap-x-4 px-4 justify-between items-center w-auto hover:cursor-pointer",
-          if(@disabled, do: "bg-gray-300 hover:cursor-not-allowed")
+          if(@disabled, do: "hover:cursor-not-allowed")
         ]}
         id={"#{@id}-selected-options-container"}
       >
@@ -329,7 +347,11 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
             <%= @placeholder %>
           </span>
           <span :if={@selected_values != %{}}>
-            <.show_selected_pages selected_values={@selected_values} target={@target} />
+            <.show_selected_pages
+              selected_values={@selected_values}
+              target={@target}
+              disabled={@disabled}
+            />
           </span>
         </div>
         <.toggle_chevron id={@id} map_values={@selected_values} />
@@ -399,6 +421,7 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
 
   attr :selected_values, :map, required: true
   attr :target, :map, required: true
+  attr :disabled, :boolean, default: false
 
   defp show_selected_pages(assigns) do
     ~H"""
@@ -409,7 +432,10 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
       <span><%= title %></span>
       <button
         type="button"
-        class="ml-1.5 text-black hover:bg-[#3383e1] rounded-full w-5 h-5 flex items-center justify-center"
+        class={[
+          "ml-1.5 text-black rounded-full w-5 h-5 flex items-center justify-center",
+          if(@disabled, do: "cursor-not-allowed", else: "hover:bg-[#3383e1]")
+        ]}
         aria-label="Remove"
         phx-click="toggle_selected"
         phx-value-resource_id={id}

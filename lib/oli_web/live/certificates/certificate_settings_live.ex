@@ -19,34 +19,40 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   on_mount OliWeb.LiveSessionPlugs.SetRouteName
   on_mount OliWeb.LiveSessionPlugs.SetUri
 
-  def mount(%{"product_id" => product_slug} = _params, session, socket) do
+  def mount(params, session, socket) do
+    slug = params["product_id"] || params["section_slug"]
     socket = assigns_for(socket, :page)
 
-    case Mount.for(product_slug, session) do
+    case Mount.for(slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {_, _, product} ->
-        certificate = Certificates.get_certificate_by(%{section_id: product.id})
+      {_, _, section} ->
+        certificate = Certificates.get_certificate_by(%{section_id: section.id})
 
         socket
-        |> assign(product: product)
-        |> assign(product_changeset: Section.changeset(product))
+        |> assign(section: section)
+        |> assign(section_changeset: Section.changeset(section))
         |> assign(certificate: certificate)
     end
     |> ok_wrapper()
   end
 
-  def handle_params(params, _uri, socket) do
-    %{product: product, ctx: ctx} = socket.assigns
+  def handle_params(params, url, socket) do
+    %{host: host, path: path} = URI.parse(url)
+
+    route_info = Phoenix.Router.route_info(OliWeb.Router, "GET", path, host)
+
+    %{section: section, ctx: ctx} = socket.assigns
     params = decode_params(params)
 
     socket =
       socket
       |> assign(params: params)
       |> assign(active_tab: params["active_tab"])
+      |> assign(read_only: route_info[:access] == :read_only)
       |> assign(graded_pages: [])
-      |> assign(table_model: CertificatesIssuedTableModel.new(ctx, [], product.slug))
+      |> assign(table_model: CertificatesIssuedTableModel.new(ctx, [], section.slug))
       |> assigns_for(:breadcrumbs)
 
     case connected?(socket) do
@@ -57,15 +63,15 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   end
 
   defp assigns_for(socket, :breadcrumbs) do
-    %{assigns: %{route_name: route_name, product: product}} = socket
+    %{assigns: %{route_name: route_name, section: section}} = socket
 
     case route_name do
-      :authoring ->
-        socket |> assign(breadcrumbs: breadcrumbs(:authoring, nil, product.slug))
-
       :workspaces ->
         project = socket.assigns.project
-        socket |> assign(breadcrumbs: breadcrumbs(:workspaces, project.slug, product.slug))
+        socket |> assign(breadcrumbs: breadcrumbs(:workspaces, project.slug, section.slug))
+
+      route_name when route_name in [:authoring, :delivery] ->
+        socket |> assign(breadcrumbs: breadcrumbs(:authoring, nil, section.slug))
     end
   end
 
@@ -88,10 +94,10 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   end
 
   defp assigns_for(socket, :thresholds) do
-    product_slug = socket.assigns.product.slug
+    section_slug = socket.assigns.section.slug
 
     socket
-    |> assign(graded_pages: product_graded_pages(product_slug))
+    |> assign(graded_pages: section_graded_pages(section_slug))
   end
 
   defp assigns_for(socket, :credentials_issued) do
@@ -102,7 +108,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     sorting = %Sorting{direction: params["direction"], field: params["sort_by"]}
     text_search = params["text_search"]
 
-    section_id = socket.assigns.product.id
+    section_id = socket.assigns.section.id
 
     granted_certificates =
       Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
@@ -130,35 +136,38 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="w-full flex-col justify-start items-start gap-[30px] inline-flex mb-5">
-      <div role="title" class="self-stretch text-2xl font-normal">
-        Certificate Settings
-      </div>
-      <.form
-        for={@product_changeset}
-        phx-change="toggle_certificate"
-        class="self-stretch justify-start items-center gap-3 inline-flex"
-      >
-        <input
-          type="checkbox"
-          class="form-check-input w-5 h-5 p-0.5"
-          id="enable_certificates_checkbox"
-          name="certificate_enabled"
-          checked={Ecto.Changeset.get_field(@product_changeset, :certificate_enabled)}
-        />
-        <div class="grow shrink basis-0 text-base font-medium">
-          Enable certificate capabilities for this product
+    <div class="container mx-auto mt-10 mb-20">
+      <div class="w-full flex-col justify-start items-start gap-[30px] inline-flex mb-5">
+        <div role="title" class="self-stretch text-2xl font-normal">
+          Certificate Settings
         </div>
-      </.form>
-      <.tabs
-        active_tab={@active_tab}
-        current_path={@current_path}
-        certificate_enabled={@product.certificate_enabled}
-      />
-    </div>
+        <.form
+          :if={!@read_only}
+          for={@section_changeset}
+          phx-change="toggle_certificate"
+          class="self-stretch justify-start items-center gap-3 inline-flex"
+        >
+          <input
+            type="checkbox"
+            class="form-check-input w-5 h-5 p-0.5"
+            id="enable_certificates_checkbox"
+            name="certificate_enabled"
+            checked={Ecto.Changeset.get_field(@section_changeset, :certificate_enabled)}
+          />
+          <div class="grow shrink basis-0 text-base font-medium">
+            Enable certificate capabilities for this product
+          </div>
+        </.form>
+        <.tabs
+          active_tab={@active_tab}
+          current_path={@current_path}
+          certificate_enabled={@section.certificate_enabled}
+        />
+      </div>
 
-    <div :if={@product.certificate_enabled}>
-      <%= render_tab(assigns) %>
+      <div :if={@section.certificate_enabled}>
+        <%= render_tab(assigns) %>
+      </div>
     </div>
     """
   end
@@ -169,7 +178,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       module={CertificatesIssuedTab}
       id="certificates_issued_component"
       params={@params}
-      section_slug={@product.slug}
+      section_slug={@section.slug}
       table_model={@table_model}
       ctx={@ctx}
       route_name={@route_name}
@@ -183,7 +192,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     <.live_component
       module={DesignTab}
       id="design_component"
-      product={@product}
+      section={@section}
       certificate={@certificate}
       active_tab={@active_tab}
     />
@@ -195,10 +204,11 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     <.live_component
       module={ThresholdsTab}
       id="thresholds_component"
-      product={@product}
+      section={@section}
       certificate={@certificate}
       active_tab={@active_tab}
       graded_pages={@graded_pages}
+      read_only={@read_only}
     />
     """
   end
@@ -262,15 +272,15 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
   def handle_event("toggle_certificate", params, socket) do
     certificate_enabled = params["certificate_enabled"] == "on"
 
-    case Sections.update_section(socket.assigns.product, %{
+    case Sections.update_section(socket.assigns.section, %{
            certificate_enabled: certificate_enabled
          }) do
-      {:ok, product} ->
+      {:ok, section} ->
         {:noreply,
-         assign(socket, product: product, product_changeset: Section.changeset(product))}
+         assign(socket, section: section, section_changeset: Section.changeset(section))}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, product_changeset: changeset)}
+        {:noreply, assign(socket, section_changeset: changeset)}
     end
   end
 
@@ -281,21 +291,21 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
      |> put_flash(type, message)}
   end
 
-  defp breadcrumbs(:authoring, _project_slug, product_slug) do
+  defp breadcrumbs(:authoring, _project_slug, section_slug) do
     [
       Breadcrumb.new(%{
-        full_title: "Product Overview",
-        link: ~p"/authoring/products/#{product_slug}"
+        full_title: "Manage Section",
+        link: ~p"/authoring/products/#{section_slug}"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]
   end
 
-  defp breadcrumbs(:workspaces, project_slug, product_slug) do
+  defp breadcrumbs(:workspaces, project_slug, section_slug) do
     [
       Breadcrumb.new(%{
         full_title: "Product Overview",
-        link: ~p"/workspaces/course_author/#{project_slug}/products/#{product_slug}"
+        link: ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]
@@ -308,8 +318,8 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     Map.put(params, "active_tab", active_tab)
   end
 
-  defp product_graded_pages(product_slug) do
-    product_slug
+  defp section_graded_pages(section_slug) do
+    section_slug
     |> DeliveryResolver.graded_pages_revisions_and_section_resources()
     |> Enum.map(&(&1 |> elem(0) |> Map.take([:resource_id, :title])))
   end
