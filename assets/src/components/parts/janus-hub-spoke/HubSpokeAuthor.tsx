@@ -306,7 +306,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
                 <div className="mb-2 flex justify-between items-center">
                   <h3 className="text-sm font-semibold text-gray-800 dark:text-white">Progress</h3>
                   <span className="text-sm text-gray-800 dark:text-white">
-                    <b>00/{options?.length}</b>
+                    <b>0/{options?.length}</b>
                   </span>
                 </div>
                 <div
