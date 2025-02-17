@@ -80,7 +80,6 @@ defmodule OliWeb.AttemptControllerTest do
   describe "activity and attempt already submitted" do
     setup [:setup_session]
 
-    @tag :skip
     test "cannot submit an already submitted activity in a graded page", %{
       conn: conn,
       map: map
@@ -98,7 +97,7 @@ defmodule OliWeb.AttemptControllerTest do
       conn =
         put(
           conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{activity_attempt.attempt_guid}",
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/active/#{activity_attempt.attempt_guid}",
           %{
             "section_slug" => map.section.slug,
             "activity_attempt_guid" => activity_attempt.attempt_guid,
@@ -114,7 +113,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot change an already input submitted in a graded page", %{
       conn: conn,
       map: map
@@ -132,7 +130,7 @@ defmodule OliWeb.AttemptControllerTest do
       conn =
         patch(
           conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.activity_attempt1.attempt_guid}",
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/active/#{map.activity_attempt1.attempt_guid}",
           %{
             "activity_attempt_guid" => map.activity_attempt1.attempt_guid,
             "partInputs" => [
@@ -152,7 +150,6 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
-    @tag :skip
     test "cannot save an already part attempt submitted in a graded page", %{
       conn: conn,
       map: map
@@ -170,115 +167,9 @@ defmodule OliWeb.AttemptControllerTest do
       conn =
         patch(
           conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.activity_attempt1.attempt_guid}/part_attempt/#{part_attempt.attempt_guid}",
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/active/#{map.activity_attempt1.attempt_guid}/part_attempt/#{part_attempt.attempt_guid}",
           %{
             "activity_attempt_guid" => map.activity_attempt1.attempt_guid,
-            "part_attempt_guid" => part_attempt.attempt_guid,
-            "response" => "Hello World"
-          }
-        )
-
-      assert %{
-               "message" =>
-                 "These changes could not be saved as this attempt may have already been submitted",
-               "error" => true
-             } =
-               json_response(conn, 403)
-    end
-
-    @tag :skip
-    test "cannot submit an already submitted activity in a adaptive page", %{
-      conn: conn,
-      map: map
-    } do
-      # Mark activity attempt as submitted
-      {:ok, activity_attempt} =
-        Core.get_latest_activity_attempts(map.adaptive_attempt1.id)
-        |> hd
-        |> Core.update_activity_attempt(%{
-          lifecycle_state: "submitted",
-          date_submitted: DateTime.utc_now()
-        })
-
-      # Submit activity attempt endpoint
-      conn =
-        put(
-          conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{activity_attempt.attempt_guid}",
-          %{
-            "section_slug" => map.section.slug,
-            "activity_attempt_guid" => activity_attempt.attempt_guid,
-            "partInputs" => []
-          }
-        )
-
-      assert %{
-               "message" =>
-                 "These changes could not be saved as this attempt may have already been submitted",
-               "error" => true
-             } =
-               json_response(conn, 403)
-    end
-
-    @tag :skip
-    test "cannot change an already input submitted in a adaptive page", %{
-      conn: conn,
-      map: map
-    } do
-      # Mark part attempt as submitted
-      {:ok, part_attempt} =
-        Core.get_latest_part_attempts(map.adaptive_activity_attempt1.attempt_guid)
-        |> hd
-        |> Core.update_part_attempt(%{
-          lifecycle_state: "submitted",
-          date_submitted: DateTime.utc_now()
-        })
-
-      # Save activity attempt endpoint
-      conn =
-        patch(
-          conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.adaptive_activity_attempt1.attempt_guid}",
-          %{
-            "activity_attempt_guid" => map.adaptive_activity_attempt1.attempt_guid,
-            "partInputs" => [
-              %{
-                "attemptGuid" => part_attempt.attempt_guid,
-                "response" => %{"input" => "Hello World"}
-              }
-            ]
-          }
-        )
-
-      assert %{
-               "message" =>
-                 "These changes could not be saved as this attempt may have already been submitted",
-               "error" => true
-             } =
-               json_response(conn, 403)
-    end
-
-    @tag :skip
-    test "cannot save an already part attempt submitted in a adaptive page", %{
-      conn: conn,
-      map: map
-    } do
-      # Mark part attempt as submitted
-      {:ok, part_attempt} =
-        Core.get_latest_part_attempts(map.adaptive_activity_attempt1.attempt_guid)
-        |> hd
-        |> Core.update_part_attempt(%{
-          lifecycle_state: "submitted",
-          date_submitted: DateTime.utc_now()
-        })
-
-      # Save part attempt endpoint
-      conn =
-        patch(
-          conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.adaptive_activity_attempt1.attempt_guid}/part_attempt/#{part_attempt.attempt_guid}",
-          %{
-            "activity_attempt_guid" => map.adaptive_activity_attempt1.attempt_guid,
             "part_attempt_guid" => part_attempt.attempt_guid,
             "response" => "Hello World"
           }
