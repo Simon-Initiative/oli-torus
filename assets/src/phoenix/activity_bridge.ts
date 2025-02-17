@@ -58,7 +58,7 @@ export const initActivityBridge = (elementId: string) => {
       };
 
       makeRequest(
-        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`,
+        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/active`,
         'PATCH',
         { partInputs: e.detail.payload },
         newContinuation,
@@ -106,7 +106,7 @@ export const initActivityBridge = (elementId: string) => {
       e.preventDefault();
       e.stopPropagation();
       makeRequest(
-        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`,
+        `/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}/active`,
         'PATCH',
         { response: e.detail.payload },
         e.detail.continuation,

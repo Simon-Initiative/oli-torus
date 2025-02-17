@@ -80,6 +80,33 @@ defmodule OliWeb.AttemptControllerTest do
   describe "activity and attempt already submitted" do
     setup [:setup_session]
 
+    test "can change an active input in a basic graded page", %{
+      conn: conn,
+      map: map
+    } do
+      part_attempt =
+        Core.get_latest_part_attempts(map.activity_attempt1.attempt_guid)
+        |> hd
+
+      # Save active activity attempt endpoint
+      conn =
+        patch(
+          conn,
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.activity_attempt1.attempt_guid}/active",
+          %{
+            "activity_attempt_guid" => map.activity_attempt1.attempt_guid,
+            "partInputs" => [
+              %{
+                "attemptGuid" => part_attempt.attempt_guid,
+                "response" => %{"input" => "Hello World"}
+              }
+            ]
+          }
+        )
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+    end
+
     test "cannot change an already input submitted in a graded page", %{
       conn: conn,
       map: map
@@ -93,11 +120,11 @@ defmodule OliWeb.AttemptControllerTest do
           date_submitted: DateTime.utc_now()
         })
 
-      # Save activity attempt endpoint
+      # Save active activity attempt endpoint
       conn =
         patch(
           conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/active/#{map.activity_attempt1.attempt_guid}",
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.activity_attempt1.attempt_guid}/active",
           %{
             "activity_attempt_guid" => map.activity_attempt1.attempt_guid,
             "partInputs" => [
@@ -117,6 +144,29 @@ defmodule OliWeb.AttemptControllerTest do
                json_response(conn, 403)
     end
 
+    test "can save an active part attempt in a graded page", %{
+      conn: conn,
+      map: map
+    } do
+      part_attempt =
+        Core.get_latest_part_attempts(map.activity_attempt1.attempt_guid)
+        |> hd
+
+      # Save active part attempt endpoint
+      conn =
+        patch(
+          conn,
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.activity_attempt1.attempt_guid}/part_attempt/#{part_attempt.attempt_guid}/active",
+          %{
+            "activity_attempt_guid" => map.activity_attempt1.attempt_guid,
+            "part_attempt_guid" => part_attempt.attempt_guid,
+            "response" => "Hello World"
+          }
+        )
+
+      assert %{"type" => "success"} = json_response(conn, 200)
+    end
+
     test "cannot save an already part attempt submitted in a graded page", %{
       conn: conn,
       map: map
@@ -130,11 +180,11 @@ defmodule OliWeb.AttemptControllerTest do
           date_submitted: DateTime.utc_now()
         })
 
-      # Save part attempt endpoint
+      # Save active part attempt endpoint
       conn =
         patch(
           conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/active/#{map.activity_attempt1.attempt_guid}/part_attempt/#{part_attempt.attempt_guid}",
+          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/#{map.activity_attempt1.attempt_guid}/part_attempt/#{part_attempt.attempt_guid}/active",
           %{
             "activity_attempt_guid" => map.activity_attempt1.attempt_guid,
             "part_attempt_guid" => part_attempt.attempt_guid,
