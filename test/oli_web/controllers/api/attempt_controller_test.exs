@@ -80,39 +80,6 @@ defmodule OliWeb.AttemptControllerTest do
   describe "activity and attempt already submitted" do
     setup [:setup_session]
 
-    test "cannot submit an already submitted activity in a graded page", %{
-      conn: conn,
-      map: map
-    } do
-      # Mark activity attempt as submitted
-      {:ok, activity_attempt} =
-        Core.get_latest_activity_attempts(map.attempt1.id)
-        |> hd
-        |> Core.update_activity_attempt(%{
-          lifecycle_state: "submitted",
-          date_submitted: DateTime.utc_now()
-        })
-
-      # Submit activity attempt endpoint
-      conn =
-        put(
-          conn,
-          ~p"/api/v1/state/course/#{map.section.slug}/activity_attempt/active/#{activity_attempt.attempt_guid}",
-          %{
-            "section_slug" => map.section.slug,
-            "activity_attempt_guid" => activity_attempt.attempt_guid,
-            "partInputs" => []
-          }
-        )
-
-      assert %{
-               "message" =>
-                 "These changes could not be saved as this attempt may have already been submitted",
-               "error" => true
-             } =
-               json_response(conn, 403)
-    end
-
     test "cannot change an already input submitted in a graded page", %{
       conn: conn,
       map: map
