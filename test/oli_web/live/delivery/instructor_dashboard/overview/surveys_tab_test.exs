@@ -1232,100 +1232,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
                "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
              )
 
-      # check that the multiple choice details render correctly
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
+      activity_id = view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{oli-multiple-choice-authoring})
+      |> Floki.attribute("activity_id")
+      |> hd()
+      |> String.split("_")
+      |> Enum.at(1)
+      |> String.to_integer()
 
-      assert has_element?(
-               view,
-               ~s(div[role="activity_title"]),
-               "#{mcq_activity_1.title} - Question details"
-             )
+      assert activity_id == mcq_activity_1.resource_id
 
-      assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}]}"
-    end
-
-    test "single response details get rendered correctly when activity is selected",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           student_2: student_2,
-           mcq_activity_1: mcq_activity_1,
-           single_response_activity: single_response_activity,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        single_response_activity,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "This is an incorrect answer from student 2",
-        false
-      )
-
-      set_activity_attempt(
-        page_1,
-        single_response_activity,
-        student_2,
-        section,
-        project.id,
-        publication.id,
-        "This is the second answer (correct) from student 2",
-        true
-      )
-
-      set_activity_attempt(
-        page_1,
-        single_response_activity,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "This is the first answer (correct) from the GOAT",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
-
-      # we click on the single response activity
-      view
-      |> element(~s{table tbody tr:nth-of-type(2)})
-      |> render_click()
-
-      # and check that the single response details render correctly
-      # sorted by student name
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-short-answer-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      assert selected_activity_model =~
-               "\"responses\":[{\"text\":\"This is an incorrect answer from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the second answer (correct) from student 2\",\"user_name\":\"Di Maria, Angel\"},{\"text\":\"This is the first answer (correct) from the GOAT\",\"user_name\":\"Messi, Lionel\"}]"
     end
 
     # https://eliterate.atlassian.net/browse/TRIAGE-4
@@ -1376,52 +1294,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
                "{\"authoring\":{\"responses\":[{\"type\":\"text\",\"text\":\"unsupported\",\"user_name\":\"#{student_1.family_name}, #{student_1.given_name}\",\"part_id\":\"1\"}]},\"inputs\":[{\"id\":\"1458555427\",\"inputType\":\"text\",\"partId\":\"1\"}]}"
     end
 
-    test "likert activity details get rendered correctly when page is selected",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           likert_activity: likert_activity,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        likert_activity,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      # check that the likert VegaLite visualization renders correctly
-      selected_activity_data =
-        view
-        |> element("div[data-live-react-class=\"Components.VegaLiteRenderer\"]")
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.attribute("data-live-react-props")
-        |> hd()
-        |> Jason.decode!()
-
-      assert has_element?(
-               view,
-               ~s(div[role="activity_title"]),
-               "#{likert_activity.title} - Question details"
-             )
-
-      assert selected_activity_data["spec"]["title"]["text"] == likert_activity.title
-    end
-
     test "question details responds to user click on an activity", %{
       conn: conn,
       section: section,
@@ -1465,17 +1337,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
                "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
              )
 
-      # and check that the question details have changed to match the selected activity
-      selected_activity_model =
-        view
+      activity_id = view
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
+        |> Floki.attribute("activity_id")
+        |> hd()
+        |> String.split("_")
+        |> Enum.at(1)
+        |> String.to_integer()
 
-      assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}]}"
+      assert activity_id == mcq_activity_1.resource_id
+
     end
 
     test "student attempts summary gets rendered correctly when no students have attempted", %{

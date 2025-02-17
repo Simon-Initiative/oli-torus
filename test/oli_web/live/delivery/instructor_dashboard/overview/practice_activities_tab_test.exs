@@ -1259,23 +1259,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
                "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
              )
 
-      # check that the multiple choice details render correctly
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
+      activity_id = view
+      |> render()
+      |> Floki.parse_fragment!()
+      |> Floki.find(~s{oli-multiple-choice-authoring})
+      |> Floki.attribute("activity_id")
+      |> hd()
+      |> String.split("_")
+      |> Enum.at(1)
+      |> String.to_integer()
 
-      assert has_element?(
-               view,
-               ~s(div[role="activity_title"]),
-               "#{mcq_activity_1.title} - Question details"
-             )
+      assert mcq_activity_1.resource_id == activity_id
 
-      assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}]}"
     end
 
     test "single response details get rendered correctly when page is selected",

@@ -428,6 +428,7 @@ defmodule Oli.Analytics.Summary do
       where: rs.project_id == -1 and rs.publication_id == -1 and rs.section_id == ^section_id and rs.page_id == ^page_id,
       where: s.user_id != -1 and s.project_id == -1 and s.publication_id == -1,
       where: ^activity_constraint,
+      distinct: [s.resource_id, s.user_id, s.part_id],
       select: s
     )
     |> Repo.all()

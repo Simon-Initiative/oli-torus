@@ -7,7 +7,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
   use OliWeb, :html
 
   alias Oli.Analytics.Summary
-  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Sections.Section
   alias OliWeb.ManualGrading.RenderedActivity
   alias Oli.Delivery.Page.ActivityContext
@@ -193,67 +192,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   end
 
-  @spec get_activities_details(
-          any(),
-          atom() | %{:analytics_version => any(), :id => any(), optional(any()) => any()},
-          any(),
-          any()
-        ) :: any()
-  def get_activities_details(activity_resource_ids, section, activity_types_map, page_resource_id) do
-    multiple_choice_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Multiple Choice", do: k end)
+  attr :activity, :map, required: true
+  attr :activity_types_map, :map, required: true
 
-    single_response_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Single Response", do: k end)
+  def rendered_activity(assigns) do
+    case Map.get(assigns.activity_types_map, assigns.activity.revision.activity_type_id) do
+      %{slug: "oli_likert"} ->
+        render_likert(assigns)
 
-    multi_input_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} ->
-        if v.title == "Multi Input",
-          do: k
-      end)
-
-    likert_type_id =
-      Enum.find_value(activity_types_map, fn {k, v} -> if v.title == "Likert", do: k end)
-
-    activity_attempts = Core.get_activity_attempts_by(section.id, activity_resource_ids)
-
-    if section.analytics_version == :v2 do
-      response_summaries =
-        Summary.get_response_summary_for(page_resource_id, section.id, activity_resource_ids)
-
-      Enum.map(activity_attempts, fn activity_attempt ->
-        case activity_attempt.activity_type_id do
-          ^multiple_choice_type_id ->
-            add_choices_frequencies(activity_attempt, response_summaries)
-
-          ^single_response_type_id ->
-            add_single_response_details(activity_attempt, response_summaries)
-
-          ^multi_input_type_id ->
-            add_multi_input_details(activity_attempt, response_summaries)
-
-          ^likert_type_id ->
-            add_likert_details(activity_attempt, response_summaries)
-
-          _ ->
-            activity_attempt
-        end
-      end)
-    else
-      activity_attempts
+      _ ->
+        render_other(assigns)
     end
   end
 
-  attr :activity, :map, required: true
-
-  def rendered_activity(
-        %{
-          activity: %{
-            preview_rendered: ["<oli-likert-authoring" <> _rest],
-            analytics_version: :v2
-          }
-        } = assigns
-      ) do
+  def render_likert(assigns) do
     spec =
       VegaLite.from_json("""
       {
@@ -422,7 +374,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     """
   end
 
-  def rendered_activity(assigns) do
+  defp render_other(assigns) do
     ~H"""
     <RenderedActivity.render
       id={"activity_#{@activity.id}"}
