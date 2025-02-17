@@ -57,4 +57,23 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> Changeset.change(attrs)
     |> Repo.update()
   end
+
+  def create_granted_certificate(attrs) do
+    %GrantedCertificate{}
+    |> GrantedCertificate.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, granted_certificate} ->
+        # This oban job will create the pdf and update the granted_certificate.url
+        Oli.Delivery.Sections.Certificates.Workers.GeneratePdf.new(%{
+          granted_certificate_id: granted_certificate.id
+        })
+        |> Oban.insert()
+
+        {:ok, granted_certificate}
+
+      error ->
+        error
+    end
+  end
 end
