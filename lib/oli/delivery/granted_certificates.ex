@@ -52,13 +52,16 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> GrantedCertificate.changeset(attrs)
     |> Repo.insert()
     |> case do
-      {:ok, granted_certificate} ->
+      {:ok, %{state: :earned, id: id} = granted_certificate} ->
         # This oban job will create the pdf and update the granted_certificate.url
         Oli.Delivery.Sections.Certificates.Workers.GeneratePdf.new(%{
-          granted_certificate_id: granted_certificate.id
+          granted_certificate_id: id
         })
         |> Oban.insert()
 
+        {:ok, granted_certificate}
+
+      {:ok, granted_certificate} ->
         {:ok, granted_certificate}
 
       error ->
