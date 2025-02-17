@@ -415,6 +415,12 @@ defmodule Oli.Analytics.Summary do
     |> Oli.Repo.insert()
   end
 
+  @doc """
+  Retrieves the resource summaries for the activities present on a specified page in a
+  specified section. If `only_for_activity_ids` is provided, only the activities with the
+  specified IDs will be included in the result. If `only_for_activity_ids` is nil, all
+  activities on the page will be included in the result.
+  """
   def summarize_activities_for_page(section_id, page_id, only_for_activity_ids) do
 
     activity_constraint =
@@ -423,6 +429,8 @@ defmodule Oli.Analytics.Summary do
         _ -> dynamic([rs, _], rs.activity_id in ^only_for_activity_ids)
       end
 
+    # The only way to query resource summary for all activities in a page is
+    # to go through the response summary and constrain by page_id
     from(rs in ResponseSummary,
       join: s in ResourceSummary, on: rs.activity_id == s.resource_id and rs.section_id == s.section_id,
       where: rs.project_id == -1 and rs.publication_id == -1 and rs.section_id == ^section_id and rs.page_id == ^page_id,
