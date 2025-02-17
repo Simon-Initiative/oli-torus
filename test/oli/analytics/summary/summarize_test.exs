@@ -53,9 +53,6 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
 
       activity_type_id = Oli.Resources.ResourceType.id_for_activity()
 
-
-      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{analytics_version: :v2})
-
       id1 = a1.resource.id
       id2 = a2.resource.id
 
