@@ -49,7 +49,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         },
         %ColumnSpec{
           name: :progress,
-          th_class: "flex items-center gap-1 ",
+          th_class: "flex items-center gap-1 border-b-0",
           label: HTMLComponents.student_progress_label(%{title: "COURSE PROGRESS"}),
           render_fn: &__MODULE__.render_progress_column/3
         },
@@ -84,7 +84,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
               name: :certificate_status,
               label: render_certificate_status_label(certificate_pending_approval_count),
               render_fn: &render_certificate_status_column/3,
-              th_class: "flex items-center gap-2"
+              th_class: "flex items-center gap-2 border-b-0"
             }
           ]
         else
@@ -143,7 +143,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       })
 
     ~H"""
-    <div class="flex items-center ml-8">
+    <div class="flex items-center ml-8 border-b-">
       <div class={"flex flex-shrink-0 rounded-full w-2 h-2 #{if @progress < 50, do: "bg-red-600", else: "bg-gray-500"}"}>
       </div>
       <.link class="ml-6 underline" navigate={@link}>
@@ -266,9 +266,19 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       certificate_status={@certificate_status}
       requires_instructor_approval={@certificate.requires_instructor_approval}
       granted_certificate_id={@granted_certificate_id}
+      certificate_id={@certificate.id}
+      student_id={@user_id}
+      issued_by_type={issued_by_type(@ctx)}
+      issued_by_id={issued_by_id(@ctx)}
     />
     """
   end
+
+  defp issued_by_type(%{author: author} = _ctx) when not is_nil(author), do: :author
+  defp issued_by_type(_ctx), do: :user
+
+  defp issued_by_id(%{author: author} = _ctx) when not is_nil(author), do: author.id
+  defp issued_by_id(ctx), do: ctx.user.id
 
   defp parse_progress(progress) do
     {progress, _} =
