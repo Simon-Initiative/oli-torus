@@ -12,9 +12,14 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
     })
   end
 
-
-  def add_response_summary([section_id, page_id, activity_id, part_id, count, resource_part_response_id]) do
-
+  def add_response_summary([
+        section_id,
+        page_id,
+        activity_id,
+        part_id,
+        count,
+        resource_part_response_id
+      ]) do
     Summary.create_response_summary(%{
       project_id: -1,
       publication_id: -1,
@@ -50,26 +55,26 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
       a2: a2,
       page1: page1
     } do
-
       activity_type_id = Oli.Resources.ResourceType.id_for_activity()
 
       id1 = a1.resource.id
       id2 = a2.resource.id
 
       # Create two responses for each activity
-      [{:ok, r1}, {:ok, r2}, {:ok, r3}, {:ok, r4}] = [
-        [id1, "1", "apple"],
-        [id1, "1", "banana"],
-        [id2, "1", "apple"],
-        [id2, "1", "banana"]
-      ]
-      |> Enum.map(fn v -> add_resource_part_response(v) end)
+      [{:ok, r1}, {:ok, r2}, {:ok, r3}, {:ok, r4}] =
+        [
+          [id1, "1", "apple"],
+          [id1, "1", "banana"],
+          [id2, "1", "apple"],
+          [id2, "1", "banana"]
+        ]
+        |> Enum.map(fn v -> add_resource_part_response(v) end)
 
       [
         [section.id, page1.id, id1, "1", 3, r1.id],
         [section.id, page1.id, id1, "1", 3, r2.id],
         [section.id, page1.id, id2, "1", 3, r3.id],
-        [section.id, page1.id, id2, "1", 3, r4.id],
+        [section.id, page1.id, id2, "1", 3, r4.id]
       ]
       |> Enum.each(fn v -> add_response_summary(v) end)
 
@@ -78,7 +83,6 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
         [-1, -1, section.id, user2.id, id1, "1", activity_type_id, 1, 3, 1, 1, 0],
         [-1, -1, section.id, user1.id, id2, "1", activity_type_id, 2, 4, 1, 1, 0],
         [-1, -1, section.id, user2.id, id2, "1", activity_type_id, 3, 5, 1, 1, 0]
-
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
@@ -96,8 +100,6 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
 
       items = Summary.summarize_activities_for_page(section.id, page1.id, [id1 + id2])
       assert Enum.count(items) == 0
-
     end
-
   end
 end

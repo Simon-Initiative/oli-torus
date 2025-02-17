@@ -36,49 +36,69 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     datasets: map
   }
   """
-  def summarize_activity_performance(%Section{} = section, page_revision, activity_types_map, students, only_for_activity_ids \\ nil) do
-
+  def summarize_activity_performance(
+        %Section{} = section,
+        page_revision,
+        activity_types_map,
+        students,
+        only_for_activity_ids \\ nil
+      ) do
     page_id = page_revision.resource_id
     graded = page_revision.graded
 
     # Get the per-student performance summary for all activities on the page, then group
     # them by the activity id (which comes back as resource_id)
-    student_summary = Summary.summarize_activities_for_page(section.id, page_id, only_for_activity_ids)
+    student_summary =
+      Summary.summarize_activities_for_page(section.id, page_id, only_for_activity_ids)
+
     grouped_by_activity_id = Enum.group_by(student_summary, & &1.resource_id)
 
-    response_summaries = Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
+    response_summaries =
+      Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
 
     # Then resolve the revisions for the activities
     activity_ids = Map.keys(grouped_by_activity_id)
-    revisions_by_resource_id = Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
-    |> Enum.reduce(%{}, fn revision, acc -> Map.put(acc, revision.resource_id, revision) end)
+
+    revisions_by_resource_id =
+      Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
+      |> Enum.reduce(%{}, fn revision, acc -> Map.put(acc, revision.resource_id, revision) end)
 
     # NOTE: From this point forward, we make no more DB queries
 
     # Now total up the attempt numbers across all students for each activity
-    attempt_totals = Enum.reduce(activity_ids, %{}, fn activity_id, acc ->
-      total = Enum.reduce(grouped_by_activity_id[activity_id], 0, fn summary, acc -> acc + summary.num_attempts end)
-      Map.put(acc, activity_id, total)
-    end)
+    attempt_totals =
+      Enum.reduce(activity_ids, %{}, fn activity_id, acc ->
+        total =
+          Enum.reduce(grouped_by_activity_id[activity_id], 0, fn summary, acc ->
+            acc + summary.num_attempts
+          end)
+
+        Map.put(acc, activity_id, total)
+      end)
 
     all_emails = Enum.map(students, & &1.email) |> MapSet.new()
     ordinal_mapping = build_ordinal_mapping(page_revision)
 
     # Now we can assemble the final structure for each activity
     Enum.map(activity_ids, fn activity_id ->
-
       students_with_attempts = grouped_by_activity_id[activity_id] |> Enum.map(& &1.user_id)
-      revision = case revisions_by_resource_id[activity_id] do
-        nil -> %{title: "Unknown Activity"}
-        revision -> revision
-      end
+
+      revision =
+        case revisions_by_resource_id[activity_id] do
+          nil -> %{title: "Unknown Activity"}
+          revision -> revision
+        end
 
       # Determine with students have not attempted this activity, all via set difference
-      emails_with_attempts = Enum.filter(response_summaries, fn response_summary -> response_summary.activity_id == activity_id end)
-      |> Enum.map(fn response_summary -> response_summary.user.email end)
-      |> MapSet.new()
+      emails_with_attempts =
+        Enum.filter(response_summaries, fn response_summary ->
+          response_summary.activity_id == activity_id
+        end)
+        |> Enum.map(fn response_summary -> response_summary.user.email end)
+        |> MapSet.new()
 
-      student_emails_without_attempts = MapSet.difference(all_emails, emails_with_attempts) |> MapSet.to_list()
+      student_emails_without_attempts =
+        MapSet.difference(all_emails, emails_with_attempts) |> MapSet.to_list()
 
       %{
         id: activity_id,
@@ -95,13 +115,23 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     end)
     |> stage_performance_details(activity_types_map, response_summaries)
     |> Enum.map(fn activity ->
-        ordinal = Map.get(ordinal_mapping, activity.resource_id)
-        Map.put(activity, :preview_rendered, fast_preview_render(section, activity.revision, page_id, activity_types_map, ordinal))
-      end)
+      ordinal = Map.get(ordinal_mapping, activity.resource_id)
+
+      Map.put(
+        activity,
+        :preview_rendered,
+        fast_preview_render(section, activity.revision, page_id, activity_types_map, ordinal)
+      )
+    end)
   end
 
-  defp fast_preview_render(%Section{slug: section_slug}, revision, page_id, activity_types_map, ordinal) do
-
+  defp fast_preview_render(
+         %Section{slug: section_slug},
+         revision,
+         page_id,
+         activity_types_map,
+         ordinal
+       ) do
     type = Map.get(activity_types_map, revision.activity_type_id)
     state = ActivityState.create_preview_state(revision.content)
 
@@ -109,7 +139,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       id: revision.resource_id,
       attempt_guid: "fake_attempt_guid",
       unencoded_model: revision.content,
-      model: ActivityContext.prepare_model(revision.content, [prune: false]),
+      model: ActivityContext.prepare_model(revision.content, prune: false),
       state: ActivityContext.prepare_state(state),
       lifecycle_state: :evaluated,
       delivery_element: type.delivery_element,
@@ -133,24 +163,23 @@ defmodule OliWeb.Delivery.ActivityHelpers do
       is_liveview: true
     }
     |> OliWeb.ManualGrading.Rendering.render(:instructor_preview)
-
   end
 
   defp build_ordinal_mapping(revision) do
+    {mapping, _} =
+      revision.content
+      |> Oli.Resources.PageContent.flat_filter(fn e ->
+        e["type"] == "activity-reference" or e["type"] == "selection"
+      end)
+      |> Enum.reduce({%{}, 1}, fn e, {m, ordinal} ->
+        case e["type"] do
+          "activity-reference" ->
+            {Map.put(m, e["activity_id"], ordinal), ordinal + 1}
 
-    {mapping, _} = revision.content
-    |> Oli.Resources.PageContent.flat_filter(fn e -> e["type"] == "activity-reference" or e["type"] == "selection" end)
-    |> Enum.reduce({%{}, 1}, fn e, {m, ordinal} ->
-
-      case e["type"] do
-        "activity-reference" ->
-          {Map.put(m, e["activity_id"], ordinal), ordinal + 1}
-
-        "selection" ->
-          {m, ordinal + m["count"]}
-
-      end
-    end)
+          "selection" ->
+            {m, ordinal + m["count"]}
+        end
+      end)
 
     mapping
   end
@@ -189,7 +218,6 @@ defmodule OliWeb.Delivery.ActivityHelpers do
           a
       end
     end)
-
   end
 
   attr :activity, :map, required: true
