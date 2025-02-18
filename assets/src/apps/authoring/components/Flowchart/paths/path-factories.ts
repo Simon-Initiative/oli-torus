@@ -117,13 +117,13 @@ export const createMCQCommonErrorPath = (
   mcq: IMCQPartLayout,
   selectedOption: number,
   destinationScreenId: number | null = null,
-): OptionSpecificPath => {
+): OptionCommonErrorPath => {
   const optionLabel =
     getNodeText(mcq.custom?.mcqItems[selectedOption].nodes) || `Option #${selectedOption + 1}`;
 
   return {
     ...createDestinationPathTemplate(`mcq-common-error-${selectedOption}`, destinationScreenId),
-    type: 'option-specific',
+    type: 'option-common-error',
     selectedOption: selectedOption + 1, // The dropdown component is 1-based, I do not know if this is going to hold true for all components...
     componentId: mcq.id,
     label: 'Incorrect option: ' + optionLabel.substring(0, 20),
