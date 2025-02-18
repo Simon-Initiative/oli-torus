@@ -21,7 +21,6 @@ export const generateRule = (
   feedback: string | null = null,
   additionalActions: IAction[] = [],
   extra: Partial<IAdaptiveRule> = {},
-  conditionType = 'all',
 ): IAdaptiveRule => {
   const rule = createRuleTemplate(label);
   rule.correct = correct;
@@ -39,15 +38,9 @@ export const generateRule = (
   if (additionalActions) {
     rule.event.params.actions.push(...additionalActions);
   }
-  if (conditionType === 'all') {
-    rule.conditions = {
-      all: conditions,
-    };
-  } else {
-    rule.conditions = {
-      any: conditions,
-    };
-  }
+  rule.conditions = {
+    all: conditions,
+  };
   return {
     ...rule,
     ...extra,

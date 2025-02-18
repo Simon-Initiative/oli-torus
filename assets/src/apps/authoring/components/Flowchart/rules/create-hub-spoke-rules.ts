@@ -59,7 +59,7 @@ export const generateHubSpokeRules = (
 
   const incorrect: Required<IConditionWithFeedback[]> = [
     {
-      conditions: createSpokeIncorrectCondition(spokedCompleteDestination, question),
+      conditions: createSpokeIncorrectCondition(question),
       feedback: question?.custom?.incorrectFeedback?.trim()?.length
         ? question?.custom?.incorrectFeedback
         : 'Please visit the required number of spokes before clicking Next.',
@@ -82,17 +82,7 @@ export const generateHubSpokeRules = (
     incorrect,
     spokeSpecificConditionsFeedback,
     commanErrors,
-    [
-      {
-        type: 'mutateState',
-        params: {
-          value: '1',
-          target: `stage.${question.id}.totalCompletedSpoke`,
-          operator: 'adding',
-          targetType: 1,
-        },
-      },
-    ],
+    [],
   );
 };
 
@@ -118,20 +108,9 @@ export const createSpokeCorrectCondition = (correctScreens: any, question: any):
   return [];
 };
 
-export const createSpokeIncorrectCondition = (correctScreens: any, question: any) => {
-  const requiredSpoke = question?.custom?.requiredSpoke;
-  if (correctScreens?.length > requiredSpoke) {
-    return [createCondition(`stage.${question.id}.spokeCompleted`, `${requiredSpoke}`, 'lessThan')];
-  }
-  const correctconditions = correctScreens
-    .filter((screen: string) => screen?.length)
-    .map((correctScreen: any) => {
-      return createCondition(`session.visits.${correctScreen}`, '0', 'equal');
-    });
-  if (correctconditions?.length) {
-    return [...correctconditions];
-  }
-  return [];
+export const createSpokeIncorrectCondition = (question: any) => {
+  const requiredSpoke = question?.custom?.requiredSpoke || 0;
+  return [createCondition(`stage.${question.id}.spokeCompleted`, `${requiredSpoke}`, 'lessThan')];
 };
 
 const createSpokeCommonPathCondition = (

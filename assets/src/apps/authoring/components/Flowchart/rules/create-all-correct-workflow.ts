@@ -118,8 +118,6 @@ export const generateMultipleCorrectWorkflow = (
         30,
         path.feedback,
         [],
-        undefined,
-        'any',
       ),
     );
   }
@@ -134,8 +132,6 @@ export const generateMultipleCorrectWorkflow = (
         30,
         path.feedback,
         [],
-        undefined,
-        'any',
       ),
     );
   }
