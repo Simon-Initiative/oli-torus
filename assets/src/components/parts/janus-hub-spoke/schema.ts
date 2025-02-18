@@ -210,11 +210,8 @@ export const adaptivitySchema = {
   requiredSpoke: CapiVariableTypes.NUMBER,
   enabled: CapiVariableTypes.BOOLEAN,
   showProgressBar: CapiVariableTypes.BOOLEAN,
-  numberOfSelectedChoices: CapiVariableTypes.NUMBER,
-  selectedChoice: CapiVariableTypes.NUMBER,
-  selectedChoiceText: CapiVariableTypes.STRING,
-  selectedChoices: CapiVariableTypes.ARRAY,
-  selectedChoicesText: CapiVariableTypes.ARRAY,
+  spokeCompleted: CapiVariableTypes.NUMBER,
+  selectedSpoke: CapiVariableTypes.NUMBER,
   spokeFeedback: CapiVariableTypes.STRING,
 };
 

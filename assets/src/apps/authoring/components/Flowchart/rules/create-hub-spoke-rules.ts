@@ -37,8 +37,7 @@ export const generateHubSpokeRules = (
   const spokedCompleteDestination: string[] = commonErrorPaths.map(
     (path) => getSequenceIdFromDestinationPath(path, sequence) || '',
   );
-  const correctCombinations = getCombinations(commonErrorPaths, 3);
-  console.log({ correctCombinations });
+
   const correct: Required<IConditionWithFeedback> = {
     conditions: createSpokeCorrectCondition(spokedCompleteDestination, question),
     feedback: question.custom.correctFeedback || '',
@@ -58,21 +57,6 @@ export const generateHubSpokeRules = (
     feedback: "You've already visited this screen. Please select another screen or click Next.",
   }));
 
-  // const incorrects: Required<IConditionWithFeedback[]> = [
-  //   {
-  //     conditions: [
-  //       createCondition(
-  //         `stage.${question.id}.totalCompletedSpoke`,
-  //         `${question?.custom?.requiredSpoke}`,
-  //         'lessThan',
-  //       ),
-  //     ],
-
-  //     feedback:
-  //       question.custom.incorrectFeedback ??
-  //       'Please visit the required number of spokes before clicking Next.',
-  //   },
-  // ];
   const incorrect: Required<IConditionWithFeedback[]> = [
     {
       conditions: createSpokeIncorrectCondition(spokedCompleteDestination, question),
@@ -112,35 +96,12 @@ export const generateHubSpokeRules = (
   );
 };
 
-const getCombinations = (arr: any[], groupSize: number) => {
-  if (groupSize > arr.length || groupSize <= 0) return [];
-
-  const result: any[][] = [];
-
-  function combine(start: number, combination: any[]) {
-    if (combination.length === groupSize) {
-      result.push([...combination]);
-      return;
-    }
-
-    for (let i = start; i < arr.length; i++) {
-      combination.push(arr[i]);
-      combine(i + 1, combination);
-      combination.pop();
-    }
-  }
-
-  combine(0, []);
-  return result;
-};
-
 export const createSpokeCorrectCondition = (correctScreens: any, question: any): ICondition[] => {
   const requiredSpoke = question?.custom?.requiredSpoke;
-  console.log({ requiredSpoke, correctScreenslength: correctScreens?.length });
   if (correctScreens?.length > requiredSpoke) {
     return [
       createCondition(
-        `stage.${question.id}.totalCompletedSpoke`,
+        `stage.${question.id}.spokeCompleted`,
         `${requiredSpoke}`,
         'greaterThanInclusive',
       ),
@@ -158,16 +119,10 @@ export const createSpokeCorrectCondition = (correctScreens: any, question: any):
 };
 
 export const createSpokeIncorrectCondition = (correctScreens: any, question: any) => {
-  // const requiredSpoke = question?.custom?.requiredSpoke;
-  // if (correctScreens?.length > requiredSpoke) {
-  //   return [
-  //     createCondition(
-  //       `stage.${question.id}.totalCompletedSpoke`,
-  //       `${requiredSpoke}`,
-  //       'lessThanInclusive',
-  //     ),
-  //   ];
-  // }
+  const requiredSpoke = question?.custom?.requiredSpoke;
+  if (correctScreens?.length > requiredSpoke) {
+    return [createCondition(`stage.${question.id}.spokeCompleted`, `${requiredSpoke}`, 'lessThan')];
+  }
   const correctconditions = correctScreens
     .filter((screen: string) => screen?.length)
     .map((correctScreen: any) => {
@@ -187,7 +142,7 @@ const createSpokeCommonPathCondition = (
   if (Number.isInteger(path.selectedOption)) {
     return [
       createCondition(`session.visits.${destinationScreenId}`, '0', 'equal'),
-      createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
+      createCondition(`stage.${question.id}.selectedSpoke`, String(path.selectedOption), 'equal'),
     ];
   }
   return [createNeverCondition()];
@@ -201,7 +156,7 @@ const createSpokeDuplicatePathCondition = (
   if (Number.isInteger(path.selectedOption)) {
     return [
       createCondition(`session.visits.${destinationScreenId}`, '1', 'equal'),
-      createCondition(`stage.${question.id}.selectedChoice`, String(path.selectedOption), 'equal'),
+      createCondition(`stage.${question.id}.selectedSpoke`, String(path.selectedOption), 'equal'),
     ];
   }
   return [createNeverCondition()];

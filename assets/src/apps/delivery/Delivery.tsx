@@ -201,7 +201,6 @@ const Delivery: React.FC<DeliveryProps> = ({
   // this is something SS does.....
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
-  console.log({isInstructor,reviewMode,previewMode})
   return (
     <div
       className={`${parentDivClasses.join(' ')} ${currentTheme} ${

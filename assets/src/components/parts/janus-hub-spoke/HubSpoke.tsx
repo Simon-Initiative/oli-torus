@@ -9,7 +9,7 @@ import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import { Item, JanusHubSpokeItemProperties, hubSpokeModel } from './schema';
 
-const SpokeItemContentComponent: React.FC<any> = ({ itemId, nodes, state }) => {
+const SpokeItemContentComponent: React.FC<any> = ({ nodes }) => {
   return nodes;
 };
 
@@ -78,11 +78,9 @@ interface SpokeOptionModel extends Item {
 }
 
 const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
-  const id: string = props.id;
-
+  const id = props.id;
   const [enabled, setEnabled] = useState(true);
   const [options, setOptions] = useState<SpokeOptionModel[]>([]);
   const [completedSpokeCount, setCompletedSpokeCount] = useState<number>(0);
@@ -101,7 +99,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
           value: dEnabled,
         },
         {
-          key: 'selectedChoice',
+          key: 'selectedSpoke',
           type: CapiVariableTypes.NUMBER,
           value: -1,
         },
@@ -110,7 +108,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
 
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
-    setState(currentStateSnapshot);
 
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
     const spokeItems: SpokeOptionModel[] = pModel.spokeItems?.map((item: any, index: number) => ({
@@ -126,6 +123,17 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     setOptions(spokeItems);
     const spokeCount = spokeItems.filter((spoke) => spoke.IsCompleted) ?? 0;
     setCompletedSpokeCount(spokeCount?.length || 0);
+    props.onSave({
+      id: `${id}`,
+      responses: [
+        {
+          key: 'spokeCompleted',
+          type: CapiVariableTypes.NUMBER,
+          value: spokeCount?.length || 0,
+        },
+      ],
+    });
+
     const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
@@ -149,19 +157,10 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
 
   useEffect(() => {
     let pModel;
-    let pState;
     if (typeof props?.model === 'string') {
       try {
         pModel = JSON.parse(props.model);
         setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
       } catch (err) {
         // bad json, what do?
       }
@@ -184,7 +183,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
       id: `${id}`,
       responses: [
         {
-          key: 'selectedChoice',
+          key: 'selectedSpoke',
           type: CapiVariableTypes.NUMBER,
           value: val,
         },
@@ -340,7 +339,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
                 groupId={`mcq-${id}`}
                 val={item.value}
                 onSelected={handleButtonPress}
-                state={state}
                 {...item}
                 x={0}
                 y={0}
