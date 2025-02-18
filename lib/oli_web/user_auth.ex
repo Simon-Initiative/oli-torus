@@ -257,6 +257,7 @@ defmodule OliWeb.UserAuth do
     end)
     |> preload_platform_roles()
     |> preload_linked_author()
+    |> assign_datashop_session_id(session)
     |> AuthorAuth.mount_current_author(session)
   end
 
@@ -278,6 +279,16 @@ defmodule OliWeb.UserAuth do
       %Accounts.User{} = user ->
         Phoenix.Component.assign(socket, :current_user, Accounts.preload_linked_author(user))
     end
+  end
+
+  defp assign_datashop_session_id(socket, session) do
+    Phoenix.Component.assign_new(socket, :datashop_session_id, fn ->
+      if datashop_session_id = session["datashop_session_id"] do
+        datashop_session_id
+      else
+        nil
+      end
+    end)
   end
 
   @doc """
