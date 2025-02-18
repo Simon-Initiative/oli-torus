@@ -32,7 +32,6 @@ defmodule OliWeb.UserAuth do
     # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
-    |> create_datashop_session_id()
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
   end
@@ -97,8 +96,7 @@ defmodule OliWeb.UserAuth do
         "browser_timezone",
         "author_token",
         "author_live_socket_id",
-        "current_author_id",
-        "datashop_session_id"
+        "current_author_id"
       ])
 
     conn
@@ -259,7 +257,6 @@ defmodule OliWeb.UserAuth do
     end)
     |> preload_platform_roles()
     |> preload_linked_author()
-    |> assign_datashop_session_id(session)
     |> AuthorAuth.mount_current_author(session)
   end
 
@@ -281,16 +278,6 @@ defmodule OliWeb.UserAuth do
       %Accounts.User{} = user ->
         Phoenix.Component.assign(socket, :current_user, Accounts.preload_linked_author(user))
     end
-  end
-
-  defp assign_datashop_session_id(socket, session) do
-    Phoenix.Component.assign_new(socket, :datashop_session_id, fn ->
-      if datashop_session_id = session["datashop_session_id"] do
-        datashop_session_id
-      else
-        nil
-      end
-    end)
   end
 
   @doc """
@@ -440,11 +427,6 @@ defmodule OliWeb.UserAuth do
   defp put_user_id_in_session(conn, user_id) do
     conn
     |> put_session(:current_user_id, user_id)
-  end
-
-  defp create_datashop_session_id(conn) do
-    conn
-    |> put_session(:datashop_session_id, UUID.uuid4())
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

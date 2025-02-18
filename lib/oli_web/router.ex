@@ -103,6 +103,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
+  pipeline :ensure_datashop_id do
+    plug(OliWeb.Plugs.EnsureDatashopId)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -115,6 +119,7 @@ defmodule OliWeb.Router do
 
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(OliWeb.Plugs.SetToken)
+    plug(:ensure_datashop_id)
 
     plug(:delivery_layout)
   end
@@ -1050,6 +1055,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery,
       :require_authenticated_user_or_guest,
+      :ensure_datashop_id,
       :student,
       :enforce_enroll_and_paywall,
       :ensure_user_section_visit,

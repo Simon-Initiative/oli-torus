@@ -6,8 +6,6 @@ defmodule Oli.Analytics.Datashop do
   https://pslcdatashop.web.cmu.edu/help?page=logging
   https://pslcdatashop.web.cmu.edu/help?page=importFormatTd
   """
-
-  import Oli.Utils, only: [value_or: 2]
   import Ecto.Query
 
   alias Oli.Repo
@@ -144,10 +142,7 @@ defmodule Oli.Analytics.Datashop do
         date: part_attempt.date_submitted,
         email: email,
         sub: sub,
-        # datashop_session_id will be set to the latest part attempt datashop_session_id
-        # unless it is nil, then it will be set to a generated UUID. This will handle any
-        # part attempts that existed before this value was tracked in the part attempt record
-        datashop_session_id: value_or(part_attempt.datashop_session_id, UUID.uuid4()),
+        datashop_session_id: part_attempt.datashop_session_id,
         context_message_id: Utils.make_unique_id(activity_slug, part_attempt.part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_attempt.part_id),
         transaction_id: Utils.make_unique_id(activity_slug, part_attempt.part_id),
