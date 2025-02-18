@@ -59,7 +59,7 @@ defmodule OliWeb.Components.Delivery.Students do
         section,
         ctx,
         assigns[:certificate],
-        assigns[:initial_certificate_pending_approval_count],
+        assigns[:certificate_pending_approval_count],
         socket.assigns.myself
       )
 
