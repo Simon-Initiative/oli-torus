@@ -9,10 +9,17 @@ defmodule Oli.Delivery.GrantedCertificates do
   alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.{HTTP, Repo}
 
+  @doc """
+  Returns the granted certificate with the given guid.
+  """
   def get_granted_certificate_by_guid(guid) do
     Repo.get_by(GrantedCertificate, guid: guid)
   end
 
+  @doc """
+  Generates a .pdf for the granted certificate with the given id by invoking a lambda function.
+  The granted certificate must exist and not have a url already.
+  """
   def generate_pdf(granted_certificate_id) do
     case Repo.get(GrantedCertificate, granted_certificate_id) do
       nil ->
@@ -40,12 +47,19 @@ defmodule Oli.Delivery.GrantedCertificates do
     end
   end
 
+  @doc """
+  Updates a granted certificate with the given attributes.
+  """
   def update_granted_certificate(granted_certificate_id, attrs) do
     Repo.get(GrantedCertificate, granted_certificate_id)
     |> Changeset.change(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Creates a new granted certificate and schedules a job to generate the .pdf
+  if the certificate has an :earned state.
+  """
   def create_granted_certificate(attrs) do
     %GrantedCertificate{}
     |> GrantedCertificate.changeset(attrs)
