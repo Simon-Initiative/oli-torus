@@ -61,6 +61,8 @@ defmodule Oli.Delivery.GrantedCertificates do
   if the certificate has an :earned state.
   """
   def create_granted_certificate(attrs) do
+    attrs = Map.merge(attrs, %{issued_at: DateTime.utc_now()})
+
     %GrantedCertificate{}
     |> GrantedCertificate.changeset(attrs)
     |> Repo.insert()
