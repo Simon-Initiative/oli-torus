@@ -9,7 +9,7 @@ import {
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
 import { OptionCommonErrorPath } from '../paths/path-types';
-import { isAlwaysPath, isCorrectPath, isOptionCommonErrorPath } from '../paths/path-utils';
+import { isCorrectPath, isOptionCommonErrorPath } from '../paths/path-utils';
 import { generateMultipleCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
@@ -26,15 +26,13 @@ export const generateHubSpokeRules = (
   defaultDestination: number,
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IHubSpokePartLayout;
-
-  const alwaysPath = (screen.authoring?.flowchart?.paths || []).find(isAlwaysPath);
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
-  const commonErrorPaths = (screen.authoring?.flowchart?.paths || []).filter(
+  const commonOptionPaths = (screen.authoring?.flowchart?.paths || []).filter(
     isOptionCommonErrorPath,
   );
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
 
-  const spokedCompleteDestination: string[] = commonErrorPaths.map(
+  const spokedCompleteDestination: string[] = commonOptionPaths.map(
     (path) => getSequenceIdFromDestinationPath(path, sequence) || '',
   );
 
@@ -43,12 +41,13 @@ export const generateHubSpokeRules = (
     feedback: question.custom.correctFeedback || '',
     destinationId:
       getSequenceIdFromScreenResourceId(
-        correctPath?.destinationScreenId || alwaysPath?.destinationScreenId || defaultDestination,
+        correctPath?.destinationScreenId || defaultDestination,
         sequence,
       ) || 'unknown',
   };
 
-  const commanErrors: Required<IConditionWithFeedback[]> = commonErrorPaths.map((path) => ({
+  //check if the user has already visited the spoke and trying to re-visit it again.
+  const commanErrors: Required<IConditionWithFeedback[]> = commonOptionPaths.map((path) => ({
     conditions: createSpokeDuplicatePathCondition(
       path,
       question,
@@ -65,8 +64,8 @@ export const generateHubSpokeRules = (
         : 'Please visit the required number of spokes before clicking Next.',
     },
   ];
-
-  const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = commonErrorPaths.map(
+  //generated rule for each spoke item.
+  const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = commonOptionPaths.map(
     (path) => ({
       conditions: createSpokeCommonPathCondition(
         path,

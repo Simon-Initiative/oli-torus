@@ -70,7 +70,7 @@ export const generateAllCorrectWorkflow = (
 
 /*
   Used for things like Hub & Spoke when there are multiple correct answer and any option is valid to pick. There could
-  be authored paths out of it for each option, or a default path if none of the options are picked.
+  be authored paths out of it for each option.
 */
 export const generateMultipleCorrectWorkflow = (
   defaultPath: Required<IConditionWithFeedback>,
@@ -93,7 +93,7 @@ export const generateMultipleCorrectWorkflow = (
     ),
     default: true,
   });
-
+  // option specific conditions / navigations
   for (const path of specificPaths.filter((e) => !!e.destinationId)) {
     rules.push(
       generateRule(

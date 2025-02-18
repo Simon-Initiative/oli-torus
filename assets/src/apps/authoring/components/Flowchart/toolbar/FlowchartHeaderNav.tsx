@@ -171,7 +171,6 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
       const [currentActivity] = currentActivityTree.slice(-1);
-      console.log('I M HERE', { newPartData });
       dispatch(addPart({ activityId: currentActivity.id, newPartData }));
     }
   };
