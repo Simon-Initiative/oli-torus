@@ -56,7 +56,9 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
         <button
           type="button"
           style={{ width: '100%' }}
-          onClick={() => onSelected(val)}
+          onClick={() => {
+            if (onSelected) onSelected(val);
+          }}
           className="btn btn-primary"
         >
           {IsCompleted && (
