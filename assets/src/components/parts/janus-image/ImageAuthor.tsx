@@ -28,7 +28,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   };
 
   const debounceWaitTime = 1000;
-  const debounceInputText = useCallback(
+  const debounceImage = useCallback(
     debounce((updatedModel: any) => {
       manipulateImageSize(updatedModel, true);
     }, debounceWaitTime),
@@ -36,8 +36,8 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   );
 
   useEffect(() => {
-    if (src != defaultSrc) {
-      debounceInputText(model);
+    if (src != defaultSrc && model?.lockAspectRatio) {
+      debounceImage(model);
     }
   }, [model]);
   const imageContainerRef = useRef<HTMLImageElement>(null);
