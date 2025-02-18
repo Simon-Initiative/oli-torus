@@ -69,7 +69,7 @@ export const generateAllCorrectWorkflow = (
 };
 
 /*
-  Used for things like MCQ when there is no correct answer and any option is valid to pick. There could
+  Used for things like Hub & Spoke when there are multiple correct answer and any option is valid to pick. There could
   be authored paths out of it for each option, or a default path if none of the options are picked.
 */
 export const generateMultipleCorrectWorkflow = (
@@ -145,7 +145,6 @@ export const generateMultipleCorrectWorkflow = (
     .map((r) => [...(r.conditions.all || []), ...(r.conditions.any || [])])
     .flat();
   const variables = uniq(conditions.map((c: ICondition) => c.fact));
-  console.log({ rules });
   return { rules, variables };
 };
 
