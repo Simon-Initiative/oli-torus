@@ -657,7 +657,8 @@ defmodule Oli.Factory do
       required_class_notes: 1,
       min_percentage_for_completion: 50,
       min_percentage_for_distinction: 80,
-      section: anonymous_build(:section)
+      section: anonymous_build(:section),
+      description: "some cert desc"
     }
   end
 

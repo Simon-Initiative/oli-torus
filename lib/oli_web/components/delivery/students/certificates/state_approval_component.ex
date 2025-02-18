@@ -11,13 +11,17 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
   def render(%{requires_instructor_approval: true, certificate_status: :pending} = assigns) do
     ~H"""
-    <div><.approve_or_deny_buttons target={@myself} current_state={@certificate_status} /></div>
+    <div role="instructor pending approval status">
+      <.approve_or_deny_buttons target={@myself} current_state={@certificate_status} />
+    </div>
     """
   end
 
   def render(%{is_editing: true} = assigns) do
     ~H"""
-    <div><.approve_or_deny_buttons target={@myself} current_state={@certificate_status} /></div>
+    <div role="editing status">
+      <.approve_or_deny_buttons target={@myself} current_state={@certificate_status} />
+    </div>
     """
   end
 
@@ -25,7 +29,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     # edge case where the granted certificate is not yet created
     # (the student has not yet met all of the thresholds)
     ~H"""
-    <div class="flex w-full justify-between px-6">
+    <div role="in progress status" class="flex w-full justify-between px-6">
       <span class="text-[#383a44] text-sm font-bold font-['Open Sans']">
         In Progress
       </span>
@@ -38,7 +42,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
   def render(%{certificate_status: :earned} = assigns) do
     ~H"""
-    <div class="flex w-full justify-between px-6">
+    <div role="approved status" class="flex w-full justify-between px-6">
       <span class="text-[#0165da] text-sm font-bold">
         Approved
       </span>
@@ -51,7 +55,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
   def render(%{certificate_status: :denied} = assigns) do
     ~H"""
-    <div class="flex w-full justify-between px-6">
+    <div role="denied status" class="flex w-full justify-between px-6">
       <span class="text-[#c03a2b] text-sm font-bold">
         Denied
       </span>
@@ -67,7 +71,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
   def approve_or_deny_buttons(assigns) do
     ~H"""
-    <div class="flex w-full justify-center gap-2 px-1">
+    <div role="approve or deny buttons" class="flex w-full justify-center gap-2 px-1">
       <button
         phx-click="update_certificate"
         phx-target={@target}
@@ -127,8 +131,13 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
            # (in case the certificate has an :earned state)
            url: nil
          }) do
-      {:ok, _granted_certificate} ->
-        {:noreply, assign(socket, is_editing: false, certificate_status: required_state)}
+      {:ok, granted_certificate} ->
+        {:noreply,
+         assign(socket,
+           is_editing: false,
+           certificate_status: required_state,
+           granted_certificate_id: granted_certificate.id
+         )}
 
       {:error, _changeset} ->
         send(self(), {:flash_message, {:error, "Could not update certificate status"}})
