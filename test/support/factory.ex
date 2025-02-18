@@ -668,7 +668,9 @@ defmodule Oli.Factory do
       guid: UUID.uuid4(),
       user: build(:user),
       certificate: build(:certificate),
-      issued_at: now
+      issued_at: now,
+      with_distinction: false,
+      state: :earned
     }
   end
 

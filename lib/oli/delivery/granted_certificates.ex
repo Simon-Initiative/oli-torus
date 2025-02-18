@@ -52,7 +52,7 @@ defmodule Oli.Delivery.GrantedCertificates do
   """
   def update_granted_certificate(granted_certificate_id, attrs) do
     Repo.get(GrantedCertificate, granted_certificate_id)
-    |> Changeset.change(attrs)
+    |> GrantedCertificate.changeset(attrs)
     |> Repo.update()
   end
 
