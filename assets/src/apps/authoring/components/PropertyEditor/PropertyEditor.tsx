@@ -87,13 +87,13 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         if (shouldTriggerChange || changedPropType === 'boolean') {
           // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
           if (updatedData.id === formData.id) {
-            // console.log('ONCHANGE P EDITOR TRIGGERED', {
-            //   e,
-            //   updatedData,
-            //   changedProp,
-            //   changedPropType,
-            //   triggerOnChange,
-            // });
+            console.log('ONCHANGE P EDITOR TRIGGERED', {
+              e,
+              updatedData,
+              changedProp,
+              changedPropType,
+              triggerOnChange,
+            });
             onChangeHandler(updatedData);
           }
         }
@@ -113,7 +113,7 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         // key will look like root_Position_x
         // changed will be the new value
         // formData will be the current state of the form
-        //console.info('ONBLUR');
+        console.info('ONBLUR');
         const dotPath = key.replace(/_/g, '.').replace('root.', '');
         const [newValue] = at(value as any, dotPath);
         // console.log('ONBLUR', { key, changed, formData, value, dotPath, newValue });

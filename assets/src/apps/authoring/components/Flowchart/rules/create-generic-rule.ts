@@ -38,9 +38,11 @@ export const generateRule = (
   if (additionalActions) {
     rule.event.params.actions.push(...additionalActions);
   }
+
   rule.conditions = {
     all: conditions,
   };
+
   return {
     ...rule,
     ...extra,
