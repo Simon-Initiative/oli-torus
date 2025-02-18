@@ -47,8 +47,6 @@ defmodule OliWeb.Components.Delivery.Students do
           section: section,
           ctx: ctx,
           students: students,
-          certificate: certificate,
-          certificate_pending_approval_count: initial_certificate_pending_approval_count,
           dropdown_options: dropdown_options
         } = assigns,
         socket
@@ -60,8 +58,8 @@ defmodule OliWeb.Components.Delivery.Students do
         rows,
         section,
         ctx,
-        certificate,
-        initial_certificate_pending_approval_count,
+        assigns[:certificate],
+        assigns[:initial_certificate_pending_approval_count],
         socket.assigns.myself
       )
 
