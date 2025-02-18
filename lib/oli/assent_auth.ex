@@ -29,12 +29,14 @@ defmodule Oli.AssentAuth do
   @callback email_confirmed?(any()) :: boolean()
 
   @doc """
-  Upserts a user identity.
-
-  If a matching user identity already exists for the user, the identity will be updated,
-  otherwise a new identity is inserted.
+  Gets a user by identity provider and uid.
   """
-  @callback upsert_identity(Atom.t(), map()) :: {:ok, map()} | {:error, String.t()}
+  @callback get_user_by_provider_uid(String.t(), String.t()) :: any()
+
+  @doc """
+  Gets a user with identities.
+  """
+  @callback get_user_with_identities(integer()) :: any()
 
   @doc """
   Creates a user with user identity.
@@ -49,14 +51,9 @@ defmodule Oli.AssentAuth do
   @callback update_user_details(any(), map()) :: {:ok, any()} | {:error, any()}
 
   @doc """
-  Gets a user by identity provider and uid.
+  Adds a user identity for the provider and user.
   """
-  @callback get_user_by_provider_uid(String.t(), String.t()) :: any()
-
-  @doc """
-  Gets a user with identities.
-  """
-  @callback get_user_with_identities(integer()) :: any()
+  @callback add_identity_provider(any(), any()) :: {:ok, any()} | {:error, any()}
 
   @doc """
   Deletes a user identity for the provider and user.

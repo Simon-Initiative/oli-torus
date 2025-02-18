@@ -19,6 +19,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     next.()
   end
 
+  def trigger(%Context{} = _context, _, _attrs) do
+    [""]
+  end
+
   def manystudentswonder(%Context{} = _context, next, _) do
     ["[Many students wonder]: ", next.(), " "]
   end

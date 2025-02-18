@@ -32,7 +32,10 @@ def lambda_handler(event, context):
         # Upload the PDF to S3
         s3 = boto3.client('s3')
         with open(pdf_file_path, 'rb') as pdf_file:
-            s3.upload_fileobj(pdf_file, bucket_name, s3_file_path)
+            s3_extra_args = {
+                "ContentType": "application/pdf"
+            }
+            s3.upload_fileobj(pdf_file, bucket_name, s3_file_path, s3_extra_args)
 
         # Cleanup local file
         os.remove(pdf_file_path)
