@@ -18,9 +18,6 @@ defmodule Oli.Delivery.GrantedCertificates do
       nil ->
         {:error, :granted_certificate_not_found}
 
-      %GrantedCertificate{url: url} when not is_nil(url) ->
-        {:error, :granted_certificate_already_has_url}
-
       gc ->
         gc.guid
         |> invoke_lambda(CertificateRenderer.render(gc))

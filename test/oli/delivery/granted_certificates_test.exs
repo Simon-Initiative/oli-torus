@@ -22,14 +22,6 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       assert Repo.get(GrantedCertificate, gc.id).url =~ "/certificates/#{gc.guid}.pdf"
     end
 
-    test "does not generate a pdf if granted certificate already has a url" do
-      gc = insert(:granted_certificate, url: "foo/bar")
-      expect(Oli.Test.MockAws, :request, 0, fn _ -> :noop end)
-
-      assert {:error, :granted_certificate_already_has_url} =
-               GrantedCertificates.generate_pdf(gc.id)
-    end
-
     test "fails if aws operation fails" do
       gc = insert(:granted_certificate)
 
