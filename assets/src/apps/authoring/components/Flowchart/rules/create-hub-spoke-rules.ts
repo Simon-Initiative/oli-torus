@@ -8,14 +8,12 @@ import {
   SequenceEntryChild,
 } from '../../../../delivery/store/features/groups/actions/sequence';
 import { getScreenPrimaryQuestion } from '../paths/path-options';
-import { OptionCommonErrorPath } from '../paths/path-types';
-import { isCorrectPath, isOptionCommonErrorPath } from '../paths/path-utils';
+import { isCorrectPath } from '../paths/path-utils';
 import { generateMultipleCorrectWorkflow } from './create-all-correct-workflow';
 import { createCondition } from './create-condition';
 import {
   IConditionWithFeedback,
   createNeverCondition,
-  getSequenceIdFromDestinationPath,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
 import { RulesAndVariables } from './rule-compilation';
@@ -27,17 +25,21 @@ export const generateHubSpokeRules = (
 ): RulesAndVariables => {
   const question = getScreenPrimaryQuestion(screen) as IHubSpokePartLayout;
   const correctPath = (screen.authoring?.flowchart?.paths || []).find(isCorrectPath);
-  const commonOptionPaths = (screen.authoring?.flowchart?.paths || []).filter(
-    isOptionCommonErrorPath,
-  );
+
+  const spokeNavigations = question?.custom.spokeItems.map((item) => {
+    return {
+      destinationActivityId: item.destinationActivityId,
+      selectedSpoke: item.scoreValue + 1,
+    };
+  });
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
-
-  const spokedCompleteDestination: string[] = commonOptionPaths.map(
-    (path) => getSequenceIdFromDestinationPath(path, sequence) || '',
+  const requiredSpoke: number = question.custom?.requiredSpoke || spokeNavigations?.length;
+  const spokedCompleteDestination: string[] = spokeNavigations.map(
+    (item) => item.destinationActivityId,
   );
-
+  console.log({ screen, question });
   const correct: Required<IConditionWithFeedback> = {
-    conditions: createSpokeCorrectCondition(spokedCompleteDestination, question),
+    conditions: createSpokeCorrectCondition(spokedCompleteDestination, requiredSpoke, question.id),
     feedback: question.custom.correctFeedback || '',
     destinationId:
       getSequenceIdFromScreenResourceId(
@@ -47,11 +49,11 @@ export const generateHubSpokeRules = (
   };
 
   //check if the user has already visited the spoke and trying to re-visit it again.
-  const commanErrors: Required<IConditionWithFeedback[]> = commonOptionPaths.map((path) => ({
+  const commanErrors: Required<IConditionWithFeedback[]> = spokeNavigations.map((path) => ({
     conditions: createSpokeDuplicatePathCondition(
-      path,
-      question,
-      getSequenceIdFromDestinationPath(path, sequence),
+      question.id,
+      path.selectedSpoke,
+      path.destinationActivityId || 'unknown',
     ),
     feedback: "You've already visited this screen. Please select another screen or click Next.",
   }));
@@ -65,15 +67,15 @@ export const generateHubSpokeRules = (
     },
   ];
   //generated rule for each spoke item.
-  const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = commonOptionPaths.map(
+  const spokeSpecificConditionsFeedback: IConditionWithFeedback[] = spokeNavigations.map(
     (path) => ({
       conditions: createSpokeCommonPathCondition(
-        path,
-        question,
-        getSequenceIdFromDestinationPath(path, sequence),
+        path.selectedSpoke,
+        question?.id,
+        path.destinationActivityId,
       ),
-      feedback: commonErrorFeedback[path.selectedOption - 1] || question.custom?.spokeFeedback,
-      destinationId: getSequenceIdFromDestinationPath(path, sequence),
+      feedback: commonErrorFeedback[path.selectedSpoke - 1] || question.custom?.spokeFeedback,
+      destinationId: path.destinationActivityId || 'unknown',
     }),
   );
   return generateMultipleCorrectWorkflow(
@@ -85,12 +87,15 @@ export const generateHubSpokeRules = (
   );
 };
 
-export const createSpokeCorrectCondition = (correctScreens: any, question: any): ICondition[] => {
-  const requiredSpoke = question?.custom?.requiredSpoke;
+export const createSpokeCorrectCondition = (
+  correctScreens: any,
+  requiredSpoke: number,
+  questionId: string,
+): ICondition[] => {
   if (correctScreens?.length > requiredSpoke) {
     return [
       createCondition(
-        `stage.${question.id}.spokeCompleted`,
+        `stage.${questionId}.spokeCompleted`,
         `${requiredSpoke}`,
         'greaterThanInclusive',
       ),
@@ -113,28 +118,28 @@ export const createSpokeIncorrectCondition = (question: any) => {
 };
 
 const createSpokeCommonPathCondition = (
-  path: OptionCommonErrorPath,
-  question: IHubSpokePartLayout,
-  destinationScreenId: string | undefined,
+  selectedSpoke: number,
+  questionId: string,
+  destinationScreenId: string,
 ) => {
-  if (Number.isInteger(path.selectedOption)) {
+  if (Number.isInteger(selectedSpoke)) {
     return [
       createCondition(`session.visits.${destinationScreenId}`, '0', 'equal'),
-      createCondition(`stage.${question.id}.selectedSpoke`, String(path.selectedOption), 'equal'),
+      createCondition(`stage.${questionId}.selectedSpoke`, String(selectedSpoke), 'equal'),
     ];
   }
   return [createNeverCondition()];
 };
 
 const createSpokeDuplicatePathCondition = (
-  path: OptionCommonErrorPath,
-  question: IHubSpokePartLayout,
+  questionId: string,
+  selectedSpoke: number,
   destinationScreenId: string | undefined,
 ) => {
-  if (Number.isInteger(path.selectedOption)) {
+  if (Number.isInteger(selectedSpoke)) {
     return [
       createCondition(`session.visits.${destinationScreenId}`, '1', 'equal'),
-      createCondition(`stage.${question.id}.selectedSpoke`, String(path.selectedOption), 'equal'),
+      createCondition(`stage.${questionId}.selectedSpoke`, String(selectedSpoke), 'equal'),
     ];
   }
   return [createNeverCondition()];
