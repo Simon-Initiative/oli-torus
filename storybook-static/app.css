@@ -5824,6 +5824,10 @@ table.table-striped tbody tr:nth-child(even) {
   width: 70px;
 }
 
+.w-\[71px\] {
+  width: 71px;
+}
+
 .w-\[72px\] {
   width: 72px;
 }
@@ -7156,6 +7160,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#E8E8E8\] {
   --tw-border-opacity: 1;
   border-color: rgb(232 232 232 / var(--tw-border-opacity));
+}
+
+.border-\[\#c03a2b\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(192 58 43 / var(--tw-border-opacity));
 }
 
 .border-\[\#c8c8c8\] {
