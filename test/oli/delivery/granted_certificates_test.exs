@@ -9,6 +9,46 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
   alias Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
   alias Oli.Delivery.Sections.GrantedCertificate
 
+  describe "with_distinction_exists?/2" do
+    test "returns false when no granted certificate is associated with a certificate" do
+      user = insert(:user)
+      section = insert(:section)
+      _certificate = insert(:certificate, section: section)
+
+      refute GrantedCertificates.with_distinction_exists?(user.id, section.id)
+    end
+
+    test "returns false when granted certificate is not with distinction" do
+      user = insert(:user)
+      section = insert(:section)
+      certificate = insert(:certificate, section: section)
+
+      _gc =
+        insert(:granted_certificate,
+          user: user,
+          certificate: certificate,
+          with_distinction: false
+        )
+
+      refute GrantedCertificates.with_distinction_exists?(user.id, section.id)
+    end
+
+    test "returns true when granted certificate is with distinction" do
+      user = insert(:user)
+      section = insert(:section)
+      certificate = insert(:certificate, section: section)
+
+      _gc =
+        insert(:granted_certificate,
+          user: user,
+          certificate: certificate,
+          with_distinction: true
+        )
+
+      assert GrantedCertificates.with_distinction_exists?(user.id, section.id)
+    end
+  end
+
   describe "generate_pdf/1" do
     test "generates a pdf certificate in a lambda function and stores the url" do
       gc = insert(:granted_certificate)

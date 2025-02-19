@@ -2,12 +2,27 @@ defmodule Oli.Delivery.GrantedCertificates do
   @moduledoc """
   The Granted Certificates context
   """
+  import Ecto.Query
 
   alias Ecto.Changeset
   alias ExAws.Lambda
   alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.{HTTP, Repo}
+
+  @doc """
+  Returns true if a granted certificate with distinction is found.
+  """
+  def with_distinction_exists?(user_id, section_id) do
+    from(gc in GrantedCertificate,
+      join: c in assoc(gc, :certificate),
+      where: gc.with_distinction == true,
+      where: gc.user_id == ^user_id,
+      where: c.section_id == ^section_id,
+      select: gc.id
+    )
+    |> Oli.Repo.exists?()
+  end
 
   @doc """
   Returns the granted certificate with the given guid.
