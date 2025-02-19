@@ -5,6 +5,7 @@ defmodule Oli.Delivery.GrantedCertificates do
 
   alias Ecto.Changeset
   alias ExAws.Lambda
+  alias Oli.Delivery.Sections.Certificates.Workers.{GeneratePdf, Mailer}
   alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.{HTTP, Repo}
@@ -72,9 +73,7 @@ defmodule Oli.Delivery.GrantedCertificates do
       {:ok, %{state: :earned, id: id} = granted_certificate} ->
         # This oban job will create the pdf and update the granted_certificate.url
         # only for certificates with the :earned state (:denied ones do not need a .pdf)
-        Oli.Delivery.Sections.Certificates.Workers.GeneratePdf.new(%{
-          granted_certificate_id: id
-        })
+        GeneratePdf.new(%{granted_certificate_id: id})
         |> Oban.insert()
 
         {:ok, granted_certificate}
@@ -85,6 +84,12 @@ defmodule Oli.Delivery.GrantedCertificates do
       error ->
         error
     end
+  end
+
+  def send_email(granted_certificate, to, template) do
+    # TODO finish implementation with MER-4107
+    Mailer.new(%{granted_certificate_id: granted_certificate.id, to: to, template: template})
+    |> Oban.insert()
   end
 
   defp certificate_s3_url(guid) do
