@@ -7,6 +7,7 @@ import { selectAutoOpenPath } from '../../../store/flowchart/flowchart-slice';
 import ConfirmDelete from '../../Modal/DeleteConfirmationModal';
 import { deletePath } from '../flowchart-actions/delete-path';
 import { replacePath } from '../flowchart-actions/replace-path';
+import { QuestionTypeMapping } from '../paths/path-options';
 import { AllPaths, DestinationPath } from '../paths/path-types';
 import {
   addComponentId,
@@ -53,9 +54,9 @@ export const PathEditBox: React.FC<Props> = ({
       }),
     );
   };
-
   const effectiveEditMode = editMode || autoOpen === path.id;
-
+  const disablePathEdit =
+    (questionType === QuestionTypeMapping.HUB_SPOKE && path.type !== 'correct') || false;
   return effectiveEditMode ? (
     <PathEditor
       questionType={questionType}
@@ -75,6 +76,7 @@ export const PathEditBox: React.FC<Props> = ({
       screens={screens}
       toggleEditMode={toggleEditMode}
       className={className}
+      disablePathEdit={disablePathEdit}
     />
   );
 };
@@ -224,9 +226,16 @@ interface ROParams {
   path: AllPaths;
   toggleEditMode: () => void;
   screens: Record<string, string>;
+  disablePathEdit: boolean;
 }
 
-const ReadOnlyPath: React.FC<ROParams> = ({ path, toggleEditMode, className, screens }) => {
+const ReadOnlyPath: React.FC<ROParams> = ({
+  path,
+  toggleEditMode,
+  className,
+  screens,
+  disablePathEdit,
+}) => {
   const prelabel = isEndOfActivityPath(path)
     ? 'Always '
     : isComponentPath(path) || isCorrectPath(path) || isIncorrectPath(path)
@@ -234,7 +243,13 @@ const ReadOnlyPath: React.FC<ROParams> = ({ path, toggleEditMode, className, scr
     : '';
   const goToLabel = isDestinationPath(path) ? ' go to ' : '';
   return (
-    <div className={className} onClick={toggleEditMode}>
+    <div
+      className={className}
+      onClick={() => {
+        if (disablePathEdit) return;
+        toggleEditMode();
+      }}
+    >
       {prelabel}
       <div className="param-box">
         <span className="path-param">{path.label}</span>

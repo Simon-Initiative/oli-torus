@@ -163,6 +163,15 @@ const questionMapping: Record<string, QuestionType> = {
 
 const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
 
+export enum QuestionTypeMapping {
+  MULTIPLE_CHOICE = 'Multiple Choice',
+  MULTILINE_TEXT = 'Multi-line Text',
+  JANUS_TEXT = 'Text Input',
+  INPUT_NUMBER = 'Number Input',
+  HUB_SPOKE = 'Hub and Spoke',
+  DROPDOWN = 'Dropdown',
+  SLIDER = 'Slider',
+}
 export const questionTypeLabels: Record<QuestionType, string> = {
   'multiple-choice': 'Multiple Choice',
   'check-all-that-apply': 'Check All That Apply',
