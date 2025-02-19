@@ -9,10 +9,17 @@ defmodule Oli.Delivery.GrantedCertificates do
   alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.{HTTP, Repo}
 
+  @doc """
+  Returns the granted certificate with the given guid.
+  """
   def get_granted_certificate_by_guid(guid) do
     Repo.get_by(GrantedCertificate, guid: guid)
   end
 
+  @doc """
+  Generates a .pdf for the granted certificate with the given id by invoking a lambda function.
+  The granted certificate must exist and not have a url already.
+  """
   def generate_pdf(granted_certificate_id) do
     case Repo.get(GrantedCertificate, granted_certificate_id) do
       nil ->
@@ -34,6 +41,49 @@ defmodule Oli.Delivery.GrantedCertificates do
               {:error, :error_generating_pdf, result}
             end
         end
+    end
+  end
+
+  @doc """
+  Updates a granted certificate with the given attributes.
+  This update does not trigger the generation of a .pdf.
+  (we use it, for example, to invalidate a granted certificate by updating its state to :denied)
+
+  If in the future we have some cases where we need to update the granted certificate and generate a .pdf
+  we should create another function or extend this one with a third argument to indicate if we should do so
+  """
+  def update_granted_certificate(granted_certificate_id, attrs) do
+    Repo.get(GrantedCertificate, granted_certificate_id)
+    |> GrantedCertificate.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Creates a new granted certificate and schedules a job to generate the .pdf
+  if the certificate has an :earned state.
+  """
+  def create_granted_certificate(attrs) do
+    attrs = Map.merge(attrs, %{issued_at: DateTime.utc_now()})
+
+    %GrantedCertificate{}
+    |> GrantedCertificate.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, %{state: :earned, id: id} = granted_certificate} ->
+        # This oban job will create the pdf and update the granted_certificate.url
+        # only for certificates with the :earned state (:denied ones do not need a .pdf)
+        Oli.Delivery.Sections.Certificates.Workers.GeneratePdf.new(%{
+          granted_certificate_id: id
+        })
+        |> Oban.insert()
+
+        {:ok, granted_certificate}
+
+      {:ok, granted_certificate} ->
+        {:ok, granted_certificate}
+
+      error ->
+        error
     end
   end
 

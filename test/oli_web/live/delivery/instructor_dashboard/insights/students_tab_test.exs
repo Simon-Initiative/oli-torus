@@ -1402,6 +1402,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       refute html =~ "Add Enrollments"
     end
+
+    test "Certificate status column is not shown if the section does not have a certificate enabled AND there is a certificate",
+         %{conn: conn, section: section} do
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      refute has_element?(view, "th", "CERTIFICATE STATUS")
+    end
+
+    test "Certificate status column is shown if the section has a certificate enabled AND there is a certificate",
+         %{conn: conn, section: section} do
+      Sections.update_section(section, %{certificate_enabled: true})
+      _certificate = insert(:certificate, section: section)
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      assert has_element?(view, "th", "CERTIFICATE STATUS")
+    end
   end
 
   defp get_emails_of_users_enrolled_in_section(emails, section_slug) when is_list(emails) do

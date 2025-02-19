@@ -53,7 +53,15 @@ defmodule OliWeb.Components.Delivery.Students do
       ) do
     {total_count, rows} = apply_filters(students, params)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
+    {:ok, table_model} =
+      EnrollmentsTableModel.new(
+        rows,
+        section,
+        ctx,
+        assigns[:certificate],
+        assigns[:certificate_pending_approval_count],
+        socket.assigns.myself
+      )
 
     navigation_data = Jason.decode!(params.navigation_data)
 
