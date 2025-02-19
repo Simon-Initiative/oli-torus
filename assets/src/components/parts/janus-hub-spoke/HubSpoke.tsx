@@ -214,8 +214,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
             break;
           case NotificationType.STATE_CHANGED:
             {
-              const { mutateChanges: changes } = payload;
-              console.log({ changes });
+              //
             }
             break;
           case NotificationType.CONTEXT_CHANGED:

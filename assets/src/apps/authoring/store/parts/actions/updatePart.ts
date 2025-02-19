@@ -67,7 +67,6 @@ export const updatePart = createAsyncThunk(
         if (flowchartPaths?.length) {
           paths = paths.filter((path: any) => path.type === 'correct');
           paths = [...paths, ...flowchartPaths];
-          console.log({ paths });
           activityClone.authoring.flowchart.paths = paths;
         }
       }
