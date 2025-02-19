@@ -130,12 +130,20 @@ const OptionsEditor: React.FC<{
     dispatch(setCurrentPartPropertyFocus({ focus: true }));
   }, [tempValue.value, value, currentSpokeLabel, currentSpokeDestination]);
   const onEdit = useCallback(() => {
+    if (!value.targetScreen?.trim()?.length) {
+      const sequenceEntry = sequence.find((s) => s.resourceId == Object.keys(screens)[0]);
+      if (sequenceEntry) {
+        setCurrentSpokeDestination(sequenceEntry?.resourceId);
+        setCurrentSpokeDestinationActivityId(sequenceEntry?.custom?.sequenceId);
+      }
+    } else {
+      setCurrentSpokeDestination(value.targetScreen);
+      setCurrentSpokeDestinationActivityId(value.destinationActivityId);
+    }
     openEditor();
     setTempValue({ value: value.nodes });
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
     setCurrentSpokeLabel(value.nodes);
-    setCurrentSpokeDestination(value.targetScreen);
-    setCurrentSpokeDestinationActivityId(value.destinationActivityId);
   }, [openEditor, value.nodes]);
 
   return (
