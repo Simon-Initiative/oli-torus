@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { EntityId } from '@reduxjs/toolkit';
 import { useToggle } from '../../../../../components/hooks/useToggle';
@@ -243,22 +244,39 @@ const ReadOnlyPath: React.FC<ROParams> = ({
     : '';
   const goToLabel = isDestinationPath(path) ? ' go to ' : '';
   return (
-    <div
-      className={className}
-      onClick={() => {
-        if (disablePathEdit) return;
-        toggleEditMode();
-      }}
+    <OverlayTrigger
+      placement="bottom"
+      delay={{ show: 150, hide: 150 }}
+      overlay={
+        <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+          {disablePathEdit ? (
+            <div>
+              You cannot edit the flow logic from here. Please update the part component from
+              authoring to generate the updated flowchart logic
+            </div>
+          ) : (
+            'Click to update the flowchart logic'
+          )}
+        </Tooltip>
+      }
     >
-      {prelabel}
-      <div className="param-box">
-        <span className="path-param">{path.label}</span>
+      <div
+        className={className}
+        onClick={() => {
+          if (disablePathEdit) return;
+          toggleEditMode();
+        }}
+      >
+        {prelabel}
+        <div className="param-box">
+          <span className="path-param">{path.label}</span>
+        </div>
+        {goToLabel}
+        <div className="param-box">
+          {isDestinationPath(path) && <DestinationLabel path={path} screens={screens} />}
+        </div>
       </div>
-      {goToLabel}
-      <div className="param-box">
-        {isDestinationPath(path) && <DestinationLabel path={path} screens={screens} />}
-      </div>
-    </div>
+    </OverlayTrigger>
   );
 };
 
