@@ -46,6 +46,11 @@ defmodule Oli.Delivery.GrantedCertificates do
 
   @doc """
   Updates a granted certificate with the given attributes.
+  This update does not trigger the generation of a .pdf.
+  (we use it, for example, to invalidate a granted certificate by updating its state to :denied)
+
+  If in the future we have some cases where we need to update the granted certificate and generate a .pdf
+  we should create another function or extend this one with a third argument to indicate if we should do so
   """
   def update_granted_certificate(granted_certificate_id, attrs) do
     Repo.get(GrantedCertificate, granted_certificate_id)
