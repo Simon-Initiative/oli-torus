@@ -50,8 +50,7 @@ defmodule Oli.Delivery.Attempts.Core.PartAttempt do
       :attempt_guid,
       :attempt_number,
       :part_id,
-      :activity_attempt_id,
-      :datashop_session_id
+      :activity_attempt_id
     ])
   end
 end
