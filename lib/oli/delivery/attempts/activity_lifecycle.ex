@@ -330,11 +330,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   @doc """
   Processes a list of part inputs and saves the response to the corresponding
-  part attempt record.
+  part attempt record. If the `only_active` option is set to `true`, the function
+  will only update part attempts with a lifecycle state of `active`.
 
-  On success returns a tuple of the form `{:ok, %Postgrex.Result{}}`
+  On success returns a tuple of the form `{:ok, %Postgrex.Result{}}` or
+  `{:error, :already_submitted}` if `only_active` is set to `true` and no active part attempts
+  were found.
   """
-  def save_student_input(part_inputs) do
+  def save_student_input(part_inputs, opts \\ []) do
     {part_input_values, params, _} =
       Enum.reduce(part_inputs, {[], [], 0}, fn part_input, {values, params, i} ->
         {
@@ -346,6 +349,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
     part_input_values = Enum.join(part_input_values, ",")
 
+    constrain_part_attempt_lifecycle_state_active? = Keyword.get(opts, :only_active, false)
+
     sql = """
       UPDATE part_attempts
       SET
@@ -356,9 +361,16 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           #{part_input_values}
       ) AS batch_values (attempt_guid, response)
       WHERE part_attempts.attempt_guid = batch_values.attempt_guid
+      #{if constrain_part_attempt_lifecycle_state_active?, do: " AND lifecycle_state = 'active'", else: ""}
     """
 
-    Ecto.Adapters.SQL.query(Oli.Repo, sql, params)
+    case Ecto.Adapters.SQL.query(Oli.Repo, sql, params) do
+      {:ok, %Postgrex.Result{num_rows: 0}} when constrain_part_attempt_lifecycle_state_active? ->
+        {:error, :already_submitted}
+
+      result ->
+        result
+    end
   end
 
   @doc """

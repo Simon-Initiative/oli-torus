@@ -711,6 +711,9 @@ defmodule OliWeb.Router do
     post("/:activity_attempt_guid", Api.AttemptController, :new_activity)
     put("/:activity_attempt_guid", Api.AttemptController, :submit_activity)
     patch("/:activity_attempt_guid", Api.AttemptController, :save_activity)
+
+    patch("/:activity_attempt_guid/active", Api.AttemptController, :save_active_activity)
+
     put("/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations)
 
     post(
@@ -735,6 +738,12 @@ defmodule OliWeb.Router do
       "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
       Api.AttemptController,
       :save_part
+    )
+
+    patch(
+      "/:activity_attempt_guid/part_attempt/:part_attempt_guid/active",
+      Api.AttemptController,
+      :save_active_part
     )
 
     get(
