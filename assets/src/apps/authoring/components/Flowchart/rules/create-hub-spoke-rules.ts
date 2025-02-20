@@ -33,7 +33,7 @@ export const generateHubSpokeRules = (
     };
   });
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
-  // number of required spoke for correct trap stsate can never be more than the total spokes so when generating we need to make sure that we check it
+  // number of required spoke for correct trap state can never be more than the total spokes so when generating we need to make sure that we check it
   const requiredSpoke: number = Math.min(
     question.custom?.requiredSpoke ?? spokeNavigations?.length,
     spokeNavigations?.length,
@@ -51,7 +51,7 @@ export const generateHubSpokeRules = (
       ) || 'unknown',
   };
 
-  //check if the user has already visited the spoke and trying to re-visit it again.
+  //rule to check if the user has already visited the spoke and trying to re-visit it again.
   const commanErrors: Required<IConditionWithFeedback[]> = spokeNavigations.map((path) => ({
     conditions: createSpokeDuplicatePathCondition(
       question.id,
