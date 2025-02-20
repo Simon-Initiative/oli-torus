@@ -1,14 +1,13 @@
 import { JSONSchema7Object } from 'json-schema';
-import { formatExpression } from 'adaptivity/scripting';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
-import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
 
 export interface JanusHubSpokeProperties extends JanusCustomCss, JanusAbsolutePositioned {
   title: string;
 }
 
 export interface JanusHubSpokeItemProperties extends JanusCustomCss {
-  nodes: string;
+  spokeLabel: string;
   itemId: string;
   layoutType: string;
   totalItems: number;
@@ -26,7 +25,7 @@ export interface Item {
   targetScreen: string;
   destinationActivityId: string;
   IsCompleted: boolean;
-  nodes: string;
+  spokeLabel: string;
   [key: string]: any;
 }
 export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
@@ -215,23 +214,6 @@ export const adaptivitySchema = {
   spokeFeedback: CapiVariableTypes.STRING,
 };
 
-export const validateUserConfig = (part: any, owner: any): Expression[] => {
-  const brokenExpressions: Expression[] = [];
-  part.custom.spokeItems.forEach((element: any) => {
-    const evaluatedValue = formatExpression(element.nodes[0]);
-    if (evaluatedValue) {
-      brokenExpressions.push({
-        part,
-        owner,
-        suggestedFix: evaluatedValue,
-        formattedExpression: true,
-        message: 'Spoke Options',
-      });
-    }
-  });
-  return brokenExpressions;
-};
-
 export const uiSchema = {};
 
 export const getCapabilities = () => ({
@@ -244,7 +226,7 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     scoreValue: score,
     IsCompleted: false,
     targetScreen: '',
-    nodes: `Spoke ${index}`,
+    spokeLabel: `Spoke ${index}`,
     destinationActivityId: '',
   });
 

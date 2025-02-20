@@ -9,14 +9,14 @@ import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import { Item, JanusHubSpokeItemProperties, hubSpokeModel } from './schema';
 
-const SpokeItemContentComponent: React.FC<any> = ({ nodes }) => {
-  return nodes;
+const SpokeItemContentComponent: React.FC<any> = ({ spokeLabel }) => {
+  return spokeLabel;
 };
 
 const SpokeItemContent = React.memo(SpokeItemContentComponent);
 
 export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
-  nodes,
+  spokeLabel,
   state,
   itemId,
   layoutType,
@@ -66,7 +66,7 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
               &nbsp;
             </span>
           )}
-          <SpokeItemContent itemId={itemId} nodes={nodes} state={state} />
+          <SpokeItemContent itemId={itemId} spokeLabel={spokeLabel} state={state} />
         </button>
       </div>
       {layoutType !== 'horizontalLayout' && <br style={{ padding: '0px' }} />}

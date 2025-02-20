@@ -58,7 +58,7 @@ export const updatePart = createAsyncThunk(
               componentId: partDef.id,
               destinationScreenId: Number(spoke.targetScreen),
               id: `spoke-common-path-${spoke.scoreValue}`,
-              label: spoke.nodes,
+              label: spoke.spokeLabel,
               priority: 4,
               ruleId: null,
               type: 'option-common-error',

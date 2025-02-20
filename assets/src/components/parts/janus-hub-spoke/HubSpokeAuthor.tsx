@@ -31,7 +31,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
   const [showConfigureMode, setShowConfigureMode] = useState<boolean>(false);
   const [editOptionClicked, setEditOptionClicked] = useState<boolean>(false);
   const [deleteOptionClicked, setDeleteOptionClicked] = useState<boolean>(false);
-  const [textNodes, setTextNodes] = useState<string>('');
+  const [spokeLabel, setSpokeLabel] = useState<string>('');
   const [ready, setReady] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   useEffect(() => {
@@ -43,14 +43,14 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
     if (deleteOptionClicked) {
       modelClone.spokeItems.splice(currentIndex, 1);
     } else {
-      modelClone.spokeItems[currentIndex].nodes = textNodes;
+      modelClone.spokeItems[currentIndex].spokeLabel = spokeLabel;
     }
     await onSaveConfigure({ id, snapshot: modelClone });
     setInConfigureMode(false);
 
     setEditOptionClicked(false);
     setDeleteOptionClicked(false);
-  }, [model, textNodes, currentIndex, spokeItems, deleteOptionClicked, editOptionClicked]);
+  }, [model, spokeLabel, currentIndex, spokeItems, deleteOptionClicked, editOptionClicked]);
 
   const initialize = useCallback(async (pModel) => {
     setReady(true);
@@ -141,7 +141,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
         return;
       } // not mine
       const { payload } = e.detail;
-      setTextNodes(payload.value);
+      setSpokeLabel(payload.value);
     };
 
     if (inConfigureMode) {
@@ -177,7 +177,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
     if (option === 1) {
       setEditOptionClicked(true);
       setDeleteOptionClicked(false);
-      setTextNodes(spokeItems[index].nodes);
+      setSpokeLabel(spokeItems[index].spokeLabel);
 
       onConfigure({ id, configure: true, context: { fullscreen: false } });
     } else if (option === 3) {
@@ -188,7 +188,7 @@ const HubSpokeAuthor: React.FC<AuthorPartComponentProps<hubSpokeModel>> = (props
         modelClone.spokeItems.splice(index, 1);
       } else {
         modelClone.spokeItems.splice(index + 1, 0, {
-          nodes: `Option ${spokeItems.length + 1}`,
+          spokeLabel: `Option ${spokeItems.length + 1}`,
           scoreValue: 0,
           index: spokeItems.length,
           value: spokeItems.length,

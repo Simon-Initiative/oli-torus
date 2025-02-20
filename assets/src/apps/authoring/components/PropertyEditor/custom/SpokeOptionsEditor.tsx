@@ -10,7 +10,7 @@ import { ScreenDeleteIcon } from '../../Flowchart/chart-components/ScreenDeleteI
 import { ScreenEditIcon } from '../../Flowchart/chart-components/ScreenEditIcon';
 
 type OptionsType = {
-  nodes: string;
+  spokeLabel: string;
   targetScreen: string;
   destinationActivityId: string;
   IsCompleted: boolean;
@@ -122,7 +122,7 @@ const OptionsEditor: React.FC<{
     const activityId = sequenceEntry?.custom.sequenceId ?? currentSpokeDestinationActivityId;
     const newValue = {
       ...value,
-      nodes: currentSpokeLabel,
+      spokeLabel: currentSpokeLabel,
       targetScreen: currentSpokeDestination,
       destinationActivityId: activityId,
     };
@@ -141,14 +141,14 @@ const OptionsEditor: React.FC<{
       setCurrentSpokeDestinationActivityId(value.destinationActivityId);
     }
     openEditor();
-    setTempValue({ value: value.nodes });
+    setTempValue({ value: value.spokeLabel });
     dispatch(setCurrentPartPropertyFocus({ focus: false }));
-    setCurrentSpokeLabel(value.nodes);
-  }, [openEditor, value.nodes]);
+    setCurrentSpokeLabel(value.spokeLabel);
+  }, [openEditor, value.spokeLabel]);
 
   return (
     <div className="flex">
-      <div className="flex-1">{value.nodes}</div>
+      <div className="flex-1">{value.spokeLabel}</div>
       <div className="flex-none">
         <button className="btn btn-link p-0 mr-1" onClick={onEdit}>
           <ScreenEditIcon />
@@ -214,7 +214,7 @@ const OptionsEditor: React.FC<{
 };
 
 const optionTemplate = (count: number) => ({
-  nodes: `Spoke ${count}`,
+  spokeLabel: `Spoke ${count}`,
   scoreValue: 0,
   targetScreen: '',
   destinationActivityId: '',
