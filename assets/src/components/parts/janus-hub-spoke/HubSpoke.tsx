@@ -111,7 +111,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
 
-    // we need to set up a new list so that we can shuffle while maintaining correct index/values
     const spokeItems: SpokeOptionModel[] = pModel.spokeItems?.map((item: any, index: number) => ({
       ...item,
       index: index + 1,
@@ -238,11 +237,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
 
   // Set up the styles
   const styles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
-    width,
-    zIndex: z, */
     width,
   };
   if (overrideHeight) {

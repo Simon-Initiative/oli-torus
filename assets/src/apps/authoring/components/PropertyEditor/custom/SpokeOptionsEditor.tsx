@@ -46,7 +46,7 @@ export const SpokeOptionsEditor: React.FC<Props> = ({ id, value, onChange, onBlu
   );
 
   const onAddOption = useCallback(() => {
-    const newValue = [...value, optionTemplate(value.length + 1)];
+    const newValue = [...value, optionTemplate(value.length)];
     onChange(newValue);
     setTimeout(() => onBlur(id, newValue), 0);
   }, [id, onBlur, onChange, value]);
@@ -214,8 +214,8 @@ const OptionsEditor: React.FC<{
 };
 
 const optionTemplate = (count: number) => ({
-  spokeLabel: `Spoke ${count}`,
-  scoreValue: 0,
+  spokeLabel: `Spoke ${count + 1}`,
+  scoreValue: count,
   targetScreen: '',
   destinationActivityId: '',
   IsCompleted: false,
