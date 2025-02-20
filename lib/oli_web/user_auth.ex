@@ -391,11 +391,15 @@ defmodule OliWeb.UserAuth do
   end
 
   defp require_confirmed_email(conn) do
-    case conn.assigns[:current_user] do
-      nil ->
+    case {conn.assigns[:current_user], conn.assigns[:section]} do
+      {nil, _} ->
         conn
 
-      %Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil} ->
+      {_user, %Section{open_and_free: true, skip_email_verification: true}} ->
+        # The section is independent and specifies to skip email verification
+        conn
+
+      {%Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil}, _} ->
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)
