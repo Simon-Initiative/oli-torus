@@ -121,7 +121,7 @@ export const updateActivityRules = createAsyncThunk(
         const referencedSequenceIds: string[] = [];
         let referencedVariableKeys: string[] = [];
 
-        const conditionWithExpression: string[] = [];
+        let conditionWithExpression: string[] = [];
         // ensure that all conditions and condition blocks are assigned an id
         await Promise.all(
           activityRulesClone.map(async (rule: any) => {
@@ -237,6 +237,7 @@ export const updateActivityRules = createAsyncThunk(
         childActivityClone.authoring.variablesRequiredForEvaluation =
           childActivityClone.authoring.variablesRequiredForEvaluation || [];
 
+        conditionWithExpression = [...new Set(conditionWithExpression)];
         const refConditionWithExpressionLengthEqual =
           childActivityClone.content.custom.conditionsRequiredEvaluation.length ===
           conditionWithExpression.length;
