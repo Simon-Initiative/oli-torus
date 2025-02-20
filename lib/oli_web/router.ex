@@ -1249,9 +1249,10 @@ defmodule OliWeb.Router do
     end
   end
 
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :require_section,
       :delivery_protected
     ])
 
@@ -1265,7 +1266,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
-        "/:section_slug/welcome",
+        "/welcome",
         Delivery.StudentOnboarding.Wizard
       )
     end
