@@ -132,6 +132,7 @@ defmodule OliWeb.Components.Delivery.Students do
        params: params,
        section_slug: section.slug,
        section_open_and_free: section.open_and_free,
+       section_title: section.title,
        dropdown_options: dropdown_options,
        view: assigns[:view],
        title: Map.get(assigns, :title, "Students"),
@@ -158,7 +159,8 @@ defmodule OliWeb.Components.Delivery.Students do
        navigation_data: navigation_data,
        proficiency_options: proficiency_options,
        selected_proficiency_options: selected_proficiency_options,
-       selected_proficiency_ids: selected_proficiency_ids
+       selected_proficiency_ids: selected_proficiency_ids,
+       platform_name: Oli.Branding.brand_name(section)
      )}
   end
 
@@ -612,10 +614,23 @@ defmodule OliWeb.Components.Delivery.Students do
           show_limit_change={true}
         />
         <HTMLComponents.view_example_student_progress_modal />
+
+        <.live_component
+          id="certificate_email_notification_modals"
+          module={OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModals}
+          selected_student={nil}
+          platform_name={@platform_name}
+          course_name={@section_title}
+          instructor_email={issued_by_email(@current_author, @current_user)}
+          selected_modal={nil}
+        />
       </div>
     </div>
     """
   end
+
+  defp issued_by_email(author, _user) when not is_nil(author), do: author.email
+  defp issued_by_email(_author, user), do: user.email
 
   attr :placeholder, :string, default: "Select an option"
   attr :disabled, :boolean, default: false

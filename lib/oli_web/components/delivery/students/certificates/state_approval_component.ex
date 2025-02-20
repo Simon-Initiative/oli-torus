@@ -2,7 +2,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   use OliWeb, :live_component
 
   alias Oli.Delivery.GrantedCertificates
-  alias OliWeb.Components.Delivery.Students.Certificates.PendingApprovalComponent
+
+  alias OliWeb.Components.Delivery.Students.Certificates.{
+    EmailNotificationModals,
+    PendingApprovalComponent
+  }
+
   alias OliWeb.Icons
 
   def mount(socket) do
@@ -158,13 +163,20 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
            %{state: required_state, url: nil}
          ) do
       {:ok, _} ->
-        if socket.assigns.requires_instructor_approval and current_state == "pending",
+        if socket.assigns.requires_instructor_approval and current_state == "pending" do
           # decrease the number of pending approvals
-          do:
-            send_update(PendingApprovalComponent,
-              id: "certificate_pending_approval_count_badge",
-              change_pending_approvals: -1
-            )
+          send_update(PendingApprovalComponent,
+            id: "certificate_pending_approval_count_badge",
+            change_pending_approvals: -1
+          )
+
+          # show the corresponding email notification modal
+          send_update(EmailNotificationModals,
+            id: "certificate_email_notification_modals",
+            selected_student: socket.assigns.student,
+            selected_modal: if(required_state == :earned, do: :approve, else: :deny)
+          )
+        end
 
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}
 
