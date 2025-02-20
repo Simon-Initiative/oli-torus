@@ -272,6 +272,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
   if (customCssClass === 'four-columns') {
     columns = 4;
   }
+  const progressPercentage = options?.length ? (completedSpokeCount / options?.length) * 100 : 0;
 
   return (
     <React.Fragment>
@@ -368,7 +369,7 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
                   >
                     <div
                       className="flex flex-col justify-center rounded-full overflow-hidden bg-body-dark-600 text-xs text-white text-center whitespace-nowrap transition duration-500 dark:bg-blue-500"
-                      style={{ width: '25%' }}
+                      style={{ width: `${progressPercentage}%` }}
                     ></div>
                   </div>
                 </div>

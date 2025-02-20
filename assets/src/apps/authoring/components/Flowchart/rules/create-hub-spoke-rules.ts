@@ -33,11 +33,14 @@ export const generateHubSpokeRules = (
     };
   });
   const commonErrorFeedback: string[] = question.custom?.commonErrorFeedback || [];
-  const requiredSpoke: number = question.custom?.requiredSpoke || spokeNavigations?.length;
+  // number of required spoke for correct trap stsate can never be more than the total spokes so when generating we need to make sure that we check it
+  const requiredSpoke: number = Math.min(
+    question.custom?.requiredSpoke ?? spokeNavigations?.length,
+    spokeNavigations?.length,
+  );
   const spokedCompleteDestination: string[] = spokeNavigations.map(
     (item) => item.destinationActivityId,
   );
-  console.log({ screen, question });
   const correct: Required<IConditionWithFeedback> = {
     conditions: createSpokeCorrectCondition(spokedCompleteDestination, requiredSpoke, question.id),
     feedback: question.custom.correctFeedback || '',
