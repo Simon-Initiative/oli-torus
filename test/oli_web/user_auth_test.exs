@@ -1,6 +1,8 @@
 defmodule OliWeb.UserAuthTest do
   use OliWeb.ConnCase, async: true
 
+  import Oli.Factory
+
   alias Phoenix.LiveView
   alias Oli.Accounts
   alias OliWeb.UserAuth
@@ -273,6 +275,53 @@ defmodule OliWeb.UserAuthTest do
 
     test "does not redirect if user is authenticated", %{conn: conn, user: user} do
       conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "requires user to confirm email", %{conn: conn, user: user} do
+      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.create_session(user)
+        |> assign(:current_user, user)
+        |> UserAuth.require_authenticated_user([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/users/confirm"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) ==
+               "You must confirm your email to continue."
+    end
+
+    test "does not require user to confirm email if email is confirmed", %{conn: conn, user: user} do
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.create_session(user)
+        |> assign(:current_user, user)
+        |> UserAuth.require_authenticated_user([])
+
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "does not required user to confirm email if independent section has omit email verification set",
+         %{conn: conn, user: user} do
+      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+
+      section = insert(:section, open_and_free: true, skip_email_verification: true)
+
+      conn =
+        conn
+        |> fetch_flash()
+        |> UserAuth.create_session(user)
+        |> assign(:current_user, user)
+        |> assign(:section, section)
+        |> UserAuth.require_authenticated_user([])
+
       refute conn.halted
       refute conn.status
     end
