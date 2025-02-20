@@ -17,6 +17,9 @@ defmodule Oli.Delivery.Sections.GrantedCertificate do
     field :issued_at, :utc_datetime
     field :url, :string
 
+    # whether the instructor has sent a notification email to the student (when approved/denied the certificate)
+    field :student_email_sent, :boolean, default: false
+
     belongs_to :certificate, Certificate
     belongs_to :user, User
 
