@@ -1,0 +1,1 @@
+<%= Oli.Delivery.Sections.Certificates.EmailTemplates.student_approval(%{student_name: @student_name, platform_name: @platform_name, course_name: @course_name, certificate_link: @certificate_link}) %>
