@@ -183,6 +183,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       ctx={@ctx}
       route_name={@route_name}
       project={if @route_name == :workspaces, do: @project, else: nil}
+      read_only={@read_only}
     />
     """
   end
