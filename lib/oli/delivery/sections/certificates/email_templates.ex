@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
   @moduledoc """
   This module contains the email templates for the certificates email notifications.
+  They are used both for showing the instructor a preview of the email and for sending the email.
   """
 
   use OliWeb, :html
@@ -12,11 +13,11 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
 
   def student_approval(assigns) do
     ~H"""
-    <p class="text-[#373a44]">
+    <p class="text-[#373a44]" style="text-align: left;">
       Dear <%= @student_name %>, <br />
       <br /> Congratulations! You have earned a Certificate of Completion for <%= @course_name %>.
       <.link href={@certificate_link} class="text-[#0062f2]">
-        Access you certificate here
+        Access your certificate here
       </.link>
       or navigate to your certificate progress on your course home page. <br />
       <br /> Steps to upload this certificate to LinkedIn:<br />
@@ -41,7 +42,7 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
 
   def student_denial(assigns) do
     ~H"""
-    <p class="text-[#373a44]">
+    <p class="text-[#373a44]" style="text-align: left;">
       Dear <%= @student_name %>, <br />
       <br /> Thank you for completing the <%= @course_name %> on <%= @platform_name %>. <br />
       <br />

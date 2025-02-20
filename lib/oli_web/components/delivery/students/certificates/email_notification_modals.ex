@@ -2,6 +2,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
   use OliWeb, :live_component
 
   alias Oli.Delivery.Sections.Certificates.EmailTemplates
+  alias Oli.Email
+  alias Oli.Mailer
   alias OliWeb.Common.Utils
   alias OliWeb.Components.Modal
 
@@ -39,7 +41,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
               <%= title_by_selected_modal(@selected_modal) %>:
             </h3>
             <div class="p-6 border rounded-lg border-[#CBD2E0]">
-              <.template_by_selected_modal
+              <.preview_template_by_selected_modal
                 student_name={Utils.name(@selected_student)}
                 platform_name={@platform_name}
                 course_name={@course_name}
@@ -57,7 +59,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
                 Skip
               </button>
               <button
-                phx-click="send_email"
+                phx-click={JS.push("send_email") |> Modal.hide_modal("certificate_modal")}
                 phx-value-selected_modal={@selected_modal}
                 phx-target={@myself}
                 class="text-white text-sm font-semibold leading-[14px] h-[30px] px-4 py-2 bg-[#0062f2] rounded-md border border-[#0062f2] justify-center items-center gap-2 inline-flex overflow-hidden"
@@ -72,12 +74,50 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     """
   end
 
-  def handle_event("send_email", _, socket) do
-    # TODO
+  def handle_event("send_email", %{"selected_modal" => selected_modal}, socket)
+      when selected_modal in ["approve", "deny"] do
+    %{
+      selected_student: student,
+      platform_name: platform_name,
+      course_name: course_name,
+      instructor_email: instructor_email
+    } =
+      socket.assigns
+
+    selected_modal = String.to_existing_atom(selected_modal)
+
+    email_assigns =
+      Map.merge(
+        %{
+          student_name: Utils.name(student),
+          platform_name: platform_name,
+          course_name: course_name,
+          instructor_email: instructor_email
+        },
+        if(selected_modal == :approve,
+          do: %{certificate_link: url(OliWeb.Endpoint, ~p"/")},
+          else: %{}
+        )
+      )
+
+    # TODO:
+    # 1. Add real link to certificate (only in approved case)
+    # 2. mark the granted certificate as sent (a migration is required)
+    # 3. Replace this email implementation -> wire with Oli.Delivery.Sections.Certificates.Workers.Mailer through
+    #    Oli.Delivery.GrantedCertificates.send_email
+
+    Email.create_email(
+      student.email,
+      "#{course_name}: Certificate #{action_by_selected_modal(selected_modal)}",
+      email_template_by_selected_modal(selected_modal),
+      email_assigns
+    )
+    |> Mailer.deliver()
+
     {:noreply, socket}
   end
 
-  def template_by_selected_modal(%{selected_modal: :approve} = assigns) do
+  def preview_template_by_selected_modal(%{selected_modal: :approve} = assigns) do
     ~H"""
     <EmailTemplates.student_approval
       student_name={@student_name}
@@ -87,7 +127,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     """
   end
 
-  def template_by_selected_modal(%{selected_modal: :deny} = assigns) do
+  def preview_template_by_selected_modal(%{selected_modal: :deny} = assigns) do
     ~H"""
     <EmailTemplates.student_denial
       student_name={@student_name}
@@ -97,6 +137,9 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     />
     """
   end
+
+  defp email_template_by_selected_modal(:approve), do: :certificate_approval
+  defp email_template_by_selected_modal(:deny), do: :certificate_denial
 
   defp title_by_selected_modal(:approve), do: "Certificate Approval Email"
   defp title_by_selected_modal(:deny), do: "Certificate Denial Email"
