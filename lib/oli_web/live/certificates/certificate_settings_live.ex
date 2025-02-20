@@ -195,6 +195,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       section={@section}
       certificate={@certificate}
       active_tab={@active_tab}
+      read_only={@read_only}
     />
     """
   end
