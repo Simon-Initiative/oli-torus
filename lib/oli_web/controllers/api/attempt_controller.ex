@@ -428,6 +428,44 @@ defmodule OliWeb.Api.AttemptController do
   end
 
   @doc """
+  Saves user state for a specific part attempt on a basic page. This will only save the state
+  for active part attempts.
+  """
+  @doc parameters: @part_attempt_parameters,
+       request_body: {"User state", "application/json", UserStateUpdateBody, required: true},
+       responses: %{
+         200 => {"Update Response", "application/json", UserStateUpdateResponse}
+       }
+  def save_active_part(conn, %{
+        "activity_attempt_guid" => _attempt_guid,
+        "part_attempt_guid" => part_attempt_guid,
+        "response" => response
+      }) do
+    case Activity.save_student_input(
+           [
+             %{attempt_guid: part_attempt_guid, response: response}
+           ],
+           only_active: true
+         ) do
+      {:ok, _} ->
+        json(conn, %{"type" => "success"})
+
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
+
+      {:error, e} ->
+        {_, msg} = Oli.Utils.log_error("Could not save part", e)
+        error(conn, 500, msg)
+    end
+  end
+
+  @doc """
   Submit user state for server-side evaluation for a single part.
 
   If this evaluation completes the activity attempt, a rolled up score will be calculdated
@@ -579,6 +617,43 @@ defmodule OliWeb.Api.AttemptController do
     case Activity.save_student_input(parsed) do
       {:ok, _} ->
         json(conn, %{"type" => "success"})
+
+      {:error, e} ->
+        {_, msg} = Oli.Utils.log_error("Could not save activity", e)
+        error(conn, 500, msg)
+    end
+  end
+
+  @doc """
+  Saves user state for all parts for a specific activity attempt on a basic page. This will only
+  save the state for active part attempts.
+  """
+  @doc parameters: @activity_attempt_parameters,
+       request_body: {"User state", "application/json", ActivityAttemptBody, required: true},
+       responses: %{
+         200 => {"Update Response", "application/json", UserStateUpdateResponse}
+       }
+  def save_active_activity(conn, %{
+        "activity_attempt_guid" => _attempt_guid,
+        "partInputs" => part_inputs
+      }) do
+    parsed =
+      Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => response} ->
+        %{attempt_guid: attempt_guid, response: response}
+      end)
+
+    case Activity.save_student_input(parsed, only_active: true) do
+      {:ok, _} ->
+        json(conn, %{"type" => "success"})
+
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
 
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not save activity", e)

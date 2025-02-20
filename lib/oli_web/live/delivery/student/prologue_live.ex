@@ -108,6 +108,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           page_context={@page_context}
           attempt_message={@attempt_message}
           ctx={@ctx}
+          is_adaptive={is_adaptive_page(@page_context.page)}
           allow_attempt?={@allow_attempt?}
           section_slug={@section.slug}
           request_path={@request_path}
@@ -137,6 +138,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :attempt_message, :string
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
+  attr :is_adaptive, :boolean, required: true
   attr :allow_attempt?, :boolean
   attr :section_slug, :string
   attr :request_path, :string
@@ -171,6 +173,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           section_slug={@section_slug}
           page_revision_slug={@page_context.page.slug}
           attempt={attempt}
+          is_adaptive={@is_adaptive}
           ctx={@ctx}
           allow_review_submission?={@page_context.effective_settings.review_submission == :allow}
           request_path={@request_path}
@@ -199,6 +202,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :index, :integer
   attr :attempt, ResourceAttempt
   attr :ctx, OliWeb.Common.SessionContext
+  attr :is_adaptive, :boolean, required: true
   attr :allow_review_submission?, :boolean
   attr :section_slug, :string
   attr :page_revision_slug, :string
@@ -206,7 +210,12 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
   defp attempt_summary(assigns) do
     attempt = Core.preload_activity_part_attempts(assigns.attempt)
-    feedback_texts = Utils.extract_feedback_text(attempt.activity_attempts)
+
+    feedback_texts =
+      if assigns.is_adaptive,
+        do: Utils.extract_feedback_text(attempt.activity_attempts),
+        else: []
+
     assigns = assign(assigns, feedback_texts: feedback_texts)
 
     ~H"""
@@ -284,7 +293,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         </div>
       </div>
     </div>
-    <div :if={@feedback_texts != []} class="mt-2 mb-8">
+    <div :if={@is_adaptive && @feedback_texts != []} class="mt-2 mb-8">
       <div class="text-neutral-500 text-sm font-bold mb-2">Instructor Feedback:</div>
       <div class="flex flex-col gap-y-2">
         <%= for feedback <- @feedback_texts do %>

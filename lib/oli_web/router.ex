@@ -103,6 +103,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
+  pipeline :ensure_datashop_id do
+    plug(OliWeb.Plugs.EnsureDatashopId)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -115,6 +119,7 @@ defmodule OliWeb.Router do
 
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(OliWeb.Plugs.SetToken)
+    plug(:ensure_datashop_id)
 
     plug(:delivery_layout)
   end
@@ -706,6 +711,9 @@ defmodule OliWeb.Router do
     post("/:activity_attempt_guid", Api.AttemptController, :new_activity)
     put("/:activity_attempt_guid", Api.AttemptController, :submit_activity)
     patch("/:activity_attempt_guid", Api.AttemptController, :save_activity)
+
+    patch("/:activity_attempt_guid/active", Api.AttemptController, :save_active_activity)
+
     put("/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations)
 
     post(
@@ -730,6 +738,12 @@ defmodule OliWeb.Router do
       "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
       Api.AttemptController,
       :save_part
+    )
+
+    patch(
+      "/:activity_attempt_guid/part_attempt/:part_attempt_guid/active",
+      Api.AttemptController,
+      :save_active_part
     )
 
     get(
@@ -1049,6 +1063,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :ensure_datashop_id,
       :require_authenticated_user_or_guest,
       :student,
       :enforce_enroll_and_paywall,

@@ -1259,23 +1259,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
                "table tbody tr:nth-of-type(1)[class=\"table-active bg-delivery-primary-100\"]"
              )
 
-      # check that the multiple choice details render correctly
-      selected_activity_model =
+      activity_id =
         view
         |> render()
         |> Floki.parse_fragment!()
         |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
+        |> Floki.attribute("activity_id")
+        |> hd()
+        |> String.split("_")
+        |> Enum.at(1)
+        |> String.to_integer()
 
-      assert has_element?(
-               view,
-               ~s(div[role="activity_title"]),
-               "#{mcq_activity_1.title} - Question details"
-             )
-
-      assert selected_activity_model =~
-               "{\"choices\":[{\"content\":[{\"children\":[{\"text\":\"Choice 1 for #{mcq_activity_1.id}\"}],\"id\":\"1866911747\",\"type\":\"p\"}],\"frequency\":1,\"id\":\"id_for_option_a\"},{\"content\":[{\"children\":[{\"text\":\"Choice 2 for #{mcq_activity_1.id}\"}],\"id\":\"3926142114\",\"type\":\"p\"}],\"frequency\":0,\"id\":\"id_for_option_b\"}]}"
+      assert mcq_activity_1.resource_id == activity_id
     end
 
     test "single response details get rendered correctly when page is selected",
@@ -1451,217 +1446,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
              )
 
       assert selected_activity_data["spec"]["title"]["text"] == likert_activity.title
-    end
-
-    test "single response details get rendered for a section with analytics_version :v2 but not for :v1",
-         %{
-           conn: conn,
-           section_v1: section_v1,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           single_response_activity: single_response_activity,
-           project: project,
-           publication: publication
-         } do
-      ## section with analytics_version :v1
-      set_activity_attempt(
-        page_1,
-        single_response_activity,
-        student_1,
-        section_v1,
-        project.id,
-        publication.id,
-        "This is an incorrect answer from student 1",
-        false
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section_v1.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-short-answer-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      refute selected_activity_model =~ "This is an incorrect answer from student 1"
-
-      ## section with analytics_version :v2
-      set_activity_attempt(
-        page_1,
-        single_response_activity,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "This is an incorrect answer from student 1",
-        false
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-short-answer-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      assert selected_activity_model =~ "This is an incorrect answer from student 1"
-    end
-
-    test "multiple choice frequency details get rendered for a section with analytics_version :v2 but not for :v1",
-         %{
-           conn: conn,
-           section_v1: section_v1,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           mcq_activity_1: mcq_activity_1,
-           project: project,
-           publication: publication
-         } do
-      ## section with analytics_version :v1
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section_v1,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section_v1.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      assert selected_activity_model =~ ~s{"id":"id_for_option_a"}
-      refute selected_activity_model =~ ~s{"frequency":}
-
-      ## section with analytics_version :v2
-      set_activity_attempt(
-        page_1,
-        mcq_activity_1,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multiple-choice-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      assert selected_activity_model =~ ~s{"frequency":1,"id":"id_for_option_a"}
-    end
-
-    test "multi input details get not rendered for a section with analytics_version :v1",
-         %{
-           conn: conn,
-           section_v1: section_v1,
-           page_1: page_1,
-           student_1: student_1,
-           multi_input_activity: multi_input_activity,
-           project: project,
-           publication: publication
-         } do
-      ## section with analytics_version :v1
-      set_activity_attempt(
-        page_1,
-        multi_input_activity,
-        student_1,
-        section_v1,
-        project.id,
-        publication.id,
-        "Incorrect answer",
-        false
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section_v1.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multi-input-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      refute selected_activity_model =~ "Incorrect answer"
-    end
-
-    test "likert activity details get not rendered for a section with analytics_version :v1",
-         %{
-           conn: conn,
-           section_v1: section_v1,
-           page_1: page_1,
-           student_1: student_1,
-           likert_activity: likert_activity,
-           project: project,
-           publication: publication
-         } do
-      ## section with analytics_version :v1
-      set_activity_attempt(
-        page_1,
-        likert_activity,
-        student_1,
-        section_v1,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        false
-      )
-
-      {:ok, view, _html} = live(conn, live_view_practice_activities_route(section_v1.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      # check that the likert VegaLite visualization is not rendered
-      refute has_element?(
-               view,
-               ~s(div[data-live-react-class="Components.VegaLiteRenderer"])
-             )
     end
 
     test "student attempts summary gets rendered correctly when no students have attempted", %{

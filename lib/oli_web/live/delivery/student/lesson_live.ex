@@ -1201,8 +1201,16 @@ defmodule OliWeb.Delivery.Student.LessonLive do
            to: Utils.lesson_live_path(section.slug, revision_slug, request_path: request_path)
          )}
 
+      {:error, {:already_submitted}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Failed to submit. This attempt has already been submitted."
+         )}
+
       {:error, {reason}}
-      when reason in [:already_submitted, :active_attempt_present, :no_more_attempts] ->
+      when reason in [:active_attempt_present, :no_more_attempts] ->
         {:noreply, put_flash(socket, :error, "Unable to finalize page")}
 
       e ->

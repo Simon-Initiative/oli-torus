@@ -190,7 +190,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
-                  <ActivityHelpers.rendered_activity activity={activity} />
+                  <ActivityHelpers.rendered_activity
+                    activity={activity}
+                    activity_types_map={@activity_types_map}
+                  />
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
@@ -209,9 +212,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         socket
       ) do
     %{
+      section: section,
       students: students,
-      student_ids: student_ids,
-      section: section
+      activity_types_map: activity_types_map
     } =
       socket.assigns
 
@@ -220,44 +223,19 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         assessment.id == String.to_integer(selected_assessment_id)
       end)
 
-    current_activities =
-      ActivityHelpers.get_activities(
-        current_assessment.resource_id,
-        section.id,
-        student_ids
-      )
-
-    activity_resource_ids =
-      Enum.map(current_activities, fn activity -> activity.resource_id end)
-
-    activities_details =
-      ActivityHelpers.get_activities_details(
-        activity_resource_ids,
-        socket.assigns.section,
-        socket.assigns.activity_types_map,
+    page_revision =
+      Oli.Publishing.DeliveryResolver.from_resource_id(
+        section.slug,
         current_assessment.resource_id
       )
 
     current_activities =
-      Enum.map(current_activities, fn activity ->
-        activity_details =
-          Enum.find(activities_details, fn activity_details ->
-            activity.resource_id == activity_details.revision.resource_id
-          end)
-
-        activity
-        |> Map.put(
-          :preview_rendered,
-          ActivityHelpers.get_preview_rendered(
-            activity_details,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
-          )
-        )
-        |> Map.put(:datasets, Map.get(activity_details, :datasets))
-        |> Map.put(:analytics_version, section.analytics_version)
-        |> ActivityHelpers.add_activity_attempts_info(students, student_ids, section)
-      end)
+      ActivityHelpers.summarize_activity_performance(
+        section,
+        page_revision,
+        activity_types_map,
+        students
+      )
 
     {:noreply,
      assign(

@@ -45,7 +45,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.VisitContext do
           section_slug: String.t(),
           user: Oli.Accounts.User.t() | Oli.Accounts.Author.t(),
           audience_role: :student | :instructor,
-          datashop_session_id: String.t() | nil,
+          datashop_session_id: String.t(),
           activity_provider: any(),
           effective_settings: Oli.Delivery.Settings.Combined.t()
         }
