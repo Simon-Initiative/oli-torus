@@ -255,24 +255,30 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     assigns =
       Map.merge(assigns, %{
         certificate_status: Map.get(user, :certificate) && user.certificate.state,
-        user_id: user.id,
+        student: user,
         granted_certificate_id: Map.get(user, :certificate) && user.certificate.id
       })
 
     ~H"""
     <.live_component
-      id={"certificate-state-component-#{@user_id}"}
+      id={"certificate-state-component-#{@student.id}"}
       module={StateApprovalComponent}
       certificate_status={@certificate_status}
       requires_instructor_approval={@certificate.requires_instructor_approval}
       granted_certificate_id={@granted_certificate_id}
       certificate_id={@certificate.id}
-      student_id={@user_id}
+      student={@student}
+      platform_name={Oli.Branding.brand_name(@section)}
+      course_name={@section.title}
+      instructor_email={issued_by_email(@ctx)}
       issued_by_type={issued_by_type(@ctx)}
       issued_by_id={issued_by_id(@ctx)}
     />
     """
   end
+
+  defp issued_by_email(%{author: author} = _ctx) when not is_nil(author), do: author.email
+  defp issued_by_email(ctx), do: ctx.user.email
 
   defp issued_by_type(%{author: author} = _ctx) when not is_nil(author), do: :author
   defp issued_by_type(_ctx), do: :user
