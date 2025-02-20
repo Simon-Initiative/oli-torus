@@ -152,10 +152,10 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
-  Updates a SectionResource record.
+  Updates a SectionResource record's entry in the (potentially distributed) cache.
   """
   def update_section_resource(section_resource) do
-    Depot.update(@depot_desc, section_resource)
+    Oli.Delivery.DepotCoordinator.update_all(@depot_desc, [section_resource])
   end
 
   @doc """
