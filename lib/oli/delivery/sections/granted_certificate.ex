@@ -27,7 +27,7 @@ defmodule Oli.Delivery.Sections.GrantedCertificate do
   end
 
   @required_fields [:user_id, :certificate_id, :state, :with_distinction, :guid]
-  @optional_fields [:issued_by, :issued_by_type, :issued_at, :url]
+  @optional_fields [:issued_by, :issued_by_type, :issued_at, :url, :student_email_sent]
 
   @all_fields @required_fields ++ @optional_fields
 
