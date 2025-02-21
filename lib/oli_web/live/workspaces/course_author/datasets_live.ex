@@ -124,7 +124,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.DatasetsLive do
               @project_slug
             )
           }>
-            reqeust new dataset jobs
+            request new dataset jobs
           </a>
         <% end %>
       </p>
