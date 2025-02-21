@@ -130,6 +130,23 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> Oban.insert_all()
   end
 
+  @doc """
+  Counts the number of granted certificates in the given section that have not been emailed to the students yet.
+  (that have the student_email_sent field set to false).
+  This count won't include students that haven't yet acomplished the certificate (there is no GrantedCertificate record).
+  """
+  def certificate_pending_email_notification_count(section_slug) do
+    Repo.one(
+      from gc in GrantedCertificate,
+        join: cert in assoc(gc, :certificate),
+        join: s in assoc(cert, :section),
+        where: gc.state in [:earned, :denied],
+        where: s.slug == ^section_slug,
+        where: gc.student_email_sent == false,
+        select: count(gc.id)
+    )
+  end
+
   defp certificate_s3_url(guid) do
     s3_pdf_bucket = Application.fetch_env!(:oli, :certificates)[:s3_pdf_bucket]
     "https://#{s3_pdf_bucket}.s3.amazonaws.com/certificates/#{guid}.pdf"

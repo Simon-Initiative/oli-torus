@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
   alias Oli.Delivery.GrantedCertificates
   alias Oli.Delivery.Sections.Certificates.EmailTemplates
   alias OliWeb.Common.Utils
+  alias OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail
   alias OliWeb.Components.Modal
 
   def render(%{selected_student: nil, selected_modal: nil} = assigns) do
@@ -52,8 +53,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
           <:custom_footer>
             <div class="flex justify-end space-x-4 w-full h-24 px-[35px]">
               <button
-                phx-click={Modal.hide_modal("certificate_modal")}
+                phx-click={
+                  JS.push("skip_email_notification") |> Modal.hide_modal("certificate_modal")
+                }
                 class="text-[#3c75d3] text-sm font-normal leading-[14px] h-[30px] px-4 py-2 rounded-md border border-[#3c75d3] justify-center items-center gap-2 inline-flex overflow-hidden"
+                phx-target={@myself}
               >
                 Skip
               </button>
@@ -148,6 +152,15 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       </div>
     </div>
     """
+  end
+
+  def handle_event("skip_email_notification", _, socket) do
+    send_update(BulkCertificateStatusEmail,
+      id: "bulk_email_certificate_status_component",
+      show_component: true
+    )
+
+    {:noreply, socket}
   end
 
   def handle_event("send_email", %{"selected_modal" => selected_modal}, socket)

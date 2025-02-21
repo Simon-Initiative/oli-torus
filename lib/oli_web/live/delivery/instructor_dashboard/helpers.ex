@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
-  alias Oli.Delivery.{Certificates, Metrics, Sections}
+  alias Oli.Delivery.{Certificates, GrantedCertificates, Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
 
   def get_containers(section, opts \\ [async: true]) do
@@ -72,7 +72,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       do:
         Phoenix.Component.assign(
           socket,
-          %{certificate: nil, certificate_pending_approval_count: nil}
+          %{
+            certificate: nil,
+            certificate_pending_approval_count: nil,
+            certificate_pending_email_notification_count: nil
+          }
         )
 
   def maybe_assign_certificate_data(socket) do
@@ -81,9 +85,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     certificate = Certificates.get_certificate_by(%{section_id: section.id})
     pending_count = certificate_pending_approval_count(socket.assigns.users, certificate)
 
+    certificate_pending_email_notification_count =
+      GrantedCertificates.certificate_pending_email_notification_count(section.slug)
+
     Phoenix.Component.assign(
       socket,
-      %{certificate: certificate, certificate_pending_approval_count: pending_count}
+      %{
+        certificate: certificate,
+        certificate_pending_approval_count: pending_count,
+        certificate_pending_email_notification_count: certificate_pending_email_notification_count
+      }
     )
   end
 

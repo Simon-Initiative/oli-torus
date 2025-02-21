@@ -4,6 +4,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   alias Oli.Delivery.GrantedCertificates
 
   alias OliWeb.Components.Delivery.Students.Certificates.{
+    BulkCertificateStatusEmail,
     EmailNotificationModals,
     PendingApprovalComponent
   }
@@ -155,6 +156,13 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
            url: nil
          }) do
       {:ok, granted_certificate} ->
+        # show the bulk email notification component
+        # (when manually granting a certificate, no email is sent to that student)
+        send_update(BulkCertificateStatusEmail,
+          id: "bulk_email_certificate_status_component",
+          show_component: true
+        )
+
         {:noreply,
          assign(socket,
            is_editing: false,

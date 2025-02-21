@@ -9,12 +9,9 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Common.{SearchInput, Params, Utils}
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Components.Delivery.CardHighlights
-  alias OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModals
-  alias OliWeb.Components.Modal
   alias OliWeb.Delivery.Content.Progress
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
-  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
@@ -165,7 +162,10 @@ defmodule OliWeb.Components.Delivery.Students do
        selected_proficiency_ids: selected_proficiency_ids,
        platform_name: Oli.Branding.brand_name(section),
        certificate_requires_instructor_approval:
-         assigns[:certificate] && assigns.certificate.requires_instructor_approval
+         assigns[:certificate] &&
+           assigns.certificate.requires_instructor_approval,
+       certificate_pending_email_notification_count:
+         (assigns[:certificate] && assigns.certificate_pending_email_notification_count) || 0
      )}
   end
 
@@ -605,22 +605,14 @@ defmodule OliWeb.Components.Delivery.Students do
             Clear All Filters
           </button>
 
-          <button
-            :if={@section_certificate_enabled and @certificate_requires_instructor_approval}
-            class="ml-auto h-5 flex space-x-4"
-            phx-click={
-              JS.push("show_bulk_certificate_status_email_modal")
-              |> Modal.show_modal("certificate_modal")
+          <.live_component
+            id="bulk_email_certificate_status_component"
+            module={OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatusEmail}
+            show_component={
+              @section_certificate_enabled and
+                @certificate_pending_email_notification_count > 0
             }
-            phx-target={@myself}
-          >
-            <div class="text-center text-[#3b76d3] text-xs font-semibold leading-[17.40px] whitespace-normal">
-              Bulk Certificate Status Email
-            </div>
-            <div data-svg-wrapper class="">
-              <Icons.email />
-            </div>
-          </button>
+          />
         </div>
 
         <InstructorDashboardPagedTable.render
@@ -1048,15 +1040,6 @@ defmodule OliWeb.Components.Delivery.Students do
       </fieldset>
     </div>
     """
-  end
-
-  def handle_event("show_bulk_certificate_status_email_modal", _, socket) do
-    send_update(EmailNotificationModals,
-      id: "certificate_email_notification_modals",
-      selected_modal: :bulk_email
-    )
-
-    {:noreply, socket}
   end
 
   def handle_event("toggle_selected", %{"_target" => [id]}, socket) do
