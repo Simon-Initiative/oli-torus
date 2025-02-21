@@ -8,5 +8,4 @@ defmodule Oli.Analytics.Common do
     Enum.map(maps, fn m -> Jason.encode!(m) end)
     |> Enum.join("\n")
   end
-
 end

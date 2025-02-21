@@ -275,6 +275,5 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
 
       assert Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
     end
-
   end
 end
