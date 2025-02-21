@@ -124,7 +124,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     required_state = String.to_existing_atom(required_state)
 
     case GrantedCertificates.create_granted_certificate(%{
-           user_id: socket.assigns.student_id,
+           user_id: socket.assigns.student.id,
            certificate_id: socket.assigns.certificate_id,
            state: required_state,
            with_distinction: false,
