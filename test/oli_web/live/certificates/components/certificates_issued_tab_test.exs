@@ -47,7 +47,8 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
         table_model: table_model,
         ctx: session_context,
         route_name: route_name,
-        project: project
+        project: project,
+        read_only: false
       }
 
       {:ok, lcd, _html} = live_component_isolated(conn, CertificatesIssuedTab, attrs)
@@ -95,6 +96,48 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
                  instructor_name
                )
       end)
+    end
+
+    test "does not render Download CSV button when read only mode", ctx do
+      %{conn: conn, session_context: session_context, section: section} = ctx
+
+      id = "certificates_issued_component"
+      section_slug = section.slug
+      section_id = section.id
+      route_name = :authoring
+      project = nil
+
+      %{
+        "direction" => direction,
+        "limit" => limit,
+        "offset" => offset,
+        "sort_by" => sort_by,
+        "text_search" => text_search
+      } = params = CertificatesIssuedTab.decode_params(%{})
+
+      paging = %Paging{offset: offset, limit: limit}
+      sorting = %Sorting{field: sort_by, direction: direction}
+
+      granted_certificates =
+        Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
+
+      table_model =
+        CertificatesIssuedTableModel.new(session_context, granted_certificates, section_slug)
+
+      attrs = %{
+        id: id,
+        params: params,
+        section_slug: section_slug,
+        table_model: table_model,
+        ctx: session_context,
+        route_name: route_name,
+        project: project,
+        read_only: true
+      }
+
+      {:ok, lcd, _html} = live_component_isolated(conn, CertificatesIssuedTab, attrs)
+
+      refute has_element?(lcd, "a[role=\"export\"]")
     end
   end
 

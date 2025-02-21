@@ -246,6 +246,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     <div class="flex flex-col">
       <div class="flex flex-row justify-center overflow-hidden">
         <button
+          role="prev button"
           phx-click="prev_preview_page"
           phx-target={@target}
           disabled={@preview_page == 0}
@@ -254,8 +255,14 @@ defmodule OliWeb.Certificates.Components.DesignTab do
           <Icons.left_arrow class="fill-[#3E3F44] dark:fill-white" />
         </button>
 
-        <iframe srcdoc={elem(@certificate_html, @preview_page)} class="w-[65rem] h-[40rem]"></iframe>
+        <iframe
+          id={"certificate_preview_#{@preview_page}"}
+          srcdoc={elem(@certificate_html, @preview_page)}
+          class="w-[65rem] h-[40rem]"
+        >
+        </iframe>
         <button
+          role="next button"
           phx-click="next_preview_page"
           phx-target={@target}
           disabled={@preview_page == 1}
@@ -266,6 +273,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       </div>
       <div class="flex gap-4 justify-center">
         <button
+          role="carousel prev button"
           phx-click="prev_preview_page"
           phx-target={@target}
           disabled={@preview_page == 0}
@@ -274,6 +282,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
           <.carousel_dot active={@preview_page == 0} />
         </button>
         <button
+          role="carousel next button"
           phx-click="next_preview_page"
           phx-target={@target}
           disabled={@preview_page == 1}
