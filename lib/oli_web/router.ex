@@ -1602,7 +1602,6 @@ defmodule OliWeb.Router do
       as: :history_by_resource_id
     )
 
-    live("/:project_id/datashop", Datashop.AnalyticsLive)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope
