@@ -74,7 +74,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
           socket,
           %{
             certificate: nil,
-            certificate_pending_approval_count: nil,
             certificate_pending_email_notification_count: nil
           }
         )
@@ -83,7 +82,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     section = socket.assigns.section
 
     certificate = Certificates.get_certificate_by(%{section_id: section.id})
-    pending_count = certificate_pending_approval_count(socket.assigns.users, certificate)
 
     certificate_pending_email_notification_count =
       GrantedCertificates.certificate_pending_email_notification_count(section.slug)
@@ -92,7 +90,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
       socket,
       %{
         certificate: certificate,
-        certificate_pending_approval_count: pending_count,
         certificate_pending_email_notification_count: certificate_pending_email_notification_count
       }
     )
