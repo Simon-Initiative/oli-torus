@@ -162,7 +162,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
            socket.assigns.granted_certificate_id,
            %{state: required_state, url: nil}
          ) do
-      {:ok, _} ->
+      {:ok, gc} ->
         if socket.assigns.requires_instructor_approval and current_state == "pending" do
           # decrease the number of pending approvals
           send_update(PendingApprovalComponent,
@@ -174,7 +174,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
           send_update(EmailNotificationModals,
             id: "certificate_email_notification_modals",
             selected_student: socket.assigns.student,
-            selected_modal: if(required_state == :earned, do: :approve, else: :deny)
+            selected_modal: if(required_state == :earned, do: :approve, else: :deny),
+            granted_certificate_id: gc.id
           )
         end
 

@@ -623,6 +623,7 @@ defmodule OliWeb.Components.Delivery.Students do
           course_name={@section_title}
           instructor_email={issued_by_email(@current_author, @current_user)}
           selected_modal={nil}
+          granted_certificate_id={nil}
         />
       </div>
     </div>

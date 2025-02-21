@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModals do
   use OliWeb, :live_component
 
+  alias Oli.Delivery.GrantedCertificates
   alias Oli.Delivery.Sections.Certificates.EmailTemplates
   alias Oli.Email
   alias Oli.Mailer
@@ -80,7 +81,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       selected_student: student,
       platform_name: platform_name,
       course_name: course_name,
-      instructor_email: instructor_email
+      instructor_email: instructor_email,
+      granted_certificate_id: granted_certificate_id
     } =
       socket.assigns
 
@@ -113,6 +115,16 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       email_assigns
     )
     |> Mailer.deliver()
+    |> case do
+      {:ok, _} ->
+        GrantedCertificates.update_granted_certificate(granted_certificate_id, %{
+          student_email_sent: true
+        })
+        |> IO.inspect(label: "a ver")
+
+      {:error, _} ->
+        send(self(), {:flash_message, {:error, "Could not send email to student"}})
+    end
 
     {:noreply, socket}
   end
