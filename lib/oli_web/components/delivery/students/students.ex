@@ -10,6 +10,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Components.Delivery.CardHighlights
   alias OliWeb.Delivery.Content.Progress
+  alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -50,15 +51,18 @@ defmodule OliWeb.Components.Delivery.Students do
         } = assigns,
         socket
       ) do
-    {total_count, rows} = apply_filters(students, params)
+    {total_count, filtered_students} = apply_filters(students, params)
+
+    certificate_pending_approval_count =
+      Helpers.certificate_pending_approval_count(filtered_students, assigns[:certificate])
 
     {:ok, table_model} =
       EnrollmentsTableModel.new(
-        rows,
+        filtered_students,
         section,
         ctx,
         assigns[:certificate],
-        assigns[:certificate_pending_approval_count],
+        certificate_pending_approval_count,
         socket.assigns.myself
       )
 
@@ -81,7 +85,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
     table_model =
       Map.merge(table_model, %{
-        rows: rows,
+        rows: filtered_students,
         sort_order: params.sort_order,
         sort_by_spec:
           Enum.find(table_model.column_specs, fn col_spec -> col_spec.name == params.sort_by end)
