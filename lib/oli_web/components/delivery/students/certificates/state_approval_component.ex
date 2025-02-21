@@ -8,6 +8,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     PendingApprovalComponent
   }
 
+  alias OliWeb.Components.Modal
   alias OliWeb.Icons
 
   def mount(socket) do
@@ -17,7 +18,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   def render(%{requires_instructor_approval: true, certificate_status: :pending} = assigns) do
     ~H"""
     <div role="instructor pending approval status">
-      <.approve_or_deny_buttons target={@myself} current_state={@certificate_status} />
+      <.approve_or_deny_buttons
+        target={@myself}
+        current_state={@certificate_status}
+        show_modal?={true}
+      />
     </div>
     """
   end
@@ -74,11 +79,20 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   attr :target, Phoenix.LiveComponent.CID, required: true
   attr :current_state, :string, required: true
 
+  attr :show_modal?, :boolean,
+    default: false,
+    doc:
+      "Whether to show the email notification modal after the instructor approves or denies the certificate"
+
   def approve_or_deny_buttons(assigns) do
     ~H"""
     <div role="approve or deny buttons" class="flex w-full justify-center gap-2 px-1">
       <button
-        phx-click="update_certificate"
+        phx-click={
+          if @show_modal?,
+            do: JS.push("update_certificate") |> Modal.show_modal("certificate_modal"),
+            else: JS.push("update_certificate")
+        }
         phx-target={@target}
         phx-value-required_state="earned"
         phx-value-current_state={@current_state || "new_certificate_required"}
@@ -87,7 +101,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         Approve
       </button>
       <button
-        phx-click="update_certificate"
+        phx-click={
+          if @show_modal?,
+            do: JS.push("update_certificate") |> Modal.show_modal("certificate_modal"),
+            else: JS.push("update_certificate")
+        }
         phx-target={@target}
         phx-value-required_state="denied"
         phx-value-current_state={@current_state || "new_certificate_required"}
