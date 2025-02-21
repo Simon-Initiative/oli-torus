@@ -3,6 +3,8 @@ defmodule Oli.Delivery.GrantedCertificates do
   The Granted Certificates context
   """
 
+  import Ecto.Query, warn: false
+
   alias Ecto.Changeset
   alias ExAws.Lambda
   alias Oli.Delivery.Sections.Certificates.Workers.{GeneratePdf, Mailer}
@@ -86,10 +88,46 @@ defmodule Oli.Delivery.GrantedCertificates do
     end
   end
 
-  def send_email(granted_certificate, to, template) do
-    # TODO finish implementation with MER-4107
-    Mailer.new(%{granted_certificate_id: granted_certificate.id, to: to, template: template})
+  @doc """
+  Sends an email to the given email address with the given template, to inform the student
+  about the status of the granted certificate.
+  """
+  def send_certificate_email(granted_certificate_id, to, template) do
+    # TODO: check on MER-4107 if we need to add more assign fields to the email,
+    # and if the granted_certificate is updated to mark the student_email_sent field as true
+    Mailer.new(%{granted_certificate_id: granted_certificate_id, to: to, template: template})
     |> Oban.insert()
+  end
+
+  @doc """
+  Fetches all the students that have a granted certificate in the given section with status :earned or :denied,
+  and sends them an email with the corresponding template (if they have not been sent yet).
+  """
+  def bulk_send_certificate_status_email(section_slug) do
+    # TODO: check on MER-4107 if we need to add more assign fields to the email,
+    # and if the granted_certificate is updated to mark the student_email_sent field as true
+
+    granted_certificates =
+      Repo.all(
+        from gc in GrantedCertificate,
+          join: cert in assoc(gc, :certificate),
+          join: s in assoc(cert, :section),
+          join: student in assoc(gc, :user),
+          where: s.slug == ^section_slug,
+          where: gc.state in [:earned, :denied],
+          where: gc.student_email_sent == false,
+          select: {gc.id, gc.state, student.email}
+      )
+
+    granted_certificates
+    |> Enum.map(fn {id, state, email} ->
+      Mailer.new(%{
+        granted_certificate_id: id,
+        to: email,
+        template: if(state == :earned, do: :certificate_approval, else: :certificate_denial)
+      })
+    end)
+    |> Oban.insert_all()
   end
 
   defp certificate_s3_url(guid) do
