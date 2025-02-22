@@ -45,8 +45,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         students,
         only_for_activity_ids \\ nil
       ) do
-
-    Logger.info("Summarizing activity performance for section #{section.id} and page #{page_revision.resource_id}")
+    Logger.info(
+      "Summarizing activity performance for section #{section.id} and page #{page_revision.resource_id}"
+    )
 
     page_id = page_revision.resource_id
     graded = page_revision.graded
@@ -64,7 +65,9 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     # Then resolve the revisions for the activities
     activity_ids = Map.keys(grouped_by_activity_id)
 
-    Logger.info("Summarizing #{Enum.count(activity_ids)} for section #{section.id} and page #{page_revision.resource_id}")
+    Logger.info(
+      "Summarizing #{Enum.count(activity_ids)} for section #{section.id} and page #{page_revision.resource_id}"
+    )
 
     revisions_by_resource_id =
       Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
