@@ -211,11 +211,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         %{"id" => selected_assessment_id},
         socket
       ) do
-
     details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
 
     if details_enabled do
-
       %{
         section: section,
         students: students,
@@ -243,21 +241,21 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         )
 
       {:noreply,
-      assign(
-        socket,
-        current_assessment: current_assessment,
-        activities: current_activities
-      )
-      |> assign_selected_assessment(current_assessment.id)
-      |> case do
-        %{assigns: %{scripts_loaded: true}} = socket ->
-          socket
+       assign(
+         socket,
+         current_assessment: current_assessment,
+         activities: current_activities
+       )
+       |> assign_selected_assessment(current_assessment.id)
+       |> case do
+         %{assigns: %{scripts_loaded: true}} = socket ->
+           socket
 
-        socket ->
-          push_event(socket, "load_survey_scripts", %{
-            script_sources: socket.assigns.scripts
-          })
-      end}
+         socket ->
+           push_event(socket, "load_survey_scripts", %{
+             script_sources: socket.assigns.scripts
+           })
+       end}
     else
       {:noreply, socket}
     end
