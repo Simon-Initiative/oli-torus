@@ -211,48 +211,56 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         %{"id" => selected_assessment_id},
         socket
       ) do
-    %{
-      section: section,
-      students: students,
-      activity_types_map: activity_types_map
-    } =
-      socket.assigns
 
-    current_assessment =
-      Enum.find(socket.assigns.assessments, fn assessment ->
-        assessment.id == String.to_integer(selected_assessment_id)
-      end)
+    details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
 
-    page_revision =
-      Oli.Publishing.DeliveryResolver.from_resource_id(
-        section.slug,
-        current_assessment.resource_id
+    if details_enabled do
+
+      %{
+        section: section,
+        students: students,
+        activity_types_map: activity_types_map
+      } =
+        socket.assigns
+
+      current_assessment =
+        Enum.find(socket.assigns.assessments, fn assessment ->
+          assessment.id == String.to_integer(selected_assessment_id)
+        end)
+
+      page_revision =
+        Oli.Publishing.DeliveryResolver.from_resource_id(
+          section.slug,
+          current_assessment.resource_id
+        )
+
+      current_activities =
+        ActivityHelpers.summarize_activity_performance(
+          section,
+          page_revision,
+          activity_types_map,
+          students
+        )
+
+      {:noreply,
+      assign(
+        socket,
+        current_assessment: current_assessment,
+        activities: current_activities
       )
+      |> assign_selected_assessment(current_assessment.id)
+      |> case do
+        %{assigns: %{scripts_loaded: true}} = socket ->
+          socket
 
-    current_activities =
-      ActivityHelpers.summarize_activity_performance(
-        section,
-        page_revision,
-        activity_types_map,
-        students
-      )
-
-    {:noreply,
-     assign(
-       socket,
-       current_assessment: current_assessment,
-       activities: current_activities
-     )
-     |> assign_selected_assessment(current_assessment.id)
-     |> case do
-       %{assigns: %{scripts_loaded: true}} = socket ->
-         socket
-
-       socket ->
-         push_event(socket, "load_survey_scripts", %{
-           script_sources: socket.assigns.scripts
-         })
-     end}
+        socket ->
+          push_event(socket, "load_survey_scripts", %{
+            script_sources: socket.assigns.scripts
+          })
+      end}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event(

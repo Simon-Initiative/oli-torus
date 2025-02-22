@@ -181,37 +181,45 @@ defmodule OliWeb.Components.Delivery.Surveys do
         %{"id" => survey_id},
         socket
       ) do
-    %{
-      students: students,
-      activity_types_map: activity_types_map,
-      section: section
-    } =
-      socket.assigns
 
-    current_assessment = find_current_assessment(socket, survey_id)
+    details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
 
-    page_revision =
-      Oli.Publishing.DeliveryResolver.from_resource_id(
-        section.slug,
-        current_assessment.resource_id
+    if details_enabled do
+
+      %{
+        students: students,
+        activity_types_map: activity_types_map,
+        section: section
+      } =
+        socket.assigns
+
+      current_assessment = find_current_assessment(socket, survey_id)
+
+      page_revision =
+        Oli.Publishing.DeliveryResolver.from_resource_id(
+          section.slug,
+          current_assessment.resource_id
+        )
+
+      survey_activity_ids = get_survey_activity_ids(page_revision)
+
+      current_activities =
+        ActivityHelpers.summarize_activity_performance(
+          section,
+          page_revision,
+          activity_types_map,
+          students,
+          survey_activity_ids
+        )
+
+      assign_assessments_activities_table_model(
+        socket,
+        current_assessment,
+        current_activities
       )
-
-    survey_activity_ids = get_survey_activity_ids(page_revision)
-
-    current_activities =
-      ActivityHelpers.summarize_activity_performance(
-        section,
-        page_revision,
-        activity_types_map,
-        students,
-        survey_activity_ids
-      )
-
-    assign_assessments_activities_table_model(
-      socket,
-      current_assessment,
-      current_activities
-    )
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event(
