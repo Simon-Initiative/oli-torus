@@ -181,11 +181,9 @@ defmodule OliWeb.Components.Delivery.Surveys do
         %{"id" => survey_id},
         socket
       ) do
-
     details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
 
     if details_enabled do
-
       %{
         students: students,
         activity_types_map: activity_types_map,
