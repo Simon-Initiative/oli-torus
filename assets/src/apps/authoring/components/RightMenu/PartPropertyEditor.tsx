@@ -354,6 +354,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
               onChange={handleEditComponentJson}
               jsonValue={selectedPartDef}
               existingPartIds={existingIds}
+              onfocusHandler={componentPropertyFocusHandler}
             />
 
             <Button variant="danger" onClick={showConfirmDelete}>
