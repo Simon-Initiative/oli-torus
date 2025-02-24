@@ -16,9 +16,10 @@ defmodule OliWeb.Plugs.EnsureUserSectionVisitTest do
     test "does not redirect when user is an admin", %{conn: conn} do
       user = user_fixture()
 
-      conn = conn
-             |> assign(:current_user, user)
-             |> assign(:is_admin, true)
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> assign(:is_admin, true)
 
       assert conn == conn |> EnsureUserSectionVisit.call([])
     end
@@ -27,11 +28,12 @@ defmodule OliWeb.Plugs.EnsureUserSectionVisitTest do
       user = insert(:user)
       section = insert(:section)
 
-      conn = conn
-             |> assign(:current_user, user)
-             |> assign(:section, section)
-             |> fetch_session()
-             |> Plug.Conn.put_session("visited_sections", Map.put(%{}, section.slug, true))
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> assign(:section, section)
+        |> fetch_session()
+        |> Plug.Conn.put_session("visited_sections", Map.put(%{}, section.slug, true))
 
       assert conn == conn |> EnsureUserSectionVisit.call([])
     end
@@ -42,10 +44,11 @@ defmodule OliWeb.Plugs.EnsureUserSectionVisitTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = conn
-             |> assign(:current_user, user)
-             |> assign(:section, section)
-             |> EnsureUserSectionVisit.call([])
+      conn =
+        conn
+        |> assign(:current_user, user)
+        |> assign(:section, section)
+        |> EnsureUserSectionVisit.call([])
 
       assert redirected_to(conn) == "/sections/#{section.slug}/welcome"
     end
