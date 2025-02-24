@@ -1,4 +1,5 @@
-defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
+
+defmodule Oli.Delivery.Sections.EnsureResourceTest do
   use Oli.DataCase
 
   import Ecto.Query

@@ -1,4 +1,5 @@
-html.preview {
+html.preview,
+.instructor-preview {
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -12,7 +13,8 @@ html.preview {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-  body #PreviewTools {
+  body #PreviewTools,
+  .instructor-preview #PreviewTools {
     font-feature-settings: 'kern', 'liga', 'pnum';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

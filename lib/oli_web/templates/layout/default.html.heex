@@ -7,7 +7,9 @@
     <Components.Header.delivery_header :if={!assigns[:hide_header]} {assigns} />
 
     <main role="main" id="main-content">
-      <%= @inner_content %>
+      <div class="relative">
+        <%= @inner_content %>
+      </div>
     </main>
 
     <%= if !assigns[:hide_footer], do: OliWeb.Components.Footer.login_footer(%{}) %>

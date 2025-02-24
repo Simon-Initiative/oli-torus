@@ -11,7 +11,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
   alias Oli.Inventories
   alias Oli.Utils.S3Storage
   alias OliWeb.Common.Confirm
-  alias OliWeb.Common.SessionContext
   alias OliWeb.Products.Details.Actions
   alias OliWeb.Products.Details.Content
   alias OliWeb.Products.Details.Edit
@@ -21,18 +20,19 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
 
   require Logger
 
+  on_mount {OliWeb.AuthorAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def mount(%{"product_id" => product_slug}, session, socket) do
     case Mount.for(product_slug, session) do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
       {_, _, product} ->
-        ctx = SessionContext.init(socket, session)
-
-        author = socket.assigns.ctx.author
+        author = socket.assigns.current_author
         base_project = Course.get_project!(product.base_project_id)
         publishers = Inventories.list_publishers()
-        is_admin = Accounts.has_admin_role?(author)
+        is_admin = Accounts.has_admin_role?(author, :content_admin)
         changeset = Section.changeset(product, %{})
         project = socket.assigns.project
 
@@ -50,7 +50,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
            title: "Edit Product",
            show_confirm: false,
            base_project: base_project,
-           ctx: ctx,
            resource_slug: project.slug,
            resource_title: project.title,
            active_workspace: :course_author,
@@ -123,6 +122,28 @@ defmodule OliWeb.Workspaces.CourseAuthor.Products.DetailsLive do
             cancel_upload="cancel_upload"
             updates={@updates}
           />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 py-5 border-b">
+        <div class="md:col-span-4">
+          <h4>Certificate Settings</h4>
+          <div class="max-w-[30rem] text-muted">
+            Design and deliver digital credentials to students that complete this course.
+          </div>
+        </div>
+        <div class="flex flex-col md:col-span-8 gap-2">
+          <div>
+            This product <b>does <%= unless @product.certificate_enabled, do: "not" %></b>
+            currently produce a certificate.
+          </div>
+          <div>
+            <a href={
+              ~p"/workspaces/course_author/#{@project.slug}/products/#{@product.slug}/certificate_settings"
+            }>
+              Manage Certificate Settings
+            </a>
+          </div>
         </div>
       </div>
 

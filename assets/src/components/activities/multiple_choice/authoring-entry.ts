@@ -2,7 +2,7 @@
 import { registerCreationFunc } from '../creation';
 import { CreationContext, Manifest } from '../types';
 import { MCSchema } from './schema';
-import { defaultMCModel } from './utils';
+import { defaultMCModel, mCModel } from './utils';
 
 // This is the entry point for the multiple choice authoring
 // component, as specified in the manifest.json
@@ -27,6 +27,9 @@ export { MultipleChoiceAuthoring } from './MultipleChoiceAuthoring';
 const manifest: Manifest = require('./manifest.json');
 
 function createFn(content: CreationContext): Promise<MCSchema> {
+  if (content && content.creationData) {
+    return Promise.resolve(Object.assign({}, mCModel(content.creationData)));
+  }
   return Promise.resolve(Object.assign({}, defaultMCModel()));
 }
 

@@ -359,6 +359,20 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       ContextRoles.get_role(:context_instructor)
     ])
 
+    Sections.get_section_resource(section.id, page_4_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      scheduling_type: :due_by,
+      start_date: ~U[2024-12-18 20:00:00Z],
+      end_date: ~U[2024-12-25 20:00:00Z]
+    })
+
+    Sections.get_section_resource(section.id, page_2_revision.resource_id)
+    |> Sections.update_section_resource(%{
+      scheduling_type: :due_by,
+      start_date: ~U[2024-12-20 20:00:00Z],
+      end_date: ~U[2024-12-22 20:00:00Z]
+    })
+
     %{
       section: section,
       page_1: page_1_revision,
@@ -477,12 +491,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       conn: conn,
       section: section
     } do
-      section_slug = section.slug
-      active_tab = "settings"
-      assessment_id = "all"
-
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_overview_route(section.slug, "settings", "all"))
@@ -493,12 +503,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
            conn: conn,
            section: section
          } do
-      section_slug = section.slug
-      active_tab = "student_exceptions"
-      assessment_id = "all"
-
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section_slug}%2Fassessment_settings%2F#{active_tab}%2F#{assessment_id}&section=#{section_slug}"
+        "/users/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(
@@ -609,7 +615,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_4 == page_4.title
 
       assert html =~
-               ~s(<a href="/sections/#{section.slug}/instructor_dashboard/manage">Manage Section</a>)
+               ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
     end
 
     test "student_exceptions view loads correctly", %{
@@ -714,7 +720,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       {:error, {:live_redirect, %{kind: :push, to: url}}} =
         element(
           view,
-          ".instructor_dashboard_table tbody tr:first-of-type td:last-of-type a",
+          ".instructor_dashboard_table tbody tr:first-of-type td:nth-last-of-type(2) a",
           "1"
         )
         |> render_click()
@@ -791,9 +797,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
          %{
            conn: conn,
            section: section,
-           page_3: page_3
+           page_1: page_1,
+           page_2: page_2,
+           page_3: page_3,
+           page_4: page_4
          } do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Reset start and end dates for all assessments
+      for page <- [page_1, page_2, page_3, page_4] do
+        Sections.get_section_resource(section.id, page.resource.id)
+        |> Sections.update_section_resource(%{
+          start_date: nil,
+          end_date: nil
+        })
+      end
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
         table_as_list_of_maps(view, :settings)
@@ -907,7 +925,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     test "can be sorted", %{conn: conn, section: section, page_3: page_3} do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
-      [initial_a1, initial_a2, initial_a3, initial_a4] = table_as_list_of_maps(view, :settings)
+      assessments =
+        [initial_a1, initial_a2, initial_a3, initial_a4] = table_as_list_of_maps(view, :settings)
+
+      # Default sort is by index descendent
+      for {assessment, index} <- Enum.with_index(assessments, 1) do
+        assert assessment.index == "#{index}"
+        assert assessment.name == "Page #{index}"
+      end
 
       view
       |> element("th[phx-value-sort_by=index]")
@@ -939,6 +964,48 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert sorted_2.late_policy == "Allow late start and late submit"
       assert sorted_3.late_policy == "Allow late start and late submit"
       assert sorted_4.late_policy == "Allow late start and late submit"
+    end
+
+    test "can be sorted by date", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      # Sort by available date
+      view
+      |> element("th[phx-value-sort_by=available_date]")
+      |> render_click()
+
+      [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
+
+      assert sorted_1.name == "Page 1"
+      assert sorted_1.available_date == "Always available"
+
+      assert sorted_2.name == "Page 3"
+      assert sorted_2.available_date == "Always available"
+
+      assert sorted_3.name == "Page 4"
+      assert sorted_3.available_date == "December 18, 2024 8:00 PM UTC"
+
+      assert sorted_4.name == "Page 2"
+      assert sorted_4.available_date == "December 20, 2024 8:00 PM UTC"
+
+      # Sort by due date
+      view
+      |> element("th[phx-value-sort_by=due_date]")
+      |> render_click()
+
+      [sorted_1, sorted_2, sorted_3, sorted_4] = table_as_list_of_maps(view, :settings)
+
+      assert sorted_1.name == "Page 1"
+      assert sorted_1.due_date == "No due date"
+
+      assert sorted_2.name == "Page 3"
+      assert sorted_2.due_date == "No due date"
+
+      assert sorted_3.name == "Page 2"
+      assert sorted_3.due_date == "December 22, 2024 8:00 PM UTC"
+
+      assert sorted_4.name == "Page 4"
+      assert sorted_4.due_date == "December 25, 2024 8:00 PM UTC"
     end
 
     test "can be paginated", %{
@@ -1345,11 +1412,17 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
          %{
            conn: conn,
            section: section,
-           page_1: page_1
+           page_1: page_1,
+           page_2: page_2
          } do
       Sections.get_section_resource(section.id, page_1.resource.id)
       |> Sections.update_section_resource(%{
         start_date: ~U[2023-10-10 16:00:00Z]
+      })
+
+      Sections.get_section_resource(section.id, page_2.resource.id)
+      |> Sections.update_section_resource(%{
+        start_date: nil
       })
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
@@ -1361,7 +1434,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_2.available_date =~ "Always available"
     end
 
-    test "due date date can be changed by clicking the due date in the table",
+    test "due date can be changed by clicking the due date in the table",
          %{
            conn: conn,
            section: section,
@@ -1505,7 +1578,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert assessment_2.due_date =~ "No due date"
     end
 
-    test "Changing an assessment setting persists that action in the database", %{
+    test "changing an assessment setting persists that action in the database", %{
       conn: conn,
       section: section,
       page_1: page_1
@@ -1585,6 +1658,45 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       ## Since we did a bulk apply and previously changed a setting for page 3, we should have 34 changes in our settings changes table.
       ## That is, 11 changes for each of the remaining resources (Page 1, Page 2, Page 4) and 1 done above.
       assert length(changes) == 34
+    end
+
+    test "can change allow hints setting", %{
+      conn: conn,
+      section: section,
+      page_1: page_1
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      ## Checks that there is no setting change for allow_hints
+      assert Settings.fetch_all_settings_changes() == []
+
+      ## Changes the allow_hints setting to allow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_1.resource.id}"],
+        "allow_hints-#{page_1.resource.id}" => true
+      })
+
+      ## Checks that there is a setting change for allow_hints
+      assert Settings.fetch_all_settings_changes() |> hd |> Map.get(:new_value) == "true"
+
+      ## Changes the allow_hints setting back to disallow
+      view
+      |> form(~s{form[for="settings_table"]})
+      |> render_change(%{
+        "_target" => ["allow_hints-#{page_1.resource.id}"],
+        "allow_hints-#{page_1.resource.id}" => false
+      })
+
+      ## Checks that now there are 2 setting changes for allow_hints (one for disallow and one for allow)
+      assert Settings.fetch_all_settings_changes() |> length() == 2
+
+      ## Checks that the last setting change for allow_hints is disallow
+      assert Settings.fetch_all_settings_changes()
+             |> Enum.sort_by(& &1.id, :desc)
+             |> hd
+             |> Map.get(:new_value) == "false"
     end
   end
 

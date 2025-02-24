@@ -7,11 +7,10 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   import Ecto.Query, warn: false
 
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
-  alias OliWeb.Pow.PowHelpers
 
   @default_selected_view :gallery
 
@@ -29,6 +28,28 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         lifecycle_state: resource_attempt_data[:lifecycle_state] || :submitted,
         content: resource_attempt_data[:content] || %{model: []}
       })
+
+    activity_attempt =
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt,
+        resource: revision.resource,
+        revision: revision,
+        lifecycle_state: :submitted,
+        score: 5,
+        out_of: 10
+      )
+
+    insert(:part_attempt, %{
+      activity_attempt_id: activity_attempt.id,
+      activity_attempt: activity_attempt,
+      attempt_guid: UUID.uuid4(),
+      part_id: "1",
+      grading_approach: :manual,
+      datashop_session_id: "1234abcd",
+      score: 5,
+      out_of: 10,
+      lifecycle_state: :submitted
+    })
 
     resource_attempt
   end
@@ -340,7 +361,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         base_project: project,
         title: "The best course ever!",
         start_date: ~U[2023-10-30 20:00:00Z],
-        analytics_version: :v2
+        analytics_version: :v2,
+        assistant_enabled: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -415,7 +437,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprologue%2F#{page_1.slug}&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 
@@ -1034,7 +1056,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       redirect_path_1 = "/sections/#{section.slug}/lesson/#{graded_adaptive_page_revision.slug}"
       assert redirected_to(conn, 302) =~ redirect_path_1
 
-      conn = Pow.Plug.assign_current_user(recycle(conn), user, PowHelpers.get_pow_config(:user))
+      conn = log_in_user(recycle(conn), user)
 
       conn = get(conn, redirect_path_1)
 
@@ -1043,7 +1065,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       assert redirected_to(conn, 302) =~ redirect_path_2
 
-      conn = Pow.Plug.assign_current_user(recycle(conn), user, PowHelpers.get_pow_config(:user))
+      conn = log_in_user(recycle(conn), user)
       {:ok, view, _html} = live(conn, redirect_path_2)
 
       [href] =
@@ -1131,7 +1153,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       enroll_and_mark_visited(user, section)
 
-      params = %{late_submit: :allow}
+      params = %{late_submit: :allow, time_limit: 10}
 
       get_and_update_section_resource(section.id, page_2.resource_id, params)
 
@@ -1160,6 +1182,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.get_section_resource(section_id, resource_id)
       |> Sections.update_section_resource(updated_params)
     end
+
   end
 
   describe "offline detector" do
@@ -1179,4 +1202,5 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "div[id='offline_detector']")
     end
   end
+
 end

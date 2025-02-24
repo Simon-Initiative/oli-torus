@@ -4,6 +4,7 @@ import {
   evalScript,
   getAssignStatements,
   getValue,
+  setVariableWithTypeAssignStatements,
 } from '../../../../../../adaptivity/scripting';
 import { deferredSavePart } from '../../../../../../data/persistence/deferredSavePart';
 import { DeliveryRootState } from '../../../rootReducer';
@@ -40,7 +41,16 @@ export const savePartState = createAsyncThunk(
             if (p.attemptGuid === partAttemptRecord.attemptGuid) {
               // always want to merge the previous response inputs into the attempt
               // overwrite with later info, but don't delete
-              updatedPartResponses = { ...result.response, ...updatedPartResponses };
+              updatedPartResponses = {
+                ...result.response,
+                ...updatedPartResponses,
+              };
+              if (isPreviewMode) {
+                updatedPartResponses = {
+                  ...updatedPartResponses,
+                  partId: p.partId,
+                };
+              }
               result.response = updatedPartResponses;
             }
             return result;
@@ -49,7 +59,9 @@ export const savePartState = createAsyncThunk(
         await dispatch(upsertActivityAttemptState({ attempt: updated }));
       }
     }
-
+    if (isPreviewMode && updatedPartResponses?.partId?.length) {
+      setVariableWithTypeAssignStatements(updatedPartResponses, updatedPartResponses?.partId);
+    }
     // update scripting env with latest values
     const assignScripts = getAssignStatements(updatedPartResponses);
     const scriptResult: string[] = [];

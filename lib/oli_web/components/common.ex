@@ -111,6 +111,9 @@ defmodule OliWeb.Components.Common do
       :tertiary ->
         "rounded text-primary-700 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 active:bg-primary-200 focus:ring-2 focus:ring-primary-100 dark:text-primary-300 dark:bg-primary-800 dark:hover:bg-primary-700 dark:active:bg-primary-600 focus:outline-none dark:focus:ring-primary-800 hover:no-underline"
 
+      :outline ->
+        "rounded text-body-color hover:text-body-color bg-transparent border border-body-color dark:border-body-color-dark hover:bg-gray-200 active:text-white active:bg-primary-700 focus:ring-2 focus:ring-primary-400 dark:text-body-color-dark dark:hover:bg-gray-600 dark:active:bg-primary-400 dark:focus:ring-primary-700 hover:no-underline"
+
       :light ->
         "rounded text-body-color hover:text-body-color bg-gray-100 hover:bg-gray-200 active:bg-gray-300 focus:ring-2 focus:ring-gray-100 dark:text-white dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 focus:outline-none dark:focus:ring-gray-800 hover:no-underline"
 
@@ -175,6 +178,7 @@ defmodule OliWeb.Components.Common do
       :primary,
       :secondary,
       :tertiary,
+      :outline,
       :light,
       :dark,
       :info,
@@ -194,7 +198,10 @@ defmodule OliWeb.Components.Common do
   attr(:href, :string, default: nil)
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
-  attr(:rest, :global, include: ~w(disabled form name value target rel download xphx-mouseover))
+
+  attr(:rest, :global,
+    include: ~w(disabled form name value target rel method download xphx-mouseover)
+  )
 
   slot(:inner_block, required: true)
 
@@ -205,7 +212,7 @@ defmodule OliWeb.Components.Common do
         <button
           type={@type}
           class={[
-            "whitespace-nowrap overflow-hidden text-ellipsis",
+            "text-center whitespace-nowrap overflow-hidden text-ellipsis",
             button_variant_classes(@variant, disabled: @rest[:disabled]),
             button_size_classes(@size),
             @class
@@ -218,7 +225,7 @@ defmodule OliWeb.Components.Common do
         <a
           href={@href}
           class={[
-            "whitespace-nowrap overflow-hidden text-ellipsis",
+            "text-center whitespace-nowrap overflow-hidden text-ellipsis",
             button_variant_classes(@variant, disabled: @rest[:disabled]),
             button_size_classes(@size),
             @class
@@ -281,7 +288,8 @@ defmodule OliWeb.Components.Common do
 
   attr(:errors, :list, default: [])
   attr(:class, :string, default: nil)
-  attr(:class_label, :string, default: "")
+
+  attr(:label_class, :string, default: "")
   attr(:checked, :boolean, doc: "the checked flag for checkbox inputs")
   attr(:ctx, :map, default: nil)
   attr(:prompt, :string, default: nil, doc: "the prompt for select inputs")
@@ -293,6 +301,7 @@ defmodule OliWeb.Components.Common do
                 multiple pattern placeholder readonly required rows size step)
   )
 
+  attr(:label_position, :atom, default: :top, values: [:top, :bottom, :responsive])
   attr(:error_position, :atom, default: :bottom, values: [:top, :bottom])
 
   slot(:inner_block)
@@ -313,7 +322,7 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class="contents" phx-feedback-for={@name}>
-      <label class={"flex gap-2 items-center #{@class_label}"}>
+      <label class={"flex gap-2 items-center #{@label_class}"}>
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -473,6 +482,9 @@ defmodule OliWeb.Components.Common do
 
     ~H"""
     <div class={@group_class} phx-feedback-for={@name}>
+      <.label :if={@label && @label_position == :top} class={@label_class} for={@id}>
+        <%= @label %>
+      </.label>
       <.error :for={msg <- @errors} :if={@error_position == :top}><%= msg %></.error>
       <input
         type={@type}
@@ -483,7 +495,13 @@ defmodule OliWeb.Components.Common do
         placeholder={@placeholder}
         {@rest}
       />
-      <.label :if={@label} class={@label_class} for={@id}><%= @label %></.label>
+      <.label
+        :if={@label && (@label_position == :bottom || @label_position == :responsive)}
+        class={@label_class}
+        for={@id}
+      >
+        <%= @label %>
+      </.label>
       <.error :for={msg <- @errors} :if={@error_position == :bottom}><%= msg %></.error>
     </div>
     """
@@ -503,14 +521,15 @@ defmodule OliWeb.Components.Common do
   defp set_input_classes(assigns) do
     input_class = [
       assigns.class,
-      assigns.errors != [] && "border-red-400 focus:border-red-400"
+      assigns.errors != [] && "border-red-400 focus:border-red-400",
+      assigns.rest[:readonly] && "bg-gray-200 dark:bg-gray-600"
     ]
 
     {group_class, label_class, input_class} =
       if assigns[:variant] == "outlined" do
         {"form-label-group", "control-label pointer-events-none", ["form-control" | input_class]}
       else
-        {"flex flex-col-reverse", "", input_class}
+        {"flex flex-col", "", input_class}
       end
 
     assign(assigns, group_class: group_class, label_class: label_class, input_class: input_class)
@@ -1133,7 +1152,7 @@ defmodule OliWeb.Components.Common do
         field={@form[@field_name]}
         label={@field_label}
         type="hidden"
-        class_label="control-label"
+        label_class="control-label"
         error_position={:top}
         errors={@form.errors}
       />
@@ -1155,6 +1174,55 @@ defmodule OliWeb.Components.Common do
           id: "rich_text_editor_react_component"
         ) %>
       </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders a simple form box.
+
+  ## Examples
+
+      <.form_box for={@form} phx-change="validate" phx-submit="save">
+        <.input field={@form[:email]} label="Email"/>
+        <.input field={@form[:username]} label="Username" />
+        <:actions>
+          <.button>Save</.button>
+        </:actions>
+      </.form_box>
+  """
+  attr :for, :any, required: true, doc: "the data structure for the form"
+  attr :as, :any, default: nil, doc: "the server side parameter to collect all input under"
+
+  attr :class, :string, default: nil, doc: "the class to apply to the form"
+
+  attr :rest, :global,
+    include: ~w(autocomplete name rel action enctype method novalidate target multipart),
+    doc: "the arbitrary HTML attributes to apply to the form tag"
+
+  slot :title, default: nil, doc: "the title of the form"
+  slot :subtitle, default: nil, doc: "the subtitle of the form"
+
+  slot :inner_block, required: true
+  slot :actions, doc: "the slot for form actions, such as a submit button"
+
+  def form_box(assigns) do
+    ~H"""
+    <div class={["w-96 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white py-8 px-10"]}>
+      <div :if={@title} class="text-center text-xl font-normal leading-7 pb-6">
+        <%= render_slot(@title) %>
+      </div>
+      <div :if={@subtitle} class="text-center leading-6 pb-6">
+        <%= render_slot(@subtitle) %>
+      </div>
+
+      <.form :let={f} for={@for} as={@as} {@rest}>
+        <%= render_slot(@inner_block, f) %>
+
+        <div :for={action <- @actions} class="mt-2 flex flex-col items-center justify-between gap-2">
+          <%= render_slot(action, f) %>
+        </div>
+      </.form>
     </div>
     """
   end

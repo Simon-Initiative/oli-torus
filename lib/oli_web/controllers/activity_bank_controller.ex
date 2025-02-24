@@ -74,7 +74,7 @@ defmodule OliWeb.ActivityBankController do
 
           section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
 
-          datashop_session_id = conn.private.plug_session["datashop_session_id"]
+          datashop_session_id = conn.assigns.datashop_session_id
           numbered_revisions = Oli.Delivery.Sections.get_revision_indexes(section_slug)
 
           page_context =

@@ -230,6 +230,12 @@ defmodule Oli.Delivery.Sections.Blueprint do
     custom_labels =
       if section.customizations == nil, do: nil, else: Map.from_struct(section.customizations)
 
+    certificate =
+      case Oli.Repo.preload(section, :certificate).certificate do
+        nil -> nil
+        certificate -> Map.from_struct(certificate)
+      end
+
     params =
       Map.merge(
         %{
@@ -254,7 +260,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           cover_image: section.cover_image,
           skip_email_verification: section.skip_email_verification,
           registration_open: section.registration_open,
-          requires_enrollment: section.requires_enrollment
+          requires_enrollment: section.requires_enrollment,
+          certificate: certificate
         },
         attrs
       )

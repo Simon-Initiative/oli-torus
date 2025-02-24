@@ -25,6 +25,29 @@ export type BulkActivityUpdate = {
   authoring?: any;
 };
 
+export type BulkActivityCreate = {
+  title: string;
+  objectives: ResourceId[];
+  tags: ResourceId[];
+  content: ActivityModelSchema;
+  activityTypeSlug: ActivityTypeSlug;
+};
+
+export type CreateRevision = {
+  revisionSlug: string;
+  resourceId: ResourceId;
+  activityTypeSlug: string;
+  title: string;
+  objectives: any;
+  tags: any;
+  content: any;
+};
+
+export type CreatedBulk = {
+  result: 'success';
+  revisions: CreateRevision[];
+};
+
 export type Created = {
   result: 'success';
   revisionSlug: string;
@@ -161,6 +184,30 @@ export function create(
   };
 
   return makeRequest<Created>(params);
+}
+
+export function createBulk(
+  project: ProjectSlug,
+  bulkData: BulkActivityCreate[],
+  scope = 'embedded',
+) {
+  const params = {
+    method: 'POST',
+    body: JSON.stringify({ bulkData, scope }),
+    url: `/project/${project}/create/activity/bulk`,
+  };
+
+  return makeRequest<CreatedBulk>(params);
+}
+
+export function deleteBulk(project: ProjectSlug, resourceIds: ResourceId[]) {
+  const params = {
+    method: 'POST',
+    body: JSON.stringify({ resourceIds }),
+    url: `/project/${project}/delete/activity/bulk`,
+  };
+
+  return makeRequest<Deleted>(params);
 }
 
 export function createFull(

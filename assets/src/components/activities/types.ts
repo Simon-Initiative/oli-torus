@@ -3,6 +3,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
 import { EditorType, ResourceContext } from 'data/content/resource';
+import { ActivityTrigger } from 'data/triggers';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
@@ -581,6 +582,7 @@ export interface Part extends Identifiable {
   outOf?: null | number;
   incorrectScore?: null | number;
   targets?: string[];
+  triggers?: ActivityTrigger[];
 }
 
 /**
@@ -663,6 +665,31 @@ export enum Transform {
  * Context supplied to a creation function.
  */
 export interface CreationContext extends ResourceContext {}
+
+/**
+ * Data supplied to a creation function .
+ */
+export interface CreationData {
+  answer: string;
+  choiceA: string;
+  choiceB: string;
+  choiceC: string;
+  choiceD: string;
+  choiceE: string;
+  choiceF: string;
+  correct_feedback: string;
+  explanation: string;
+  hint1: string;
+  hint2: string;
+  hint3: string;
+  incorrect_feedback: string;
+  objectives: string;
+  stem: string;
+  tags: string;
+  title: string;
+  type: string;
+  editorSlug: string;
+}
 
 /**
  * @ignore

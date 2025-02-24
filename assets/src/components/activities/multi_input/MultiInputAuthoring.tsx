@@ -20,6 +20,7 @@ import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { ExplanationTab } from './sections/ExplanationTab';
@@ -81,6 +82,10 @@ export const MultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label={TriggerLabel()}>
+            <TriggerAuthoring partId={input.partId} />
+          </TabbedNavigation.Tab>
+
           <ActivitySettings settings={settings} />
         </TabbedNavigation.Tabs>
       ) : (

@@ -7,10 +7,7 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
 
   defp again(conn, user) do
     recycle(conn)
-    |> Pow.Plug.assign_current_user(
-      user,
-      OliWeb.Pow.PowHelpers.get_pow_config(:user)
-    )
+    |> log_in_user(user)
   end
 
   describe "section extrinsic endpoints" do
@@ -158,16 +155,14 @@ defmodule OliWeb.ExtrinsicStateControllerTest do
         open_and_free: false
       })
 
-    lti_params_id =
-      Oli.Lti.TestHelpers.all_default_claims()
-      |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
-      |> cache_lti_params(user.id)
+    Oli.Lti.TestHelpers.all_default_claims()
+    |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
+    |> cache_lti_params(user.id)
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
+      |> log_in_author(map.author)
+      |> log_in_user(user)
 
     {:ok,
      conn: conn,

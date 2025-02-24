@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Delivery.Content do
   use OliWeb, :live_component
 
-  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
+  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
   alias Phoenix.LiveView.JS
 
@@ -286,7 +286,7 @@ defmodule OliWeb.Components.Delivery.Content do
             Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
           </span>
         </div>
-        <.instructor_dasboard_toggle_chevron id={@id} map_values={@selected_values} />
+        <.toggle_chevron id={@id} map_values={@selected_values} />
       </div>
       <div class="relative">
         <div
@@ -312,7 +312,7 @@ defmodule OliWeb.Components.Delivery.Content do
                 label={option.name}
                 checked={option.id in @selected_proficiency_ids}
                 type="checkbox"
-                class_label="text-zinc-900 text-xs font-normal leading-none dark:text-white"
+                label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
               />
             </.form>
           </div>

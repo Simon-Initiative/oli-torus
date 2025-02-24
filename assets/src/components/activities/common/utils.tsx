@@ -1,4 +1,5 @@
 import React from 'react';
+import { ShortAnswerModelSchema } from '../short_answer/schema';
 import {
   HasPerPartSubmissionOption,
   PartId,
@@ -32,6 +33,12 @@ export const togglePerPartSubmissionOption = () => {
   return (model: HasPerPartSubmissionOption): void => {
     model.submitPerPart =
       model.submitPerPart === undefined || model.submitPerPart === false ? true : false;
+  };
+};
+
+export const toggleSubmitAndCompareOption = () => {
+  return (model: ShortAnswerModelSchema): void => {
+    model.submitAndCompare = !model.submitAndCompare;
   };
 };
 

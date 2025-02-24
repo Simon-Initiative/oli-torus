@@ -24,7 +24,7 @@ defmodule OliWeb.ConnCase do
       use OliWeb, :verified_routes
 
       import Oli.TestHelpers
-      import OliWeb.Pow.PowHelpers
+      import Oli.Utils.Seeder.AccountsFixtures
 
       # The default endpoint for testing
       @endpoint OliWeb.Endpoint

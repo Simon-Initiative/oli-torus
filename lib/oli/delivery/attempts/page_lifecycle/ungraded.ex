@@ -92,15 +92,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   @impl Lifecycle
   @decorate transaction_event("Ungraded.start")
-  def start(%VisitContext{} = context) do
+  def start(%VisitContext{page_revision: page_revision} = context) do
     {:ok, resource_attempt} = Hierarchy.create(context)
 
     AttemptState.fetch_attempt_state(resource_attempt, context.page_revision)
-    |> update_progress(resource_attempt)
+    |> update_progress(page_revision, resource_attempt)
   end
 
   @decorate transaction_event("Ungraded.update_progress")
-  defp update_progress({:ok, state}, %ResourceAttempt{
+  defp update_progress({:ok, state}, page_revision, %ResourceAttempt{
          resource_access_id: resource_access_id
        }) do
     number_of_scorable_activities =
@@ -119,24 +119,37 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
       |> Enum.count()
 
     Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id)
-    |> do_update_progress(number_of_scorable_activities)
+    |> do_update_progress(page_revision.full_progress_pct, number_of_scorable_activities)
 
     {:ok, state}
   end
 
-  defp update_progress(other, _) do
+  defp update_progress(other, _, _) do
     other
   end
 
-  defp do_update_progress(resource_access, 0) do
+  # Update the progress of the resource access based on the number of scorable activities
+  # and the full progress percentage of the page revision.  If the full progress percentage
+  # OR the number of scorable activities is 0, then the progress is marked as completed.
+
+  defp do_update_progress(resource_access, _, 0) do
     Oli.Delivery.Metrics.mark_progress_completed(resource_access)
   end
 
-  defp do_update_progress(%{progress: nil} = resource_access, _) do
+  defp do_update_progress(resource_access, 0, _) do
+    Oli.Delivery.Metrics.mark_progress_completed(resource_access)
+  end
+
+  # If the progress is nil, then we reset the progress to 0
+
+  defp do_update_progress(%{progress: nil} = resource_access, _, _) do
     Oli.Delivery.Metrics.reset_progress(resource_access)
   end
 
-  defp do_update_progress(resource_access, _) do
+  # Otherwise, we do not update the progress, preserving the existing progress from
+  # previous attempts on this page
+
+  defp do_update_progress(resource_access, _, _) do
     {:ok, resource_access}
   end
 

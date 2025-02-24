@@ -74,8 +74,25 @@ config :oli,
   node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   screen_idle_timeout_in_seconds:
     String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
-  always_use_persistent_login_sessions: false,
   log_incomplete_requests: true
+
+config :oli, :dataset_generation,
+  enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
+  emr_application_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+  execution_role:
+    System.get_env(
+      "EMR_DATASET_EXECUTION_ROLE",
+      "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"
+    ),
+  entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
+  log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
+  context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
+  source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+  spark_submit_parameters:
+    System.get_env(
+      "EMR_DATASET_SPARK_SUBMIT_PARAMETERS",
+      "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+    )
 
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
@@ -174,7 +191,15 @@ config :oli, OliWeb.Endpoint,
 
 config :oli, Oban,
   repo: Oli.Repo,
-  plugins: [Oban.Plugins.Pruner],
+  plugins: [
+    Oban.Plugins.Pruner,
+    {
+      Oban.Plugins.Cron,
+      crontab: [
+        {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+      ]
+    }
+  ],
   queues: [
     default: 10,
     snapshots: 20,
@@ -186,7 +211,9 @@ config :oli, Oban,
     project_export: 3,
     analytics_export: 3,
     datashop_export: 3,
-    objectives: 3
+    objectives: 3,
+    mailer: 10,
+    certificate_pdf: 3
   ]
 
 config :ex_money,
@@ -228,7 +255,9 @@ config :lti_1p3,
   ags_line_item_prefix: "oli-torus-"
 
 config :ex_aws,
-  region: {:system, "AWS_REGION"}
+  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
+  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role],
+  region: [{:system, "AWS_REGION"}, :instance_role]
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -251,11 +280,6 @@ if Mix.env() == :dev do
     clear: true
 end
 
-# Configure Mnesia directory (used by pow persistent sessions)
-config :mnesia,
-  dir: to_charlist(System.get_env("MNESIA_DIR", ".mnesia")),
-  dump_log_write_threshold: 10000
-
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 
 # Configure Privacy Policies link
@@ -276,14 +300,6 @@ config :ex_json_schema,
 
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
-
-config :oli, :auth_providers,
-  google_client_id: System.get_env("GOOGLE_CLIENT_ID", ""),
-  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", ""),
-  author_github_client_id: System.get_env("AUTHOR_GITHUB_CLIENT_ID", ""),
-  author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
-  user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
-  user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
 
 # Configure libcluster for horizontal scaling
 # Take into account that different strategies could use different config options

@@ -47,7 +47,7 @@ defmodule Oli.LtiAccountsTest do
       institution_id = section.institution_id
 
       # Insert a user with nil institution
-      {:ok, user} = Oli.Repo.insert(User.changeset(%User{}, make_user(nil)))
+      {:ok, user} = Oli.Repo.insert(User.noauth_changeset(%User{}, make_user(nil)))
 
       # Now a call to insert_or_update_lms_user should create a new user with the institution_id
       # because there is no enrollment record
@@ -62,7 +62,8 @@ defmodule Oli.LtiAccountsTest do
       institution_id = section.institution_id
 
       # Insert a user with nil institution and enroll it in a section
-      {:ok, user} = Oli.Repo.insert(User.changeset(%User{}, make_user(nil)))
+      {:ok, user} = Oli.Repo.insert(User.noauth_changeset(%User{}, make_user(nil)))
+
       Oli.Delivery.Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       # Now a call to insert_or_update_lms_user should UPDATE that user, not create a new one

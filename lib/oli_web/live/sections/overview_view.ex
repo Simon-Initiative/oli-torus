@@ -19,6 +19,9 @@ defmodule OliWeb.Sections.OverviewView do
 
   require Logger
 
+  on_mount {OliWeb.UserAuth, :ensure_authenticated}
+  on_mount OliWeb.LiveSessionPlugs.SetCtx
+
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
     |> breadcrumb(section)
@@ -33,13 +36,7 @@ defmodule OliWeb.Sections.OverviewView do
       [
         Breadcrumb.new(%{
           full_title: section.title,
-          link:
-            Routes.live_path(
-              OliWeb.Endpoint,
-              OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-              section.slug,
-              :manage
-            )
+          link: ~p"/sections/#{section.slug}/manage"
         })
       ]
   end
@@ -81,7 +78,6 @@ defmodule OliWeb.Sections.OverviewView do
         {:ok,
          assign(socket,
            page_prompt_template: section.page_prompt_template,
-           is_system_admin: type == :admin,
            is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
@@ -143,10 +139,10 @@ defmodule OliWeb.Sections.OverviewView do
         <%= unless is_nil(@deployment) do %>
           <ReadOnly.render
             label="Institution"
-            type={if @is_system_admin, do: "link"}
+            type={if @is_admin, do: "link"}
             link_label={@deployment.institution.name}
             value={
-              if @is_system_admin,
+              if @is_admin,
                 do: Routes.institution_path(OliWeb.Endpoint, :show, @deployment.institution_id),
                 else: @deployment.institution.name
             }
@@ -379,7 +375,11 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Grades.FailedGradeSyncLive,
+                    @section.slug
+                  )
                 }
                 class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
@@ -405,7 +405,11 @@ defmodule OliWeb.Sections.OverviewView do
             <li>
               <a
                 href={
-                  Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)
+                  Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Grades.BrowseUpdatesView,
+                    @section.slug
+                  )
                 }
                 class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline"
               >
@@ -425,7 +429,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render
         label="Cover Image"
         description="Manage the cover image for this section. Max file size is 5 MB."
-        is_last={!@is_system_admin}
+        is_last={!@is_admin}
       >
         <section>
           <ImageUpload.render
@@ -439,12 +443,15 @@ defmodule OliWeb.Sections.OverviewView do
         </section>
       </Group.render>
 
-      <div :if={@is_system_admin} class="border-t dark:border-gray-700">
+      <div :if={@is_admin} class="border-t dark:border-gray-700">
         <Group.render
           label="AI Assistant"
           description="View and manage the AI Assistant details"
           is_last={true}
         >
+          <div class="my-2">
+            <.assistant_buttons section={@section} />
+          </div>
           <div :if={Sections.assistant_enabled?(@section)}>
             <section class="flex flex-col space-y-4">
               <ul class="link-list">
@@ -500,9 +507,6 @@ defmodule OliWeb.Sections.OverviewView do
                 </button>
               </div>
             </section>
-          </div>
-          <div class="my-2">
-            <.assistant_toggle_button section={@section} />
           </div>
         </Group.render>
       </div>
@@ -596,7 +600,7 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
-            is_admin = socket.assigns.is_system_admin
+            is_admin = socket.assigns.is_admin
 
             redirect_path =
               if is_admin do
@@ -631,12 +635,36 @@ defmodule OliWeb.Sections.OverviewView do
     section = socket.assigns.section
     assistant_enabled = section.assistant_enabled
 
+    triggers_enabled =
+      if assistant_enabled do
+        false
+      else
+        section.triggers_enabled
+      end
+
     {:ok, section} =
-      Oli.Delivery.Sections.update_section(section, %{assistant_enabled: !assistant_enabled})
+      Oli.Delivery.Sections.update_section(section, %{
+        assistant_enabled: !assistant_enabled,
+        triggers_enabled: triggers_enabled
+      })
 
     socket =
       socket
       |> put_flash(:info, "Assistant settings updated successfully")
+
+    {:noreply, assign(socket, section: section)}
+  end
+
+  def handle_event("toggle_triggers", _, socket) do
+    section = socket.assigns.section
+    triggers_enabled = section.triggers_enabled
+
+    {:ok, section} =
+      Oli.Delivery.Sections.update_section(section, %{triggers_enabled: !triggers_enabled})
+
+    socket =
+      socket
+      |> put_flash(:info, "Assistant trigger settings updated successfully")
 
     {:noreply, assign(socket, section: section)}
   end
@@ -688,17 +716,28 @@ defmodule OliWeb.Sections.OverviewView do
 
   attr :section, Section
 
-  def assistant_toggle_button(assigns) do
+  def assistant_buttons(assigns) do
     ~H"""
-    <%= if Sections.assistant_enabled?(@section) do %>
-      <.button variant={:warning} phx-click="toggle_assistant">
-        Disable Assistant
-      </.button>
-    <% else %>
-      <.button variant={:primary} phx-click="toggle_assistant">
-        Enable Assistant
-      </.button>
-    <% end %>
+    <div>
+      <div class="flex py-2 mb-2">
+        <div>Enable AI Assistant</div>
+        <.toggle_switch
+          class="ml-4"
+          checked={@section.assistant_enabled}
+          on_toggle="toggle_assistant"
+          name="toggle_assistant"
+        />
+      </div>
+      <div class="flex py-2 mb-2">
+        <div>Enable Assistant Triggers</div>
+        <.toggle_switch
+          class="ml-4"
+          checked={@section.triggers_enabled}
+          on_toggle="toggle_triggers"
+          name="toggle_triggers"
+        />
+      </div>
+    </div>
     """
   end
 

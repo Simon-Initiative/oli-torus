@@ -17,18 +17,17 @@ defmodule OliWeb.NewCourse.SelectSourceTest do
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin view", %{conn: conn} do
-      {:error,
-       {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fsections%2Fcreate"}}} =
+      {:error, {:redirect, %{to: "/authors/log_in"}}} =
         live(conn, @live_view_admin_route)
     end
 
     test "redirects to new session when accessing the independent instructor view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/session/new?request_path=%2Fsections%2Findependent%2Fcreate"}}} =
+      {:error, {:redirect, %{to: "/users/log_in"}}} =
         live(conn, @live_view_independent_learner_route)
     end
 
     test "redirects to new session when accessing the lms instructor view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/session/new?request_path=%2Fcourse%2Fselect_project"}}} =
+      {:error, {:redirect, %{to: "/users/log_in"}}} =
         live(conn, @live_view_lms_instructor_route)
     end
   end

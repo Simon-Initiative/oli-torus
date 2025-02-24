@@ -6,14 +6,14 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
 
   alias Oli.Accounts.User
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
-  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Metrics
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Settings
   alias Oli.Publishing.DeliveryResolver, as: Resolver
-  alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.{FormatDateTime, Utils}
   alias OliWeb.Components.Modal
-  alias OliWeb.Delivery.Student.Utils
+  alias OliWeb.Delivery.Student.Utils, as: StudentUtils
   alias OliWeb.Icons
 
   require Logger
@@ -95,7 +95,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           ctx={@ctx}
           objectives={@objectives}
           index={@current_page["index"]}
-          container_label={Utils.get_container_label(@current_page["id"], @section)}
+          container_label={StudentUtils.get_container_label(@current_page["id"], @section)}
         />
         <div class="self-stretch h-[0px] opacity-80 dark:opacity-20 bg-white border border-gray-200 mt-3 mb-10">
         </div>
@@ -108,6 +108,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           page_context={@page_context}
           attempt_message={@attempt_message}
           ctx={@ctx}
+          is_adaptive={is_adaptive_page(@page_context.page)}
           allow_attempt?={@allow_attempt?}
           section_slug={@section.slug}
           request_path={@request_path}
@@ -137,6 +138,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :attempt_message, :string
   attr :page_context, Oli.Delivery.Page.PageContext
   attr :ctx, OliWeb.Common.SessionContext
+  attr :is_adaptive, :boolean, required: true
   attr :allow_attempt?, :boolean
   attr :section_slug, :string
   attr :request_path, :string
@@ -171,6 +173,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
           section_slug={@section_slug}
           page_revision_slug={@page_context.page.slug}
           attempt={attempt}
+          is_adaptive={@is_adaptive}
           ctx={@ctx}
           allow_review_submission?={@page_context.effective_settings.review_submission == :allow}
           request_path={@request_path}
@@ -199,12 +202,22 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
   attr :index, :integer
   attr :attempt, ResourceAttempt
   attr :ctx, OliWeb.Common.SessionContext
+  attr :is_adaptive, :boolean, required: true
   attr :allow_review_submission?, :boolean
   attr :section_slug, :string
   attr :page_revision_slug, :string
   attr :request_path, :string
 
   defp attempt_summary(assigns) do
+    attempt = Core.preload_activity_part_attempts(assigns.attempt)
+
+    feedback_texts =
+      if assigns.is_adaptive,
+        do: Utils.extract_feedback_text(attempt.activity_attempts),
+        else: []
+
+    assigns = assign(assigns, feedback_texts: feedback_texts)
+
     ~H"""
     <div
       id={"attempt_#{@index}_summary"}
@@ -261,12 +274,12 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
         >
           <.link
             href={
-              Utils.review_live_path(
+              StudentUtils.review_live_path(
                 @section_slug,
                 @page_revision_slug,
                 @attempt.attempt_guid,
                 request_path:
-                  Utils.prologue_live_path(@section_slug, @page_revision_slug,
+                  StudentUtils.prologue_live_path(@section_slug, @page_revision_slug,
                     request_path: @request_path
                   )
               )
@@ -278,6 +291,16 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
             </div>
           </.link>
         </div>
+      </div>
+    </div>
+    <div :if={@is_adaptive && @feedback_texts != []} class="mt-2 mb-8">
+      <div class="text-neutral-500 text-sm font-bold mb-2">Instructor Feedback:</div>
+      <div class="flex flex-col gap-y-2">
+        <%= for feedback <- @feedback_texts do %>
+          <p class="w-full text-black font-normal dark:text-neutral-500" readonly>
+            <%= feedback %>
+          </p>
+        <% end %>
       </div>
     </div>
     """
@@ -303,7 +326,7 @@ defmodule OliWeb.Delivery.Student.PrologueLive do
       {:noreply,
        redirect(socket,
          to:
-           Utils.lesson_live_path(section.slug, revision.slug,
+           StudentUtils.lesson_live_path(section.slug, revision.slug,
              request_path: socket.assigns.request_path,
              selected_view: socket.assigns.selected_view
            )

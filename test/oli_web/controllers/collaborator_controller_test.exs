@@ -10,8 +10,8 @@ defmodule OliWeb.CollaboratorControllerTest do
   @invite_email "invite@example.com"
 
   defp get_authors(project) do
-    Accounts.project_authors(project)
-    |> Enum.map(fn author -> author.email end)
+    Accounts.authors_projects(project)
+    |> Enum.map(fn author_project -> author_project.author.email end)
     |> Enum.join(", ")
   end
 
@@ -81,9 +81,9 @@ defmodule OliWeb.CollaboratorControllerTest do
                         "/workspaces/course_author/#{project.slug}/overview"
 
                assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
-                        "Failed to add some collaborators: notevenan_email"
+                        "Failed to invite some collaborators: notevenan_email"
              end) =~
-               "Failed to add some collaborators: notevenan_email"
+               "Failed to invite some collaborators: notevenan_email"
     end
 
     test "redirects to project path when data is invalid", %{conn: conn, project: project} do
@@ -144,40 +144,6 @@ defmodule OliWeb.CollaboratorControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "Collaborator invitations cannot exceed 20 emails at a time. Please try again with fewer invites"
-    end
-  end
-
-  describe "collaboration_invite" do
-    test "accept new collaboration invitation", %{conn: conn, project: project} do
-      expect_recaptcha_http_post()
-
-      conn =
-        post(conn, Routes.collaborator_path(conn, :create, project),
-          collaborator_emails: @invite_email,
-          authors: get_authors(project),
-          "g-recaptcha-response": "any"
-        )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      token = PowInvitation.Plug.sign_invitation_token(conn, new_author)
-
-      put(
-        conn,
-        Routes.pow_invitation_invitation_path(conn, :update, token),
-        %{
-          user: %{
-            email: @invite_email,
-            given_name: "me",
-            family_name: "too",
-            password: "passingby",
-            password_confirmation: "passingby"
-          }
-        }
-      )
-
-      new_author = Accounts.get_author_by_email(@invite_email)
-      assert new_author.given_name == "me"
-      assert new_author.invitation_accepted_at
     end
   end
 

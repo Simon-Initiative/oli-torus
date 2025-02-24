@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.{Certificates, Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
 
   def get_containers(section, opts \\ [async: true]) do
@@ -66,6 +66,42 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     return_page(graded_pages_and_section_resources, section, students)
   end
 
+  def maybe_assign_certificate_data(
+        %{assigns: %{section: %{certificate_enabled: false}}} = socket
+      ),
+      do:
+        Phoenix.Component.assign(
+          socket,
+          %{certificate: nil, certificate_pending_approval_count: nil}
+        )
+
+  def maybe_assign_certificate_data(socket) do
+    section = socket.assigns.section
+
+    certificate = Certificates.get_certificate_by(%{section_id: section.id})
+    pending_count = certificate_pending_approval_count(socket.assigns.users, certificate)
+
+    Phoenix.Component.assign(
+      socket,
+      %{certificate: certificate, certificate_pending_approval_count: pending_count}
+    )
+  end
+
+  def certificate_pending_approval_count(
+        students,
+        %{requires_instructor_approval: true} = _certificate
+      ) do
+    Enum.reduce(students, 0, fn student, acc ->
+      if student.certificate && student.certificate.state == :pending do
+        acc + 1
+      else
+        acc
+      end
+    end)
+  end
+
+  def certificate_pending_approval_count(_students, _certificate), do: nil
+
   defp return_page(graded_pages_and_section_resources, section, students) do
     student_ids = Enum.map(students, & &1.id)
     page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
@@ -118,12 +154,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_proficiency(section, params.container_id)
+        |> maybe_add_certificates(section)
 
       page_id ->
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_proficiency_for_page(section, page_id)
+        |> maybe_add_certificates(section)
     end
   end
 
@@ -179,6 +217,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         overall_proficiency:
           Map.get(proficiency_per_student_for_page, student.id, "Not enough data")
       })
+    end)
+  end
+
+  defp maybe_add_certificates(students, %{certificate_enabled: false}), do: students
+
+  defp maybe_add_certificates(students, section) do
+    certificates =
+      Certificates.get_granted_certificates_by_section_slug(section.slug)
+      |> Enum.into(%{}, fn cert -> {cert.recipient.id, cert} end)
+
+    Enum.map(students, fn student ->
+      Map.put(student, :certificate, Map.get(certificates, student.id))
     end)
   end
 end

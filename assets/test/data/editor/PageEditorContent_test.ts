@@ -32,7 +32,11 @@ describe('PageEditorContent', () => {
     ]);
 
     const model = Immutable.List<ResourceContent>().push(exampleContent).push(exampleGroup);
-    const pageEditorContent = new PageEditorContent({ version: '0.1.0', model });
+    const pageEditorContent = new PageEditorContent({
+      version: '0.1.0',
+      model,
+      trigger: undefined,
+    });
 
     return {
       pageEditorContent,

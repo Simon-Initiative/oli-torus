@@ -195,10 +195,9 @@ defmodule OliWeb.ResourceControllerTest do
       |> Oli.Seeder.add_adaptive_page()
 
     conn =
-      Pow.Plug.assign_current_user(
+      log_in_author(
         conn,
-        seeds.author,
-        OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        seeds.author
       )
 
     {:ok, Map.merge(%{conn: conn}, seeds)}

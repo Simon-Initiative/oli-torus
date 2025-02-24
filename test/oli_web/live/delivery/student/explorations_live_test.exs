@@ -33,6 +33,47 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
         purpose: :application
       )
 
+    orphan_exploration_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Orphan Exploration",
+        duration_minutes: 10,
+        purpose: :application,
+        relates_to: [exploration_1_revision.resource_id]
+      )
+
+    basic_exploration_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Basic Exploration Page",
+        duration_minutes: 10,
+        purpose: :application,
+        graded: true
+      )
+
+    adaptive_exploration_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Adaptive Exploration Page",
+        duration_minutes: 10,
+        purpose: :application,
+        graded: true,
+        content: %{
+          "model" => [],
+          "advancedDelivery" => true,
+          "displayApplicationChrome" => false
+        }
+      )
+
+    non_exploration_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Non Exploration Page",
+        duration_minutes: 10,
+        purpose: :foundation,
+        graded: true
+      )
+
     ## units...
     unit_1_revision =
       insert(:revision, %{
@@ -45,7 +86,12 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
     container_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [unit_1_revision.resource_id],
+        children: [
+          unit_1_revision.resource_id,
+          basic_exploration_revision.resource_id,
+          adaptive_exploration_revision.resource_id,
+          non_exploration_revision.resource_id
+        ],
         title: "Root Container"
       })
 
@@ -53,6 +99,10 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
       [
         exploration_1_revision,
         exploration_2_revision,
+        basic_exploration_revision,
+        adaptive_exploration_revision,
+        non_exploration_revision,
+        orphan_exploration_revision,
         unit_1_revision,
         container_revision
       ]
@@ -97,8 +147,13 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
       section: section,
       project: project,
       publication: publication,
+      container: container_revision,
       exploration_1: exploration_1_revision,
-      exploration_2: exploration_2_revision
+      exploration_2: exploration_2_revision,
+      basic_exploration: basic_exploration_revision,
+      adaptive_exploration: adaptive_exploration_revision,
+      orphan_exploration: orphan_exploration_revision,
+      non_exploration: non_exploration_revision
     }
   end
 
@@ -113,7 +168,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
         live(conn, ~p"/sections/#{section.slug}/explorations")
 
       assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}%2Fexplorations&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 
@@ -161,6 +216,55 @@ defmodule OliWeb.Delivery.Student.ExplorationsLiveTest do
 
       # the redirected page will show the prologue or go directly to the exploration
       # if there is an attempt in progress
+    end
+
+    test "pages that belong to the root container are shown correctly in the explorations tab", %{
+      conn: conn,
+      user: user,
+      section: section,
+      basic_exploration: basic_exploration,
+      adaptive_exploration: adaptive_exploration,
+      container: container
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/explorations")
+
+      # assert the container title and the pages belonging to the container are shown
+      assert has_element?(view, "h2", "Curriculum 1: #{container.title}")
+      assert has_element?(view, "h5", basic_exploration.title)
+      assert has_element?(view, "h5", adaptive_exploration.title)
+    end
+
+    test "orphaned pages are shown correctly in the explorations tab", %{
+      conn: conn,
+      user: user,
+      section: section,
+      orphan_exploration: orphan_exploration
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/explorations")
+
+      # assert the container title and the orphaned pages are shown
+      assert has_element?(view, "h2", "Other Pages")
+      assert has_element?(view, "h5", orphan_exploration.title)
+    end
+
+    test "a non exploration page is not shown in the explorations tab", %{
+      conn: conn,
+      user: user,
+      section: section,
+      non_exploration: non_exploration
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}/explorations")
+
+      refute has_element?(view, "h5", non_exploration.title)
     end
   end
 end

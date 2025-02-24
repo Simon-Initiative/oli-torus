@@ -27,7 +27,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       section = insert(:section)
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Finstructor_dashboard%2Foverview%2Fstudents"
+        "/users/log_in"
 
       assert {:error, {:redirect, %{to: ^redirect_path}}} =
                live(conn, live_view_students_route(section.slug))
@@ -436,14 +436,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug, params))
 
-      [non_student_1, _non_student_2] =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{.instructor_dashboard_table tr a})
-        |> Enum.map(fn a_tag -> Floki.text(a_tag) end)
-
-      assert non_student_1 =~ "Scaloni, Lionel"
       refute render(view) =~ "Messi, Lionel"
       refute render(view) =~ "Suarez, Luis"
 
@@ -1145,7 +1137,10 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       # Remove an email from the "Users not found" list
       view
       |> with_target("#students_table")
-      |> render_hook("add_enrollments_remove_from_list", %{email: non_existant_email_2})
+      |> render_hook("add_enrollments_remove_from_list", %{
+        email: non_existant_email_2,
+        status: "non_existing_users"
+      })
 
       refute has_element?(
                view,
@@ -1169,12 +1164,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       refute view |> element("fieldset input#author") |> render() =~ "checked=\"checked\""
       assert view |> element("fieldset input#user") |> render() =~ "checked=\"checked\""
 
+      stub_real_current_time()
       # Send the invitations (this mocks the POST request made by the form)
       conn =
         post(
           conn,
           Routes.invite_path(conn, :create_bulk, section.slug,
-            emails: [user_1.email, user_2.email, non_existant_email_1],
+            non_existing_users_emails: Jason.encode!([non_existant_email_1]),
+            not_enrolled_users_emails: Jason.encode!([user_1.email, user_2.email]),
+            not_active_enrolled_users_emails: Jason.encode!([]),
             role: "instructor",
             "g-recaptcha-response": "any",
             inviter: "user"
@@ -1184,19 +1182,217 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       emails_sent = [user_1.email, user_2.email, non_existant_email_1] |> Enum.sort()
       assert emails_sent == get_emails_of_users_enrolled_in_section(emails_sent, section.slug)
 
-      assert redirected_to(conn) == students_url
+      # Redirects to the students page, filtered by the pending_confirmation users
+      assert redirected_to(conn) == students_url <> "?filter_by=pending_confirmation"
 
       new_users =
         Oli.Accounts.User
         |> where([u], u.email in [^user_1.email, ^user_2.email, ^non_existant_email_1])
-        |> select([u], {u.email, u.invitation_token})
         |> Repo.all()
-        |> Enum.into(%{})
 
-      assert length(Map.keys(new_users)) == 3
-      assert Map.get(new_users, user_1.email) == nil
-      assert Map.get(new_users, user_2.email) == nil
-      assert Map.get(new_users, non_existant_email_1) != nil
+      assert length(new_users) == 3
+    end
+
+    test "get a warning when inviting not existing users, users already enrolled and/or users with an inactive enrollment",
+         %{section: section, conn: conn} do
+      students_url = live_view_students_route(section.slug)
+
+      already_enrolled_user = insert(:user)
+
+      Sections.enroll(
+        [already_enrolled_user.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      # inactive_enrollment = enrollment.status in [:pending_confirmation, :rejected, :suspended]
+      user_with_inactive_enrollment = insert(:user)
+
+      Sections.enroll(
+        [user_with_inactive_enrollment.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :rejected
+      )
+
+      not_enrolled_user = insert(:user)
+      non_existant_email_1 = "non_existant_user_1@test.com"
+      non_existant_email_2 = "non_existant_user_2@test.com"
+
+      {:ok, view, _html} = live(conn, students_url)
+
+      # Open "Add enrollments modal"
+      view
+      |> with_target("#students_table_add_enrollments_modal")
+      |> render_click("open")
+
+      # Add emails to the list
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_update_list", %{
+        value: [
+          already_enrolled_user.email,
+          user_with_inactive_enrollment.email,
+          not_enrolled_user.email,
+          non_existant_email_1,
+          non_existant_email_2
+        ]
+      })
+
+      # Go to second step
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_2")
+
+      ## non_existing_users warning message
+      assert has_element?(
+               view,
+               "#non_existing_users p",
+               "The following emails don't exist in the database"
+             )
+
+      assert has_element?(view, "#non_existing_users li ul p", non_existant_email_1)
+
+      assert has_element?(view, "#non_existing_users li ul p", non_existant_email_2)
+
+      ## rejected_enrollments warning message
+      assert has_element?(
+               view,
+               "#rejected_enrollments p",
+               ~s{The following emails have a "rejected" invitation. A new invitation will be sent by email.}
+             )
+
+      assert has_element?(
+               view,
+               "#rejected_enrollments li ul p",
+               user_with_inactive_enrollment.email
+             )
+
+      ## already_enrolled warning message
+      assert has_element?(
+               view,
+               "#already_enrolled p",
+               ~s{The following emails are already enrolled in the course (no email invitation will be sent)}
+             )
+
+      assert has_element?(view, "#already_enrolled li ul p", already_enrolled_user.email)
+    end
+
+    test "already enrolled users do not count on the message shown in the step 3 confirmation",
+         %{section: section, conn: conn} do
+      students_url = live_view_students_route(section.slug)
+
+      already_enrolled_user = insert(:user)
+
+      Sections.enroll(
+        [already_enrolled_user.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      # inactive_enrollment = enrollment.status in [:pending_confirmation, :rejected, :suspended]
+      user_with_inactive_enrollment = insert(:user)
+
+      Sections.enroll(
+        [user_with_inactive_enrollment.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :rejected
+      )
+
+      not_enrolled_user = insert(:user)
+      non_existant_email_1 = "non_existant_user_1@test.com"
+      non_existant_email_2 = "non_existant_user_2@test.com"
+
+      {:ok, view, _html} = live(conn, students_url)
+
+      # Open "Add enrollments modal"
+      view
+      |> with_target("#students_table_add_enrollments_modal")
+      |> render_click("open")
+
+      # Add emails to the list
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_update_list", %{
+        value: [
+          already_enrolled_user.email,
+          user_with_inactive_enrollment.email,
+          not_enrolled_user.email,
+          non_existant_email_1,
+          non_existant_email_2
+        ]
+      })
+
+      # Go to second step
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_2")
+
+      # Go to third step
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_3")
+
+      # the instructor added 5 emails, but one of them was already enrolled
+
+      assert has_element?(
+               view,
+               "p",
+               "Are you sure you want to send an enrollment email invitation to 4 users?"
+             )
+    end
+
+    test "no action is made after step 3 if all invited emails are already enrolled", %{
+      section: section,
+      conn: conn
+    } do
+      students_url = live_view_students_route(section.slug)
+
+      already_enrolled_user_1 = insert(:user)
+      already_enrolled_user_2 = insert(:user)
+
+      Sections.enroll(
+        [already_enrolled_user_1.id, already_enrolled_user_2.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      {:ok, view, _html} = live(conn, students_url)
+
+      # Open "Add enrollments modal"
+      view
+      |> with_target("#students_table_add_enrollments_modal")
+      |> render_click("open")
+
+      # Add emails to the list
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_update_list", %{
+        value: [
+          already_enrolled_user_1.email,
+          already_enrolled_user_2.email
+        ]
+      })
+
+      # Go to second step
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_2")
+
+      # Go to third step
+      view
+      |> with_target("#students_table")
+      |> render_hook("add_enrollments_go_to_step_3")
+
+      assert has_element?(
+               view,
+               "p",
+               "The emails you provided are already enrolled in the course. No email invitation will be sent."
+             )
     end
 
     test "can't invite new users to the section if section is not open and free", %{conn: conn} do
@@ -1205,6 +1401,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       {:ok, _view, html} = live(conn, live_view_students_route(section.slug))
 
       refute html =~ "Add Enrollments"
+    end
+
+    test "Certificate status column is not shown if the section does not have a certificate enabled AND there is a certificate",
+         %{conn: conn, section: section} do
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      refute has_element?(view, "th", "CERTIFICATE STATUS")
+    end
+
+    test "Certificate status column is shown if the section has a certificate enabled AND there is a certificate",
+         %{conn: conn, section: section} do
+      Sections.update_section(section, %{certificate_enabled: true})
+      _certificate = insert(:certificate, section: section)
+      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+
+      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      assert has_element?(view, "th", "CERTIFICATE STATUS")
     end
   end
 
@@ -1252,8 +1476,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
     conn =
       Plug.Test.init_test_session(conn, [])
-      |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-      |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> log_in_author(admin)
+      |> log_in_user(user)
 
     map
     |> Map.merge(%{

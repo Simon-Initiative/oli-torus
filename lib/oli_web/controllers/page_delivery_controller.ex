@@ -45,15 +45,7 @@ defmodule OliWeb.PageDeliveryController do
 
           if user_roles.is_instructor? do
             conn
-            |> redirect(
-              to:
-                Routes.live_path(
-                  OliWeb.Endpoint,
-                  OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive,
-                  section_slug,
-                  :manage
-                )
-            )
+            |> redirect(to: ~p"/sections/#{section_slug}/manage")
           else
             revision = DeliveryResolver.root_container(section_slug)
 
@@ -710,6 +702,8 @@ defmodule OliWeb.PageDeliveryController do
        ) do
     section = conn.assigns.section
 
+    author = conn.assigns[:current_author]
+
     layout = "chromeless.html"
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
@@ -751,11 +745,10 @@ defmodule OliWeb.PageDeliveryController do
           |> to_epoch,
         lateSubmit: context.effective_settings.late_submit,
         activityGuidMapping: context.activities,
-        signoutUrl: Routes.session_path(OliWeb.Endpoint, :signout, type: :user),
+        signoutUrl: ~p"/users/log_out",
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
-        isInstructor: true,
         reviewMode: context.review_mode,
         overviewURL: ~p"/sections/#{section_slug}",
         finalizeGradedURL:
@@ -764,7 +757,10 @@ defmodule OliWeb.PageDeliveryController do
             :transition
           ),
         screenIdleTimeOutInSeconds:
-          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800"))
+          String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
+        isAuthor: !is_nil(author),
+        isAdmin: Accounts.is_admin?(author),
+        isInstructor: context.is_instructor
       },
       bib_app_params: %{
         bibReferences: context.bib_revisions

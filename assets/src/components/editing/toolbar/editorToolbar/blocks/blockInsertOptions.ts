@@ -19,6 +19,7 @@ import { insertDialog } from '../../../elements/dialog/dialogActions';
 import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
+import { insertTrigger } from '../../../elements/trigger/TriggerEditor';
 import { insertVideo } from '../../../elements/video/videoActions';
 
 export const extendedBlockInsertActions = (
@@ -40,6 +41,7 @@ export const extendedBlockInsertActions = (
     insertDialog,
     insertConjugation,
     insertDescriptionListCommand,
+    insertTrigger,
   ];
 
   if (optionalContentTypes === undefined) {
@@ -71,6 +73,7 @@ export const allBlockInsertActions = (
     insertPageLink,
     insertConjugation,
     insertDescriptionListCommand,
+    insertTrigger,
   ];
 
   if (optionalContentTypes === undefined) {

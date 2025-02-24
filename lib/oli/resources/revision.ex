@@ -53,6 +53,7 @@ defmodule Oli.Resources.Revision do
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil
     field :poster_image, :string, default: nil
+    field :full_progress_pct, :integer, default: 100
 
     # 0 represents "unlimited" attempts
     field :max_attempts, :integer, default: 0
@@ -127,7 +128,8 @@ defmodule Oli.Resources.Revision do
       :scoring_strategy_id,
       :activity_type_id,
       :purpose,
-      :relates_to
+      :relates_to,
+      :full_progress_pct
     ])
     |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)

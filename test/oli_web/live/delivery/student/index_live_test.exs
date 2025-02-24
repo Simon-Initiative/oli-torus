@@ -691,7 +691,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         live(conn, ~p"/sections/#{section.slug}")
 
       assert redirect_path ==
-               "/?request_path=%2Fsections%2F#{section.slug}&section=#{section.slug}"
+               "/users/log_in"
     end
 
     test "can not access when not enrolled to course", context do
@@ -1115,10 +1115,6 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       page_3: page_3,
       page_4: page_4
     } do
-      Sections.update_section(section, %{
-        agenda: true
-      })
-
       stub_current_time(~U[2023-11-03 21:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -1135,6 +1131,10 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       section: section,
       page_1: page_1
     } do
+      Sections.update_section(section, %{
+        agenda: false
+      })
+
       stub_current_time(~U[2023-11-03 21:00:00Z])
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
@@ -1638,6 +1638,90 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       {:ok, view, _html} = live(conn, ~p"/sections/#{section.slug}")
 
       refute view |> element("#assignments_nav_link") |> has_element?()
+    end
+  end
+
+  describe "certificate progress" do
+    setup [
+      :user_conn,
+      :set_timezone,
+      :create_elixir_project,
+      :enroll_as_student,
+      :mark_section_visited
+    ]
+
+    test "student can see the certificate progress card if the section has a certificate enabled",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_4: page_4
+         } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      insert(:certificate,
+        section: section,
+        required_discussion_posts: 5,
+        required_class_notes: 10,
+        min_percentage_for_completion: 70,
+        min_percentage_for_distinction: 90,
+        assessments_apply_to: :all
+      )
+
+      Sections.update_section(section, %{
+        certificate_enabled: true
+      })
+
+      ## class note
+      insert(:post, user: user, section: section, annotated_resource_id: page_4.resource_id)
+      ## course discussion
+      insert(:post, user: user, section: section, annotated_resource_id: nil)
+      ## required assessment
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_4.resource,
+        score: 3.0,
+        out_of: 4.0
+      )
+
+      {:ok, view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "Loading progress..."
+      assert render_async(view) =~ "certificate_discussion_posts_progress"
+
+      assert render(view) =~ "1 of 5 Discussion Posts"
+      assert render(view) =~ "1 of 10 Class Notes"
+      assert render(view) =~ "1 of 3 Required Assignments"
+    end
+
+    test "student can not see the certificate progress card if the section has no certificate enabled",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_4: page_4
+         } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      Sections.update_section(section, %{
+        certificate_enabled: false
+      })
+
+      ## required assessment
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_4.resource,
+        score: 3.0,
+        out_of: 4.0
+      )
+
+      {:ok, view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      refute html =~ "Loading progress..."
+      refute render_async(view) =~ "certificate_discussion_posts_progress"
+      refute render(view) =~ "1 of 3 Required Assignments"
     end
   end
 end

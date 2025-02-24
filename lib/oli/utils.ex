@@ -4,6 +4,8 @@ defmodule Oli.Utils do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
+  import Phoenix.Naming, only: [humanize: 1]
+
   @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
 
   @doc """
@@ -101,6 +103,16 @@ defmodule Oli.Utils do
     end
   end
 
+  def confirm_email_if_verified(changeset) do
+    # if the email_verified field is true and the email_confirmed_at field is nil, then set the email_confirmed_at field to now
+    if get_change(changeset, :email_verified) && get_field(changeset, :email_confirmed_at) == nil do
+      now = DateTime.utc_now() |> DateTime.truncate(:second)
+      change(changeset, email_confirmed_at: now)
+    else
+      changeset
+    end
+  end
+
   def maybe_name_from_given_and_family(changeset) do
     case changeset do
       # here we try to derive a full display name using changes or data for name
@@ -160,7 +172,7 @@ defmodule Oli.Utils do
   end
 
   def put_email_confirmed_at(changeset) do
-    now = DateTime.truncate(DateTime.utc_now(), :second)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
     Ecto.Changeset.put_change(changeset, :email_confirmed_at, now)
   end
 
@@ -476,4 +488,29 @@ defmodule Oli.Utils do
   """
   @spec identity(any) :: any
   def identity(x), do: x
+
+  @doc """
+  Validate the inequality between two numbers
+
+  ## Examples
+
+      validate_greater_than_or_equal(changeset, :from, :to)
+      validate_greater_than_or_equal(changeset, :from, :to, allow_equal: true)
+
+  """
+  def validate_greater_than_or_equal(changeset, from, to, opts \\ []) do
+    {_, from_value} = fetch_field(changeset, from)
+    {_, to_value} = fetch_field(changeset, to)
+    allow_equal = Keyword.get(opts, :allow_equal, false)
+
+    if compare(from_value, to_value, allow_equal) do
+      changeset
+    else
+      message = "#{humanize(to)} must be greater than #{humanize(from)}"
+      add_error(changeset, from, message, to_field: to)
+    end
+  end
+
+  defp compare(f, t, true), do: f <= t
+  defp compare(f, t, false), do: f < t
 end

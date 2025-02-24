@@ -30,7 +30,7 @@ defmodule OliWeb.InstitutionsLiveTest do
       institution: institution
     } do
       redirect_path =
-        "/authoring/session/new?request_path=%2Fadmin%2Finstitutions%2F#{institution.id}%2Fresearch_consent"
+        "/authors/log_in"
 
       {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, live_view_route(institution.id))
     end
@@ -45,7 +45,10 @@ defmodule OliWeb.InstitutionsLiveTest do
     } do
       conn = get(conn, live_view_route(institution.id))
 
-      assert response(conn, 403)
+      assert redirected_to(conn) == ~p"/workspaces/course_author"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are not authorized to access this page."
     end
   end
 

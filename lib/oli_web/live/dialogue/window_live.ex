@@ -2,6 +2,8 @@ defmodule OliWeb.Dialogue.WindowLive do
   use Phoenix.LiveView, layout: {OliWeb.LayoutView, :live_no_flash}
   use OliWeb, :verified_routes
   use Phoenix.HTML
+
+  require Logger
   import Ecto.Query, warn: false
 
   import Phoenix.Component
@@ -13,6 +15,9 @@ defmodule OliWeb.Dialogue.WindowLive do
   alias OliWeb.Dialogue.UserInput
   alias Oli.Conversation.Message
   alias Phoenix.LiveView.JS
+  alias Oli.Conversation.Triggers
+
+  alias Phoenix.PubSub
 
   defp realize_prompt_template(nil, _), do: ""
 
@@ -75,6 +80,9 @@ defmodule OliWeb.Dialogue.WindowLive do
         socket
       ) do
     section = Oli.Delivery.Sections.get_section_by_slug(section_slug)
+    resource_id = session["resource_id"]
+
+    PubSub.subscribe(Oli.PubSub, "trigger:#{current_user_id}:#{section.id}:#{resource_id}")
 
     if Sections.assistant_enabled?(section) do
       project = Oli.Authoring.Course.get_project!(section.base_project_id)
@@ -90,6 +98,8 @@ defmodule OliWeb.Dialogue.WindowLive do
          allow_submission?: true,
          active_message: nil,
          function_call: nil,
+         teaser_message: nil,
+         teaser_visible: false,
          title: "Dot",
          current_user: Oli.Accounts.get_user!(current_user_id),
          height: 500,
@@ -130,6 +140,7 @@ defmodule OliWeb.Dialogue.WindowLive do
         height={@height}
         width={@width}
       />
+      <.teaser teaser_message={@teaser_message} teaser_visible={@teaser_visible} />
       <.collapsed_bot is_page={@is_page} />
     </div>
     """
@@ -145,7 +156,9 @@ defmodule OliWeb.Dialogue.WindowLive do
     >
       <button
         phx-click={
-          JS.hide(to: "#ai_bot_collapsed")
+          JS.dispatch("teaser_quick_hide", to: "#trigger_teaser")
+          |> JS.hide(to: "#ai_bot_collapsed")
+          |> JS.push("hide_teaser")
           |> JS.show(
             to: "#ai_bot_conversation",
             transition:
@@ -229,6 +242,49 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :dialogue, :list
+  attr :teaser_message, :any
+  attr :teaser_visible, :boolean
+
+  def teaser(assigns) do
+    ~H"""
+    <div
+      id="trigger_teaser"
+      phx-hook="ShowTeaser"
+      phx-click={
+        JS.dispatch("teaser_quick_hide", to: "#trigger_teaser")
+        |> JS.show(
+          to: "#ai_bot_conversation",
+          transition:
+            {"ease-out duration-200", "translate-x-full translate-y-full opacity-0",
+             "translate-x-0 translate-y-0 opacity-100"}
+        )
+        |> JS.push("hide_teaser")
+        |> JS.focus(to: "#ai_bot_input")
+      }
+      style="height: 150px; width: 200px;"
+      class={"p-1 shadow-lg bg-white dark:bg-[#0A0A17] flex flex-col " <> if(@teaser_visible, do: "", else: "hidden")}
+    >
+      <div class="flex flex-none justify-right">
+        <button
+          id="close_teaser_button"
+          phx-click={JS.push("hide_teaser")}
+          class="flex items-center justify-center ml-auto cursor-pointer opacity-80 dark:opacity-100 dark:hover:opacity-80 hover:opacity-100 hover:scale-105"
+        >
+          <.small_close_icon />
+        </button>
+      </div>
+      <div class="mb-3 grow text-sm rounded-md overflow-hidden text-gray-500 dark:text-white">
+        <.live_teaser_response teaser_message={@teaser_message} />
+      </div>
+      <div class="flex-none">
+        <hr />
+        <small class="text-gray-300">Enter your message...</small>
+      </div>
+    </div>
+    """
+  end
+
   def resize_icon(assigns) do
     ~H"""
     <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
@@ -246,6 +302,17 @@ defmodule OliWeb.Dialogue.WindowLive do
       <path
         d="M6.2248 18.8248L5.1748 17.7748L10.9498 11.9998L5.1748 6.2248L6.2248 5.1748L11.9998 10.9498L17.7748 5.1748L18.8248 6.2248L13.0498 11.9998L18.8248 17.7748L17.7748 18.8248L11.9998 13.0498L6.2248 18.8248Z"
         class="fill-black dark:fill-white"
+      />
+    </svg>
+    """
+  end
+
+  def small_close_icon(assigns) do
+    ~H"""
+    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M6.2248 18.8248L5.1748 17.7748L10.9498 11.9998L5.1748 6.2248L6.2248 5.1748L11.9998 10.9498L17.7748 5.1748L18.8248 6.2248L13.0498 11.9998L18.8248 17.7748L17.7748 18.8248L11.9998 13.0498L6.2248 18.8248Z"
+        class="fill-gray-400"
       />
     </svg>
     """
@@ -530,12 +597,45 @@ defmodule OliWeb.Dialogue.WindowLive do
     """
   end
 
+  attr :teaser_message, :any
+
+  def live_teaser_response(assigns) do
+    ~H"""
+    <%= if is_nil(@teaser_message) do %>
+      <svg
+        class="fill-black dark:fill-white"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <style>
+          .spinner_b2T7{animation:spinner_xe7Q .8s linear infinite}.spinner_YRVV{animation-delay:-.65s}.spinner_c9oY{animation-delay:-.5s}@keyframes spinner_xe7Q{93.75%,100%{r:3px}46.875%{r:.2px}}
+        </style>
+        <circle class="spinner_b2T7" cx="4" cy="12" r="3" />
+        <circle class="spinner_b2T7 spinner_YRVV" cx="12" cy="12" r="3" /><circle
+          class="spinner_b2T7 spinner_c9oY"
+          cx="20"
+          cy="12"
+          r="3"
+        />
+      </svg>
+    <% else %>
+      <%= @teaser_message %>
+    <% end %>
+    """
+  end
+
   def handle_event("minimize", _, socket) do
     {:noreply, assign(socket, minimized: true)}
   end
 
   def handle_event("restore", _, socket) do
     {:noreply, assign(socket, minimized: false)}
+  end
+
+  def handle_event("hide_teaser", _, socket) do
+    {:noreply, assign(socket, teaser_visible: false)}
   end
 
   def handle_event("update", %{"user_input" => %{"content" => content}}, socket) do
@@ -562,6 +662,39 @@ defmodule OliWeb.Dialogue.WindowLive do
 
   def handle_event("resize", %{"height" => height, "width" => width}, socket) do
     {:noreply, assign(socket, height: height, width: width)}
+  end
+
+  def handle_info({:trigger, trigger}, socket) do
+    Logger.info(
+      "Handlng trigger for section #{socket.assigns.section.id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
+    )
+
+    prompt = Triggers.assemble_trigger_prompt(trigger)
+
+    dialogue =
+      Dialogue.add_message(
+        socket.assigns.dialogue,
+        Message.new(:system, prompt),
+        trigger.user_id,
+        trigger.resource_id,
+        trigger.section_id
+      )
+
+    pid = self()
+
+    Task.async(fn ->
+      Dialogue.engage(dialogue, :async)
+      send(pid, {:reply_finished})
+    end)
+
+    # socket = push_event(socket, "show_teaser", %{})
+
+    {:noreply,
+     assign(socket,
+       dialogue: dialogue,
+       teaser_message: nil,
+       teaser_visible: true
+     )}
   end
 
   use Oli.Conversation.DialogueHandler

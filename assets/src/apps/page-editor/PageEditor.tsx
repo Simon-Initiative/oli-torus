@@ -6,6 +6,7 @@ import { Dispatch, State } from 'state';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { guaranteeMultiInputValidity } from 'components/activities/multi_input/utils';
 import { ActivityModelSchema, Undoable as ActivityUndoable } from 'components/activities/types';
+import { createCopy } from 'components/activity/DuplicateActivity';
 import { EditorUpdate as ActivityEditorUpdate } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { TitleBar } from 'components/content/TitleBar';
@@ -18,7 +19,6 @@ import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
 import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
-import { createCopy } from 'apps/bank/CreateActivity';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
 import { ActivityEditorMap } from 'data/content/editors';
@@ -47,6 +47,7 @@ import { AppsignalContext, ErrorBoundary } from '../../components/common/ErrorBo
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import { initAppSignal } from '../../utils/appsignal';
 import '../ResourceEditor.scss';
+import { PageTriggerEditor } from './PageTriggerEditor';
 import { registerUnload, unregisterUnload } from './listeners';
 import { FeatureFlags, PageUndoable, Undoables, empty } from './types';
 
@@ -649,6 +650,13 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                     />
                   </AlternativesContextProvider>
                 </div>
+                <PageTriggerEditor
+                  onEdit={(trigger) => {
+                    const updated = this.state.content.with({ trigger });
+                    onEdit(updated);
+                  }}
+                  trigger={this.state.content.trigger}
+                />
               </div>
             </div>
           </ErrorBoundary>

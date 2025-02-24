@@ -1,3 +1,5 @@
+import { TriggerButton } from 'components/TriggerButton';
+import { TriggerGroupButton } from 'components/TriggerGroupButton';
 import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
 import { LikertReportRenderer } from 'components/activities/likert/reports/LikerReportRenderer';
 import { DeliveryElementRenderer } from 'components/common/DeliveryElementRenderer';
@@ -47,3 +49,5 @@ registerApplication('VegaLiteRenderer', VegaLiteRenderer, globalStore);
 registerApplication('LikertReportRenderer', LikertReportRenderer, globalStore);
 registerApplication('ActivityBank', ActivityBank, globalStore);
 registerApplication('Evaluation', Evaluation, globalStore);
+registerApplication('TriggerButton', TriggerButton, globalStore);
+registerApplication('TriggerGroupButton', TriggerGroupButton, globalStore);

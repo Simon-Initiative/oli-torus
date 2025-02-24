@@ -6,7 +6,11 @@ defmodule Oli.Accounts do
 
   alias Oli.Accounts.{
     User,
+    UserToken,
+    UserNotifier,
     Author,
+    AuthorToken,
+    AuthorNotifier,
     SystemRole,
     UserBrowseOptions,
     AuthorBrowseOptions,
@@ -14,13 +18,16 @@ defmodule Oli.Accounts do
     UserPreferences
   }
 
+  alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Authoring.Course.Project
+
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
   alias Oli.Institutions.Institution
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.AccountLookupCache
-  alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Lti_1p3.DataProviders.EctoProvider
 
@@ -91,20 +98,27 @@ defmodule Oli.Accounts do
   @doc """
   Creates multiple invited users
   ## Examples
-      iex> bulk_invite_users(["email_1@test.com", "email_2@test.com"], %Author{id: 1})
+       iex> bulk_create_invited_users(["email_1@test.com", "email_2@test.com"], %User{id: 1})
       [%User{id: 3}, %User{id: 4}]
   """
-  def bulk_invite_users(user_emails, inviter_user) do
+  def bulk_create_invited_users(user_emails, inviter_user) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     users =
       Enum.map(user_emails, fn email ->
-        %{changes: changes} = User.invite_changeset(%User{}, inviter_user, %{email: email})
+        %{changes: changes} =
+          User.invite_changeset(%User{}, %{email: email, invited_by_id: inviter_user.id})
 
         Enum.into(changes, %{inserted_at: now, updated_at: now})
       end)
 
-    Repo.insert_all(User, users, returning: [:id, :invitation_token, :email])
+    Repo.insert_all(User, users, returning: [:id, :email])
+  end
+
+  def create_invited_author(email) do
+    %Author{}
+    |> Author.invite_changeset(%{email: email})
+    |> Repo.insert()
   end
 
   def browse_authors(
@@ -174,6 +188,8 @@ defmodule Oli.Accounts do
     Repo.all(Author)
   end
 
+  #### MER-3835 TODO: Reconcile these functions with new functions at end of module
+
   @doc """
   Gets a single user.
   Raises `Ecto.NoResultsError` if the User does not exist.
@@ -232,20 +248,6 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Creates a user.
-  ## Examples
-      iex> create_user(%{field: value})
-      {:ok, %User{}}
-      iex> create_user(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-  """
-  def create_user(attrs \\ %{}) do
-    %User{}
-    |> User.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
   Creates a guest user.
   ## Examples
       iex> create_guest_user(%{field: value})
@@ -264,23 +266,6 @@ defmodule Oli.Accounts do
     |> Repo.insert()
   end
 
-  def update_user(
-        %User{} = user,
-        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
-      ) do
-    user
-    |> User.update_changeset(attrs)
-    |> Repo.update()
-    |> case do
-      {:ok, %User{id: user_id}} = result ->
-        AccountLookupCache.delete("user_#{user_id}")
-        result
-
-      error ->
-        error
-    end
-  end
-
   @doc """
   Updates a user.
   ## Examples
@@ -290,35 +275,9 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_user(%User{} = user, attrs) do
-    res =
-      user
-      |> User.noauth_changeset(attrs)
-      |> Repo.update()
-
-    case res do
-      {:ok, %User{id: user_id}} ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
-  Updates a user from an admin.
-  """
-  def update_user_from_admin(changeset) do
-    case Repo.update(changeset) do
-      {:ok, %User{id: user_id}} = res ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
+    user
+    |> User.noauth_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
@@ -410,30 +369,12 @@ defmodule Oli.Accounts do
     %User{sub: sub, independent_learner: false}
     |> User.noauth_changeset(changes)
     |> Repo.insert()
-    |> case do
-      {:ok, %User{id: user_id}} = res ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
   end
 
   defp update_lms_user(%User{} = user, changes) do
     user
     |> User.noauth_changeset(changes)
     |> Repo.update()
-    |> case do
-      {:ok, %User{id: user_id}} = res ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
   end
 
   @doc """
@@ -457,17 +398,22 @@ defmodule Oli.Accounts do
       nil -> %User{sub: sub, independent_learner: false}
       user -> user
     end
-    |> User.noauth_changeset(changes)
+    |> User.external_user_changeset(changes)
     |> Repo.insert_or_update()
     |> case do
-      {:ok, %User{id: user_id}} = res ->
-        AccountLookupCache.delete("user_#{user_id}")
-
+      {:ok, %User{}} = res ->
         res
 
       error ->
         error
     end
+  end
+
+  @doc """
+  Preloads the user's linked author.
+  """
+  def preload_author(%User{} = user) do
+    Repo.preload(user, :author)
   end
 
   @doc """
@@ -482,22 +428,11 @@ defmodule Oli.Accounts do
   def update_user_platform_roles(%User{} = user, roles) do
     roles = Lti_1p3.DataProviders.EctoProvider.Marshaler.to(roles)
 
-    res =
-      user
-      |> Repo.preload([:platform_roles])
-      |> User.noauth_changeset()
-      |> Ecto.Changeset.put_assoc(:platform_roles, roles)
-      |> Repo.update()
-
-    case res do
-      {:ok, %User{id: user_id}} ->
-        AccountLookupCache.delete("user_#{user_id}")
-
-        res
-
-      error ->
-        error
-    end
+    user
+    |> Repo.preload([:platform_roles])
+    |> User.noauth_changeset()
+    |> Ecto.Changeset.put_assoc(:platform_roles, roles)
+    |> Repo.update()
   end
 
   @doc """
@@ -524,6 +459,24 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Preloads the user's platform roles.
+  """
+  def preload_platform_roles(%User{} = user) do
+    Repo.preload(user, :platform_roles)
+  end
+
+  def preload_platform_roles(nil), do: nil
+
+  @doc """
+  Preloads the user's linked authoring account.
+  """
+  def preload_linked_author(%User{} = user) do
+    Repo.preload(user, :author)
+  end
+
+  def preload_linked_author(nil), do: nil
+
+  @doc """
   Links a User to Author account
 
   ## Examples
@@ -532,16 +485,6 @@ defmodule Oli.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def link_user_author_account(nil, _author),
-    do:
-      throw(
-        "No current_user to link to author. This function should only be called in an LTI context"
-      )
-
-  def link_user_author_account(_user, nil),
-    do:
-      throw("No author to link. This function should only be called after an author is logged in")
-
   def link_user_author_account(user, author) do
     update_user(user, %{author_id: author.id})
   end
@@ -549,6 +492,22 @@ defmodule Oli.Accounts do
   def unlink_user_author_account(user) do
     update_user(user, %{author_id: nil})
   end
+
+  @doc """
+  Returns true if a user is entitled to link and manage a linked author account.
+  """
+  def can_manage_linked_account?(user) do
+    Sections.is_independent_instructor?(user) || Sections.is_institution_instructor?(user) ||
+      Sections.is_institution_admin?(user)
+  end
+
+  @doc """
+  Returns a user's linked author account.
+
+  If no author account is linked, returns nil.
+  """
+  def linked_author_account(%User{author: author = %Author{}}), do: author
+  def linked_author_account(_), do: nil
 
   @doc """
   Returns true if a user belongs to an LMS.
@@ -562,6 +521,8 @@ defmodule Oli.Accounts do
 
     Repo.exists?(query)
   end
+
+  # MER-3835 TODO: reconcile with new functions below
 
   def at_least_content_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().content_admin == system_role_id or
@@ -579,37 +540,10 @@ defmodule Oli.Accounts do
   def at_least_account_admin?(_), do: false
 
   @doc """
-  Returns true if an author is a content admin.
-  """
-  def is_content_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id().content_admin == system_role_id
-  end
-
-  def is_content_admin?(_), do: false
-
-  @doc """
-  Returns true if an author is an account admin.
-  """
-  def is_account_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id().account_admin == system_role_id
-  end
-
-  def is_account_admin?(_), do: false
-
-  @doc """
-  Returns true if an author is a system admin.
-  """
-  def is_system_admin?(%Author{system_role_id: system_role_id}) do
-    SystemRole.role_id().system_admin == system_role_id
-  end
-
-  def is_system_admin?(_), do: false
-
-  @doc """
   Returns true if an author has some role admin.
   """
 
-  def has_admin_role?(%Author{system_role_id: system_role_id}) do
+  def is_admin?(%Author{system_role_id: system_role_id}) do
     system_role_id in [
       SystemRole.role_id().system_admin,
       SystemRole.role_id().account_admin,
@@ -617,7 +551,54 @@ defmodule Oli.Accounts do
     ]
   end
 
-  def has_admin_role?(_), do: false
+  def is_admin?(_), do: false
+
+  @doc """
+  Returns true if an author has some role admin. System admins have all roles by definition.
+
+  This function can either accept the role_id, typically provided in the long form:
+
+  ## Examples
+      iex> has_admin_role?(author, SystemRole.role_id().content_admin)
+      false
+
+      iex> has_admin_role?(author, SystemRole.role_id().account_admin)
+      true
+
+      iex> has_admin_role?(author, SystemRole.role_id().system_admin)
+      false
+
+  or the role can also be passed as a short-hand key form:
+
+  ## Examples
+      iex> has_admin_role?(author, :content_admin)
+      false
+
+      iex> has_admin_role?(author, :account_admin)
+      true
+
+      iex> has_admin_role?(author, :system_admin)
+      false
+
+  """
+  def has_admin_role?(%Author{system_role_id: system_role_id}, role_id)
+      when is_integer(role_id) do
+    system_role_id == role_id or system_role_id == SystemRole.role_id().system_admin
+  end
+
+  def has_admin_role?(%Author{system_role_id: system_role_id}, role) when is_atom(role) do
+    system_role_id == SystemRole.role_id()[role] or
+      system_role_id == SystemRole.role_id().system_admin
+  end
+
+  def has_admin_role?(_, _), do: false
+
+  @doc """
+  Returns true if an author is a community admin.
+  """
+  def is_community_admin?(%Author{community_admin_count: community_admin_count}) do
+    community_admin_count > 0
+  end
 
   @doc """
   Returns an author if one matches given email, or creates and returns a new author
@@ -627,40 +608,12 @@ defmodule Oli.Accounts do
       {:ok, %Author{}}
   """
   def insert_or_update_author(%{email: email} = changes) do
-    res =
-      case Repo.get_by(Author, email: email) do
-        nil -> %Author{}
-        author -> author
-      end
-      |> Author.noauth_changeset(changes)
-      |> Repo.insert_or_update()
-
-    case res do
-      {:ok, %Author{id: author_id}} ->
-        AccountLookupCache.delete("author_#{author_id}")
-
-        res
-
-      error ->
-        error
+    case Repo.get_by(Author, email: email) do
+      nil -> %Author{}
+      author -> author
     end
-  end
-
-  def update_author(
-        %Author{} = author,
-        %{"current_password" => _, "password" => _, "password_confirmation" => _} = attrs
-      ) do
-    author
-    |> Author.update_changeset(attrs)
-    |> Repo.update()
-    |> case do
-      {:ok, %Author{id: author_id}} = result ->
-        AccountLookupCache.delete("author_#{author_id}")
-        result
-
-      error ->
-        error
-    end
+    |> Author.noauth_changeset(changes)
+    |> Repo.insert_or_update()
   end
 
   @doc """
@@ -672,32 +625,9 @@ defmodule Oli.Accounts do
       {:error, %Ecto.Changeset{}}
   """
   def update_author(%Author{} = author, attrs) do
-    res =
-      author
-      |> Author.noauth_changeset(attrs)
-      |> Repo.update()
-
-    case res do
-      {:ok, %Author{id: author_id}} ->
-        AccountLookupCache.delete("author_#{author_id}")
-
-        res
-
-      error ->
-        error
-    end
-  end
-
-  @doc """
-  Creates and returns a new author
-  ## Examples
-      iex> create_author(%{field: value})
-      {:ok, %Author{}}
-  """
-  def create_author(params \\ %{}) do
-    %Author{}
-    |> Author.changeset(params)
-    |> Repo.insert()
+    author
+    |> Author.noauth_changeset(attrs)
+    |> Repo.update()
   end
 
   @doc """
@@ -748,15 +678,6 @@ defmodule Oli.Accounts do
       }
     )
     |> Repo.one()
-  end
-
-  @doc """
-  Gets a single author with the given email
-  """
-  def get_author_by_email(email) do
-    email = String.downcase(email)
-
-    Repo.get_by(Author, email: email)
   end
 
   @doc """
@@ -908,7 +829,7 @@ defmodule Oli.Accounts do
   end
 
   def can_access?(author, project) do
-    if has_admin_role?(author) do
+    if has_admin_role?(author, :content_admin) do
       # Admin authors have access to every project
       true
     else
@@ -926,7 +847,7 @@ defmodule Oli.Accounts do
   end
 
   def can_access_via_slug?(author, project_slug) do
-    if has_admin_role?(author) do
+    if has_admin_role?(author, :content_admin) do
       # Admin authors have access to every project
       true
     else
@@ -958,31 +879,24 @@ defmodule Oli.Accounts do
     )
   end
 
-  def project_authors(project_ids) when is_list(project_ids) do
+  def authors_projects(project_ids) when is_list(project_ids) do
     Repo.all(
-      from(assoc in "authors_projects",
+      from(ap in AuthorProject,
         join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id in ^project_ids and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: [author, assoc.project_id]
+        on: ap.author_id == author.id,
+        join: project in Project,
+        on: ap.project_id == project.id,
+        where: ap.project_id in ^project_ids,
+        select: %{
+          author: author,
+          author_project_status: ap.status,
+          project_slug: project.slug
+        }
       )
     )
   end
 
-  def project_authors(project) do
-    Repo.all(
-      from(assoc in "authors_projects",
-        join: author in Author,
-        on: assoc.author_id == author.id,
-        where:
-          assoc.project_id == ^project.id and
-            (is_nil(author.invitation_token) or not is_nil(author.invitation_accepted_at)),
-        select: author
-      )
-    )
-  end
+  def authors_projects(project), do: authors_projects([project.id])
 
   @doc """
   Get all the communities for which the author is an admin.
@@ -1004,22 +918,6 @@ defmodule Oli.Accounts do
         select: community
       )
     )
-  end
-
-  @doc """
-  Returns whether the user account is waiting for confirmation or not.
-
-  ## Examples
-
-      iex> user_confirmation_pending?(%{email_confirmation_token: "token", email_confirmed_at: nil})
-      true
-
-      iex> user_confirmation_pending?(%{email_confirmation_token: nil, email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
-      false
-  """
-  def user_confirmation_pending?(user) do
-    EmailConfirmationContext.current_email_unconfirmed?(user, []) or
-      EmailConfirmationContext.pending_email_change?(user, [])
   end
 
   @doc """
@@ -1099,8 +997,13 @@ defmodule Oli.Accounts do
     |> Repo.insert()
     |> case do
       {:ok, author} = result ->
-        link_user_author_account(user, author)
-        result
+        case link_user_author_account(user, author) do
+          {:ok, _user} ->
+            result
+
+          error ->
+            error
+        end
 
       error ->
         error
@@ -1134,4 +1037,1019 @@ defmodule Oli.Accounts do
   defp create_community_account(_repo, %{user: %User{id: user_id}}, community_id) do
     Groups.find_or_create_community_user_account(user_id, community_id)
   end
+
+  @doc """
+  Gets a user by email.
+
+  ## Examples
+
+      iex> get_independent_user_by_email("foo@example.com")
+      %User{}
+
+      iex> get_independent_user_by_email("unknown@example.com")
+      nil
+
+  """
+  def get_independent_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email, independent_learner: true)
+  end
+
+  @doc """
+  Gets a user by email and password.
+
+  ## Examples
+
+      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
+      %User{}
+
+      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
+      nil
+
+  """
+  def get_user_by_email_and_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = Repo.get_by(User, email: email)
+    if User.valid_password?(user, password), do: user
+  end
+
+  def get_user_by_email_and_password(_email, _password), do: nil
+
+  @doc """
+  Gets an independent user by email and password.
+
+  ## Examples
+      iex> get_independent_user_by_email_and_password("foo@example.com", "correct_password")
+      %User{}
+
+      iex> get_independent_user_by_email_and_password("foo@example.com", "invalid_password")
+      nil
+
+  """
+  def get_independent_user_by_email_and_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    user = Repo.get_by(User, email: email, independent_learner: true)
+    if User.valid_password?(user, password), do: user
+  end
+
+  ## User registration
+
+  @doc """
+  Registers a user.
+
+  ## Examples
+
+      iex> register_independent_user(%{field: value})
+      {:ok, %User{independent_learner: true, guest: false, ...}}
+
+      iex> register_independent_user(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def register_independent_user(attrs) do
+    %User{independent_learner: true, guest: false}
+    |> User.registration_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking user changes.
+
+  ## Examples
+
+      iex> change_user_registration(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_registration(%User{} = user, attrs \\ %{}) do
+    User.registration_changeset(user, attrs,
+      hash_password: false,
+      validate_email: false
+    )
+  end
+
+  ## Email invitations
+
+  @doc """
+  When a new user accepts an invitation to a section, the user -student or instructor- data is updated (password for intance)
+  and the enrollment status is updated from `:pending_confirmation` to `:enrolled`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_user_invitation(user, enrollment, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      user
+      |> User.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      enrollment
+      |> Enrollment.changeset(%{status: :enrolled})
+      |> Repo.update!()
+    end)
+  end
+
+  ## Settings
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user details.
+
+  ## Examples
+
+      iex> change_user(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_details(user, attrs \\ %{}) do
+    User.details_changeset(user, attrs)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user email.
+
+  ## Examples
+
+      iex> change_user_email(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_email(user, attrs \\ %{}) do
+    User.email_changeset(user, attrs, validate_email: false)
+  end
+
+  @doc """
+  Emulates that the email will change without actually changing
+  it in the database.
+
+  ## Examples
+
+      iex> apply_user_email(user, "valid password", %{email: ...})
+      {:ok, %User{}}
+
+      iex> apply_user_email(user, "invalid password", %{email: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def apply_user_email(user, password, attrs) do
+    user
+    |> User.email_changeset(attrs)
+    |> User.validate_current_password(password)
+    |> Ecto.Changeset.apply_action(:update)
+  end
+
+  @doc """
+  Updates the user email using the given token.
+
+  If the token matches, the user email is updated and the token is deleted.
+  The confirmed_at date is also updated to the current time.
+  """
+  def update_user_email(user, token) do
+    context = "change:#{user.email}"
+
+    with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
+         %UserToken{sent_to: email} <- Repo.one(query),
+         {:ok, _} <- Repo.transaction(user_email_multi(user, email, context)) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  defp user_email_multi(user, email, context) do
+    changeset =
+      user
+      |> User.email_changeset(%{email: email})
+      |> User.confirm_changeset()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, [context]))
+  end
+
+  @doc ~S"""
+  Delivers the update email instructions to the given user.
+
+  ## Examples
+
+      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/users/settings/confirm_email/#{&1})")
+      {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
+      when is_function(update_email_url_fun, 1) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
+
+    Repo.insert!(user_token)
+    UserNotifier.deliver_confirmation_instructions(user, update_email_url_fun.(encoded_token))
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user password.
+
+  ## Examples
+
+      iex> change_user_password(user)
+      %Ecto.Changeset{data: %User{}}
+
+  """
+  def change_user_password(user, attrs \\ %{}) do
+    User.password_changeset(user, attrs, hash_password: false)
+  end
+
+  @doc """
+  Updates the user password.
+
+  ## Examples
+
+      iex> update_user_password(user, "valid password", %{password: ...})
+      {:ok, %User{}}
+
+      iex> update_user_password(user, "invalid password", %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_user_password(user, password, attrs) do
+    changeset =
+      user
+      |> User.password_changeset(attrs)
+      |> User.validate_current_password(password)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Adds a user password. Used for accounts initially created by a login provider. This function
+  should only run when the user has no password set.
+
+  ## Examples
+
+      iex> create_user_password(user, %{password: ...})
+      {:ok, %User{}}
+
+      iex> create_user_password(user, %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_user_password(%{password_hash: nil} = user, attrs) do
+    changeset =
+      user
+      |> User.password_changeset(attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, changeset)
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  ## Session
+
+  @doc """
+  Generates a session token.
+  """
+  def generate_user_session_token(user) do
+    {token, user_token} = UserToken.build_session_token(user)
+    Repo.insert!(user_token)
+    token
+  end
+
+  @doc """
+  Gets the user with the given signed token.
+  """
+  def get_user_by_session_token(token) do
+    {:ok, query} = UserToken.verify_session_token_query(token)
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
+  Deletes the signed token with the given context.
+  """
+  def delete_user_session_token(token) do
+    Repo.delete_all(UserToken.token_and_context_query(token, "session"))
+    :ok
+  end
+
+  ## Confirmation
+
+  @doc ~S"""
+  Delivers the confirmation email instructions to the given user.
+
+  ## Examples
+
+      iex> deliver_user_confirmation_instructions(user, &url(~p"/users/confirm/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+      iex> deliver_user_confirmation_instructions(confirmed_user, &url(~p"/users/confirm/#{&1}"))
+      {:error, :already_confirmed}
+
+  """
+  def deliver_user_confirmation_instructions(%User{} = user, confirmation_url_fun)
+      when is_function(confirmation_url_fun, 1) do
+    if user.email_confirmed_at do
+      {:error, :already_confirmed}
+    else
+      {encoded_token, user_token} = UserToken.build_email_token(user, "confirm")
+      Repo.insert!(user_token)
+      UserNotifier.deliver_confirmation_instructions(user, confirmation_url_fun.(encoded_token))
+    end
+  end
+
+  @doc """
+  Confirms a user by the given token.
+
+  If the token matches, the user account is marked as confirmed
+  and the token is deleted.
+  """
+  def confirm_user(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "confirm"),
+         %User{} = user <- Repo.one(query),
+         {:ok, %{user: user}} <- Repo.transaction(confirm_user_multi(user)) do
+      {:ok, user}
+    else
+      _ -> :error
+    end
+  end
+
+  defp confirm_user_multi(user) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.confirm_changeset(user))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, ["confirm"]))
+  end
+
+  @doc """
+  Confirms a user as an admin.
+  """
+  def admin_confirm_user(user) do
+    user
+    |> User.confirm_changeset()
+    |> Repo.update()
+  end
+
+  ## Reset password
+
+  @doc ~S"""
+  Delivers the reset password email to the given user.
+
+  ## Examples
+
+      iex> deliver_user_reset_password_instructions(user, &url(~p"/users/reset_password/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_user_reset_password_instructions(%User{} = user, reset_password_url_fun)
+      when is_function(reset_password_url_fun, 1) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    Repo.insert!(user_token)
+    UserNotifier.deliver_reset_password_instructions(user, reset_password_url_fun.(encoded_token))
+  end
+
+  @doc """
+  Generates a reset password token for the given user which can be used to generate a reset password URL.
+  """
+  def generate_user_reset_password_token(user) do
+    {encoded_token, user_token} = UserToken.build_email_token(user, "reset_password")
+    Repo.insert!(user_token)
+
+    encoded_token
+  end
+
+  @doc """
+  Gets the user by reset password token.
+
+  ## Examples
+
+      iex> get_user_by_reset_password_token("validtoken")
+      %User{}
+
+      iex> get_user_by_reset_password_token("invalidtoken")
+      nil
+
+  """
+  def get_user_by_reset_password_token(token) do
+    with {:ok, query} <- UserToken.verify_email_token_query(token, "reset_password"),
+         %User{} = user <- Repo.one(query) do
+      user
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the user by enrollment invitation token.
+
+  ## Examples
+
+      iex> get_user_by_enrollment_invitation_token("validtoken")
+      %UserToken{}
+
+      iex> get_user_by_enrollment_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_user_token_by_enrollment_invitation_token(token) do
+    with {:ok, query} <- UserToken.enrollment_invitation_token_query(token),
+         %UserToken{} = user_token <- Repo.one(query) |> Repo.preload(:user) do
+      user_token
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Deletes all the enrollment invitation tokens for a list of emails in a given section.
+  """
+
+  def delete_enrollment_invitation_tokens(section_slug, emails) do
+    from(
+      ut in UserToken,
+      join: u in User,
+      on: ut.user_id == u.id,
+      where:
+        ut.context == ^"enrollment_invitation:#{section_slug}" and
+          u.email in ^emails
+    )
+    |> Repo.delete_all()
+  end
+
+  @doc """
+  Resets the user password.
+
+  ## Examples
+
+      iex> reset_user_password(user, %{password: "new long password", password_confirmation: "new long password"})
+      {:ok, %User{}}
+
+      iex> reset_user_password(user, %{password: "valid", password_confirmation: "not the same"})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def reset_user_password(user, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:user, User.password_changeset(user, attrs))
+    |> Ecto.Multi.delete_all(:tokens, UserToken.user_and_contexts_query(user, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user}} -> {:ok, user}
+      {:error, :user, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Locks a user account preventing them from logging in.
+  """
+  def lock_user(user) do
+    user
+    |> User.lock_account_changeset(true)
+    |> Repo.update()
+  end
+
+  @doc """
+  Unlocks a user account.
+  """
+  def unlock_user(user) do
+    user
+    |> User.lock_account_changeset(false)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns whether the user account is waiting for confirmation or not.
+
+  ## Examples
+
+      iex> user_confirmation_pending?(%{email_confirmed_at: nil})
+      true
+
+      iex> user_confirmation_pending?(%{email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
+      false
+  """
+  def user_confirmation_pending?(%{email_confirmed_at: nil}), do: true
+
+  def user_confirmation_pending?(_user), do: false
+
+  ## Author
+
+  @doc """
+  Gets an author by email.
+
+  ## Examples
+
+      iex> get_author_by_email("foo@example.com")
+      %Author{}
+
+      iex> get_author_by_email("unknown@example.com")
+      nil
+
+  """
+  def get_author_by_email(email) when is_binary(email) do
+    Repo.get_by(Author, email: email)
+  end
+
+  @doc """
+  Gets a author by email and password.
+
+  ## Examples
+
+      iex> get_author_by_email_and_password("foo@example.com", "correct_password")
+      %Author{}
+
+      iex> get_author_by_email_and_password("foo@example.com", "invalid_password")
+      nil
+
+  """
+  def get_author_by_email_and_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    author = Repo.get_by(Author, email: email)
+    if Author.valid_password?(author, password), do: author
+  end
+
+  ## Author registration
+
+  @doc """
+  Registers a author.
+
+  ## Examples
+
+      iex> register_author(%{field: value})
+      {:ok, %Author{}}
+
+      iex> register_author(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def register_author(attrs) do
+    %Author{}
+    |> Author.registration_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking author changes.
+
+  ## Examples
+
+      iex> change_author_registration(author)
+      %Ecto.Changeset{data: %Author{}}
+
+  """
+  def change_author_registration(%Author{} = author, attrs \\ %{}) do
+    Author.registration_changeset(author, attrs,
+      hash_password: false,
+      validate_email: false
+    )
+  end
+
+  @doc """
+  Updates the author data after the inviter user redeems the authoring invitation.
+  """
+  def accept_author_invitation(author, attrs \\ %{}) do
+    author
+    |> Author.accept_invitation_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  When a new collaborator accepts an invitation to a project, the author's data is updated (password for intance)
+  and the author_project status is updated from `:pending_confirmation` to `:accepted`.
+
+  Since both operations are related, they are wrapped in a transaction.
+  """
+  def accept_collaborator_invitation(author, author_project, attrs \\ %{}) do
+    Repo.transaction(fn ->
+      author
+      |> Author.accept_invitation_changeset(attrs)
+      |> Repo.update!()
+
+      author_project
+      |> AuthorProject.changeset(%{status: :accepted})
+      |> Repo.update!()
+    end)
+  end
+
+  ## Settings
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the author details.
+
+  ## Examples
+
+      iex> change_author_details(author)
+      %Ecto.Changeset{data: %Author{}}
+
+  """
+  def change_author_details(author, attrs \\ %{}) do
+    Author.noauth_changeset(author, attrs)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the author email.
+
+  ## Examples
+
+      iex> change_author_email(author)
+      %Ecto.Changeset{data: %Author{}}
+
+  """
+  def change_author_email(author, attrs \\ %{}) do
+    Author.email_changeset(author, attrs, validate_email: false)
+  end
+
+  @doc """
+  Emulates that the email will change without actually changing
+  it in the database.
+
+  ## Examples
+
+      iex> apply_author_email(author, "valid password", %{email: ...})
+      {:ok, %Author{}}
+
+      iex> apply_author_email(author, "invalid password", %{email: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def apply_author_email(author, password, attrs) do
+    author
+    |> Author.email_changeset(attrs)
+    |> Author.validate_current_password(password)
+    |> Ecto.Changeset.apply_action(:update)
+  end
+
+  @doc """
+  Updates the author email using the given token.
+
+  If the token matches, the author email is updated and the token is deleted.
+  The confirmed_at date is also updated to the current time.
+  """
+  def update_author_email(author, token) do
+    context = "change:#{author.email}"
+
+    with {:ok, query} <- AuthorToken.verify_change_email_token_query(token, context),
+         %AuthorToken{sent_to: email} <- Repo.one(query),
+         {:ok, _} <- Repo.transaction(author_email_multi(author, email, context)) do
+      :ok
+    else
+      _ -> :error
+    end
+  end
+
+  defp author_email_multi(author, email, context) do
+    changeset =
+      author
+      |> Author.email_changeset(%{email: email})
+      |> Author.confirm_changeset()
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, changeset)
+    |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, [context]))
+  end
+
+  @doc ~S"""
+  Delivers the update email instructions to the given author.
+
+  ## Examples
+
+      iex> deliver_author_update_email_instructions(author, current_email, &url(~p"/authors/settings/confirm_email/#{&1})")
+      {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_author_update_email_instructions(
+        %Author{} = author,
+        current_email,
+        update_email_url_fun
+      )
+      when is_function(update_email_url_fun, 1) do
+    {encoded_token, author_token} =
+      AuthorToken.build_email_token(author, "change:#{current_email}")
+
+    Repo.insert!(author_token)
+    AuthorNotifier.deliver_confirmation_instructions(author, update_email_url_fun.(encoded_token))
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the author password.
+
+  ## Examples
+
+      iex> change_author_password(author)
+      %Ecto.Changeset{data: %Author{}}
+
+  """
+  def change_author_password(author, attrs \\ %{}) do
+    Author.password_changeset(author, attrs, hash_password: false)
+  end
+
+  @doc """
+  Updates the author password.
+
+  ## Examples
+
+      iex> update_author_password(author, "valid password", %{password: ...})
+      {:ok, %Author{}}
+
+      iex> update_author_password(author, "invalid password", %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_author_password(author, password, attrs) do
+    changeset =
+      author
+      |> Author.password_changeset(attrs)
+      |> Author.validate_current_password(password)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, changeset)
+    |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{author: author}} -> {:ok, author}
+      {:error, :author, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Updates an author as an admin.
+  """
+  def admin_update_author(author, attrs \\ %{}) do
+    author
+    |> Author.noauth_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Adds an author password. Used for accounts initially created by a login provider. This function
+  should only run when the author has no password set.
+
+  ## Examples
+
+      iex> create_author_password(author, %{password: ...})
+      {:ok, %Author{}}
+
+      iex> create_author_password(author, %{password: ...})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_author_password(%{password_hash: nil} = author, attrs) do
+    changeset =
+      author
+      |> Author.password_changeset(attrs)
+
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, changeset)
+    |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{author: author}} -> {:ok, author}
+      {:error, :author, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  ## Session
+
+  @doc """
+  Generates a session token.
+  """
+  def generate_author_session_token(author) do
+    {token, author_token} = AuthorToken.build_session_token(author)
+    Repo.insert!(author_token)
+    token
+  end
+
+  @doc """
+  Gets the author with the given signed token.
+  """
+  def get_author_by_session_token(token) do
+    {:ok, query} = AuthorToken.verify_session_token_query(token)
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
+  Deletes the signed token with the given context.
+  """
+  def delete_author_session_token(token) do
+    Repo.delete_all(AuthorToken.token_and_context_query(token, "session"))
+    :ok
+  end
+
+  ## Confirmation
+
+  @doc ~S"""
+  Delivers the confirmation email instructions to the given author.
+
+  ## Examples
+
+      iex> deliver_author_confirmation_instructions(author, &url(~p"/authors/confirm/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+      iex> deliver_author_confirmation_instructions(confirmed_author, &url(~p"/authors/confirm/#{&1}"))
+      {:error, :already_confirmed}
+
+  """
+  def deliver_author_confirmation_instructions(%Author{} = author, confirmation_url_fun)
+      when is_function(confirmation_url_fun, 1) do
+    if author.email_confirmed_at do
+      {:error, :already_confirmed}
+    else
+      {encoded_token, author_token} = AuthorToken.build_email_token(author, "confirm")
+      Repo.insert!(author_token)
+
+      AuthorNotifier.deliver_confirmation_instructions(
+        author,
+        confirmation_url_fun.(encoded_token)
+      )
+    end
+  end
+
+  @doc """
+  Confirms a author by the given token.
+
+  If the token matches, the author account is marked as confirmed
+  and the token is deleted.
+  """
+  def confirm_author(token) do
+    with {:ok, query} <- AuthorToken.verify_email_token_query(token, "confirm"),
+         %Author{} = author <- Repo.one(query),
+         {:ok, %{author: author}} <- Repo.transaction(confirm_author_multi(author)) do
+      {:ok, author}
+    else
+      _ -> :error
+    end
+  end
+
+  defp confirm_author_multi(author) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, Author.confirm_changeset(author))
+    |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, ["confirm"]))
+  end
+
+  @doc """
+  Confirms an author as an admin.
+  """
+  def admin_confirm_author(author) do
+    author
+    |> Author.confirm_changeset()
+    |> Repo.update()
+  end
+
+  ## Reset password
+
+  @doc ~S"""
+  Delivers the reset password email to the given author.
+
+  ## Examples
+
+      iex> deliver_author_reset_password_instructions(author, &url(~p"/authors/reset_password/#{&1}"))
+      {:ok, %{to: ..., body: ...}}
+
+  """
+  def deliver_author_reset_password_instructions(%Author{} = author, reset_password_url_fun)
+      when is_function(reset_password_url_fun, 1) do
+    {encoded_token, author_token} = AuthorToken.build_email_token(author, "reset_password")
+    Repo.insert!(author_token)
+
+    AuthorNotifier.deliver_reset_password_instructions(
+      author,
+      reset_password_url_fun.(encoded_token)
+    )
+  end
+
+  @doc """
+  Generates a reset password token for the given user which can be used to generate a reset password URL.
+  """
+  def generate_author_reset_password_token(user) do
+    {encoded_token, author_token} = AuthorToken.build_email_token(user, "reset_password")
+    Repo.insert!(author_token)
+
+    encoded_token
+  end
+
+  @doc """
+  Gets the author by reset password token.
+
+  ## Examples
+
+      iex> get_author_by_reset_password_token("validtoken")
+      %Author{}
+
+      iex> get_author_by_reset_password_token("invalidtoken")
+      nil
+
+  """
+  def get_author_by_reset_password_token(token) do
+    with {:ok, query} <- AuthorToken.verify_email_token_query(token, "reset_password"),
+         %Author{} = author <- Repo.one(query) do
+      author
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author token by invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_author_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_author_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_author_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.author_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Gets the author by collaboration invitation token.
+
+  ## Examples
+
+      iex> get_author_token_by_collaboration_invitation_token("validtoken")
+      %Author{}
+
+      iex> get_author_token_by_collaboration_invitation_token("invalidtoken")
+      nil
+
+  """
+  def get_author_token_by_collaboration_invitation_token(token) do
+    with {:ok, query} <- AuthorToken.collaborator_invitation_token_query(token),
+         %AuthorToken{} = author_token <- Repo.one(query) |> Repo.preload(:author) do
+      author_token
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Resets the author password.
+
+  ## Examples
+
+      iex> reset_author_password(author, %{password: "new long password", password_confirmation: "new long password"})
+      {:ok, %Author{}}
+
+      iex> reset_author_password(author, %{password: "valid", password_confirmation: "not the same"})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def reset_author_password(author, attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.update(:author, Author.password_changeset(author, attrs))
+    |> Ecto.Multi.delete_all(:tokens, AuthorToken.author_and_contexts_query(author, :all))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{author: author}} -> {:ok, author}
+      {:error, :author, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Locks an author account preventing them from logging in.
+  """
+  def lock_author(author) do
+    author
+    |> Author.lock_account_changeset(true)
+    |> Repo.update()
+  end
+
+  @doc """
+  Unlocks an author account.
+  """
+  def unlock_author(author) do
+    author
+    |> Author.lock_account_changeset(false)
+    |> Repo.update()
+  end
+
+  @doc """
+  Returns whether the author account is waiting for confirmation or not.
+
+  ## Examples
+
+      iex> author_confirmation_pending?(%{email_confirmed_at: nil})
+      true
+
+      iex> author_confirmation_pending?(%{email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
+      false
+  """
+  def author_confirmation_pending?(%{email_confirmed_at: nil}), do: true
+
+  def author_confirmation_pending?(_user), do: false
 end

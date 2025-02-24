@@ -1,5 +1,5 @@
 import * as Immutable from 'immutable';
-import { ActivityModelSchema } from 'components/activities/types';
+import { ActivityModelSchema, CreationData } from 'components/activities/types';
 import { getDefaultEditor } from 'components/editing/markdown_editor/markdown_util';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
@@ -7,6 +7,7 @@ import { ModelElement, TextDirection } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivityWithReportOption } from 'data/persistence/resource';
+import { GroupTrigger, PageTrigger } from 'data/triggers';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import guid from 'utils/guid';
 import { getDefaultTextDirection } from 'utils/useDefaultTextDirection';
@@ -15,6 +16,7 @@ import { ActivityEditContext } from './activity';
 export type PageContent = {
   model: ResourceContent[];
   bibrefs?: string[];
+  trigger?: PageTrigger;
   [key: string]: any;
 };
 
@@ -172,6 +174,7 @@ export type ResourceContext = {
   allTags: Tag[]; // All available tags
   activityContexts: ActivityEditContext[]; // Contexts for inline activity editing
   optionalContentTypes: OptionalContentTypes; // Optional content types
+  creationData?: CreationData; // Creation data for bulk import
 };
 
 export enum ResourceType {
@@ -324,6 +327,7 @@ export interface PurposeGroupContent {
   purpose: string;
   audience?: AudienceMode;
   paginationMode?: PaginationMode;
+  trigger?: GroupTrigger;
   children: Immutable.List<ResourceContent>;
 }
 

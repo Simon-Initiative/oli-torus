@@ -27,7 +27,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       %ColumnSpec{
         name: :name,
         label: "ASSESSMENT",
-        render_fn: &__MODULE__.render_assessment_column/3,
+        render_fn: &render_assessment_column/3,
         th_class: "!sticky left-20 bg-white z-10",
         td_class: "sticky left-20 bg-white dark:bg-neutral-800 z-10 whitespace-nowrap",
         tooltip: Tooltips.for(:name)
@@ -35,84 +35,84 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       %ColumnSpec{
         name: :available_date,
         label: "AVAILABLE DATE",
-        render_fn: &__MODULE__.render_available_date_column/3,
+        render_fn: &render_available_date_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:available_date)
       },
       %ColumnSpec{
         name: :due_date,
         label: "DUE DATE",
-        render_fn: &__MODULE__.render_due_date_column/3,
+        render_fn: &render_due_date_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:due_date)
       },
       %ColumnSpec{
         name: :max_attempts,
         label: "# ATTEMPTS",
-        render_fn: &__MODULE__.render_attempts_column/3,
+        render_fn: &render_attempts_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:max_attempts)
       },
       %ColumnSpec{
         name: :time_limit,
         label: "TIME LIMIT",
-        render_fn: &__MODULE__.render_time_limit_column/3,
+        render_fn: &render_time_limit_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:time_limit)
       },
       %ColumnSpec{
         name: :late_policy,
         label: "LATE POLICY",
-        render_fn: &__MODULE__.render_late_policy_column/3,
+        render_fn: &render_late_policy_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:late_policy)
       },
       %ColumnSpec{
         name: :scoring_strategy_id,
         label: "SCORING",
-        render_fn: &__MODULE__.render_scoring_column/3,
+        render_fn: &render_scoring_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:scoring_strategy_id)
       },
       %ColumnSpec{
         name: :grace_period,
         label: "GRACE PERIOD",
-        render_fn: &__MODULE__.render_grace_period_column/3,
+        render_fn: &render_grace_period_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:grace_period)
       },
       %ColumnSpec{
         name: :retake_mode,
         label: "RETAKE MODE",
-        render_fn: &__MODULE__.render_retake_mode_column/3,
+        render_fn: &render_retake_mode_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:retake_mode)
       },
       %ColumnSpec{
         name: :assessment_mode,
         label: "PRESENTATION",
-        render_fn: &__MODULE__.render_assessment_mode_column/3,
+        render_fn: &render_assessment_mode_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:assessment_mode)
       },
       %ColumnSpec{
         name: :feedback_mode,
         label: "VIEW FEEDBACK",
-        render_fn: &__MODULE__.render_view_feedback_column/3,
+        render_fn: &render_view_feedback_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:feedback_mode)
       },
       %ColumnSpec{
         name: :review_submission,
         label: "VIEW ANSWERS",
-        render_fn: &__MODULE__.render_view_answers_column/3,
+        render_fn: &render_view_answers_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:review_submission)
       },
       %ColumnSpec{
         name: :password,
         label: "PASSWORD",
-        render_fn: &__MODULE__.render_password_column/3,
+        render_fn: &render_password_column/3,
         th_class: "pt-3 whitespace-nowrap",
         sortable: false,
         tooltip: Tooltips.for(:password)
@@ -120,9 +120,15 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
       %ColumnSpec{
         name: :exceptions_count,
         label: "EXCEPTIONS",
-        render_fn: &__MODULE__.render_exceptions_column/3,
+        render_fn: &render_exceptions_column/3,
         th_class: "whitespace-nowrap",
         tooltip: Tooltips.for(:exceptions_count)
+      },
+      %ColumnSpec{
+        name: :allow_hints,
+        label: "ALLOW HINTS",
+        render_fn: &render_allow_hints_column/3,
+        th_class: "whitespace-nowrap"
       }
     ]
 
@@ -434,6 +440,21 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTableModel do
         <%= @exceptions_count %>
       </.link>
     </div>
+    """
+  end
+
+  def render_allow_hints_column(assigns, assessment, _) do
+    assigns =
+      Map.merge(assigns, %{
+        allow_hints: assessment.allow_hints,
+        id: assessment.resource_id
+      })
+
+    ~H"""
+    <select class="torus-select pr-32" name={"allow_hints-#{@id}"}>
+      <option selected={@allow_hints} value="true">Allow</option>
+      <option selected={!@allow_hints} value="false">Disallow</option>
+    </select>
     """
   end
 

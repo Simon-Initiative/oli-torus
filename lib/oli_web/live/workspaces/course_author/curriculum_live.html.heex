@@ -37,7 +37,10 @@
     </p>
     <div class="flex items-center gap-x-4">
       <.link
-        :if={(assigns[:has_show_links_uri_hash] || false) and Accounts.is_system_admin?(@author)}
+        :if={
+          (assigns[:has_show_links_uri_hash] || false) and
+            Accounts.has_admin_role?(@author, :content_admin)
+        }
         navigate={
           ~p"/workspaces/course_author/#{@project.slug}/curriculum/#{@container.slug}/history"
         }
@@ -106,7 +109,8 @@
             view={@view}
             numberings={@numberings}
             revision_history_link={
-              (assigns[:has_show_links_uri_hash] || false) and Accounts.is_system_admin?(@author)
+              (assigns[:has_show_links_uri_hash] || false) and
+                Accounts.has_admin_role?(@author, :content_admin)
             }
           />
         <% end %>

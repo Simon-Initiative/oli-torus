@@ -47,6 +47,8 @@ export interface DeliveryProps {
   currentServerTime?: number;
   effectiveEndTime?: number;
   lateSubmit?: 'allow' | 'disallow';
+  isAdmin?: boolean;
+  isAuthor?: boolean;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -73,6 +75,8 @@ const Delivery: React.FC<DeliveryProps> = ({
   currentServerTime = 0,
   effectiveEndTime = 0,
   lateSubmit = 'allow',
+  isAdmin,
+  isAuthor,
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -202,8 +206,14 @@ const Delivery: React.FC<DeliveryProps> = ({
   const { width: windowWidth } = useWindowSize();
   const isLessonEnded = useSelector(selectLessonEnd);
   return (
-    <div className={`${parentDivClasses.join(' ')} ${currentTheme}`}>
-      {previewMode && <PreviewTools model={content?.model} />}
+    <div
+      className={`${parentDivClasses.join(' ')} ${currentTheme} ${
+        reviewMode && isInstructor ? 'instructor-preview' : ''
+      }`}
+    >
+      {(previewMode || (reviewMode && (isInstructor || isAdmin || isAuthor))) && (
+        <PreviewTools reviewMode={reviewMode} isInstructor={isInstructor} model={content?.model} />
+      )}
       <div className="mainView" role="main" style={{ width: windowWidth }}>
         <LayoutView pageTitle={pageTitle} previewMode={previewMode} pageContent={content} />
       </div>

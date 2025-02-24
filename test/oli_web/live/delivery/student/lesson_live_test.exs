@@ -441,7 +441,8 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         base_project: project,
         title: "The best course ever!",
         start_date: ~U[2023-10-30 20:00:00Z],
-        analytics_version: :v2
+        analytics_version: :v2,
+        assistant_enabled: true
       )
 
     {:ok, section} = Sections.create_section_resources(section, publication)
@@ -645,7 +646,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
       assert redirect_path ==
-               "/session/new?request_path=%2Fsections%2F#{section.slug}%2Flesson%2F#{page_1.slug}&section=#{section.slug}"
+               "/users/log_in"
     end
   end
 
@@ -1361,6 +1362,41 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         view,
         request_path
       )
+    end
+
+    test "can see DOT AI Bot interface if it's on a non scored page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, "div[id='dialogue-window']")
+      assert has_element?(view, "div[id=ai_bot_collapsed]")
+    end
+
+    test "can not see DOT AI Bot interface if it's on a scored page", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      refute has_element?(view, "div[id='dialogue-window']")
+      refute has_element?(view, "div[id=ai_bot_collapsed]")
     end
   end
 

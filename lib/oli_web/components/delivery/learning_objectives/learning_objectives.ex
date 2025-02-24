@@ -1,7 +1,7 @@
 defmodule OliWeb.Components.Delivery.LearningObjectives do
   use OliWeb, :live_component
 
-  import OliWeb.Components.Delivery.Buttons, only: [instructor_dasboard_toggle_chevron: 1]
+  import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.Params
@@ -264,7 +264,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
             Proficiency is <%= show_proficiency_selected_values(@selected_values) %>
           </span>
         </div>
-        <.instructor_dasboard_toggle_chevron id={@id} map_values={@selected_values} />
+        <.toggle_chevron id={@id} map_values={@selected_values} />
       </div>
       <div class="relative">
         <div
@@ -290,7 +290,7 @@ defmodule OliWeb.Components.Delivery.LearningObjectives do
                 label={option.name}
                 checked={option.id in @selected_proficiency_ids}
                 type="checkbox"
-                class_label="text-zinc-900 text-xs font-normal leading-none dark:text-white"
+                label_class="text-zinc-900 text-xs font-normal leading-none dark:text-white"
               />
             </.form>
           </div>
