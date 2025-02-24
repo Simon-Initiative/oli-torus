@@ -59,11 +59,11 @@ export const describeTrigger = (t: ActivityTrigger, part: Part, maxchars: number
       return addContent('Student triggers explanation', explanation);
 
     case 'hint':
-      const hint = part.hints[t.hint_number - 1].content;
-      return addContent(`Student requests ${nth[t.hint_number]} hint`, hint);
+      const hint = part.hints[t.ref_id - 1].content;
+      return addContent(`Student requests ${nth[t.ref_id]} hint`, hint);
 
     case 'targeted_feedback':
-      const response = part.responses.find((r) => r.id == t.response_id);
+      const response = part.responses.find((r) => r.id == t.ref_id);
       const feedback = response?.feedback.content;
       return addContent('Student triggers targeted feedback', feedback);
 

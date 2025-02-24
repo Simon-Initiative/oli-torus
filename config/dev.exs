@@ -206,3 +206,12 @@ config :ex_aws, :s3, region: System.get_env("AWS_REGION", "us-east-1")
 config :ex_aws, :hackney_opts,
   follow_redirect: true,
   recv_timeout: 200_000
+
+# Configure development reCAPTCHA. This is a publicly available test key and will
+# render a warning to prevent it from being used in production.
+# https://developers.google.com/recaptcha/docs/faq#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
+config :oli, :recaptcha,
+  verify_url: "https://www.google.com/recaptcha/api/siteverify",
+  timeout: 5000,
+  site_key: System.get_env("RECAPTCHA_SITE_KEY", "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"),
+  secret: System.get_env("RECAPTCHA_PRIVATE_KEY", "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")

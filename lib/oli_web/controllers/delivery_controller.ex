@@ -41,12 +41,8 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
 
-    if user.independent_learner do
-      redirect(conn, to: ~p"/workspaces/student")
-    else
-      user = Accounts.load_lti_params(user)
-      lti_params = user.lti_params.params
-
+    with false <- user.independent_learner,
+         %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
       lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
       context_roles = ContextRoles.get_roles_by_uris(lti_roles)
       platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
@@ -84,6 +80,9 @@ defmodule OliWeb.DeliveryController do
             redirect_to_page_delivery(conn, section)
           end
       end
+    else
+      _ ->
+        redirect(conn, to: ~p"/workspaces/student")
     end
   end
 

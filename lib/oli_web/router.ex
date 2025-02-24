@@ -103,6 +103,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
+  pipeline :ensure_datashop_id do
+    plug(OliWeb.Plugs.EnsureDatashopId)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -115,6 +119,7 @@ defmodule OliWeb.Router do
 
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(OliWeb.Plugs.SetToken)
+    plug(:ensure_datashop_id)
 
     plug(:delivery_layout)
   end
@@ -254,6 +259,9 @@ defmodule OliWeb.Router do
       only: [:new, :delete]
 
     get "/users/auth/:provider/callback", UserAuthorizationController, :callback
+
+    get "/certificates/", CertificateController, :index
+    post "/certificates/verify", CertificateController, :verify
   end
 
   scope "/", OliWeb do
@@ -381,10 +389,19 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+
+    live("/products/:product_id/certificate_settings", Certificates.CertificatesSettingsLive,
+      metadata: %{route_name: :authoring}
+    )
 
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
+    )
+
+    get(
+      "/products/:product_id/downloads/granted_certificates",
+      GrantedCertificatesController,
+      :download_granted_certificates
     )
 
     get(
@@ -678,6 +695,13 @@ defmodule OliWeb.Router do
     delete("/", SchedulingController, :clear)
   end
 
+  # AI trigger point endpoints
+  scope "/api/v1/triggers/:section_slug", OliWeb.Api do
+    pipe_through([:api, :delivery_protected])
+
+    post("/", TriggerPointController, :invoke)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -687,6 +711,9 @@ defmodule OliWeb.Router do
     post("/:activity_attempt_guid", Api.AttemptController, :new_activity)
     put("/:activity_attempt_guid", Api.AttemptController, :submit_activity)
     patch("/:activity_attempt_guid", Api.AttemptController, :save_activity)
+
+    patch("/:activity_attempt_guid/active", Api.AttemptController, :save_active_activity)
+
     put("/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations)
 
     post(
@@ -711,6 +738,12 @@ defmodule OliWeb.Router do
       "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
       Api.AttemptController,
       :save_part
+    )
+
+    patch(
+      "/:activity_attempt_guid/part_attempt/:part_attempt_guid/active",
+      Api.AttemptController,
+      :save_active_part
     )
 
     get(
@@ -863,7 +896,14 @@ defmodule OliWeb.Router do
         scope "/:project_id/products" do
           live("/", ProductsLive)
           live("/:product_id", Products.DetailsLive)
-          live("/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+
+          scope "/", alias: false do
+            live(
+              "/:product_id/certificate_settings",
+              OliWeb.Certificates.CertificatesSettingsLive,
+              metadata: %{route_name: :workspaces}
+            )
+          end
         end
       end
     end
@@ -1023,6 +1063,7 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :ensure_datashop_id,
       :require_authenticated_user_or_guest,
       :student,
       :enforce_enroll_and_paywall,
@@ -1208,9 +1249,10 @@ defmodule OliWeb.Router do
     end
   end
 
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :require_section,
       :delivery_protected
     ])
 
@@ -1224,7 +1266,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
-        "/:section_slug/welcome",
+        "/welcome",
         Delivery.StudentOnboarding.Wizard
       )
     end

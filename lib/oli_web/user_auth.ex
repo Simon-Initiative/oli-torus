@@ -32,7 +32,6 @@ defmodule OliWeb.UserAuth do
     # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
-    |> create_datashop_session_id()
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
   end
@@ -97,8 +96,7 @@ defmodule OliWeb.UserAuth do
         "browser_timezone",
         "author_token",
         "author_live_socket_id",
-        "current_author_id",
-        "datashop_session_id"
+        "current_author_id"
       ])
 
     conn
@@ -393,11 +391,15 @@ defmodule OliWeb.UserAuth do
   end
 
   defp require_confirmed_email(conn) do
-    case conn.assigns[:current_user] do
-      nil ->
+    case {conn.assigns[:current_user], conn.assigns[:section]} do
+      {nil, _} ->
         conn
 
-      %Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil} ->
+      {_user, %Section{open_and_free: true, skip_email_verification: true}} ->
+        # The section is independent and specifies to skip email verification
+        conn
+
+      {%Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil}, _} ->
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)
@@ -442,11 +444,6 @@ defmodule OliWeb.UserAuth do
     |> put_session(:current_user_id, user_id)
   end
 
-  defp create_datashop_session_id(conn) do
-    conn
-    |> put_session(:datashop_session_id, UUID.uuid4())
-  end
-
   defp maybe_store_return_to(%{method: "GET"} = conn) do
     put_session(conn, :user_return_to, current_path(conn))
   end
@@ -456,5 +453,16 @@ defmodule OliWeb.UserAuth do
   defp maybe_return_to_section(nil), do: nil
   defp maybe_return_to_section(section), do: ~p"/sections/#{section}"
 
-  defp signed_in_path(_conn), do: ~p"/workspaces/student"
+  defp signed_in_path(%{request_path: "/instructors/log_in"} = _conn),
+    do: ~p"/workspaces/instructor"
+
+  defp signed_in_path(conn) do
+    case conn.assigns[:current_user] do
+      %User{can_create_sections: true} ->
+        ~p"/workspaces/instructor"
+
+      _ ->
+        ~p"/workspaces/student"
+    end
+  end
 end

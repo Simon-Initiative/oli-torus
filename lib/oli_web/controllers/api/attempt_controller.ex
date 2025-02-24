@@ -7,6 +7,8 @@ defmodule OliWeb.Api.AttemptController do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Delivery.Attempts.Core.ClientEvaluation
+  alias Oli.Conversation.Triggers
+  alias Oli.Conversation.Trigger
   alias OpenApiSpex.Schema
 
   require Logger
@@ -426,6 +428,44 @@ defmodule OliWeb.Api.AttemptController do
   end
 
   @doc """
+  Saves user state for a specific part attempt on a basic page. This will only save the state
+  for active part attempts.
+  """
+  @doc parameters: @part_attempt_parameters,
+       request_body: {"User state", "application/json", UserStateUpdateBody, required: true},
+       responses: %{
+         200 => {"Update Response", "application/json", UserStateUpdateResponse}
+       }
+  def save_active_part(conn, %{
+        "activity_attempt_guid" => _attempt_guid,
+        "part_attempt_guid" => part_attempt_guid,
+        "response" => response
+      }) do
+    case Activity.save_student_input(
+           [
+             %{attempt_guid: part_attempt_guid, response: response}
+           ],
+           only_active: true
+         ) do
+      {:ok, _} ->
+        json(conn, %{"type" => "success"})
+
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
+
+      {:error, e} ->
+        {_, msg} = Oli.Utils.log_error("Could not save part", e)
+        error(conn, 500, msg)
+    end
+  end
+
+  @doc """
   Submit user state for server-side evaluation for a single part.
 
   If this evaluation completes the activity attempt, a rolled up score will be calculdated
@@ -461,6 +501,12 @@ defmodule OliWeb.Api.AttemptController do
            datashop_session_id
          ) do
       {:ok, evaluations} ->
+        maybe_fire_trigger(
+          section_slug,
+          Plug.Conn.get_session(conn, :current_user_id),
+          evaluations
+        )
+
         json(conn, %{"type" => "success", "actions" => evaluations})
 
       {:error, e} ->
@@ -468,6 +514,35 @@ defmodule OliWeb.Api.AttemptController do
         error(conn, 500, msg)
     end
   end
+
+  defp maybe_fire_trigger(_section_slug, _user_id, []), do: :ok
+  defp maybe_fire_trigger(_section_slug, _user_id, nil), do: :ok
+
+  defp maybe_fire_trigger(section_slug, user_id, %Trigger{} = trigger) do
+    Task.start(fn -> Triggers.possibly_invoke_trigger(section_slug, user_id, trigger) end)
+  end
+
+  defp maybe_fire_trigger(section_slug, user_id, evaluations) when is_list(evaluations) do
+    # Find the first trigger, as we never want to invoke multiple triggers from a single action.
+    #
+    # But do all of this in the most robust way possible, including invoking the trigger
+    # in a Task so we don't block the response, and if we encounter an error, we don't
+    # want to crash the request
+
+    try do
+      case Enum.map(evaluations, fn evaluation -> Map.get(evaluation, :trigger, nil) end)
+           |> Enum.filter(fn trigger -> !is_nil(trigger) end) do
+        [] -> :ok
+        [trigger | _] -> maybe_fire_trigger(section_slug, user_id, trigger)
+      end
+    rescue
+      e ->
+        Logger.error("Could not fire trigger for evaluations: #{inspect(e)}")
+        :ok
+    end
+  end
+
+  defp maybe_fire_trigger(_section_slug, _user_id, _other), do: :ok
 
   @doc """
   Requests a new attempt for a specific part of an activity. NOT IMPLEMENTED.
@@ -502,11 +577,14 @@ defmodule OliWeb.Api.AttemptController do
          200 => {"Evaluation response", "application/json", HintResponse}
        }
   def get_hint(conn, %{
+        "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => part_attempt_guid
       }) do
     case Activity.request_hint(activity_attempt_guid, part_attempt_guid) do
-      {:ok, {hint, has_more_hints}} ->
+      {:ok, {hint, trigger, has_more_hints}} ->
+        maybe_fire_trigger(section_slug, Plug.Conn.get_session(conn, :current_user_id), trigger)
+
         json(conn, %{"type" => "success", "hint" => hint, "hasMoreHints" => has_more_hints})
 
       {:error, {:not_found}} ->
@@ -547,6 +625,43 @@ defmodule OliWeb.Api.AttemptController do
   end
 
   @doc """
+  Saves user state for all parts for a specific activity attempt on a basic page. This will only
+  save the state for active part attempts.
+  """
+  @doc parameters: @activity_attempt_parameters,
+       request_body: {"User state", "application/json", ActivityAttemptBody, required: true},
+       responses: %{
+         200 => {"Update Response", "application/json", UserStateUpdateResponse}
+       }
+  def save_active_activity(conn, %{
+        "activity_attempt_guid" => _attempt_guid,
+        "partInputs" => part_inputs
+      }) do
+    parsed =
+      Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => response} ->
+        %{attempt_guid: attempt_guid, response: response}
+      end)
+
+    case Activity.save_student_input(parsed, only_active: true) do
+      {:ok, _} ->
+        json(conn, %{"type" => "success"})
+
+      {:error, :already_submitted} ->
+        conn
+        |> put_status(403)
+        |> json(%{
+          "error" => true,
+          "message" =>
+            "These changes could not be saved as this attempt may have already been submitted"
+        })
+
+      {:error, e} ->
+        {_, msg} = Oli.Utils.log_error("Could not save activity", e)
+        error(conn, 500, msg)
+    end
+  end
+
+  @doc """
   Evaluates user state for all parts for a specific activity attempt.
 
   """
@@ -577,6 +692,12 @@ defmodule OliWeb.Api.AttemptController do
            datashop_session_id
          ) do
       {:ok, evaluations} ->
+        maybe_fire_trigger(
+          section_slug,
+          Plug.Conn.get_session(conn, :current_user_id),
+          evaluations
+        )
+
         json(conn, %{"type" => "success", "actions" => evaluations})
 
       {:error, message} ->

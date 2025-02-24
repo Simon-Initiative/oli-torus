@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Activities.Model.Feedback
+  alias Oli.Conversation.Triggers
 
   @doc """
   Evaluates a student input for a given activity part.  In a successful
@@ -21,8 +22,10 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   end
 
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
+    relevant_triggers_by_type = Triggers.relevant_triggers_by_type(part)
+
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
-      {_, %Response{feedback: feedback, score: score, show_page: show_page}, _, out_of} ->
+      {_, %Response{feedback: feedback, score: score, show_page: show_page} = response, _, out_of} ->
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",
@@ -32,7 +35,14 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            attempt_guid: context.part_attempt_guid,
            error: nil,
            show_page: show_page,
-           part_id: part.id
+           part_id: part.id,
+           trigger:
+             Triggers.check_for_response_trigger(
+               relevant_triggers_by_type,
+               response,
+               out_of,
+               context
+             )
          }}
 
       # No matching response found - mark incorrect
@@ -56,7 +66,14 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            attempt_guid: context.part_attempt_guid,
            error: nil,
            show_page: nil,
-           part_id: part.id
+           part_id: part.id,
+           trigger:
+             Triggers.check_for_response_trigger(
+               relevant_triggers_by_type,
+               %Response{score: 0},
+               adjusted_out_of,
+               context
+             )
          }}
 
       _ ->

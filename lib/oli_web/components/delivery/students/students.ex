@@ -53,7 +53,15 @@ defmodule OliWeb.Components.Delivery.Students do
       ) do
     {total_count, rows} = apply_filters(students, params)
 
-    {:ok, table_model} = EnrollmentsTableModel.new(rows, section, ctx)
+    {:ok, table_model} =
+      EnrollmentsTableModel.new(
+        rows,
+        section,
+        ctx,
+        assigns[:certificate],
+        assigns[:certificate_pending_approval_count],
+        socket.assigns.myself
+      )
 
     navigation_data = Jason.decode!(params.navigation_data)
 
@@ -132,7 +140,15 @@ defmodule OliWeb.Components.Delivery.Students do
        add_enrollments_step: :step_1,
        add_enrollments_selected_role: :student,
        add_enrollments_emails: [],
-       add_enrollments_users_not_found: [],
+       add_enrollments_grouped_by_status: %{
+         enrolled: [],
+         suspended: [],
+         pending_confirmation: [],
+         rejected: [],
+         non_existing_users: [],
+         not_enrolled_users: []
+       },
+       add_enrollments_effective_count: 0,
        inviter: if(is_nil(ctx.author), do: "user", else: "author"),
        current_user: ctx.user,
        current_author: ctx.author,
@@ -355,7 +371,6 @@ defmodule OliWeb.Components.Delivery.Students do
   attr(:add_enrollments_step, :atom, default: :step_1)
   attr(:add_enrollments_selected_role, :atom, default: :student)
   attr(:add_enrollments_emails, :list, default: [])
-  attr(:add_enrollments_users_not_found, :list, default: [])
   attr(:current_user, :any, required: false)
   attr(:current_author, :any, required: false)
   attr(:inviter, :string, required: false)
@@ -374,9 +389,20 @@ defmodule OliWeb.Components.Delivery.Students do
         title="Add enrollments"
         on_confirm={
           case @add_enrollments_step do
-            :step_1 -> JS.push("add_enrollments_go_to_step_2", target: @myself)
-            :step_2 -> JS.push("add_enrollments_go_to_step_3", target: @myself)
-            :step_3 -> JS.dispatch("click", to: "#add_enrollments_form button")
+            :step_1 ->
+              JS.push("add_enrollments_go_to_step_2", target: @myself)
+
+            :step_2 ->
+              JS.push("add_enrollments_go_to_step_3", target: @myself)
+
+            :step_3 ->
+              if(@add_enrollments_effective_count > 0,
+                do: JS.dispatch("click", to: "#add_enrollments_form button"),
+                else:
+                  JS.dispatch("click",
+                    to: "#students_table_add_enrollments_modal_backdrop button[phx-click='close']"
+                  )
+              )
           end
         }
         on_confirm_label={if @add_enrollments_step == :step_3, do: "Confirm", else: "Next"}
@@ -392,7 +418,8 @@ defmodule OliWeb.Components.Delivery.Students do
           add_enrollments_emails={@add_enrollments_emails}
           add_enrollments_step={@add_enrollments_step}
           add_enrollments_selected_role={@add_enrollments_selected_role}
-          add_enrollments_users_not_found={@add_enrollments_users_not_found}
+          add_enrollments_grouped_by_status={@add_enrollments_grouped_by_status}
+          add_enrollments_effective_count={@add_enrollments_effective_count}
           section_slug={@section_slug}
           target={@id}
           current_user={@current_user}
@@ -429,7 +456,7 @@ defmodule OliWeb.Components.Delivery.Students do
                 <%= @title %>
               </div>
             </div>
-            <div class="w-auto py-2 flex rounded-md justify-center items-center gap-2 inline-flex">
+            <div class="w-auto py-2 flex rounded-md justify-center items-center gap-2">
               <button
                 disabled={is_nil(@next_id)}
                 phx-click="change_navigation"
@@ -723,33 +750,171 @@ defmodule OliWeb.Components.Delivery.Students do
 
   def add_enrollments(%{add_enrollments_step: :step_2} = assigns) do
     ~H"""
+    <div class="px-4 flex flex-col space-y-4">
+      <div
+        :if={@add_enrollments_grouped_by_status[:non_existing_users] not in [[], nil]}
+        id="non_existing_users"
+      >
+        <p>
+          The following emails don't exist in the database. If you still want to proceed, an email will be sent and they
+          will become enrolled once they sign up. Please, review them and click on "Next" to continue.
+        </p>
+        <div>
+          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+            <%= for email <- @add_enrollments_grouped_by_status[:non_existing_users] do %>
+              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+                <div class="flex items-center justify-between">
+                  <p><%= email %></p>
+                  <button
+                    phx-click={
+                      JS.push("add_enrollments_remove_from_list",
+                        value: %{email: email, status: :non_existing_users},
+                        target: "##{@target}"
+                      )
+                    }
+                    class="torus-button error"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </ul>
+            <% end %>
+          </li>
+        </div>
+      </div>
+
+      <div
+        :if={@add_enrollments_grouped_by_status[:pending_confirmation] not in [[], nil]}
+        id="pending_confirmation_enrollments"
+      >
+        <p>
+          The following emails have a "pending confirmation" invitation. A new invitation will be sent by email.
+        </p>
+        <div>
+          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+            <%= for email <- @add_enrollments_grouped_by_status[:pending_confirmation] do %>
+              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+                <div class="flex items-center justify-between">
+                  <p><%= email %></p>
+                  <button
+                    phx-click={
+                      JS.push("add_enrollments_remove_from_list",
+                        value: %{email: email, status: :pending_confirmation},
+                        target: "##{@target}"
+                      )
+                    }
+                    class="torus-button error"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </ul>
+            <% end %>
+          </li>
+        </div>
+      </div>
+
+      <div
+        :if={@add_enrollments_grouped_by_status[:rejected] not in [[], nil]}
+        id="rejected_enrollments"
+      >
+        <p>
+          The following emails have a "rejected" invitation. A new invitation will be sent by email.
+        </p>
+        <div>
+          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+            <%= for email <- @add_enrollments_grouped_by_status[:rejected] do %>
+              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+                <div class="flex items-center justify-between">
+                  <p><%= email %></p>
+                  <button
+                    phx-click={
+                      JS.push("add_enrollments_remove_from_list",
+                        value: %{email: email, status: :rejected},
+                        target: "##{@target}"
+                      )
+                    }
+                    class="torus-button error"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </ul>
+            <% end %>
+          </li>
+        </div>
+      </div>
+
+      <div
+        :if={@add_enrollments_grouped_by_status[:suspended] not in [[], nil]}
+        id="suspended_enrollments"
+      >
+        <p>
+          The following emails have a "suspended" enrollment. A new invitation will be sent by email so they can rejoin.
+        </p>
+        <div>
+          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+            <%= for email <- @add_enrollments_grouped_by_status[:suspended] do %>
+              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+                <div class="flex items-center justify-between">
+                  <p><%= email %></p>
+                  <button
+                    phx-click={
+                      JS.push("add_enrollments_remove_from_list",
+                        value: %{email: email, status: :suspended},
+                        target: "##{@target}"
+                      )
+                    }
+                    class="torus-button error"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </ul>
+            <% end %>
+          </li>
+        </div>
+      </div>
+
+      <div :if={@add_enrollments_grouped_by_status[:enrolled] not in [[], nil]} id="already_enrolled">
+        <p>
+          The following emails are already enrolled in the course (no email invitation will be sent)
+        </p>
+        <div>
+          <li class="list-none mt-4 max-h-80 overflow-y-scroll">
+            <%= for email <- @add_enrollments_grouped_by_status[:enrolled] do %>
+              <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
+                <div class="flex items-center justify-between">
+                  <p><%= email %></p>
+                  <button
+                    phx-click={
+                      JS.push("add_enrollments_remove_from_list",
+                        value: %{email: email, status: :enrolled},
+                        target: "##{@target}"
+                      )
+                    }
+                    class="torus-button error"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </ul>
+            <% end %>
+          </li>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def add_enrollments(
+        %{add_enrollments_step: :step_3, add_enrollments_effective_count: 0} = assigns
+      ) do
+    ~H"""
     <div class="px-4">
       <p>
-        The following emails don't exist in the database. If you still want to proceed, an email will be sent and they
-        will become enrolled once they sign up. Please, review them and click on "Next" to continue.
+        The emails you provided are already enrolled in the course. No email invitation will be sent.
       </p>
-      <div>
-        <li class="list-none mt-4 max-h-80 overflow-y-scroll">
-          <%= for user <- @add_enrollments_users_not_found do %>
-            <ul class="odd:bg-gray-200 dark:odd:bg-neutral-600 even:bg-gray-100 dark:even:bg-neutral-500 p-2 first:rounded-t last:rounded-b">
-              <div class="flex items-center justify-between">
-                <p><%= user %></p>
-                <button
-                  phx-click={
-                    JS.push("add_enrollments_remove_from_list",
-                      value: %{user: user},
-                      target: "##{@target}"
-                    )
-                  }
-                  class="torus-button error"
-                >
-                  Remove
-                </button>
-              </div>
-            </ul>
-          <% end %>
-        </li>
-      </div>
     </div>
     """
   end
@@ -763,9 +928,27 @@ defmodule OliWeb.Components.Delivery.Students do
       method="POST"
       action={Routes.invite_path(OliWeb.Endpoint, :create_bulk, @section_slug)}
     >
-      <%= for email <- @add_enrollments_emails do %>
-        <input name="emails[]" value={email} hidden />
-      <% end %>
+      <input
+        name="non_existing_users_emails"
+        value={Jason.encode!(List.wrap(@add_enrollments_grouped_by_status[:non_existing_users]))}
+        hidden
+      />
+      <input
+        name="not_enrolled_users_emails"
+        value={Jason.encode!(List.wrap(@add_enrollments_grouped_by_status[:not_enrolled_users]))}
+        hidden
+      />
+      <input
+        name="not_active_enrolled_users_emails"
+        value={
+          Jason.encode!(
+            List.wrap(@add_enrollments_grouped_by_status[:suspended]) ++
+              List.wrap(@add_enrollments_grouped_by_status[:pending_confirmation]) ++
+              List.wrap(@add_enrollments_grouped_by_status[:rejected])
+          )
+        }
+        hidden
+      />
       <input name="role" value={@add_enrollments_selected_role} />
       <input name="section_slug" value={@section_slug} />
       <input name="inviter" value={@inviter} />
@@ -773,7 +956,7 @@ defmodule OliWeb.Components.Delivery.Students do
     </.form>
     <div class="px-4">
       <p>
-        Are you sure you want to enroll <%= "#{if length(@add_enrollments_emails) == 1, do: "one user", else: "#{length(@add_enrollments_emails)} users"}" %>?
+        Are you sure you want to send an enrollment email invitation to <%= "#{if @add_enrollments_effective_count == 1, do: "one user", else: "#{@add_enrollments_effective_count} users"}" %>?
       </p>
       <.inviter
         current_author={@current_author}
@@ -924,30 +1107,61 @@ defmodule OliWeb.Components.Delivery.Students do
   end
 
   def handle_event("add_enrollments_go_to_step_2", _, socket) do
-    users = socket.assigns.add_enrollments_emails
-    existing_users = Oli.Accounts.get_users_by_email(users) |> Enum.map(& &1.email)
-    add_enrollments_users_not_found = users -- existing_users
+    all_required_enrollments = socket.assigns.add_enrollments_emails
 
-    case length(add_enrollments_users_not_found) do
-      0 ->
-        {:noreply,
-         assign(socket, %{
-           add_enrollments_step: :step_3
-         })}
+    # we need to distinguish all required enrollments between existing users and non existing users
+    existing_users =
+      Oli.Accounts.get_users_by_email(all_required_enrollments) |> Enum.map(& &1.email)
 
-      _ ->
-        {:noreply,
-         assign(socket, %{
-           add_enrollments_step: :step_2,
-           add_enrollments_users_not_found: add_enrollments_users_not_found
-         })}
+    non_existing_users = all_required_enrollments -- existing_users
+
+    # From the existing users we need to distinguish wich have already an enrollment in the current course
+    enrollments_by_emails =
+      Oli.Delivery.Sections.get_enrollments_by_emails(socket.assigns.section_slug, existing_users)
+
+    enrolled_emails = Enum.map(enrollments_by_emails, & &1.user.email)
+
+    existing_users_with_an_enrollment =
+      Enum.filter(existing_users, fn email -> email in enrolled_emails end)
+
+    not_enrolled_users = existing_users -- existing_users_with_an_enrollment
+
+    # we finally group all the required enrollments by status
+
+    add_enrollments_grouped_by_status =
+      enrollments_by_emails
+      |> Enum.group_by(& &1.status, fn enrollment -> enrollment.user.email end)
+      |> Map.merge(%{
+        non_existing_users: non_existing_users,
+        not_enrolled_users: not_enrolled_users
+      })
+
+    if add_enrollment_warning_step_required?(
+         add_enrollments_grouped_by_status,
+         all_required_enrollments
+       ) do
+      {:noreply,
+       assign(socket, %{
+         add_enrollments_step: :step_2,
+         add_enrollments_grouped_by_status: add_enrollments_grouped_by_status
+       })}
+    else
+      {:noreply,
+       assign(socket, %{
+         add_enrollments_step: :step_3,
+         add_enrollments_grouped_by_status: add_enrollments_grouped_by_status,
+         add_enrollments_effective_count:
+           add_enrollments_effective_count(add_enrollments_grouped_by_status)
+       })}
     end
   end
 
   def handle_event("add_enrollments_go_to_step_3", _, socket) do
     {:noreply,
      assign(socket, %{
-       add_enrollments_step: :step_3
+       add_enrollments_step: :step_3,
+       add_enrollments_effective_count:
+         add_enrollments_effective_count(socket.assigns.add_enrollments_grouped_by_status)
      })}
   end
 
@@ -976,11 +1190,19 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply, socket}
   end
 
-  def handle_event("add_enrollments_remove_from_list", %{"email" => email}, socket) do
+  def handle_event(
+        "add_enrollments_remove_from_list",
+        %{"email" => email, "status" => status},
+        socket
+      ) do
     add_enrollments_emails = Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != email))
 
-    add_enrollments_users_not_found =
-      Enum.filter(socket.assigns.add_enrollments_users_not_found, &(&1 != email))
+    add_enrollments_grouped_by_status =
+      update_enrollments_grouped_by_status(
+        socket.assigns.add_enrollments_grouped_by_status,
+        email,
+        status
+      )
 
     step =
       cond do
@@ -988,7 +1210,10 @@ defmodule OliWeb.Components.Delivery.Students do
           :step_1
 
         socket.assigns.add_enrollments_step == :step_2 and
-            length(add_enrollments_users_not_found) == 0 ->
+            !add_enrollment_warning_step_required?(
+              add_enrollments_grouped_by_status,
+              add_enrollments_emails
+            ) ->
           :step_1
 
         true ->
@@ -998,8 +1223,21 @@ defmodule OliWeb.Components.Delivery.Students do
     {:noreply,
      assign(socket, %{
        add_enrollments_emails: add_enrollments_emails,
-       add_enrollments_users_not_found: add_enrollments_users_not_found,
+       add_enrollments_grouped_by_status: add_enrollments_grouped_by_status,
+       add_enrollments_effective_count:
+         add_enrollments_effective_count(add_enrollments_grouped_by_status),
        add_enrollments_step: step
+     })}
+  end
+
+  def handle_event(
+        "add_enrollments_remove_from_list",
+        %{"email" => email},
+        socket
+      ) do
+    {:noreply,
+     assign(socket, %{
+       add_enrollments_emails: Enum.filter(socket.assigns.add_enrollments_emails, &(&1 != email))
      })}
   end
 
@@ -1403,5 +1641,47 @@ defmodule OliWeb.Components.Delivery.Students do
        proficiency_options: updated_options,
        selected_proficiency_ids: selected_ids
      )}
+  end
+
+  _docp = """
+  Checks if the step 2 of the "add enrollments" wizard is required to be shown.
+  It should be shown if not existing users and/or users with any enrollment
+  status ("enrolled", "pending_confirmation", "rejected" or "suspended") where required by the instructor.
+  """
+
+  defp add_enrollment_warning_step_required?(
+         add_enrollments_grouped_by_status,
+         all_required_enrollments
+       ),
+       do:
+         length(add_enrollments_grouped_by_status[:not_enrolled_users] || []) !=
+           length(all_required_enrollments)
+
+  _docp = """
+  Counts the amount of enrollments invitations that will be sent, not
+  considering the ones that are already enrolled to the course.
+  """
+
+  defp add_enrollments_effective_count(add_enrollments_grouped_by_status) do
+    add_enrollments_grouped_by_status
+    |> Map.drop([:enrolled])
+    |> Enum.reduce(0, fn {_, emails}, acc ->
+      length(emails) + acc
+    end)
+  end
+
+  defp update_enrollments_grouped_by_status(
+         add_enrollments_grouped_by_status,
+         email,
+         status
+       ) do
+    Map.update(
+      add_enrollments_grouped_by_status,
+      String.to_existing_atom(status),
+      [],
+      fn emails ->
+        Enum.filter(emails, fn e -> e != email end)
+      end
+    )
   end
 end

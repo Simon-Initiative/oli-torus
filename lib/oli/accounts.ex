@@ -410,11 +410,10 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Preloads the user's LTI params.
+  Preloads the user's linked author.
   """
-  def load_lti_params(user) do
-    user
-    |> Repo.preload(:lti_params)
+  def preload_author(%User{} = user) do
+    Repo.preload(user, :author)
   end
 
   @doc """
@@ -1464,6 +1463,22 @@ defmodule Oli.Accounts do
     else
       _ -> nil
     end
+  end
+
+  @doc """
+  Deletes all the enrollment invitation tokens for a list of emails in a given section.
+  """
+
+  def delete_enrollment_invitation_tokens(section_slug, emails) do
+    from(
+      ut in UserToken,
+      join: u in User,
+      on: ut.user_id == u.id,
+      where:
+        ut.context == ^"enrollment_invitation:#{section_slug}" and
+          u.email in ^emails
+    )
+    |> Repo.delete_all()
   end
 
   @doc """

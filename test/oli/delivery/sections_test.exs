@@ -1046,6 +1046,7 @@ defmodule Oli.Delivery.SectionsTest do
 
     test "returns the correct ordered container labels for a section", %{
       section: section,
+      curriculum: curriculum,
       unit1: unit1,
       unit1_module1: unit1_module1,
       unit1_module1_section1: unit1_module1_section1,
@@ -1055,22 +1056,24 @@ defmodule Oli.Delivery.SectionsTest do
     } do
       ordered_labels = Sections.fetch_ordered_container_labels(section.slug)
 
-      assert Enum.count(ordered_labels) == 6
+      assert Enum.count(ordered_labels) == 7
 
-      assert Enum.at(ordered_labels, 0) == {unit1.resource_id, "Unit 1: Unit 1"}
+      assert Enum.at(ordered_labels, 0) == {curriculum.resource_id, "Curriculum 1: Curriculum"}
 
-      assert Enum.at(ordered_labels, 1) ==
-               {unit1_module1.resource_id, "Module 1: Unit 1 Module 1"}
+      assert Enum.at(ordered_labels, 1) == {unit1.resource_id, "Unit 1: Unit 1"}
 
       assert Enum.at(ordered_labels, 2) ==
-               {unit1_module1_section1.resource_id, "Section 1: Unit 1 Module 1 Section 1"}
+               {unit1_module1.resource_id, "Module 1: Unit 1 Module 1"}
 
       assert Enum.at(ordered_labels, 3) ==
+               {unit1_module1_section1.resource_id, "Section 1: Unit 1 Module 1 Section 1"}
+
+      assert Enum.at(ordered_labels, 4) ==
                {unit1_module2.resource_id, "Module 2: Unit 1 Module 2"}
 
-      assert Enum.at(ordered_labels, 4) == {unit2.resource_id, "Unit 2: Unit 2"}
+      assert Enum.at(ordered_labels, 5) == {unit2.resource_id, "Unit 2: Unit 2"}
 
-      assert Enum.at(ordered_labels, 5) ==
+      assert Enum.at(ordered_labels, 6) ==
                {unit2_module3.resource_id, "Module 3: Unit 2 Module 3"}
     end
   end
@@ -2525,6 +2528,73 @@ defmodule Oli.Delivery.SectionsTest do
 
       assert hd(user_2_enrollment.context_roles).uri ==
                "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+    end
+  end
+
+  describe "get_enrollments_by_emails/2" do
+    test "returns enrollments for the specified section and emails" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      user_3 = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(
+        [user_1.id, user_2.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Sections.enroll(
+        [user_3.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :pending_confirmation
+      )
+
+      enrollments = Sections.get_enrollments_by_emails(section.slug, [user_1.email, user_2.email])
+
+      assert length(enrollments) == 2
+      assert Enum.all?(enrollments, fn e -> e.status == :enrolled end)
+    end
+  end
+
+  describe "bulk_update_enrollment_status/3" do
+    test "updates the status of enrollments for the specified section and emails" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      user_3 = insert(:user)
+      section = insert(:section)
+
+      Sections.enroll(
+        [user_1.id, user_2.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :enrolled
+      )
+
+      Sections.enroll(
+        [user_3.id],
+        section.id,
+        [ContextRoles.get_role(:context_learner)],
+        :pending_confirmation
+      )
+
+      Sections.bulk_update_enrollment_status(
+        section.slug,
+        [user_1.email, user_2.email, user_3.email],
+        :suspended
+      )
+
+      enrollments =
+        Sections.get_enrollments_by_emails(section.slug, [
+          user_1.email,
+          user_2.email,
+          user_3.email
+        ])
+
+      assert length(enrollments) == 3
+      assert Enum.all?(enrollments, fn e -> e.status == :suspended end)
     end
   end
 end

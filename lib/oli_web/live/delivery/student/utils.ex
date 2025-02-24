@@ -215,6 +215,14 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
+  defp submit_term(%{effective_settings: %{late_submit: :allow, time_limit: 0}} = assigns) do
+    ~H"""
+    <li id="page_submit_term">
+      If you submit after the due date, it will be marked late.
+    </li>
+    """
+  end
+
   defp submit_term(%{effective_settings: %{late_submit: :allow}} = assigns) do
     ~H"""
     <li id="page_submit_term">
@@ -602,6 +610,7 @@ defmodule OliWeb.Delivery.Student.Utils do
           page_context.user.id
         ),
       user: page_context.user,
+      page_id: page_context.page.resource_id,
       section_slug: section.slug,
       project_slug: Oli.Repo.get(Oli.Authoring.Course.Project, section.base_project_id).slug,
       mode: mode,
