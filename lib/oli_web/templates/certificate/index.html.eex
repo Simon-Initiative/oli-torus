@@ -7,7 +7,7 @@
       <div class="flex w-full">
         <%= text_input f, :value,
           placeholder: "Enter certificate ID...",
-          class: "w-full bg-primary-24 border border-gray-600 rounded-l-sm px-4 py-2" %>
+          class: "w-full bg-primary-24 border border-gray-600 rounded-l-sm px-4 py-2 placeholder-white" %>
         <%= submit "Submit", class: "bg-[#4CA6FF] hover:bg-blue-400 text-white font-semibold px-4 py-2 rounded-r-sm" %>
       </div>
     </div>
