@@ -364,16 +364,20 @@ export const triggerCheck = createAsyncThunk(
     }
     //Even If the check result contains a wrong trap state and has a navigation to different screen, we should not create a new attempt for that screen because
     // the student will be navigated to different screen so it does not make sense to create a new attempt for the current screen
-    if (
-      !isCorrect &&
-      !doesCheckResultContainsNavigationToDifferentScreen &&
-      attempt?.hasMoreAttempts
-    ) {
-      /* console.log('Incorrect, time for new attempt'); */
-      const { payload: newAttempt } = await dispatch(
-        createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
-      );
-      if (attempt) attempt = newAttempt;
+
+    if (!isCorrect && !doesCheckResultContainsNavigationToDifferentScreen) {
+      const activityHasMoreAttempt = attempt?.hasMoreAttempts;
+      if (activityHasMoreAttempt) {
+        /* console.log('Incorrect, time for new attempt'); */
+        const { payload: newAttempt } = await dispatch(
+          createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
+        );
+        if (attempt) {
+          attempt = newAttempt;
+        }
+      } else {
+        attempt.attemptNumber += 1;
+      }
       const updateSessionAttempt: ApplyStateOperation[] = [
         {
           target: 'session.attemptNumber',
