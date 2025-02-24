@@ -454,7 +454,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "can access when enrolled to course", %{

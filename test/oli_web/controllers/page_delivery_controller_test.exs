@@ -296,7 +296,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(~p"/sections/#{section.slug}/lesson/#{revision.slug}")
 
-      assert html_response(conn, 302) =~ "You are being <a href=\"/unauthorized\">redirected</a>"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>"
     end
 
     test "handles student access who is not enrolled", %{conn: conn, section: section} do
@@ -304,7 +304,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(~p"/sections/#{section.slug}")
 
-      assert html_response(conn, 302) =~ "You are being <a href=\"/unauthorized\">redirected</a>"
+      assert html_response(conn, 302) =~ "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>"
     end
 
     test "handles student access who is not enrolled when section requires enrollment", %{

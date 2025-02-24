@@ -198,7 +198,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, live_view_discussions_live_route(section.slug))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "can access when enrolled to course", %{

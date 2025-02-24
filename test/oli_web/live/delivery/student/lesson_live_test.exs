@@ -661,7 +661,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "redirects when page is adaptive", %{

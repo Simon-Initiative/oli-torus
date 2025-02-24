@@ -581,7 +581,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, ~p"/sections/#{section.slug}/student_schedule")
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "can access when enrolled to course", %{conn: conn, user: user, section: section} do
