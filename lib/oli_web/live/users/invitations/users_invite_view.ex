@@ -297,7 +297,17 @@ defmodule OliWeb.Users.Invitations.UsersInviteView do
   defp emails_match?(_user_email, email_param) when is_nil(email_param), do: true
   defp emails_match?(user_email, email_param), do: user_email == email_param
 
-  defp new_invited_user?(%User{password_hash: nil}), do: true
+  defp new_invited_user?(%User{password_hash: nil} = user) do
+    user = user |> Oli.Repo.preload(:user_identities)
+
+    # if the user has identities, it means that the user is signed up via social login
+    if Enum.empty?(user.user_identities) do
+      true
+    else
+      false
+    end
+  end
+
   defp new_invited_user?(_), do: false
 
   defp current_user_is_the_invited_one?(nil, _user), do: false
