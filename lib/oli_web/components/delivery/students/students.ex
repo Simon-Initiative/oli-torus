@@ -13,6 +13,7 @@ defmodule OliWeb.Components.Delivery.Students do
   alias OliWeb.Delivery.InstructorDashboard.Helpers
   alias OliWeb.Delivery.InstructorDashboard.HTMLComponents
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
+  alias OliWeb.Icons
   alias OliWeb.Router.Helpers, as: Routes
   alias Phoenix.LiveView.JS
 
