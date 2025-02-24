@@ -47,7 +47,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: granted_certificate.id,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -70,7 +70,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: granted_certificate.id,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -100,7 +100,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: nil,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
+        platform_name: "Oli Torus",
+        course_name: "Some Course Name",
+        instructor_email: instructor.email,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -125,7 +128,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: granted_certificate.id,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
+        platform_name: "Oli Torus",
+        course_name: "Some Course Name",
+        instructor_email: instructor.email,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -152,7 +158,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: granted_certificate.id,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
+        platform_name: "Oli Torus",
+        course_name: "Some Course Name",
+        instructor_email: instructor.email,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -179,7 +188,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: granted_certificate.id,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
+        platform_name: "Oli Torus",
+        course_name: "Some Course Name",
+        instructor_email: instructor.email,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -194,7 +206,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       |> render_click()
 
       lcd
-      |> element("button[phx-click=update_certificate][phx-value-required_state=earned]")
+      |> element("button[phx-value-required_state=earned]", "Approve")
       |> render_click()
 
       granted_certificate =
@@ -210,7 +222,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       |> render_click()
 
       lcd
-      |> element("button[phx-click=update_certificate][phx-value-required_state=denied]")
+      |> element("button[phx-value-required_state=denied]", "Deny")
       |> render_click()
 
       granted_certificate =
@@ -234,7 +246,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         requires_instructor_approval: certificate.requires_instructor_approval,
         granted_certificate_id: nil,
         certificate_id: certificate.id,
-        student_id: student.id,
+        student: student,
+        platform_name: "Oli Torus",
+        course_name: "Some Course Name",
+        instructor_email: instructor.email,
         issued_by_type: :user,
         issued_by_id: instructor.id
       }
@@ -253,7 +268,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       |> render_click()
 
       lcd
-      |> element("button[phx-click=update_certificate][phx-value-required_state=earned]")
+      |> element("button[phx-value-required_state=earned]", "Approve")
       |> render_click()
 
       granted_certificate = user_granted_certificate(certificate.id, student.id)
@@ -267,7 +282,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       |> render_click()
 
       lcd
-      |> element("button[phx-click=update_certificate][phx-value-required_state=denied]")
+      |> element("button[phx-value-required_state=denied]", "Deny")
       |> render_click()
 
       granted_certificate = user_granted_certificate(certificate.id, student.id)

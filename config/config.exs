@@ -202,7 +202,8 @@ config :oli, Oban,
     datashop_export: 3,
     objectives: 3,
     mailer: 10,
-    certificate_pdf: 3
+    certificate_pdf: 3,
+    certificate_mailer: 3
   ]
 
 config :ex_money,

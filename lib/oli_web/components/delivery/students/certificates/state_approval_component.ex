@@ -2,7 +2,14 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   use OliWeb, :live_component
 
   alias Oli.Delivery.GrantedCertificates
-  alias OliWeb.Components.Delivery.Students.Certificates.PendingApprovalComponent
+
+  alias OliWeb.Components.Delivery.Students.Certificates.{
+    BulkCertificateStatusEmail,
+    EmailNotificationModals,
+    PendingApprovalComponent
+  }
+
+  alias OliWeb.Components.Modal
   alias OliWeb.Icons
 
   def mount(socket) do
@@ -12,7 +19,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   def render(%{requires_instructor_approval: true, certificate_status: :pending} = assigns) do
     ~H"""
     <div role="instructor pending approval status">
-      <.approve_or_deny_buttons target={@myself} current_state={@certificate_status} />
+      <.approve_or_deny_buttons
+        target={@myself}
+        current_state={@certificate_status}
+        show_modal?={true}
+      />
     </div>
     """
   end
@@ -69,11 +80,20 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   attr :target, Phoenix.LiveComponent.CID, required: true
   attr :current_state, :string, required: true
 
+  attr :show_modal?, :boolean,
+    default: false,
+    doc:
+      "Whether to show the email notification modal after the instructor approves or denies the certificate"
+
   def approve_or_deny_buttons(assigns) do
     ~H"""
     <div role="approve or deny buttons" class="flex w-full justify-center gap-2 px-1">
       <button
-        phx-click="update_certificate"
+        phx-click={
+          if @show_modal?,
+            do: JS.push("update_certificate") |> Modal.show_modal("certificate_modal"),
+            else: JS.push("update_certificate")
+        }
         phx-target={@target}
         phx-value-required_state="earned"
         phx-value-current_state={@current_state || "new_certificate_required"}
@@ -82,7 +102,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         Approve
       </button>
       <button
-        phx-click="update_certificate"
+        phx-click={
+          if @show_modal?,
+            do: JS.push("update_certificate") |> Modal.show_modal("certificate_modal"),
+            else: JS.push("update_certificate")
+        }
         phx-target={@target}
         phx-value-required_state="denied"
         phx-value-current_state={@current_state || "new_certificate_required"}
@@ -119,7 +143,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     required_state = String.to_existing_atom(required_state)
 
     case GrantedCertificates.create_granted_certificate(%{
-           user_id: socket.assigns.student_id,
+           user_id: socket.assigns.student.id,
            certificate_id: socket.assigns.certificate_id,
            state: required_state,
            with_distinction: false,
@@ -132,6 +156,13 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
            url: nil
          }) do
       {:ok, granted_certificate} ->
+        # show the bulk email notification component
+        # (when manually granting a certificate, no email is sent to that student)
+        send_update(BulkCertificateStatusEmail,
+          id: "bulk_email_certificate_status_component",
+          show_component: true
+        )
+
         {:noreply,
          assign(socket,
            is_editing: false,
@@ -157,14 +188,22 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
            socket.assigns.granted_certificate_id,
            %{state: required_state, url: nil}
          ) do
-      {:ok, _} ->
-        if socket.assigns.requires_instructor_approval and current_state == "pending",
+      {:ok, gc} ->
+        if socket.assigns.requires_instructor_approval and current_state == "pending" do
           # decrease the number of pending approvals
-          do:
-            send_update(PendingApprovalComponent,
-              id: "certificate_pending_approval_count_badge",
-              change_pending_approvals: -1
-            )
+          send_update(PendingApprovalComponent,
+            id: "certificate_pending_approval_count_badge",
+            change_pending_approvals: -1
+          )
+
+          # show the corresponding email notification modal
+          send_update(EmailNotificationModals,
+            id: "certificate_email_notification_modals",
+            selected_student: socket.assigns.student,
+            selected_modal: if(required_state == :earned, do: :approve, else: :deny),
+            granted_certificate_id: gc.id
+          )
+        end
 
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}
 

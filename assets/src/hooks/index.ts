@@ -24,6 +24,7 @@ import { LoadSurveyScripts } from './load_survey_scripts';
 import { LtiConnectInstructions } from './lti_connect_instructions';
 import { ModalLaunch } from './modal';
 import { MonacoEditor } from './monaco_editor';
+import { OnMountAndUpdate } from './on_mount_and_update';
 import { FirePageTrigger } from './page_trigger';
 import { PointMarkers } from './point_markers';
 import { ProjectsTypeahead } from './projects_typeahead';
@@ -97,4 +98,5 @@ export const Hooks = {
   ReactToLiveView,
   DisableSubmitted,
   Recaptcha,
+  OnMountAndUpdate,
 };
