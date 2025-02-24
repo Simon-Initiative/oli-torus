@@ -40,7 +40,6 @@ export const getAvailablePaths = (screen: IActivity): AllPaths[] => {
       return createMultipleChoicePathOptions(screen.content?.partsLayout.find(isMCQ));
     case 'hub-spoke':
       return createHubAndSpokePathOptions(screen.content?.partsLayout.find(isHubSpoke));
-
     case 'dropdown':
       return createDropdownChoicePathOptions(screen.content?.partsLayout.find(isDropdown));
     default:

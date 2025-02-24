@@ -19,7 +19,8 @@ const questionPages: ScreenTypes[] = [
   'number_input',
   'text_input',
   'dropdown',
-]; //'hub_and',
+  'hub_spoke',
+];
 
 export const screenTypeToTitle: Record<string, string> = {
   blank_screen: 'Instructional Screen',
@@ -27,7 +28,7 @@ export const screenTypeToTitle: Record<string, string> = {
   multiple_choice: 'Multiple Choice',
   multiline_text: 'Multiline Text',
   slider: 'Slider',
-  hub_and: 'Hub and Spoke',
+  hub_spoke: 'Hub and Spoke',
   end_screen: 'End Screen',
   number_input: 'Number Input',
   text_input: 'Text Input',
