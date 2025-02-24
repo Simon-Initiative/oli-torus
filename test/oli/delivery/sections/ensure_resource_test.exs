@@ -1,4 +1,3 @@
-
 defmodule Oli.Delivery.Sections.EnsureResourceTest do
   use Oli.DataCase
 

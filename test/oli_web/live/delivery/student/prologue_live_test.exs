@@ -1182,7 +1182,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.get_section_resource(section_id, resource_id)
       |> Sections.update_section_resource(updated_params)
     end
-
   end
 
   describe "offline detector" do
@@ -1202,5 +1201,4 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       refute has_element?(view, "div[id='offline_detector']")
     end
   end
-
 end
