@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Phoenix.LiveViewTest
   import Oli.Factory
@@ -9,6 +10,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Delivery.GrantedCertificates
+  alias Oli.Delivery.Sections.Certificate
   alias Oli.{Repo, Seeder}
 
   defp live_view_students_route(section_slug, params \\ %{}) do
@@ -1402,15 +1405,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
       refute html =~ "Add Enrollments"
     end
+  end
 
-    test "Certificate status column is not shown if the section does not have a certificate enabled AND there is a certificate",
-         %{conn: conn, section: section} do
-      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
-      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+  describe "instructor - certificates" do
+    setup [:setup_instructor_certificates]
 
-      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
-
+    test "Certificate status column is not shown if the section does not have a certificate",
+         %{conn: conn, section_without_certificate: section} do
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       refute has_element?(view, "th", "CERTIFICATE STATUS")
@@ -1418,17 +1419,222 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
 
     test "Certificate status column is shown if the section has a certificate enabled AND there is a certificate",
          %{conn: conn, section: section} do
-      Sections.update_section(section, %{certificate_enabled: true})
-      _certificate = insert(:certificate, section: section)
-      user_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
-      user_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
-
-      Sections.enroll(user_1.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.enroll(user_2.id, section.id, [ContextRoles.get_role(:context_learner)])
-
       {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
 
       assert has_element?(view, "th", "CERTIFICATE STATUS")
+    end
+
+    test "instructor can approve/deny a granted certificate with a pending status", %{
+      conn: conn,
+      section: section,
+      certificate: certificate,
+      student_1: student_1,
+      student_2: student_2
+    } do
+      certificate = update_certificate(certificate, %{requires_instructor_approval: true})
+
+      _granted_certificate_1 =
+        insert(:granted_certificate, certificate: certificate, user: student_1, state: :pending)
+
+      _granted_certificate_2 =
+        insert(:granted_certificate, certificate: certificate, user: student_2, state: :pending)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      # The initial pending count should be 2
+      assert view
+             |> element("#students_pending_certificates_count")
+             |> render() =~ "2"
+
+      ## Approve the certificate for student 1
+      view
+      |> element(~s{tr[id=#{student_1.id}] button[phx-value-required_state="earned"]})
+      |> render_click()
+
+      # the pending count should decrease in 1
+      assert view
+             |> element("#students_pending_certificates_count")
+             |> render() =~ "1"
+
+      # the modal to send an approval email notification should be shown
+      assert has_element?(view, "#certificate_modal-container h1", "Certificate Approval Email")
+
+      assert view
+             |> element("#certificate_modal-container")
+             |> render() =~
+               "Please confirm that you want to send Messi, Lionel a\n          <span class=\"font-bold\">\n            certificate approval\n          </span>\n          email."
+
+      ## Deny the certificate for student 2
+      view
+      |> element(~s{tr[id=#{student_2.id}] button[phx-value-required_state="denied"]})
+      |> render_click()
+
+      # the pending count should decrease in 1, so the bagde should not be visible anymore
+      # (since the pending count has reached 0)
+      refute has_element?(view, "#students_pending_certificates_count")
+
+      # the modal to send a denial email notification should be shown
+      assert has_element?(view, "#certificate_modal-container h1", "Certificate Denial Email")
+
+      assert view
+             |> element("#certificate_modal-container")
+             |> render() =~
+               "Please confirm that you want to send Suarez, Luis a\n          <span class=\"font-bold\">\n            certificate denial\n          </span>\n          email."
+    end
+
+    test "instructor can approve/deny a granted certificate and schedule an email notification",
+         %{
+           conn: conn,
+           section: section,
+           certificate: certificate,
+           student_1: student_1,
+           student_2: student_2
+         } do
+      certificate = update_certificate(certificate, %{requires_instructor_approval: true})
+
+      granted_certificate_1 =
+        insert(:granted_certificate, certificate: certificate, user: student_1, state: :pending)
+
+      granted_certificate_2 =
+        insert(:granted_certificate, certificate: certificate, user: student_2, state: :pending)
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      ## Approve the certificate for student 1
+      view
+      |> element(~s{tr[id=#{student_1.id}] button[phx-value-required_state="earned"]})
+      |> render_click()
+
+      # Confirm "Send Email"
+      view
+      |> element("#certificate_modal-container button[role='send email']")
+      |> render_click()
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => granted_certificate_1.id,
+          "to" => granted_certificate_1.user.email,
+          "template" => "certificate_approval"
+        }
+      )
+
+      ## Deny the certificate for student 2
+      view
+      |> element(~s{tr[id=#{student_2.id}] button[phx-value-required_state="denied"]})
+      |> render_click()
+
+      # Confirm "Send Email"
+      view
+      |> element("#certificate_modal-container button[role='send email']")
+      |> render_click()
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => granted_certificate_2.id,
+          "to" => granted_certificate_2.user.email,
+          "template" => "certificate_denial"
+        }
+      )
+    end
+
+    test "the bulk apply notification buttons is visible depending on the number of pending student emails",
+         %{
+           conn: conn,
+           section: section,
+           certificate: certificate,
+           student_1: student_1,
+           student_2: student_2
+         } do
+      granted_certificate_1 =
+        insert(:granted_certificate,
+          certificate: certificate,
+          user: student_1,
+          state: :earned,
+          student_email_sent: true
+        )
+
+      _granted_certificate_2 =
+        insert(:granted_certificate,
+          certificate: certificate,
+          user: student_2,
+          state: :denied,
+          student_email_sent: true
+        )
+
+      # the bulk apply notification button should not be visible
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      refute has_element?(view, "button[role='bulk certificate status email']")
+
+      # now the bulk apply notification button should be visible
+      update_granted_certificate(granted_certificate_1, %{student_email_sent: false})
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      assert has_element?(view, "button[role='bulk certificate status email']")
+    end
+
+    test "can bulk send certificate email notifications (email workers are enqueued)", %{
+      conn: conn,
+      section: section,
+      certificate: certificate,
+      student_1: student_1,
+      student_2: student_2
+    } do
+      granted_certificate_1 =
+        insert(:granted_certificate,
+          certificate: certificate,
+          user: student_1,
+          state: :earned,
+          student_email_sent: false
+        )
+
+      granted_certificate_2 =
+        insert(:granted_certificate,
+          certificate: certificate,
+          user: student_2,
+          state: :denied,
+          student_email_sent: false
+        )
+
+      {:ok, view, _html} = live(conn, live_view_students_route(section.slug))
+
+      # open the modal
+      view
+      |> element("button[role='bulk certificate status email']")
+      |> render_click()
+
+      assert has_element?(view, "#certificate_modal-container h1", "Certificate Status Email")
+
+      assert view
+             |> element("#certificate_modal-container")
+             |> render() =~
+               "Please confirm that you want to send <span class=\"font-bold\">all students</span>\n          who\n          <span class=\"font-bold\">\n            have not yet been emailed their certificate status\n          </span>\n          an email regarding their status as approved or denied."
+
+      # Confirm "Send Emails"
+      view
+      |> element("#certificate_modal-container button[role='bulk send emails']")
+      |> render_click()
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => granted_certificate_1.id,
+          "to" => granted_certificate_1.user.email,
+          "template" => "certificate_approval"
+        }
+      )
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => granted_certificate_2.id,
+          "to" => granted_certificate_2.user.email,
+          "template" => "certificate_denial"
+        }
+      )
     end
   end
 
@@ -1456,6 +1662,66 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       inserted_at: timestamp,
       updated_at: timestamp
     })
+  end
+
+  defp setup_instructor_certificates(%{conn: conn}) do
+    section =
+      insert(:section, %{certificate_enabled: true, open_and_free: true, type: :enrollable})
+
+    certificate = insert(:certificate, section: section)
+
+    student_1 = insert(:user, %{given_name: "Lionel", family_name: "Messi"})
+    student_2 = insert(:user, %{given_name: "Luis", family_name: "Suarez"})
+    instructor = insert(:user, %{given_name: "Diego", family_name: "Maradona"})
+
+    Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+    Sections.enroll(student_1.id, section.id, [ContextRoles.get_role(:context_learner)])
+    Sections.enroll(student_2.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+    section_without_certificate =
+      insert(:section, %{certificate_enabled: false, open_and_free: true, type: :enrollable})
+
+    Sections.enroll(instructor.id, section_without_certificate.id, [
+      ContextRoles.get_role(:context_instructor)
+    ])
+
+    Sections.enroll(student_1.id, section_without_certificate.id, [
+      ContextRoles.get_role(:context_learner)
+    ])
+
+    Sections.enroll(student_2.id, section_without_certificate.id, [
+      ContextRoles.get_role(:context_learner)
+    ])
+
+    conn =
+      Plug.Test.init_test_session(conn, [])
+      |> log_in_user(instructor)
+
+    %{
+      conn: conn,
+      section: section,
+      section_without_certificate: section_without_certificate,
+      certificate: certificate,
+      student_1: student_1,
+      student_2: student_2,
+      instructor: instructor
+    }
+  end
+
+  defp update_certificate(certificate, attrs) do
+    {:ok, certificate} =
+      certificate
+      |> Certificate.changeset(attrs)
+      |> Repo.update()
+
+    certificate
+  end
+
+  defp update_granted_certificate(granted_certificate, attrs) do
+    {:ok, granted_certificate} =
+      GrantedCertificates.update_granted_certificate(granted_certificate.id, attrs)
+
+    granted_certificate
   end
 
   defp setup_enrollments_view(%{conn: conn}) do

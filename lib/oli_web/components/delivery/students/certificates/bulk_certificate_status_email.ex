@@ -19,6 +19,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.BulkCertificateStatus
         JS.push("show_bulk_certificate_status_email_modal")
         |> Modal.show_modal("certificate_modal")
       }
+      role="bulk certificate status email"
       phx-target={@myself}
     >
       <div class="text-center text-[#3b76d3] text-xs font-semibold leading-[17.40px] whitespace-normal">
