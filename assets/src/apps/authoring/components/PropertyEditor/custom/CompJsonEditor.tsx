@@ -10,9 +10,10 @@ interface JsonEditorProps {
   jsonValue: any;
   onChange: (changedJson: object) => void;
   existingPartIds: string[];
+  onfocusHandler: (focus: boolean) => void;
 }
 const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
-  const { jsonValue, onChange, existingPartIds } = props;
+  const { jsonValue, onChange, existingPartIds, onfocusHandler } = props;
   let val = { id: jsonValue.id, custom: jsonValue.custom };
   const [value, setValue] = useState<string>(JSON.stringify(val, null, 4));
   const [validationMsg, setValidationMsg] = useState<string>('');
@@ -52,7 +53,14 @@ const CompJsonEditor: React.FC<JsonEditorProps> = (props) => {
           <h4 className="modal-title">Edit JSON</h4>
         </Modal.Header>
         <Modal.Body>
-          <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value} />
+          <textarea
+            onFocus={() => onfocusHandler(false)}
+            style={textAreaStyle}
+            rows={20}
+            onChange={handleOnChange}
+            value={value}
+            onBlur={() => onfocusHandler(true)}
+          />
           <label className="text-danger">{validationMsg}</label>
         </Modal.Body>
         <Modal.Footer>
