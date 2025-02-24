@@ -9935,6 +9935,16 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(156 163 175 / var(--tw-placeholder-opacity));
 }
 
+.placeholder-white::-moz-placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-placeholder-opacity));
+}
+
+.placeholder-white::placeholder {
+  --tw-placeholder-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-placeholder-opacity));
+}
+
 .\!opacity-100 {
   opacity: 1 !important;
 }
