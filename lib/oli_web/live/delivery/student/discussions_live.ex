@@ -171,7 +171,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
         "visibility" => :public
       })
 
-    case Collaboration.create_post(attrs) do
+    require_certification_check = socket.assigns.require_certification_check
+
+    case Oli.CertificationEligibility.create_post_and_verify_qualification(
+           attrs,
+           require_certification_check
+         ) do
       {:ok, %Post{} = post} ->
         new_post = %Post{
           post
@@ -255,7 +260,12 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
       thread_root_id: parent_post_id
     }
 
-    case Collaboration.create_post(attrs) do
+    require_certification_check = socket.assigns.require_certification_check
+
+    case Oli.CertificationEligibility.create_post_and_verify_qualification(
+           attrs,
+           require_certification_check
+         ) do
       {:ok, post} ->
         Phoenix.PubSub.broadcast(
           Oli.PubSub,
