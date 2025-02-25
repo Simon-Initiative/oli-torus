@@ -898,12 +898,23 @@ defmodule OliWeb.Router do
         live("/:project_id/datasets/details/:job_id", DatasetDetailsLive)
 
         scope "/:project_id/products" do
-          live("/", ProductsLive)
-          live("/:product_id", Products.DetailsLive)
+          live("/", OliWeb.Workspaces.CourseAuthor.ProductsLive)
 
-          scope "/", alias: false do
+          scope "/:product_id", alias: false do
+            live("/", OliWeb.Workspaces.CourseAuthor.Products.DetailsLive)
+
+            live("/scheduling", OliWeb.Sections.ScheduleView, :product, as: :product_scheduling)
+
+            live("/gating_and_scheduling", OliWeb.Sections.GatingAndScheduling, :product, as: :product_gating_and_scheduling)
+            live("/gating_and_scheduling/new", OliWeb.Sections.GatingAndScheduling.New, :product, as: :product_gating_and_scheduling_new)
+            live("/gating_and_scheduling/new/:parent_gate_id", OliWeb.Sections.GatingAndScheduling.New, :product, as: :product_gating_and_scheduling_new_with_parent)
+            live("/gating_and_scheduling/edit/:id", OliWeb.Sections.GatingAndScheduling.Edit, :product, as: :product_gating_and_scheduling_edit)
+            live("/gating_and_scheduling/exceptions/:parent_gate_id", OliWeb.Sections.GatingAndScheduling, :product, as: :product_gating_and_scheduling_exceptions)
+
+            live("/assessment_settings/:active_tab/:assessment_id", OliWeb.Sections.AssessmentSettings.SettingsLive, :product)
+
             live(
-              "/:product_id/certificate_settings",
+              "/certificate_settings",
               OliWeb.Certificates.CertificatesSettingsLive,
               metadata: %{route_name: :workspaces}
             )

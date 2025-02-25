@@ -4,6 +4,7 @@ defmodule OliWeb.Products.Details.Content do
   alias OliWeb.Router.Helpers, as: Routes
 
   attr(:product, :any, required: true)
+  attr(:project_slug, :string, required: true)
   attr(:updates, :any, required: true)
   attr(:changeset, :any, default: nil)
   attr(:save, :any, required: true)
@@ -29,18 +30,44 @@ defmodule OliWeb.Products.Details.Content do
             Manage Source Materials
           </.link>
         </div>
-        <p>
-          <.link href={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}>
-            Customize content
-          </.link>
-        </p>
-        <p>
-          <.link href={
-            Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)
-          }>
-            Gating and scheduling
-          </.link>
-        </p>
+
+        <ul class="link-list">
+          <li>
+            <.link href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @product.slug)}>
+              Edit Details
+            </.link>
+          </li>
+          <li>
+            <.link href={Routes.product_remix_path(OliWeb.Endpoint, :product_remix, @product.slug)}>
+              Customize content
+            </.link>
+          </li>
+          <li>
+            <.link href={~p"/workspaces/course_author/#{@project_slug}/products/#{@product.slug}/scheduling"}>
+              Scheduling
+            </.link>
+          </li>
+          <li>
+            <.link href={
+              Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)
+            }>
+              Advanced Gating and scheduling
+            </.link>
+          </li>
+          <li>
+            <.link href={
+              Routes.live_path(
+                    OliWeb.Endpoint,
+                    OliWeb.Sections.AssessmentSettings.SettingsLive,
+                    @product.slug,
+                    :settings,
+                    :all
+                  )
+            }>
+              Assessment Settings
+            </.link>
+          </li>
+        </ul>
       </div>
 
       <div class="grid grid-cols-12 my-4" id="content-form">
