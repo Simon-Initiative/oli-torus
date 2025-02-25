@@ -22,7 +22,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
   end
 
   defp social_login_user() do
-      insert(:user, user_identities: [%UserIdentity{uid: "123", provider: "google"}])
+    insert(:user, user_identities: [%UserIdentity{uid: "123", provider: "google"}])
   end
 
   defp insert_invitation_token_and_enrollment(
