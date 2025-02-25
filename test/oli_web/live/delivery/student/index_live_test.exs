@@ -31,6 +31,16 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
     context
   end
 
+  defp unmark_section_visited(section, user) do
+    visited_section_key = Oli.Delivery.ExtrinsicState.Key.has_visited_once()
+
+    Oli.Delivery.ExtrinsicState.upsert_section(
+      user.id,
+      section.slug,
+      Map.put(%{}, visited_section_key, false)
+    )
+  end
+
   defp create_not_scheduled_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])
@@ -1722,6 +1732,40 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       refute html =~ "Loading progress..."
       refute render_async(view) =~ "certificate_discussion_posts_progress"
       refute render(view) =~ "1 of 3 Required Assignments"
+    end
+
+    test "student can see the certificate progress card the first time they visit the section (when they have no progress)",
+         %{
+           conn: conn,
+           section: section,
+           user: user
+         } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      insert(:certificate,
+        section: section,
+        required_discussion_posts: 5,
+        required_class_notes: 10,
+        min_percentage_for_completion: 70,
+        min_percentage_for_distinction: 90,
+        assessments_apply_to: :all
+      )
+
+      Sections.update_section(section, %{
+        certificate_enabled: true
+      })
+
+      unmark_section_visited(section, user)
+
+      {:ok, view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "Loading progress..."
+      assert render_async(view) =~ "certificate_discussion_posts_progress"
+
+      assert render(view) =~ "Begin your learning journey to watch your progress unfold here!"
+      assert render(view) =~ "0 of 5 Discussion Posts"
+      assert render(view) =~ "0 of 10 Class Notes"
+      assert render(view) =~ "0 of 3 Required Assignments"
     end
   end
 end
