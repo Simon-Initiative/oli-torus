@@ -515,13 +515,16 @@ defmodule Oli.Delivery.GrantedCertificates do
       guid: Ecto.UUID.generate()
     }
 
-    if certificate.requires_instructor_approval do
-      {:ok, :send_email_to_instructor}
-    else
-      case create_granted_certificate(attrs) do
-        {:ok, %GrantedCertificate{}} = gc -> gc
-        error -> log_error(error, user_id, certificate.section_id, :insert)
-      end
+    case create_granted_certificate(attrs) do
+      {:ok, %GrantedCertificate{}} = gc ->
+        if certificate.requires_instructor_approval,
+          do: :send_email_to_instructor,
+          else: :send_email_to_student
+
+        {:ok, gc}
+
+      error ->
+        log_error(error, user_id, certificate.section_id, :insert)
     end
   end
 
