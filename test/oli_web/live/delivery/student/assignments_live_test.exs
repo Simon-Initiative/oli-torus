@@ -315,7 +315,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, live_view_assignments_live_route(section.slug))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
   end
 
