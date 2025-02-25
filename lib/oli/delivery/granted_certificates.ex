@@ -347,7 +347,7 @@ defmodule Oli.Delivery.GrantedCertificates do
        when state in [:pending, :earned],
        do: :halt
 
-  # def check_granted_cert_state(%GrantedCertificate{state: :denied}), do: :halt
+  defp check_granted_cert_state(%GrantedCertificate{state: :denied}), do: :halt
 
   defp check_granted_cert_state(_granted_certificate), do: :continue
 
