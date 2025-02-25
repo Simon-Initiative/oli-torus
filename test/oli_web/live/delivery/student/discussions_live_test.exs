@@ -1,5 +1,6 @@
 defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
   use ExUnit.Case, async: true
+  use Oban.Testing, repo: Oli.Repo
   alias Oli.Resources.Collaboration
   use OliWeb.ConnCase
 
@@ -10,6 +11,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
+  alias Oli.Delivery.Sections.Certificates.Workers.CheckCertification
 
   defp live_view_discussions_live_route(section_slug) do
     ~p"/sections/#{section_slug}/discussions"
@@ -647,6 +649,97 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       assert render(view) =~ "Discussion 11 :)"
 
       refute has_element?(view, "button[phx-click=\"load_more_posts\"]", "Load more posts")
+    end
+
+    test "skips CheckCertification if require_certification_check is false when creating a post",
+         ctx do
+      %{conn: conn, student: student, section: section} = ctx
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, student)
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
+      view
+      |> element("form[id=\"new_discussion_form\"")
+      |> render_submit(%{
+        "post" => %{"anonymous" => "false", "content" => %{"message" => "New Discussion Post"}}
+      })
+
+      refute_enqueued(
+        worker: CheckCertification,
+        args: %{"user_id" => student.id, "section_id" => section.id}
+      )
+    end
+
+    test "triggers CheckCertification if require_certification_check is true when creating a post",
+         ctx do
+      %{conn: conn, student: student, section: section} = ctx
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, student)
+      section = Sections.update_section!(section, %{certificate_enabled: true})
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
+      view
+      |> element("form[id=\"new_discussion_form\"")
+      |> render_submit(%{
+        "post" => %{"anonymous" => "false", "content" => %{"message" => "New Discussion Post"}}
+      })
+
+      assert_enqueued(
+        worker: CheckCertification,
+        args: %{"user_id" => student.id, "section_id" => section.id}
+      )
+    end
+
+    test "triggers CheckCertification when creating a child post",
+         ctx do
+      %{conn: conn, student: student, section: section, root_container: root_container} = ctx
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, student)
+      section = Sections.update_section!(section, %{certificate_enabled: true})
+
+      post =
+        insert(:post, %{
+          section: section,
+          resource: root_container.resource,
+          user: student,
+          content: %{message: "Discussion 1"}
+        })
+
+      {:ok, view, _html} = live(conn, live_view_discussions_live_route(section.slug))
+
+      # select course discussions tab
+      view
+      |> element("div[phx-click='select_tab'][phx-value-tab='discussions']")
+      |> render_click
+
+      view
+      |> element("button[phx-click='toggle_post_replies'][phx-value-post-id='#{post.id}']")
+      |> render_click
+
+      view
+      |> element("form[phx-value-parent-post-id='#{post.id}'")
+      |> render_submit(%{
+        "anonymous" => "false",
+        "content" => "Child Post",
+        "parent-post-id" => "#{post.id}"
+      })
+
+      assert_enqueued(
+        worker: CheckCertification,
+        args: %{"user_id" => student.id, "section_id" => section.id}
+      )
     end
   end
 
