@@ -14,7 +14,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       {:error, error} ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
-      {_user_type, current_user, section} ->
+      {_user_type, _user, section} ->
         section =
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -23,7 +23,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
         {:ok,
          assign(socket,
-           current_user: current_user,
            preview_mode: socket.assigns[:live_action] == :preview,
            title: "Assessment Settings",
            section: section,
