@@ -90,6 +90,12 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> case do
       {:ok, gc} ->
         %{granted_certificate_id: gc.id} |> GeneratePdf.new() |> Oban.insert()
+        certificate = Repo.preload(gc, :certificate).certificate
+
+        if certificate.requires_instructor_approval,
+          do: :send_email_to_instructor,
+          else: :send_email_to_student
+
         {:ok, gc}
 
       error ->
