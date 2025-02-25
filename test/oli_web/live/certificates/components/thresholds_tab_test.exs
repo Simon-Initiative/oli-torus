@@ -6,9 +6,10 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Delivery.Certificates
+  alias Oli.Delivery.Sections.Certificate
   alias OliWeb.Certificates.Components.ThresholdsTab
 
-  describe "thresholds component" do
+  describe "thresholds component with write mode" do
     setup [:setup_data]
 
     test "updates thresholds with correct values", ctx do
@@ -20,10 +21,11 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       attrs = %{
         id: id,
-        product: product,
+        section: product,
         certificate: certificate,
         active_tab: active_tab,
-        graded_pages: graded_pages
+        graded_pages: graded_pages,
+        read_only: false
       }
 
       {:ok, lcd, _html} = live_component_isolated(ctx.conn, ThresholdsTab, attrs)
@@ -70,10 +72,11 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       attrs = %{
         id: id,
-        product: product,
+        section: product,
         certificate: certificate,
         active_tab: active_tab,
-        graded_pages: graded_pages
+        graded_pages: graded_pages,
+        read_only: false
       }
 
       {:ok, lcd, _html} = live_component_isolated(ctx.conn, ThresholdsTab, attrs)
@@ -108,10 +111,11 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       attrs = %{
         id: id,
-        product: product,
+        section: product,
         certificate: certificate,
         active_tab: active_tab,
-        graded_pages: graded_pages
+        graded_pages: graded_pages,
+        read_only: false
       }
 
       {:ok, lcd, _html} = live_component_isolated(ctx.conn, ThresholdsTab, attrs)
@@ -145,10 +149,11 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
 
       attrs = %{
         id: id,
-        product: product,
+        section: product,
         certificate: certificate,
         active_tab: active_tab,
-        graded_pages: graded_pages
+        graded_pages: graded_pages,
+        read_only: false
       }
 
       {:ok, lcd, _html} = live_component_isolated(ctx.conn, ThresholdsTab, attrs)
@@ -180,6 +185,45 @@ defmodule OliWeb.Certificates.Components.ThresholdsTabTest do
       # all checkboxes are unchecked
       refute has_element?(lcd, "input[name=\"#{gp1.resource_id}\"]:checked")
       refute has_element?(lcd, "input[name=\"#{gp2.resource_id}\"]:checked")
+    end
+  end
+
+  describe "thresholds component with read only mode" do
+    setup [:setup_data]
+
+    test "can see threshold values but can not edit them", ctx do
+      id = "thresholds_component"
+      product = ctx.product
+      active_tab = :thresholds
+      [gp1, _] = graded_pages = ctx.graded_pages
+
+      certificate =
+        ctx.certificate
+        |> Certificate.changeset(%{
+          assessments_apply_to: :custom,
+          custom_assessments: [gp1.resource_id]
+        })
+        |> Oli.Repo.update!()
+
+      attrs = %{
+        id: id,
+        section: product,
+        certificate: certificate,
+        active_tab: active_tab,
+        graded_pages: graded_pages,
+        read_only: true
+      }
+
+      {:ok, lcd, _html} = live_component_isolated(ctx.conn, ThresholdsTab, attrs)
+
+      # There is a lock icon
+      assert has_element?(lcd, "svg[role=\"lock icon\"]")
+
+      # There is a disabled fieldset
+      assert has_element?(lcd, "fieldset[disabled")
+
+      # The cross icon button on the multiselect dropdown is disabled
+      assert has_element?(lcd, "button[aria-label=\"Remove\"].cursor-not-allowed")
     end
   end
 

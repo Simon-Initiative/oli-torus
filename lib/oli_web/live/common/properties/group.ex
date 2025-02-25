@@ -4,6 +4,7 @@ defmodule OliWeb.Common.Properties.Group do
   attr :label, :string, required: true
   attr :description, :string, default: ""
   attr :is_last, :boolean, default: false
+  attr :description_class, :string, default: ""
 
   slot :inner_block, required: true
 
@@ -13,7 +14,7 @@ defmodule OliWeb.Common.Properties.Group do
       <div class="md:col-span-4">
         <h4><%= @label %></h4>
         <%= if @description != "" do %>
-          <div class="text-muted">
+          <div class={[@description_class, "text-muted"]}>
             <%= @description %>
           </div>
         <% end %>

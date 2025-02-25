@@ -1301,6 +1301,10 @@ defmodule OliWeb.Router do
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
+      live("/certificate_settings", Certificates.CertificatesSettingsLive,
+        metadata: %{route_name: :delivery, access: :read_only}
+      )
+
       live("/manage", Sections.OverviewView)
       live("/grades/lms", Grades.GradesLive)
       live("/grades/lms_grade_updates", Grades.BrowseUpdatesView)
