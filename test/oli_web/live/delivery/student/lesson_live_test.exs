@@ -1,6 +1,7 @@
 defmodule OliWeb.Delivery.Student.LessonLiveTest do
   use ExUnit.Case, async: true
   use OliWeb.ConnCase
+  use Oban.Testing, repo: Oli.Repo
 
   import Phoenix.LiveViewTest
   import Oli.Factory
@@ -897,6 +898,58 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
+    test "triggers CheckCertification job if certificate_enabled is off on submit", ctx do
+      %{conn: conn, user: user, section: section, page_3: page_3} = ctx
+      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+      refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
+      refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
+      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
+
+      view
+      |> element("button[id=submit_answers]", "Submit Answers")
+      |> render_hook("finalize_attempt")
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.CheckCertification,
+        args: %{"user_id" => user.id, "section_id" => section.id}
+      )
+    end
+
+    test "skips CheckCertification job if certificate_enabled is off on submit",
+         ctx do
+      %{conn: conn, user: user, section: section, page_3: page_3} = ctx
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      _first_attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+      refute has_element?(view, "div[id='attempts_summary_with_tooltip']", "Attempts 0/5")
+      refute has_element?(view, "button[id='begin_attempt_button']", "Begin 1st Attempt")
+      assert has_element?(view, "div[role='page content']")
+      assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
+
+      view
+      |> element("button[id=submit_answers]", "Submit Answers")
+      |> render_hook("finalize_attempt")
+
+      refute_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.CheckCertification,
+        args: %{"user_id" => user.id, "section_id" => section.id}
+      )
+    end
+
     test "does not see prologue but adaptive page when an attempt is in progress", %{
       conn: conn,
       user: user,
@@ -1591,6 +1644,104 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
 
       # verify the like button is styled as primary since it was liked by the current user
       assert like_button_html =~ "<path class=\"stroke-primary\""
+    end
+
+    test "skips CheckCertification if require_certification_check is false when creating a student note",
+         ctx do
+      %{conn: conn, section: section, user: user, page_1: page_1} = ctx
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      # We need this initial post to show the annotation points
+      {:ok, _post_1} = create_post(user, section, page_1, "This is a class note")
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      view
+      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> render_click()
+
+      # change the selected tab to class notes -> search should be retriggered
+      view
+      |> element("button[phx-click='select_tab'][phx-value-tab='class_notes']")
+      |> render_click()
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      render_hook(view, "update_point_markers", %{
+        point_markers: [
+          %{"id" => "158828742", "top" => 100.0000},
+          %{"id" => "3371710400", "top" => 150.0000}
+        ]
+      })
+
+      # Click on annotation point
+      view
+      |> element("button[phx-click='toggle_annotation_point']", "1")
+      |> render_click()
+
+      # Focus on input, this open the textarea
+      view
+      |> element("input[phx-focus='begin_create_annotation']")
+      |> render_focus()
+
+      # Submit form
+      view
+      |> element("form[phx-submit='create_annotation'")
+      |> render_submit(%{"content" => "New Note"})
+
+      refute_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.CheckCertification,
+        args: %{"user_id" => user.id, "section_id" => section.id}
+      )
+    end
+
+    test "triggers CheckCertification when creating an student note", ctx do
+      %{conn: conn, section: section, user: user, page_1: page_1} = ctx
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+      section = Sections.update_section!(section, %{certificate_enabled: true})
+      # We need this initial post to show the annotation points
+      {:ok, _post_1} = create_post(user, section, page_1, "This is a class note")
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      view
+      |> element("button[phx-click='toggle_notes_sidebar']")
+      |> render_click()
+
+      # change the selected tab to class notes -> search should be retriggered
+      view
+      |> element("button[phx-click='select_tab'][phx-value-tab='class_notes']")
+      |> render_click()
+
+      wait_while(fn -> has_element?(view, "svg.loading") end)
+
+      render_hook(view, "update_point_markers", %{
+        point_markers: [
+          %{"id" => "158828742", "top" => 100.0000},
+          %{"id" => "3371710400", "top" => 150.0000}
+        ]
+      })
+
+      # Click on annotation point
+      view
+      |> element("button[phx-click='toggle_annotation_point']", "1")
+      |> render_click()
+
+      # Focus on input, this open the textarea
+      view
+      |> element("input[phx-focus='begin_create_annotation']")
+      |> render_focus()
+
+      # Submit form
+      view
+      |> element("form[phx-submit='create_annotation'")
+      |> render_submit(%{"content" => "New Note"})
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.CheckCertification,
+        args: %{"user_id" => user.id, "section_id" => section.id}
+      )
     end
 
     @tag :skip
