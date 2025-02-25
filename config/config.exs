@@ -214,7 +214,8 @@ config :oli, Oban,
     objectives: 3,
     mailer: 10,
     certificate_pdf: 3,
-    certificate_mailer: 3
+    certificate_mailer: 3,
+    certificate_eligibility: 10
   ]
 
 config :ex_money,
