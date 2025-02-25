@@ -599,14 +599,14 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     } do
       admin =
         author_fixture(%{
-          system_role_id: Oli.Accounts.SystemRole.role_id().system_admin,
+          system_role_id: Oli.Accounts.SystemRole.role_id().system_admin
         })
 
       # log out instructor, leaving only admin logged in
-      conn = conn
+      conn =
+        conn
         |> OliWeb.UserAuth.clear_all_session_data()
         |> OliWeb.AuthorAuth.create_session(admin)
-
 
       {:ok, view, html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
 
@@ -628,7 +628,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       assert html =~
                ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
     end
-
   end
 
   describe "user can access when is logged in as an instructor and is enrolled in the section" do
