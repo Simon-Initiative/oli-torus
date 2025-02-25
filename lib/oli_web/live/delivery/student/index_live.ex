@@ -537,10 +537,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           >
             <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
           </.link>
-          <.certificate_progress
-            :if={@certificate_enabled}
-            certificate_progress={@certificate_progress}
-          />
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
             <div class="text-base font-normal tracking-tight grow">
@@ -548,6 +544,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </div>
           </div>
         <% end %>
+        <.certificate_progress
+          :if={@certificate_enabled}
+          certificate_progress={@certificate_progress}
+        />
       </div>
     </div>
     """
