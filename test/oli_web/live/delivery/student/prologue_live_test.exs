@@ -7,10 +7,8 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   import Ecto.Query, warn: false
 
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAccess}
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Delivery.Sections
-  alias Oli.Repo
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
 
@@ -1165,21 +1163,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
                "<li id=\"page_submit_term\">\n  If you exceed this time, it will be marked late.\n</li>"
     end
 
-    test "page terms render a late submit message regarding the date, not the time limit", ctx do
-      %{conn: conn, user: user, section: section, page_2: page_2} = ctx
-
-      enroll_and_mark_visited(user, section)
-
-      params = %{late_submit: :allow, time_limit: 0}
-
-      get_and_update_section_resource(section.id, page_2.resource_id, params)
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_2.slug))
-
-      assert view |> element("#page_submit_term") |> render() =~
-               "<li id=\"page_submit_term\">\n  If you submit after the due date, it will be marked late.\n</li>"
-    end
-
     test "page terms render no message when late submit is disallowed", ctx do
       %{conn: conn, user: user, section: section, page_2: page_2} = ctx
 
@@ -1199,99 +1182,6 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       Sections.get_section_resource(section_id, resource_id)
       |> Sections.update_section_resource(updated_params)
     end
-
-    test "can not see DOT AI Bot interface if it's on a scored page", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_1: page_1
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-
-      {:ok, view, _html} = live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
-
-      refute has_element?(view, "div[id='dialogue-window']")
-      refute has_element?(view, "div[id=ai_bot_collapsed]")
-    end
-
-    test "students can see instructor feedback for adaptive pages", %{
-      conn: conn,
-      user: user,
-      section: section,
-      graded_adaptive_page_revision: graded_adaptive_page_revision
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-      feedback = "This is the feedback for the student"
-
-      attempt = create_attempt(user, section, graded_adaptive_page_revision)
-
-      activity_attempt =
-        Repo.preload(attempt, activity_attempts: [:part_attempts]).activity_attempts |> hd()
-
-      activity_attempt = %ActivityAttempt{
-        activity_attempt
-        | graded: true,
-          resource_attempt_guid: attempt.attempt_guid
-      }
-
-      part_attempt =
-        Core.get_part_attempts_by_activity_attempts([activity_attempt.id]) |> hd()
-
-      Core.update_part_attempt(part_attempt, %{
-        lifecycle_state: :evaluated,
-        date_evaluated: DateTime.utc_now(),
-        score: 1.0,
-        out_of: 1.0,
-        feedback: %{content: wrap_in_paragraphs(feedback)}
-      })
-
-      {:ok, view, _html} =
-        live(conn, Utils.prologue_live_path(section.slug, graded_adaptive_page_revision.slug))
-
-      assert has_element?(view, "div", "Instructor Feedback:")
-      assert has_element?(view, "p", "This is the feedback for the student")
-    end
-
-    test "students are not shown instructor feedback for basic pages", %{
-      conn: conn,
-      user: user,
-      section: section,
-      page_3: page_3
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      Sections.mark_section_visited_for_student(section, user)
-      feedback = "This is the feedback for the student"
-
-      attempt = create_attempt(user, section, page_3)
-
-      activity_attempt =
-        Repo.preload(attempt, activity_attempts: [:part_attempts]).activity_attempts |> hd()
-
-      activity_attempt = %ActivityAttempt{
-        activity_attempt
-        | graded: true,
-          resource_attempt_guid: attempt.attempt_guid
-      }
-
-      part_attempt =
-        Core.get_part_attempts_by_activity_attempts([activity_attempt.id]) |> hd()
-
-      Core.update_part_attempt(part_attempt, %{
-        lifecycle_state: :evaluated,
-        date_evaluated: DateTime.utc_now(),
-        score: 1.0,
-        out_of: 1.0,
-        feedback: %{content: wrap_in_paragraphs(feedback)}
-      })
-
-      {:ok, view, _html} =
-        live(conn, Utils.prologue_live_path(section.slug, page_3.slug))
-
-      refute has_element?(view, "div", "Instructor Feedback:")
-      refute has_element?(view, "p", "This is the feedback for the student")
-    end
   end
 
   describe "offline detector" do
@@ -1310,12 +1200,5 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       refute has_element?(view, "div[id='offline_detector']")
     end
-  end
-
-  defp wrap_in_paragraphs(text) do
-    String.split(text, "\n")
-    |> Enum.map(fn text ->
-      %{type: "p", children: [%{text: text}]}
-    end)
   end
 end

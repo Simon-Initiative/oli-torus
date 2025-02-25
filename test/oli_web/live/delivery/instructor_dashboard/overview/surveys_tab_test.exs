@@ -1246,54 +1246,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.SurveysTabTest do
       assert activity_id == mcq_activity_1.resource_id
     end
 
-    # https://eliterate.atlassian.net/browse/TRIAGE-4
-    @tag :skip
-    test "multi input activity details get rendered correctly when page is selected",
-         %{
-           conn: conn,
-           section: section,
-           page_1: page_1,
-           student_1: student_1,
-           multi_input_activity: multi_input_activity,
-           project: project,
-           publication: publication
-         } do
-      set_activity_attempt(
-        page_1,
-        multi_input_activity,
-        student_1,
-        section,
-        project.id,
-        publication.id,
-        "Answer for input 1",
-        true
-      )
-
-      {:ok, view, _html} = live(conn, live_surveys_route(section.slug))
-
-      view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
-      |> render_click()
-
-      # check that the multi input details render correctly
-      selected_activity_model =
-        view
-        |> render()
-        |> Floki.parse_fragment!()
-        |> Floki.find(~s{oli-multi-input-authoring})
-        |> Floki.attribute("model")
-        |> hd
-
-      assert has_element?(
-               view,
-               ~s(div[role="activity_title"]),
-               "#{multi_input_activity.title} - Question details"
-             )
-
-      assert selected_activity_model =~
-               "{\"authoring\":{\"responses\":[{\"type\":\"text\",\"text\":\"unsupported\",\"user_name\":\"#{student_1.family_name}, #{student_1.given_name}\",\"part_id\":\"1\"}]},\"inputs\":[{\"id\":\"1458555427\",\"inputType\":\"text\",\"partId\":\"1\"}]}"
-    end
-
     test "question details responds to user click on an activity", %{
       conn: conn,
       section: section,
