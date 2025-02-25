@@ -1,4 +1,4 @@
-defmodule OliWeb.LiveSessionPlugs.SetGrantedCertificate do
+defmodule OliWeb.LiveSessionPlugs.SetRequireCertificationCheck do
   import Phoenix.Component, only: [assign: 2]
   import Phoenix.LiveView, only: [connected?: 1]
 
