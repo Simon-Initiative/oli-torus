@@ -525,7 +525,6 @@ defmodule Oli.Delivery.GrantedCertificates do
     end
   end
 
-  # AQUI
   defp log_error(error, user_id, reference_id, operation) do
     message =
       case operation do
