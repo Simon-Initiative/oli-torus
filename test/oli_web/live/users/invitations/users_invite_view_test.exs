@@ -7,6 +7,7 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
+  alias Oli.AssentAuth.UserIdentity
 
   def create_section_and_user(%{conn: conn}) do
     %{conn: conn, section: insert(:section), user: insert(:user)}
@@ -18,6 +19,10 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
     # non existing users are inserted in the DB with no password
     # (password is set by the user in the invitation redemption process)
     insert(:user, password: nil)
+  end
+
+  defp social_login_user() do
+      insert(:user, user_identities: [%UserIdentity{uid: "123", provider: "google"}])
   end
 
   defp insert_invitation_token_and_enrollment(
@@ -163,6 +168,58 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
       assert just_created_user.invitation_accepted_at == ~U[2024-12-20 20:00:00Z]
       assert just_created_user.email_confirmed_at == ~U[2024-12-20 20:00:00Z]
       assert just_created_user.email_verified
+
+      assert updated_enrollment.status == :enrolled
+    end
+
+    test "a social login student can accept an invitation", %{conn: conn, section: section} do
+      social_student = social_login_user()
+
+      conn = log_in_user(conn, social_student)
+
+      %{encode64_token: encode64_token, enrollment: initial_enrollment} =
+        insert_invitation_token_and_enrollment(
+          social_student,
+          section,
+          "a_pending_invitation_token",
+          "student"
+        )
+
+      assert initial_enrollment.status == :pending_confirmation
+
+      {:ok, view, _html} = live(conn, users_invite_url(encode64_token))
+
+      view
+      |> element("button", "Accept")
+      |> render_click()
+
+      updated_enrollment = Sections.get_enrollment(section.slug, social_student.id)
+
+      assert updated_enrollment.status == :enrolled
+    end
+
+    test "a social login instructor can accept an invitation", %{conn: conn, section: section} do
+      social_student = social_login_user()
+
+      conn = log_in_user(conn, social_student)
+
+      %{encode64_token: encode64_token, enrollment: initial_enrollment} =
+        insert_invitation_token_and_enrollment(
+          social_student,
+          section,
+          "a_pending_invitation_token",
+          "instructor"
+        )
+
+      assert initial_enrollment.status == :pending_confirmation
+
+      {:ok, view, _html} = live(conn, users_invite_url(encode64_token))
+
+      view
+      |> element("button", "Accept")
+      |> render_click()
+
+      updated_enrollment = Sections.get_enrollment(section.slug, social_student.id)
 
       assert updated_enrollment.status == :enrolled
     end
@@ -335,6 +392,31 @@ defmodule OliWeb.Users.Invitations.UsersInviteViewTest do
 
       updated_enrollment =
         Sections.get_enrollment(section.slug, non_existing_instructor.id, filter_by_status: false)
+
+      assert updated_enrollment.status == :rejected
+    end
+
+    test "social login student can reject an invitation", %{conn: conn, section: section} do
+      social_student = social_login_user()
+
+      %{encode64_token: encode64_token, enrollment: initial_enrollment} =
+        insert_invitation_token_and_enrollment(
+          social_student,
+          section,
+          "a_pending_invitation_token",
+          "student"
+        )
+
+      assert initial_enrollment.status == :pending_confirmation
+
+      {:ok, view, _html} = live(conn, users_invite_url(encode64_token))
+
+      view
+      |> element("button", "Reject invitation")
+      |> render_click()
+
+      updated_enrollment =
+        Sections.get_enrollment(section.slug, social_student.id, filter_by_status: false)
 
       assert updated_enrollment.status == :rejected
     end
