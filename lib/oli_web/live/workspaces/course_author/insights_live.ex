@@ -7,8 +7,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
 
   alias Oli.{Activities, Publishing}
   alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions}
-  alias Oli.Authoring.{Broadcaster, Course}
-  alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo
@@ -69,16 +67,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
     {:ok, table_model} =
       ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
-    {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
-      case Course.analytics_export_status(project) do
-        {:available, url, timestamp} -> {:available, url, timestamp}
-        {:expired, _, _} -> {:expired, nil, nil}
-        {status} -> {status, nil, nil}
-      end
-
-    # Subscribe to any raw analytics snapshot progress updates for this project
-    Subscriber.subscribe_to_analytics_export_status(project.slug)
-
     {:ok,
      assign(socket,
        resource_slug: project.slug,
@@ -90,9 +78,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
        parent_pages: parent_pages,
        selected: :by_activity,
        latest_publication: latest_publication,
-       analytics_export_status: analytics_export_status,
-       analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp,
        products: products,
        sections: sections,
        is_product: false,
@@ -279,24 +264,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
     )
   end
 
-  def handle_event("generate_analytics_snapshot", _params, socket) do
-    project = socket.assigns.project
-
-    case Course.generate_analytics_snapshot(project) do
-      {:ok, _job} ->
-        Broadcaster.broadcast_analytics_export_status(project.slug, {:in_progress})
-
-        {:noreply, socket}
-
-      {:error, _changeset} ->
-        socket =
-          socket
-          |> put_flash(:error, "Raw analytics snapshot could not be generated.")
-
-        {:noreply, socket}
-    end
-  end
-
   def handle_event(event, params, socket) do
     delegate_to(
       {event, params, socket, &patch_with/2},
@@ -335,33 +302,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
       |> Enum.to_list()
 
     change_section_ids(socket, section_ids)
-  end
-
-  def handle_info(
-        {:analytics_export_status,
-         {:available, analytics_export_url, analytics_export_timestamp}},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       analytics_export_status: :available,
-       analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp
-     )}
-  end
-
-  def handle_info(
-        {:analytics_export_status, {:error, _e}},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       analytics_export_status: :error
-     )}
-  end
-
-  def handle_info({:analytics_export_status, {status}}, socket) do
-    {:noreply, assign(socket, analytics_export_status: status)}
   end
 
   # Runs a query to find all sections for this project which have a

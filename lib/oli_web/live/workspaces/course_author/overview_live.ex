@@ -394,30 +394,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           />
         </div>
 
-        <div :if={@is_admin} class="flex items-center">
-          <%= case @latest_publication do %>
-            <% nil -> %>
-              <.button
-                variant={:link}
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
-                disabled
-              >
-                Datashop Analytics
-              </.button>
-              <span>
-                Project must be published to create a <.datashop_link /> snapshot for download
-              </span>
-            <% _pub -> %>
-              <.link
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
-                navigate={~p"/workspaces/course_author/#{@project.slug}/datashop"}
-              >
-                Datashop Analytics
-              </.link>
-              <span>Create a <.datashop_link /> snapshot for download</span>
-          <% end %>
-        </div>
-
         <div class="flex items-center mt-8">
           <button
             type="button"
@@ -726,16 +702,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
-
-  defp datashop_link(assigns) do
-    ~H"""
-    <a
-      class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline py-2 external"
-      href="https://pslcdatashop.web.cmu.edu/"
-      target="_blank"
-    >
-      datashop
-    </a>
-    """
-  end
 end
