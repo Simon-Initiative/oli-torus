@@ -4953,50 +4953,6 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Maps each resource with its parent container label, being the label (if any) like
-  <Container Label> <Numbering Index>: <Container Title>
-
-  For example:
-
-  %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
-  """
-  def map_resources_with_container_labels(section_slug, resource_ids) do
-    resource_type_id = Oli.Resources.ResourceType.id_for_container()
-
-    containers =
-      from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
-        select: %{
-          id: rev.resource_id,
-          title: rev.title,
-          numbering_level: sr.numbering_level,
-          numbering_index: sr.numbering_index,
-          children: rev.children,
-          customizations: s.customizations
-        }
-      )
-      |> Repo.all()
-
-    Enum.map(resource_ids, fn page_id ->
-      {page_id,
-       case Enum.find(containers, fn container ->
-              page_id in container.children
-            end) do
-         nil ->
-           {nil, nil}
-
-         %{numbering_level: 0} ->
-           {nil, nil}
-
-         c ->
-           {c.id,
-            ~s{#{get_container_label_and_numbering(c.numbering_level, c.numbering_index, c.customizations)}: #{c.title}}}
-       end}
-    end)
-    |> Enum.into(%{})
-  end
-
-  @doc """
   Returns the container label and numbering for a given container.
   If the container has any customizations, they are considered in the label.
 

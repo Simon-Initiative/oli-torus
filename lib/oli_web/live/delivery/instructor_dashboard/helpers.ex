@@ -102,20 +102,25 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
 
   defp return_page(graded_pages_and_section_resources, section, _students) do
 
-    page_ids = Enum.map(graded_pages_and_section_resources, fn r -> r.resource_id end)
-
-    container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
+    # Create a map of all section resource ids to their parent container labels
+    container_labels = Oli.Delivery.Sections.SectionResourceDepot.containers(section.id)
+    |> Enum.reduce(%{}, fn container, acc ->
+      Enum.reduce(container.children, acc, fn sr_id, acc ->
+        label = Sections.get_container_label_and_numbering(container.numbering_level, container.numbering_index, section.customizations)
+        Map.put(acc, sr_id, {container.id, label})
+      end)
+    end)
 
     graded_pages_and_section_resources
     |> Enum.with_index(1)
     |> Enum.map(fn {r, index} ->
       Map.merge(r, %{
-        container_id: Map.get(container_labels, r.resource_id) |> elem(0),
+        container_id: Map.get(container_labels, r.id) |> elem(0),
         order: index,
         end_date: r.end_date,
         students_completion: nil,
         scheduling_type: r.scheduling_type,
-        container_label: Map.get(container_labels, r.resource_id) |> elem(1),
+        container_label: Map.get(container_labels, r.id) |> elem(1),
         avg_score: nil,
         total_attempts: nil
       })
