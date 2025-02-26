@@ -1,5 +1,6 @@
 defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponentTest do
   use OliWeb.ConnCase, async: true
+  use Oban.Testing, repo: Oli.Repo
 
   import LiveComponentTests
   import Phoenix.LiveViewTest
@@ -7,6 +8,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
   alias Oli.Delivery.GrantedCertificates
   alias Oli.Delivery.Sections.Certificate
+  alias Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
   alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Repo
   alias OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponent
@@ -179,7 +181,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       instructor: instructor
     } do
       granted_certificate =
-        update_granted_certificate(granted_certificate, %{state: :denied, url: "some_initial_url"})
+        update_granted_certificate(granted_certificate, %{
+          state: :denied,
+          url: "some_initial_url",
+          student_email_sent: true
+        })
 
       attrs = %{
         id: "certificate-state-component",
@@ -214,7 +220,13 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
       assert granted_certificate.state == :earned
       refute granted_certificate.url
+      refute granted_certificate.student_email_sent
       assert has_element?(lcd, "div[role='approved status']", "Approved")
+
+      assert_enqueued(
+        worker: GeneratePdf,
+        args: %{"granted_certificate_id" => granted_certificate.id, "send_email?" => false}
+      )
 
       ## from approved to denied
       lcd
@@ -230,6 +242,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
       assert granted_certificate.state == :denied
       refute granted_certificate.url
+      refute granted_certificate.student_email_sent
       assert has_element?(lcd, "div[role='denied status']", "Denied")
     end
 
@@ -275,6 +288,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
       assert granted_certificate.state == :earned
       assert has_element?(lcd, "div[role='approved status']", "Approved")
+      refute granted_certificate.student_email_sent
+
+      assert_enqueued(
+        worker: GeneratePdf,
+        args: %{"granted_certificate_id" => granted_certificate.id, "send_email?" => false}
+      )
 
       ## from approved to denied
       lcd
