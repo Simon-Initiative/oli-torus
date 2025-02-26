@@ -187,6 +187,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
           student_email_sent: true
         })
 
+      previous_gc_guid = granted_certificate.guid
+
       attrs = %{
         id: "certificate-state-component",
         module: StateApprovalComponent,
@@ -215,18 +217,20 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       |> element("button[phx-value-required_state=earned]", "Approve")
       |> render_click()
 
-      granted_certificate =
-        GrantedCertificates.get_granted_certificate_by_guid(granted_certificate.guid)
+      granted_certificate = Repo.get_by!(GrantedCertificate, id: granted_certificate.id)
 
       assert granted_certificate.state == :earned
       refute granted_certificate.url
       refute granted_certificate.student_email_sent
+      assert previous_gc_guid != granted_certificate.guid
       assert has_element?(lcd, "div[role='approved status']", "Approved")
 
       assert_enqueued(
         worker: GeneratePdf,
         args: %{"granted_certificate_id" => granted_certificate.id, "send_email?" => false}
       )
+
+      previous_gc_guid = granted_certificate.guid
 
       ## from approved to denied
       lcd
@@ -237,12 +241,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       |> element("button[phx-value-required_state=denied]", "Deny")
       |> render_click()
 
-      granted_certificate =
-        GrantedCertificates.get_granted_certificate_by_guid(granted_certificate.guid)
+      granted_certificate = Repo.get_by!(GrantedCertificate, id: granted_certificate.id)
 
       assert granted_certificate.state == :denied
       refute granted_certificate.url
       refute granted_certificate.student_email_sent
+      assert previous_gc_guid != granted_certificate.guid
       assert has_element?(lcd, "div[role='denied status']", "Denied")
     end
 
