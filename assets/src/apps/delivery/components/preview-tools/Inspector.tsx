@@ -120,7 +120,10 @@ const Inspector: React.FC<InspectorProps> = ({ reviewMode, isInstructor }) => {
       const allState = getEnvState(defaultGlobalEnv);
       const variableTypes: Array<any> = getVariablesTypeState(allState);
       const globalStateAsVars = Object.keys(allState).reduce((collect: any, key) => {
-        const result = variableTypes?.filter((part) => key.includes(part.key));
+        // key contains the activityId as well so we remove it then do the comparison and get the variable type.
+        const partItem = key.split('|');
+        const partVariable = partItem?.length > 1 ? partItem[1] : '';
+        const result = variableTypes?.filter((part) => partVariable == part.key);
         const variableType = result?.length ? result[0].type : 0;
         //We need this because when the variable type is ENUM, we get the allowed  values that gets displayed in dropdown
         const variableAllowedValues = result?.length ? result[0]?.allowedValues || null : null;

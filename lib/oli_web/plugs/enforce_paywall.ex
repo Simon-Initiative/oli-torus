@@ -1,4 +1,4 @@
-defmodule Oli.Plugs.EnforceEnrollAndPaywall do
+defmodule Oli.Plugs.EnforcePaywall do
   import Plug.Conn
   import Phoenix.Controller
 
@@ -8,8 +8,6 @@ defmodule Oli.Plugs.EnforceEnrollAndPaywall do
 
   def init(opts), do: opts
 
-  # user should be enrolled before accessing any delivery route (via lms or open and
-  # free invitation) so if it's not, redirect to not authorized
   # show guard when paywall is required and user has not paid
   def call(conn, _opts) do
     section = conn.assigns.section

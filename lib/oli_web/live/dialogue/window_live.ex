@@ -262,8 +262,8 @@ defmodule OliWeb.Dialogue.WindowLive do
         |> JS.push("hide_teaser")
         |> JS.focus(to: "#ai_bot_input")
       }
-      style="height: 150px; width: 200px;"
-      class={"p-1 shadow-lg bg-white dark:bg-[#0A0A17] flex flex-col " <> if(@teaser_visible, do: "", else: "hidden")}
+      style="height: 150px; width: 200px; margin-right: 35px;"
+      class={"p-1 shadow-lg bg-white dark:bg-[#0A0A17] rounded-md flex flex-col " <> if(@teaser_visible, do: "", else: "hidden")}
     >
       <div class="flex flex-none justify-right">
         <button

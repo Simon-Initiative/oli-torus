@@ -653,12 +653,12 @@ defmodule Oli.Factory do
   def certificate_factory() do
     %Certificate{
       title: "#{sequence("certificate")}",
+      description: "#{sequence("certificate description")}",
       required_discussion_posts: 1,
       required_class_notes: 1,
       min_percentage_for_completion: 50,
       min_percentage_for_distinction: 80,
-      section: anonymous_build(:section),
-      description: "some cert desc"
+      section: anonymous_build(:section)
     }
   end
 

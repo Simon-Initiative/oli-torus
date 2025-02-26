@@ -2095,7 +2095,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "can not access Gallery view (default one) when not enrolled to course", %{
@@ -2105,7 +2105,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.learn_live_path(section.slug))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
   end
 

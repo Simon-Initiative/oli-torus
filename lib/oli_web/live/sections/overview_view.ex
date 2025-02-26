@@ -226,6 +226,23 @@ defmodule OliWeb.Sections.OverviewView do
           </li>
         </ul>
       </Group.render>
+      <Group.render
+        label="Certificate Settings"
+        description="Design and deliver digital credentials to students that complete this course."
+        description_class="max-w-[30rem]"
+      >
+        <div class="flex flex-col md:col-span-8 gap-2">
+          <div>
+            This product <b>does <%= unless @section.certificate_enabled, do: "not" %></b>
+            currently produce a certificate.
+          </div>
+          <div :if={@section.certificate_enabled}>
+            <a href={~p"/sections/#{@section.slug}/certificate_settings"}>
+              Manage Certificate Settings
+            </a>
+          </div>
+        </div>
+      </Group.render>
       <Group.render label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
           <%= if @section.open_and_free do %>
@@ -284,6 +301,7 @@ defmodule OliWeb.Sections.OverviewView do
       <Group.render
         label="Required Survey"
         description="Show a required to students who access the course for the first time"
+        description_class="max-w-[30rem]"
       >
         <%= if @show_required_section_config do %>
           <.live_component

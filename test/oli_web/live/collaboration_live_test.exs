@@ -274,7 +274,7 @@ defmodule OliWeb.CollaborationLiveTest do
       assert conn
              |> get(live_view_student_page(section.slug, page_revision.slug))
              |> html_response(302) =~
-               "You are being <a href=\"/unauthorized\">redirected</a>"
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected</a>"
     end
   end
 

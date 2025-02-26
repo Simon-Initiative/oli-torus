@@ -73,6 +73,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
        total_count: total_count,
        params: params,
        section: assigns.section,
+       user: assigns.user,
        ctx: assigns.ctx,
        assessments: assigns.assessments,
        form_id: UUID.uuid4(),
@@ -444,7 +445,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   def handle_event("confirm_bulk_apply", _params, socket) do
     %{
       section: section,
-      ctx: %{user: user},
+      user: user,
       assessments: assessments,
       modal_assigns: %{base_assessment: base_assessment}
     } =
@@ -571,7 +572,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
   end
 
   def handle_event("update_setting", params, socket) do
-    %{section: section, ctx: %{user: user} = ctx, assessments: assessments} = socket.assigns
+    %{section: section, ctx: ctx, user: user, assessments: assessments} = socket.assigns
     resources = %{section: section, user: user, assessments: assessments}
 
     case decode_target(params, ctx) do
@@ -640,7 +641,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
         },
         socket
       ) do
-    %{section: section, ctx: %{user: user}} = socket.assigns
+    %{section: section, user: user} = socket.assigns
 
     utc_datetime =
       FormatDateTime.datestring_to_utc_datetime(
@@ -806,7 +807,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsTable do
 
   defp on_edit_date(date_field, new_date, socket) do
     assessment = socket.assigns.selected_assessment
-    %{section: section, ctx: %{user: user}} = socket.assigns
+    %{section: section, user: user} = socket.assigns
 
     {new_start_date, new_end_date, message} =
       maybe_adjust_dates(date_field, new_date, assessment, socket.assigns.ctx)

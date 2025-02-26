@@ -257,15 +257,9 @@ defmodule OliWeb.Components.Delivery.InstructorDashboard do
     <div class="w-full bg-delivery-instructor-dashboard-header text-white py-8">
       <div class="container mx-auto flex flex-row justify-between">
         <div class="flex-1 flex items-center text-[1.5em]">
-          <div class="font-bold text-slate-300">
+          <div class="px-[4px] font-bold text-slate-300">
             <%= @section.title %>
           </div>
-          <%!-- <div class="border-l border-white ml-4 pl-4">
-            Section 2360
-          </div> --%>
-          <%!-- <div class="font-thin border-l border-white ml-4 pl-4">
-            Mon/Wed 12:00 PM
-          </div> --%>
         </div>
       </div>
     </div>
