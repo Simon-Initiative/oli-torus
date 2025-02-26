@@ -147,7 +147,7 @@ defmodule Oli.Conversation.Triggers do
 
   If a matching trigger is found, return the trigger, otherwise return nil.
   """
-  def check_for_hint_trigger(activity_attempt, part_attempt, model, hint) do
+  def check_for_hint_trigger(activity_attempt, part_attempt, model, hint, set_resource_id \\ true) do
     part = Enum.filter(model.parts, fn p -> p.id == part_attempt.part_id end) |> hd()
 
     hint_ordinal =
@@ -162,14 +162,17 @@ defmodule Oli.Conversation.Triggers do
       [trigger | _other] ->
 
         # we have to look up the page id for this activity attempt
-        page_id = Repo.one(
-          from(ra in ResourceAttempt,
-            join: r in ResourceAccess,
-            on: ra.resource_access_id == r.id,
-            where: ra.id == ^activity_attempt.resource_attempt_id,
-            select: r.resource_id
+        page_id = case set_resource_id do
+          true ->  Repo.one(
+            from(ra in ResourceAttempt,
+              join: r in ResourceAccess,
+              on: ra.resource_access_id == r.id,
+              where: ra.id == ^activity_attempt.resource_attempt_id,
+              select: r.resource_id
+            )
           )
-        )
+          false -> nil
+        end
 
         %Trigger{
           trigger_type: :hint,
