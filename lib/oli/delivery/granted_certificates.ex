@@ -404,27 +404,41 @@ defmodule Oli.Delivery.GrantedCertificates do
   end
 
   _doc = """
-  Evaluates whether a user meets the grading thresholds required for certificate eligibility.
-
-  This function checks the user's scores on required assignments within a section to determine
-  if they qualify for a certificate. It considers both the minimum percentage required for
-  completion and the higher threshold for distinction, depending on whether the user has already
-  been granted a certificate.
+  Evaluates whether a user has met the required percentage thresholds for completion
+  and/or distinction based on their performance in graded assignments.
 
   ## Parameters
-    - `user_id`: The ID of the user.
-    - `section_id`: The ID of the section.
-    - `certificate`: The certificate associated with the section.
-    - `granted_certificate`: The user's granted certificate or `nil` if none exists.
+
+  - `user_id` (integer): The ID of the user being evaluated.
+  - `section_id` (integer): The ID of the section in which the user is enrolled.
+  - `certificate` (map or struct): The certificate configuration, containing the required
+  minimum percentages for completion and distinction.
+  - `granted_certificate` (GrantedCertificate | nil): If present, represents an existing granted
+  certificate for the user. If the user already has a certificate without distinction,
+  only the distinction criteria are checked.
 
   ## Returns
-    - If the user already has a certificate (without distinction):
-      - A tuple `{:certificate_earned, distinction_status}`, where `distinction_status` indicates
-        whether the user met the distinction threshold.
-    - If the user has no granted certificate:
-      - A tuple `{completion_status, distinction_status}`, where:
-        - `completion_status` indicates whether the user met the minimum percentage for completion.
-        - `distinction_status` indicates whether the user met the minimum percentage for distinction.
+
+  - `{atom, atom}`: A tuple where:
+  - The first atom represents whether the user has met the completion requirement.
+    Possible values:
+    - `:certificate_earned` (when checking only for distinction)
+    - `:passed_min_percentage_for_completion`
+    - `:failed_min_percentage_for_completion`
+  - The second atom represents whether the user has met the distinction requirement.
+    Possible values:
+    - `:passed_min_percentage_for_distinction`
+    - `:failed_min_percentage_for_distinction`
+
+  ## Behavior
+
+  - If the user already has a certificate without distinction, only the distinction requirement
+  is checked (`granted_certificate.with_distinction == false`).
+  - Otherwise, both the completion and distinction requirements are evaluated.
+  - Uses a database query to determine whether ALL required graded assignments have been
+  completed with the minimum percentage score.
+  - If any required assignment is missing or falls below the required percentage,
+  the corresponding requirement is marked as failed.
   """
 
   defp check_graded_page_thlds(
@@ -435,64 +449,61 @@ defmodule Oli.Delivery.GrantedCertificates do
        ) do
     min_percentage_for_distinction = certificate.min_percentage_for_distinction
     required_assignment_ids = get_required_assignment_ids(section_id, certificate)
-    total_required_assignments = Enum.count(required_assignment_ids)
 
-    current_percentage =
-      from(ra in ResourceAccess,
-        where: ra.section_id == ^section_id,
-        where: ra.user_id == ^user_id,
-        where: ra.resource_id in ^required_assignment_ids,
-        select:
-          fragment(
-            "COALESCE(SUM(? / ? * 100) / ?, 0.0)",
-            ra.score,
-            ra.out_of,
-            ^total_required_assignments
-          )
-      )
-      |> Oli.Repo.one()
-
-    distinction_result =
-      if current_percentage >= min_percentage_for_distinction,
-        do: :passed_min_percentage_for_distinction,
-        else: :failed_min_percentage_for_distinction
-
-    {:certificate_earned, distinction_result}
+    from(
+      required in fragment("SELECT unnest(?::bigint[]) AS resource_id", ^required_assignment_ids),
+      left_join: ra in ResourceAccess,
+      on:
+        ra.resource_id == required.resource_id and
+          ra.section_id == ^section_id and
+          ra.user_id == ^user_id,
+      select:
+        {:certificate_earned,
+         fragment(
+           "CASE WHEN bool_and(COALESCE(COALESCE(?, 0) / NULLIF(COALESCE(?, 100), 0) * 100 >= ?, false)) THEN ? ELSE ? END",
+           ra.score,
+           ra.out_of,
+           ^min_percentage_for_distinction,
+           "passed_min_percentage_for_distinction",
+           "failed_min_percentage_for_distinction"
+         )}
+    )
+    |> Repo.one()
+    |> then(fn {left, right} -> {left, String.to_atom(right)} end)
   end
 
-  defp check_graded_page_thlds(user_id, section_id, certificate, nil) do
+  defp check_graded_page_thlds(user_id, section_id, certificate, _GrantedCertificate = nil) do
     min_percentage_for_completion = certificate.min_percentage_for_completion
     min_percentage_for_distinction = certificate.min_percentage_for_distinction
     required_assignment_ids = get_required_assignment_ids(section_id, certificate)
 
-    total_required_assignments = Enum.count(required_assignment_ids)
-
-    current_percentage =
-      from(ra in ResourceAccess,
-        where: ra.section_id == ^section_id,
-        where: ra.user_id == ^user_id,
-        where: ra.resource_id in ^required_assignment_ids,
-        select:
-          fragment(
-            "COALESCE(SUM(? / ? * 100) / ?, 0.0)",
-            ra.score,
-            ra.out_of,
-            ^total_required_assignments
-          )
-      )
-      |> Oli.Repo.one()
-
-    completion_result =
-      if current_percentage >= min_percentage_for_completion,
-        do: :passed_min_percentage_for_completion,
-        else: :failed_min_percentage_for_completion
-
-    distinction_result =
-      if current_percentage >= min_percentage_for_distinction,
-        do: :passed_min_percentage_for_distinction,
-        else: :failed_min_percentage_for_distinction
-
-    {completion_result, distinction_result}
+    from(
+      required in fragment("SELECT unnest(?::bigint[]) AS resource_id", ^required_assignment_ids),
+      left_join: ra in ResourceAccess,
+      on:
+        ra.resource_id == required.resource_id and
+          ra.section_id == ^section_id and
+          ra.user_id == ^user_id,
+      select:
+        {fragment(
+           "CASE WHEN bool_and(COALESCE(COALESCE(?, 0) / NULLIF(COALESCE(?, 100), 0) * 100 >= ?, false)) THEN ? ELSE ? END",
+           ra.score,
+           ra.out_of,
+           ^min_percentage_for_completion,
+           "passed_min_percentage_for_completion",
+           "failed_min_percentage_for_completion"
+         ),
+         fragment(
+           "CASE WHEN bool_and(COALESCE(COALESCE(?, 0) / NULLIF(COALESCE(?, 100), 0) * 100 >= ?, false)) THEN ? ELSE ? END",
+           ra.score,
+           ra.out_of,
+           ^min_percentage_for_distinction,
+           "passed_min_percentage_for_distinction",
+           "failed_min_percentage_for_distinction"
+         )}
+    )
+    |> Repo.one()
+    |> then(fn {left, right} -> {String.to_atom(left), String.to_atom(right)} end)
   end
 
   defp get_required_assignment_ids(section_id, certificate) do
