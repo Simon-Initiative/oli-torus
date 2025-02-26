@@ -2,7 +2,6 @@ defmodule Oli.Repo.Migrations.DropPublicationScope do
   use Ecto.Migration
 
   def up do
-
     execute("""
     DELETE FROM resource_summary WHERE publication_id != -1
     """)
@@ -58,6 +57,7 @@ defmodule Oli.Repo.Migrations.DropPublicationScope do
     alter table(:resource_summary) do
       add :publication_id, :integer, default: -1
     end
+
     alter table(:response_summary) do
       add :publication_id, :integer, default: -1
     end

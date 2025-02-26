@@ -198,7 +198,7 @@ defmodule Oli.Analytics.Summary do
       fn ctx -> [nil, ctx.section_id, nil] end,
 
       # Student specific
-      fn ctx -> [nil, ctx.section_id, ctx.user_id] end,
+      fn ctx -> [nil, ctx.section_id, ctx.user_id] end
     ]
   end
 
@@ -212,7 +212,7 @@ defmodule Oli.Analytics.Summary do
       fn ctx -> [ctx.project_id, nil] end,
 
       # Course section speficic, agnostic of publication
-      fn ctx -> [nil, ctx.section_id] end,
+      fn ctx -> [nil, ctx.section_id] end
     ]
   end
 
