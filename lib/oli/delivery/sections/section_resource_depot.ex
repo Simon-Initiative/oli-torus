@@ -103,7 +103,7 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
     Depot.query(
       @depot_desc,
       section_id,
-      [resource_type_id: container]
+      resource_type_id: container
     )
     |> Enum.sort_by(& &1.numbering_index)
   end
