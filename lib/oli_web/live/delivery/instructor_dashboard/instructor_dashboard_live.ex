@@ -105,17 +105,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:assessments, fn %{students: students} ->
-
         result = Helpers.get_assessments(socket.assigns.section, students)
 
         pid = self()
+
         Task.async(fn ->
           result_with_metrics = Helpers.load_metrics(result, socket.assigns.section, students)
           send(pid, {:assessments, result_with_metrics})
         end)
 
         result
-
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->
@@ -150,17 +149,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:practice_activities, fn %{students: students} ->
-
         result = Helpers.get_practice_pages(socket.assigns.section, students)
 
         pid = self()
+
         Task.async(fn ->
           result_with_metrics = Helpers.load_metrics(result, socket.assigns.section, students)
           send(pid, {:practice_activities, result_with_metrics})
         end)
 
         result
-
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->
@@ -198,13 +196,13 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         result = Helpers.get_assessments_with_surveys(socket.assigns.section, students)
 
         pid = self()
+
         Task.async(fn ->
           result_with_metrics = Helpers.load_metrics(result, socket.assigns.section, students)
           send(pid, {:surveys, result_with_metrics})
         end)
 
         result
-
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->

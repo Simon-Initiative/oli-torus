@@ -101,7 +101,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   def certificate_pending_approval_count(_students, _certificate), do: nil
 
   defp return_page(graded_pages_and_section_resources, section, _students) do
-
     # Create a map of all section resource ids to their parent container labels
     container_labels = Oli.Delivery.Sections.SectionResourceDepot.containers(section.id)
     |> Enum.reduce(%{}, fn container, acc ->
@@ -159,7 +158,6 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   end
 
   def get_assessments_with_surveys(section, students) do
-
     page_ids = DeliveryResolver.pages_with_surveys(section.slug)
 
     Oli.Delivery.Sections.SectionResourceDepot.get_pages(section.id, page_ids)

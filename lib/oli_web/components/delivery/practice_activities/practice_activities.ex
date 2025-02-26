@@ -232,12 +232,13 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           current_assessment.resource_id
         )
 
-      activities = ActivityHelpers.summarize_activity_performance(
-        section,
-        page_revision,
-        activity_types_map,
-        students
-      )
+      activities =
+        ActivityHelpers.summarize_activity_performance(
+          section,
+          page_revision,
+          activity_types_map,
+          students
+        )
 
       {:noreply,
        assign(
