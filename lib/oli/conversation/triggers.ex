@@ -2,7 +2,7 @@ defmodule Oli.Conversation.Triggers do
   require Logger
   import Ecto.Query
   alias Oli.Repo
-
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   alias Phoenix.PubSub
   alias Oli.Conversation.Trigger
   alias Oli.Activities.Model.{Part}
@@ -14,7 +14,7 @@ defmodule Oli.Conversation.Triggers do
     :content_block,
     :correct_answer,
     :incorrect_answer,
-    :hint_request,
+    :hint,
     :explanation,
     :targeted_feedback
   ]
@@ -37,7 +37,7 @@ defmodule Oli.Conversation.Triggers do
   def description(:incorrect_answer, data),
     do: "Answered incorrectly question: #{data["question"]}"
 
-  def description(:hint_request, data),
+  def description(:hint, data),
     do: "Requested a hint (id: #{data["ref_id"]}) from question: #{data["question"]}"
 
   def description(:explanation, data),
@@ -157,17 +157,28 @@ defmodule Oli.Conversation.Triggers do
       end
 
     case Enum.filter(part.triggers, fn t ->
-           t.trigger_type == :hint_request and t.ref_id == hint_ordinal
+           t.trigger_type == :hint and t.ref_id == hint_ordinal
          end) do
       [trigger | _other] ->
+
+        # we have to look up the page id for this activity attempt
+        page_id = Repo.one(
+          from(ra in ResourceAttempt,
+            join: r in ResourceAccess,
+            on: ra.resource_access_id == r.id,
+            where: ra.id == ^activity_attempt.resource_attempt_id,
+            select: r.resource_id
+          )
+        )
+
         %Trigger{
-          trigger_type: :hint_request,
+          trigger_type: :hint,
           data: %{
             "ref_id" => hint_ordinal,
-            "hint" => hint.hint,
+            "activity_attempt_guid" => activity_attempt.attempt_guid,
             "activity_id" => activity_attempt.resource_id
           },
-          resource_id: activity_attempt.resource_id,
+          resource_id: page_id,
           prompt: trigger.prompt
         }
 
