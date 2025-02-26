@@ -64,8 +64,14 @@ defmodule Oli.Delivery.GrantedCertificates do
   @doc """
   Creates a new granted certificate and schedules a job to generate the .pdf
   if the certificate has an :earned state.
+
+  An optional argument can be passed to indicate if we should send an email to the student
+  that has earned the certificate.
   """
-  def create_granted_certificate(attrs) do
+
+  def create_granted_certificate(attrs, opts \\ [send_email?: true])
+
+  def create_granted_certificate(attrs, opts) do
     attrs = Map.merge(attrs, %{issued_at: DateTime.utc_now()})
 
     %GrantedCertificate{}
@@ -76,7 +82,7 @@ defmodule Oli.Delivery.GrantedCertificates do
         # This oban job will create the pdf and update the granted_certificate.url
         # only for certificates with the :earned state (:denied ones do not need a .pdf)
         # after the job finishes, it will schedule another job to send an email to the student (Mailer Worker)
-        GeneratePdf.new(%{granted_certificate_id: id, send_email?: true})
+        GeneratePdf.new(%{granted_certificate_id: id, send_email?: opts[:send_email?]})
         |> Oban.insert()
 
         {:ok, granted_certificate}

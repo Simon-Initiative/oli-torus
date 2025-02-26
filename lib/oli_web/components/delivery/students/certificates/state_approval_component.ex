@@ -2,6 +2,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
   use OliWeb, :live_component
 
   alias Oli.Delivery.GrantedCertificates
+  alias Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
 
   alias OliWeb.Components.Delivery.Students.Certificates.{
     BulkCertificateStatusEmail,
@@ -16,7 +17,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     {:ok, assign(socket, %{is_editing: false})}
   end
 
-  def render(%{requires_instructor_approval: true, certificate_status: :pending} = assigns) do
+  def render(
+        %{requires_instructor_approval: true, certificate_status: :pending, is_editing: false} =
+          assigns
+      ) do
     ~H"""
     <div role="instructor pending approval status">
       <.approve_or_deny_buttons
@@ -126,15 +130,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     {:noreply, assign(socket, :is_editing, true)}
   end
 
-  def handle_event(
-        "update_certificate",
-        %{"required_state" => required_state, "current_state" => current_state},
-        socket
-      )
-      when required_state == current_state do
-    {:noreply, assign(socket, is_editing: false)}
-  end
-
+  # this handles the case where a student certificate is "in progress"
+  # and the instructor approves or denies it
   def handle_event(
         "update_certificate",
         %{"required_state" => required_state, "current_state" => "new_certificate_required"},
@@ -142,19 +139,22 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       ) do
     required_state = String.to_existing_atom(required_state)
 
-    case GrantedCertificates.create_granted_certificate(%{
-           user_id: socket.assigns.student.id,
-           certificate_id: socket.assigns.certificate_id,
-           state: required_state,
-           with_distinction: false,
-           guid: UUID.uuid4(),
-           issued_by: socket.assigns.issued_by_id,
-           issued_by_type: socket.assigns.issued_by_type,
-           issued_at: DateTime.utc_now(),
-           # the url will be provided later once the .pdf is generated
-           # (in case the certificate has an :earned state)
-           url: nil
-         }) do
+    case GrantedCertificates.create_granted_certificate(
+           %{
+             user_id: socket.assigns.student.id,
+             certificate_id: socket.assigns.certificate_id,
+             state: required_state,
+             with_distinction: false,
+             guid: UUID.uuid4(),
+             issued_by: socket.assigns.issued_by_id,
+             issued_by_type: socket.assigns.issued_by_type,
+             issued_at: DateTime.utc_now(),
+             # the url will be provided later once the .pdf is generated
+             # (in case the certificate has an :earned state)
+             url: nil
+           },
+           send_email?: false
+         ) do
       {:ok, granted_certificate} ->
         # show the bulk email notification component
         # (when manually granting a certificate, no email is sent to that student)
@@ -176,34 +176,81 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     end
   end
 
+  # this handles the case where an instructor edits the status of a student certificate
+  # but ends up selecting the same status as the current one
   def handle_event(
         "update_certificate",
         %{"required_state" => required_state, "current_state" => current_state},
-        socket
+        %{assigns: %{is_editing: true}} = socket
+      )
+      when required_state == current_state do
+    {:noreply, assign(socket, is_editing: false)}
+  end
+
+  # this handles the case where an instructor edits the status of a student certificate
+  def handle_event(
+        "update_certificate",
+        %{"required_state" => required_state},
+        %{assigns: %{is_editing: true}} = socket
       ) do
     required_state = String.to_existing_atom(required_state)
 
     # we set the url to nil to invalidate any previous .pdf (if any)
+    # and mark email as not sent
     case GrantedCertificates.update_granted_certificate(
            socket.assigns.granted_certificate_id,
-           %{state: required_state, url: nil}
+           %{state: required_state, url: nil, student_email_sent: false}
          ) do
       {:ok, gc} ->
-        if socket.assigns.requires_instructor_approval and current_state == "pending" do
-          # decrease the number of pending approvals
-          send_update(PendingApprovalComponent,
-            id: "certificate_pending_approval_count_badge",
-            change_pending_approvals: -1
-          )
-
-          # show the corresponding email notification modal
-          send_update(EmailNotificationModals,
-            id: "certificate_email_notification_modals",
-            selected_student: socket.assigns.student,
-            selected_modal: if(required_state == :earned, do: :approve, else: :deny),
-            granted_certificate_id: gc.id
-          )
+        if required_state == :earned do
+          # we create the pdf certificate but do not send email
+          # when editing the status the email has to be triggered from the "bulk send email"
+          GeneratePdf.new(%{granted_certificate_id: gc.id, send_email?: false})
+          |> Oban.insert()
         end
+
+        {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}
+
+      _ ->
+        send(self(), {:flash_message, {:error, "Could not update certificate status"}})
+        {:noreply, assign(socket, is_editing: false)}
+    end
+  end
+
+  # this handles the case where an instrutor is requested to approve or deny a certificate
+  def handle_event(
+        "update_certificate",
+        %{"required_state" => required_state, "current_state" => "pending"},
+        %{assigns: %{is_editing: false}} = socket
+      ) do
+    required_state =
+      String.to_existing_atom(required_state)
+
+    case GrantedCertificates.update_granted_certificate(
+           socket.assigns.granted_certificate_id,
+           %{state: required_state}
+         ) do
+      {:ok, gc} ->
+        if required_state == :earned do
+          # we create the pdf certificate
+          # we still do not know if we need to trigger the email (since that will be decided in the modal)
+          GeneratePdf.new(%{granted_certificate_id: gc.id, send_email?: false})
+          |> Oban.insert()
+        end
+
+        # decrease the number of pending approvals
+        send_update(PendingApprovalComponent,
+          id: "certificate_pending_approval_count_badge",
+          change_pending_approvals: -1
+        )
+
+        # show the corresponding email notification modal
+        send_update(EmailNotificationModals,
+          id: "certificate_email_notification_modals",
+          selected_student: socket.assigns.student,
+          selected_modal: if(required_state == :earned, do: :approve, else: :deny),
+          granted_certificate_id: gc.id
+        )
 
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}
 
