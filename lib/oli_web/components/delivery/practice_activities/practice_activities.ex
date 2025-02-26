@@ -232,7 +232,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
           current_assessment.resource_id
         )
 
-      current_activities =
+      activities =
         ActivityHelpers.summarize_activity_performance(
           section,
           page_revision,
@@ -244,7 +244,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
        assign(
          socket,
          current_assessment: current_assessment,
-         activities: current_activities
+         activities: activities
        )
        |> assign_selected_assessment(current_assessment.id)
        |> case do
