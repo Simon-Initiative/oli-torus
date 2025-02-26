@@ -4,7 +4,6 @@ defmodule Oli.Analytics.Summary.ResponseSummary do
 
   schema "response_summary" do
     field(:project_id, :integer, default: -1)
-    field(:publication_id, :integer, default: -1)
     field(:section_id, :integer, default: -1)
 
     belongs_to(:page, Oli.Resources.Resource)
@@ -20,7 +19,6 @@ defmodule Oli.Analytics.Summary.ResponseSummary do
     brand
     |> cast(attrs, [
       :project_id,
-      :publication_id,
       :section_id,
       :page_id,
       :activity_id,
