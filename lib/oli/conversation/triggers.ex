@@ -160,16 +160,16 @@ defmodule Oli.Conversation.Triggers do
            t.trigger_type == :hint and t.ref_id == hint_ordinal
          end) do
       [trigger | _other] ->
-
         # we have to look up the page id for this activity attempt
-        page_id = Repo.one(
-          from(ra in ResourceAttempt,
-            join: r in ResourceAccess,
-            on: ra.resource_access_id == r.id,
-            where: ra.id == ^activity_attempt.resource_attempt_id,
-            select: r.resource_id
+        page_id =
+          Repo.one(
+            from(ra in ResourceAttempt,
+              join: r in ResourceAccess,
+              on: ra.resource_access_id == r.id,
+              where: ra.id == ^activity_attempt.resource_attempt_id,
+              select: r.resource_id
+            )
           )
-        )
 
         %Trigger{
           trigger_type: :hint,
