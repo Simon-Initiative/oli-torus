@@ -20,7 +20,7 @@ defmodule OliWeb.Components.Header do
     <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
         <a
-          class="navbar-brand torus-logo my-1 mr-auto"
+          class="navbar-brand torus-logo shrink-0 my-1 mr-auto"
           href={
             case assigns[:logo_link] do
               nil ->
@@ -102,7 +102,7 @@ defmodule OliWeb.Components.Header do
   def delivery_header(assigns) do
     ~H"""
     <nav class="bg-primary-24 dark h-[111px] flex items-center pl-4 pr-10">
-      <a class="navbar-brand torus-logo my-1 mr-auto" href={~p"/"}>
+      <a class="navbar-brand torus-logo shrink-0 my-1 mr-auto" href={~p"/"}>
         <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
       </a>
       <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
