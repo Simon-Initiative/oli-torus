@@ -100,9 +100,11 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       assert gc.state == :earned
       refute gc.with_distinction
 
+      # this oban job will enqueue another job to send an email to the student
+      # after creating the pdf
       assert_enqueued(
         worker: GeneratePdf,
-        args: %{"granted_certificate_id" => gc.id}
+        args: %{"granted_certificate_id" => gc.id, "send_email?" => true}
       )
     end
 

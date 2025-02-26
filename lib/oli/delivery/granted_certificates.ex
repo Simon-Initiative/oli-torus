@@ -75,7 +75,8 @@ defmodule Oli.Delivery.GrantedCertificates do
       {:ok, %{state: :earned, id: id} = granted_certificate} ->
         # This oban job will create the pdf and update the granted_certificate.url
         # only for certificates with the :earned state (:denied ones do not need a .pdf)
-        GeneratePdf.new(%{granted_certificate_id: id})
+        # after the job finishes, it will schedule another job to send an email to the student (Mailer Worker)
+        GeneratePdf.new(%{granted_certificate_id: id, send_email?: true})
         |> Oban.insert()
 
         {:ok, granted_certificate}
