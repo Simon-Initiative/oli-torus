@@ -240,7 +240,10 @@ defmodule OliWeb.Workspaces.Student do
           <h5 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
             <%= @section.title %>
           </h5>
-          <div class="flex drop-shadow-md" role={"progress_for_section_#{@section.id}"}>
+          <div
+            class="flex flex-col md:flex-row drop-shadow-md"
+            role={"progress_for_section_#{@section.id}"}
+          >
             <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9">
               Course Progress
             </h4>
