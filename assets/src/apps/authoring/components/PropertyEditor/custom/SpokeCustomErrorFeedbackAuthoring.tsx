@@ -4,8 +4,7 @@ import { selectCurrentActivityTree } from '../../../../delivery/store/features/g
 import { selectCurrentSelection, setCurrentPartPropertyFocus } from '../../../store/parts/slice';
 
 /*
- This component handles editing advanced feedback for a question type that has a fixed set of options.
- Right now, supports dropdown, will support multiple choice eventually.
+ This component handles editing advanced feedback for Hub & Spoke question type
 */
 
 interface CorrectOptionProps {
@@ -99,7 +98,7 @@ const OptionFeedback: React.FC<OptionFeedbackProps> = ({
   onChange,
 }) => {
   const dispatch = useDispatch();
-  const labelOption = option || `Option ${index + 1}`;
+  const labelOption = option || `Spoke ${index + 1}`;
   return (
     <div className="form-group">
       <label>{labelOption}</label>
