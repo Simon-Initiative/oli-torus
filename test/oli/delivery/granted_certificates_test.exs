@@ -115,6 +115,9 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       # The previously granted certificate is updated, now indicating that the student has earned it with distinction.
       assert %GrantedCertificate{with_distinction: true} =
                Oli.Repo.get_by(GrantedCertificate, %{user_id: student_id})
+
+      # Assert that email notification is correctly enqueued
+      # TODO https://eliterate.atlassian.net/browse/MER-4107
     end
   end
 

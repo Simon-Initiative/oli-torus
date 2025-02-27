@@ -81,20 +81,36 @@ defmodule Oli.Delivery.GrantedCertificates do
   end
 
   @doc """
-  Set up a certificate with distinction and generate the PDF.
+  Updates a granted certificate to "with distinction," sets it to pending, and resets relevant fields.
+  If instructor approval is required, it prepares to notify the instructor; otherwise, it notifies the student.
+  Also triggers PDF generation via Oban.
   """
+  def update_granted_certificate_with_distinction(
+        %GrantedCertificate{} = granted_certificate,
+        requires_instructor_approval
+      ) do
+    state = if requires_instructor_approval, do: :pending, else: :earned
 
-  def update_granted_certificate_with_distinction(%GrantedCertificate{} = granted_certificate) do
+    changes = %{
+      with_distinction: true,
+      state: state,
+      url: nil,
+      student_email_sent: false,
+      guid: UUID.uuid4()
+    }
+
     granted_certificate
-    |> Oli.Delivery.GrantedCertificates.update(%{with_distinction: true})
+    |> Oli.Delivery.GrantedCertificates.update(changes)
     |> case do
       {:ok, gc} ->
-        %{granted_certificate_id: gc.id} |> GeneratePdf.new() |> Oban.insert()
-        certificate = Repo.preload(gc, :certificate).certificate
-
-        if certificate.requires_instructor_approval,
-          do: :send_email_to_instructor,
-          else: :send_email_to_student
+        if requires_instructor_approval do
+          # TODO https://eliterate.atlassian.net/browse/MER-4107
+          :send_email_to_instructor
+        else
+          %{granted_certificate_id: gc.id, send_email?: true}
+          |> GeneratePdf.new()
+          |> Oban.insert()
+        end
 
         {:ok, gc}
 
@@ -110,10 +126,11 @@ defmodule Oli.Delivery.GrantedCertificates do
   An optional argument can be passed to indicate if we should send an email to the student
   that has earned the certificate.
   """
-
-  def create_granted_certificate(attrs, opts \\ [send_email?: true])
+  def create_granted_certificate(attrs, opt \\ [])
 
   def create_granted_certificate(attrs, opts) do
+    send_email? = Keyword.get(opts, :send_email?, true)
+
     attrs = Map.merge(attrs, %{issued_at: DateTime.utc_now()})
 
     %GrantedCertificate{}
@@ -124,12 +141,14 @@ defmodule Oli.Delivery.GrantedCertificates do
         # This oban job will create the pdf and update the granted_certificate.url
         # only for certificates with the :earned state (:denied ones do not need a .pdf)
         # after the job finishes, it will schedule another job to send an email to the student (Mailer Worker)
-        GeneratePdf.new(%{granted_certificate_id: id, send_email?: opts[:send_email?]})
+        GeneratePdf.new(%{granted_certificate_id: id, send_email?: send_email?})
         |> Oban.insert()
 
         {:ok, granted_certificate}
 
-      {:ok, granted_certificate} ->
+      {:ok, %{state: :pending} = granted_certificate} ->
+        # TODO https://eliterate.atlassian.net/browse/MER-4107
+        if send_email?, do: :notify_instructor
         {:ok, granted_certificate}
 
       error ->
@@ -297,21 +316,23 @@ defmodule Oli.Delivery.GrantedCertificates do
          {notes_count, posts_count} <- count_notes_and_posts(user_id, section_id),
          :continue <- check_note_and_post_thlds(cert, notes_count, posts_count, granted_cert),
          result <- check_graded_page_thlds(user_id, section_id, cert, granted_cert) do
+      requires_instructor_approval = cert.requires_instructor_approval
+
       case result do
         {:failed_min_percentage_for_completion, :failed_min_percentage_for_distinction} ->
           {:ok, :no_change}
 
         {:passed_min_percentage_for_completion, :failed_min_percentage_for_distinction} ->
-          create_granted_cert_maybe_spawn_builder(user_id, cert, false)
+          create_granted_cert_and_notify(user_id, cert, _with_distinction = false)
 
         {:certificate_earned, :failed_min_percentage_for_distinction} ->
           {:ok, :no_change}
 
         {:certificate_earned, :passed_min_percentage_for_distinction} ->
-          update_granted_certificate_with_distinction(granted_cert)
+          update_granted_certificate_with_distinction(granted_cert, requires_instructor_approval)
 
         {:passed_min_percentage_for_completion, :passed_min_percentage_for_distinction} ->
-          create_granted_cert_maybe_spawn_builder(user_id, cert, true)
+          create_granted_cert_and_notify(user_id, cert, _with_distinction = true)
       end
 
       result
@@ -523,21 +544,19 @@ defmodule Oli.Delivery.GrantedCertificates do
     end
   end
 
-  defp create_granted_cert_maybe_spawn_builder(user_id, certificate, with_distinction) do
+  defp create_granted_cert_and_notify(user_id, certificate, with_distinction) do
+    req_instr_appr = certificate.requires_instructor_approval
+
     attrs = %{
       user_id: user_id,
       certificate_id: certificate.id,
-      state: if(certificate.requires_instructor_approval, do: :pending, else: :earned),
+      state: if(req_instr_appr, do: :pending, else: :earned),
       with_distinction: with_distinction,
-      guid: Ecto.UUID.generate()
+      guid: UUID.uuid4()
     }
 
     case create_granted_certificate(attrs) do
       {:ok, %GrantedCertificate{}} = gc ->
-        if certificate.requires_instructor_approval,
-          do: :send_email_to_instructor,
-          else: :send_email_to_student
-
         {:ok, gc}
 
       error ->
