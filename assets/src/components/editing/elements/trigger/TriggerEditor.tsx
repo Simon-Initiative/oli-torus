@@ -43,12 +43,8 @@ export const TriggerEditorCore = ({
       {promptsExpanded && (
         <ul className="list-disc list-inside py-2 ml-10">
           <li>&quot;Highlight the most imporant concepts present on this page&quot;</li>
-          <li>
-            &quot;Ask the student to summarize the previous paragraphs&quot;
-          </li>
-          <li>
-            &quot;Introduce the following video&quot;
-          </li>
+          <li>&quot;Ask the student to summarize the previous paragraphs&quot;</li>
+          <li>&quot;Introduce the following video&quot;</li>
         </ul>
       )}
     </div>
@@ -64,7 +60,8 @@ export const TriggerEditorCore = ({
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
       </div>
       <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow the student clicks this trigger button
+        Customize a prompt for our AI assistant, DOT, to follow the student clicks this trigger
+        button
       </p>
 
       <h6 className="mt-2">
