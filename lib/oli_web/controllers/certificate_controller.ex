@@ -3,7 +3,12 @@ defmodule OliWeb.CertificateController do
 
   alias Oli.Delivery.GrantedCertificates
 
-  def index(conn, _params), do: render(conn, "index.html")
+  def index(conn, params) do
+    render(conn, "index.html",
+      guid: params["cert_guid"],
+      recaptha_error: params["recaptcha_error"]
+    )
+  end
 
   def verify(conn, params) do
     if recaptcha_verified?(params) do
@@ -15,7 +20,10 @@ defmodule OliWeb.CertificateController do
           render(conn, "show.html", certificate: nil)
       end
     else
-      render(conn, "index.html", recaptcha_error: "ReCaptcha failed, please try again")
+      render(conn, "index.html",
+        recaptcha_error: "ReCaptcha failed, please try again",
+        guid: params["guid"]["value"]
+      )
     end
   end
 

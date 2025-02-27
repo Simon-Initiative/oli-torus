@@ -441,11 +441,15 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       [certificate.logo1, certificate.logo2, certificate.logo3]
       |> Enum.reject(&is_nil/1)
 
+    granted_certificate_guid = "00000000-0000-0000-0000-000000000000"
+
     attrs = %{
       certificate_type: "Certificate of Completion",
+      certificate_verification_url:
+        url(OliWeb.Endpoint, ~p"/certificates?cert_guid=#{granted_certificate_guid}"),
       student_name: "Student Name",
       completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
-      certificate_id: "00000000-0000-0000-0000-000000000000",
+      certificate_id: granted_certificate_guid,
       course_name: certificate.title,
       course_description: certificate.description,
       administrators: admins,

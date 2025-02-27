@@ -1,4 +1,6 @@
 defmodule Oli.Delivery.Certificates.CertificateRenderer do
+  use OliWeb, :verified_routes
+
   @template """
   <html lang="en">
   <meta charset="UTF-8" />
@@ -68,8 +70,7 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
               <img src="<%= logo %>" style="max-height: 50px; margin-right: 50px;" />
             <% end %>
           </div>
-
-          <p style="margin-top: 20px; font-size: small;">Certificate ID: <%= @certificate_id %></p>
+          <a href="<%= @certificate_verification_url %>" style="margin-top: 20px; font-size: small; text-decoration-line: none; color: black">Certificate ID: <%= @certificate_id %></a>
         </div>
       </div>
     </div>
@@ -116,6 +117,8 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
 
     attrs = %{
       certificate_type: certificate_type,
+      certificate_verification_url:
+        url(OliWeb.Endpoint, ~p"/certificates?cert_guid=#{granted_certificate.guid}"),
       student_name: granted_certificate.user.name,
       completion_date:
         granted_certificate.issued_at |> DateTime.to_date() |> Calendar.strftime("%B %d, %Y"),
