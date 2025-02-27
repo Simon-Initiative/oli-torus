@@ -56,4 +56,37 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
     </p>
     """
   end
+
+  attr :instructor_name, :string, default: "[Instructor Name]"
+  attr :student_name, :string, default: "[Student]"
+  attr :course_name, :string, default: "[Course Name]"
+  attr :section_slug, :string, required: true
+
+  attr :certificate_type, :string,
+    default: "[certificate of completion]",
+    doc: "'certificate of completion' or 'certificate with distinction'"
+
+  def instructor_pending_approval(assigns) do
+    ~H"""
+    <p class="text-[#373a44]" style="text-align: left;">
+      Dear <strong><%= @instructor_name %></strong>, <br />
+
+      <br />
+      <strong><%= @student_name %></strong>
+      has met the thresholds set in place to receive their certificate for <%= @course_name %>. You are required to approve this status before
+      <strong><%= @student_name %></strong>
+      will be issued a <strong><%= @certificate_type %></strong>. <br />
+
+      <br />
+      <.link
+        href={
+          url(OliWeb.Endpoint, ~p"/sections/#{@section_slug}/instructor_dashboard/overview/students")
+        }
+        class="text-[#0062f2]"
+      >
+        View pending credentials.
+      </.link>
+    </p>
+    """
+  end
 end
