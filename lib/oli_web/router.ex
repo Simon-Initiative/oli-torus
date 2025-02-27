@@ -1100,6 +1100,7 @@ defmodule OliWeb.Router do
         live("/student_schedule", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
+        live("/certificate/:certificate_guid", Delivery.Student.CertificateLive)
       end
     end
 

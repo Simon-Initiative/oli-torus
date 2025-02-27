@@ -186,7 +186,7 @@ defmodule Oli.Delivery.Certificates do
         select:
           merge(
             map(c, ^Certificate.__schema__(:fields)),
-            %{granted_certificate_state: gc.state}
+            %{granted_certificate_state: gc.state, granted_certificate_guid: gc.guid}
           )
       )
       |> Repo.one()
@@ -219,7 +219,8 @@ defmodule Oli.Delivery.Certificates do
         required_assignments: %{
           completed: required_assignment_ids_count,
           total: required_assignment_ids_count
-        }
+        },
+        granted_certificate_guid: certificate.granted_certificate_guid
       }
     else
       %{
@@ -241,7 +242,8 @@ defmodule Oli.Delivery.Certificates do
             section_id,
             required_assignment_ids,
             certificate.min_percentage_for_completion
-          )
+          ),
+        granted_certificate_guid: certificate.granted_certificate_guid
       }
     end
   end
