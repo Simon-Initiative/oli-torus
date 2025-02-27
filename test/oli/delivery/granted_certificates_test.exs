@@ -100,9 +100,11 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       assert gc.state == :earned
       refute gc.with_distinction
 
+      # this oban job will enqueue another job to send an email to the student
+      # after creating the pdf
       assert_enqueued(
         worker: GeneratePdf,
-        args: %{"granted_certificate_id" => gc.id}
+        args: %{"granted_certificate_id" => gc.id, "send_email?" => true}
       )
     end
 
@@ -134,6 +136,141 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
                GrantedCertificates.update_granted_certificate(gc.id, %{state: nil})
 
       assert changeset.errors[:state] == {"can't be blank", [validation: :required]}
+    end
+  end
+
+  describe "send_certificate_email/3" do
+    test "schedules an oban job to send the corresponding email" do
+      granted_certificate = insert(:granted_certificate)
+
+      GrantedCertificates.send_certificate_email(
+        granted_certificate.id,
+        "some@email.com",
+        :certificate_approval
+      )
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => granted_certificate.id,
+          "to" => "some@email.com",
+          "template" => "certificate_approval"
+        }
+      )
+    end
+  end
+
+  describe "bulk_send_certificate_status_email/1" do
+    test "schedules oban jobs to send the corresponding email to all students that haven't yet received the notification" do
+      section = insert(:section)
+      certificate = insert(:certificate, section: section)
+
+      [gc_1, gc_2] =
+        insert_pair(:granted_certificate,
+          state: :earned,
+          certificate: certificate,
+          student_email_sent: false
+        )
+
+      [gc_3, gc_4] =
+        insert_pair(:granted_certificate,
+          state: :denied,
+          certificate: certificate,
+          student_email_sent: false
+        )
+
+      [gc_5, gc_6] =
+        insert_pair(:granted_certificate,
+          state: :earned,
+          certificate: certificate,
+          student_email_sent: true
+        )
+
+      GrantedCertificates.bulk_send_certificate_status_email(section.slug)
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => gc_1.id,
+          "to" => gc_1.user.email,
+          "template" => "certificate_approval"
+        }
+      )
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => gc_2.id,
+          "to" => gc_2.user.email,
+          "template" => "certificate_approval"
+        }
+      )
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => gc_3.id,
+          "to" => gc_3.user.email,
+          "template" => "certificate_denial"
+        }
+      )
+
+      assert_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => gc_4.id,
+          "to" => gc_4.user.email,
+          "template" => "certificate_denial"
+        }
+      )
+
+      refute_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => gc_5.id,
+          "to" => gc_5.user.email,
+          "template" => "certificate_approval"
+        }
+      )
+
+      refute_enqueued(
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
+        args: %{
+          "granted_certificate_id" => gc_6.id,
+          "to" => gc_6.user.email,
+          "template" => "certificate_approval"
+        }
+      )
+    end
+  end
+
+  describe "certificate_pending_email_notification_count/1" do
+    test "returns the count of granted certificates that have not been emailed to the students yet" do
+      section = insert(:section)
+      certificate = insert(:certificate, section: section)
+
+      [_gc_1, _gc_2] =
+        insert_pair(:granted_certificate,
+          state: :earned,
+          certificate: certificate,
+          student_email_sent: false
+        )
+
+      [_gc_3, _gc_4] =
+        insert_pair(:granted_certificate,
+          state: :denied,
+          certificate: certificate,
+          student_email_sent: false
+        )
+
+      [_gc_5, _gc_6] =
+        insert_pair(:granted_certificate,
+          state: :earned,
+          certificate: certificate,
+          student_email_sent: true
+        )
+
+      assert GrantedCertificates.certificate_pending_email_notification_count(section.slug) == 4
     end
   end
 end

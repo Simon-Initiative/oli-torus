@@ -469,7 +469,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         view={@view}
         students={@users}
         certificate={@certificate}
-        certificate_pending_approval_count={@certificate_pending_approval_count}
+        certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
         dropdown_options={@dropdown_options}
       />
     </div>

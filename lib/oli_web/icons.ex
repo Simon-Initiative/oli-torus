@@ -1709,6 +1709,29 @@ defmodule OliWeb.Icons do
     """
   end
 
+  attr :class, :string, default: "stroke-[#3B76D3]"
+
+  def email(assigns) do
+    ~H"""
+    <svg width="21" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g clip-path="url(#clip0_461_29883)">
+        <path
+          d="M10.484 15.8334H4.36841C3.905 15.8334 3.46056 15.6578 3.13287 15.3453C2.80519 15.0327 2.62109 14.6088 2.62109 14.1667V5.83341M2.62109 5.83341C2.62109 5.39139 2.80519 4.96746 3.13287 4.6549C3.46056 4.34234 3.905 4.16675 4.36841 4.16675H16.5997C17.0631 4.16675 17.5075 4.34234 17.8352 4.6549C18.1629 4.96746 18.347 5.39139 18.347 5.83341M2.62109 5.83341L10.484 10.8334L18.347 5.83341M18.347 5.83341V10.4167M16.5997 18.3334V13.3334M16.5997 13.3334L19.2206 15.8334M16.5997 13.3334L13.9787 15.8334"
+          stroke-width="1.74732"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class={@class}
+        />
+      </g>
+      <defs>
+        <clipPath id="clip0_461_29883">
+          <rect width="20.9678" height="20" fill="white" />
+        </clipPath>
+      </defs>
+    </svg>
+    """
+  end
+
   def lock(assigns) do
     ~H"""
     <svg
