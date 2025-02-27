@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.Student.CertificateLive do
       <.back_button section_slug={@section.slug} />
     </div>
     <div class="flex flex-col justify-center items-center p-10">
-      <h1>The requested certificate does not exist or it belongs to another student</h1>
+      <h3>The requested certificate does not exist or belongs to another student</h3>
     </div>
     """
   end
@@ -37,7 +37,7 @@ defmodule OliWeb.Delivery.Student.CertificateLive do
       <.back_button section_slug={@section.slug} />
     </div>
     <div class="flex flex-col justify-center items-center p-10">
-      <h1>The requested certificate is being created. Please revisit the page in some minutes</h1>
+      <h3>The requested certificate is being created. Please revisit the page in some minutes</h3>
     </div>
     """
   end
