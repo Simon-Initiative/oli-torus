@@ -1,0 +1,1 @@
+<%= Oli.Delivery.Sections.Certificates.EmailTemplates.instructor_pending_approval(%{instructor_name: @instructor_name, student_name: @student_name, section_slug: @section_slug, course_name: @course_name, certificate_type: @certificate_type}) %>
