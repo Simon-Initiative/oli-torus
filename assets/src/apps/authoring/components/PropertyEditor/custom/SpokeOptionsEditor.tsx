@@ -130,7 +130,10 @@ const OptionsEditor: React.FC<{
     dispatch(setCurrentPartPropertyFocus({ focus: true }));
   }, [tempValue.value, value, currentSpokeLabel, currentSpokeDestination]);
   const onEdit = useCallback(() => {
-    if (!value.targetScreen?.trim()?.length) {
+    const isBlankTarget =
+      (typeof value.targetScreen === 'number' && value.targetScreen <= 0) ||
+      (typeof value.targetScreen === 'string' && value.targetScreen.trim().length === 0);
+    if (isBlankTarget) {
       const sequenceEntry = sequence.find((s) => s.resourceId == Object.keys(screens)[0]);
       if (sequenceEntry) {
         setCurrentSpokeDestination(sequenceEntry?.resourceId);
