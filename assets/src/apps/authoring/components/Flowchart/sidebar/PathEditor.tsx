@@ -251,8 +251,8 @@ const ReadOnlyPath: React.FC<ROParams> = ({
         <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
           {disablePathEdit ? (
             <div>
-              You cannot edit the flow logic from here. Please update the part component from
-              authoring to generate the updated flowchart logic
+              You cannot edit the flowchart logic for this screen here. Please update the part
+              component in Authoring to regenerate the updated flowchart logic.
             </div>
           ) : (
             'Click to update the flowchart logic'
