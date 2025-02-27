@@ -28,10 +28,6 @@ export const SpokeOptionsEditor: React.FC<Props> = ({ id, value, onChange, onBlu
     (index) => (modified: OptionsType) => {
       const newValue = value.map((v, i) => (i === index ? modified : v));
       onChange(newValue);
-      // The property editor has an interesting method of commiting changes on blur that could use a look, but think of this as a way
-      // for the control to signal that it's time to commit the value. It's much more natural on controls like a text input, but even
-      // then it's a bit awkward.
-      setTimeout(() => onBlur(id, newValue), 0);
     },
     [id, onBlur, onChange, value],
   );
