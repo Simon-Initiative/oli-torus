@@ -46,28 +46,32 @@ export const updatePart = createAsyncThunk(
       const sequenceEntry = findInSequenceByResourceId(sequence, activityClone.id);
       const activitySequenceId = sequenceEntry?.custom.sequenceId;
       if (authorPart && partDef.type === 'janus-hub-spoke') {
-        //for hub & spoke, we need to create flowchart path automatically based on the spoke destinations
-        let paths =
-          activityClone.authoring.flowchart?.paths?.filter(
-            (path: any) => path.type === 'correct',
-          ) || [];
-        const flowchartPaths =
-          partDef?.custom?.spokeItems?.map((spoke: any) => {
-            return {
-              completed: true,
-              componentId: partDef.id,
-              destinationScreenId: Number(spoke.targetScreen),
-              id: `spoke-common-path-${spoke.scoreValue}`,
-              label: spoke.spokeLabel,
-              priority: 4,
-              ruleId: null,
-              type: 'option-common-error',
-            };
-          }) || [];
-        if (flowchartPaths?.length) {
-          paths = paths.filter((path: any) => path.type === 'correct');
-          paths = [...paths, ...flowchartPaths];
-          activityClone.authoring.flowchart.paths = paths;
+        try {
+          //for hub & spoke, we need to create flowchart path automatically based on the spoke destinations
+          let paths =
+            activityClone.authoring.flowchart?.paths?.filter(
+              (path: any) => path.type === 'correct',
+            ) || [];
+          const flowchartPaths =
+            partDef?.custom?.spokeItems?.map((spoke: any) => {
+              return {
+                completed: true,
+                componentId: partDef.id,
+                destinationScreenId: Number(spoke.targetScreen),
+                id: `spoke-common-path-${spoke.scoreValue}`,
+                label: spoke.spokeLabel,
+                priority: 4,
+                ruleId: null,
+                type: 'option-common-error',
+              };
+            }) || [];
+          if (flowchartPaths?.length) {
+            paths = paths.filter((path: any) => path.type === 'correct');
+            paths = [...paths, ...flowchartPaths];
+            activityClone.authoring.flowchart.paths = paths;
+          }
+        } catch (ex) {
+          //Ignore
         }
       }
       if (!authorPart && partDef.type !== 'janus-text-flow' && partDef.type !== 'janus-image') {
