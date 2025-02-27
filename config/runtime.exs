@@ -450,6 +450,8 @@ if config_env() == :prod do
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
       project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
-      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10"))
+      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
+      certificate_eligibility:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
     ]
 end

@@ -386,7 +386,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       Scoring.calculate_score(scoring_strategy_id, graded_attempts)
       |> ensure_valid_grade()
 
-    update_resource_access(access, %{
+    Oli.CertificationEligibility.update_resource_access_and_verify_qualification(access, %{
       was_late: was_late,
       score: score,
       out_of: out_of,
