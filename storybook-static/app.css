@@ -5287,6 +5287,10 @@ table.table-striped tbody tr:nth-child(even) {
   height: 42px;
 }
 
+.h-\[430px\] {
+  height: 430px;
+}
+
 .h-\[450px\] {
   height: 450px;
 }
@@ -5666,6 +5670,10 @@ table.table-striped tbody tr:nth-child(even) {
 
 .w-\[\#\{\@width\}\] {
   width: #{@width};
+}
+
+.w-\[1000px\] {
+  width: 1000px;
 }
 
 .w-\[100px\] {
@@ -6657,6 +6665,12 @@ table.table-striped tbody tr:nth-child(even) {
   row-gap: 2rem;
 }
 
+.space-x-12 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 0;
+  margin-right: calc(3rem * var(--tw-space-x-reverse));
+  margin-left: calc(3rem * calc(1 - var(--tw-space-x-reverse)));
+}
+
 .space-x-2 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-x-reverse: 0;
   margin-right: calc(0.5rem * var(--tw-space-x-reverse));
@@ -7136,6 +7150,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(255 255 255 / 0.75) !important;
 }
 
+.border-\[\#0062f2\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(0 98 242 / var(--tw-border-opacity));
+}
+
 .border-\[\#0F0D0F\]\/5 {
   border-color: rgb(15 13 15 / 0.05);
 }
@@ -7150,6 +7169,11 @@ table.table-striped tbody tr:nth-child(even) {
   border-color: rgb(58 55 64 / var(--tw-border-opacity));
 }
 
+.border-\[\#3c75d3\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(60 117 211 / var(--tw-border-opacity));
+}
+
 .border-\[\#3e3f44\] {
   --tw-border-opacity: 1;
   border-color: rgb(62 63 68 / var(--tw-border-opacity));
@@ -7158,6 +7182,11 @@ table.table-striped tbody tr:nth-child(even) {
 .border-\[\#B0B0B0\] {
   --tw-border-opacity: 1;
   border-color: rgb(176 176 176 / var(--tw-border-opacity));
+}
+
+.border-\[\#CBD2E0\] {
+  --tw-border-opacity: 1;
+  border-color: rgb(203 210 224 / var(--tw-border-opacity));
 }
 
 .border-\[\#D4D4D4\] {
@@ -8256,6 +8285,10 @@ table.table-striped tbody tr:nth-child(even) {
   stroke: #383A44;
 }
 
+.stroke-\[\#3B76D3\] {
+  stroke: #3B76D3;
+}
+
 .stroke-\[\#5104f7\] {
   stroke: #5104f7;
 }
@@ -9254,6 +9287,10 @@ table.table-striped tbody tr:nth-child(even) {
   line-height: 16px;
 }
 
+.leading-\[17\.40px\] {
+  line-height: 17.40px;
+}
+
 .leading-\[18px\] {
   line-height: 18px;
 }
@@ -9473,6 +9510,16 @@ table.table-striped tbody tr:nth-child(even) {
 .text-\[\#383a44\] {
   --tw-text-opacity: 1;
   color: rgb(56 58 68 / var(--tw-text-opacity));
+}
+
+.text-\[\#3b76d3\] {
+  --tw-text-opacity: 1;
+  color: rgb(59 118 211 / var(--tw-text-opacity));
+}
+
+.text-\[\#3c75d3\] {
+  --tw-text-opacity: 1;
+  color: rgb(60 117 211 / var(--tw-text-opacity));
 }
 
 .text-\[\#4CA6FF\] {
