@@ -134,14 +134,14 @@ GUIDES
   <span class="text">Create Registrations from seed</span>
 </h2>
 <p>To ease the burden of creating a new registration after every database reset, there is the option to automatically create LTI registrations
-attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="5627138454-1">[</span><span class="p" data-group-id="5627138454-2">{</span><span class="w">
+attached to the default institution in dev environment by creating a registrations.json file in the project root.</p><p>Example:</p><pre><code class="makeup elixir" translate="no"><span class="p" data-group-id="9770948604-1">[</span><span class="p" data-group-id="9770948604-2">{</span><span class="w">
   </span><span class="ss">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;client_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;XXXXXXXXXXXXX&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;key_set_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/security/jwks&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_token_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_login_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/api/lti/authorize_redirect&quot;</span><span class="p">,</span><span class="w">
   </span><span class="ss">&quot;auth_server&quot;</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;https://canvas.oli.cmu.edu/login/oauth2/token&quot;</span><span class="w">
-</span><span class="p" data-group-id="5627138454-2">}</span><span class="p" data-group-id="5627138454-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
+</span><span class="p" data-group-id="9770948604-2">}</span><span class="p" data-group-id="9770948604-1">]</span></code></pre><p>With this file, now when you run <code class="inline">mix ecto.seed</code> or <code class="inline">mix ecto.reset</code>, a registration with these details will be created for you.</p>
 </div>
 
 <div class="bottom-actions" id="bottom-actions">
