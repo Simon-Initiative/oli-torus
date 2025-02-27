@@ -947,6 +947,9 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([:browser])
 
+    # Resolve root /sections route using the DeliveryController index action
+    get("/", DeliveryController, :index)
+
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
 

@@ -170,7 +170,7 @@ defmodule OliWeb.Workspaces.Student do
     </div>
     <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
       <div class="flex flex-col md:flex-row mb-9 w-full">
-        <h3 class="w-full py-2 md:py-0 text-[26px] leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
+        <h3 class="w-full py-2 md:py-0 text-xl md:text-[26px] md:leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
           Courses available
         </h3>
         <div class="ml-auto flex items-center w-full justify-start md:justify-end gap-3">
