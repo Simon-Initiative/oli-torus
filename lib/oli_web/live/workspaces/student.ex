@@ -115,7 +115,7 @@ defmodule OliWeb.Workspaces.Student do
       <div class="z-20 flex justify-center gap-2 lg:gap-12 xl:gap-32 px-6 sm:px-0">
         <div class="w-1/4 lg:w-1/2 flex items-start justify-center">
           <div class="w-96 flex-col justify-start items-start gap-0 lg:gap-3.5 inline-flex">
-            <div class="text-left lg:text-3xl xl:text-4xl">
+            <div class="text-left text-xl lg:text-3xl xl:text-4xl">
               <span class="text-white font-normal font-['Open Sans'] leading-10">
                 Welcome to
               </span>

@@ -105,21 +105,23 @@ defmodule OliWeb.Components.Header do
       <a class="navbar-brand torus-logo shrink-0 my-1 mr-auto" href={~p"/"}>
         <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
       </a>
-      <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
-        For Instructors
-      </.sign_in_button>
-      <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
-        For Course Authors
-      </.sign_in_button>
-      <.button
-        id="support-button"
-        href="#"
-        class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
-        onclick="window.showHelpModal();"
-        phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
-      >
-        Support
-      </.button>
+      <div class="hidden md:flex">
+        <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
+          For Instructors
+        </.sign_in_button>
+        <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
+          For Course Authors
+        </.sign_in_button>
+        <.button
+          id="support-button"
+          href="#"
+          class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
+          onclick="window.showHelpModal();"
+          phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
+        >
+          Support
+        </.button>
+      </div>
     </nav>
     """
   end
