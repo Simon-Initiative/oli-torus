@@ -311,9 +311,6 @@ const HubSpoke: React.FC<PartComponentProps<hubSpokeModel>> = (props) => {
                   margin: 0 9px 15px 0;
                   min-height: 20px;
                 }
-                > div:last-of-type {
-                  margin-right: 0;
-                }
                 p {
                   margin: 0px;
                 }
