@@ -898,7 +898,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert has_element?(view, "button[id=submit_answers]", "Submit Answers")
     end
 
-    test "triggers CheckCertification job if certificate_enabled is off on submit", ctx do
+    test "triggers CheckCertification job if certificate_enabled is true on submit", ctx do
       %{conn: conn, user: user, section: section, page_3: page_3} = ctx
       {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
