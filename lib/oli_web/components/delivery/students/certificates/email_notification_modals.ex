@@ -30,14 +30,14 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
         >
           <:title><%= title_by_selected_modal(@selected_modal) %></:title>
           <div class="text-sm font-normal mt-3">
-            <p class="text-black">
+            <p class="text-black dark:text-white">
               Please confirm that you want to send <%= Utils.name(@selected_student) %> a
               <span class="font-bold">
                 certificate <%= action_by_selected_modal(@selected_modal) %>
               </span>
               email.
             </p>
-            <h3 class="text-sm text-black font-bold mt-10 mb-5">
+            <h3 class="text-sm text-black dark:text-white font-bold mt-10 mb-5">
               <%= title_by_selected_modal(@selected_modal) %>:
             </h3>
             <div class="p-6 border rounded-lg border-[#CBD2E0]">
