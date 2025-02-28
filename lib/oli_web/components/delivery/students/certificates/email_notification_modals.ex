@@ -177,15 +177,11 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
 
     selected_modal = String.to_existing_atom(selected_modal)
 
-    # TODO: check on  MER-4107:
-    # 1. if more assigns need to be provided
-    # (for instance, platform_name, course_name, instructor_email, and any info to build the url link to the pdf for approved certificates)
-    # 2. if the granted_certificate is updated to mark the student_email_sent field as true
     GrantedCertificates.send_certificate_email(
       granted_certificate_guid,
       student.email,
       email_template_by_selected_modal(selected_modal),
-      %{some: :assigns_depending_on_the_email_template}
+      email_template_assigns_by_selected_modal(selected_modal, socket.assigns)
     )
 
     {:noreply, socket}
@@ -218,8 +214,30 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     """
   end
 
-  defp email_template_by_selected_modal(:approve), do: :certificate_approval
-  defp email_template_by_selected_modal(:deny), do: :certificate_denial
+  defp email_template_by_selected_modal(:approve), do: :student_approval
+  defp email_template_by_selected_modal(:deny), do: :student_denial
+
+  defp email_template_assigns_by_selected_modal(:approve, assigns) do
+    %{
+      student_name: OliWeb.Common.Utils.name(assigns.selected_student),
+      platform_name: assigns.platform_name,
+      course_name: assigns.course_name,
+      certificate_link:
+        url(
+          OliWeb.Endpoint,
+          ~p"/sections/#{assigns.section_slug}/certificate/#{assigns.granted_certificate_guid}"
+        )
+    }
+  end
+
+  defp email_template_assigns_by_selected_modal(:deny, assigns) do
+    %{
+      student_name: OliWeb.Common.Utils.name(assigns.selected_student),
+      platform_name: assigns.platform_name,
+      course_name: assigns.course_name,
+      instructor_email: assigns.instructor_email
+    }
+  end
 
   defp title_by_selected_modal(:approve), do: "Certificate Approval Email"
   defp title_by_selected_modal(:deny), do: "Certificate Denial Email"

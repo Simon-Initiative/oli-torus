@@ -65,7 +65,7 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.Mailer do
       to,
       subject,
       template,
-      template_assigns
+      Oli.Utils.atomize_keys(template_assigns)
     )
     |> Mailer.deliver()
   end
