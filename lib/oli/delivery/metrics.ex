@@ -414,7 +414,7 @@ defmodule Oli.Delivery.Metrics do
     from(rs in ResourceSummary,
       where:
         rs.section_id == ^section_id and rs.resource_id in ^pages_ids and rs.user_id in ^user_ids and
-          rs.publication_id == -1 and rs.project_id == -1 and rs.resource_type_id == ^page_type_id,
+          rs.project_id == -1 and rs.resource_type_id == ^page_type_id,
       group_by: rs.resource_id,
       select: {
         rs.resource_id,
@@ -507,7 +507,7 @@ defmodule Oli.Delivery.Metrics do
         cp.container_id in ^container_ids and cp.section_id == ^section_id and
           rs.section_id == ^section_id and
           rs.user_id in ^user_ids and
-          rs.publication_id == -1 and rs.project_id == -1 and
+          rs.project_id == -1 and
           rs.resource_type_id == ^page_type_id and
           rev.graded,
       group_by: cp.container_id,
@@ -833,7 +833,6 @@ defmodule Oli.Delivery.Metrics do
       where:
         summary.section_id == ^section_id and
           summary.project_id == -1 and
-          summary.publication_id == -1 and
           summary.resource_type_id == ^objective_type_id,
       where: ^maybe_filter_by_objective_id,
       where: ^maybe_filter_by_student_id,
@@ -873,7 +872,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id == -1 and
             summary.resource_type_id == ^page_type_id,
         select: {
@@ -931,7 +929,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id != -1 and
             summary.resource_type_id == ^page_type_id,
         where: ^filter_by_container,
@@ -982,7 +979,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id == ^student_id and
             summary.resource_type_id == ^page_type_id,
         select: {
@@ -1020,7 +1016,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id == ^student_id and
             summary.resource_type_id == ^page_type_id,
         select: {
@@ -1070,7 +1065,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id != -1 and
             summary.resource_id == ^page_id and
             summary.resource_type_id == ^page_type_id,
@@ -1116,7 +1110,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id == -1 and
             summary.resource_id in ^page_ids and
             summary.resource_type_id == ^page_type_id,
@@ -1388,7 +1381,6 @@ defmodule Oli.Delivery.Metrics do
         where:
           summary.section_id == ^section_id and
             summary.project_id == -1 and
-            summary.publication_id == -1 and
             summary.user_id != -1 and
             summary.resource_type_id == ^objective_type_id and
             summary.resource_id == ^objective_id,

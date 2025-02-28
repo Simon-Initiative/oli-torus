@@ -6,7 +6,6 @@ defmodule Oli.Analytics.Summary.ResourceSummary do
     # These are the scope records (essentially to what scope do these summaries apply)
 
     field(:project_id, :integer, default: -1)
-    field(:publication_id, :integer, default: -1)
     field(:section_id, :integer, default: -1)
     field(:user_id, :integer, default: -1)
 
@@ -27,7 +26,6 @@ defmodule Oli.Analytics.Summary.ResourceSummary do
     brand
     |> cast(attrs, [
       :project_id,
-      :publication_id,
       :section_id,
       :user_id,
       :resource_id,

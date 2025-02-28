@@ -63,8 +63,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
             is_nil(pub.published) and
             s.resource_type_id == ^resource_type_id and
             s.section_id == -1 and
-            s.user_id == -1 and
-            s.publication_id == -1
+            s.user_id == -1
         )
 
       section_ids ->
@@ -74,8 +73,7 @@ defmodule Oli.Analytics.Summary.BrowseInsights do
             is_nil(pub.published) and
             s.resource_type_id == ^resource_type_id and
             s.section_id in ^section_ids and
-            s.user_id == -1 and
-            s.publication_id == -1
+            s.user_id == -1
         )
     end
   end

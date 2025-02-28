@@ -83,20 +83,20 @@ defmodule Oli.Analytics.Summary.UpsertTest do
       # correct number of records and that they get incremented correctly
       short_answer(context, page1.id, a1.resource.id, "i have no idea", true)
       all = Oli.Repo.all(ResourceSummary)
-      assert Enum.count(all) == 12
+      assert Enum.count(all) == 6
       assert Enum.all?(all, fn summary -> summary.num_correct == 1 end)
       assert Enum.all?(all, fn summary -> summary.num_attempts == 1 end)
       all_responses = Oli.Repo.all(ResponseSummary)
-      assert Enum.count(all_responses) == 4
+      assert Enum.count(all_responses) == 2
       assert Enum.all?(all_responses, fn summary -> summary.count == 1 end)
 
       short_answer(context, page1.id, a1.resource.id, "ah, now i get it", true)
       all = Oli.Repo.all(ResourceSummary)
-      assert Enum.count(all) == 12
+      assert Enum.count(all) == 6
       assert Enum.all?(all, fn summary -> summary.num_correct == 2 end)
       assert Enum.all?(all, fn summary -> summary.num_attempts == 2 end)
       all_responses = Oli.Repo.all(ResponseSummary)
-      assert Enum.count(all_responses) == 8
+      assert Enum.count(all_responses) == 4
       assert Enum.all?(all_responses, fn summary -> summary.count == 1 end)
 
       # there should be two unique responses
@@ -133,14 +133,14 @@ defmodule Oli.Analytics.Summary.UpsertTest do
       short_answer(context, page1.id, a1.resource.id, "i have no idea", true)
 
       all = Oli.Repo.all(ResourceSummary)
-      assert Enum.count(all) == 16
+      assert Enum.count(all) == 8
 
       # there should STILL be only two unique responses (across 8 total scope records),
       # but the count on one of them is incremented
       all_responses = Oli.Repo.all(ResponseSummary)
-      assert Enum.count(all_responses) == 8
-      assert Enum.filter(all_responses, fn summary -> summary.count == 1 end) |> Enum.count() == 4
-      assert Enum.filter(all_responses, fn summary -> summary.count == 2 end) |> Enum.count() == 4
+      assert Enum.count(all_responses) == 4
+      assert Enum.filter(all_responses, fn summary -> summary.count == 1 end) |> Enum.count() == 2
+      assert Enum.filter(all_responses, fn summary -> summary.count == 2 end) |> Enum.count() == 2
 
       response_parts = Oli.Repo.all(ResourcePartResponse)
       assert Enum.count(response_parts) == 2

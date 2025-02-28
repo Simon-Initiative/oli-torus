@@ -511,7 +511,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     from(rs in ResourceSummary,
       where:
         rs.section_id == ^section_id and rs.resource_id == ^current_assessment.resource_id and
-          rs.user_id in ^student_ids and rs.project_id == -1 and rs.publication_id == -1 and
+          rs.user_id in ^student_ids and rs.project_id == -1 and
           rs.resource_type_id == ^page_type_id,
       select: sum(rs.num_attempts)
     )
@@ -531,7 +531,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       from(rs in ResourceSummary,
         where: rs.section_id == ^section.id,
         where: rs.project_id == -1,
-        where: rs.publication_id == -1,
         where: rs.user_id == -1,
         where: rs.resource_id in ^activity_ids_from_responses,
         select: {
@@ -564,7 +563,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       where: rs.section_id == ^section_id,
       where: rs.page_id == ^page_id,
       where: rs.project_id == -1,
-      where: rs.publication_id == -1,
       distinct: true,
       select: rs.activity_id
     )
