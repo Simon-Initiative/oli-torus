@@ -215,12 +215,15 @@ defmodule Oli.Delivery.GrantedCertificates do
           select: {gc.id, gc.state, student.email}
       )
 
+    # TODO: recheck here and in other triggers if we need to provide
+    # the gc_id or the gc_guid.
     granted_certificates
     |> Enum.map(fn {id, state, email} ->
       Mailer.new(%{
         granted_certificate_id: id,
         to: email,
-        template: if(state == :earned, do: :certificate_approval, else: :certificate_denial)
+        template: if(state == :earned, do: :certificate_approval, else: :certificate_denial),
+        template_asigns: %{some: :assigns_depending_on_the_email_template}
       })
     end)
     |> Oban.insert_all()

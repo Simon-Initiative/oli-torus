@@ -184,7 +184,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     GrantedCertificates.send_certificate_email(
       granted_certificate_id,
       student.email,
-      email_template_by_selected_modal(selected_modal)
+      email_template_by_selected_modal(selected_modal),
+      %{some: :assigns_depending_on_the_email_template}
     )
 
     {:noreply, socket}
