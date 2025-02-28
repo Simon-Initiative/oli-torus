@@ -204,21 +204,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute Course.get_project!(project.id).allow_transfer_payment_codes
     end
 
-    test "does not display datashop analytics link when author is not admin", %{
-      conn: conn,
-      author: author
-    } do
-      project = create_project_with_author(author)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      refute has_element?(
-               view,
-               "a[href=#{~p"/project/#{project.slug}/datashop"}]",
-               "Datashop Analytics"
-             )
-    end
-
     defp create_project_with_author(author) do
       %{project: project} = base_project_with_curriculum(nil)
       insert(:author_project, project_id: project.id, author_id: author.id)

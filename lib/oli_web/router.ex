@@ -1420,22 +1420,6 @@ defmodule OliWeb.Router do
     post("/:section_slug/auto_enroll", LaunchController, :auto_enroll_as_guest)
   end
 
-  # Delivery Auth (Signin)
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery, :delivery_layout])
-
-    get("/create_account", DeliveryController, :create_account)
-  end
-
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    get("/", DeliveryController, :index)
-
-    get("/link_account", DeliveryController, :link_account)
-    post("/link_account", DeliveryController, :process_link_account)
-  end
-
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected])
 
