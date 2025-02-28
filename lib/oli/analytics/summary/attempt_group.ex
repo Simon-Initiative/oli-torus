@@ -45,10 +45,10 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
   def from_attempt_summary([], _project_id, _host_name), do: nil
 
   def from_attempt_summary(attempt_summary, project_id, host_name) do
-    {_, _, ra, _, page_revision, _} = List.first(attempt_summary)
+    {_, _, ra, resource_access, _} = List.first(attempt_summary)
 
     part_attempts =
-      Enum.map(attempt_summary, fn {pa, aa, _, _, _, ar} ->
+      Enum.map(attempt_summary, fn {pa, aa, _, _, ar} ->
         Map.merge(pa, %{
           activity_attempt: aa,
           activity_revision: ar
@@ -56,11 +56,11 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
       end)
 
     activity_attempts =
-      Enum.map(attempt_summary, fn {_, aa, _, _, _, _} -> aa end)
+      Enum.map(attempt_summary, fn {_, aa, _, _, _} -> aa end)
       |> Enum.filter(fn activity_attempt -> activity_attempt.lifecycle_state == :evaluated end)
       |> Enum.dedup()
 
-    resource_attempt = Map.merge(ra, %{resource_id: page_revision.resource_id})
+    resource_attempt = Map.merge(ra, %{resource_id: resource_access.resource_id})
 
     context = build_context(attempt_summary, project_id, host_name)
 
@@ -72,7 +72,7 @@ defmodule Oli.Analytics.Summary.AttemptGroup do
     }
   end
 
-  defp build_context([{_, _, _, access, _, _} | _rest], project_id, host_name) do
+  defp build_context([{_, _, _, access, _} | _rest], project_id, host_name) do
     %Context{
       host_name: host_name,
       user_id: access.user_id,
