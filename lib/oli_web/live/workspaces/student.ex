@@ -5,7 +5,6 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
-  alias OliWeb.Components.Delivery.Workspace
   alias OliWeb.Common.SourceImage
 
   import Ecto.Query, warn: false
