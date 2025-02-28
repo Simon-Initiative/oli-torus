@@ -2,6 +2,7 @@ defmodule Oli.Delivery.GrantedCertificates do
   @moduledoc """
   The Granted Certificates context
   """
+  use OliWeb, :verified_routes
 
   import Ecto.Query, warn: false
   require Logger
@@ -199,10 +200,7 @@ defmodule Oli.Delivery.GrantedCertificates do
   Fetches all the students that have a granted certificate in the given section with status :earned or :denied,
   and sends them an email with the corresponding template (if they have not been sent yet).
   """
-  def bulk_send_certificate_status_email(section_slug) do
-    # TODO: check on MER-4107 if we need to add more assign fields to the email,
-    # and if the granted_certificate is updated to mark the student_email_sent field as true
-
+  def bulk_send_certificate_status_email(section_slug, instructor_email) do
     granted_certificates =
       Repo.all(
         from gc in GrantedCertificate,
@@ -212,19 +210,38 @@ defmodule Oli.Delivery.GrantedCertificates do
           where: s.slug == ^section_slug,
           where: gc.state in [:earned, :denied],
           where: gc.student_email_sent == false,
-          select: {gc.guid, gc.state, student.email}
+          select: {gc.guid, gc.state, student, s}
       )
 
     granted_certificates
-    |> Enum.map(fn {guid, state, email} ->
+    |> Enum.map(fn {guid, state, student, section} ->
       Mailer.new(%{
         granted_certificate_guid: guid,
-        to: email,
-        template: if(state == :earned, do: :certificate_approval, else: :certificate_denial),
-        template_asigns: %{some: :assigns_depending_on_the_email_template}
+        to: student.email,
+        template: if(state == :earned, do: "student_approval", else: "student_denial"),
+        template_assigns:
+          certificate_email_template_assigns(state, student, section, guid, instructor_email)
       })
     end)
     |> Oban.insert_all()
+  end
+
+  defp certificate_email_template_assigns(:earned, student, section, guid, _instructor_email) do
+    %{
+      student_name: OliWeb.Common.Utils.name(student),
+      platform_name: Oli.Branding.brand_name(section),
+      course_name: section.title,
+      certificate_link: url(OliWeb.Endpoint, ~p"/sections/#{section.slug}/certificate/#{guid}")
+    }
+  end
+
+  defp certificate_email_template_assigns(:denied, student, section, _guid, instructor_email) do
+    %{
+      student_name: OliWeb.Common.Utils.name(student),
+      platform_name: Oli.Branding.brand_name(section),
+      course_name: section.title,
+      instructor_email: instructor_email
+    }
   end
 
   @doc """

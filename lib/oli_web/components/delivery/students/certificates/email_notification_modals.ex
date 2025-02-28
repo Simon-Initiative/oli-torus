@@ -188,7 +188,10 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
   end
 
   def handle_event("bulk_send_emails", _, socket) do
-    GrantedCertificates.bulk_send_certificate_status_email(socket.assigns.section_slug)
+    GrantedCertificates.bulk_send_certificate_status_email(
+      socket.assigns.section_slug,
+      socket.assigns.instructor_email
+    )
 
     {:noreply, socket}
   end

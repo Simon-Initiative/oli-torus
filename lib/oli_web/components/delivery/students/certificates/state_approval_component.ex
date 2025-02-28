@@ -199,7 +199,13 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     # and mark email as not sent
     case GrantedCertificates.update_granted_certificate(
            socket.assigns.granted_certificate_id,
-           %{state: required_state, url: nil, student_email_sent: false, guid: UUID.uuid4()}
+           %{
+             state: required_state,
+             url: nil,
+             student_email_sent: false,
+             guid: UUID.uuid4(),
+             with_distinction: false
+           }
          ) do
       {:ok, gc} ->
         if required_state == :earned do
