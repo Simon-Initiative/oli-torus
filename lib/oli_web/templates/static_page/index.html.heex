@@ -1,7 +1,7 @@
 <div class="relative h-[calc(100vh-112px)] flex justify-center items-center">
   <%= OliWeb.Backgrounds.student_sign_in(%{}) %>
 
-  <div class="absolute lg:h-[calc(100vh-112px)] w-full top-0 left-0 flex flex-col gap-y-10 lg:flex-row z-50 px-3 py-3 sm:py-8 lg:py-[135px]">
+  <div class="absolute lg:h-[calc(100vh-112px)] w-full top-0 left-0 flex flex-col gap-y-10 lg:flex-row z-50 px-3 py-8 lg:py-[135px]">
     <div class="w-full lg:w-1/2 flex items-center justify-center py-12 lg:py-0">
       <div class="w-96 flex-col justify-start items-start gap-3.5 inline-flex text-white font-normal font-['Open Sans']">
         <div class="text-left text-4xl leading-10">
@@ -22,9 +22,21 @@
         </div>
         <a
           href="#enrollment_info"
-          class="w-auto h-[18.56px] text-white text-xl font-normal font-['Inter'] leading-normal mt-4 lg:mt-10 underline underline-offset-4 hover:text-zinc-300"
+          class="text-white text-xl font-normal font-['Inter'] leading-normal mt-4 lg:mt-10 underline underline-offset-4 hover:text-zinc-300"
         >
           Need an account?
+        </a>
+        <a
+          href={~p"/instructors/log_in"}
+          class="md:hidden text-white text-xl font-normal font-['Inter'] leading-normal mt-2 underline underline-offset-4 hover:text-zinc-300"
+        >
+          For Instructors
+        </a>
+        <a
+          href={~p"/authors/log_in"}
+          class="md:hidden text-white text-xl font-normal font-['Inter'] leading-normal mt-2 underline underline-offset-4 hover:text-zinc-300"
+        >
+          For Course Authors
         </a>
       </div>
     </div>
