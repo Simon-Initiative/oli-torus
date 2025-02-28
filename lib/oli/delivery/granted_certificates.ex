@@ -2,6 +2,7 @@ defmodule Oli.Delivery.GrantedCertificates do
   @moduledoc """
   The Granted Certificates context
   """
+  use OliWeb, :verified_routes
 
   import Ecto.Query, warn: false
   require Logger
@@ -11,8 +12,10 @@ defmodule Oli.Delivery.GrantedCertificates do
   alias Oli.Delivery.Sections.Certificates.Workers.{GeneratePdf, Mailer}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Certificates.CertificateRenderer
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
+  alias Oli.Delivery.Sections.Certificates.Workers.Mailer
   alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.{HTTP, Repo}
@@ -104,8 +107,7 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> case do
       {:ok, gc} ->
         if requires_instructor_approval do
-          # TODO https://eliterate.atlassian.net/browse/MER-4107
-          :send_email_to_instructor
+          notify_instructors(gc)
         else
           %{granted_certificate_id: gc.id, send_email?: true}
           |> GeneratePdf.new()
@@ -117,6 +119,31 @@ defmodule Oli.Delivery.GrantedCertificates do
       error ->
         log_error(error, granted_certificate.user_id, granted_certificate.id, :update)
     end
+  end
+
+  _docp = """
+  Whenever we grant a certificate in a course that requires instructor approval,
+  this function will schedule all the jobs to send an email to the instructors of that course.
+  """
+
+  defp notify_instructors(gc) do
+    gc = Repo.preload(gc, [:user, certificate: [:section]])
+
+    Oli.Delivery.Sections.get_instructors_for_section(gc.certificate.section_id)
+    |> Enum.map(fn instructor ->
+      Mailer.new(%{
+        template: "instructor_notification",
+        to: instructor.email,
+        template_assigns: %{
+          instructor_name: OliWeb.Common.Utils.name(instructor),
+          course_name: gc.certificate.section.title,
+          student_name: OliWeb.Common.Utils.name(gc.user),
+          certificate_type: "certificate with distinction",
+          section_slug: gc.certificate.section.slug
+        }
+      })
+    end)
+    |> Oban.insert_all()
   end
 
   @doc """
@@ -147,8 +174,7 @@ defmodule Oli.Delivery.GrantedCertificates do
         {:ok, granted_certificate}
 
       {:ok, %{state: :pending} = granted_certificate} ->
-        # TODO https://eliterate.atlassian.net/browse/MER-4107
-        if send_email?, do: :notify_instructor
+        if send_email?, do: notify_instructors(granted_certificate)
         {:ok, granted_certificate}
 
       error ->
@@ -160,10 +186,13 @@ defmodule Oli.Delivery.GrantedCertificates do
   Sends an email to the given email address with the given template, to inform the student
   about the status of the granted certificate.
   """
-  def send_certificate_email(granted_certificate_id, to, template) do
-    # TODO: check on MER-4107 if we need to add more assign fields to the email,
-    # and if the granted_certificate is updated to mark the student_email_sent field as true
-    Mailer.new(%{granted_certificate_id: granted_certificate_id, to: to, template: template})
+  def send_certificate_email(granted_certificate_guid, to, template, template_assigns) do
+    Mailer.new(%{
+      granted_certificate_guid: granted_certificate_guid,
+      to: to,
+      template: template,
+      template_assigns: template_assigns
+    })
     |> Oban.insert()
   end
 
@@ -171,10 +200,7 @@ defmodule Oli.Delivery.GrantedCertificates do
   Fetches all the students that have a granted certificate in the given section with status :earned or :denied,
   and sends them an email with the corresponding template (if they have not been sent yet).
   """
-  def bulk_send_certificate_status_email(section_slug) do
-    # TODO: check on MER-4107 if we need to add more assign fields to the email,
-    # and if the granted_certificate is updated to mark the student_email_sent field as true
-
+  def bulk_send_certificate_status_email(section_slug, instructor_email) do
     granted_certificates =
       Repo.all(
         from gc in GrantedCertificate,
@@ -184,18 +210,38 @@ defmodule Oli.Delivery.GrantedCertificates do
           where: s.slug == ^section_slug,
           where: gc.state in [:earned, :denied],
           where: gc.student_email_sent == false,
-          select: {gc.id, gc.state, student.email}
+          select: {gc.guid, gc.state, student, s}
       )
 
     granted_certificates
-    |> Enum.map(fn {id, state, email} ->
+    |> Enum.map(fn {guid, state, student, section} ->
       Mailer.new(%{
-        granted_certificate_id: id,
-        to: email,
-        template: if(state == :earned, do: :certificate_approval, else: :certificate_denial)
+        granted_certificate_guid: guid,
+        to: student.email,
+        template: if(state == :earned, do: "student_approval", else: "student_denial"),
+        template_assigns:
+          certificate_email_template_assigns(state, student, section, guid, instructor_email)
       })
     end)
     |> Oban.insert_all()
+  end
+
+  defp certificate_email_template_assigns(:earned, student, section, guid, _instructor_email) do
+    %{
+      student_name: OliWeb.Common.Utils.name(student),
+      platform_name: Oli.Branding.brand_name(section),
+      course_name: section.title,
+      certificate_link: url(OliWeb.Endpoint, ~p"/sections/#{section.slug}/certificate/#{guid}")
+    }
+  end
+
+  defp certificate_email_template_assigns(:denied, student, section, _guid, instructor_email) do
+    %{
+      student_name: OliWeb.Common.Utils.name(student),
+      platform_name: Oli.Branding.brand_name(section),
+      course_name: section.title,
+      instructor_email: instructor_email
+    }
   end
 
   @doc """
@@ -552,6 +598,9 @@ defmodule Oli.Delivery.GrantedCertificates do
       certificate_id: certificate.id,
       state: if(req_instr_appr, do: :pending, else: :earned),
       with_distinction: with_distinction,
+      issued_by: Sections.get_section_creator_id(certificate.section_id),
+      issued_by_type: :user,
+      issued_at: DateTime.utc_now(),
       guid: UUID.uuid4()
     }
 

@@ -199,7 +199,13 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
     # and mark email as not sent
     case GrantedCertificates.update_granted_certificate(
            socket.assigns.granted_certificate_id,
-           %{state: required_state, url: nil, student_email_sent: false, guid: UUID.uuid4()}
+           %{
+             state: required_state,
+             url: nil,
+             student_email_sent: false,
+             guid: UUID.uuid4(),
+             with_distinction: false
+           }
          ) do
       {:ok, gc} ->
         if required_state == :earned do
@@ -208,6 +214,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
           GeneratePdf.new(%{granted_certificate_id: gc.id, send_email?: false})
           |> Oban.insert()
         end
+
+        # show the bulk email notification component
+        send_update(BulkCertificateStatusEmail,
+          id: "bulk_email_certificate_status_component",
+          show_component: true
+        )
 
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}
 
@@ -249,7 +261,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
           id: "certificate_email_notification_modals",
           selected_student: socket.assigns.student,
           selected_modal: if(required_state == :earned, do: :approve, else: :deny),
-          granted_certificate_id: gc.id
+          granted_certificate_guid: gc.guid
         )
 
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}

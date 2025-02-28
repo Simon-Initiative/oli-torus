@@ -13,7 +13,7 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
 
   def student_approval(assigns) do
     ~H"""
-    <p class="text-[#373a44]" style="text-align: left;">
+    <p class="text-[#373a44] dark:text-white" style="text-align: left;">
       Dear <%= @student_name %>, <br />
       <br /> Congratulations! You have earned a Certificate of Completion for <%= @course_name %>.
       <.link href={@certificate_link} class="text-[#0062f2]">
@@ -42,7 +42,7 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
 
   def student_denial(assigns) do
     ~H"""
-    <p class="text-[#373a44]" style="text-align: left;">
+    <p class="text-[#373a44] dark:text-white" style="text-align: left;">
       Dear <%= @student_name %>, <br />
       <br /> Thank you for completing the <%= @course_name %> on <%= @platform_name %>. <br />
       <br />
@@ -68,7 +68,7 @@ defmodule Oli.Delivery.Sections.Certificates.EmailTemplates do
 
   def instructor_pending_approval(assigns) do
     ~H"""
-    <p class="text-[#373a44]" style="text-align: left;">
+    <p class="text-[#373a44] dark:text-white" style="text-align: left;">
       Dear <strong><%= @instructor_name %></strong>, <br />
 
       <br />

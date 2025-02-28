@@ -1488,7 +1488,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
            section: section,
            certificate: certificate,
            student_1: student_1,
-           student_2: student_2
+           student_2: student_2,
+           instructor: instructor
          } do
       certificate = update_certificate(certificate, %{requires_instructor_approval: true})
 
@@ -1513,9 +1514,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => granted_certificate_1.id,
+          "granted_certificate_guid" => granted_certificate_1.guid,
           "to" => granted_certificate_1.user.email,
-          "template" => "certificate_approval"
+          "template" => "student_approval",
+          "template_assigns" => %{
+            student_name: OliWeb.Common.Utils.name(student_1),
+            platform_name: Oli.Branding.brand_name(section),
+            course_name: section.title,
+            certificate_link:
+              url(
+                OliWeb.Endpoint,
+                ~p"/sections/#{section.slug}/certificate/#{granted_certificate_1.guid}"
+              )
+          }
         }
       )
 
@@ -1532,9 +1543,15 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => granted_certificate_2.id,
+          "granted_certificate_guid" => granted_certificate_2.guid,
           "to" => granted_certificate_2.user.email,
-          "template" => "certificate_denial"
+          "template" => "student_denial",
+          "template_assigns" => %{
+            student_name: OliWeb.Common.Utils.name(student_2),
+            platform_name: Oli.Branding.brand_name(section),
+            course_name: section.title,
+            instructor_email: instructor.email
+          }
         }
       )
     end
@@ -1581,7 +1598,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       section: section,
       certificate: certificate,
       student_1: student_1,
-      student_2: student_2
+      student_2: student_2,
+      instructor: instructor
     } do
       granted_certificate_1 =
         insert(:granted_certificate,
@@ -1621,18 +1639,34 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => granted_certificate_1.id,
+          "granted_certificate_guid" => granted_certificate_1.guid,
           "to" => granted_certificate_1.user.email,
-          "template" => "certificate_approval"
+          "template" => "student_approval",
+          "template_assigns" => %{
+            student_name: OliWeb.Common.Utils.name(student_1),
+            platform_name: Oli.Branding.brand_name(section),
+            course_name: section.title,
+            certificate_link:
+              url(
+                OliWeb.Endpoint,
+                ~p"/sections/#{section.slug}/certificate/#{granted_certificate_1.guid}"
+              )
+          }
         }
       )
 
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => granted_certificate_2.id,
+          "granted_certificate_guid" => granted_certificate_2.guid,
           "to" => granted_certificate_2.user.email,
-          "template" => "certificate_denial"
+          "template" => "student_denial",
+          "template_assigns" => %{
+            student_name: OliWeb.Common.Utils.name(student_2),
+            platform_name: Oli.Branding.brand_name(section),
+            course_name: section.title,
+            instructor_email: instructor.email
+          }
         }
       )
     end
