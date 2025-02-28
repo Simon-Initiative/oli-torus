@@ -215,6 +215,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
           |> Oban.insert()
         end
 
+        # show the bulk email notification component
+        send_update(BulkCertificateStatusEmail,
+          id: "bulk_email_certificate_status_component",
+          show_component: true
+        )
+
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}
 
       _ ->

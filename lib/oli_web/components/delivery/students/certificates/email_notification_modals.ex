@@ -95,7 +95,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
         >
           <:title>Certificate Status Email</:title>
           <div class="text-sm font-normal mt-3">
-            <p class="text-black">
+            <p class="text-black dark:text-white">
               Please confirm that you want to send <span class="font-bold">all students</span>
               who
               <span class="font-bold">
@@ -105,7 +105,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
             </p>
             <div class="flex space-x-12">
               <div class="w-1/2">
-                <h3 class="text-sm text-black font-bold mt-10 mb-5">
+                <h3 class="text-sm text-black dark:text-white font-bold mt-10 mb-5">
                   Certificate Denial Email:
                 </h3>
                 <div class="p-6 border rounded-lg border-[#CBD2E0] h-[430px] overflow-y-scroll">
@@ -119,7 +119,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
                 </div>
               </div>
               <div class="w-1/2">
-                <h3 class="text-sm text-black font-bold mt-10 mb-5">
+                <h3 class="text-sm text-black dark:text-white font-bold mt-10 mb-5">
                   Certificate Approval Email:
                 </h3>
                 <div class="p-6 border rounded-lg border-[#CBD2E0] h-[430px] overflow-y-scroll">
@@ -191,6 +191,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     GrantedCertificates.bulk_send_certificate_status_email(
       socket.assigns.section_slug,
       socket.assigns.instructor_email
+    )
+
+    # hide the bulk email notification component
+    send_update(BulkCertificateStatusEmail,
+      id: "bulk_email_certificate_status_component",
+      show_component: false
     )
 
     {:noreply, socket}
