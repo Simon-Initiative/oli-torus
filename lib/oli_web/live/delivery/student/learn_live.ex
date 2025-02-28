@@ -758,19 +758,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     %{section: %{id: _section_id}} = assigns
 
     ~H"""
-    <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+    <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="flex justify-end md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex justify-between p-3 md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+        <DeliveryUtils.toggle_visibility_button
+          target_selector="div[data-completed='true']"
+          class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
+        />
+
         <.live_component
           id="view_selector"
           module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
           selected_view={@selected_view}
-        />
-      </div>
-      <div class="sticky w-fit top-20 md:px-[25px] md:pl-[20px] z-40 bg-delivery-body dark:bg-delivery-body-dark">
-        <DeliveryUtils.toggle_visibility_button
-          target_selector="div[data-completed='true']"
-          class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
         />
       </div>
 
@@ -801,20 +800,18 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   def render(%{selected_view: :gallery} = assigns) do
     ~H"""
-    <div id="student_learn" class="lg:container lg:mx-auto p-[25px]" phx-hook="Scroller">
+    <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="flex justify-end md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
-        <.live_component
-          id="view_selector"
-          module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
-          selected_view={@selected_view}
-        />
-      </div>
-      <div class="sticky w-fit top-20 md:px-[25px] md:pl-[50px] z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex justify-between p-3 md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
           on_toggle={&JS.push(&1, "toggle_completed_visibility")}
+        />
+        <.live_component
+          id="view_selector"
+          module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
+          selected_view={@selected_view}
         />
       </div>
 
@@ -1256,14 +1253,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="accordion my-2" id="accordionExample">
         <div class="card py-4 bg-white/20 dark:bg-[#0d0c0e] shadow-none">
           <div
-            class={"card-header border-b-[1px] #{if @progress == 100, do: "border-b-[#39E581]", else: "border-b-[#3B3740]"} pb-1"}
+            class={"card-header border-b-[1px] #{if @progress == 100, do: "border-b-[#39E581]", else: "border-b-gray-300 dark:border-b-gray-700"} pb-1"}
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="dark:text-[#eeebf5]/75 text-sm font-bold font-['Open Sans'] uppercase leading-none">
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
-            <div class="flex justify-between items-center h-8 mt-3 mb-1">
-              <div class="grow shrink basis-0 dark:text-white text-2xl font-semibold font-['Open Sans'] leading-loose">
+            <div class="flex justify-between items-center mt-3 mb-1">
+              <div class="grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
                 <%= @row["title"] %>
               </div>
               <div class="flex flex-row gap-x-2">
@@ -1274,7 +1271,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 <% end %>
               </div>
             </div>
-            <div class="flex justify-between items-center h-6 mb-3">
+            <div class="flex justify-between items-center mb-3">
               <div class="dark:text-[#eeebf5]/75 text-sm font-semibold font-['Open Sans'] leading-none">
                 <%= if @row["section_resource"].end_date in [nil, "Not yet scheduled"],
                   do: "Due by:",
@@ -1423,14 +1420,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <div class="accordion my-2" id="accordionExample">
         <div class="card bg-white/20 dark:bg-[#0d0c0e] py-4 pr-0 shadow-none">
           <div
-            class="card-header border-b-[1px] border-b-[#3B3740] pb-2"
+            class="card-header border-b-[1px] border-b-gray-300 dark:border-b-gray-700 pb-2"
             id={"header-#{@row["resource_id"]}"}
           >
             <h6 class="dark:text-[#eeebf5]/75 text-sm font-bold font-['Open Sans'] uppercase leading-none">
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center h-8 mt-3 mb-1">
-              <div class="grow shrink basis-0 dark:text-white text-2xl font-semibold font-['Open Sans'] leading-loose">
+              <div class="grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
                 <%= @row["title"] %>
               </div>
             </div>
@@ -1456,7 +1453,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     JS.toggle_class("rotate-180",
                       to: "#icon-#{@row["resource_id"]}"
                     )
-                    |> JS.toggle_class("border-b-[1px] border-b-[#3B3740]",
+                    |> JS.toggle_class("border-b-[1px] border-b-gray-300 dark:border-b-gray-700",
                       to: "#header-#{@row["resource_id"]}"
                     )
                   }
@@ -1488,8 +1485,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             class="collapse"
             aria-labelledby={"header-#{@row["resource_id"]}"}
           >
-            <div class="card-body pl-20 pt-8">
-              <div role="completed count" class="flex gap-2.5 border-b-[1px] border-b-[#3B3740] h-10">
+            <div class="card-body pl-6 md:pl-20 pt-4 md:pt-8">
+              <div
+                role="completed count"
+                class="flex gap-2.5 border-b-[1px] border-b-gray-300 dark:border-b-gray-700 h-10"
+              >
                 <div class="w-7 h-8 py-1 flex gap-2.5">
                   <Icons.check />
                 </div>
@@ -1593,7 +1593,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       <button
         role={"page #{@row["numbering"]["index"]} details"}
         class={[
-          "w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-2 flex rounded-lg focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 #{if @row["numbering"]["level"] == 2, do: "border-b-[1px] border-b-[#3B3740]"}",
+          "w-full pl-[5px] pr-[7px] py-2.5 justify-start items-center gap-2 flex focus:bg-[#000000]/5 hover:bg-[#000000]/5 dark:focus:bg-[#FFFFFF]/5 dark:hover:bg-[#FFFFFF]/5 #{if @row["numbering"]["level"] == 2, do: "border-b-[1px] border-b-gray-300 dark:border-b-gray-700"}",
           if(@row["graded"],
             do: "font-semibold hover:font-bold focus:font-bold",
             else: "font-normal hover:font-medium focus:font-medium"
