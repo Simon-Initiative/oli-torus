@@ -473,38 +473,7 @@ defmodule Oli.Analytics.Summary do
           section_id :: integer(),
           activity_resource_ids :: [integer()]
         ) :: [map()]
-  def get_response_summary_for(page_resource_id, section_id, only_for_activity_ids \\ nil) do
-    activity_constraint =
-      case only_for_activity_ids do
-        nil -> true
-        _ -> dynamic([s, _], s.activity_id in ^only_for_activity_ids)
-      end
-
-    from(rs in ResponseSummary,
-      join: rpp in ResourcePartResponse,
-      on: rs.resource_part_response_id == rpp.id,
-      left_join: sr in StudentResponse,
-      on:
-        rs.section_id == sr.section_id and rs.page_id == sr.page_id and
-          rs.resource_part_response_id == sr.resource_part_response_id,
-      left_join: u in Oli.Accounts.User,
-      on: sr.user_id == u.id,
-      where:
-        rs.section_id == ^section_id and rs.page_id == ^page_resource_id and
-          rs.publication_id == -1 and rs.project_id == -1,
-      where: ^activity_constraint,
-      select: %{
-        part_id: rpp.part_id,
-        response: rpp.response,
-        count: rs.count,
-        user: u,
-        activity_id: rs.activity_id
-      }
-    )
-    |> Repo.all()
-  end
-
-  def get_response_summary_for_condensed(
+  def get_response_summary_for(
         page_resource_id,
         section_id,
         only_for_activity_ids \\ nil

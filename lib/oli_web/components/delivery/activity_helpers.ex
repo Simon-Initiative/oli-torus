@@ -72,7 +72,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     # {list of all response summaries, map of activity_id -> set of user ids}
     {response_summaries, attempted_activities} =
-      Summary.get_response_summary_for_condensed(page_id, section.id, only_for_activity_ids)
+      Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
       |> Enum.reduce({[], %{}}, fn summary, {all, attempted_activities} ->
         # The users who have answered these responses comes over as a list of user ids,
         # so we need to convert them to a list of user structs, but careful to dedupe, handle
