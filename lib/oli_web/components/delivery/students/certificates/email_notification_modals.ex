@@ -171,7 +171,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       when selected_modal in ["approve", "deny"] do
     %{
       selected_student: student,
-      granted_certificate_id: granted_certificate_id
+      granted_certificate_guid: granted_certificate_guid
     } =
       socket.assigns
 
@@ -182,7 +182,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     # (for instance, platform_name, course_name, instructor_email, and any info to build the url link to the pdf for approved certificates)
     # 2. if the granted_certificate is updated to mark the student_email_sent field as true
     GrantedCertificates.send_certificate_email(
-      granted_certificate_id,
+      granted_certificate_guid,
       student.email,
       email_template_by_selected_modal(selected_modal),
       %{some: :assigns_depending_on_the_email_template}

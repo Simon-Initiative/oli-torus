@@ -249,7 +249,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
           id: "certificate_email_notification_modals",
           selected_student: socket.assigns.student,
           selected_modal: if(required_state == :earned, do: :approve, else: :deny),
-          granted_certificate_id: gc.id
+          granted_certificate_guid: gc.guid
         )
 
         {:noreply, assign(socket, certificate_status: required_state, is_editing: false)}

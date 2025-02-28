@@ -17,7 +17,8 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.Mailer do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"template" => "student_denial"} = args}) do
-    granted_certificate = GrantedCertificates.get_granted_certificate_by_guid(args["guid"])
+    granted_certificate =
+      GrantedCertificates.get_granted_certificate_by_guid(args["granted_certificate_guid"])
 
     send_email(
       :certificate_denial,
@@ -37,7 +38,8 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.Mailer do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"template" => "student_approval"} = args}) do
-    granted_certificate = GrantedCertificates.get_granted_certificate_by_guid(args["guid"])
+    granted_certificate =
+      GrantedCertificates.get_granted_certificate_by_guid(args["granted_certificate_guid"])
 
     subject = get_subject(granted_certificate)
 

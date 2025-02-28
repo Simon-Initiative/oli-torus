@@ -30,7 +30,7 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
           section = granted_certificate.certificate.section
 
           GrantedCertificates.send_certificate_email(
-            granted_certificate.id,
+            granted_certificate.guid,
             granted_certificate.user.email,
             "student_approval",
             %{

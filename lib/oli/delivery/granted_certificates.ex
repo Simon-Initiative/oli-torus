@@ -185,9 +185,9 @@ defmodule Oli.Delivery.GrantedCertificates do
   Sends an email to the given email address with the given template, to inform the student
   about the status of the granted certificate.
   """
-  def send_certificate_email(granted_certificate_id, to, template, template_assigns) do
+  def send_certificate_email(granted_certificate_guid, to, template, template_assigns) do
     Mailer.new(%{
-      granted_certificate_id: granted_certificate_id,
+      granted_certificate_guid: granted_certificate_guid,
       to: to,
       template: template,
       template_assigns: template_assigns
@@ -212,15 +212,13 @@ defmodule Oli.Delivery.GrantedCertificates do
           where: s.slug == ^section_slug,
           where: gc.state in [:earned, :denied],
           where: gc.student_email_sent == false,
-          select: {gc.id, gc.state, student.email}
+          select: {gc.guid, gc.state, student.email}
       )
 
-    # TODO: recheck here and in other triggers if we need to provide
-    # the gc_id or the gc_guid.
     granted_certificates
-    |> Enum.map(fn {id, state, email} ->
+    |> Enum.map(fn {guid, state, email} ->
       Mailer.new(%{
-        granted_certificate_id: id,
+        granted_certificate_guid: guid,
         to: email,
         template: if(state == :earned, do: :certificate_approval, else: :certificate_denial),
         template_asigns: %{some: :assigns_depending_on_the_email_template}

@@ -296,7 +296,7 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       granted_certificate = insert(:granted_certificate)
 
       GrantedCertificates.send_certificate_email(
-        granted_certificate.id,
+        granted_certificate.guid,
         "some@email.com",
         :certificate_approval
       )
