@@ -881,7 +881,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             <%= "PAGE #{@unit["numbering"]["index"]}" %>
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <div class="flex w-full">
+            <div class="flex flex-col md:flex-row w-full">
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
                 <%= @unit["title"] %>
               </h3>
@@ -948,11 +948,11 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             ) %>
           </div>
           <div class="mb-6 flex flex-col items-start gap-[6px] w-full">
-            <div class="flex w-full">
+            <div class="flex flex-col md:flex-row w-full justify-between gap-2">
               <h3 class="text-[26px] leading-[32px] tracking-[0.02px] font-normal dark:text-[#DDD]">
                 <%= @unit["title"] %>
               </h3>
-              <div class="ml-auto flex items-center gap-3" role="schedule_details">
+              <div class="flex items-center gap-3" role="schedule_details">
                 <div class="text-[14px] leading-[32px] tracking-[0.02px] font-semibold">
                   <span class="text-gray-400 opacity-80 dark:text-[#696974] dark:opacity-100 mr-1">
                     <%= if @unit["section_resource"].end_date in [nil, "Not yet scheduled"],
@@ -962,11 +962,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                           Map.get(@contained_scheduling_types, @unit["resource_id"])
                         ) %>
                   </span>
-                  <%= format_date(
-                    @unit["section_resource"].end_date,
-                    @ctx,
-                    "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
-                  ) %>
+                  <span class="whitespace-nowrap">
+                    <%= format_date(
+                      @unit["section_resource"].end_date,
+                      @ctx,
+                      "{WDshort}, {Mshort} {D}, {YYYY} ({h12}:{m}{am})"
+                    ) %>
+                  </span>
                 </div>
               </div>
             </div>
@@ -1052,7 +1054,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       >
         <.custom_focus_wrap
           :if={Map.has_key?(@selected_module_per_unit_resource_id, @unit["resource_id"])}
-          class="px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
+          class="px-3 md:px-[50px] rounded-lg flex-col justify-start items-center gap-[25px] flex"
           role="module_details"
           id={"selected_module_in_unit_#{@unit["resource_id"]}"}
           data-animate={
@@ -1091,7 +1093,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 ) %>
               </div>
             </div>
-            <h2 class="self-stretch opacity-90 text-center text-[26px] font-normal leading-loose tracking-tight dark:text-white">
+            <h2 class="self-stretch opacity-90 text-center text-xl md:text-[26px] font-normal md:leading-loose tracking-tight dark:text-white">
               <%= selected_module[
                 "title"
               ] %>
@@ -1118,7 +1120,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             }
             id={"module_intro_contentin_unit_#{@unit["resource_id"]}"}
             role="module intro content"
-            class="max-w-[760px] w-full pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
+            class="max-w-[760px] w-full pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] inline-flex"
           >
             <div class="flex flex-col opacity-80">
               <span
@@ -1178,7 +1180,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
           <div
             role="module index"
-            class="flex flex-col max-w-[760px] pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
+            class="flex flex-col max-w-[760px] pt-4 md:pt-[25px] pb-2.5 justify-start items-start gap-[23px] w-full"
           >
             <div class="w-full">
               <% module =
