@@ -12,6 +12,15 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
     })
   end
 
+  def add_student_response([section_id, resource_part_response_id, page_id, user_id]) do
+    Summary.create_student_response(%{
+      section_id: section_id,
+      resource_part_response_id: resource_part_response_id,
+      page_id: page_id,
+      user_id: user_id
+    })
+  end
+
   def add_response_summary([
         section_id,
         page_id,
@@ -70,6 +79,15 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
         ]
         |> Enum.map(fn v -> add_resource_part_response(v) end)
 
+      # Create 1 student response per activity
+      [
+        [section.id, r1.id, page1.id, user1.id],
+        [section.id, r2.id, page1.id, user2.id],
+        [section.id, r3.id, page1.id, user1.id],
+        [section.id, r4.id, page1.id, user2.id]
+      ]
+      |> Enum.map(fn v -> add_student_response(v) end)
+
       [
         [section.id, page1.id, id1, "1", 3, r1.id],
         [section.id, page1.id, id1, "1", 3, r2.id],
@@ -79,10 +97,8 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
       |> Enum.each(fn v -> add_response_summary(v) end)
 
       [
-        [-1, -1, section.id, user1.id, id1, "1", activity_type_id, 1, 2, 1, 1, 0],
-        [-1, -1, section.id, user2.id, id1, "1", activity_type_id, 1, 3, 1, 1, 0],
-        [-1, -1, section.id, user1.id, id2, "1", activity_type_id, 2, 4, 1, 1, 0],
-        [-1, -1, section.id, user2.id, id2, "1", activity_type_id, 3, 5, 1, 1, 0]
+        [-1, -1, section.id, -1, id1, "1", activity_type_id, 1, 2, 1, 1, 0],
+        [-1, -1, section.id, -1, id2, "1", activity_type_id, 2, 4, 1, 1, 0]
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
@@ -92,14 +108,25 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
       # let's assert that we did this correctly to ensure that we are getting the true
       # count of resource summaries (and not multiplying by count by the number of responses
       # trough an incorrect join)
-      assert Enum.count(items) == 4
+      assert Enum.count(items) == 2
 
       # verify the "only_for_activity_ids" optional constraint works
       items = Summary.summarize_activities_for_page(section.id, page1.id, [id1])
-      assert Enum.count(items) == 2
+      assert Enum.count(items) == 1
 
       items = Summary.summarize_activities_for_page(section.id, page1.id, [id1 + id2])
       assert Enum.count(items) == 0
+
+      # Very the responses are correct and include the user ids as a list
+      responses = Summary.get_response_summary_for(page1.id, section.id)
+
+      assert Enum.count(responses) == 4
+      [r1, r2, r3, r4] = responses
+
+      assert r1.users == [user1.id]
+      assert r2.users == [user2.id]
+      assert r3.users == [user1.id]
+      assert r4.users == [user2.id]
     end
   end
 end

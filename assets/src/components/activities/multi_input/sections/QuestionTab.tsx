@@ -3,6 +3,7 @@ import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/RemoveButton';
+import { RespondedUsersList } from 'components/activities/common/authoring/RespondedUsersList';
 import {
   MultiInput,
   MultiInputSchema,
@@ -48,7 +49,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
           <div className="mt-5">
             <table>
               <tr>
-                <th>Student </th>
+                <th>Students </th>
                 <th>Response</th>
               </tr>
               <tbody>
@@ -60,7 +61,9 @@ export const QuestionTab: React.FC<Props> = (props) => {
                   )
                   .map((response, index) => (
                     <tr key={`${index}`}>
-                      <td className="whitespace-nowrap">{response.user_name}</td>
+                      <td className="whitespace-nowrap">
+                        <RespondedUsersList users={response.users} />
+                      </td>
                       <td>{response.text}</td>
                     </tr>
                   ))}

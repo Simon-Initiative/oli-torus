@@ -45,29 +45,60 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         students,
         only_for_activity_ids \\ nil
       ) do
-    Logger.info(
-      "Summarizing activity performance for section #{section.id} and page #{page_revision.resource_id}"
-    )
-
     page_id = page_revision.resource_id
     graded = page_revision.graded
 
-    # Get the per-student performance summary for all activities on the page, then group
-    # them by the activity id (which comes back as resource_id)
-    student_summary =
+    # Get the per-part performance summary for all activities on the page, group them by
+    # activity id, and then get the list of activity ids
+    resource_summaries =
       Summary.summarize_activities_for_page(section.id, page_id, only_for_activity_ids)
 
-    grouped_by_activity_id = Enum.group_by(student_summary, & &1.resource_id)
+    grouped_by_activity_id =
+      Enum.group_by(resource_summaries, fn summary -> summary.resource_id end)
 
-    response_summaries =
-      Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
-
-    # Then resolve the revisions for the activities
     activity_ids = Map.keys(grouped_by_activity_id)
 
     Logger.info(
       "Summarizing #{Enum.count(activity_ids)} for section #{section.id} and page #{page_revision.resource_id}"
     )
+
+    # Build a map of students by their id
+    students_by_id =
+      Enum.reduce(students, %{}, fn student, acc -> Map.put(acc, student.id, student) end)
+
+    # Get the response specific counts of the activities, which also includes the
+    # user ids of the students who gave those responses, but along the way tracking which
+    # students have attempted which activities
+
+    # {list of all response summaries, map of activity_id -> set of user ids}
+    {response_summaries, attempted_activities} =
+      Summary.get_response_summary_for(page_id, section.id, only_for_activity_ids)
+      |> Enum.reduce({[], %{}}, fn summary, {all, attempted_activities} ->
+        # The users who have answered these responses comes over as a list of user ids,
+        # so we need to convert them to a list of user structs, but careful to dedupe, handle
+        # missing users, and sort them by name
+
+        users =
+          Enum.uniq(summary.users)
+          |> Enum.map(fn id -> Map.get(students_by_id, id) end)
+          |> Enum.filter(fn x -> x != nil end)
+          |> Enum.sort_by(&{&1.family_name, &1.given_name})
+
+        summary = %{summary | users: users}
+
+        # Now we need to track which students have attempted which activities
+        attempted_activities =
+          Map.put(
+            attempted_activities,
+            summary.activity_id,
+            MapSet.union(
+              Map.get(attempted_activities, summary.activity_id, MapSet.new()),
+              MapSet.new(Enum.map(users, fn user -> user.id end))
+            )
+          )
+
+        {[summary | all], attempted_activities}
+      end)
 
     revisions_by_resource_id =
       Oli.Publishing.DeliveryResolver.from_resource_id(section.slug, activity_ids)
@@ -75,7 +106,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     # NOTE: From this point forward, we make no more DB queries
 
-    # Now total up the attempt numbers across all students for each activity
+    # Now total up the attempt numbers across all potential parts
     attempt_totals =
       Enum.reduce(activity_ids, %{}, fn activity_id, acc ->
         total =
@@ -91,24 +122,20 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     # Now we can assemble the final structure for each activity
     Enum.map(activity_ids, fn activity_id ->
-      students_with_attempts = grouped_by_activity_id[activity_id] |> Enum.map(& &1.user_id)
+      # Get the ids of who have attempted this activity
+      emails_with_attempts =
+        Map.get(attempted_activities, activity_id, MapSet.new())
+        |> MapSet.to_list()
+        |> Enum.map(fn id -> Map.get(students_by_id, id).email end)
+
+      student_emails_without_attempts =
+        MapSet.difference(all_emails, MapSet.new(emails_with_attempts)) |> MapSet.to_list()
 
       revision =
         case revisions_by_resource_id[activity_id] do
           nil -> %{title: "Unknown Activity"}
           revision -> revision
         end
-
-      # Determine with students have not attempted this activity, all via set difference
-      emails_with_attempts =
-        Enum.filter(response_summaries, fn response_summary ->
-          response_summary.activity_id == activity_id
-        end)
-        |> Enum.map(fn response_summary -> response_summary.user.email end)
-        |> MapSet.new()
-
-      student_emails_without_attempts =
-        MapSet.difference(all_emails, emails_with_attempts) |> MapSet.to_list()
 
       %{
         id: activity_id,
@@ -118,8 +145,8 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         revision: revision,
         transformed_model: nil,
         total_attempts_count: attempt_totals[activity_id],
-        students_with_attempts: students_with_attempts,
-        students_with_attempts_count: Enum.count(students_with_attempts),
+        students_with_attempts: emails_with_attempts,
+        students_with_attempts_count: Enum.count(emails_with_attempts),
         student_emails_without_attempts: student_emails_without_attempts
       }
     end)
@@ -423,20 +450,13 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
   defp add_single_response_details(activity_attempt, response_summaries) do
     responses =
-      Enum.reduce(response_summaries, [], fn response_summary, acc ->
-        if response_summary.activity_id == activity_attempt.resource_id do
-          [
-            %{
-              text: response_summary.response,
-              user_name: OliWeb.Common.Utils.name(response_summary.user)
-            }
-            | acc
-          ]
-        else
-          acc
-        end
+      Enum.filter(response_summaries, fn rs -> rs.activity_id == activity_attempt.resource_id end)
+      |> Enum.map(fn rs ->
+        %{
+          text: rs.response,
+          users: Enum.map(rs.users, fn user -> OliWeb.Common.Utils.name(user) end)
+        }
       end)
-      |> Enum.reverse()
 
     update_in(
       activity_attempt,
@@ -703,7 +723,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         [
           %{
             text: response_summary.response,
-            user_name: OliWeb.Common.Utils.name(response_summary.user),
+            users: Enum.map(response_summary.users, fn u -> OliWeb.Common.Utils.name(u) end),
             type: mapper[response_summary.part_id],
             part_id: response_summary.part_id
           }

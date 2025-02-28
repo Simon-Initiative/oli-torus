@@ -60,6 +60,6 @@ export interface MultiInputSchema extends ActivityModelSchema, ActivityLevelScor
     parts: Part[];
     transformations: Transformation[];
     previewText: string;
-    responses?: { user_name: string; text: string; type: string; part_id: string; count: number }[];
+    responses?: { users: string[]; text: string; type: string; part_id: string; count: number }[];
   };
 }
