@@ -10,21 +10,29 @@ import { getQueryVariableFromString } from 'utils/params';
 export const youtubeUrlToId = (src?: string | null) => {
   if (!src) return null;
 
-  // https://www.youtube.com/embed/W98qXD35kXY
+  // check for query string including a v param
+  // e.g. http://youtube.com/watch?v=W98qXD35kXY&list=x8wefc
+  const [urlBase, queryString] = src.split('?');
+  if (queryString) {
+    const vParam = getQueryVariableFromString('v', queryString);
+    if (vParam !== '') return vParam;
+  }
+
+  // else examine urlBase = url w/any query string stripped
+
+  // embed url form https://www.youtube.com/embed/W98qXD35kXY
   const embedRegex = /embed\/([a-zA-Z0-9_-]+)/;
-  const match = embedRegex.exec(src);
+  const match = embedRegex.exec(urlBase);
   if (match) {
     return match[1];
   }
 
-  const hasParams = src.includes('?');
-  if (hasParams) {
-    const queryString = src.substr(src.indexOf('?') + 1);
-    src = getQueryVariableFromString('v', queryString);
-  } else if (src.indexOf('/youtu.be/') !== -1) {
-    src = src.substr(src.lastIndexOf('/') + 1);
+  // short url form https://youtu.be/W98qXD35kXY
+  if (urlBase.indexOf('/youtu.be/') !== -1) {
+    return urlBase.substr(src.lastIndexOf('/') + 1);
   }
 
+  // else treat as bare video id
   return src;
 };
 
