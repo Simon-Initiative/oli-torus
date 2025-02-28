@@ -34,7 +34,7 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
             granted_certificate.user.email,
             "student_approval",
             %{
-              student_name: granted_certificate.user.name,
+              student_name: OliWeb.Common.Utils.name(granted_certificate.user),
               course_name: section.title,
               certificate_link:
                 Phoenix.VerifiedRoutes.url(
