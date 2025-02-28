@@ -68,6 +68,82 @@ export const generateAllCorrectWorkflow = (
   return { rules, variables };
 };
 
+/*
+  Used for things like Hub & Spoke when there are multiple correct answer and any option is valid to pick. There could
+  be authored paths out of it for each option.
+*/
+export const generateMultipleCorrectWorkflow = (
+  defaultPath: Required<IConditionWithFeedback>,
+  incorrect: IConditionWithFeedback[],
+  specificPaths: IConditionWithFeedback[],
+  commanErrors: IConditionWithFeedback[],
+  extras: IAction[],
+): RulesAndVariables => {
+  const rules: IAdaptiveRule[] = [];
+
+  rules.push({
+    ...generateRule(
+      'correct',
+      defaultPath.conditions.map(newId),
+      defaultPath.destinationId,
+      true,
+      10,
+      defaultPath.feedback?.length ? defaultPath.feedback : null,
+      [],
+    ),
+    default: true,
+  });
+  // option specific conditions / navigations
+  for (const path of specificPaths.filter((e) => !!e.destinationId)) {
+    rules.push(
+      generateRule(
+        `specific-path-${rules.length}`,
+        path.conditions.map(newId),
+        path.destinationId || null,
+        true,
+        30,
+        path.feedback,
+        extras,
+      ),
+    );
+  }
+
+  for (const path of commanErrors.filter((e) => !e.destinationId)) {
+    rules.push(
+      generateRule(
+        `common-error--${rules.length}`,
+        path.conditions.map(newId),
+        path.destinationId || null,
+        false,
+        30,
+        path.feedback,
+        [],
+      ),
+    );
+  }
+
+  for (const path of incorrect.filter((e) => !e.destinationId)) {
+    rules.push(
+      generateRule(
+        `incorrect--${rules.length}`,
+        path.conditions.map(newId),
+        path.destinationId || null,
+        false,
+        30,
+        path.feedback,
+        [],
+      ),
+    );
+  }
+
+  const conditions: ICondition[] = rules
+    .filter((r) => !!r)
+    .map((r) => [...(r.conditions.all || []), ...(r.conditions.any || [])])
+    .flat();
+  const variables = uniq(conditions.map((c: ICondition) => c.fact));
+  return { rules, variables };
+};
+
 const resetTries = (): IAction => ({
   type: 'mutateState',
   params: {

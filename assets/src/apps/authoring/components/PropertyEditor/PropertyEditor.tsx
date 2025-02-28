@@ -13,6 +13,8 @@ import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { SpokeCustomErrorFeedbackAuthoring } from './custom/SpokeCustomErrorFeedbackAuthoring';
+import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
 import { TorusAudioBrowser } from './custom/TorusAudioBrowser';
 import { TorusImageBrowser } from './custom/TorusImageBrowser';
 import { TorusVideoBrowser } from './custom/TorusVideoBrowser';
@@ -36,8 +38,10 @@ const widgets: any = {
   TorusVideoBrowser: TorusVideoBrowser,
   OptionsCorrectPicker: OptionsCorrectPicker,
   OptionsCustomErrorFeedbackAuthoring: OptionsCustomErrorFeedbackAuthoring,
+  SpokeCustomErrorFeedbackAuthoring: SpokeCustomErrorFeedbackAuthoring,
   MCQCorrectAnswerEditor: MCQCorrectAnswerEditor,
   MCQOptionsEditor: MCQOptionsEditor,
+  SpokeOptionsEditor: SpokeOptionsEditor,
   DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
 };

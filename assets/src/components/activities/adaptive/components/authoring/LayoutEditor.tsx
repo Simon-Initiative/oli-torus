@@ -26,7 +26,7 @@ interface LayoutEditorProps {
   selected: string;
   hostRef?: HTMLElement;
   configurePortalId?: string;
-  onChange: (parts: AnyPartComponent[]) => void;
+  onChange: (parts: AnyPartComponent[], selectedPartId?: string, isDeleted?: boolean) => void;
   onSelect: (partId: string) => void;
   onCopyPart?: (part: any) => Promise<any>;
   onConfigurePart?: (part: any, context: any) => Promise<any>;
@@ -252,7 +252,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
     // console.log('AUTHOR PART DELETE', { selectedPart }, selectedPartId);
     if (!selectedPartAndCapabilities) return;
     const filteredParts = parts.filter((part) => part.id !== selectedPartAndCapabilities.id);
-    props.onChange(filteredParts);
+    props.onChange(filteredParts, selectedPartId, true);
     // optimistically update local state
     setParts(filteredParts);
     // just setting the part ID should trigger the selectedPart also to get reset
