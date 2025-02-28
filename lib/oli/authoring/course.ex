@@ -464,104 +464,6 @@ defmodule Oli.Authoring.Course do
     |> Enum.count() > 0
   end
 
-  def kill_datashop_export(project_slug, queue) do
-    # Cancel all Oban jobs matching this project_slug and queue
-    Oban.Job
-    |> where([j], j.state in ["available", "executing", "scheduled"])
-    |> where([j], j.queue == ^queue)
-    |> where([j], fragment("?->>'project_slug' = ?", j.args, ^project_slug))
-    |> Repo.all()
-    |> Enum.each(fn job -> Oban.cancel_job(job.id) end)
-  end
-
-  @doc """
-  Returns the status of the analytics export for the given project.
-  """
-  def analytics_export_status(project) do
-    if export_in_progress?(project.slug, "analytics_export") do
-      # snapshot is in progress
-      {:in_progress}
-    else
-      case project do
-        # snapshot is created and completed
-        %Project{
-          latest_analytics_snapshot_url: snapshot_url,
-          latest_analytics_snapshot_timestamp: snapshot_timestamp
-        }
-        when not is_nil(snapshot_url) and not is_nil(snapshot_timestamp) ->
-          # here we are checking if the snapshot is expired or not
-          {:ok, snapshot_timestamp} = DateTime.from_naive(snapshot_timestamp, "Etc/UTC")
-
-          # snapshot automatically expires after 30 days
-          snapshot_expiry = DateTime.add(snapshot_timestamp, 30, :day)
-
-          case DateTime.compare(snapshot_expiry, DateTime.utc_now()) do
-            :lt ->
-              {:expired, snapshot_url, snapshot_timestamp}
-
-            _ ->
-              {:available, snapshot_url, snapshot_timestamp}
-          end
-
-        # snapshot has not been created yet
-        _ ->
-          {:not_available}
-      end
-    end
-  end
-
-  @doc """
-  Generates an analytics snapshot for the given project if one is not already in progress
-  """
-  def generate_analytics_snapshot(project) do
-    case analytics_export_status(project) do
-      {:in_progress} ->
-        {:error, "Raw analytics snapshot is already in progress"}
-
-      _ ->
-        generate_analytics_snapshot!(project)
-    end
-  end
-
-  defp generate_analytics_snapshot!(project) do
-    %{project_slug: project.slug}
-    |> Oli.Analytics.RawAnalyticsExportWorker.new()
-    |> Oban.insert()
-  end
-
-  def datashop_export_status(project) do
-    if export_in_progress?(project.slug, "datashop_export") do
-      # snapshot is in progress
-      {:in_progress}
-    else
-      case project do
-        # snapshot is created and completed
-        %Project{
-          latest_datashop_snapshot_url: snapshot_url,
-          latest_datashop_snapshot_timestamp: snapshot_timestamp
-        }
-        when not is_nil(snapshot_url) and not is_nil(snapshot_timestamp) ->
-          # here we are checking if the snapshot is expired or not
-          {:ok, snapshot_timestamp} = DateTime.from_naive(snapshot_timestamp, "Etc/UTC")
-
-          # snapshot automatically expires after 30 days
-          snapshot_expiry = DateTime.add(snapshot_timestamp, 30, :day)
-
-          case DateTime.compare(snapshot_expiry, DateTime.utc_now()) do
-            :lt ->
-              {:expired, snapshot_url, snapshot_timestamp}
-
-            _ ->
-              {:available, snapshot_url, snapshot_timestamp}
-          end
-
-        # snapshot has not been created yet
-        _ ->
-          {:not_available}
-      end
-    end
-  end
-
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking project changes.
   ## Examples
@@ -572,26 +474,8 @@ defmodule Oli.Authoring.Course do
     Project.changeset(project, params)
   end
 
-  @doc """
-  Generates a datashop snapshot for the given project and sections if one is not already in progress
-  """
-  def generate_datashop_snapshot(project, section_ids) do
-    case datashop_export_status(project) do
-      {:in_progress} ->
-        {:error, "Datashop snapshot is already in progress"}
-
-      _ ->
-        generate_datashop_snapshot!(project, section_ids)
-    end
-  end
-
-  defp generate_datashop_snapshot!(project, section_ids) do
-    %{project_slug: project.slug, section_ids: section_ids}
-    |> Oli.Analytics.DatashopExportWorker.new()
-    |> Oban.insert()
-  end
-
   alias Oli.Authoring.Course.CreativeCommons
+
   @cc_options Map.keys(CreativeCommons.cc_options())
 
   @type license_types ::

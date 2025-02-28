@@ -4,8 +4,21 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   alias Oli.Delivery.Certificates.CertificateRenderer
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Repo
+  alias OliWeb.Icons
 
   @impl true
+  def render(%{read_only: true} = assigns) do
+    ~H"""
+    <div>
+      <.preview_certificate
+        certificate_html={@certificate_html}
+        preview_page={@preview_page}
+        target={@myself}
+      />
+    </div>
+    """
+  end
+
   def render(assigns) do
     ~H"""
     <div class="w-full flex-col">
@@ -228,6 +241,60 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     """
   end
 
+  def preview_certificate(assigns) do
+    ~H"""
+    <div class="flex flex-col">
+      <div class="flex flex-row justify-center overflow-hidden">
+        <button
+          role="prev button"
+          phx-click="prev_preview_page"
+          phx-target={@target}
+          disabled={@preview_page == 0}
+          class="enabled:hover:scale-105 disabled:opacity-50"
+        >
+          <Icons.left_arrow class="fill-[#3E3F44] dark:fill-white" />
+        </button>
+
+        <iframe
+          id={"certificate_preview_#{@preview_page}"}
+          srcdoc={elem(@certificate_html, @preview_page)}
+          class="w-[65rem] h-[40rem]"
+        >
+        </iframe>
+        <button
+          role="next button"
+          phx-click="next_preview_page"
+          phx-target={@target}
+          disabled={@preview_page == 1}
+          class="enabled:hover:scale-105 disabled:opacity-50"
+        >
+          <Icons.left_arrow class="fill-[#3E3F44] dark:fill-white -rotate-180" />
+        </button>
+      </div>
+      <div class="flex gap-4 justify-center">
+        <button
+          role="carousel prev button"
+          phx-click="prev_preview_page"
+          phx-target={@target}
+          disabled={@preview_page == 0}
+          class="enabled:hover:scale-105"
+        >
+          <.carousel_dot active={@preview_page == 0} />
+        </button>
+        <button
+          role="carousel next button"
+          phx-click="next_preview_page"
+          phx-target={@target}
+          disabled={@preview_page == 1}
+          class="enabled:hover:scale-105"
+        >
+          <.carousel_dot active={@preview_page == 1} />
+        </button>
+      </div>
+    </div>
+    """
+  end
+
   @impl true
   def mount(socket) do
     {:ok,
@@ -243,7 +310,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
      |> assign(
        show_preview: false,
        preview_page: 0,
-       certificate_html: {nil, nil}
+       certificate_html: maybe_generate_previews(assigns.read_only, assigns.certificate)
      )
      |> assign_new(:certificate_changeset, fn -> certificate_changeset(assigns.certificate) end)}
   end
@@ -345,5 +412,55 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   defp saved_logos(changeset) do
     [changeset.data.logo1, changeset.data.logo2, changeset.data.logo3]
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp carousel_dot(%{active: true} = assigns) do
+    ~H"""
+    <div class="w-3 h-3 bg-[#383A44] rounded-full"></div>
+    """
+  end
+
+  defp carousel_dot(%{active: false} = assigns) do
+    ~H"""
+    <div class="w-3 h-3 bg-[#A3A3A3] rounded-full"></div>
+    """
+  end
+
+  defp maybe_generate_previews(false, _), do: {nil, nil}
+
+  defp maybe_generate_previews(true, certificate) do
+    admins =
+      [
+        {certificate.admin_name1, certificate.admin_title1},
+        {certificate.admin_name2, certificate.admin_title2},
+        {certificate.admin_name3, certificate.admin_title3}
+      ]
+      |> Enum.reject(fn {name, _} -> name == "" || !name end)
+
+    logos =
+      [certificate.logo1, certificate.logo2, certificate.logo3]
+      |> Enum.reject(&is_nil/1)
+
+    granted_certificate_guid = "00000000-0000-0000-0000-000000000000"
+
+    attrs = %{
+      certificate_type: "Certificate of Completion",
+      certificate_verification_url:
+        url(OliWeb.Endpoint, ~p"/certificates?cert_guid=#{granted_certificate_guid}"),
+      student_name: "Student Name",
+      completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
+      certificate_id: granted_certificate_guid,
+      course_name: certificate.title,
+      course_description: certificate.description,
+      administrators: admins,
+      logos: logos
+    }
+
+    completion_cert = CertificateRenderer.render(attrs)
+
+    distinction_cert =
+      CertificateRenderer.render(%{attrs | certificate_type: "Certificate with Distinction"})
+
+    {completion_cert, distinction_cert}
   end
 end

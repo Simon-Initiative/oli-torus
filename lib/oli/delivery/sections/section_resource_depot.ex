@@ -93,6 +93,57 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
+  Returns a list of SectionResource records for all containers
+  """
+  def containers(section_id) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    container = Oli.Resources.ResourceType.id_for_container()
+
+    Depot.query(
+      @depot_desc,
+      section_id,
+      resource_type_id: container
+    )
+    |> Enum.sort_by(& &1.numbering_index)
+  end
+
+  @doc """
+  Return the SectionResource records for a given section and a list of page ids.
+  """
+  def get_pages(section_id, page_ids) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    query_conditions = {:resource_id, {:in, page_ids}}
+
+    Depot.query(
+      @depot_desc,
+      section_id,
+      query_conditions
+    )
+    |> Enum.sort_by(& &1.numbering_index)
+  end
+
+  @doc """
+  Returns a list of SectionResource records for all practice pages for a given section.
+  """
+  def practice_pages(section_id, additional_query_conditions \\ []) do
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+
+    page = Oli.Resources.ResourceType.id_for_page()
+
+    query_conditions =
+      Keyword.merge([graded: false, resource_type_id: page], additional_query_conditions)
+
+    Depot.query(
+      @depot_desc,
+      section_id,
+      query_conditions
+    )
+    |> Enum.sort_by(& &1.numbering_index)
+  end
+
+  @doc """
   Access the SectionResource records pertaining to the course schedule.
   """
   def retrieve_schedule(section_id, filter_resource_type \\ false) do

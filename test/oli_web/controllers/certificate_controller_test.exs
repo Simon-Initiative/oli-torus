@@ -7,6 +7,12 @@ defmodule OliWeb.CertificateControllerTest do
       conn = get(conn, Routes.certificate_path(conn, :index))
       assert html_response(conn, 200) =~ "Certificate Verification"
     end
+
+    test "renders index with guid preloaded in the text input", %{conn: conn} do
+      conn = get(conn, Routes.certificate_path(conn, :index), %{"cert_guid" => "some-guid"})
+
+      assert html_response(conn, 200) =~ "some-guid"
+    end
   end
 
   describe "POST /certificate/verify" do

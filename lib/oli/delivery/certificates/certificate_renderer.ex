@@ -1,4 +1,6 @@
 defmodule Oli.Delivery.Certificates.CertificateRenderer do
+  use OliWeb, :verified_routes
+
   @template """
   <html lang="en">
   <meta charset="UTF-8" />
@@ -8,16 +10,27 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
     }
 
     body {
-      background-color: white;
+      background-color: inherit;
       margin: 0;
       padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .frame-container {
+      margin: 40px 60px;
+      border: 1px solid #D3D3D3;
+      border-radius: 0.3rem;
+      padding: 22px 20px;
+      background-color: white;
     }
 
     .outer-container {
       border: 4px solid #917e08;
       padding: 2px;
       width: 800px;
-      margin: 40px auto;
     }
 
     .inner-container {
@@ -29,36 +42,36 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
     }
   </style>
   <body>
-    <div class="outer-container">
-      <div class="inner-container">
-        <h1 style="color:#8f7b00;font-family:'DejaVu Serif', 'Times New Roman', Times, serif;font-weight:400;font-size:50px;"><%= @certificate_type %></h1>
+    <div class="frame-container">
+      <div class="outer-container">
+        <div class="inner-container">
+          <h1 style="color:#8f7b00;font-family:'DejaVu Serif', 'Times New Roman', Times, serif;font-weight:400;font-size:50px;"><%= @certificate_type %></h1>
+          <p>This certificate is presented to</p>
+          <h2 style="font-size: 24px; font-weight: bold;"><%= @student_name %></h2>
+          <p>on <strong><%= @completion_date %></strong> for completing</p>
+          <h3 style="font-size: 22px; font-weight: bold;"><%= @course_name %></h3>
+          <p style="font-style: italic;"><%= @course_description %></p>
 
-        <p>This certificate is presented to</p>
-        <h2 style="font-size: 24px; font-weight: bold;"><%= @student_name %></h2>
-        <p>on <strong><%= @completion_date %></strong> for completing</p>
-        <h3 style="font-size: 22px; font-weight: bold;"><%= @course_name %></h3>
-        <p style="font-style: italic;"><%= @course_description %></p>
+          <div style="margin-top: 40px;">
+            <div style="display: flex; justify-content: space-around;">
+              <%= for {admin_name, admin_description} <- @administrators do %>
+                <div>
+                  <p style="margin: 0; font-weight: bold; font-family: 'Alex Brush', cursive; font-size: 20px;">
+                    <%= admin_name %>
+                  </p>
+                  <p style="margin: 0; font-size: small;"><%= admin_description %></p>
+                </div>
+              <% end %>
+            </div>
+          </div>
 
-        <div style="margin-top: 40px;">
-          <div style="display: flex; justify-content: space-around;">
-            <%= for {admin_name, admin_description} <- @administrators do %>
-              <div>
-                <p style="margin: 0; font-weight: bold; font-family: 'Alex Brush', cursive; font-size: 20px;">
-                  <%= admin_name %>
-                </p>
-                <p style="margin: 0; font-size: small;"><%= admin_description %></p>
-              </div>
+          <div style="margin-top: 20px; display: flex; justify-content: center;">
+            <%= for logo <- @logos do %>
+              <img src="<%= logo %>" style="max-height: 50px; margin-right: 50px;" />
             <% end %>
           </div>
+          <a href="<%= @certificate_verification_url %>" style="margin-top: 20px; font-size: small; text-decoration-line: none; color: black">Certificate ID: <%= @certificate_id %></a>
         </div>
-
-        <div style="margin-top: 20px; display: flex; justify-content: center;">
-          <%= for logo <- @logos do %>
-            <img src="<%= logo %>" style="max-height: 50px; margin-right: 50px;" />
-          <% end %>
-        </div>
-
-        <p style="margin-top: 20px; font-size: small;">Certificate ID: <%= @certificate_id %></p>
       </div>
     </div>
   </body>
@@ -104,6 +117,8 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
 
     attrs = %{
       certificate_type: certificate_type,
+      certificate_verification_url:
+        url(OliWeb.Endpoint, ~p"/certificates?cert_guid=#{granted_certificate.guid}"),
       student_name: granted_certificate.user.name,
       completion_date:
         granted_certificate.issued_at |> DateTime.to_date() |> Calendar.strftime("%B %d, %Y"),

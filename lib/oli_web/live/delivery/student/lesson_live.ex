@@ -354,7 +354,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       content: %Collaboration.PostContent{message: value}
     }
 
-    case Collaboration.create_post(attrs) do
+    require_certification_check = socket.assigns.require_certification_check
+
+    case Oli.CertificationEligibility.create_post_and_verify_qualification(
+           attrs,
+           require_certification_check
+         ) do
       {:ok, post} ->
         {:noreply,
          socket
@@ -547,7 +552,12 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       thread_root_id: parent_post_id
     }
 
-    case Collaboration.create_post(attrs) do
+    require_certification_check = socket.assigns.require_certification_check
+
+    case Oli.CertificationEligibility.create_post_and_verify_qualification(
+           attrs,
+           require_certification_check
+         ) do
       {:ok, post} ->
         {:noreply,
          socket

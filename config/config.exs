@@ -25,7 +25,18 @@ world_universities_and_domains_json =
 
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
+get_env_as_boolean = fn key, default ->
+  System.get_env(key, default)
+  |> String.downcase()
+  |> String.trim()
+  |> case do
+    "true" -> true
+    _ -> false
+  end
+end
+
 config :oli,
+  instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
   depot_coordinator: Oli.Delivery.DistributedDepotCoordinator,
   depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
   depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
@@ -202,7 +213,9 @@ config :oli, Oban,
     datashop_export: 3,
     objectives: 3,
     mailer: 10,
-    certificate_pdf: 3
+    certificate_pdf: 3,
+    certificate_mailer: 3,
+    certificate_eligibility: 10
   ]
 
 config :ex_money,

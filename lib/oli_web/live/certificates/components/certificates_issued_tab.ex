@@ -32,6 +32,8 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
             class="w-[500px]"
           />
           <a
+            :if={!@read_only}
+            role="export"
             href={~p"/authoring/products/#{assigns.section_slug}/downloads/granted_certificates"}
             class="flex items-center justify-center gap-x-2"
           >

@@ -99,8 +99,12 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.ForceRequiredSurvey)
   end
 
-  pipeline :enforce_enroll_and_paywall do
-    plug(Oli.Plugs.EnforceEnrollAndPaywall)
+  pipeline :enforce_paywall do
+    plug(Oli.Plugs.EnforcePaywall)
+  end
+
+  pipeline :require_enrollment do
+    plug(OliWeb.Plugs.RequireEnrollment)
   end
 
   pipeline :ensure_datashop_id do
@@ -177,7 +181,7 @@ defmodule OliWeb.Router do
   end
 
   pipeline :ensure_user_section_visit do
-    plug(Oli.Plugs.EnsureUserSectionVisit)
+    plug(OliWeb.Plugs.EnsureUserSectionVisit)
   end
 
   pipeline :delivery_preview do
@@ -1066,7 +1070,8 @@ defmodule OliWeb.Router do
       :ensure_datashop_id,
       :require_authenticated_user_or_guest,
       :student,
-      :enforce_enroll_and_paywall,
+      :enforce_paywall,
+      :require_enrollment,
       :ensure_user_section_visit,
       :force_required_survey
     ])
@@ -1080,6 +1085,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
@@ -1095,6 +1101,7 @@ defmodule OliWeb.Router do
         live("/student_schedule", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
+        live("/certificate/:certificate_guid", Delivery.Student.CertificateLive)
       end
     end
 
@@ -1158,7 +1165,8 @@ defmodule OliWeb.Router do
       :redirect_by_attempt_state,
       :delivery_protected,
       :maybe_gated_resource,
-      :enforce_enroll_and_paywall,
+      :enforce_paywall,
+      :require_enrollment,
       :ensure_user_section_visit,
       :force_required_survey
     ])
@@ -1190,6 +1198,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1301,6 +1310,10 @@ defmodule OliWeb.Router do
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
+      live("/certificate_settings", Certificates.CertificatesSettingsLive,
+        metadata: %{route_name: :delivery, access: :read_only}
+      )
+
       live("/manage", Sections.OverviewView)
       live("/grades/lms", Grades.GradesLive)
       live("/grades/lms_grade_updates", Grades.BrowseUpdatesView)
@@ -1601,8 +1614,6 @@ defmodule OliWeb.Router do
     live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
       as: :history_by_resource_id
     )
-
-    live("/:project_id/datashop", Datashop.AnalyticsLive)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope

@@ -288,7 +288,7 @@ defmodule OliWeb.Delivery.Student.ReviewLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.review_live_path(section.slug, page_1.slug, attempt.attempt_guid))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "can not access when review is not allowed", %{

@@ -141,7 +141,9 @@ defmodule Oli.Conversation.TriggersTest do
 
   test "check hint trigger" do
     activity_attempt = %{
-      resource_id: "activity_id"
+      resource_id: "activity_id",
+      resource_attempt_id: 1,
+      attempt_guid: "attempt_guid"
     }
 
     part_attempt = %{
@@ -161,7 +163,7 @@ defmodule Oli.Conversation.TriggersTest do
           triggers: [
             %Oli.Activities.Model.Trigger{
               id: "trigger_id1",
-              trigger_type: :hint_request,
+              trigger_type: :hint,
               prompt: "hint prompt",
               ref_id: 1
             }
@@ -175,7 +177,7 @@ defmodule Oli.Conversation.TriggersTest do
       hint: "this is the hint"
     }
 
-    trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint)
+    trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint, false)
 
     assert trigger.data["ref_id"] == 1
     assert trigger.prompt == "hint prompt"
@@ -183,7 +185,9 @@ defmodule Oli.Conversation.TriggersTest do
 
   test "check for hint trigger when multiple present" do
     activity_attempt = %{
-      resource_id: "activity_id"
+      resource_id: "activity_id",
+      resource_attempt_id: 1,
+      attempt_guid: "attempt_guid"
     }
 
     part_attempt = %{
@@ -210,7 +214,7 @@ defmodule Oli.Conversation.TriggersTest do
           ],
           triggers: [
             %{
-              trigger_type: :hint_request,
+              trigger_type: :hint,
               prompt: "hint prompt",
               ref_id: 3
             }
@@ -224,7 +228,7 @@ defmodule Oli.Conversation.TriggersTest do
       hint: "this is the hint"
     }
 
-    trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint)
+    trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint, false)
 
     assert trigger.data["ref_id"] == 3
     assert trigger.prompt == "hint prompt"
@@ -234,7 +238,7 @@ defmodule Oli.Conversation.TriggersTest do
       hint: "this is the hint1"
     }
 
-    trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint)
+    trigger = Triggers.check_for_hint_trigger(activity_attempt, part_attempt, model, hint, false)
     assert is_nil(trigger)
   end
 end

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
@@ -36,20 +35,19 @@ interface SettingsButtonProps {
 }
 
 const SettingsButton = (props: SettingsButtonProps) => {
-  const dispatch = useDispatch();
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
         icon: <i className="fa-solid fa-video"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
-          dispatch(
+          window.oliDispatch(
             modalActions.display(
               <VideoModal
                 projectSlug={props.projectSlug}
                 model={props.model}
                 onDone={(video: Partial<ContentModel.Video>) => {
-                  dispatch(modalActions.dismiss());
+                  window.oliDispatch(modalActions.dismiss());
                   props.onEdit(video);
                 }}
                 onCancel={() => window.oliDispatch(modalActions.dismiss())}

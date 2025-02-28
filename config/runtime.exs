@@ -180,6 +180,7 @@ if config_env() == :prod do
 
   # General OLI app config
   config :oli,
+    instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
     depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
     depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
     s3_media_bucket_name: s3_media_bucket_name,
@@ -449,6 +450,8 @@ if config_env() == :prod do
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
       project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
-      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10"))
+      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
+      certificate_eligibility:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
     ]
 end

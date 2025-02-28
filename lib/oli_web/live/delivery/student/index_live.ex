@@ -191,6 +191,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             completed_pages={@completed_pages}
             certificate_enabled={@certificate_enabled}
             certificate_progress={@certificate_progress}
+            section_slug={@section_slug}
           />
         </div>
 
@@ -398,6 +399,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
   attr(:completed_pages, :map, required: true)
   attr(:certificate_enabled, :boolean, required: true)
   attr(:certificate_progress, :map, required: true)
+  attr(:section_slug, :string, required: true)
 
   defp course_progress(assigns) do
     ~H"""
@@ -537,10 +539,6 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           >
             <%= @completed_pages.completed_pages %>/<%= @completed_pages.total_pages %> Pages Completed
           </.link>
-          <.certificate_progress
-            :if={@certificate_enabled}
-            certificate_progress={@certificate_progress}
-          />
         <% else %>
           <div class="justify-start items-center gap-1 inline-flex self-stretch">
             <div class="text-base font-normal tracking-tight grow">
@@ -548,10 +546,18 @@ defmodule OliWeb.Delivery.Student.IndexLive do
             </div>
           </div>
         <% end %>
+        <.certificate_progress
+          :if={@certificate_enabled}
+          certificate_progress={@certificate_progress}
+          section_slug={@section_slug}
+        />
       </div>
     </div>
     """
   end
+
+  attr :certificate_progress, :map, required: true
+  attr :section_slug, :string, required: true
 
   def certificate_progress(assigns) do
     ~H"""
@@ -646,10 +652,11 @@ defmodule OliWeb.Delivery.Student.IndexLive do
           </div>
           <.link
             :if={all_certificate_requirements_met?(certificate_progress)}
-            navigate="#"
+            navigate={
+              ~p"/sections/#{@section_slug}/certificate/#{certificate_progress.granted_certificate_guid}"
+            }
             class=" text-[#4ca6ff] dark:text-[#3399FF] text-base font-bold ml-auto hover:text-opacity-80 hover:no-underline"
           >
-            <%!-- TODO: hidden button. Unhide and link to certificate when https://eliterate.atlassian.net/browse/MER-3809 is done --%>
             Access my certificate
           </.link>
         </div>
@@ -673,7 +680,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp all_certificate_requirements_met?(certificate_progress),
     do:
-      Enum.all?(certificate_progress, fn {_criteria, result} ->
+      Map.drop(certificate_progress, [:granted_certificate_guid])
+      |> Enum.all?(fn {_criteria, result} ->
         result.completed >= result.total
       end)
 
