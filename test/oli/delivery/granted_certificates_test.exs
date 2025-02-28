@@ -312,7 +312,7 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
     end
   end
 
-  describe "bulk_send_certificate_status_email/1" do
+  describe "bulk_send_certificate_status_email/2" do
     test "schedules oban jobs to send the corresponding email to all students that haven't yet received the notification" do
       section = insert(:section)
       certificate = insert(:certificate, section: section)
@@ -338,59 +338,62 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
           student_email_sent: true
         )
 
-      GrantedCertificates.bulk_send_certificate_status_email(section.slug)
+      GrantedCertificates.bulk_send_certificate_status_email(
+        section.slug,
+        "some_instructor@test.com"
+      )
 
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc_1.id,
+          "granted_certificate_guid" => gc_1.guid,
           "to" => gc_1.user.email,
-          "template" => "certificate_approval"
+          "template" => "student_approval"
         }
       )
 
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc_2.id,
+          "granted_certificate_guid" => gc_2.guid,
           "to" => gc_2.user.email,
-          "template" => "certificate_approval"
+          "template" => "student_approval"
         }
       )
 
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc_3.id,
+          "granted_certificate_guid" => gc_3.guid,
           "to" => gc_3.user.email,
-          "template" => "certificate_denial"
+          "template" => "student_denial"
         }
       )
 
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc_4.id,
+          "granted_certificate_guid" => gc_4.guid,
           "to" => gc_4.user.email,
-          "template" => "certificate_denial"
+          "template" => "student_denial"
         }
       )
 
       refute_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc_5.id,
+          "granted_certificate_guid" => gc_5.guid,
           "to" => gc_5.user.email,
-          "template" => "certificate_approval"
+          "template" => "student_approval"
         }
       )
 
       refute_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc_6.id,
+          "granted_certificate_guid" => gc_6.guid,
           "to" => gc_6.user.email,
-          "template" => "certificate_approval"
+          "template" => "student_approval"
         }
       )
     end
