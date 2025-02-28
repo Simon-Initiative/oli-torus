@@ -63,23 +63,39 @@ defmodule OliWeb.Pow.UserContext do
   def create(params) do
     case Accounts.get_independent_user_by(%{email: params["email"]}) do
       %User{email: email} = user ->
-        if user.email_confirmed_at,
-          do:
-            Oli.Email.create_email(
-              email,
-              "Account already exists",
-              "account_already_exists.html",
-              %{
-                url: Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
-                forgot_password:
-                  Utils.ensure_absolute_url(
-                    Routes.pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
-                  )
-              }
-            )
-            |> Oli.Mailer.deliver_now()
+        if user.email_confirmed_at do
+          Oli.Email.create_email(
+            email,
+            "Account already exists",
+            "account_already_exists.html",
+            %{
+              url: Utils.ensure_absolute_url(Routes.pow_session_path(OliWeb.Endpoint, :new)),
+              forgot_password:
+                Utils.ensure_absolute_url(
+                  Routes.pow_reset_password_reset_password_path(OliWeb.Endpoint, :new)
+                )
+            }
+          )
+          |> Oli.Mailer.deliver_now()
 
-        {:error, %{email: "has already been taken"}}
+          {:error, %{email: "has already been taken"}}
+        else
+          # If this request contains a valid invitation token and an invitation has not
+          # previously been accepted, then update user details with provided params
+          case params do
+            %{"invitation_token" => invitation_token}
+            when invitation_token == user.invitation_token and is_nil(user.invitation_accepted_at) ->
+              email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
+              params = Map.put(params, "email_confirmed_at", email_confirmed_at)
+
+              user
+              |> User.update_changeset(params)
+              |> Repo.update()
+
+            _ ->
+              {:ok, user}
+          end
+        end
 
       _nil ->
         params =
@@ -120,6 +136,8 @@ defmodule OliWeb.Pow.UserContext do
             end
 
           {:error, error} ->
+            Logger.error("Failed to create user: #{inspect(error)}")
+
             {:error, error}
         end
     end

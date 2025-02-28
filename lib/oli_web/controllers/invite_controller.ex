@@ -54,7 +54,7 @@ defmodule OliWeb.InviteController do
           case user.status do
             :new_user ->
               {"Join now",
-               ~p"/registration/new?#{[section: section.slug, from_invitation_link?: true]}"}
+               ~p"/registration/new?#{[section: section.slug, from_invitation_link?: true, token: user.invitation_token]}"}
 
             :existing_user ->
               {"Go to the course", ~p"/sections/#{section.slug}?#{[from_invitation_link?: true]}"}
