@@ -63,7 +63,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def render(assigns) do
     ~H"""
     <.top_hero_banner />
-    <div class="flex justify-center py-9 px-20 w-full">
+    <div class="flex justify-center py-9 px-3 md:px-20 w-full">
       <.assignments_agenda assignments={@assignments} ctx={@ctx} section_slug={@section.slug} />
     </div>
     """
@@ -73,11 +73,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     ~H"""
     <div
       role="hero banner"
-      class="w-full bg-cover bg-center bg-no-repeat h-[247px]"
+      class="w-full bg-cover bg-center bg-no-repeat h-[160px] h-[247px]"
       style="background-image: url('/images/gradients/assignments-bg.png');"
     >
-      <div class="h-[247px] bg-gradient-to-r from-[#e4e4ea] dark:from-[#0a0b11] to-transparent">
-        <h1 class="py-20 pl-[76px] text-4xl md:text-6xl font-normal tracking-tight dark:text-white">
+      <div class="h-[160px] md:h-[247px] bg-gradient-to-r from-[#e4e4ea] dark:from-[#0a0b11] to-transparent">
+        <h1 class="py-12 md:py-20 pl-[76px] text-4xl md:text-6xl font-normal tracking-tight dark:text-white">
           Assignments
         </h1>
       </div>
