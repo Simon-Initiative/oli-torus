@@ -890,7 +890,7 @@ defmodule OliWeb.Components.Common do
 
   def hero_banner(assigns) do
     ~H"""
-    <div class={["w-full bg-cover bg-center bg-no-repeat py-24 px-16", @class]}>
+    <div class={["w-full bg-cover bg-center bg-no-repeat py-12 md:py-24 px-8 md:px-16", @class]}>
       <div class="container mx-auto flex flex-col">
         <%= render_slot(@inner_block) %>
       </div>
