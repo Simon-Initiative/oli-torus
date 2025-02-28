@@ -98,7 +98,7 @@ defmodule Oli.Analytics.Summary.SummarizeTest do
 
       [
         [-1, -1, section.id, -1, id1, "1", activity_type_id, 1, 2, 1, 1, 0],
-        [-1, -1, section.id, -1, id2, "1", activity_type_id, 2, 4, 1, 1, 0],
+        [-1, -1, section.id, -1, id2, "1", activity_type_id, 2, 4, 1, 1, 0]
       ]
       |> Enum.each(fn v -> add_resource_summary(v) end)
 
