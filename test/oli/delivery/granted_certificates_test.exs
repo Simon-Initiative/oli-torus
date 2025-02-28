@@ -16,8 +16,9 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
          ctx do
       %{student: student, section: section, page_1: page_1, page_2: page_2, page_3: page_3} = ctx
       student_id = student.id
+      issued_by = ctx.creator.id
 
-      _certificate =
+      certificate =
         insert(:certificate,
           section: section,
           required_discussion_posts: 1,
@@ -101,8 +102,22 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
                Oli.Delivery.GrantedCertificates.has_qualified(student_id, section.id)
 
       # A certificate is granted to the student, but it is without distinction since they have not yet met the higher threshold.
-      assert %GrantedCertificate{with_distinction: false} =
+      assert %GrantedCertificate{with_distinction: false, issued_by: ^issued_by, id: gc_id} =
                Oli.Repo.get_by(GrantedCertificate, %{user_id: student_id})
+
+      # Student enqueues a worker to generate their certificate PDF
+      assert_enqueued(
+        args: %{"granted_certificate_id" => gc_id, "send_email?" => true},
+        worker: Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
+      )
+
+      Repo.delete_all(Oban.Job)
+
+      # Update certificate to require instructor approval
+      _certificate =
+        certificate
+        |> Oli.Delivery.Sections.Certificate.changeset(%{requires_instructor_approval: true})
+        |> Repo.update!()
 
       # The student's score for the third graded page is updated to 4.0 out of 4.0 (a perfect score).
       Oli.Delivery.Attempts.Core.update_resource_access(access_page_3, %{score: 4.0, out_of: 4.0})
@@ -116,8 +131,21 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
       assert %GrantedCertificate{with_distinction: true} =
                Oli.Repo.get_by(GrantedCertificate, %{user_id: student_id})
 
-      # Assert that email notification is correctly enqueued
-      # TODO https://eliterate.atlassian.net/browse/MER-4107
+      #  Enqueue a worker to send an email to the instructor.
+      assert_enqueued(
+        args: %{
+          "template" => "instructor_notification",
+          "template_assigns" => %{
+            "certificate_type" => "certificate with distinction",
+            "course_name" => section.title,
+            "instructor_name" => OliWeb.Common.Utils.name(ctx.creator),
+            "section_slug" => section.slug,
+            "student_name" => OliWeb.Common.Utils.name(student)
+          },
+          "to" => ctx.creator.email
+        },
+        worker: Oli.Delivery.Sections.Certificates.Workers.Mailer
+      )
     end
   end
 
@@ -295,18 +323,27 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
     test "schedules an oban job to send the corresponding email" do
       granted_certificate = insert(:granted_certificate)
 
+      template_assigns = %{
+        student_name: "John Doe",
+        course_name: "Test Course",
+        platform_name: "Torus",
+        certificate_link: "some_url"
+      }
+
       GrantedCertificates.send_certificate_email(
         granted_certificate.guid,
         "some@email.com",
-        :certificate_approval
+        :student_approval,
+        template_assigns
       )
 
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => granted_certificate.id,
-          "to" => "some@email.com",
-          "template" => "certificate_approval"
+          "granted_certificate_guid" => granted_certificate.guid,
+          "template" => "student_approval",
+          "template_assigns" => template_assigns,
+          "to" => "some@email.com"
         }
       )
     end
@@ -513,12 +550,17 @@ defmodule Oli.Delivery.GrantedCertificatesTest do
     {:ok, _} = Oli.Delivery.Sections.rebuild_contained_pages(section)
     {:ok, _} = Oli.Delivery.Sections.rebuild_contained_objectives(section)
 
+    # Creator
+    creator = user_fixture(%{can_create_sections: true})
+    enroll_user_to_section(creator, section, :context_instructor)
+
     # enroll a student
     student = insert(:user)
     enroll_user_to_section(student, section, :context_learner)
 
     %{
       author: author,
+      creator: creator,
       section: section,
       project: project,
       publication: publication,
