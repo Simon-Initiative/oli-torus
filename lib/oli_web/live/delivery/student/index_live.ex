@@ -236,7 +236,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
       <div
         :if={!is_nil(@suggested_page)}
-        class="flex flex-col w-full px-9 absolute flex-col justify-center items-start gap-2 md:gap-6"
+        class="flex flex-col w-full px-3 md:px-9 absolute flex-col justify-center items-start gap-2 md:gap-6"
       >
         <h3 class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight">
           Continue Learning
@@ -344,22 +344,20 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </div>
 
-      <div class="w-full pl-14 pr-5 absolute flex flex-col justify-center items-start gap-6">
-        <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
+      <div class="flex flex-col w-full px-9 absolute flex-col justify-center items-start gap-2 md:gap-6">
+        <h3 class="w-full text-white text-2xl font-bold tracking-wide">
           Hi, <%= user_given_name(@ctx) %> !
-        </div>
-        <div class="w-full flex flex-col items-start gap-2.5">
-          <div class="w-full whitespace-nowrap overflow-hidden">
-            <span class="text-3xl text-white font-medium">
-              <%= build_welcome_title(@section.welcome_title) %>
-            </span>
-          </div>
-          <div class="w-96 text-white/60 text-lg font-semibold">
+        </h3>
+        <div class="flex flex-col items-start gap-2.5">
+          <h4 class="text-3xl text-white font-medium">
+            <%= build_welcome_title(@section.welcome_title) %>
+          </h4>
+          <div class="text-white/60 text-lg font-semibold">
             <%= @section.encouraging_subtitle ||
               "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
           </div>
         </div>
-        <div class="pt-5 flex items-start gap-6">
+        <div class="flex flex-col md:flex-row w-full justify-end items-start gap-3.5">
           <.link
             href={
               Utils.lesson_live_path(
@@ -368,17 +366,20 @@ defmodule OliWeb.Delivery.Student.IndexLive do
                 request_path: ~p"/sections/#{@section_slug}"
               )
             }
-            class="hover:no-underline"
+            class="w-full md:w-auto hover:no-underline"
           >
-            <div class="w-52 h-11 px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
-              <div class="text-white text-base font-bold leading-tight">
+            <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
+              <div class="text-white text-base font-bold leading-tight whitespace-nowrap">
                 Start course
               </div>
             </div>
           </.link>
-          <.link href={Utils.learn_live_path(@section_slug)} class="hover:no-underline">
-            <div class="w-52 h-11 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
-              <div class="text-white text-base font-semibold leading-tight">
+          <.link
+            href={Utils.learn_live_path(@section_slug)}
+            class="w-full md:w-auto hover:no-underline"
+          >
+            <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
+              <div class="text-white text-base font-semibold leading-tight whitespace-nowrap">
                 Discover content
               </div>
             </div>
