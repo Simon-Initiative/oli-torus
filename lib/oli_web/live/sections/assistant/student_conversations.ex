@@ -137,7 +137,7 @@ defmodule OliWeb.Sections.Assistant.StudentConversationsLive do
   def render(assigns) do
     ~H"""
     <div class="container mx-auto mb-10">
-      <.loader if={!@table_model} />
+      <.loader :if={!@table_model} />
 
       <div :if={@table_model} class="flex flex-col-reverse md:flex-row">
         <div class={if @conversation_messages, do: "md:w-8/12", else: "flex-1"}>

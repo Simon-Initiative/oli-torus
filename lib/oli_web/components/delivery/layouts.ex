@@ -52,7 +52,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       id="header"
-      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
       <.link
         :if={@include_logo}
@@ -62,11 +62,8 @@ defmodule OliWeb.Components.Delivery.Layouts do
       >
         <.logo_img section={@section} />
       </.link>
-      <div class={[
-        if(@sidebar_expanded, do: "md:!pl-[226px]"),
-        "w-full flex flex-row md:pl-[95px]"
-      ]}>
-        <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
+      <div class="flex flex-row flex-1 justify-between">
+        <div class="flex hidden md:flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
           <.title section={@section} project={@project} preview_mode={@preview_mode} />
         </div>
         <div class="justify-end items-center flex">
@@ -81,7 +78,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             />
           </div>
         </div>
-        <div class="flex items-center p-2 ml-auto">
+        <div class="flex items-center p-2">
           <button
             class={[
               "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
@@ -101,12 +98,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
 
+  attr :rest, :global, include: ~w(class)
+
   def title(assigns) do
     ~H"""
-    <span :if={@section} class="text-2xl text-bold hidden md:block">
+    <span :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
       <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
     </span>
-    <span :if={@project} class="text-2xl text-bold hidden md:block">
+    <span :if={@project} class={["text-2xl text-bold", @rest[:class]]}>
       <%= @project.title %>
     </span>
     """

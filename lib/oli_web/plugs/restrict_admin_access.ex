@@ -9,7 +9,6 @@ defmodule Oli.Plugs.RestrictAdminAccess do
   def call(conn, _opts) do
     if Oli.Accounts.is_admin?(conn.assigns[:current_author]) do
       conn
-      |> put_flash(:error, "Admins are not allowed to access this page.")
       |> redirect(to: ~p"/workspaces/course_author")
       |> halt()
     else
