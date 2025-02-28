@@ -11,8 +11,10 @@ defmodule Oli.Delivery.GrantedCertificates do
   alias Oli.Delivery.Sections.Certificates.Workers.{GeneratePdf, Mailer}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Certificates.CertificateRenderer
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.Certificates.Workers.GeneratePdf
+  alias Oli.Delivery.Sections.Certificates.Workers.Mailer
   alias Oli.Delivery.Sections.GrantedCertificate
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.{HTTP, Repo}
@@ -104,8 +106,7 @@ defmodule Oli.Delivery.GrantedCertificates do
     |> case do
       {:ok, gc} ->
         if requires_instructor_approval do
-          # TODO https://eliterate.atlassian.net/browse/MER-4107
-          :send_email_to_instructor
+          notify_instructors(gc)
         else
           %{granted_certificate_id: gc.id, send_email?: true}
           |> GeneratePdf.new()
@@ -117,6 +118,31 @@ defmodule Oli.Delivery.GrantedCertificates do
       error ->
         log_error(error, granted_certificate.user_id, granted_certificate.id, :update)
     end
+  end
+
+  _docp = """
+  Whenever we grant a certificate in a course that requires instructor approval,
+  this function will schedule all the jobs to send an email to the instructors of that course.
+  """
+
+  defp notify_instructors(gc) do
+    gc = Repo.preload(gc, [:user, certificate: [:section]])
+
+    Oli.Delivery.Sections.get_instructors_for_section(gc.certificate.section_id)
+    |> Enum.map(fn instructor ->
+      Mailer.new(%{
+        template: "instructor_notification",
+        to: instructor.email,
+        template_assigns: %{
+          instructor_name: OliWeb.Common.Utils.name(instructor),
+          course_name: gc.certificate.section.title,
+          student_name: OliWeb.Common.Utils.name(gc.user),
+          certificate_type: "certificate with distinction",
+          section_slug: gc.certificate.section.slug
+        }
+      })
+    end)
+    |> Oban.insert_all()
   end
 
   @doc """
@@ -147,8 +173,7 @@ defmodule Oli.Delivery.GrantedCertificates do
         {:ok, granted_certificate}
 
       {:ok, %{state: :pending} = granted_certificate} ->
-        # TODO https://eliterate.atlassian.net/browse/MER-4107
-        if send_email?, do: :notify_instructor
+        if send_email?, do: notify_instructors(granted_certificate)
         {:ok, granted_certificate}
 
       error ->
@@ -160,10 +185,13 @@ defmodule Oli.Delivery.GrantedCertificates do
   Sends an email to the given email address with the given template, to inform the student
   about the status of the granted certificate.
   """
-  def send_certificate_email(granted_certificate_id, to, template) do
-    # TODO: check on MER-4107 if we need to add more assign fields to the email,
-    # and if the granted_certificate is updated to mark the student_email_sent field as true
-    Mailer.new(%{granted_certificate_id: granted_certificate_id, to: to, template: template})
+  def send_certificate_email(granted_certificate_id, to, template, template_assigns) do
+    Mailer.new(%{
+      granted_certificate_id: granted_certificate_id,
+      to: to,
+      template: template,
+      template_assigns: template_assigns
+    })
     |> Oban.insert()
   end
 
@@ -552,6 +580,9 @@ defmodule Oli.Delivery.GrantedCertificates do
       certificate_id: certificate.id,
       state: if(req_instr_appr, do: :pending, else: :earned),
       with_distinction: with_distinction,
+      issued_by: Sections.get_section_creator_id(certificate.section_id),
+      issued_by_type: :user,
+      issued_at: DateTime.utc_now(),
       guid: UUID.uuid4()
     }
 

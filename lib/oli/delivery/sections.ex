@@ -947,6 +947,22 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Returns the id of the user who created the section.
+  This will in most cases match the instructor id.
+  """
+  @spec get_section_creator_id(number()) :: number()
+  def get_section_creator_id(section_id) do
+    from(u in User,
+      join: e in assoc(u, :enrollments),
+      where: e.section_id == ^section_id,
+      order_by: [asc: e.inserted_at],
+      limit: 1,
+      select: u.id
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Gets all sections and products that will be affected by forcing the publication update.
 
   ## Examples

@@ -8,8 +8,10 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
   """
 
   use Oban.Worker, queue: :certificate_pdf, max_attempts: 3
+  use OliWeb, :verified_routes
 
   alias Oli.Delivery.GrantedCertificates
+  alias Oli.Repo
 
   @impl Oban.Worker
   def perform(%Oban.Job{
@@ -22,15 +24,25 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdf do
 
       {:ok, granted_certificate} ->
         if send_email do
-          # TODO: MER-4107.
-          # we need to provide the target email as an arg of the oban job,
-          # or delegate that responsability to the Mailer Worker (grab the email by joining GrantedCertificate with User)
-          student_email = "dummy@email.com"
+          granted_certificate =
+            Repo.preload(granted_certificate, [:user, certificate: [:section]])
+
+          section = granted_certificate.certificate.section
 
           GrantedCertificates.send_certificate_email(
             granted_certificate.id,
-            student_email,
-            :certificate_approval
+            granted_certificate.user.email,
+            "student_approval",
+            %{
+              student_name: granted_certificate.user.name,
+              course_name: section.title,
+              certificate_link:
+                Phoenix.VerifiedRoutes.url(
+                  OliWeb.Endpoint,
+                  ~p"/sections/#{section.slug}/certificate/#{granted_certificate.guid}"
+                ),
+              platform_name: Oli.Branding.brand_name(section)
+            }
           )
         end
 
