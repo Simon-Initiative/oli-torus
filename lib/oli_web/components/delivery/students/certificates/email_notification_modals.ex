@@ -30,14 +30,14 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
         >
           <:title><%= title_by_selected_modal(@selected_modal) %></:title>
           <div class="text-sm font-normal mt-3">
-            <p class="text-black">
+            <p class="text-black dark:text-white">
               Please confirm that you want to send <%= Utils.name(@selected_student) %> a
               <span class="font-bold">
                 certificate <%= action_by_selected_modal(@selected_modal) %>
               </span>
               email.
             </p>
-            <h3 class="text-sm text-black font-bold mt-10 mb-5">
+            <h3 class="text-sm text-black dark:text-white font-bold mt-10 mb-5">
               <%= title_by_selected_modal(@selected_modal) %>:
             </h3>
             <div class="p-6 border rounded-lg border-[#CBD2E0]">
@@ -95,7 +95,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
         >
           <:title>Certificate Status Email</:title>
           <div class="text-sm font-normal mt-3">
-            <p class="text-black">
+            <p class="text-black dark:text-white">
               Please confirm that you want to send <span class="font-bold">all students</span>
               who
               <span class="font-bold">
@@ -105,7 +105,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
             </p>
             <div class="flex space-x-12">
               <div class="w-1/2">
-                <h3 class="text-sm text-black font-bold mt-10 mb-5">
+                <h3 class="text-sm text-black dark:text-white font-bold mt-10 mb-5">
                   Certificate Denial Email:
                 </h3>
                 <div class="p-6 border rounded-lg border-[#CBD2E0] h-[430px] overflow-y-scroll">
@@ -119,7 +119,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
                 </div>
               </div>
               <div class="w-1/2">
-                <h3 class="text-sm text-black font-bold mt-10 mb-5">
+                <h3 class="text-sm text-black dark:text-white font-bold mt-10 mb-5">
                   Certificate Approval Email:
                 </h3>
                 <div class="p-6 border rounded-lg border-[#CBD2E0] h-[430px] overflow-y-scroll">
@@ -171,27 +171,33 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
       when selected_modal in ["approve", "deny"] do
     %{
       selected_student: student,
-      granted_certificate_id: granted_certificate_id
+      granted_certificate_guid: granted_certificate_guid
     } =
       socket.assigns
 
     selected_modal = String.to_existing_atom(selected_modal)
 
-    # TODO: check on  MER-4107:
-    # 1. if more assigns need to be provided
-    # (for instance, platform_name, course_name, instructor_email, and any info to build the url link to the pdf for approved certificates)
-    # 2. if the granted_certificate is updated to mark the student_email_sent field as true
     GrantedCertificates.send_certificate_email(
-      granted_certificate_id,
+      granted_certificate_guid,
       student.email,
-      email_template_by_selected_modal(selected_modal)
+      email_template_by_selected_modal(selected_modal),
+      email_template_assigns_by_selected_modal(selected_modal, socket.assigns)
     )
 
     {:noreply, socket}
   end
 
   def handle_event("bulk_send_emails", _, socket) do
-    GrantedCertificates.bulk_send_certificate_status_email(socket.assigns.section_slug)
+    GrantedCertificates.bulk_send_certificate_status_email(
+      socket.assigns.section_slug,
+      socket.assigns.instructor_email
+    )
+
+    # hide the bulk email notification component
+    send_update(BulkCertificateStatusEmail,
+      id: "bulk_email_certificate_status_component",
+      show_component: false
+    )
 
     {:noreply, socket}
   end
@@ -217,8 +223,30 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.EmailNotificationModa
     """
   end
 
-  defp email_template_by_selected_modal(:approve), do: :certificate_approval
-  defp email_template_by_selected_modal(:deny), do: :certificate_denial
+  defp email_template_by_selected_modal(:approve), do: :student_approval
+  defp email_template_by_selected_modal(:deny), do: :student_denial
+
+  defp email_template_assigns_by_selected_modal(:approve, assigns) do
+    %{
+      student_name: OliWeb.Common.Utils.name(assigns.selected_student),
+      platform_name: assigns.platform_name,
+      course_name: assigns.course_name,
+      certificate_link:
+        url(
+          OliWeb.Endpoint,
+          ~p"/sections/#{assigns.section_slug}/certificate/#{assigns.granted_certificate_guid}"
+        )
+    }
+  end
+
+  defp email_template_assigns_by_selected_modal(:deny, assigns) do
+    %{
+      student_name: OliWeb.Common.Utils.name(assigns.selected_student),
+      platform_name: assigns.platform_name,
+      course_name: assigns.course_name,
+      instructor_email: assigns.instructor_email
+    }
+  end
 
   defp title_by_selected_modal(:approve), do: "Certificate Approval Email"
   defp title_by_selected_modal(:deny), do: "Certificate Denial Email"

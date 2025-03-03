@@ -8,7 +8,7 @@ import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 
 export const insertTrigger = createButtonCommandDesc({
-  icon: <i className="fa-solid fa-microchip"></i>,
+  icon: <img src="/images/icons/icon-AI.svg" className="inline mr-1" />,
   category: 'General',
   description: 'DOT Trigger',
   execute: (_context, editor) => {
@@ -42,17 +42,9 @@ export const TriggerEditorCore = ({
       </button>
       {promptsExpanded && (
         <ul className="list-disc list-inside py-2 ml-10">
-          <li>&quot;Give the students another worked example of this question type&quot;</li>
-          <li>
-            &quot;Ask the student if they need further assistance answering this question&quot;
-          </li>
-          <li>
-            &quot;Point students towards more practice regarding this question&apos;s learning
-            objectives&quot;
-          </li>
-          <li>&quot;Give students another question of this type&quot;</li>
-          <li>&quot;Give students an expert response to this question&quot;</li>
-          <li>&quot;Evaluate the student&apos;s answer to this question&quot;</li>
+          <li>&quot;Highlight the most imporant concepts present on this page&quot;</li>
+          <li>&quot;Ask the student to summarize the previous paragraphs&quot;</li>
+          <li>&quot;Introduce the following video&quot;</li>
         </ul>
       )}
     </div>
@@ -63,13 +55,13 @@ export const TriggerEditorCore = ({
       <div className="flex justify-between">
         <h4>
           <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-          DOT AI Activity Trigger Point
+          DOT AI Paragraph Trigger Point
         </h4>
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
       </div>
       <p className="mt-2">
-        Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
-        activity.
+        Customize a prompt for our AI assistant, DOT, to follow the student clicks this trigger
+        button.
       </p>
 
       <h6 className="mt-2">

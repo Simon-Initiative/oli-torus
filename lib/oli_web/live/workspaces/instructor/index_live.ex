@@ -231,7 +231,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             <p>You are not enrolled in any courses as an instructor.</p>
           <% else %>
             <div class="flex flex-wrap w-full gap-3">
-              <.course_card
+              <.instructor_course_card
                 :for={{section, index} <- Enum.with_index(@filtered_sections)}
                 index={index}
                 section={section}
@@ -252,7 +252,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   attr :index, :integer
   attr :params, :map
 
-  def course_card(assigns) do
+  def instructor_course_card(assigns) do
     ~H"""
     <div
       id={"course_card_#{@section.id}"}

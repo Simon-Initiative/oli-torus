@@ -1,6 +1,7 @@
 defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdfTest do
   use Oli.DataCase, async: true
   use Oban.Testing, repo: Oli.Repo
+  use OliWeb, :verified_routes
 
   import Oli.Factory
   import Mox
@@ -73,9 +74,19 @@ defmodule Oli.Delivery.Sections.Certificates.Workers.GeneratePdfTest do
       assert_enqueued(
         worker: Oli.Delivery.Sections.Certificates.Workers.Mailer,
         args: %{
-          "granted_certificate_id" => gc.id,
-          "to" => "dummy@email.com",
-          "template" => :certificate_approval
+          "granted_certificate_guid" => gc.guid,
+          "to" => user.email,
+          "template" => "student_approval",
+          "template_assigns" => %{
+            "certificate_link" =>
+              Phoenix.VerifiedRoutes.url(
+                OliWeb.Endpoint,
+                ~p"/sections/#{section.slug}/certificate/#{gc.guid}"
+              ),
+            "course_name" => section.title,
+            "platform_name" => Oli.Branding.brand_name(section),
+            "student_name" => OliWeb.Common.Utils.name(user)
+          }
         }
       )
     end

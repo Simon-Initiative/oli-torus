@@ -177,7 +177,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
       conn = get(conn, enrollment_path)
-      assert response(conn, 302) =~ "You are being <a href=\"/course\">redirected</a>"
+      assert response(conn, 302) =~ "You are being <a href=\"/sections\">redirected</a>"
     end
 
     test "redirect to requested path after login", %{conn: conn, section: section} do

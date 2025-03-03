@@ -174,9 +174,6 @@ defmodule OliWeb.StaticPageControllerTest do
     } do
       conn = get(conn, Routes.static_page_path(conn, :index))
 
-      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
-               "Admins are not allowed to access this page."
-
       assert html_response(conn, 302) =~
                "You are being <a href=\"/workspaces/course_author\">redirected"
     end

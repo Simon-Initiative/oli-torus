@@ -297,7 +297,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       wait_for_completion()
 
-      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/course")
+      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/sections")
     end
 
     @tag :skip
@@ -331,7 +331,7 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
 
       assert blueprint_section.contains_explorations == true
 
-      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/course")
+      assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/sections")
     end
 
     test "creates a section with analytics_version :v2 ", %{conn: conn} = context do
