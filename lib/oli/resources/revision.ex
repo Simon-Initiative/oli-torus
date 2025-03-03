@@ -49,6 +49,8 @@ defmodule Oli.Resources.Revision do
     field :tags, {:array, :id}, default: []
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
+    field :batch_scoring, :boolean, default: true
+    field :replacement_strategy, Ecto.Enum, values: [:none, :selections, :dynamic, :both], default: :none
     field :duration_minutes, :integer, default: nil
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil
@@ -114,6 +116,8 @@ defmodule Oli.Resources.Revision do
       :tags,
       :objectives,
       :graded,
+      :batch_scoring,
+      :replacement_strategy,
       :duration_minutes,
       :intro_content,
       :intro_video,
