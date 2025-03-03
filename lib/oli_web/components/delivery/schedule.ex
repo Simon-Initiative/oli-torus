@@ -73,48 +73,50 @@ defmodule OliWeb.Components.Delivery.Schedule do
                     } <- scheduled_resources do %>
                     <div class="flex flex-row gap-4 mb-3">
                       <.page_icon progress={progress} graded={graded} purpose={purpose} />
-                      <div class="flex-1">
-                        <.link
-                          href={
-                            Utils.lesson_live_path(@section_slug, resource.revision_slug,
-                              request_path: @request_path
-                            )
-                          }
-                          class="hover:no-underline"
-                        >
-                          <%= resource.title %>
-                        </.link>
+                      <div class="flex flex-col md:flex-row gap-2 md:gap-6">
+                        <div class="flex-1">
+                          <.link
+                            href={
+                              Utils.lesson_live_path(@section_slug, resource.revision_slug,
+                                request_path: @request_path
+                              )
+                            }
+                            class="hover:no-underline"
+                          >
+                            <%= resource.title %>
+                          </.link>
 
-                        <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
-                          <%= resource_scheduling_label(resource.scheduling_type) %>
-                          <%= if is_nil(effective_settings),
-                            do:
-                              date(
-                                Utils.coalesce(resource.end_date, resource.start_date),
-                                ctx: @ctx,
-                                precision: :date
-                              ),
-                            else:
-                              date(
-                                Utils.coalesce(
-                                  effective_settings.end_date,
-                                  effective_settings.start_date
+                          <div class="text-sm text-gray-700 dark:text-gray-300 group-[.past-start]:text-gray-400 dark:group-[.past-start]:text-gray-700">
+                            <%= resource_scheduling_label(resource.scheduling_type) %>
+                            <%= if is_nil(effective_settings),
+                              do:
+                                date(
+                                  Utils.coalesce(resource.end_date, resource.start_date),
+                                  ctx: @ctx,
+                                  precision: :date
                                 ),
-                                ctx: @ctx,
-                                precision: :date
-                              ) %>
+                              else:
+                                date(
+                                  Utils.coalesce(
+                                    effective_settings.end_date,
+                                    effective_settings.start_date
+                                  ),
+                                  ctx: @ctx,
+                                  precision: :date
+                                ) %>
+                          </div>
                         </div>
-                      </div>
-                      <div :if={graded} class="flex flex-col">
-                        <Student.attempts_dropdown
-                          ctx={@ctx}
-                          section_slug={@section_slug}
-                          page_revision_slug={resource.revision_slug}
-                          attempt_summary={@historical_graded_attempt_summary}
-                          attempts_count={resource_attempt_count}
-                          effective_settings={effective_settings}
-                        />
-                        <Student.score_summary raw_avg_score={raw_avg_score} />
+                        <div :if={graded} class="flex flex-col justify-center">
+                          <Student.attempts_dropdown
+                            ctx={@ctx}
+                            section_slug={@section_slug}
+                            page_revision_slug={resource.revision_slug}
+                            attempt_summary={@historical_graded_attempt_summary}
+                            attempts_count={resource_attempt_count}
+                            effective_settings={effective_settings}
+                          />
+                          <Student.score_summary raw_avg_score={raw_avg_score} />
+                        </div>
                       </div>
                     </div>
                   <% end %>
@@ -148,7 +150,7 @@ defmodule OliWeb.Components.Delivery.Schedule do
                 title={title}
               />
 
-              <div class="flex flex-col my-6 mx-10">
+              <div class="flex flex-col my-6 ml-10">
                 <%= for %ScheduledSectionResource{
                       resource: resource,
                       purpose: purpose,
@@ -167,28 +169,30 @@ defmodule OliWeb.Components.Delivery.Schedule do
                         </div>
                       </div>
                     </div>
-                    <div class="flex-1">
-                      <.link
-                        href={
-                          Utils.lesson_live_path(@section_slug, resource.revision_slug,
-                            request_path: @request_path
-                          )
-                        }
-                        class="text-left dark:text-white opacity-90 text-base font-['Open Sans'] hover:no-underline"
-                      >
-                        <%= resource.title %>
-                      </.link>
-                    </div>
-                    <div :if={graded} class="flex flex-col">
-                      <Student.attempts_dropdown
-                        ctx={@ctx}
-                        section_slug={@section_slug}
-                        page_revision_slug={resource.revision_slug}
-                        attempt_summary={@historical_graded_attempt_summary}
-                        attempts_count={resource_attempt_count}
-                        effective_settings={effective_settings}
-                      />
-                      <Student.score_summary raw_avg_score={raw_avg_score} />
+                    <div class="flex flex-col md:flex-row gap-2 md:gap-6">
+                      <div class="flex-1">
+                        <.link
+                          href={
+                            Utils.lesson_live_path(@section_slug, resource.revision_slug,
+                              request_path: @request_path
+                            )
+                          }
+                          class="text-left dark:text-white opacity-90 text-base font-['Open Sans'] hover:no-underline"
+                        >
+                          <%= resource.title %>
+                        </.link>
+                      </div>
+                      <div :if={graded} class="flex flex-col justify-center">
+                        <Student.attempts_dropdown
+                          ctx={@ctx}
+                          section_slug={@section_slug}
+                          page_revision_slug={resource.revision_slug}
+                          attempt_summary={@historical_graded_attempt_summary}
+                          attempts_count={resource_attempt_count}
+                          effective_settings={effective_settings}
+                        />
+                        <Student.score_summary raw_avg_score={raw_avg_score} />
+                      </div>
                     </div>
                   </div>
                 <% end %>

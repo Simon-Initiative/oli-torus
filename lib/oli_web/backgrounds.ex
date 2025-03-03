@@ -562,7 +562,7 @@ defmodule OliWeb.Backgrounds do
 
   def enrollment_info(assigns) do
     ~H"""
-    <div class="flex justify-end relative w-full h-[427px]">
+    <div class="flex justify-end relative w-full min-h-[427px]">
       <img
         src="/images/enrollment_info.png"
         alt="A student looks at her computer to browse course topics."

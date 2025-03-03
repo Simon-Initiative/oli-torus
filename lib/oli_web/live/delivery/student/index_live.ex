@@ -171,9 +171,9 @@ defmodule OliWeb.Delivery.Student.IndexLive do
       suggested_page={@last_open_and_unfinished_page || @nearest_upcoming_lesson}
       unfinished_lesson={!is_nil(@last_open_and_unfinished_page)}
     />
-    <div id="home-view" class="w-full h-full bg-stone-950 dark:text-white" phx-hook="Countdown">
-      <div class="w-full p-8 justify-start items-start gap-6 inline-flex">
-        <div class="w-2/5 h-48 flex-col justify-start items-start gap-6 inline-flex">
+    <div id="home-view" class="bg-stone-950 dark:text-white" phx-hook="Countdown">
+      <div class="flex flex-col md:flex-row p-3 md:p-8 justify-start items-start gap-6">
+        <div class="flex flex-col-reverse md:flex-col w-full md:w-2/5 md:h-48 justify-start items-start gap-6">
           <.assignments
             upcoming_assignments={@upcoming_assignments}
             latest_assignments={@latest_assignments}
@@ -197,7 +197,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
         <div
           :if={@section.agenda && not is_nil(@grouped_agenda_resources)}
-          class="w-3/5 h-full flex-col justify-start items-start gap-6 inline-flex"
+          class="flex flex-col w-full md:w-3/5 justify-start items-start gap-6"
         >
           <.agenda
             section_slug={@section_slug}
@@ -220,109 +220,107 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(%{has_visited_section: true} = assigns) do
     ~H"""
-    <div class="relative">
-      <div class="w-full h-72 relative flex items-center">
-        <div class="inset-0 absolute">
-          <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
-          <img
-            src="/images/gradients/home-bg.png"
-            alt="Background Image"
-            class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
-          />
-          <div class="absolute inset-0 opacity-60">
-            <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
-            </div>
-            <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
+    <div class="w-full h-[20rem] md:h-72 relative flex items-center">
+      <div class="inset-0 absolute">
+        <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
+        <img
+          src="/images/gradients/home-bg.png"
+          alt="Background Image"
+          class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
+        />
+        <div class="absolute inset-0 opacity-60">
+          <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
           </div>
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
         </div>
+      </div>
 
-        <div
-          :if={!is_nil(@suggested_page)}
-          class="w-full px-9 absolute flex-col justify-center items-start gap-6 inline-flex"
-        >
-          <div class="text-white text-2xl font-bold leading-loose tracking-tight">
-            Continue Learning
+      <div
+        :if={!is_nil(@suggested_page)}
+        class="flex flex-col w-full px-3 md:px-9 absolute flex-col justify-center items-start gap-2 md:gap-6"
+      >
+        <h3 class="text-white text-lg md:text-2xl font-bold leading-loose tracking-tight">
+          Continue Learning
+        </h3>
+        <div class="flex flex-col lg:flex-row self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between lg:items-end gap-3">
+          <div class="flex-col justify-center items-start gap-3.5 inline-flex">
+            <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
+              <div
+                :if={show_page_module?(@suggested_page)}
+                class="justify-start items-start gap-1 flex"
+              >
+                <div class="opacity-50 text-white text-sm font-bold uppercase tracking-tight">
+                  Module <%= @suggested_page.module_index %>
+                </div>
+              </div>
+              <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
+                <div class="text-right text-white text-sm font-bold">Due:</div>
+                <div class="text-right text-white text-sm font-bold">
+                  <%= format_date(
+                    @suggested_page.end_date,
+                    @ctx,
+                    "{WDshort} {Mshort} {D}, {YYYY}"
+                  ) %>
+                </div>
+              </div>
+            </div>
+            <div class="justify-start items-center gap-10 inline-flex">
+              <div class="justify-start items-center gap-5 flex">
+                <div class="py-0.5 justify-start items-start gap-2.5 flex">
+                  <div class="text-white text-xs font-semibold">
+                    <%= @suggested_page.numbering_index %>
+                  </div>
+                </div>
+                <div class="flex-col justify-center items-start gap-1 inline-flex">
+                  <div class="text-white md:text-lg font-semibold">
+                    <%= @suggested_page.title %>
+                  </div>
+                </div>
+              </div>
+              <div
+                :if={@suggested_page.duration_minutes}
+                class="w-36 self-stretch justify-end items-center gap-1.5 flex"
+              >
+                <div class="h-6 px-2 py-1 bg-white bg-opacity-10 rounded-xl shadow justify-end items-center gap-1 flex">
+                  <div class="text-white text-xs font-semibold">
+                    Estimated time <%= @suggested_page.duration_minutes %> m
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="self-stretch p-6 bg-zinc-900 bg-opacity-40 rounded-xl justify-between items-end inline-flex">
-            <div class="flex-col justify-center items-start gap-3.5 inline-flex">
-              <div class="self-stretch h-3 justify-start items-center gap-3.5 inline-flex">
-                <div
-                  :if={show_page_module?(@suggested_page)}
-                  class="justify-start items-start gap-1 flex"
-                >
-                  <div class="opacity-50 text-white text-sm font-bold uppercase tracking-tight">
-                    Module <%= @suggested_page.module_index %>
-                  </div>
-                </div>
-                <div class="grow shrink basis-0 h-5 justify-start items-center gap-1 flex">
-                  <div class="text-right text-white text-sm font-bold">Due:</div>
-                  <div class="text-right text-white text-sm font-bold">
-                    <%= format_date(
-                      @suggested_page.end_date,
-                      @ctx,
-                      "{WDshort} {Mshort} {D}, {YYYY}"
-                    ) %>
-                  </div>
+          <div class="flex flex-col md:flex-row justify-end items-start gap-3.5">
+            <.link
+              href={
+                Utils.lesson_live_path(
+                  @section_slug,
+                  @suggested_page.slug,
+                  request_path: ~p"/sections/#{@section_slug}"
+                )
+              }
+              class="w-full hover:no-underline"
+            >
+              <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
+                <div class="text-white text-sm font-bold leading-tight whitespace-nowrap">
+                  <%= lesson_button_label(@unfinished_lesson, @suggested_page) %>
                 </div>
               </div>
-              <div class="justify-start items-center gap-10 inline-flex">
-                <div class="justify-start items-center gap-5 flex">
-                  <div class="py-0.5 justify-start items-start gap-2.5 flex">
-                    <div class="text-white text-xs font-semibold">
-                      <%= @suggested_page.numbering_index %>
-                    </div>
-                  </div>
-                  <div class="flex-col justify-center items-start gap-1 inline-flex">
-                    <div class="text-white text-lg font-semibold">
-                      <%= @suggested_page.title %>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  :if={@suggested_page.duration_minutes}
-                  class="w-36 self-stretch justify-end items-center gap-1.5 flex"
-                >
-                  <div class="h-6 px-2 py-1 bg-white bg-opacity-10 rounded-xl shadow justify-end items-center gap-1 flex">
-                    <div class="text-white text-xs font-semibold">
-                      Estimated time <%= @suggested_page.duration_minutes %> m
-                    </div>
-                  </div>
+            </.link>
+            <.link
+              href={
+                Utils.learn_live_path(@section_slug,
+                  target_resource_id: @suggested_page.resource_id,
+                  request_path: ~p"/sections/#{@section_slug}"
+                )
+              }
+              class="w-full hover:no-underline"
+            >
+              <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
+                <div class="text-white text-sm font-semibold leading-tight whitespace-nowrap">
+                  Show in course
                 </div>
               </div>
-            </div>
-            <div class="justify-start items-start gap-3.5 flex">
-              <.link
-                href={
-                  Utils.lesson_live_path(
-                    @section_slug,
-                    @suggested_page.slug,
-                    request_path: ~p"/sections/#{@section_slug}"
-                  )
-                }
-                class="hover:no-underline"
-              >
-                <div class="w-full h-10 px-5 py-2.5 bg-blue-600 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-blue-500">
-                  <div class="text-white text-sm font-bold leading-tight">
-                    <%= lesson_button_label(@unfinished_lesson, @suggested_page) %>
-                  </div>
-                </div>
-              </.link>
-              <.link
-                href={
-                  Utils.learn_live_path(@section_slug,
-                    target_resource_id: @suggested_page.resource_id,
-                    request_path: ~p"/sections/#{@section_slug}"
-                  )
-                }
-                class="hover:no-underline"
-              >
-                <div class="w-44 h-10 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow justify-center items-center gap-2.5 flex hover:bg-opacity-40">
-                  <div class="text-white text-sm font-semibold leading-tight">
-                    Show in course
-                  </div>
-                </div>
-              </.link>
-            </div>
+            </.link>
           </div>
         </div>
       </div>
@@ -332,62 +330,61 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp header_banner(assigns) do
     ~H"""
-    <div class="relative">
-      <div class="w-full h-72 relative flex items-center">
-        <div class="inset-0 absolute">
-          <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
-          <img
-            src="/images/gradients/home-bg.png"
-            alt="Background Image"
-            class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
-          />
-          <div class="absolute inset-0 opacity-60">
-            <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
-            </div>
-            <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
+    <div class="w-full h-[20rem] md:h-72 relative flex items-center">
+      <div class="inset-0 absolute">
+        <div class="inset-0 absolute bg-purple-700 bg-opacity-50"></div>
+        <img
+          src="/images/gradients/home-bg.png"
+          alt="Background Image"
+          class="absolute inset-0 w-full h-full object-cover border border-gray-300 dark:border-black mix-blend-luminosity"
+        />
+        <div class="absolute inset-0 opacity-60">
+          <div class="absolute left-[1250px] top-0 origin-top-left rotate-180 bg-gradient-to-r from-white to-white">
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-700 to-cyan-500"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-col w-full px-9 absolute flex-col justify-center items-start gap-2 md:gap-6">
+        <h3 class="w-full text-white text-2xl font-bold tracking-wide">
+          Hi, <%= user_given_name(@ctx) %> !
+        </h3>
+        <div class="flex flex-col items-start gap-2.5">
+          <h4 class="text-3xl text-white font-medium">
+            <%= build_welcome_title(@section.welcome_title) %>
+          </h4>
+          <div class="text-white/60 text-lg font-semibold">
+            <%= @section.encouraging_subtitle ||
+              "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
           </div>
         </div>
-
-        <div class="w-full pl-14 pr-5 absolute flex flex-col justify-center items-start gap-6">
-          <div class="w-full text-white text-2xl font-bold tracking-wide whitespace-nowrap overflow-hidden">
-            Hi, <%= user_given_name(@ctx) %> !
-          </div>
-          <div class="w-full flex flex-col items-start gap-2.5">
-            <div class="w-full whitespace-nowrap overflow-hidden">
-              <span class="text-3xl text-white font-medium">
-                <%= build_welcome_title(@section.welcome_title) %>
-              </span>
-            </div>
-            <div class="w-96 text-white/60 text-lg font-semibold">
-              <%= @section.encouraging_subtitle ||
-                "Dive Into Discovery. Begin Your Learning Adventure Now!" %>
-            </div>
-          </div>
-          <div class="pt-5 flex items-start gap-6">
-            <.link
-              href={
-                Utils.lesson_live_path(
-                  @section_slug,
-                  DeliveryResolver.get_first_page_slug(@section_slug),
-                  request_path: ~p"/sections/#{@section_slug}"
-                )
-              }
-              class="hover:no-underline"
-            >
-              <div class="w-52 h-11 px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
-                <div class="text-white text-base font-bold leading-tight">
-                  Start course
-                </div>
+        <div class="flex flex-col md:flex-row w-full justify-end items-start gap-3.5">
+          <.link
+            href={
+              Utils.lesson_live_path(
+                @section_slug,
+                DeliveryResolver.get_first_page_slug(@section_slug),
+                request_path: ~p"/sections/#{@section_slug}"
+              )
+            }
+            class="w-full md:w-auto hover:no-underline"
+          >
+            <div class="px-5 py-2.5 bg-blue-600 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-blue-500">
+              <div class="text-white text-base font-bold leading-tight whitespace-nowrap">
+                Start course
               </div>
-            </.link>
-            <.link href={Utils.learn_live_path(@section_slug)} class="hover:no-underline">
-              <div class="w-52 h-11 px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
-                <div class="text-white text-base font-semibold leading-tight">
-                  Discover content
-                </div>
+            </div>
+          </.link>
+          <.link
+            href={Utils.learn_live_path(@section_slug)}
+            class="w-full md:w-auto hover:no-underline"
+          >
+            <div class="px-5 py-2.5 bg-white bg-opacity-20 rounded-lg shadow flex justify-center items-center gap-2.5 hover:bg-opacity-40">
+              <div class="text-white text-base font-semibold leading-tight whitespace-nowrap">
+                Discover content
               </div>
-            </.link>
-          </div>
+            </div>
+          </.link>
         </div>
       </div>
     </div>
@@ -480,8 +477,8 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         </div>
       </Modal.modal>
     </div>
-    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start gap-32 inline-flex">
-      <div class="flex-col justify-start items-start gap-5 inline-flex grow">
+    <div class="w-full h-fit p-6 bg-white shadow dark:bg-[#1C1A20] dark:bg-opacity-100 rounded-2xl justify-start items-start inline-flex">
+      <div class="flex-col justify-start items-start gap-3 md:gap-5 inline-flex grow">
         <div class="flex items-baseline gap-2.5 relative">
           <div class="text-2xl font-bold leading-loose">
             Course Progress
@@ -518,10 +515,10 @@ defmodule OliWeb.Delivery.Student.IndexLive do
         <%= if @has_visited_section do %>
           <div class="flex-col justify-start items-start flex">
             <div>
-              <span class="text-6xl font-bold leading-[76px]">
+              <span class="text-3xl md:text-6xl font-bold leading-[76px]">
                 <%= parse_progress(@completed_pages.completed_pages / @completed_pages.total_pages) %>
               </span>
-              <span class="text-3xl font-bold leading-[44px]">%</span>
+              <span class="text-xl md:text-3xl font-bold leading-[44px]">%</span>
             </div>
           </div>
           <Common.progress_bar

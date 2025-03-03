@@ -69,7 +69,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def render(assigns) do
     ~H"""
     <div>
-      <.loader if={!@table_model} />
+      <.loader :if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 lg:items-center">
           <h4 class="torus-h4 whitespace-nowrap">Practice Activities</h4>

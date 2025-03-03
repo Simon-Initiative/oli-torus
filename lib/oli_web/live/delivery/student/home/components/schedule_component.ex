@@ -377,10 +377,10 @@ defmodule OliWeb.Delivery.Student.Home.Components.ScheduleComponent do
             <% resource_completed = resource.progress == 100 %>
             <div
               role="group_item"
-              class="w-full flex self-stretch pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-5 hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer"
+              class="w-full flex self-stretch px-3 md:pl-7 pr-4 py-2.5 rounded-lg justify-start items-start gap-2 md:gap-5 hover:bg-[#000000]/5 dark:hover:bg-[#FFFFFF]/5 hover:font-medium hover:cursor-pointer"
             >
-              <div class="grow shrink h-auto justify-start items-start gap-5 flex">
-                <div class="justify-start items-start gap-5 flex">
+              <div class="grow shrink h-auto justify-start items-start gap-2 md:gap-5 flex">
+                <div class="justify-start items-start gap-2 md:gap-5 flex">
                   <div class="w-5 h-5 flex-col justify-center items-center inline-flex">
                     <div class="justify-center items-center inline-flex">
                       <Icons.check :if={resource_completed} progress={1.0} />

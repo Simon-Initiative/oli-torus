@@ -20,7 +20,7 @@ defmodule OliWeb.Delivery.Student.PracticeLive do
     <.hero_banner class="bg-practice">
       <h1 class="text-4xl md:text-6xl mb-8">Your Practice Pages</h1>
     </.hero_banner>
-    <div class="overflow-x-scroll md:overflow-x-auto container mx-auto flex flex-col mt-6 px-16">
+    <div class="overflow-x-scroll md:overflow-x-auto container mx-auto flex flex-col mt-6 px-3 md:px-16">
       <div :if={Enum.count(@practices_by_container) == 0} class="text-center" role="alert">
         <h6>There are no practice pages available</h6>
       </div>
