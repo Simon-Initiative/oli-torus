@@ -61,7 +61,7 @@ export const TriggerEditorCore = ({
       </div>
       <p className="mt-2">
         Customize a prompt for our AI assistant, DOT, to follow the student clicks this trigger
-        button
+        button.
       </p>
 
       <h6 className="mt-2">
