@@ -129,7 +129,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     ~H"""
     <%= render_modal(assigns) %>
-    <div class="ml-auto"><.flash_message flash={@flash} /></div>
+
     <Groups.render>
       <Group.render label="Details" description="Overview of course section details">
         <ReadOnly.render label="Course Section ID" value={@section.slug} />
@@ -756,41 +756,6 @@ defmodule OliWeb.Sections.OverviewView do
         />
       </div>
     </div>
-    """
-  end
-
-  defp flash_message(assigns) do
-    ~H"""
-    <%= if Phoenix.Flash.get(@flash, :info) do %>
-      <div class="alert alert-info flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :info) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
-    <%= if Phoenix.Flash.get(@flash, :error) do %>
-      <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :error) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="error"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
     """
   end
 

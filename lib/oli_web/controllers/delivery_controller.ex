@@ -160,7 +160,7 @@ defmodule OliWeb.DeliveryController do
           end
 
         _ ->
-          ~p"/course"
+          ~p"/sections"
       end
 
     institution = Institutions.get_institution_by_lti_user(user)
