@@ -44,8 +44,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.BibliographyLive do
     <div :if={!@error} id="editor" phx-update="ignore">
       <%= React.component(@ctx, "Components.Bibliography", @context, id: "bibliography") %>
     </div>
-
-    <%= React.component(@ctx, "Components.ModalDisplay", @context, id: "modal-display") %>
     """
   end
 end
