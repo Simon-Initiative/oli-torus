@@ -240,7 +240,10 @@ const AddComponentToolbar: React.FC<{
                 <Popover.Content>
                   <ListGroup className="aa-parts-list">
                     {availablePartComponents
-                      .filter((part) => !frequentlyUsed!.includes(part.slug))
+                      .filter(
+                        (part) =>
+                          !frequentlyUsed!.includes(part.slug) && part.slug !== 'janus_hub_spoke', // hub Spoke is only for basic authoring
+                      )
                       .map((part) => (
                         <ListGroup.Item
                           action

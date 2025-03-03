@@ -1,0 +1,16 @@
+{
+  "id": "janus_hub_spoke",
+  "friendlyName": "Hub and Spoke",
+  "description": "Displays a Hub and Spoke",
+  "icon": "icon-part-hub-spoke.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-hub-spoke",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-hub-spoke",
+    "entry": "./authoring-entry.ts"
+  }
+}

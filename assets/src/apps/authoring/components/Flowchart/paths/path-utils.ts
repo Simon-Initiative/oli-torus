@@ -16,6 +16,7 @@ import { cloneT } from '../../../../../utils/common';
 import {
   IActivity,
   IDropdownPartLayout,
+  IHubSpokePartLayout,
   IInputNumberPartLayout,
   IInputTextPartLayout,
   IMCQPartLayout,
@@ -77,6 +78,9 @@ export const isMCQ = (screen: IPartLayout): screen is IMCQPartLayout => screen.t
 
 export const isDropdown = (screen: IPartLayout): screen is IDropdownPartLayout =>
   screen.type === 'janus-dropdown';
+
+export const isHubSpoke = (screen: IPartLayout): screen is IHubSpokePartLayout =>
+  screen.type === 'janus-hub-spoke';
 
 export const isEndOfActivityPath = (path: AllPaths): path is EndOfActivityPath =>
   path.type === 'end-of-activity';
