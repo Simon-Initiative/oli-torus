@@ -360,5 +360,4 @@ defmodule OliWeb.Workspaces.InstructorTest do
              )
     end
   end
-
 end
