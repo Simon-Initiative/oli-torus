@@ -93,7 +93,7 @@ defmodule OliWeb.Pow.UserContext do
               |> Repo.update()
 
             _ ->
-              {:ok, user}
+              {:error, %{email: "has already been taken"}}
           end
         end
 
