@@ -39,7 +39,7 @@ import { ShortAnswerModelSchema } from './schema';
 const store = configureStore();
 
 const ShortAnswer = () => {
-  const { dispatch, model, editMode, projectSlug } =
+  const { dispatch, model, editMode, projectSlug, authoringContext } =
     useAuthoringElementContext<ShortAnswerModelSchema>();
 
   const submitAndCompareSetting = {
@@ -177,9 +177,11 @@ const ShortAnswer = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-        <TabbedNavigation.Tab label={TriggerLabel()}>
-          <TriggerAuthoring partId={model.authoring.parts[0].id} />
-        </TabbedNavigation.Tab>
+        {authoringContext.optionalContentTypes.triggers && (
+          <TabbedNavigation.Tab label={TriggerLabel()}>
+            <TriggerAuthoring partId={model.authoring.parts[0].id} />
+          </TabbedNavigation.Tab>
+        )}
 
         <ActivitySettings settings={[submitAndCompareSetting]} />
       </TabbedNavigation.Tabs>

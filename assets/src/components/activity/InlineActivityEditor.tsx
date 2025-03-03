@@ -7,6 +7,7 @@ import { Tags } from 'components/resource/Tags';
 import { ActivityLOs } from 'components/resource/objectives/ActivityLOs';
 import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
 import { Objective } from 'data/content/objective';
+import { OptionalContentTypes } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { ResourceId } from 'data/types';
 import { classNames } from 'utils/classNames';
@@ -15,6 +16,7 @@ import styles from './InlineActivityEditor.modules.scss';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;
+  optionalContentTypes: OptionalContentTypes;
   projectSlug: string;
   revisionHistoryLink: boolean;
   allObjectives: Objective[];
@@ -148,7 +150,11 @@ export class InlineActivityEditor extends React.Component<
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),
       projectslug: this.props.projectSlug,
-      authoringcontext: JSON.stringify({ contentBreaksExist, variables }),
+      authoringcontext: JSON.stringify({
+        contentBreaksExist,
+        variables,
+        optionalContentTypes: this.props.optionalContentTypes,
+      }),
     };
 
     const parts = valueOr(this.props.model.authoring.parts, []);

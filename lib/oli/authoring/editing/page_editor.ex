@@ -248,7 +248,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
          next_page: next,
          collab_space_config: collab_space_config,
          optionalContentTypes: %{
-           ecl: publication.project.allow_ecl_content_type
+           ecl: publication.project.allow_ecl_content_type,
+           triggers: publication.project.allow_triggers
          },
          appsignalKey: Application.get_env(:appsignal, :client_key),
          hasExperiments: nil

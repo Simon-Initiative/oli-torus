@@ -650,13 +650,15 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                     />
                   </AlternativesContextProvider>
                 </div>
-                <PageTriggerEditor
-                  onEdit={(trigger) => {
-                    const updated = this.state.content.with({ trigger });
-                    onEdit(updated);
-                  }}
-                  trigger={this.state.content.trigger}
-                />
+                {this.props.optionalContentTypes.triggers && (
+                  <PageTriggerEditor
+                    onEdit={(trigger) => {
+                      const updated = this.state.content.with({ trigger });
+                      onEdit(updated);
+                    }}
+                    trigger={this.state.content.trigger}
+                  />
+                )}
               </div>
             </div>
           </ErrorBoundary>

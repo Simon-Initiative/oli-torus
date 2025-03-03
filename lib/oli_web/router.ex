@@ -446,6 +446,7 @@ defmodule OliWeb.Router do
     # Project display pages
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/duplicate", ProjectController, :clone_project)
+    post("/:project_id/triggers", ProjectController, :enable_triggers)
 
     live("/:project_id/embeddings", Search.EmbeddingsLive)
 

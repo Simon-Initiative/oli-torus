@@ -29,7 +29,8 @@ import { PartsTab } from './sections/PartsTab';
 const store = configureStore();
 
 export const ResponseMultiInputComponent = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<ResponseMultiInputSchema>();
+  const { dispatch, model, editMode, authoringContext } =
+    useAuthoringElementContext<ResponseMultiInputSchema>();
   const [editor, setEditor] = React.useState<(ReactEditor & Editor) | undefined>();
   const [selectedInputRef, setSelectedInputRef] = React.useState<InputRef | undefined>(undefined);
 
@@ -81,9 +82,12 @@ export const ResponseMultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
-          <TabbedNavigation.Tab label={TriggerLabel()}>
-            <TriggerAuthoring partId={input.partId} />
-          </TabbedNavigation.Tab>
+
+          {authoringContext.optionalContentTypes.triggers && (
+            <TabbedNavigation.Tab label={TriggerLabel()}>
+              <TriggerAuthoring partId={input.partId} />
+            </TabbedNavigation.Tab>
+          )}
 
           <ActivitySettings
             settings={[
