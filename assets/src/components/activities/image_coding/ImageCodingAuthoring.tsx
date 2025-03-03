@@ -215,7 +215,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
               <Explanation partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
 
-            {authoringContext.optionalContentTypes.triggers && (
+            {authoringContext?.optionalContentTypes?.triggers && (
               <TabbedNavigation.Tab label={TriggerLabel()}>
                 <TriggerAuthoring partId={model.authoring.parts[0].id} />
               </TabbedNavigation.Tab>
