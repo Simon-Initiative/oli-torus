@@ -39,6 +39,29 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
 
+  def workspace_menu(%{ctx: %{author: %{system_role_id: system_role_id}}} = assigns) when system_role_id in [2, 3, 4] do
+    ~H"""
+    <div class="relative">
+      <button
+        id={@id}
+        class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
+        phx-click={toggle_menu("##{@id}-dropdown")}
+      >
+        <.user_picture_icon user={@ctx.author} />
+      </button>
+      <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
+        <.account_label label="Admin" class="text-[#F68E2E]" />
+        <.author_menu_items
+          ctx={@ctx}
+          id={@id}
+          target_signout_path={target_signout_path(@active_workspace)}
+          is_admin={true}
+        />
+      </.dropdown_menu>
+    </div>
+    """
+  end
+
   def workspace_menu(%{active_workspace: :course_author} = assigns) do
     ~H"""
     <div class="relative">
@@ -72,7 +95,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <.user_picture_icon user={@ctx.user} />
+        <.user_picture_icon :if={Accounts.is_admin?(@ctx.author)} user={@ctx.author} />
+        <.user_picture_icon :if={@ctx.author == nil or !Accounts.is_admin?(@ctx.author)} user={@ctx.user} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label
