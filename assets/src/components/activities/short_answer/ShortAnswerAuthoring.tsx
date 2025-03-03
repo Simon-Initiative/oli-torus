@@ -177,7 +177,7 @@ const ShortAnswer = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-        {authoringContext.optionalContentTypes.triggers && (
+        {authoringContext?.optionalContentTypes?.triggers && (
           <TabbedNavigation.Tab label={TriggerLabel()}>
             <TriggerAuthoring partId={model.authoring.parts[0].id} />
           </TabbedNavigation.Tab>

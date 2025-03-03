@@ -55,6 +55,7 @@ export interface ActivityBankProps {
   totalCount: number;
   appsignalKey: string | null;
   revisionHistoryLink: boolean;
+  allowTriggers: boolean;
 }
 
 type ActivityBankState = {
@@ -597,6 +598,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
               model: r.content,
               objectives: r.objectives,
               tags: r.tags,
+              optionalContentTypes: { triggers: this.props.allowTriggers },
             } as ActivityEditContext;
           })
           .map((c) => [c.activitySlug, c]);

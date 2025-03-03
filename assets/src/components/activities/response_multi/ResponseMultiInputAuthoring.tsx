@@ -83,7 +83,7 @@ export const ResponseMultiInputComponent = () => {
             />
           </TabbedNavigation.Tab>
 
-          {authoringContext.optionalContentTypes.triggers && (
+          {authoringContext?.optionalContentTypes?.triggers && (
             <TabbedNavigation.Tab label={TriggerLabel()}>
               <TriggerAuthoring partId={input.partId} />
             </TabbedNavigation.Tab>
