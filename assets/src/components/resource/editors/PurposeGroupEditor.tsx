@@ -246,7 +246,7 @@ const GroupTriggerEditor = ({
       >
         <textarea
           disabled={!editMode}
-          className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={trigger.prompt}
           onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))}
         />
