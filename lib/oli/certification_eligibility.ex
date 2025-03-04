@@ -67,9 +67,7 @@ defmodule Oli.CertificationEligibility do
   """
 
   defp enqueue_certification_check(user_id, section_id) do
-    %{user_id: user_id, section_id: section_id}
-    |> CheckCertification.new()
-    |> Oban.insert()
+    CheckCertification.restart_certificate_check(user_id, section_id)
   end
 
   # Case: Discussion Post
