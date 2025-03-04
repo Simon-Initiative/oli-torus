@@ -6715,6 +6715,12 @@ table.table-striped tbody tr:nth-child(even) {
   margin-bottom: calc(1rem * var(--tw-space-y-reverse));
 }
 
+.space-y-5 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(1.25rem * var(--tw-space-y-reverse));
+}
+
 .space-y-6 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
@@ -7696,6 +7702,11 @@ table.table-striped tbody tr:nth-child(even) {
 .bg-body-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(249 249 249 / var(--tw-bg-opacity));
+}
+
+.bg-body-dark-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(71 71 71 / var(--tw-bg-opacity));
 }
 
 .bg-body\/75 {
@@ -15184,6 +15195,11 @@ Not supports in Firefox and IE */
 
 .dark .dark\:bg-black\/40 {
   background-color: rgb(0 0 0 / 0.4);
+}
+
+.dark .dark\:bg-blue-500 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(59 118 211 / var(--tw-bg-opacity));
 }
 
 .dark .dark\:bg-blue-500\/40 {
