@@ -324,6 +324,8 @@ defmodule Oli.Resources do
           title: previous_revision.title,
           graded: previous_revision.graded,
           duration_minutes: previous_revision.duration_minutes,
+          batch_scoring: previous_revision.batch_scoring,
+          replacement_strategy: previous_revision.replacement_strategy,
           intro_content: previous_revision.intro_content,
           intro_video: previous_revision.intro_video,
           poster_image: previous_revision.poster_image,

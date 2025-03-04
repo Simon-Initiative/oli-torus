@@ -31,6 +31,8 @@ defmodule Oli.Delivery.Sections.Updates do
                                     :max_attempts,
                                     :retake_mode,
                                     :assessment_mode,
+                                    :batch_scoring,
+                                    :replacement_strategy,
                                     :password,
                                     :late_submit,
                                     :late_start,

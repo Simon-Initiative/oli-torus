@@ -367,6 +367,45 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
               </div>
 
               <div class="form-group">
+                <label for="scoring_type">Scoring Policy</label>
+                <.input
+                  type="select"
+                  class="form-control custom-select"
+                  field={@form[:batch_scoring]}
+                  options={[{"Score at the end", "true"}, {"Score as you go", "false"}]}
+                />
+                <small id="scoring_type_description" class="form-text text-muted">
+                  Score as you go will update the grade book after each question is answered.
+                </small>
+              </div>
+
+              <div class="form-group">
+                <label for="retake_mode">Replacement Policy</label>
+                <.input
+                  type="select"
+                  id="replacement_strategy"
+                  name="revision[replacement_strategy]"
+                  aria-describedby="replacement_policy_description"
+                  placeholder="Replacement Policy"
+                  disabled={not_score_as_you_go(@form, @revision)}
+                  class="form-control custom-select"
+                  field={@form[:replacement_strategy]}
+                  options={[
+                    {"None: All questions remain the same for all attempts", :none},
+                    {"Bank selections only: Activity bank selections draw new quesetions",
+                    :selections},
+                    {"Dynamic only: Dynamic questions regenerate a new question",
+                    :dynamic},
+                    {"Both: Activity bank selections and dynamic questions yields new quesetions",
+                    :both}
+                  ]}
+                />
+                <small id="replacement_policy_description" class="form-text text-muted">
+                  Determines how questions are selected and presented to students on subsequent attempts.
+                </small>
+              </div>
+
+              <div class="form-group">
                 <label>Explanation Strategy</label>
                 <div class="flex gap-2">
                   <.inputs_for :let={es} field={@form[:explanation_strategy]}>
@@ -1001,6 +1040,14 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
       !form.source.changes[:graded]
     else
       !revision.graded
+    end
+  end
+
+  defp not_score_as_you_go(form, revision) do
+    if !is_nil(form.source.changes[:batch_scoring]) do
+      form.source.changes[:batch_scoring]
+    else
+      revision.batch_scoring
     end
   end
 

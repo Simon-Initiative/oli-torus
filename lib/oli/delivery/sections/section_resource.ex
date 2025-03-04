@@ -85,6 +85,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
       values: [:foundation, :application, :deliberate_practice],
       default: :foundation
 
+    field :batch_scoring, :boolean, default: true
+    field :replacement_strategy, Ecto.Enum, values: [:none, :selections, :dynamic, :both], default: :none
     field :duration_minutes, :integer
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil
@@ -115,6 +117,8 @@ defmodule Oli.Delivery.Sections.SectionResource do
       :max_attempts,
       :password,
       :retake_mode,
+      :batch_scoring,
+      :replacement_strategy,
       :assessment_mode,
       :late_submit,
       :late_start,
