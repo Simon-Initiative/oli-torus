@@ -676,6 +676,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
                     <PersistenceStatus persistence={this.state.persistence} />
                   </div>
                   <CreateActivity
+                    allowTriggers={props.allowTriggers}
                     projectSlug={props.projectSlug}
                     editorMap={props.editorMap}
                     allObjectives={props.allObjectives}
