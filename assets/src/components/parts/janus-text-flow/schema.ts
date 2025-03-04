@@ -111,7 +111,7 @@ export const createSchema = (context?: CreationContext): Partial<TextFlowModel> 
         children: [
           {
             tag: 'span',
-            style: {},
+            style: { fontSize: '20' },
             children: [
               {
                 tag: 'text',
