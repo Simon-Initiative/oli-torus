@@ -33,9 +33,9 @@ export const TriggerEditorCore = ({
   const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
 
   const ExpandablePromptHelp = () => (
-    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-600 rounded-lg' : ''}`}>
+    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-800 rounded-lg' : ''}`}>
       <button
-        className="bg-slate-300 rounded-lg p-1"
+        className="bg-slate-300 dark:bg-gray-800 rounded-lg p-1"
         onClick={(e) => setPromptsExpanded(!promptsExpanded)}
       >
         View examples of helpful prompts&nbsp;&nbsp; {promptsExpanded ? '^' : '\u22C1'}
@@ -102,7 +102,7 @@ export const TriggerEditor: React.FC<Props> = ({ model }) => {
       }
     >
       <textarea
-        className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={model.prompt}
         onChange={(e) => onEdit({ prompt: e.target.value })}
       />
