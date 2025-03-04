@@ -421,9 +421,9 @@ defmodule Oli.Analytics.Summary do
       where:
         rs.project_id == -1 and rs.section_id == ^section_id and
           rs.page_id == ^page_id,
-      where: s.user_id != -1 and s.project_id == -1,
+      where: s.user_id == -1 and s.project_id == -1,
       where: ^activity_constraint,
-      distinct: [s.resource_id, s.user_id, s.part_id],
+      distinct: [s.resource_id, s.part_id],
       select: s
     )
     |> Repo.all()
@@ -458,7 +458,11 @@ defmodule Oli.Analytics.Summary do
           section_id :: integer(),
           activity_resource_ids :: [integer()]
         ) :: [map()]
-  def get_response_summary_for(page_resource_id, section_id, only_for_activity_ids \\ nil) do
+  def get_response_summary_for(
+        page_resource_id,
+        section_id,
+        only_for_activity_ids \\ nil
+      ) do
     activity_constraint =
       case only_for_activity_ids do
         nil -> true
@@ -470,20 +474,20 @@ defmodule Oli.Analytics.Summary do
       on: rs.resource_part_response_id == rpp.id,
       left_join: sr in StudentResponse,
       on:
-        rs.section_id == sr.section_id and rs.page_id == sr.page_id and
+        rs.section_id == sr.section_id and
+          rs.page_id == sr.page_id and
           rs.resource_part_response_id == sr.resource_part_response_id,
-      left_join: u in Oli.Accounts.User,
-      on: sr.user_id == u.id,
       where:
         rs.section_id == ^section_id and rs.page_id == ^page_resource_id and
           rs.project_id == -1,
       where: ^activity_constraint,
+      group_by: [rs.id, rpp.part_id, rpp.response, rs.count, rs.activity_id],
       select: %{
         part_id: rpp.part_id,
         response: rpp.response,
         count: rs.count,
-        user: u,
-        activity_id: rs.activity_id
+        activity_id: rs.activity_id,
+        users: fragment("COALESCE(array_agg(?), '{}')", sr.user_id)
       }
     )
     |> Repo.all()
