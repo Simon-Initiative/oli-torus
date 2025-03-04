@@ -8,9 +8,9 @@ export const PageTriggerEditor: React.FC<{
   const [promptsExpanded, setPromptsExpanded] = useState<boolean>(false);
 
   const ExpandablePromptHelp = () => (
-    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-600 rounded-lg' : ''}`}>
+    <div className={`mt-2 ${promptsExpanded ? 'bg-gray-100 dark:bg-gray-800 rounded-lg' : ''}`}>
       <button
-        className="bg-slate-300 rounded-lg p-1"
+        className="bg-slate-300 dark:bg-gray-800 rounded-lg p-1"
         onClick={(e) => setPromptsExpanded(!promptsExpanded)}
       >
         View examples of helpful prompts&nbsp;&nbsp; {promptsExpanded ? '^' : '\u22C1'}
@@ -67,7 +67,7 @@ export const PageTriggerEditor: React.FC<{
       <ExpandablePromptHelp />
 
       <textarea
-        className="mt-2 grow w-full bg-white rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={trigger.prompt}
         onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))}
       />
