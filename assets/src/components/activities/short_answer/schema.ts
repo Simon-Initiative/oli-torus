@@ -13,5 +13,5 @@ export interface ShortAnswerModelSchema extends ActivityModelSchema {
     transformations: Transformation[];
     previewText: string;
   };
-  responses?: { user_name: string; text: string }[];
+  responses?: { users: string[]; text: string }[];
 }

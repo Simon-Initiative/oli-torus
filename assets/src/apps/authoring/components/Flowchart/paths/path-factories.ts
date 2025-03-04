@@ -3,6 +3,7 @@ import guid from '../../../../../utils/guid';
 import {
   AdvancedFeedbackAnswerType,
   IDropdownPartLayout,
+  IHubSpokePartLayout,
   IInputNumberPartLayout,
   IMCQPartLayout,
   ISliderPartLayout,
@@ -94,6 +95,24 @@ export const createMCQSpecificPath = (
   };
 };
 
+export const createSpokeCommonPath = (
+  spoke: IHubSpokePartLayout,
+  selectedOption: number,
+  destinationScreenId: number | null = null,
+): OptionCommonErrorPath => {
+  const optionLabel =
+    spoke.custom?.spokeItems[selectedOption].nodes || `Spoke #${selectedOption + 1}`;
+
+  return {
+    ...createDestinationPathTemplate(`spoke-common-path-${selectedOption}`, destinationScreenId),
+    type: 'option-common-error',
+    selectedOption: selectedOption + 1,
+    componentId: spoke.id,
+    label: optionLabel.substring(0, 20),
+    priority: 4,
+  };
+};
+
 export const createMCQCommonErrorPath = (
   mcq: IMCQPartLayout,
   selectedOption: number,
@@ -131,6 +150,17 @@ export const createCorrectPath = (
   type: 'correct',
   componentId,
   label: 'Correct',
+  priority: 8,
+});
+
+export const createSpokeCorrectPath = (
+  componentId: string,
+  destinationScreenId: number | null = null,
+): CorrectPath => ({
+  ...createDestinationPathTemplate('correct', destinationScreenId),
+  type: 'correct',
+  componentId,
+  label: 'Hub Completed',
   priority: 8,
 });
 

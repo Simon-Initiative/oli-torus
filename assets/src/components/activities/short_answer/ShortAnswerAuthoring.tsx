@@ -26,6 +26,7 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { RespondedUsersList } from '../common/authoring/RespondedUsersList';
 import { ActivitySettings } from '../common/authoring/settings/ActivitySettings';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
@@ -66,13 +67,15 @@ const ShortAnswer = () => {
             ) : (
               <table>
                 <tr>
-                  <th>Student</th>
+                  <th>Students</th>
                   <th>Response</th>
                 </tr>
                 <tbody>
                   {model.responses.map((response, index) => (
                     <tr key={index}>
-                      <td className="whitespace-nowrap">{response.user_name}</td>
+                      <td className="whitespace-nowrap">
+                        <RespondedUsersList users={response.users} />
+                      </td>
                       <td>{response.text}</td>
                     </tr>
                   ))}

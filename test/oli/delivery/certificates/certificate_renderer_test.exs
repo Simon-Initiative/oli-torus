@@ -27,7 +27,8 @@ defmodule Oli.Delivery.Certificates.CertificateRendererTest do
         "data:image/gif;base64,R0lGODlhAQABAAAAACw=",
         "data:image/gif;base64,R0lGODlhAQABAAAAACw="
       ],
-      certificate_id: "CERT123456"
+      certificate_id: "CERT123456",
+      certificate_verification_url: "some_url"
     }
 
     rendered_html = CertificateRenderer.render(assigns)

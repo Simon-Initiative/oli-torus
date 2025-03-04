@@ -50,12 +50,10 @@ defmodule Oli.Delivery.Snapshots.Worker do
         on: aa.resource_attempt_id == ra.id,
         join: a in ResourceAccess,
         on: ra.resource_access_id == a.id,
-        join: r1 in Revision,
-        on: ra.revision_id == r1.id,
         join: r2 in Revision,
         on: aa.revision_id == r2.id,
         where: pa.attempt_guid in ^part_attempt_guids and pa.lifecycle_state == :evaluated,
-        select: {pa, aa, ra, a, r1, r2}
+        select: {pa, aa, ra, a, r2}
       )
       |> Repo.all()
 
@@ -65,7 +63,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
         [] ->
           Oli.Delivery.Sections.get_section_by_slug(section_slug).base_project_id
 
-        [{_, _, _, ra, _, _} | _] ->
+        [{_, _, _, ra, _} | _] ->
           Oli.Delivery.Sections.determine_which_project_id(ra.section_id, ra.resource_id)
       end
 

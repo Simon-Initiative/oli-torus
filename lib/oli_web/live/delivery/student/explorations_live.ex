@@ -28,7 +28,7 @@ defmodule OliWeb.Delivery.Student.ExplorationsLive do
       <p>All your explorations in one place.</p>
       <p>You unlock explorations as you solve problems and gain useful skills.</p>
     </.hero_banner>
-    <div class="overflow-x-scroll md:overflow-x-auto container mx-auto flex flex-col mt-6 px-16">
+    <div class="overflow-x-scroll md:overflow-x-auto container mx-auto flex flex-col mt-6 px-3 md:px-16">
       <div :if={Enum.count(@explorations_by_container) == 0} class="text-center" role="alert">
         <h6>There are no explorations available</h6>
       </div>

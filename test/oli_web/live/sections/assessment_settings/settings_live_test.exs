@@ -809,7 +809,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         end)
 
       assert view
-             |> has_element?("div .alert-info", "Setting updated!")
+             |> has_element?("#flash[role='alert']", "Setting updated!")
 
       assert updated_page_1_assessment_settings.late_submit == :disallow
     end
@@ -1865,7 +1865,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # a flash message confirms the removal and the exception is not listed anymore
       assert has_element?(
                view,
-               ~s{div.alert.alert-info},
+               "#flash[role='alert']",
                "Student Exception/s removed!"
              )
 

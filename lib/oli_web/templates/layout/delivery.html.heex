@@ -160,6 +160,8 @@
 
     <%= Map.get(assigns, :inner_layout) || @inner_content %>
 
+    <%= react_component("Components.ModalDisplay") %>
+
     <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
   </body>
 </html>

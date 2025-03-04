@@ -21,6 +21,7 @@ export const screenFilter = [
   'number_input',
   'text_input',
   'dropdown',
+  'hub_spoke',
 ];
 
 export const TemplatePicker: React.FC<Props> = ({ onPick, onCancel, screenType }) => {
