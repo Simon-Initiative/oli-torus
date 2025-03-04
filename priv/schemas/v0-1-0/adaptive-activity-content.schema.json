@@ -49,7 +49,8 @@
               "janus-popup",
               "janus-slider",
               "janus-text-flow",
-              "janus-video"
+              "janus-video",
+              "janus-hub-spoke"
             ]
           },
           "custom": {}

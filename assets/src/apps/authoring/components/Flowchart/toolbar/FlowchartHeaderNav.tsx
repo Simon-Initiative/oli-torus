@@ -71,6 +71,7 @@ const questionComponents: string[] = [
   'janus_input_number',
   'janus_slider',
   'janus_multi_line_text',
+  'janus_hub_spoke',
 ];
 
 const ToolbarOption: React.FC<{ disabled?: boolean; component: string; onClick: () => void }> = ({
