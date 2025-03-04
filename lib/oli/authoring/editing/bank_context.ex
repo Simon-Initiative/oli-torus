@@ -7,6 +7,7 @@ defmodule Oli.Authoring.Editing.BankContext do
     :allTags,
     :editorMap,
     :totalCount,
-    :revisionHistoryLink
+    :revisionHistoryLink,
+    :allowTriggers
   ]
 end

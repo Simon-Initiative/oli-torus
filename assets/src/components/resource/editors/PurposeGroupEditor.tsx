@@ -57,6 +57,7 @@ export const PurposeGroupEditor = ({
 }: PurposeGroupEditorProps) => {
   return (
     <PurposeGroupBlock
+      allowTriggers={resourceContext.optionalContentTypes?.triggers || false}
       editMode={editMode}
       contentItem={contentItem}
       parents={parents}
@@ -114,6 +115,7 @@ export const PurposeGroupOutlineItem = (props: PurposeGroupOutlineItemProps) => 
 };
 
 interface PurposeGroupBlockProps {
+  allowTriggers: boolean;
   editMode: boolean;
   contentItem: PurposeGroupContent;
   parents: ResourceContent[];
@@ -124,6 +126,7 @@ interface PurposeGroupBlockProps {
 export const PurposeGroupBlock = ({
   editMode,
   contentItem,
+  allowTriggers,
   parents,
   canRemove,
   children,
@@ -148,11 +151,13 @@ export const PurposeGroupBlock = ({
     >
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
-        <GroupTriggerEditorButton
-          editMode={editMode}
-          onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
-          trigger={contentItem.trigger}
-        />
+        {allowTriggers ? (
+          <GroupTriggerEditorButton
+            editMode={editMode}
+            onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
+            trigger={contentItem.trigger}
+          />
+        ) : null}
         {contentBreaksExist ? (
           <PaginationModes
             onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}

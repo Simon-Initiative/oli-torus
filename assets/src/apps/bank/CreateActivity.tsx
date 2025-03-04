@@ -17,12 +17,14 @@ export type CreateActivityProps = {
   allObjectives: Objective[];
   allTags: Tag[];
   onError: (message: string) => void;
+  allowTriggers: boolean;
 };
 
 const create = (
   projectSlug: string,
   editorDesc: EditorDesc,
   onAdded: (context: ActivityEditContext) => void,
+  allowTriggers: boolean,
 ) => {
   let model: any;
   invokeCreationFunc(editorDesc.slug, {} as any)
@@ -48,6 +50,7 @@ const create = (
         typeSlug: editorDesc.slug,
         activityId: result.resourceId,
         title: editorDesc.friendlyName,
+        optionalContentTypes: { triggers: allowTriggers },
         model,
         objectives,
         tags: [],
@@ -121,6 +124,7 @@ const createBulk = async (
   bulkImportData: CreationData[],
   onBulkAdd: (added: ActivityEditContext[]) => void,
   onError: (message: string) => void,
+  allowTriggers: boolean,
 ) => {
   const bulkCreateData: BulkActivityCreate[] = [];
   for (const data of bulkImportData) {
@@ -161,6 +165,7 @@ const createBulk = async (
           typeSlug: editorDesc.slug,
           activityId: result.resourceId,
           title: result.title,
+          optionalContentTypes: { triggers: allowTriggers },
           model: result.content,
           objectives: result.objectives,
           tags: result.tags,
@@ -179,11 +184,21 @@ export const CreateActivity = (props: CreateActivityProps) => {
   const { editorMap, onAdd, onBulkAdd, onError, projectSlug, allObjectives, allTags } = props;
   const [modalShow, setModalShow] = useState(false);
 
-  const handleAdd = (editorDesc: EditorDesc) => create(projectSlug, editorDesc, onAdd);
+  const handleAdd = (editorDesc: EditorDesc) =>
+    create(projectSlug, editorDesc, onAdd, props.allowTriggers);
 
   const handleBulkAdd = (bulkImportData: CreationData[]) => {
     setModalShow(false);
-    createBulk(projectSlug, allObjectives, allTags, editorMap, bulkImportData, onBulkAdd, onError);
+    createBulk(
+      projectSlug,
+      allObjectives,
+      allTags,
+      editorMap,
+      bulkImportData,
+      onBulkAdd,
+      onError,
+      props.allowTriggers,
+    );
   };
 
   let activityEntries = Object.keys(editorMap)

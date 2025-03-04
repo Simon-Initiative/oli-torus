@@ -41,16 +41,17 @@ export const extendedBlockInsertActions = (
     insertDialog,
     insertConjugation,
     insertDescriptionListCommand,
-    insertTrigger,
   ];
 
   if (optionalContentTypes === undefined) {
     return base;
   }
 
-  return [...base, optionalContentTypes.ecl ? insertEcl : null].filter(
-    (x) => x !== null,
-  ) as CommandDescription[];
+  return [
+    ...base,
+    optionalContentTypes.triggers ? insertTrigger : null,
+    optionalContentTypes.ecl ? insertEcl : null,
+  ].filter((x) => x !== null) as CommandDescription[];
 };
 
 export const allBlockInsertActions = (
@@ -73,16 +74,17 @@ export const allBlockInsertActions = (
     insertPageLink,
     insertConjugation,
     insertDescriptionListCommand,
-    insertTrigger,
   ];
 
   if (optionalContentTypes === undefined) {
     return base;
   }
 
-  return [...base, optionalContentTypes.ecl ? insertEcl : null].filter(
-    (x) => x !== null,
-  ) as CommandDescription[];
+  return [
+    ...base,
+    optionalContentTypes.triggers ? insertTrigger : null,
+    optionalContentTypes.ecl ? insertEcl : null,
+  ].filter((x) => x !== null) as CommandDescription[];
 };
 
 interface Opts {
