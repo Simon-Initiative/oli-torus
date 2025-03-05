@@ -371,6 +371,7 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                 <.input
                   type="select"
                   class="form-control custom-select"
+                  disabled={is_disabled(@form, @revision)}
                   field={@form[:batch_scoring]}
                   options={[{"Score at the end", "true"}, {"Score as you go", "false"}]}
                 />
