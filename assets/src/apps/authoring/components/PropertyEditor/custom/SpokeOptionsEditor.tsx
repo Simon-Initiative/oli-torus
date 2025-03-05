@@ -49,7 +49,7 @@ export const SpokeOptionsEditor: React.FC<Props> = ({ id, value, onChange, onBlu
 
   return (
     <div>
-      <label className="form-label">Number of spokes</label>
+      <label className="form-label">Spoke names and destinations</label>
       <div>
         {value.map((option, index) => (
           <OptionsEditor

@@ -45,7 +45,11 @@ export const updatePart = createAsyncThunk(
       const sequence = selectSequence(rootState);
       const sequenceEntry = findInSequenceByResourceId(sequence, activityClone.id);
       const activitySequenceId = sequenceEntry?.custom.sequenceId;
-      if (authorPart && partDef.type === 'janus-hub-spoke') {
+      if (
+        authorPart &&
+        partDef.type === 'janus-hub-spoke' &&
+        payload?.changes?.custom?.spokeItems
+      ) {
         try {
           //for hub & spoke, we need to create flowchart path automatically based on the spoke destinations
           let paths =
@@ -53,7 +57,7 @@ export const updatePart = createAsyncThunk(
               (path: any) => path.type === 'correct',
             ) || [];
           const flowchartPaths =
-            partDef?.custom?.spokeItems?.map((spoke: any) => {
+            payload?.changes?.custom?.spokeItems?.map((spoke: any) => {
               return {
                 completed: true,
                 componentId: partDef.id,

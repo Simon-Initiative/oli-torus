@@ -61,11 +61,13 @@ export const SpokeItems: React.FC<JanusHubSpokeItemProperties> = ({
           }}
           className="btn btn-primary"
         >
-          {IsCompleted && (
-            <span style={{ float: 'left', paddingLeft: '10px' }} className={'fa fa-check-circle'}>
-              &nbsp;
-            </span>
-          )}
+          <span
+            style={{ float: 'left', marginLeft: IsCompleted ? '10px' : '23px' }}
+            className={IsCompleted ? 'fa fa-check-circle' : ''}
+          >
+            &nbsp;
+          </span>
+
           <SpokeItemContent itemId={itemId} spokeLabel={spokeLabel} state={state} />
         </button>
       </div>
