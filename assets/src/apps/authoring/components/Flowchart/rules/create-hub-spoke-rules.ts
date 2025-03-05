@@ -58,7 +58,7 @@ export const generateHubSpokeRules = (
       path.selectedSpoke,
       path.destinationActivityId || 'unknown',
     ),
-    feedback: "You've already visited this screen. Please select another screen or click Next.",
+    feedback: "You've already visited this screen. Please select another screen.",
   }));
 
   const incorrect: Required<IConditionWithFeedback[]> = [

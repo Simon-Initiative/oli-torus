@@ -48,14 +48,14 @@ export const schema: JSONSchema7Object = {
     default: 'verticalLayout',
   },
   spokeItems: {
-    title: 'Number of spokes',
+    title: 'Spoke names and destinations',
     type: 'array',
     items: {
       type: 'object',
     },
   },
   requiredSpoke: {
-    title: 'Number of required spokes',
+    title: 'Number of required spoke visits',
     type: 'number',
     enum: [0, 1, 2, 3, 4, 5],
     default: 3,
@@ -122,14 +122,14 @@ export const simpleSchema: JSONSchema7Object = {
     default: 'verticalLayout',
   },
   spokeItems: {
-    title: 'Number of spokes',
+    title: 'Spoke names and destinations',
     type: 'array',
     items: {
       type: 'object',
     },
   },
   requiredSpoke: {
-    title: 'Number of required spokes',
+    title: 'Number of required spoke visits',
     type: 'number',
     enum: [0, 1, 2, 3, 4, 5],
     default: 3,
@@ -199,7 +199,8 @@ export const simpleUiSchema = {
     'spokeFeedback',
     'commonErrorFeedback',
   ],
-  spokeItems: { 'ui:widget': 'SpokeOptionsEditor' },
+  layoutType: { classNames: 'col-span-12 spokeItem' },
+  spokeItems: { 'ui:widget': 'SpokeOptionsEditor', classNames: 'col-span-12 spokeItem' },
   commonErrorFeedback: {
     'ui:widget': 'SpokeCustomErrorFeedbackAuthoring',
   },
