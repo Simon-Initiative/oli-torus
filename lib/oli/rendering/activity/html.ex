@@ -173,6 +173,7 @@ defmodule Oli.Rendering.Activity.Html do
     activity_context =
       %{
         graded: graded,
+        batchScoring: effective_settings && effective_settings.batch_scoring,
         userId: user.id,
         sectionSlug: context.section_slug,
         projectSlug: context.project_slug,

@@ -50,6 +50,7 @@ export interface PartActivityResponse extends Success {
 
 export interface ActivityContext {
   graded: boolean;
+  batchScoring: boolean;
   sectionSlug: string;
   projectSlug: string;
   userId: number;
