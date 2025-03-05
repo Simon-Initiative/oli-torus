@@ -95,6 +95,7 @@ const addActivity = (
         typeSlug: editorDesc.slug,
         activityId: result.resourceId,
         title: editor.friendlyName,
+        optionalContentTypes: resourceContext.optionalContentTypes,
         model,
         objectives,
         tags: [],

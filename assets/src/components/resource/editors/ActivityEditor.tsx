@@ -12,6 +12,7 @@ interface ActivityEditorProps extends EditorProps {
 }
 
 export const ActivityEditor = ({
+  resourceContext,
   editMode,
   projectSlug,
   contentItem,
@@ -56,6 +57,7 @@ export const ActivityEditor = ({
           banked={false}
           revisionHistoryLink={false}
           contentBreaksExist={contentBreaksExist}
+          optionalContentTypes={resourceContext.optionalContentTypes}
           canRemove={canRemove}
           onRemove={() => onRemove(contentItem.id)}
           onEdit={(update: EditorUpdate) => onEditActivity(activity.activitySlug, update)}

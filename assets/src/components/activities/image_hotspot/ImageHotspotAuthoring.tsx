@@ -33,7 +33,8 @@ import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
-  const { dispatch, model, projectSlug } = useAuthoringElementContext<ImageHotspotModelSchema>();
+  const { dispatch, model, projectSlug, authoringContext } =
+    useAuthoringElementContext<ImageHotspotModelSchema>();
 
   const selectedPartId = model.authoring.parts[0].id;
   const writerContext = defaultWriterContext({
@@ -290,9 +291,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
         <TabbedNavigation.Tab label="Explanation">
           <Explanation partId={selectedPartId} />
         </TabbedNavigation.Tab>
-        <TabbedNavigation.Tab label={TriggerLabel()}>
-          <TriggerAuthoring partId={model.authoring.parts[0].id} />
-        </TabbedNavigation.Tab>
+
+        {authoringContext?.optionalContentTypes?.triggers && (
+          <TabbedNavigation.Tab label={TriggerLabel()}>
+            <TriggerAuthoring partId={model.authoring.parts[0].id} />
+          </TabbedNavigation.Tab>
+        )}
       </TabbedNavigation.Tabs>
     </React.Fragment>
   );
