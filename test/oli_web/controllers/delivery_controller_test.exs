@@ -163,12 +163,12 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 403) =~ "Section Not Available"
     end
 
-    test "blocks LMS users from manually enrollment", %{
+    test "allow cognito users manual enrollment in section", %{
       conn: conn,
       section: section,
       student: student
     } do
-      # Assert that the user is an LMS user
+      # Assert that the user is a cognito user
       assert student.independent_learner == false
 
       conn =
@@ -177,7 +177,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
       enrollment_path = ~p"/sections/#{section.slug}/enroll"
       conn = get(conn, enrollment_path)
-      assert response(conn, 302) =~ "You are being <a href=\"/sections\">redirected</a>"
+
+      assert response(conn, 200) =~ "Enroll in Course Section"
     end
 
     test "redirect to requested path after login", %{conn: conn, section: section} do

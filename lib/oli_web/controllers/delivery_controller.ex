@@ -224,10 +224,6 @@ defmodule OliWeb.DeliveryController do
         redirect(conn,
           to: ~p"/users/log_in?#{params}"
         )
-
-      # redirect to course index when user is not an independent learner (LTI user)
-      {:redirect, :non_independent_learner} ->
-        redirect(conn, to: Routes.delivery_path(conn, :index))
     end
   end
 
@@ -294,9 +290,6 @@ defmodule OliWeb.DeliveryController do
         else
           if requires_enrollment, do: {:redirect, nil}, else: {:redirect, :enroll}
         end
-
-      %User{independent_learner: false} ->
-        {:redirect, :non_independent_learner}
 
       %User{guest: true} = guest ->
         if requires_enrollment, do: {:redirect, nil}, else: {:ok, guest}
