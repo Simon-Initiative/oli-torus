@@ -9,6 +9,7 @@ defmodule Oli.Delivery.Certificates do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Delivery.Sections.GrantedCertificate
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
   alias Oli.Repo
   alias Oli.Repo.Paging
@@ -98,8 +99,19 @@ defmodule Oli.Delivery.Certificates do
         %Paging{limit: limit, offset: offset},
         %Sorting{direction: direction, field: field},
         text_search,
-        section_id
+        %Section{id: section_id, type: type}
       ) do
+
+    # if the section is blueprint (a product) we search for the granted certificates
+    # in all the courses created based on that product
+    filter_by_section_or_blueprint =
+      if type == :blueprint do
+        dynamic([gc, c, s, u, u1, a], s.blueprint_id == ^section_id or s.id == ^section_id)
+      else
+        dynamic([gc, c, s, u, u1, a], s.id == ^section_id)
+      end
+
+
     query =
       GrantedCertificate
       |> join(:inner, [gc], c in assoc(gc, :certificate))
@@ -111,7 +123,7 @@ defmodule Oli.Delivery.Certificates do
       |> join(:left, [gc, c, s, u, u1], a in Author,
         on: a.id == gc.issued_by and gc.issued_by_type == :author
       )
-      |> where([gc, c, s, u, u1, a], s.id == ^section_id)
+      |> where(^filter_by_section_or_blueprint)
       |> offset(^offset)
       |> limit(^limit)
       |> select(
