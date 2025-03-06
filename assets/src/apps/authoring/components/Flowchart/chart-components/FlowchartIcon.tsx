@@ -8,6 +8,7 @@ export const FlowchartIcon: React.FC<{ fill?: string; stroke?: string }> = ({
     <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <g
         clipPath="url(#clip0_304_15587)"
+        stroke={stroke}
         strokeWidth={1.5}
         strokeLinecap="round"
         strokeLinejoin="round"
