@@ -255,7 +255,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
 
   defp maybe_add_certificates(students, section) do
     certificates =
-      Certificates.get_granted_certificates_by_section_slug(section.slug)
+      Certificates.get_granted_certificates_by_section_id(section.id)
       |> Enum.into(%{}, fn cert -> {cert.recipient.id, cert} end)
 
     Enum.map(students, fn student ->

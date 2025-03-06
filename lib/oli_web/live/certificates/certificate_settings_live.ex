@@ -181,6 +181,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       module={CertificatesIssuedTab}
       id="certificates_issued_component"
       params={@params}
+      section_id={@section.id}
       section_slug={@section.slug}
       table_model={@table_model}
       ctx={@ctx}
