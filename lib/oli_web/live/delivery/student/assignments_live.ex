@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Delivery.{Metrics, Settings}
+  alias Oli.Delivery.{Certificates, Metrics, Settings}
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Student.Utils
@@ -28,13 +28,15 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def mount(_params, _session, socket) do
     %{section: section, current_user: %{id: current_user_id}} = socket.assigns
+    certificate = Certificates.get_certificate_by(section_id: section.id)
 
     send(self(), :gc)
 
     {:ok,
      assign(socket,
        active_tab: :assignments,
-       assignments: get_assignments(section, current_user_id)
+       assignments: get_assignments(section, current_user_id),
+       certificate: if(section.certificate_enabled, do: certificate, else: nil)
      )
      |> slim_assigns(), temporary_assigns: [assignments: []]}
   end
@@ -63,8 +65,16 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def render(assigns) do
     ~H"""
     <.top_hero_banner />
-    <div class="flex justify-center py-9 px-3 md:px-20 w-full">
-      <.assignments_agenda assignments={@assignments} ctx={@ctx} section_slug={@section.slug} />
+
+    <div class="flex flex-col justify-center py-9 px-20 w-full gap-24">
+      <.certificate_requirements certificate={@certificate} />
+
+      <.assignments_agenda
+        assignments={@assignments}
+        ctx={@ctx}
+        section_slug={@section.slug}
+        certificate={@certificate}
+      />
     </div>
     """
   end
@@ -85,9 +95,58 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     """
   end
 
+  attr :certificate, :map, default: nil
+
+  def certificate_requirements(%{certificate: nil} = assigns) do
+    ~H"""
+    """
+  end
+
+  def certificate_requirements(assigns) do
+    ~H"""
+    <div class="w-full h-[81px] justify-center items-center inline-flex">
+      <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-[5px] inline-flex">
+        <div class="flex-col justify-center items-start gap-[15px] flex">
+          <div class="w-full h-5">
+            <span class="text-[#e6e9f2] font-bold">
+              This is a Certificate Course.
+            </span>
+            <span class="text-[#e6e9f2] font-normal">
+              Complete all required assignments (
+            </span>
+            <span class="text-[#ff8787] text-xl font-normal">*</span>
+            <span class="text-[#e6e9f2] font-normal"> ) and follow these scoring guidelines:</span>
+          </div>
+          <div class="w-full grow shrink basis-0 relative">
+            <div class="w-full h-4 left-0 top-0 absolute">
+              <span class="text-[#e6e9f2] text-sm font-bold">
+                Certificate of Completion:
+              </span>
+              <span class="text-[#e6e9f2] text-sm font-normal"> Earn </span><span class="text-[#39e581] text-sm font-bold">
+              <%= format_percentage(@certificate.min_percentage_for_completion) %>
+              </span>
+              <span class="text-[#39e581] text-sm font-normal"></span><span class="text-white text-sm font-normal">or above on all required assignments</span>
+            </div>
+            <div class="w-full h-4 left-0 top-[26px] absolute">
+              <span class="text-[#e6e9f2] text-sm font-bold">
+                Certificate with Distinction:
+              </span>
+              <span class="text-white text-sm font-bold"></span><span class="text-white text-sm font-normal">Earn</span><span class="text-[#30db9d] text-sm font-normal"> </span><span class="text-[#39e581] text-sm font-bold">
+              <%= format_percentage(@certificate.min_percentage_for_distinction) %>
+              </span>
+              <span class="text-[#30db9d] text-sm font-normal"></span><span class="text-white text-sm font-normal">or above on all required assignments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr :assignments, :list, required: true
   attr :ctx, SessionContext, required: true
   attr :section_slug, :string, required: true
+  attr :certificate, :map, required: true
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -120,6 +179,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               request_path: ~p"/sections/#{@section_slug}/assignments"
             )
           }
+          required={assignment_required_for_certificate(assignment, @certificate)}
         />
         <span :if={@assignments == []}>There are no assignments</span>
       </div>
@@ -131,6 +191,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   attr :ctx, SessionContext, required: true
   attr :target, :string, required: true, doc: "The target URL for the assignment"
 
+  attr :required, :boolean,
+    default: false,
+    doc: "Whether the assignment is required for the certificate"
+
   def assignment(assigns) do
     ~H"""
     <div
@@ -140,9 +204,13 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       class="h-12 flex"
     >
       <div role="page icon" class="w-6 h-6 flex justify-center items-center">
-        <.page_icon purpose={@assignment.purpose} completed={!is_nil(@assignment.raw_avg_score)} />
+        <.page_icon
+          purpose={@assignment.purpose}
+          completed={!is_nil(@assignment.raw_avg_score)}
+          required={@required}
+        />
       </div>
-      <div class="ml-2 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
+      <div class="ml-6 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
         <%= @assignment.numbering_index %>
       </div>
       <div class="h-12 flex flex-col justify-between mr-6 flex-1 min-w-0">
@@ -229,6 +297,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   attr :completed, :boolean, required: true
   attr :purpose, :atom, required: true
+  attr :required, :boolean, required: true
 
   defp page_icon(assigns) do
     ~H"""
@@ -237,9 +306,34 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <span class="text-[#9a40a8] dark:text-[#ebaaf2]"><Icons.world /></span>
       <% @completed -> %>
         <Icons.square_checked class="fill-[#218358] dark:fill-[#39e581]" />
+      <% @required -> %>
+        <.asterisk_icon />
       <% true -> %>
         <Icons.flag fill_class="fill-[#fa8d3e] dark:fill-[#ff9040]" />
     <% end %>
     """
   end
+
+  defp asterisk_icon(assigns) do
+    ~H"""
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        opacity="0.9"
+        d="M8.20654 0.0561523L7.69385 4.95239L12.6157 3.5553L13.0002 6.2854L8.3988 6.69556L11.3853 10.6818L8.89868 12.0276L6.73254 7.73376L4.79712 12.0148L2.20801 10.6818L5.16882 6.69556L0.593018 6.27258L1.02881 3.5553L5.86096 4.95239L5.34827 0.0561523H8.20654Z"
+        fill="#FF8787"
+      />
+    </svg>
+    """
+  end
+
+  defp format_percentage(percentage) do
+    "#{trunc(percentage)}%"
+  end
+
+  defp assignment_required_for_certificate(_assignment, nil), do: false
+
+  defp assignment_required_for_certificate(assignment, certificate),
+    do:
+      certificate.assessments_apply_to == :all or
+        assignment.id in certificate.custom_assessments
 end
