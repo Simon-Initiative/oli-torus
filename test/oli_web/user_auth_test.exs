@@ -308,7 +308,7 @@ defmodule OliWeb.UserAuthTest do
       refute conn.status
     end
 
-    test "does not required user to confirm email if independent section has omit email verification set",
+    test "does not required user to confirm email when accesssing independent section has omit email verification set",
          %{conn: conn, user: user} do
       {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
 
