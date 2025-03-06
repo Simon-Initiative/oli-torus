@@ -16,9 +16,6 @@ defmodule OliWeb.Insights do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Authoring.Course
   alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Components.Project.AsyncExporter
-  alias Oli.Authoring.Broadcaster
-  alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Analytics.Summary.BrowseInsights
   alias Oli.Analytics.Summary.BrowseInsightsOptions
   alias OliWeb.Insights.ActivityTableModel
@@ -75,16 +72,6 @@ defmodule OliWeb.Insights do
     {:ok, table_model} =
       ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
-    {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
-      case Course.analytics_export_status(project) do
-        {:available, url, timestamp} -> {:available, url, timestamp}
-        {:expired, _, _} -> {:expired, nil, nil}
-        {status} -> {status, nil, nil}
-      end
-
-    # Subscribe to any raw analytics snapshot progress updates for this project
-    Subscriber.subscribe_to_analytics_export_status(project.slug)
-
     {:ok,
      assign(socket,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Insights"})],
@@ -95,9 +82,6 @@ defmodule OliWeb.Insights do
        parent_pages: parent_pages,
        selected: :by_activity,
        latest_publication: latest_publication,
-       analytics_export_status: analytics_export_status,
-       analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp,
        products: products,
        sections: sections,
        is_product: false,
@@ -179,17 +163,6 @@ defmodule OliWeb.Insights do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <%= if @is_admin? do %>
-        <div class="d-flex align-items-center my-3">
-          <AsyncExporter.raw_analytics
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            analytics_export_status={@analytics_export_status}
-            analytics_export_url={@analytics_export_url}
-            analytics_export_timestamp={@analytics_export_timestamp}
-          />
-        </div>
-      <% end %>
     </div>
     <ul class="nav nav-pills">
       <li class="nav-item my-2 mr-2">
@@ -412,24 +385,6 @@ defmodule OliWeb.Insights do
     )
   end
 
-  def handle_event("generate_analytics_snapshot", _params, socket) do
-    project = socket.assigns.project
-
-    case Course.generate_analytics_snapshot(project) do
-      {:ok, _job} ->
-        Broadcaster.broadcast_analytics_export_status(project.slug, {:in_progress})
-
-        {:noreply, socket}
-
-      {:error, _changeset} ->
-        socket =
-          socket
-          |> put_flash(:error, "Raw analytics snapshot could not be generated.")
-
-        {:noreply, socket}
-    end
-  end
-
   def handle_event(event, params, socket) do
     delegate_to(
       {event, params, socket, &OliWeb.Insights.patch_with/2},
@@ -467,33 +422,6 @@ defmodule OliWeb.Insights do
       |> Enum.to_list()
 
     change_section_ids(socket, section_ids)
-  end
-
-  def handle_info(
-        {:analytics_export_status,
-         {:available, analytics_export_url, analytics_export_timestamp}},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       analytics_export_status: :available,
-       analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp
-     )}
-  end
-
-  def handle_info(
-        {:analytics_export_status, {:error, _e}},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       analytics_export_status: :error
-     )}
-  end
-
-  def handle_info({:analytics_export_status, {status}}, socket) do
-    {:noreply, assign(socket, analytics_export_status: status)}
   end
 
   defp generate_uuid do

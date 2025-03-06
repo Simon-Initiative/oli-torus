@@ -47,6 +47,20 @@ defmodule OliWeb.ProjectControllerTest do
     end
   end
 
+  describe "triggers" do
+    test "enables triggers", %{conn: conn, project: project} do
+      refute project.allow_triggers
+
+      conn = post(conn, Routes.project_path(conn, :enable_triggers, project.slug))
+
+      response = html_response(conn, 302)
+      assert response =~ "redirected"
+
+      updated_project = Oli.Authoring.Course.get_project!(project.id)
+      assert updated_project.allow_triggers
+    end
+  end
+
   describe "create project" do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.project_path(conn, :create), project: @valid_attrs)

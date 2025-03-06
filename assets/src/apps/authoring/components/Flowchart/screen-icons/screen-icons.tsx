@@ -17,11 +17,11 @@ export const screenTypeToIcon: Record<ScreenTypes, React.FC<{ fill?: string }>> 
   multiple_choice: MultipleChoiceScreenIcon,
   multiline_text: MultilineTextScreenIcon,
   slider: SliderScreenIcon,
-  hub_and: HubSpokeIcon,
   end_screen: EndScreenIcon,
   number_input: NumberInputScreenIcon,
   text_input: TextInputScreenIcon,
   dropdown: DropdownScreenIcon,
+  hub_spoke: HubSpokeIcon,
 };
 
 export const ScreenValidationColors = {

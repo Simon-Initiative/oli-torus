@@ -52,7 +52,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
     ~H"""
     <div
       id="header"
-      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
+      class="sticky top-0 z-50 w-full py-2.5 h-14 flex flex-row gap-6 bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
     >
       <.link
         :if={@include_logo}
@@ -62,21 +62,23 @@ defmodule OliWeb.Components.Delivery.Layouts do
       >
         <.logo_img section={@section} />
       </.link>
-      <div class={[
-        if(@sidebar_expanded, do: "md:!pl-[226px]"),
-        "w-full flex flex-row md:pl-[95px]"
-      ]}>
-        <div class="flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
+      <div class="flex flex-row flex-1 justify-between">
+        <div class="flex hidden md:flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
           <.title section={@section} project={@project} preview_mode={@preview_mode} />
         </div>
         <div class="justify-end items-center flex">
           <div class={
             if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
           }>
-            <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
+            <UserAccount.menu
+              id="user-account-menu"
+              ctx={@ctx}
+              is_admin={@is_admin}
+              section={@section}
+            />
           </div>
         </div>
-        <div class="flex items-center p-2 ml-auto">
+        <div class="flex items-center p-2">
           <button
             class={[
               "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
@@ -96,12 +98,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
 
+  attr :rest, :global, include: ~w(class)
+
   def title(assigns) do
     ~H"""
-    <span :if={@section} class="text-2xl text-bold hidden md:block">
+    <span :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
       <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
     </span>
-    <span :if={@project} class="text-2xl text-bold hidden md:block">
+    <span :if={@project} class={["text-2xl text-bold", @rest[:class]]}>
       <%= @project.title %>
     </span>
     """
@@ -215,6 +219,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
             id="mobile-user-account-menu-sidebar"
             ctx={@ctx}
             is_admin={@is_admin}
+            section={@section}
             dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
           />
         </div>
@@ -978,34 +983,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
         href={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
       >
-        <.back_arrow_icon />
+        <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>
       <.link
         :if={@view != :adaptive_chromeless}
         navigate={@to}
         class="hover:no-underline hover:scale-105 cursor-pointer"
       >
-        <.back_arrow_icon />
+        <Icons.left_arrow class="hover:opacity-100 hover:scale-105 fill-[#9D9D9D]" />
       </.link>
     </div>
-    """
-  end
-
-  defp back_arrow_icon(assigns) do
-    ~H"""
-    <svg
-      width="34"
-      height="33"
-      viewBox="0 0 34 33"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      class="hover:opacity-100 hover:scale-105"
-    >
-      <path
-        d="M17.0459 32.5278C8.19971 32.5278 0.884277 25.2124 0.884277 16.3662C0.884277 7.50391 8.18359 0.20459 17.0298 0.20459C25.8921 0.20459 33.2075 7.50391 33.2075 16.3662C33.2075 25.2124 25.8921 32.5278 17.0459 32.5278ZM17.0459 30.4331C24.8447 30.4331 31.1289 24.1489 31.1289 16.3662C31.1289 8.56738 24.8286 2.2832 17.0298 2.2832C9.24707 2.2832 2.979 8.56738 2.979 16.3662C2.979 24.1489 9.24707 30.4331 17.0459 30.4331ZM20.1235 24.2778C19.7852 24.6162 19.1567 24.6001 18.7861 24.2456L11.8252 17.5747C11.1162 16.9141 11.1001 15.8184 11.8252 15.1416L18.7861 8.4707C19.189 8.1001 19.7529 8.1001 20.1235 8.43848C20.5103 8.79297 20.5103 9.42139 20.1235 9.79199L13.2593 16.3501L20.1235 22.9404C20.5103 23.2949 20.5103 23.8911 20.1235 24.2778Z"
-        fill="#9D9D9D"
-      />
-    </svg>
     """
   end
 

@@ -17,8 +17,8 @@ defmodule Oli.Analytics.Summary do
 
   require Logger
 
-  @resource_fields "project_id, publication_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
-  @response_fields "project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
+  @resource_fields "project_id, section_id, user_id, resource_id, part_id, resource_type_id, num_correct, num_attempts, num_hints, num_first_attempts, num_first_attempts_correct"
+  @response_fields "project_id, section_id, page_id, activity_id, resource_part_response_id, part_id, count"
 
   @doc """
   Executes the analytics pipeline for a given snapshot attempt summary. This will produce
@@ -189,25 +189,16 @@ defmodule Oli.Analytics.Summary do
   # record upserts.
   defp resource_scope_builder_fns() do
     [
-      # [project_id, publication_id, section_id, user_id]
+      # [project_id, section_id, user_id]
 
-      # Project-wide, agnostic of publications and sections
-      fn ctx -> [ctx.project_id, nil, nil, nil] end,
-
-      # Project-wide, but specific to a particular publication
-      fn ctx -> [ctx.project_id, ctx.publication_id, nil, nil] end,
+      # Project-wide, agnostic of sections
+      fn ctx -> [ctx.project_id, nil, nil] end,
 
       # Course section speficic, agnostic of publication
-      fn ctx -> [nil, nil, ctx.section_id, nil] end,
+      fn ctx -> [nil, ctx.section_id, nil] end,
 
-      # Course section specific, publication specific
-      fn ctx -> [nil, ctx.publication_id, ctx.section_id, nil] end,
-
-      # Student specific, publication agnostic
-      fn ctx -> [nil, nil, ctx.section_id, ctx.user_id] end,
-
-      # Student specific, publication specific
-      fn ctx -> [nil, ctx.publication_id, ctx.section_id, ctx.user_id] end
+      # Student specific
+      fn ctx -> [nil, ctx.section_id, ctx.user_id] end
     ]
   end
 
@@ -215,19 +206,13 @@ defmodule Oli.Analytics.Summary do
   # that build the scope portion of the response summary table record upserts.
   defp response_scope_builder_fns() do
     [
-      # [project_id, publication_id, section_id]
+      # [project_id, section_id]
 
       # Project-wide, agnostic of publications and sections
-      fn ctx -> [ctx.project_id, nil, nil] end,
-
-      # Project-wide, but specific to a particular publication
-      fn ctx -> [ctx.project_id, ctx.publication_id, nil] end,
+      fn ctx -> [ctx.project_id, nil] end,
 
       # Course section speficic, agnostic of publication
-      fn ctx -> [nil, nil, ctx.section_id] end,
-
-      # Course section specific, publication specific
-      fn ctx -> [nil, ctx.publication_id, ctx.section_id] end
+      fn ctx -> [nil, ctx.section_id] end
     ]
   end
 
@@ -253,7 +238,7 @@ defmodule Oli.Analytics.Summary do
       INSERT INTO resource_summary (#{@resource_fields})
       VALUES
       #{data}
-      ON CONFLICT (project_id, publication_id, section_id, user_id, resource_id, resource_type_id, part_id)
+      ON CONFLICT (project_id, section_id, user_id, resource_id, resource_type_id, part_id)
       DO UPDATE SET
         num_correct = resource_summary.num_correct + EXCLUDED.num_correct,
         num_attempts = resource_summary.num_attempts + EXCLUDED.num_attempts,
@@ -272,7 +257,7 @@ defmodule Oli.Analytics.Summary do
       INSERT INTO response_summary (#{@response_fields})
       VALUES
       #{data}
-      ON CONFLICT (project_id, publication_id, section_id, page_id, activity_id, resource_part_response_id, part_id)
+      ON CONFLICT (project_id, section_id, page_id, activity_id, resource_part_response_id, part_id)
       DO UPDATE SET
         count = response_summary.count + EXCLUDED.count;
     """
@@ -416,6 +401,35 @@ defmodule Oli.Analytics.Summary do
   end
 
   @doc """
+  Retrieves the resource summaries for the activities present on a specified page in a
+  specified section. If `only_for_activity_ids` is provided, only the activities with the
+  specified IDs will be included in the result. If `only_for_activity_ids` is nil, all
+  activities on the page will be included in the result.
+  """
+  def summarize_activities_for_page(section_id, page_id, only_for_activity_ids) do
+    activity_constraint =
+      case only_for_activity_ids do
+        nil -> true
+        _ -> dynamic([rs, _], rs.activity_id in ^only_for_activity_ids)
+      end
+
+    # The only way to query resource summary for all activities in a page is
+    # to go through the response summary and constrain by page_id
+    from(rs in ResponseSummary,
+      join: s in ResourceSummary,
+      on: rs.activity_id == s.resource_id and rs.section_id == s.section_id,
+      where:
+        rs.project_id == -1 and rs.section_id == ^section_id and
+          rs.page_id == ^page_id,
+      where: s.user_id == -1 and s.project_id == -1,
+      where: ^activity_constraint,
+      distinct: [s.resource_id, s.part_id],
+      select: s
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Counts the number of attempts made by a list of students for a given activity in a given section.
   """
   @spec count_student_attempts(
@@ -429,7 +443,7 @@ defmodule Oli.Analytics.Summary do
     from(rs in ResourceSummary,
       where:
         rs.section_id == ^section_id and rs.resource_id == ^activity_resource_id and
-          rs.user_id in ^student_ids and rs.project_id == -1 and rs.publication_id == -1 and
+          rs.user_id in ^student_ids and rs.project_id == -1 and
           rs.resource_type_id == ^page_type_id,
       select: sum(rs.num_attempts)
     )
@@ -444,26 +458,36 @@ defmodule Oli.Analytics.Summary do
           section_id :: integer(),
           activity_resource_ids :: [integer()]
         ) :: [map()]
-  def get_response_summary_for(page_resource_id, section_id, activity_resource_ids) do
+  def get_response_summary_for(
+        page_resource_id,
+        section_id,
+        only_for_activity_ids \\ nil
+      ) do
+    activity_constraint =
+      case only_for_activity_ids do
+        nil -> true
+        _ -> dynamic([s, _], s.activity_id in ^only_for_activity_ids)
+      end
+
     from(rs in ResponseSummary,
       join: rpp in ResourcePartResponse,
       on: rs.resource_part_response_id == rpp.id,
       left_join: sr in StudentResponse,
       on:
-        rs.section_id == sr.section_id and rs.page_id == sr.page_id and
+        rs.section_id == sr.section_id and
+          rs.page_id == sr.page_id and
           rs.resource_part_response_id == sr.resource_part_response_id,
-      left_join: u in Oli.Accounts.User,
-      on: sr.user_id == u.id,
       where:
         rs.section_id == ^section_id and rs.page_id == ^page_resource_id and
-          rs.publication_id == -1 and rs.project_id == -1 and
-          rs.activity_id in ^activity_resource_ids,
+          rs.project_id == -1,
+      where: ^activity_constraint,
+      group_by: [rs.id, rpp.part_id, rpp.response, rs.count, rs.activity_id],
       select: %{
         part_id: rpp.part_id,
         response: rpp.response,
         count: rs.count,
-        user: u,
-        activity_id: rs.activity_id
+        activity_id: rs.activity_id,
+        users: fragment("COALESCE(array_agg(?), '{}')", sr.user_id)
       }
     )
     |> Repo.all()

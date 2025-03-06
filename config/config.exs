@@ -25,7 +25,18 @@ world_universities_and_domains_json =
 
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
+get_env_as_boolean = fn key, default ->
+  System.get_env(key, default)
+  |> String.downcase()
+  |> String.trim()
+  |> case do
+    "true" -> true
+    _ -> false
+  end
+end
+
 config :oli,
+  instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
   depot_coordinator: Oli.Delivery.DistributedDepotCoordinator,
   depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
   depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
@@ -64,6 +75,24 @@ config :oli,
   screen_idle_timeout_in_seconds:
     String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
   log_incomplete_requests: true
+
+config :oli, :dataset_generation,
+  enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
+  emr_application_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+  execution_role:
+    System.get_env(
+      "EMR_DATASET_EXECUTION_ROLE",
+      "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"
+    ),
+  entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
+  log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
+  context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
+  source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+  spark_submit_parameters:
+    System.get_env(
+      "EMR_DATASET_SPARK_SUBMIT_PARAMETERS",
+      "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+    )
 
 config :oli, :xapi_upload_pipeline,
   producer_module: Oli.Analytics.XAPI.QueueProducer,
@@ -162,7 +191,15 @@ config :oli, OliWeb.Endpoint,
 
 config :oli, Oban,
   repo: Oli.Repo,
-  plugins: [Oban.Plugins.Pruner],
+  plugins: [
+    Oban.Plugins.Pruner,
+    {
+      Oban.Plugins.Cron,
+      crontab: [
+        {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+      ]
+    }
+  ],
   queues: [
     default: 10,
     snapshots: 20,
@@ -175,7 +212,10 @@ config :oli, Oban,
     analytics_export: 3,
     datashop_export: 3,
     objectives: 3,
-    mailer: 10
+    mailer: 10,
+    certificate_pdf: 3,
+    certificate_mailer: 3,
+    certificate_eligibility: 10
   ]
 
 config :ex_money,

@@ -41,12 +41,8 @@ defmodule OliWeb.DeliveryController do
   def index(conn, _params) do
     user = conn.assigns.current_user
 
-    if user.independent_learner do
-      redirect(conn, to: ~p"/workspaces/student")
-    else
-      user = Accounts.load_lti_params(user)
-      lti_params = user.lti_params.params
-
+    with false <- user.independent_learner,
+         %LtiParams{params: lti_params} <- LtiParams.get_latest_user_lti_params(user.id) do
       lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
       context_roles = ContextRoles.get_roles_by_uris(lti_roles)
       platform_roles = PlatformRoles.get_roles_by_uris(lti_roles)
@@ -84,6 +80,9 @@ defmodule OliWeb.DeliveryController do
             redirect_to_page_delivery(conn, section)
           end
       end
+    else
+      _ ->
+        redirect(conn, to: ~p"/workspaces/student")
     end
   end
 
@@ -161,7 +160,7 @@ defmodule OliWeb.DeliveryController do
           end
 
         _ ->
-          ~p"/course"
+          ~p"/sections"
       end
 
     institution = Institutions.get_institution_by_lti_user(user)
@@ -186,17 +185,13 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def link_account(_conn, _params) do
-    # MER-4104 TODO
-    throw("NOT IMPLEMENTED")
-  end
-
   def show_enroll(conn, params) do
     section = conn.assigns.section
     from_invitation_link? = params["from_invitation_link?"] || false
+    create_guest = false
 
     with {:available, section} <- Sections.available?(section),
-         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
+         {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
          {:enrolled?, false} <- {:enrolled?, Sections.is_enrolled?(user.id, section.slug)} do
       render(conn, "enroll.html",
         section: Oli.Repo.preload(section, [:base_project]),
@@ -206,6 +201,13 @@ defmodule OliWeb.DeliveryController do
     else
       {:unavailable, reason} ->
         render_section_unavailable(conn, reason)
+
+      {:redirect, :enroll} ->
+        render(conn, "enroll.html",
+          section: Oli.Repo.preload(section, [:base_project]),
+          from_invitation_link?: from_invitation_link?,
+          auto_enroll_as_guest: params["auto_enroll_as_guest"] || false
+        )
 
       # redirect to course index if user is already signed in and enrolled
       {:enrolled?, true} ->
@@ -231,10 +233,11 @@ defmodule OliWeb.DeliveryController do
 
   def process_enroll(conn, params) do
     g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
+    create_guest = true
 
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       with {:available, section} <- Sections.available?(conn.assigns.section),
-           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment),
+           {:ok, user} <- current_or_guest_user(conn, section.requires_enrollment, create_guest),
            user <- Repo.preload(user, [:platform_roles]) do
         if Sections.is_enrolled?(user.id, section.slug) do
           redirect(conn,
@@ -283,10 +286,14 @@ defmodule OliWeb.DeliveryController do
     Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
-  defp current_or_guest_user(conn, requires_enrollment) do
+  defp current_or_guest_user(conn, requires_enrollment, create_guest) do
     case conn.assigns.current_user do
       nil ->
-        if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
+        if create_guest do
+          if requires_enrollment, do: {:redirect, nil}, else: Accounts.create_guest_user()
+        else
+          if requires_enrollment, do: {:redirect, nil}, else: {:redirect, :enroll}
+        end
 
       %User{independent_learner: false} ->
         {:redirect, :non_independent_learner}

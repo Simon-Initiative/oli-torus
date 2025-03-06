@@ -17,7 +17,7 @@ defmodule OliWeb.Components.Auth do
 
   def login_form(assigns) do
     ~H"""
-    <div class={["w-96 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white", @class]}>
+    <div class={["w-96 dark:bg-neutral-700 rounded-md sm:shadow-lg dark:text-white", @class]}>
       <div class="text-center text-xl font-normal leading-7 py-8">
         <%= @title %>
       </div>
@@ -130,7 +130,7 @@ defmodule OliWeb.Components.Auth do
   def registration_form(assigns) do
     ~H"""
     <div class={[
-      "w-96 dark:bg-neutral-700 sm:rounded-md sm:shadow-lg dark:text-white",
+      "w-96 dark:bg-neutral-700 rounded-md sm:shadow-lg dark:text-white",
       @class
     ]}>
       <div class="text-center text-xl font-normal leading-7 py-8">

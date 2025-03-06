@@ -48,7 +48,10 @@ defmodule Oli.Accounts.User do
              on_delete: :delete_all,
              foreign_key: :user_id
 
-    has_one :lti_params, Oli.Lti.LtiParams, on_delete: :delete_all, on_replace: :delete
+    has_many :lti_params,
+             Oli.Lti.LtiParams,
+             on_delete: :delete_all,
+             foreign_key: :user_id
 
     # A user may optionally be linked to an author account and Institution
     belongs_to :author, Oli.Accounts.Author

@@ -99,8 +99,16 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.ForceRequiredSurvey)
   end
 
-  pipeline :enforce_enroll_and_paywall do
-    plug(Oli.Plugs.EnforceEnrollAndPaywall)
+  pipeline :enforce_paywall do
+    plug(Oli.Plugs.EnforcePaywall)
+  end
+
+  pipeline :require_enrollment do
+    plug(OliWeb.Plugs.RequireEnrollment)
+  end
+
+  pipeline :ensure_datashop_id do
+    plug(OliWeb.Plugs.EnsureDatashopId)
   end
 
   pipeline :authorize_section_preview do
@@ -115,6 +123,7 @@ defmodule OliWeb.Router do
 
     plug(Oli.Plugs.RemoveXFrameOptions)
     plug(OliWeb.Plugs.SetToken)
+    plug(:ensure_datashop_id)
 
     plug(:delivery_layout)
   end
@@ -172,7 +181,7 @@ defmodule OliWeb.Router do
   end
 
   pipeline :ensure_user_section_visit do
-    plug(Oli.Plugs.EnsureUserSectionVisit)
+    plug(OliWeb.Plugs.EnsureUserSectionVisit)
   end
 
   pipeline :delivery_preview do
@@ -196,19 +205,28 @@ defmodule OliWeb.Router do
 
   ## Authentication routes
 
+  # allow access to non-authenticated users or guest users for sign in and account creation
+  scope "/", OliWeb do
+    pipe_through [:browser, :redirect_if_user_is_authenticated_and_not_guest]
+
+    live_session :redirect_if_user_is_authenticated_and_not_guest,
+      on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated_and_not_guest}] do
+      live "/users/register", UserRegistrationLive, :new
+      live "/users/log_in", UserLoginLive, :new
+    end
+
+    post "/users/log_in", UserSessionController, :create
+  end
+
   scope "/", OliWeb do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{OliWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
-      live "/users/log_in", UserLoginLive, :new
       live "/instructors/log_in", UserLoginLive, :instructor_new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
     end
-
-    post "/users/log_in", UserSessionController, :create
   end
 
   scope "/", OliWeb do
@@ -245,6 +263,15 @@ defmodule OliWeb.Router do
       only: [:new, :delete]
 
     get "/users/auth/:provider/callback", UserAuthorizationController, :callback
+
+    get "/certificates/", CertificateController, :index
+    post "/certificates/verify", CertificateController, :verify
+  end
+
+  scope "/", OliWeb do
+    pipe_through [:browser, :require_authenticated_user, :fetch_current_author]
+
+    live "/users/link_account", LinkAccountLive, :link_account
   end
 
   scope "/", OliWeb do
@@ -317,14 +344,6 @@ defmodule OliWeb.Router do
     post("/research_consent", DeliveryController, :research_consent)
   end
 
-  scope "/authoring", as: :authoring do
-    pipe_through([:browser, :authoring])
-
-    # handle linking accounts when using a social account provider to login
-    get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
-    get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
-  end
-
   # open access routes
   scope "/", OliWeb do
     pipe_through([:browser, :delivery, :authoring])
@@ -373,10 +392,19 @@ defmodule OliWeb.Router do
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
     live("/products/:section_slug/source_materials", Delivery.ManageSourceMaterials)
-    live("/products/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+
+    live("/products/:product_id/certificate_settings", Certificates.CertificatesSettingsLive,
+      metadata: %{route_name: :authoring}
+    )
 
     live("/products/:section_slug/remix", Delivery.RemixSection, :product_remix,
       as: :product_remix
+    )
+
+    get(
+      "/products/:product_id/downloads/granted_certificates",
+      GrantedCertificatesController,
+      :download_granted_certificates
     )
 
     get(
@@ -417,6 +445,7 @@ defmodule OliWeb.Router do
     # Project display pages
     live("/:project_id/publish", Projects.PublishView)
     post("/:project_id/duplicate", ProjectController, :clone_project)
+    post("/:project_id/triggers", ProjectController, :enable_triggers)
 
     live("/:project_id/embeddings", Search.EmbeddingsLive)
 
@@ -519,6 +548,7 @@ defmodule OliWeb.Router do
     post("/:project/activity/:activity_type", Api.ActivityController, :create)
 
     post("/:project/create/activity/bulk", Api.ActivityController, :create_bulk)
+    post("/:project/delete/activity/bulk", Api.ActivityController, :delete_bulk)
 
     put("/test/evaluate", Api.ActivityController, :evaluate)
     put("/test/transform", Api.ActivityController, :transform)
@@ -669,6 +699,13 @@ defmodule OliWeb.Router do
     delete("/", SchedulingController, :clear)
   end
 
+  # AI trigger point endpoints
+  scope "/api/v1/triggers/:section_slug", OliWeb.Api do
+    pipe_through([:api, :delivery_protected])
+
+    post("/", TriggerPointController, :invoke)
+  end
+
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
     pipe_through([:api, :delivery_protected])
@@ -678,6 +715,9 @@ defmodule OliWeb.Router do
     post("/:activity_attempt_guid", Api.AttemptController, :new_activity)
     put("/:activity_attempt_guid", Api.AttemptController, :submit_activity)
     patch("/:activity_attempt_guid", Api.AttemptController, :save_activity)
+
+    patch("/:activity_attempt_guid/active", Api.AttemptController, :save_active_activity)
+
     put("/:activity_attempt_guid/evaluations", Api.AttemptController, :submit_evaluations)
 
     post(
@@ -702,6 +742,12 @@ defmodule OliWeb.Router do
       "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
       Api.AttemptController,
       :save_part
+    )
+
+    patch(
+      "/:activity_attempt_guid/part_attempt/:part_attempt_guid/active",
+      Api.AttemptController,
+      :save_active_part
     )
 
     get(
@@ -849,10 +895,21 @@ defmodule OliWeb.Router do
         live("/:project_id/publish", PublishLive)
         live("/:project_id/insights", InsightsLive)
 
+        live("/:project_id/datasets", DatasetsLive)
+        live("/:project_id/datasets/create", CreateJobLive)
+        live("/:project_id/datasets/details/:job_id", DatasetDetailsLive)
+
         scope "/:project_id/products" do
           live("/", ProductsLive)
           live("/:product_id", Products.DetailsLive)
-          live("/:product_id/certificate_settings", Certificates.CertificateSettingsLive)
+
+          scope "/", alias: false do
+            live(
+              "/:product_id/certificate_settings",
+              OliWeb.Certificates.CertificatesSettingsLive,
+              metadata: %{route_name: :workspaces}
+            )
+          end
         end
       end
     end
@@ -891,6 +948,9 @@ defmodule OliWeb.Router do
 
   scope "/sections", OliWeb do
     pipe_through([:browser])
+
+    # Resolve root /sections route using the DeliveryController index action
+    get("/", DeliveryController, :index)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
   end
@@ -1012,9 +1072,11 @@ defmodule OliWeb.Router do
       :browser,
       :require_section,
       :delivery,
+      :ensure_datashop_id,
       :require_authenticated_user_or_guest,
       :student,
-      :enforce_enroll_and_paywall,
+      :enforce_paywall,
+      :require_enrollment,
       :ensure_user_section_visit,
       :force_required_survey
     ])
@@ -1028,6 +1090,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
           OliWeb.LiveSessionPlugs.SetSidebar,
@@ -1043,6 +1106,7 @@ defmodule OliWeb.Router do
         live("/student_schedule", Delivery.Student.ScheduleLive)
         live("/explorations", Delivery.Student.ExplorationsLive)
         live("/practice", Delivery.Student.PracticeLive)
+        live("/certificate/:certificate_guid", Delivery.Student.CertificateLive)
       end
     end
 
@@ -1106,7 +1170,8 @@ defmodule OliWeb.Router do
       :redirect_by_attempt_state,
       :delivery_protected,
       :maybe_gated_resource,
-      :enforce_enroll_and_paywall,
+      :enforce_paywall,
+      :require_enrollment,
       :ensure_user_section_visit,
       :force_required_survey
     ])
@@ -1138,6 +1203,7 @@ defmodule OliWeb.Router do
           {OliWeb.UserAuth, :ensure_authenticated},
           OliWeb.LiveSessionPlugs.SetCtx,
           OliWeb.LiveSessionPlugs.SetSection,
+          OliWeb.LiveSessionPlugs.SetRequireCertificationCheck,
           {OliWeb.LiveSessionPlugs.InitPage, :set_page_context},
           OliWeb.LiveSessionPlugs.SetBrand,
           OliWeb.LiveSessionPlugs.SetPreviewMode,
@@ -1197,9 +1263,10 @@ defmodule OliWeb.Router do
     end
   end
 
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([
       :browser,
+      :require_section,
       :delivery_protected
     ])
 
@@ -1213,7 +1280,7 @@ defmodule OliWeb.Router do
         OliWeb.LiveSessionPlugs.RequireEnrollment
       ] do
       live(
-        "/:section_slug/welcome",
+        "/welcome",
         Delivery.StudentOnboarding.Wizard
       )
     end
@@ -1248,6 +1315,10 @@ defmodule OliWeb.Router do
         OliWeb.Delivery.InstructorDashboard.InitialAssigns
       ],
       layout: {OliWeb.Layouts, :instructor_dashboard} do
+      live("/certificate_settings", Certificates.CertificatesSettingsLive,
+        metadata: %{route_name: :delivery, access: :read_only}
+      )
+
       live("/manage", Sections.OverviewView)
       live("/grades/lms", Grades.GradesLive)
       live("/grades/lms_grade_updates", Grades.BrowseUpdatesView)
@@ -1354,22 +1425,6 @@ defmodule OliWeb.Router do
     post("/:section_slug/auto_enroll", LaunchController, :auto_enroll_as_guest)
   end
 
-  # Delivery Auth (Signin)
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery, :delivery_layout])
-
-    get("/create_account", DeliveryController, :create_account)
-  end
-
-  scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected])
-
-    get("/", DeliveryController, :index)
-
-    get("/link_account", DeliveryController, :link_account)
-    post("/link_account", DeliveryController, :process_link_account)
-  end
-
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected])
 
@@ -1423,6 +1478,7 @@ defmodule OliWeb.Router do
     live("/", Admin.AdminView)
     live("/vr_user_agents", Admin.VrUserAgentsView)
     live("/products", Products.ProductsView)
+    live("/datasets", Workspaces.CourseAuthor.DatasetsLive)
 
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
 
@@ -1566,8 +1622,6 @@ defmodule OliWeb.Router do
     live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
       as: :history_by_resource_id
     )
-
-    live("/:project_id/datashop", Datashop.AnalyticsLive)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope

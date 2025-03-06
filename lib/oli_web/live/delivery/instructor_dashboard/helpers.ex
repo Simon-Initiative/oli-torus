@@ -1,5 +1,5 @@
 defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
-  alias Oli.Delivery.{Metrics, Sections}
+  alias Oli.Delivery.{Certificates, GrantedCertificates, Metrics, Sections}
   alias Oli.Publishing.DeliveryResolver
 
   def get_containers(section, opts \\ [async: true]) do
@@ -60,15 +60,92 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
   end
 
   def get_assessments(section, students) do
-    graded_pages_and_section_resources =
-      DeliveryResolver.graded_pages_revisions_and_section_resources(section.slug)
-
-    return_page(graded_pages_and_section_resources, section, students)
+    Oli.Delivery.Sections.SectionResourceDepot.graded_pages(section.id)
+    |> return_page(section, students)
   end
 
-  defp return_page(graded_pages_and_section_resources, section, students) do
+  def maybe_assign_certificate_data(
+        %{assigns: %{section: %{certificate_enabled: false}}} = socket
+      ),
+      do:
+        Phoenix.Component.assign(
+          socket,
+          %{
+            certificate: nil,
+            certificate_pending_email_notification_count: nil
+          }
+        )
+
+  def maybe_assign_certificate_data(socket) do
+    section = socket.assigns.section
+
+    certificate = Certificates.get_certificate_by(%{section_id: section.id})
+
+    certificate_pending_email_notification_count =
+      GrantedCertificates.certificate_pending_email_notification_count(section.slug)
+
+    Phoenix.Component.assign(
+      socket,
+      %{
+        certificate: certificate,
+        certificate_pending_email_notification_count: certificate_pending_email_notification_count
+      }
+    )
+  end
+
+  def certificate_pending_approval_count(
+        students,
+        %{requires_instructor_approval: true} = _certificate
+      ) do
+    Enum.reduce(students, 0, fn student, acc ->
+      if student.certificate && student.certificate.state == :pending do
+        acc + 1
+      else
+        acc
+      end
+    end)
+  end
+
+  def certificate_pending_approval_count(_students, _certificate), do: nil
+
+  defp return_page(graded_pages_and_section_resources, section, _students) do
+    # Create a map of all section resource ids to their parent container labels
+    container_labels =
+      Oli.Delivery.Sections.SectionResourceDepot.containers(section.id)
+      |> Enum.reduce(%{}, fn container, acc ->
+        Enum.reduce(container.children, acc, fn sr_id, acc ->
+          label =
+            Sections.get_container_label_and_numbering(
+              container.numbering_level,
+              container.numbering_index,
+              section.customizations
+            )
+
+          Map.put(acc, sr_id, {container.id, "#{label}: #{container.title}"})
+        end)
+      end)
+
+    graded_pages_and_section_resources
+    |> Enum.with_index(1)
+    |> Enum.map(fn {r, index} ->
+      {container_id, label} = Map.get(container_labels, r.id, {nil, nil})
+
+      Map.merge(r, %{
+        container_id: container_id,
+        order: index,
+        end_date: r.end_date,
+        students_completion: nil,
+        scheduling_type: r.scheduling_type,
+        container_label: label,
+        avg_score: nil,
+        total_attempts: nil
+      })
+    end)
+  end
+
+  def load_metrics(resources, section, students) do
     student_ids = Enum.map(students, & &1.id)
-    page_ids = Enum.map(graded_pages_and_section_resources, fn {rev, _} -> rev.resource_id end)
+    page_ids = Enum.map(resources, fn r -> r.resource_id end)
 
     progress_across_for_pages =
       Metrics.progress_across_for_pages(section.id, page_ids, student_ids)
@@ -79,36 +156,26 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     attempts_across_for_pages =
       Metrics.attempts_across_for_pages(section, page_ids, student_ids)
 
-    container_labels = Sections.map_resources_with_container_labels(section.slug, page_ids)
-
-    graded_pages_and_section_resources
-    |> Enum.with_index(1)
-    |> Enum.map(fn {{rev, sr}, index} ->
-      Map.merge(rev, %{
-        container_id: Map.get(container_labels, rev.resource_id) |> elem(0),
-        order: index,
-        end_date: sr.end_date,
-        students_completion: Map.get(progress_across_for_pages, rev.resource_id),
-        scheduling_type: sr.scheduling_type,
-        container_label: Map.get(container_labels, rev.resource_id) |> elem(1),
-        avg_score: Map.get(avg_score_across_for_pages, rev.resource_id),
-        total_attempts: Map.get(attempts_across_for_pages, rev.resource_id)
+    resources
+    |> Enum.map(fn r ->
+      Map.merge(r, %{
+        students_completion: Map.get(progress_across_for_pages, r.resource_id),
+        avg_score: Map.get(avg_score_across_for_pages, r.resource_id),
+        total_attempts: Map.get(attempts_across_for_pages, r.resource_id)
       })
     end)
   end
 
   def get_practice_pages(section, students) do
-    ungraded_pages_and_section_resources =
-      DeliveryResolver.ungraded_pages_revisions_and_section_resources(section.slug)
-
-    return_page(ungraded_pages_and_section_resources, section, students)
+    Oli.Delivery.Sections.SectionResourceDepot.practice_pages(section.id)
+    |> return_page(section, students)
   end
 
   def get_assessments_with_surveys(section, students) do
-    graded_pages_and_section_resources =
-      DeliveryResolver.practice_pages_revisions_and_section_resources_with_surveys(section.slug)
+    page_ids = DeliveryResolver.pages_with_surveys(section.slug)
 
-    return_page(graded_pages_and_section_resources, section, students)
+    Oli.Delivery.Sections.SectionResourceDepot.get_pages(section.id, page_ids)
+    |> return_page(section, students)
   end
 
   def get_students(section, params \\ %{container_id: nil}) do
@@ -118,12 +185,14 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         |> add_students_progress(section.id, params.container_id)
         |> add_students_last_interaction(section, params.container_id)
         |> add_students_overall_proficiency(section, params.container_id)
+        |> maybe_add_certificates(section)
 
       page_id ->
         Sections.enrolled_students(section.slug)
         |> add_students_progress_for_page(section.id, page_id)
         |> add_students_last_interaction_for_page(section.slug, page_id)
         |> add_students_overall_proficiency_for_page(section, page_id)
+        |> maybe_add_certificates(section)
     end
   end
 
@@ -179,6 +248,18 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
         overall_proficiency:
           Map.get(proficiency_per_student_for_page, student.id, "Not enough data")
       })
+    end)
+  end
+
+  defp maybe_add_certificates(students, %{certificate_enabled: false}), do: students
+
+  defp maybe_add_certificates(students, section) do
+    certificates =
+      Certificates.get_granted_certificates_by_section_slug(section.slug)
+      |> Enum.into(%{}, fn cert -> {cert.recipient.id, cert} end)
+
+    Enum.map(students, fn student ->
+      Map.put(student, :certificate, Map.get(certificates, student.id))
     end)
   end
 end

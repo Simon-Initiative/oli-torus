@@ -61,9 +61,6 @@ defmodule Oli.Application do
         Oli.Delivery.DepotWarmer,
         {Cachex, name: :page_content_cache},
 
-        # Starts Cachex to store datashop export info
-        Oli.DatashopCache,
-
         # Starts Cachex to store vr user agents
         Oli.VrLookupCache,
 

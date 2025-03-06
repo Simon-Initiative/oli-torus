@@ -22,10 +22,11 @@ defmodule OliWeb.UserConfirmationLive do
             </:subtitle>
 
             <.input field={@form[:token]} type="hidden" />
+            <.input :if={@section} field={@form[:section]} type="hidden" value={@section} />
 
             <:actions>
               <.button variant={:primary} phx-disable-with="Confirming..." class="w-full mt-4">
-                Confirm my account
+                Confirm
               </.button>
             </:actions>
           </.form_box>
@@ -37,18 +38,27 @@ defmodule OliWeb.UserConfirmationLive do
 
   def mount(%{"token" => token}, _session, socket) do
     form = to_form(%{"token" => token}, as: "user")
-    {:ok, assign(socket, form: form), temporary_assigns: [form: nil]}
+    {:ok, assign(socket, form: form, section: nil), temporary_assigns: [form: nil]}
+  end
+
+  def handle_params(unsigned_params, _uri, socket) do
+    section = unsigned_params["section"]
+
+    {:noreply,
+     assign(socket,
+       section: section
+     )}
   end
 
   # Do not log in the user after confirmation to avoid a
   # leaked token giving the user access to the account.
-  def handle_event("confirm_account", %{"user" => %{"token" => token}}, socket) do
+  def handle_event("confirm_account", %{"user" => %{"token" => token} = user_params}, socket) do
     case Accounts.confirm_user(token) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Email successfully confirmed.")
-         |> redirect(to: ~p"/users/log_in")}
+         |> redirect(to: ~p"/users/log_in?#{maybe_section_param(user_params["section"])}")}
 
       :error ->
         # If there is a current user and the account was already confirmed,
@@ -68,4 +78,7 @@ defmodule OliWeb.UserConfirmationLive do
         end
     end
   end
+
+  defp maybe_section_param(nil), do: []
+  defp maybe_section_param(section), do: [section: section]
 end

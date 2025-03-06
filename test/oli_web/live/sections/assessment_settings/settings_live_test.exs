@@ -586,6 +586,50 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
     end
   end
 
+  describe "admin can access" do
+    setup [:user_conn, :create_project]
+
+    test "the assessment settings view", %{
+      conn: conn,
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3,
+      page_4: page_4
+    } do
+      admin =
+        author_fixture(%{
+          system_role_id: Oli.Accounts.SystemRole.role_id().system_admin
+        })
+
+      # log out instructor, leaving only admin logged in
+      conn =
+        conn
+        |> OliWeb.UserAuth.clear_all_session_data()
+        |> OliWeb.AuthorAuth.create_session(admin)
+
+      {:ok, view, html} = live(conn, live_view_overview_route(section.slug, "settings", "all"))
+
+      [assessment_1, assessment_2, assessment_3, assessment_4] =
+        view
+        |> render()
+        |> Floki.parse_fragment!()
+        |> Floki.find(~s{.instructor_dashboard_table tbody tr td:nth-of-type(2)})
+        |> Enum.map(fn row -> Floki.text(row) |> String.split("\n") |> hd() end)
+
+      assert view
+             |> has_element?("p", "These are your current assessment settings.")
+
+      assert assessment_1 == page_1.title
+      assert assessment_2 == page_2.title
+      assert assessment_3 == page_3.title
+      assert assessment_4 == page_4.title
+
+      assert html =~
+               ~s(<a href="/sections/#{section.slug}/manage">Manage Section</a>)
+    end
+  end
+
   describe "user can access when is logged in as an instructor and is enrolled in the section" do
     setup [:user_conn, :create_project]
 
@@ -765,7 +809,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
         end)
 
       assert view
-             |> has_element?("div .alert-info", "Setting updated!")
+             |> has_element?("#flash[role='alert']", "Setting updated!")
 
       assert updated_page_1_assessment_settings.late_submit == :disallow
     end
@@ -1821,7 +1865,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       # a flash message confirms the removal and the exception is not listed anymore
       assert has_element?(
                view,
-               ~s{div.alert.alert-info},
+               "#flash[role='alert']",
                "Student Exception/s removed!"
              )
 

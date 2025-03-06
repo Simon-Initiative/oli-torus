@@ -10,6 +10,7 @@ defmodule Oli.AccountsTest do
   alias Oli.Groups.CommunityAccount
   alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Accounts.SystemRole
 
   describe "authors" do
@@ -570,6 +571,46 @@ defmodule Oli.AccountsTest do
                  {"Email has already been taken by another independent learner",
                   [validation: :unsafe_unique, fields: [:email]]}
              ]
+    end
+
+    test "can_manage_linked_account?/1" do
+      # returns false when the user is an independent student
+      user =
+        insert(:user, %{independent_learner: true, can_create_sections: false})
+        |> Accounts.preload_platform_roles()
+
+      refute Accounts.can_manage_linked_account?(user)
+
+      # returns true when the user is an independent instructor
+      user =
+        insert(:user, %{independent_learner: true, can_create_sections: true})
+        |> Accounts.preload_platform_roles()
+
+      assert Accounts.can_manage_linked_account?(user)
+
+      # returns false when the user is an LTI student
+      {:ok, user} =
+        insert(:user, %{independent_learner: false, can_create_sections: false})
+        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_student)])
+
+      refute Accounts.can_manage_linked_account?(user)
+
+      # returns true when user is an institution instructor
+      {:ok, user} =
+        insert(:user)
+        |> Accounts.update_user_platform_roles([PlatformRoles.get_role(:institution_instructor)])
+
+      assert Accounts.can_manage_linked_account?(user)
+
+      # returns true when user is an institution admin
+      {:ok, user} =
+        insert(:user)
+        |> Accounts.update_user_platform_roles([
+          PlatformRoles.get_role(:system_administrator),
+          PlatformRoles.get_role(:institution_administrator)
+        ])
+
+      assert Accounts.can_manage_linked_account?(user)
     end
   end
 
@@ -1175,6 +1216,34 @@ defmodule Oli.AccountsTest do
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+    end
+  end
+
+  describe "delete_enrollment_invitation_tokens/2" do
+    test "deletes all invitation tokens for a list of emails in the provided section" do
+      user_1 = insert(:user)
+      user_2 = insert(:user)
+      user_3 = insert(:user, email: "julian_alvarez@afa.com")
+      user_4 = insert(:user, email: "lionel_messi@afa.com")
+
+      insert(:user_token, user: user_1, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_2, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_3, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_4, context: "enrollment_invitation:first_section")
+      insert(:user_token, user: user_1, context: "enrollment_invitation:other_section")
+      insert(:user_token, user: user_2, context: "enrollment_invitation:other_section")
+
+      assert length(Repo.all(UserToken)) == 6
+
+      Accounts.delete_enrollment_invitation_tokens("first_section", [user_1.email, user_2.email])
+      Accounts.delete_enrollment_invitation_tokens("other_section", [user_1.email, user_2.email])
+
+      [user_token_1, user_token_2] = Repo.all(UserToken) |> Enum.sort_by(& &1.sent_to)
+
+      assert user_token_1.context == "enrollment_invitation:first_section"
+      assert user_token_1.sent_to == "julian_alvarez@afa.com"
+      assert user_token_2.context == "enrollment_invitation:first_section"
+      assert user_token_2.sent_to == "lionel_messi@afa.com"
     end
   end
 end

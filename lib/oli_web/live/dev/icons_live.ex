@@ -16,7 +16,8 @@ defmodule OliWeb.Dev.IconsLive do
       |> Keyword.keys()
       |> Enum.filter(&(&1 not in [:__info__, :__components__, :module_info]))
 
-    {:ok, assign(socket, icons: icons, hide_header: true, hide_footer: true)}
+    {:ok,
+     assign(socket, icons: icons, hide_header: true, hide_footer: true, ctx: %{is_liveview: true})}
   end
 
   def render(assigns) do

@@ -14,6 +14,7 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   """
   def authentication_providers() do
     Application.get_env(:oli, :author_auth_providers)
+    |> Enum.filter(fn {_, config} -> config != nil end)
   end
 
   @doc """
@@ -42,40 +43,32 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   end
 
   @doc """
-  Upserts a user identity.
-
-  If a matching user identity already exists for the user, the identity will be updated,
-  otherwise a new identity is inserted.
+  Returns true if the user's email has been confirmed.
   """
-  def upsert(user, author_identity_params) do
-    {uid_provider_params, additional_params} =
-      Map.split(author_identity_params, ["uid", "provider"])
-
-    get_for_user(user, uid_provider_params)
-    |> case do
-      nil -> insert_identity(user, author_identity_params)
-      identity -> update_identity(identity, additional_params)
-    end
+  def email_confirmed?(user) do
+    user.email_confirmed_at != nil
   end
 
   @doc """
-  Inserts a user identity for the user.
+  Gets a user by identity provider and uid.
   """
-  def insert_identity(user, author_identity_params) do
-    author_identity = Ecto.build_assoc(user, :user_identities)
-
-    author_identity
-    |> author_identity.__struct__.changeset(author_identity_params)
-    |> Repo.insert()
+  def get_user_by_provider_uid(provider, uid) do
+    from(user in Author,
+      join: author_identity in assoc(user, :user_identities),
+      where: author_identity.provider == ^provider and author_identity.uid == ^uid
+    )
+    |> Repo.one()
   end
 
   @doc """
-  Updates a user identity.
+  Gets a user with identities.
   """
-  def update_identity(author_identity, additional_params) do
-    author_identity
-    |> author_identity.__struct__.changeset(additional_params)
-    |> Repo.update()
+  def get_user_with_identities(user_id) do
+    from(user in Author,
+      where: user.id == ^user_id,
+      preload: [:user_identities]
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -90,28 +83,26 @@ defmodule Oli.AssentAuth.AuthorAssentAuth do
   end
 
   @doc """
-  Gets a user by identity provider and uid.
+  Updates user details.
   """
-  def get_user_by_provider_uid(provider, uid) do
-    from(user in Author,
-      join: author_identity in assoc(user, :user_identities),
-      where: author_identity.provider == ^provider and author_identity.uid == ^uid
-    )
-    |> Repo.one()
+  def update_user_details(author, attrs) do
+    author
+    |> Author.details_changeset(attrs)
+    |> Repo.update()
   end
 
-  defp get_for_user(author, %{"uid" => uid, "provider" => provider}) do
-    author_identity = Ecto.build_assoc(author, :user_identities).__struct__
+  @doc """
+  Adds an identity provider.
+  """
+  def add_identity_provider(author, author_identity_params) do
+    {uid_provider_params, _additional_params} =
+      Map.split(author_identity_params, ["uid", "provider"])
 
-    Repo.get_by(author_identity, user_id: author.id, provider: provider, uid: uid)
-  end
+    author_identity = Ecto.build_assoc(author, :user_identities)
 
-  def get_user_with_identities(user_id) do
-    from(user in Author,
-      where: user.id == ^user_id,
-      preload: [:user_identities]
-    )
-    |> Repo.one()
+    author_identity
+    |> AuthorIdentity.changeset(uid_provider_params)
+    |> Repo.insert()
   end
 
   @doc """

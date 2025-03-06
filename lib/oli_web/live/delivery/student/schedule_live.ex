@@ -66,11 +66,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <h1 class="text-4xl md:text-6xl mb-8">Course Schedule</h1>
     </.hero_banner>
 
-    <div
-      id="schedule-view"
-      class="overflow-x-scroll md:overflow-x-auto container mx-auto h-full"
-      phx-hook="Scroller"
-    >
+    <div id="schedule-view" class="container mx-auto h-full" phx-hook="Scroller">
       <.schedule
         ctx={@ctx}
         schedule={@schedule}
@@ -89,8 +85,8 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
       <h1 class="text-4xl md:text-6xl mb-8">Course Schedule</h1>
     </.hero_banner>
 
-    <div id="schedule-view" class="overflow-x-scroll md:overflow-x-auto container mx-auto h-full">
-      <div class="my-8 px-16">
+    <div id="schedule-view" class="container mx-auto h-full">
+      <div class="my-8 px-3 md:px-16">
         <.schedule_header />
         <div class="flex flex-col">
           <Schedule.non_scheduled_container_groups
@@ -115,7 +111,7 @@ defmodule OliWeb.Delivery.Student.ScheduleLive do
 
   def schedule(assigns) do
     ~H"""
-    <div class="my-8 px-16" id="schedule_live" phx-hook="Countdown">
+    <div class="my-8 px-3 md:px-16" id="schedule_live" phx-hook="Countdown">
       <div class="flex flex-col">
         <%= for {{month, _year}, weekly_schedule} <- @schedule do %>
           <div class="flex flex-col md:flex-row">

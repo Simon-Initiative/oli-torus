@@ -1,0 +1,6 @@
+<%#
+THIS FILE IS NOT USED
+
+But it is required to be here by Phoenix.Swoosh. Email text is generated from the
+corresponding html template. See Oli.Email for details.
+%>

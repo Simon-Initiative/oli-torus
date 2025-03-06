@@ -23,6 +23,7 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -31,7 +32,8 @@ import { MCSchema } from './schema';
 const store = configureStore();
 
 const MultipleChoice: React.FC = () => {
-  const { dispatch, model, editMode, projectSlug } = useAuthoringElementContext<MCSchema>();
+  const { dispatch, model, editMode, projectSlug, authoringContext } =
+    useAuthoringElementContext<MCSchema>();
   const writerContext = defaultWriterContext({
     projectSlug: projectSlug,
   });
@@ -101,6 +103,12 @@ const MultipleChoice: React.FC = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
+
+        {authoringContext?.optionalContentTypes?.triggers && (
+          <TabbedNavigation.Tab label={TriggerLabel()}>
+            <TriggerAuthoring partId={model.authoring.parts[0].id} />
+          </TabbedNavigation.Tab>
+        )}
 
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>

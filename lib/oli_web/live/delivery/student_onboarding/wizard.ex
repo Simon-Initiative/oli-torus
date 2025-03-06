@@ -135,7 +135,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
 
   defp wizard_header(assigns) do
     ~H"""
-    <div class="overflow-y-auto scrollbar-hide relative h-full pb-4 w-full">
+    <div class="overflow-y-auto relative h-full pb-4 w-full">
       <%= render_slot(@inner_block) %>
     </div>
     """

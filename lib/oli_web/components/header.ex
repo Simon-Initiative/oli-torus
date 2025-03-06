@@ -12,6 +12,7 @@ defmodule OliWeb.Components.Header do
   alias OliWeb.Common.SessionContext
 
   attr(:ctx, SessionContext, required: true)
+  attr(:section, Section, default: nil)
   attr(:is_admin, :boolean, required: true)
 
   def header(assigns) do
@@ -19,7 +20,7 @@ defmodule OliWeb.Components.Header do
     <nav class="navbar py-1 bg-delivery-header dark:bg-delivery-header-dark shadow-sm">
       <div class="container mx-auto flex flex-row">
         <a
-          class="navbar-brand torus-logo my-1 mr-auto"
+          class="navbar-brand torus-logo shrink-0 my-1 mr-auto"
           href={
             case assigns[:logo_link] do
               nil ->
@@ -74,7 +75,12 @@ defmodule OliWeb.Components.Header do
             </div>
           <% user_signed_in?(assigns) -> %>
             <div class="max-w-[400px] my-auto">
-              <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
+              <UserAccount.menu
+                id="user-account-menu"
+                ctx={@ctx}
+                is_admin={@is_admin}
+                section={@section}
+              />
             </div>
           <% true -> %>
             <div class="inline-flex items-center">
@@ -96,24 +102,26 @@ defmodule OliWeb.Components.Header do
   def delivery_header(assigns) do
     ~H"""
     <nav class="bg-primary-24 dark h-[111px] flex items-center pl-4 pr-10">
-      <a class="navbar-brand torus-logo my-1 mr-auto" href={~p"/"}>
+      <a class="navbar-brand torus-logo shrink-0 my-1 mr-auto" href={~p"/"}>
         <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
       </a>
-      <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
-        For Instructors
-      </.sign_in_button>
-      <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
-        For Course Authors
-      </.sign_in_button>
-      <.button
-        id="support-button"
-        href="#"
-        class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
-        onclick="window.showHelpModal();"
-        phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
-      >
-        Support
-      </.button>
+      <div class="hidden md:flex">
+        <.sign_in_button href="/instructors/log_in" request_path={assigns.conn.request_path}>
+          For Instructors
+        </.sign_in_button>
+        <.sign_in_button href="/authors/log_in" request_path={assigns.conn.request_path}>
+          For Course Authors
+        </.sign_in_button>
+        <.button
+          id="support-button"
+          href="#"
+          class="pt-[12px] text-high-24 hover:text-high-24 hover:underline hover:underline-offset-8"
+          onclick="window.showHelpModal();"
+          phx-click={JS.dispatch("maybe_add_underline_classes", to: "#help-modal")}
+        >
+          Support
+        </.button>
+      </div>
     </nav>
     """
   end

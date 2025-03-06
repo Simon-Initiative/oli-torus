@@ -1,5 +1,6 @@
 import React, { PropsWithChildren } from 'react';
 import { Purpose } from 'components/content/Purpose';
+import { TriggerEditorCore } from 'components/editing/elements/trigger/TriggerEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import {
   PurposeGroupContent,
@@ -8,7 +9,9 @@ import {
   groupOrDescendantHasPurpose,
   isGroupWithPurpose,
 } from 'data/content/resource';
+import { GroupTrigger } from 'data/triggers';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 import { AudienceModes } from './AudienceModes';
 import styles from './ContentBlock.modules.scss';
 import { GroupEditor } from './GroupEditor';
@@ -54,6 +57,7 @@ export const PurposeGroupEditor = ({
 }: PurposeGroupEditorProps) => {
   return (
     <PurposeGroupBlock
+      allowTriggers={resourceContext.optionalContentTypes?.triggers || false}
       editMode={editMode}
       contentItem={contentItem}
       parents={parents}
@@ -111,6 +115,7 @@ export const PurposeGroupOutlineItem = (props: PurposeGroupOutlineItemProps) => 
 };
 
 interface PurposeGroupBlockProps {
+  allowTriggers: boolean;
   editMode: boolean;
   contentItem: PurposeGroupContent;
   parents: ResourceContent[];
@@ -121,6 +126,7 @@ interface PurposeGroupBlockProps {
 export const PurposeGroupBlock = ({
   editMode,
   contentItem,
+  allowTriggers,
   parents,
   canRemove,
   children,
@@ -145,6 +151,13 @@ export const PurposeGroupBlock = ({
     >
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
+        {allowTriggers ? (
+          <GroupTriggerEditorButton
+            editMode={editMode}
+            onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
+            trigger={contentItem.trigger}
+          />
+        ) : null}
         {contentBreaksExist ? (
           <PaginationModes
             onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}
@@ -166,9 +179,78 @@ export const PurposeGroupBlock = ({
         />
         <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
+      {contentItem.trigger !== undefined ? (
+        <GroupTriggerEditor
+          onEdit={(trigger) => onEdit(Object.assign(contentItem, { trigger }))}
+          editMode={editMode}
+          trigger={contentItem.trigger}
+        />
+      ) : null}
       <MaybeDeliveryPurposeContainer contentItem={contentItem}>
         {children}
       </MaybeDeliveryPurposeContainer>
+    </div>
+  );
+};
+
+const GroupTriggerEditorButton = ({
+  editMode,
+  trigger,
+  onEdit,
+}: {
+  editMode: boolean;
+  trigger: GroupTrigger | undefined;
+  onEdit: (trigger: GroupTrigger | undefined) => void;
+}) => {
+  const showEditTrigger = () => {
+    if (trigger === undefined) {
+      onEdit({ id: guid(), type: 'trigger', trigger_type: 'group', prompt: '' });
+    }
+  };
+
+  return (
+    <div className="form-inline">
+      <button
+        disabled={trigger !== undefined || !editMode}
+        className="btn btn-link btn-sm"
+        onClick={showEditTrigger}
+      >
+        <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
+        DOT AI
+      </button>
+    </div>
+  );
+};
+
+const GroupTriggerEditor = ({
+  editMode,
+  trigger,
+  onEdit,
+}: {
+  editMode: boolean;
+  trigger: GroupTrigger;
+  onEdit: (trigger: GroupTrigger | undefined) => void;
+}) => {
+  return (
+    <div className="mt-2">
+      <TriggerEditorCore
+        showDelete={true}
+        onDelete={() => onEdit(undefined as any)}
+        instructions={
+          <p>
+            When a student clicks the{' '}
+            <img src="/images/icons/icon-AI.svg" className="inline mr-1"></img> icon within this
+            content group, our AI assistant, DOT will appear and follow your custom prompt.
+          </p>
+        }
+      >
+        <textarea
+          disabled={!editMode}
+          className="mt-2 grow w-full bg-white dark:bg-black rounded-lg p-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={trigger.prompt}
+          onChange={(e) => onEdit(Object.assign(trigger, { prompt: e.target.value }))}
+        />
+      </TriggerEditorCore>
     </div>
   );
 };

@@ -198,7 +198,10 @@ defmodule OliWeb.Components.Common do
   attr(:href, :string, default: nil)
   attr(:type, :string, default: nil)
   attr(:class, :string, default: nil)
-  attr(:rest, :global, include: ~w(disabled form name value target rel download xphx-mouseover))
+
+  attr(:rest, :global,
+    include: ~w(disabled form name value target rel method download xphx-mouseover)
+  )
 
   slot(:inner_block, required: true)
 
@@ -585,13 +588,14 @@ defmodule OliWeb.Components.Common do
     end
   end
 
-  attr(:if, :boolean, default: true)
+  attr(:class, :string, default: nil)
+  attr(:icon_class, :string, default: nil)
 
   def loader(assigns) do
     ~H"""
-    <div :if={@if} class="h-full w-full flex items-center justify-center">
+    <div class={@class || "flex items-center justify-center"}>
       <span
-        class="spinner-border spinner-border-sm text-primary h-16 w-16"
+        class={["spinner-border spinner-border-sm text-primary", @icon_class]}
         role="status"
         aria-hidden="true"
       />
@@ -886,7 +890,7 @@ defmodule OliWeb.Components.Common do
 
   def hero_banner(assigns) do
     ~H"""
-    <div class={["w-full bg-cover bg-center bg-no-repeat py-24 px-16", @class]}>
+    <div class={["w-full bg-cover bg-center bg-no-repeat py-12 md:py-24 px-8 md:px-16", @class]}>
       <div class="container mx-auto flex flex-col">
         <%= render_slot(@inner_block) %>
       </div>

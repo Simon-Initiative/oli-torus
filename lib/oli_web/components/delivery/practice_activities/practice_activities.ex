@@ -69,7 +69,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def render(assigns) do
     ~H"""
     <div>
-      <.loader if={!@table_model} />
+      <.loader :if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9 lg:items-center">
           <h4 class="torus-h4 whitespace-nowrap">Practice Activities</h4>
@@ -190,7 +190,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-hook="LoadSurveyScripts"
               >
                 <%= if Map.get(activity, :preview_rendered) != nil do %>
-                  <ActivityHelpers.rendered_activity activity={activity} />
+                  <ActivityHelpers.rendered_activity
+                    activity={activity}
+                    activity_types_map={@activity_types_map}
+                  />
                 <% else %>
                   <p class="pt-9 pb-5">No attempt registered for this question</p>
                 <% end %>
@@ -208,73 +211,54 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         %{"id" => selected_assessment_id},
         socket
       ) do
-    %{
-      students: students,
-      student_ids: student_ids,
-      section: section
-    } =
-      socket.assigns
+    details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
 
-    current_assessment =
-      Enum.find(socket.assigns.assessments, fn assessment ->
-        assessment.id == String.to_integer(selected_assessment_id)
-      end)
+    if details_enabled do
+      %{
+        section: section,
+        students: students,
+        activity_types_map: activity_types_map
+      } =
+        socket.assigns
 
-    current_activities =
-      ActivityHelpers.get_activities(
-        current_assessment.resource_id,
-        section.id,
-        student_ids
-      )
+      current_assessment =
+        Enum.find(socket.assigns.assessments, fn assessment ->
+          assessment.id == String.to_integer(selected_assessment_id)
+        end)
 
-    activity_resource_ids =
-      Enum.map(current_activities, fn activity -> activity.resource_id end)
-
-    activities_details =
-      ActivityHelpers.get_activities_details(
-        activity_resource_ids,
-        socket.assigns.section,
-        socket.assigns.activity_types_map,
-        current_assessment.resource_id
-      )
-
-    current_activities =
-      Enum.map(current_activities, fn activity ->
-        activity_details =
-          Enum.find(activities_details, fn activity_details ->
-            activity.resource_id == activity_details.revision.resource_id
-          end)
-
-        activity
-        |> Map.put(
-          :preview_rendered,
-          ActivityHelpers.get_preview_rendered(
-            activity_details,
-            socket.assigns.activity_types_map,
-            socket.assigns.section
-          )
+      page_revision =
+        Oli.Publishing.DeliveryResolver.from_resource_id(
+          section.slug,
+          current_assessment.resource_id
         )
-        |> Map.put(:datasets, Map.get(activity_details, :datasets))
-        |> Map.put(:analytics_version, section.analytics_version)
-        |> ActivityHelpers.add_activity_attempts_info(students, student_ids, section)
-      end)
 
-    {:noreply,
-     assign(
-       socket,
-       current_assessment: current_assessment,
-       activities: current_activities
-     )
-     |> assign_selected_assessment(current_assessment.id)
-     |> case do
-       %{assigns: %{scripts_loaded: true}} = socket ->
-         socket
+      activities =
+        ActivityHelpers.summarize_activity_performance(
+          section,
+          page_revision,
+          activity_types_map,
+          students
+        )
 
-       socket ->
-         push_event(socket, "load_survey_scripts", %{
-           script_sources: socket.assigns.scripts
-         })
-     end}
+      {:noreply,
+       assign(
+         socket,
+         current_assessment: current_assessment,
+         activities: activities
+       )
+       |> assign_selected_assessment(current_assessment.id)
+       |> case do
+         %{assigns: %{scripts_loaded: true}} = socket ->
+           socket
+
+         socket ->
+           push_event(socket, "load_survey_scripts", %{
+             script_sources: socket.assigns.scripts
+           })
+       end}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event(

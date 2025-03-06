@@ -5,6 +5,7 @@ defmodule OliWeb.UserAuth do
   import Phoenix.Controller
 
   alias Oli.Accounts
+  alias Oli.Accounts.{User}
   alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
@@ -22,7 +23,8 @@ defmodule OliWeb.UserAuth do
     token = Accounts.generate_user_session_token(user)
 
     user_return_to =
-      params["request_path"] || get_session(conn, :user_return_to) || signed_in_path(conn)
+      maybe_return_to_section(params["section"]) || params["request_path"] ||
+        get_session(conn, :user_return_to) || signed_in_path(conn)
 
     conn
     |> renew_session()
@@ -30,7 +32,6 @@ defmodule OliWeb.UserAuth do
     # A lot of existing liveviews depends on the current_user_id being in the session.
     # We eventually want to remove this, but for now, we will add it to appease the existing code.
     |> put_user_id_in_session(user.id)
-    |> create_datashop_session_id()
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to)
   end
@@ -95,8 +96,7 @@ defmodule OliWeb.UserAuth do
         "browser_timezone",
         "author_token",
         "author_live_socket_id",
-        "current_author_id",
-        "datashop_session_id"
+        "current_author_id"
       ])
 
     conn
@@ -116,10 +116,13 @@ defmodule OliWeb.UserAuth do
 
   It clears all session data for safety. See renew_session.
   """
-  def log_out_user(conn) do
+  def log_out_user(conn, params \\ %{}) do
+    redirect_to =
+      params["redirect_to"] || ~p"/"
+
     conn
     |> clear_all_session_data()
-    |> redirect(to: ~p"/")
+    |> redirect(to: redirect_to)
   end
 
   @doc """
@@ -230,6 +233,18 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  def on_mount(:redirect_if_user_is_authenticated_and_not_guest, _params, session, socket) do
+    socket = mount_current_user(socket, session)
+
+    case socket.assigns.current_user do
+      %User{guest: false} ->
+        {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
+
+      _ ->
+        {:cont, socket}
+    end
+  end
+
   defp mount_current_user(socket, session) do
     # Note: When a user first accesses an application using LiveView, the LiveView is first rendered
     # in its disconnected state, as part of a regular HTML response. By using assign_new in the
@@ -286,6 +301,22 @@ defmodule OliWeb.UserAuth do
       |> halt()
     else
       conn
+    end
+  end
+
+  @doc """
+  Used for routes that require a user to not be authenticated if they are not a guest. This will
+  allow guest users to access the page that typically cannot be accessed by authenticated users.
+  """
+  def redirect_if_user_is_authenticated_and_not_guest(conn, _opts) do
+    case conn.assigns[:current_user] do
+      %User{guest: false} ->
+        conn
+        |> redirect(to: signed_in_path(conn))
+        |> halt()
+
+      _ ->
+        conn
     end
   end
 
@@ -360,11 +391,15 @@ defmodule OliWeb.UserAuth do
   end
 
   defp require_confirmed_email(conn) do
-    case conn.assigns[:current_user] do
-      nil ->
+    case {conn.assigns[:current_user], conn.assigns[:section]} do
+      {nil, _} ->
         conn
 
-      %Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil} ->
+      {_user, %Section{open_and_free: true, skip_email_verification: true}} ->
+        # The section is independent and specifies to skip email verification
+        conn
+
+      {%Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil}, _} ->
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)
@@ -409,16 +444,25 @@ defmodule OliWeb.UserAuth do
     |> put_session(:current_user_id, user_id)
   end
 
-  defp create_datashop_session_id(conn) do
-    conn
-    |> put_session(:datashop_session_id, UUID.uuid4())
-  end
-
   defp maybe_store_return_to(%{method: "GET"} = conn) do
     put_session(conn, :user_return_to, current_path(conn))
   end
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/workspaces/student"
+  defp maybe_return_to_section(nil), do: nil
+  defp maybe_return_to_section(section), do: ~p"/sections/#{section}"
+
+  defp signed_in_path(%{request_path: "/instructors/log_in"} = _conn),
+    do: ~p"/workspaces/instructor"
+
+  defp signed_in_path(conn) do
+    case conn.assigns[:current_user] do
+      %User{can_create_sections: true} ->
+        ~p"/workspaces/instructor"
+
+      _ ->
+        ~p"/workspaces/student"
+    end
+  end
 end

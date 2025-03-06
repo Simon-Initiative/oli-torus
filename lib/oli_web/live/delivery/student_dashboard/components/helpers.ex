@@ -153,7 +153,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
       <div class="container mx-auto py-2 flex flex-row justify-between">
         <div class="flex-1 flex items-center">
           <a
-            class="navbar-brand dark torus-logo my-1 mr-auto"
+            class="navbar-brand dark torus-logo shrink-0 my-1 mr-auto"
             href={logo_link(@section, @student.id, @preview_mode)}
           >
             <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
@@ -162,7 +162,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         <%= if @preview_mode do %>
           <UserAccount.preview_user_menu ctx={@ctx} />
         <% else %>
-          <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} />
+          <UserAccount.menu id="user-account-menu" ctx={@ctx} is_admin={@is_admin} section={@section} />
         <% end %>
         <div class="flex items-center border-l border-slate-300">
           <button

@@ -79,6 +79,11 @@ config :oli, :user_auth_providers,
          ]
      end)
 
+config :oli, :certificates,
+  generate_pdf_lambda:
+    System.get_env("CERTIFICATES_GENERATE_PDF_LAMBDA", "generate_certificate_pdf_from_html"),
+  s3_pdf_bucket: System.get_env("CERTIFICATES_S3_PDF_URL", "torus-pdf-certificates")
+
 ####################### Production-only configurations ########################
 ## Note: These configurations are only applied in production
 ###############################################################################
@@ -175,6 +180,7 @@ if config_env() == :prod do
 
   # General OLI app config
   config :oli,
+    instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
     depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),
     depot_warmer_max_number_of_entries: System.get_env("DEPOT_WARMER_MAX_NUMBER_OF_ENTRIES", "0"),
     s3_media_bucket_name: s3_media_bucket_name,
@@ -201,6 +207,24 @@ if config_env() == :prod do
     screen_idle_timeout_in_seconds:
       String.to_integer(System.get_env("SCREEN_IDLE_TIMEOUT_IN_SECONDS", "1800")),
     log_incomplete_requests: get_env_as_boolean.("LOG_INCOMPLETE_REQUESTS", "true")
+
+  config :oli, :dataset_generation,
+    enabled: System.get_env("EMR_DATASET_ENABLED", "false") == "true",
+    emr_aplication_name: System.get_env("EMR_DATASET_APPLICATION_NAME", "csv_job"),
+    execution_role:
+      System.get_env(
+        "EMR_DATASET_EXECUTION_ROLE",
+        "arn:aws:iam::123456789012:role/service-role/EMR_DefaultRole"
+      ),
+    entry_point: System.get_env("EMR_DATASET_ENTRY_POINT", "s3://analyticsjobs/job.py"),
+    log_uri: System.get_env("EMR_DATASET_LOG_URI", "s3://analyticsjobs/logs"),
+    source_bucket: System.get_env("EMR_DATASET_SOURCE_BUCKET", "torus-xapi-prod"),
+    context_bucket: System.get_env("EMR_DATASET_CONTEXT_BUCKET", "torus-datasets-prod"),
+    spark_submit_parameters:
+      System.get_env(
+        "EMR_DATASET_SPARK_SUBMIT_PARAMETERS",
+        "--conf spark.archives=s3://analyticsjobs/dataset.zip#dataset --py-files s3://analyticsjobs/dataset.zip --conf spark.executor.memory=2G --conf spark.executor.cores=2"
+      )
 
   config :oli, :xapi_upload_pipeline,
     batcher_concurrency: get_env_as_integer.("XAPI_BATCHER_CONCURRENCY", "20"),
@@ -405,7 +429,15 @@ if config_env() == :prod do
 
   config :oli, Oban,
     repo: Oli.Repo,
-    plugins: [Oban.Plugins.Pruner],
+    plugins: [
+      Oban.Plugins.Pruner,
+      {
+        Oban.Plugins.Cron,
+        crontab: [
+          {"*/2 * * * *", OliWeb.DatasetStatusPoller, queue: :default}
+        ]
+      }
+    ],
     queues: [
       default: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DEFAULT", "10")),
       snapshots: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_SNAPSHOTS", "20")),
@@ -418,6 +450,8 @@ if config_env() == :prod do
       datashop_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_DATASHOP", "1")),
       project_export: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_PROJECT_EXPORT", "3")),
       objectives: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_OBJECTIVES", "3")),
-      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10"))
+      mailer: String.to_integer(System.get_env("OBAN_QUEUE_SIZE_MAILER", "10")),
+      certificate_eligibility:
+        String.to_integer(System.get_env("OBAN_QUEUE_SIZE_CERTIFICATE_ELIGIBILITY", "10"))
     ]
 end

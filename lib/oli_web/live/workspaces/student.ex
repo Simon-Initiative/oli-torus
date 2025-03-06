@@ -5,9 +5,9 @@ defmodule OliWeb.Workspaces.Student do
   alias Oli.Delivery.Sections
   alias OliWeb.Backgrounds
   alias OliWeb.Common.{Params, SearchInput}
+  alias OliWeb.Common.SourceImage
 
   import Ecto.Query, warn: false
-  import OliWeb.Common.SourceImage
   import OliWeb.Components.Delivery.Layouts
 
   @default_params %{
@@ -115,7 +115,7 @@ defmodule OliWeb.Workspaces.Student do
       <div class="z-20 flex justify-center gap-2 lg:gap-12 xl:gap-32 px-6 sm:px-0">
         <div class="w-1/4 lg:w-1/2 flex items-start justify-center">
           <div class="w-96 flex-col justify-start items-start gap-0 lg:gap-3.5 inline-flex">
-            <div class="text-left lg:text-3xl xl:text-4xl">
+            <div class="text-left text-xl lg:text-3xl xl:text-4xl">
               <span class="text-white font-normal font-['Open Sans'] leading-10">
                 Welcome to
               </span>
@@ -158,21 +158,21 @@ defmodule OliWeb.Workspaces.Student do
 
   def render(assigns) do
     ~H"""
-    <div class="relative flex items-center h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
+    <div class="relative flex items-center min-h-[100px] md:min-h-[247px] w-full bg-gray-100 dark:bg-[#0B0C11]">
       <div
         class="absolute top-0 left-0 h-full w-full"
         style="background: linear-gradient(90deg, #D9D9D9 0%, rgba(217, 217, 217, 0.00) 100%);"
       />
-      <h1 class="text-[64px] leading-[87px] tracking-[0.02px] pl-[100px] z-10">
+      <h1 class="text-3xl md:text-[64px] leading-[87px] tracking-[0.02px] px-4 md:pl-[100px] z-10">
         Hi, <span class="font-bold"><%= user_given_name(@ctx) %></span>
       </h1>
     </div>
-    <div class="flex flex-col items-start py-[60px] px-[100px]">
-      <div class="flex mb-9 w-full">
-        <h3 class="w-full text-[26px] leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
+    <div class="flex flex-col items-start py-6 md:py-[60px] px-4 md:px-[100px]">
+      <div class="flex flex-col md:flex-row mb-9 w-full">
+        <h3 class="w-full py-2 md:py-0 text-xl md:text-[26px] md:leading-[32px] tracking-[0.02px] font-semibold dark:text-white">
           Courses available
         </h3>
-        <div class="ml-auto flex items-center w-full justify-end gap-3">
+        <div class="ml-auto flex items-center w-full justify-start md:justify-end gap-3">
           <.form for={%{}} phx-change="search_section" class="w-[330px]">
             <SearchInput.render
               id="section_search_input"
@@ -189,46 +189,12 @@ defmodule OliWeb.Workspaces.Student do
           <p>You are not enrolled in any courses.</p>
         <% else %>
           <div class="flex flex-col w-full gap-3">
-            <.link
+            <.course_card
               :for={{section, index} <- Enum.with_index(@filtered_sections)}
-              href={get_course_url(section, @params.sidebar_expanded)}
-              phx-click={JS.add_class("opacity-0", to: "#content")}
-              phx-mounted={
-                JS.transition(
-                  {"ease-out duration-300", "opacity-0 -translate-x-1/2",
-                   "opacity-100 translate-x-0"},
-                  time: if(index < 6, do: 100 + index * 20, else: 240)
-                )
-                |> JS.remove_class("opacity-100 translate-x-0")
-              }
-              class="opacity-0 relative flex items-center self-stretch h-[201px] w-full bg-cover py-12 px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
-              style={"background-image: url('#{cover_image(section)}');"}
-            >
-              <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
-              <div class="top-0 left-0 rounded-xl absolute w-full h-full dark:bg-black/40" />
-              <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur-[30px] bg-[rgba(0,0,0,0.01)]" />
-              <span
-                :if={section.progress == 100}
-                role={"complete_badge_for_section_#{section.id}"}
-                class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
-              >
-                Complete
-              </span>
-              <div class="z-10 flex w-full items-center">
-                <div class="flex flex-col items-start gap-6">
-                  <h5 class="text-[36px] leading-[49px] font-semibold drop-shadow-md">
-                    <%= section.title %>
-                  </h5>
-                  <div class="flex drop-shadow-md" role={"progress_for_section_#{section.id}"}>
-                    <h4 class="text-[16px] leading-[32px] tracking-[1.28px] uppercase mr-9">
-                      Course Progress
-                    </h4>
-                    <.progress_bar percent={section.progress} show_percent={true} width="100px" />
-                  </div>
-                </div>
-                <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>
-              </div>
-            </.link>
+              index={index}
+              section={section}
+              params={@params}
+            />
             <p :if={length(@filtered_sections) == 0} class="mt-4">
               No course found matching <strong>"<%= @params.text_search %>"</strong>
             </p>
@@ -239,55 +205,53 @@ defmodule OliWeb.Workspaces.Student do
     """
   end
 
-  attr :section, :map
   attr :index, :integer
+  attr :section, :map
   attr :params, :map
 
   def course_card(assigns) do
     ~H"""
-    <div
-      id={"course_card_#{@section.id}"}
+    <.link
+      href={get_course_url(@section, @params.sidebar_expanded)}
+      phx-click={JS.add_class("opacity-0", to: "#content")}
       phx-mounted={
         JS.transition(
           {"ease-out duration-300", "opacity-0 -translate-x-1/2", "opacity-100 translate-x-0"},
           time: if(@index < 6, do: 100 + @index * 20, else: 240)
         )
+        |> JS.remove_class("opacity-100 translate-x-0")
       }
-      class="opacity-0 flex flex-col w-96 h-[500px] rounded-lg border-2 border-gray-700 transition-all overflow-hidden bg-white"
+      class="opacity-0 relative flex items-center self-stretch md:h-[200px] w-full bg-cover py-4 md:py-12 px-6 md:px-24 text-white hover:text-white rounded-xl shadow-lg hover:no-underline transition-all hover:translate-x-3"
+      style={"background-image: url('#{SourceImage.cover_image(@section)}');"}
     >
-      <div
-        class="w-96 h-[220px] bg-cover border-b-2 border-gray-700"
-        style={"background-image: url('#{cover_image(@section)}');"}
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full mix-blend-difference bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.80)_100%),linear-gradient(90deg,rgba(0,0,0,0.80)_0%,rgba(0,0,0,0.40)_100%)]" />
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full dark:bg-black/40" />
+      <div class="top-0 left-0 rounded-xl absolute w-full h-full backdrop-blur-[30px] bg-[rgba(0,0,0,0.01)]" />
+      <span
+        :if={@section.progress == 100}
+        role={"complete_badge_for_section_#{@section.id}"}
+        class="absolute w-32 top-0 right-0 rounded-tr-xl rounded-bl-xl bg-[#0CAF61] uppercase py-2 text-center text-[12px] leading-[16px] tracking-[1.2px] font-bold"
       >
-      </div>
-      <div class="flex-col justify-start items-start gap-6 inline-flex p-8">
-        <h5
-          class="text-black text-base font-bold font-['Inter'] leading-normal overflow-hidden"
-          style="display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;"
-          role="course title"
-        >
-          <%= @section.title %>
-        </h5>
-        <div class="text-black text-base font-normal leading-normal h-[100px] overflow-hidden">
-          <p
-            role="course description"
-            style="display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;"
+        Complete
+      </span>
+      <div class="z-10 flex w-full items-center">
+        <div class="flex flex-col items-start gap-6">
+          <h5 class="text-2xl md:text-[36px] md:leading-[49px] font-semibold drop-shadow-md">
+            <%= @section.title %>
+          </h5>
+          <div
+            class="flex flex-col md:flex-row drop-shadow-md"
+            role={"progress_for_section_#{@section.id}"}
           >
-            <%= @section.description %>
-          </p>
+            <h4 class="text-sm md:text-[16px] md:leading-[32px] tracking-[1.28px] uppercase mr-9">
+              Course Progress
+            </h4>
+            <.progress_bar percent={@section.progress} show_percent={true} width="100px" />
+          </div>
         </div>
-        <div class="self-stretch justify-end items-start gap-4 inline-flex">
-          <.link
-            href={get_course_url(@section, @params.sidebar_expanded)}
-            class="px-5 py-3 bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF] hover:no-underline rounded-md justify-center items-center gap-2 flex text-white text-base font-normal leading-normal"
-          >
-            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
-              View Course
-            </div>
-          </.link>
-        </div>
+        <i class="fa-solid fa-arrow-right ml-auto text-2xl p-[7px] drop-shadow-md"></i>
       </div>
-    </div>
+    </.link>
     """
   end
 

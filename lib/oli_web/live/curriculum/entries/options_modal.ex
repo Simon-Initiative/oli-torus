@@ -450,6 +450,23 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
             </small>
           </div>
           <div class="form-group">
+            <label for="duration_minutes">Full Progress %</label>
+            <.input
+              id="full_progress_pct"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              name="revision[full_progress_pct]"
+              class="form-control"
+              aria-describedby="full_progress_pct_description"
+              field={@form[:full_progress_pct]}
+            />
+            <small id="full_progress_pct_description" class="form-text text-muted">
+              Percentage of activities on the page that must be attempted to receive full progress credit.
+            </small>
+          </div>
+          <div class="form-group">
             <label for="scoring_strategy_id">Scoring Strategy</label>
             <.input
               type="select"

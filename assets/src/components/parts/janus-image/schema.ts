@@ -47,6 +47,12 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'string',
     description: 'image description text for SEO/accessibility',
   },
+  lockAspectRatio: {
+    title: 'Lock Aspect Ratio',
+    type: 'boolean',
+    description: 'specifies whether image aspect ratio is locked',
+    default: true,
+  },
 };
 
 export const uiSchema = {

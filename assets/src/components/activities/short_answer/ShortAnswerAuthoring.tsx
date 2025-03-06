@@ -26,9 +26,11 @@ import { defaultWriterContext } from 'data/content/writers/context';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { RespondedUsersList } from '../common/authoring/RespondedUsersList';
 import { ActivitySettings } from '../common/authoring/settings/ActivitySettings';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { toggleSubmitAndCompareOption } from '../common/utils';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
@@ -38,7 +40,7 @@ import { ShortAnswerModelSchema } from './schema';
 const store = configureStore();
 
 const ShortAnswer = () => {
-  const { dispatch, model, editMode, projectSlug } =
+  const { dispatch, model, editMode, projectSlug, authoringContext } =
     useAuthoringElementContext<ShortAnswerModelSchema>();
 
   const submitAndCompareSetting = {
@@ -65,13 +67,15 @@ const ShortAnswer = () => {
             ) : (
               <table>
                 <tr>
-                  <th>Student</th>
+                  <th>Students</th>
                   <th>Response</th>
                 </tr>
                 <tbody>
                   {model.responses.map((response, index) => (
                     <tr key={index}>
-                      <td className="whitespace-nowrap">{response.user_name}</td>
+                      <td className="whitespace-nowrap">
+                        <RespondedUsersList users={response.users} />
+                      </td>
                       <td>{response.text}</td>
                     </tr>
                   ))}
@@ -176,6 +180,12 @@ const ShortAnswer = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
+        {authoringContext?.optionalContentTypes?.triggers && (
+          <TabbedNavigation.Tab label={TriggerLabel()}>
+            <TriggerAuthoring partId={model.authoring.parts[0].id} />
+          </TabbedNavigation.Tab>
+        )}
+
         <ActivitySettings settings={[submitAndCompareSetting]} />
       </TabbedNavigation.Tabs>
     </>

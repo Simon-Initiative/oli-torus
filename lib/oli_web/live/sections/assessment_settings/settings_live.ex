@@ -14,7 +14,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
       {:error, error} ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, error))}
 
-      {_user_type, current_user, section} ->
+      {_user_type, user, section} ->
         section =
           section
           |> Oli.Repo.preload([:base_project, :root_section_resource])
@@ -23,10 +23,10 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
 
         {:ok,
          assign(socket,
-           current_user: current_user,
            preview_mode: socket.assigns[:live_action] == :preview,
            title: "Assessment Settings",
            section: section,
+           user: user,
            student_exceptions: student_exceptions,
            students:
              Sections.enrolled_students(section.slug)
@@ -99,7 +99,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             </li>
           <% end %>
         </ul>
-        <div class="ml-auto"><.flash_message flash={@flash} /></div>
       </div>
       <div class="mb-5">
         <%= if @active_tab == :settings do %>
@@ -109,6 +108,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
             assessments={@assessments}
             params={@params}
             section={@section}
+            user={@user}
             ctx={@ctx}
             update_sort_order={@update_sort_order}
           />
@@ -244,39 +244,4 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLive do
   end
 
   defp is_active_tab?(tab, active_tab), do: tab == active_tab
-
-  defp flash_message(assigns) do
-    ~H"""
-    <%= if Phoenix.Flash.get(@flash, :info) do %>
-      <div class="alert alert-info flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :info) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="info"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
-    <%= if Phoenix.Flash.get(@flash, :error) do %>
-      <div class="alert alert-danger flex flex-row justify-between" role="alert">
-        <%= Phoenix.Flash.get(@flash, :error) %>
-        <button
-          type="button"
-          class="close ml-4"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-          phx-click="lv:clear-flash"
-          phx-value-key="error"
-        >
-          <i class="fa-solid fa-xmark fa-lg" />
-        </button>
-      </div>
-    <% end %>
-    """
-  end
 end

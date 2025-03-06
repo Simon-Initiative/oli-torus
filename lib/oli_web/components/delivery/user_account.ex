@@ -4,12 +4,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   import OliWeb.Components.Utils
 
   alias Phoenix.LiveView.JS
+  alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Delivery
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
@@ -40,7 +39,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
 
-  def workspace_menu(%{is_admin: true} = assigns) do
+  def workspace_menu(%{ctx: %{author: %{system_role_id: system_role_id}}} = assigns)
+      when system_role_id in [2, 3, 4] do
     ~H"""
     <div class="relative">
       <button
@@ -74,12 +74,13 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_picture_icon user={@ctx.author} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <.account_label label="Author" class="text-[#EC8CFF]" />
+        <.account_label :if={Accounts.is_admin?(@ctx.author)} label="Author" class="text-[#EC8CFF]" />
+        <.account_label :if={!Accounts.is_admin?(@ctx.author)} label="Admin" class="text-[#F68E2E]" />
         <.author_menu_items
           ctx={@ctx}
           id={@id}
           target_signout_path={target_signout_path(@active_workspace)}
-          is_admin={false}
+          is_admin={Accounts.is_admin?(@ctx.author)}
         />
       </.dropdown_menu>
     </div>
@@ -95,7 +96,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <.user_picture_icon user={@ctx.user} />
+        <.user_picture_icon :if={Accounts.is_admin?(@ctx.author)} user={@ctx.author} />
+        <.user_picture_icon
+          :if={@ctx.author == nil or !Accounts.is_admin?(@ctx.author)}
+          user={@ctx.user}
+        />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label
@@ -132,6 +137,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:ctx, SessionContext)
   attr(:current_user, Accounts.User, default: nil)
   attr(:current_author, Accounts.Author, default: nil)
+  attr(:section, Section, default: nil)
   attr(:is_admin, :boolean, required: true)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
@@ -156,7 +162,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <% else %>
           <%= case assigns.ctx do %>
             <% %SessionContext{user: %User{guest: true}} -> %>
-              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} section={@section} />
             <% %SessionContext{user: %User{}} -> %>
               <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
             <% %SessionContext{author: %Author{}} -> %>
@@ -210,7 +216,10 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_maybe_linked_account user={@ctx.user} />
+    <.menu_item_maybe_linked_account
+      :if={Accounts.can_manage_linked_account?(@ctx.user)}
+      user={@ctx.user}
+    />
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -219,6 +228,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
+  attr(:section, Section, default: nil)
 
   def guest_menu_items(assigns) do
     ~H"""
@@ -226,12 +236,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
-    <.menu_item_link href={~p"/users/log_in?#{[section: maybe_section_slug(assigns)]}"}>
+    <.menu_item_link href={~p"/users/register?#{maybe_section_param(@section)}"}>
       Create account or sign in
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
-    <.menu_item_link href={~p"/users/log_out"}>
+    <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
     </.menu_item_link>
     """
@@ -300,32 +310,25 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_maybe_linked_account(assigns) do
     ~H"""
-    <%= if can_manage_linked_account?(@user) do %>
-      <%= case linked_author_account(@user) do %>
-        <% nil -> %>
-          <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
-            Link authoring account
-          </.menu_item_link>
-        <% linked_author_account_email -> %>
-          <.menu_item>
-            <.menu_item_label>Linked Authoring Account</.menu_item_label>
-          </.menu_item>
+    <%= case Accounts.linked_author_account(@user) do %>
+      <% nil -> %>
+        <.menu_item_link href={~p"/users/link_account"}>
+          Link authoring account
+        </.menu_item_link>
+      <% %Author{email: linked_author_account_email} -> %>
+        <.menu_item>
+          <.menu_item_label>Linked Authoring Account</.menu_item_label>
+        </.menu_item>
 
-          <.menu_item_link href={Routes.delivery_path(OliWeb.Endpoint, :link_account)}>
-            <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
-              <%= linked_author_account_email %>
-            </div>
-          </.menu_item_link>
-      <% end %>
-
-      <.menu_divider />
+        <.menu_item_link href={~p"/users/link_account"}>
+          <div class="overflow-hidden text-ellipsis" role="linked authoring account email">
+            <%= linked_author_account_email %>
+          </div>
+        </.menu_item_link>
     <% end %>
-    """
-  end
 
-  defp can_manage_linked_account?(user) do
-    Sections.is_independent_instructor?(user) || Sections.is_institution_instructor?(user) ||
-      Sections.is_institution_admin?(user)
+    <.menu_divider />
+    """
   end
 
   attr(:href, :string, required: true)
@@ -502,18 +505,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     """
   end
 
-  def maybe_section_slug(assigns) do
-    case assigns[:section] do
-      %Section{slug: slug} ->
-        slug
-
-      _ ->
-        ""
-    end
-  end
-
-  def linked_author_account(%User{author: %Author{email: email}}), do: email
-  def linked_author_account(_), do: nil
+  def maybe_section_param(%Section{slug: slug}), do: [section: slug]
+  def maybe_section_param(_), do: []
 
   defp to_initials(%{name: nil}), do: "G"
 

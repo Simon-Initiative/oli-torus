@@ -84,7 +84,7 @@ defmodule OliWeb do
 
   defp socket_helpers() do
     quote do
-      import OliWeb.Live.SocketHelpers
+      import OliWeb.Live.TaggedTupleHelper
     end
   end
 

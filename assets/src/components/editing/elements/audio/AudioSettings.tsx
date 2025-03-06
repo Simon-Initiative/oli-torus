@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { Provider } from 'react-redux';
 import { Tooltip } from 'components/common/Tooltip';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
+import { configureStore } from 'state/store';
 import { modalActions } from '../../../../actions/modal';
 import { useAudio } from '../../../hooks/useAudio';
 import { useToggle } from '../../../hooks/useToggle';
@@ -20,20 +21,19 @@ interface SettingsButtonProps {
   onEdit: (attrs: Partial<ContentModel.Audio>) => void;
 }
 export const SettingsButton = (props: SettingsButtonProps) => {
-  const dispatch = useDispatch();
   return (
     <DescriptiveButton
       description={createButtonCommandDesc({
         icon: <i className="fa-solid fa-circle-play"></i>,
         description: 'Settings',
         execute: (_context, _editor, _params) =>
-          dispatch(
+          window.oliDispatch(
             modalActions.display(
               <AudioSettingsModal
                 commandContext={props.commandContext}
                 model={props.model}
                 onEdit={(audio: Partial<ContentModel.Audio>) => {
-                  dispatch(modalActions.dismiss());
+                  window.oliDispatch(modalActions.dismiss());
                   props.onEdit(audio);
                 }}
                 onCancel={() => window.oliDispatch(modalActions.dismiss())}
@@ -75,6 +75,8 @@ type AudioSettingsProps = {
   onCancel: () => void;
 };
 
+const store = configureStore();
+
 const AudioSettingsModal = (props: AudioSettingsProps) => {
   // Which selection is active, URL or in course page
   const [model, setModel] = useState(props.model);
@@ -95,60 +97,62 @@ const AudioSettingsModal = (props: AudioSettingsProps) => {
   const fileName = model.src ? model.src.substr(model.src.lastIndexOf('/') + 1) : '';
 
   return (
-    <Modal
-      title="Audio Settings"
-      size={ModalSize.X_LARGE}
-      okLabel="Save"
-      cancelLabel="Cancel"
-      onCancel={props.onCancel}
-      onOk={onOk}
-    >
-      <div>
-        {audioPlayer}
-        <form className="form">
-          <label>File</label>
-          <div className="input-group mb-3 mr-sm-2">
-            <input type="text" readOnly value={fileName} className="form-control" />
-            <div className="input-group-append">
-              <button onClick={openAudioPicker} className="btn btn-outline-primary" type="button">
-                Select
-              </button>
-              {model.src && (
-                <Tooltip title="Preview audio file">
-                  <button
-                    type="button"
-                    onClick={playAudio}
-                    className="btn btn-outline-primary btn-pronunciation-audio tool-button"
-                  >
-                    <span>
-                      {isPlaying ? (
-                        <i className="fa-solid fa-circle-stop"></i>
-                      ) : (
-                        <i className="fa-solid fa-circle-play"></i>
-                      )}
-                    </span>
-                  </button>
-                </Tooltip>
-              )}
+    <Provider store={store}>
+      <Modal
+        title="Audio Settings"
+        size={ModalSize.X_LARGE}
+        okLabel="Save"
+        cancelLabel="Cancel"
+        onCancel={props.onCancel}
+        onOk={onOk}
+      >
+        <div>
+          {audioPlayer}
+          <form className="form">
+            <label>File</label>
+            <div className="input-group mb-3 mr-sm-2">
+              <input type="text" readOnly value={fileName} className="form-control" />
+              <div className="input-group-append">
+                <button onClick={openAudioPicker} className="btn btn-outline-primary" type="button">
+                  Select
+                </button>
+                {model.src && (
+                  <Tooltip title="Preview audio file">
+                    <button
+                      type="button"
+                      onClick={playAudio}
+                      className="btn btn-outline-primary btn-pronunciation-audio tool-button"
+                    >
+                      <span>
+                        {isPlaying ? (
+                          <i className="fa-solid fa-circle-stop"></i>
+                        ) : (
+                          <i className="fa-solid fa-circle-play"></i>
+                        )}
+                      </span>
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
             </div>
-          </div>
 
-          <label>Alt Text</label>
-          <input
-            type="text"
-            value={model.alt || ''}
-            onChange={(e) => setAlt(e.target.value)}
-            className="form-control mr-sm-2"
-          />
-        </form>
-      </div>
-      <MediaPickerPanel
-        projectSlug={props.commandContext.projectSlug}
-        onMediaChange={onAudioSelected}
-        open={audioPickerOpen}
-        mimeFilter={MIMETYPE_FILTERS.AUDIO}
-        onCancel={() => closeAudioPicker()}
-      />
-    </Modal>
+            <label>Alt Text</label>
+            <input
+              type="text"
+              value={model.alt || ''}
+              onChange={(e) => setAlt(e.target.value)}
+              className="form-control mr-sm-2"
+            />
+          </form>
+        </div>
+        <MediaPickerPanel
+          projectSlug={props.commandContext.projectSlug}
+          onMediaChange={onAudioSelected}
+          open={audioPickerOpen}
+          mimeFilter={MIMETYPE_FILTERS.AUDIO}
+          onCancel={() => closeAudioPicker()}
+        />
+      </Modal>
+    </Provider>
   );
 };

@@ -5,13 +5,34 @@ export const HubSpokeIcon: React.FC<{
   stroke?: string;
 }> = ({ fill = '#87CD9B', stroke = '#222439' }) => {
   return (
-    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width={24} height={24} rx={3} fill={fill} />
-      <path
-        d="M8.5 6.75v7M15.625 10.5a1.875 1.875 0 100-3.75 1.875 1.875 0 000 3.75zM8.625 17.5a1.875 1.875 0 100-3.75 1.875 1.875 0 000 3.75zM15.494 10.5a5.25 5.25 0 01-4.994 4.995"
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="24" rx="3" fill={fill} />
+
+      <circle cx="5.5" cy="12" r="2" stroke={stroke} strokeWidth="1" fill="none" />
+
+      <circle cx="16" cy="5.5" r="2.2" stroke={stroke} strokeWidth="1" fill="none" />
+      <line
+        x1="7"
+        y1="11"
+        x2="14.1"
+        y2="6.7"
         stroke={stroke}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        strokeWidth="1"
+        strokeLinecap="butt"
+      />
+
+      <circle cx="18" cy="12" r="2.2" stroke={stroke} strokeWidth="1" fill="none" />
+      <line x1="7.5" y1="12" x2="16" y2="12" stroke={stroke} strokeWidth="1" strokeLinecap="butt" />
+
+      <circle cx="16" cy="18.5" r="2.2" stroke={stroke} strokeWidth="1" fill="none" />
+      <line
+        x1="7"
+        y1="13"
+        x2="14.1"
+        y2="17.3"
+        stroke={stroke}
+        strokeWidth="1"
+        strokeLinecap="butt"
       />
     </svg>
   );

@@ -32,6 +32,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
       )
       |> assign(users: Helpers.get_students(socket.assigns.section, params))
       |> assign(dropdown_options: get_dropdown_options(socket.assigns.section))
+      |> Helpers.maybe_assign_certificate_data()
 
     socket =
       if params.container_id do
@@ -104,7 +105,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:assessments, fn %{students: students} ->
-        Helpers.get_assessments(socket.assigns.section, students)
+        result = Helpers.get_assessments(socket.assigns.section, students)
+
+        pid = self()
+
+        Task.async(fn ->
+          result_with_metrics = Helpers.load_metrics(result, socket.assigns.section, students)
+          send(pid, {:assessments, result_with_metrics})
+        end)
+
+        result
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->
@@ -139,7 +149,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:practice_activities, fn %{students: students} ->
-        Helpers.get_practice_pages(socket.assigns.section, students)
+        result = Helpers.get_practice_pages(socket.assigns.section, students)
+
+        pid = self()
+
+        Task.async(fn ->
+          result_with_metrics = Helpers.load_metrics(result, socket.assigns.section, students)
+          send(pid, {:practice_activities, result_with_metrics})
+        end)
+
+        result
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->
@@ -174,7 +193,16 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         |> Enum.reject(fn s -> s.user_role_id != 4 end)
       end)
       |> assign_new(:surveys, fn %{students: students} ->
-        Helpers.get_assessments_with_surveys(socket.assigns.section, students)
+        result = Helpers.get_assessments_with_surveys(socket.assigns.section, students)
+
+        pid = self()
+
+        Task.async(fn ->
+          result_with_metrics = Helpers.load_metrics(result, socket.assigns.section, students)
+          send(pid, {:surveys, result_with_metrics})
+        end)
+
+        result
       end)
       |> assign_new(:activities, fn -> Oli.Activities.list_activity_registrations() end)
       |> assign_new(:scripts, fn %{activities: activities} ->
@@ -440,6 +468,8 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
         section={@section}
         view={@view}
         students={@users}
+        certificate={@certificate}
+        certificate_pending_email_notification_count={@certificate_pending_email_notification_count}
         dropdown_options={@dropdown_options}
       />
     </div>
@@ -694,6 +724,21 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:practice_activities, results}, socket) do
+    {:noreply, assign(socket, practice_activities: results)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:surveys, results}, socket) do
+    {:noreply, assign(socket, surveys: results)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:assessments, results}, socket) do
+    {:noreply, assign(socket, assessments: results)}
+  end
+
+  @impl Phoenix.LiveView
   def handle_info({:proficiency, proficiency_per_container}, socket) do
     case Map.get(socket.assigns, :containers) do
       nil ->
@@ -768,6 +813,11 @@ defmodule OliWeb.Delivery.InstructorDashboard.InstructorDashboardLive do
        to:
          ~p"/sections/#{socket.assigns.section.slug}/instructor_dashboard/overview/students?#{params}"
      )}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_info({:flash_message, {type, message}}, socket) when type in [:error, :info] do
+    {:noreply, put_flash(socket, type, message)}
   end
 
   @impl Phoenix.LiveView

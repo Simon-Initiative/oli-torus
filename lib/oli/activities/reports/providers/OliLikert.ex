@@ -168,7 +168,7 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
   defp color_pick(c, group) do
     colors = Map.get(c, :colors)
     color_list = Map.get(c, :color_list)
-    index = :rand.uniform(length(color_list))
+    index = :rand.uniform(length(color_list) - 1)
     col = Enum.at(color_list, index)
     color_list = List.delete_at(color_list, index)
     c = Map.put(c, :color_list, color_list)
@@ -177,54 +177,68 @@ defmodule Oli.Activities.Reports.Providers.OliLikert do
   end
 
   defp spec_from_json(data) do
+    groups =
+      data
+      |> Enum.reduce([], fn a, c ->
+        group = Map.get(a, :group)
+        if Enum.member?(c, group), do: c, else: c ++ [group]
+      end)
+      |> Enum.join(" ---------- ")
+
     encoded = Jason.encode!(data)
 
     VegaLite.from_json("""
     {
       "width": 500,
-      "height": #{30 * length(data)},
+      "height": 300,
       "description": "A chart with embedded data.",
       "data": {
-        "values": #{encoded}
-      },
-      "mark": {
-        "type": "circle",
-        "size": "90"
-      },
-      "encoding": {
-          "y": {
-              "field": "prompt",
-              "type": "ordinal",
-              "sort": {
-                  "field": "index",
-                  "order": "ascending"
-              },
-              "axis": {
-                  "labelAngle": 0,
-                  "grid": true
-              },
-              "title": "Prompts"
-          },
-          "x": {
-              "field": "response",
-              "type": "quantitative",
-              "title": "Likert Scale",
-              "axis": {"tickMinStep": 1}
-          },
-          "color": {
-              "field": "color",
-              "type": "nominal",
-              "scale": null
-          }
+          "values": #{encoded}
       },
       "layer": [
-        {
-          "mark": {"type": "text", "x": 255, "align": "left", "size": "14"},
-          "encoding": {
-            "text": {"field": "choice"}
+          {
+              "mark": "bar",
+              "encoding": {
+                  "x": {
+                      "field": "prompt",
+                      "type": "ordinal",
+                      "sort": {
+                          "field": "index",
+                          "order": "ascending"
+                      },
+                      "axis": {
+                          "labelAngle": 0,
+                          "titleFontSize": 18,
+                          "titleAlign": "center"
+                      },
+                      "title": "<-- #{groups} -->"
+                  },
+                  "y": {
+                      "field": "response",
+                      "type": "quantitative",
+                      "title": "Scale"
+                  },
+                  "color": {
+                      "field": "color",
+                      "type": "nominal",
+                      "scale": null
+                  }
+              }
+          },
+         {
+              "mark": "text",
+              "encoding": {
+                  "y": {
+                      "field": "choice",
+                      "type": "nominal",
+                      "sort": "descending",
+                      "title": "Choice",
+                      "axis": { "orient": "right" }
+                  }
+              }
           }
-        }
-      ]
+      ],
+      "resolve": {"scale": {"y": "independent"}}
     }
     """)
     |> VegaLite.to_spec()

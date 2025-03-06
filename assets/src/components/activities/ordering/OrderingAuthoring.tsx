@@ -25,6 +25,7 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { ActivityScoring } from '../common/responses/ActivityScoring';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
@@ -34,7 +35,8 @@ import { OrderingSchema } from './schema';
 const store = configureStore();
 
 export const Ordering: React.FC = () => {
-  const { dispatch, model, editMode, projectSlug } = useAuthoringElementContext<OrderingSchema>();
+  const { dispatch, model, editMode, projectSlug, authoringContext } =
+    useAuthoringElementContext<OrderingSchema>();
   const writerContext = defaultWriterContext({ projectSlug: projectSlug });
 
   const choices = model.choices.reduce((m: any, c) => {
@@ -86,6 +88,12 @@ export const Ordering: React.FC = () => {
           onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
         />
       </TabbedNavigation.Tab>
+
+      {authoringContext?.optionalContentTypes?.triggers && (
+        <TabbedNavigation.Tab label={TriggerLabel()}>
+          <TriggerAuthoring partId={model.authoring.parts[0].id} />
+        </TabbedNavigation.Tab>
+      )}
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
     </TabbedNavigation.Tabs>

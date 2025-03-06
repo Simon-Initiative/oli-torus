@@ -22,7 +22,8 @@ defmodule Oli.Delivery.Sections do
     Enrollment,
     EnrollmentBrowseOptions,
     EnrollmentContextRole,
-    Scheduling
+    Scheduling,
+    MinimalHierarchy
   }
 
   alias Lti_1p3.Tool.ContextRole
@@ -91,6 +92,20 @@ defmodule Oli.Delivery.Sections do
         payment_date: if(!is_nil(payment), do: payment.application_date, else: nil)
       })
     end)
+  end
+
+  @doc """
+  Returns the enrollments for a given section and a list of user emails.
+  """
+  def get_enrollments_by_emails(section_slug, emails) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      join: ecr in assoc(e, :context_roles),
+      join: u in assoc(e, :user),
+      where: s.slug == ^section_slug and u.email in ^emails,
+      preload: [:user]
+    )
+    |> Repo.all()
   end
 
   def browse_enrollments_query(
@@ -595,6 +610,21 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Updates the status of the enrollments for a given section and a list of user emails.
+  """
+  def bulk_update_enrollment_status(section_slug, emails, new_status) do
+    from(
+      e in Enrollment,
+      join: s in Section,
+      on: e.section_id == s.id,
+      join: u in User,
+      on: e.user_id == u.id,
+      where: s.slug == ^section_slug and u.email in ^emails
+    )
+    |> Repo.update_all(set: [status: new_status])
+  end
+
+  @doc """
   Returns a listing of all open and free sections for a given user,
   ordered by the most recently enrolled.
   """
@@ -914,6 +944,22 @@ defmodule Oli.Delivery.Sections do
       select: %{s | creator: subquery(first_enrollment), instructors: subquery(instructors)}
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Returns the id of the user who created the section.
+  This will in most cases match the instructor id.
+  """
+  @spec get_section_creator_id(number()) :: number()
+  def get_section_creator_id(section_id) do
+    from(u in User,
+      join: e in assoc(u, :enrollments),
+      where: e.section_id == ^section_id,
+      order_by: [asc: e.inserted_at],
+      limit: 1,
+      select: u.id
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -1739,21 +1785,25 @@ defmodule Oli.Delivery.Sections do
   end
 
   defp label_and_sort_resources_by_hierarchy(resource_map, section_slug) do
-    get_ordered_container_labels(section_slug)
-    |> Enum.reduce(
-      case resource_map[:default] do
-        nil -> []
-        default -> [{:default, default}]
-      end,
-      fn {resource_id, title}, acc ->
-        if resource_map[resource_id] do
-          [{title, resource_map[resource_id]} | acc]
-        else
-          acc
+    ordered_labels = get_ordered_container_labels(section_slug)
+
+    {grouped, orphaned} =
+      Enum.reduce(resource_map, {[], []}, fn
+        {id, pages}, {acc, orphaned} when id in [nil, :default] -> {acc, orphaned ++ pages}
+        {id, pages}, {acc, orphaned} -> {[{id, pages} | acc], orphaned}
+      end)
+
+    sorted_groups =
+      ordered_labels
+      |> Enum.reduce([], fn {id, title}, acc ->
+        case List.keyfind(grouped, id, 0) do
+          {_, pages} -> [{title, pages} | acc]
+          nil -> acc
         end
-      end
-    )
-    |> Enum.reverse()
+      end)
+      |> Enum.reverse()
+
+    if orphaned == [], do: sorted_groups, else: sorted_groups ++ [{"Other Pages", orphaned}]
   end
 
   def get_practice_pages_by_containers(section) do
@@ -1803,12 +1853,11 @@ defmodule Oli.Delivery.Sections do
   def fetch_ordered_container_labels(section_slug, opts \\ []) do
     short_label = opts[:short_label] || false
 
-    # TODO: OPTIMIZATION replace this with a minimal hierarchy query after v26.2 is merged
     %Section{customizations: customizations} = get_section_by_slug(section_slug)
-    full_hierarchy = DeliveryResolver.full_hierarchy(section_slug)
+    full_hierarchy = MinimalHierarchy.full_hierarchy(section_slug)
 
     full_hierarchy
-    |> Hierarchy.flatten()
+    |> Hierarchy.flatten_hierarchy()
     |> Enum.filter(fn node ->
       node.revision.resource_type_id == ResourceType.get_id_by_type("container")
     end)
@@ -4917,50 +4966,6 @@ defmodule Oli.Delivery.Sections do
           all
       end
     end)
-  end
-
-  @doc """
-  Maps each resource with its parent container label, being the label (if any) like
-  <Container Label> <Numbering Index>: <Container Title>
-
-  For example:
-
-  %{1: "Unit 1: Basics", 15: nil, 45: "Module 3: Enumerables"}
-  """
-  def map_resources_with_container_labels(section_slug, resource_ids) do
-    resource_type_id = Oli.Resources.ResourceType.id_for_container()
-
-    containers =
-      from([sr, s, spp, _pr, rev] in DeliveryResolver.section_resource_revisions(section_slug),
-        where: s.slug == ^section_slug and rev.resource_type_id == ^resource_type_id,
-        select: %{
-          id: rev.resource_id,
-          title: rev.title,
-          numbering_level: sr.numbering_level,
-          numbering_index: sr.numbering_index,
-          children: rev.children,
-          customizations: s.customizations
-        }
-      )
-      |> Repo.all()
-
-    Enum.map(resource_ids, fn page_id ->
-      {page_id,
-       case Enum.find(containers, fn container ->
-              page_id in container.children
-            end) do
-         nil ->
-           {nil, nil}
-
-         %{numbering_level: 0} ->
-           {nil, nil}
-
-         c ->
-           {c.id,
-            ~s{#{get_container_label_and_numbering(c.numbering_level, c.numbering_index, c.customizations)}: #{c.title}}}
-       end}
-    end)
-    |> Enum.into(%{})
   end
 
   @doc """

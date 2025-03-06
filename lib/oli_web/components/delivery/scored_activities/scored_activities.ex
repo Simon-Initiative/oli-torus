@@ -5,18 +5,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   alias Oli.Analytics.Summary.ResourceSummary
   alias Oli.Analytics.Summary.ResponseSummary
-  alias Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.ActivityAttempt
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Delivery.Sections.Section
-  alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Publishing.PublishedResource
   alias Oli.Repo
   alias Oli.Resources.ResourceType
-  alias Oli.Resources.Revision
-
   alias OliWeb.Common.InstructorDashboardPagedTable
   alias OliWeb.Common.PagingParams
   alias OliWeb.Common.Params
@@ -25,7 +17,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
   alias OliWeb.Delivery.ActivityHelpers
   alias OliWeb.Delivery.ScoredActivities.ActivitiesTableModel
   alias OliWeb.Delivery.ScoredActivities.AssessmentsTableModel
-  alias OliWeb.ManualGrading.Rendering
+
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Icons
 
@@ -116,6 +108,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
             {:ok,
              assign(socket,
                current_assessment: current_assessment,
+               page_revision:
+                 DeliveryResolver.from_resource_id(
+                   assigns.section.slug,
+                   current_assessment.resource_id
+                 ),
                activities: activities,
                table_model: table_model,
                total_count: total_count,
@@ -148,7 +145,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           </div>
         </div>
       </button>
-      <.loader if={!@table_model} />
+      <.loader :if={!@table_model} />
       <div :if={@table_model} class="bg-white shadow-sm dark:bg-gray-800 dark:text-white">
         <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:justify-between px-9">
           <%= if @current_assessment != nil do %>
@@ -249,7 +246,10 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
           phx-hook="LoadSurveyScripts"
         >
           <%= if Map.get(@selected_activity, :preview_rendered) != nil do %>
-            <ActivityHelpers.rendered_activity activity={@selected_activity} />
+            <ActivityHelpers.rendered_activity
+              activity={@selected_activity}
+              activity_types_map={@activity_types_map}
+            />
           <% else %>
             <p class="pt-9 pb-5">No attempt registered for this question</p>
           <% end %>
@@ -377,50 +377,33 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
     %{
       section: section,
-      activity_types_map: activity_types_map,
-      current_assessment: %{resource_id: page_id}
+      page_revision: page_revision,
+      students: students,
+      activity_types_map: activity_types_map
     } = socket.assigns
 
-    case ActivityHelpers.get_activities_details(
-           [selected_activity.resource_id],
-           section,
-           activity_types_map,
-           page_id
-         ) do
-      details when details not in [nil, []] ->
-        activity_attempt = hd(details)
-        part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+    selected_activity =
+      case ActivityHelpers.summarize_activity_performance(
+             section,
+             page_revision,
+             activity_types_map,
+             students,
+             [selected_activity.resource_id]
+           ) do
+        [current_activity | _rest] -> current_activity
+        _ -> nil
+      end
 
-        rendering_context =
-          Rendering.create_rendering_context(
-            activity_attempt,
-            part_attempts,
-            activity_types_map,
-            section
-          )
-          |> Map.merge(%{is_liveview: true})
-
-        selected_activity =
-          Map.merge(selected_activity, %{
-            preview_rendered: Rendering.render(rendering_context, :instructor_preview),
-            datasets: Map.get(activity_attempt, :datasets),
-            analytics_version: section.analytics_version
-          })
-
+    socket
+    |> assign(table_model: table_model, selected_activity: selected_activity)
+    |> case do
+      %{assigns: %{scripts_loaded: true}} = socket ->
         socket
-        |> assign(table_model: table_model, selected_activity: selected_activity)
-        |> case do
-          %{assigns: %{scripts_loaded: true}} = socket ->
-            socket
 
-          socket ->
-            push_event(socket, "load_survey_scripts", %{
-              script_sources: socket.assigns.scripts
-            })
-        end
-
-      _details ->
-        assign(socket, table_model: table_model, selected_activity: selected_activity)
+      socket ->
+        push_event(socket, "load_survey_scripts", %{
+          script_sources: socket.assigns.scripts
+        })
     end
   end
 
@@ -520,7 +503,7 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
 
   defp count_attempts(
          current_assessment,
-         %Section{analytics_version: :v2, id: section_id},
+         %Section{id: section_id},
          student_ids
        ) do
     page_type_id = ResourceType.get_id_by_type("page")
@@ -528,28 +511,16 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     from(rs in ResourceSummary,
       where:
         rs.section_id == ^section_id and rs.resource_id == ^current_assessment.resource_id and
-          rs.user_id in ^student_ids and rs.project_id == -1 and rs.publication_id == -1 and
+          rs.user_id in ^student_ids and rs.project_id == -1 and
           rs.resource_type_id == ^page_type_id,
       select: sum(rs.num_attempts)
     )
     |> Repo.one()
   end
 
-  defp count_attempts(current_assessment, section, student_ids) do
-    from(ra in ResourceAttempt,
-      join: access in ResourceAccess,
-      on: access.id == ra.resource_access_id,
-      where:
-        ra.lifecycle_state == :evaluated and access.section_id == ^section.id and
-          access.resource_id == ^current_assessment.resource_id and access.user_id in ^student_ids,
-      select: count(ra.id)
-    )
-    |> Repo.one()
-  end
-
   defp get_activities(
          current_assessment,
-         %Section{analytics_version: :v2} = section,
+         section,
          _student_ids
        ) do
     # Fetch all unique acitivty ids from the v2 tracked responses for this section
@@ -560,7 +531,6 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
       from(rs in ResourceSummary,
         where: rs.section_id == ^section.id,
         where: rs.project_id == -1,
-        where: rs.publication_id == -1,
         where: rs.user_id == -1,
         where: rs.resource_id in ^activity_ids_from_responses,
         select: {
@@ -588,45 +558,11 @@ defmodule OliWeb.Components.Delivery.ScoredActivities do
     add_objective_mapper(activities, section.slug)
   end
 
-  defp get_activities(current_assessment, section, student_ids) do
-    activities =
-      from(aa in ActivityAttempt,
-        join: res_attempt in ResourceAttempt,
-        on: aa.resource_attempt_id == res_attempt.id,
-        where: res_attempt.lifecycle_state == :evaluated and aa.lifecycle_state == :evaluated,
-        join: res_access in ResourceAccess,
-        on: res_attempt.resource_access_id == res_access.id,
-        where:
-          res_access.section_id == ^section.id and
-            res_access.resource_id == ^current_assessment.resource_id and
-            res_access.user_id in ^student_ids,
-        join: rev in Revision,
-        on: aa.revision_id == rev.id,
-        join: pr in PublishedResource,
-        on: rev.id == pr.revision_id,
-        join: spp in SectionsProjectsPublications,
-        on: pr.publication_id == spp.publication_id,
-        where: spp.section_id == ^section.id,
-        group_by: [rev.resource_id, rev.id],
-        select:
-          {rev, count(aa.id),
-           sum(aa.score) /
-             fragment("CASE WHEN SUM(?) = 0.0 THEN 1.0 ELSE SUM(?) END", aa.out_of, aa.out_of)}
-      )
-      |> Repo.all()
-      |> Enum.map(fn {rev, total_attempts, avg_score} ->
-        Map.merge(rev, %{total_attempts: total_attempts, avg_score: avg_score})
-      end)
-
-    add_objective_mapper(activities, section.slug)
-  end
-
   defp get_unique_activities_from_responses(page_id, section_id) do
     from(rs in ResponseSummary,
       where: rs.section_id == ^section_id,
       where: rs.page_id == ^page_id,
       where: rs.project_id == -1,
-      where: rs.publication_id == -1,
       distinct: true,
       select: rs.activity_id
     )

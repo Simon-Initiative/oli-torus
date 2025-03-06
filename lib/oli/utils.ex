@@ -4,6 +4,8 @@ defmodule Oli.Utils do
   import Ecto.Changeset
   import Ecto.Query, warn: false
 
+  import Phoenix.Naming, only: [humanize: 1]
+
   @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
 
   @doc """
@@ -102,7 +104,8 @@ defmodule Oli.Utils do
   end
 
   def confirm_email_if_verified(changeset) do
-    if get_change(changeset, :email_verified) do
+    # if the email_verified field is true and the email_confirmed_at field is nil, then set the email_confirmed_at field to now
+    if get_change(changeset, :email_verified) && get_field(changeset, :email_confirmed_at) == nil do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       change(changeset, email_confirmed_at: now)
     else
@@ -503,7 +506,7 @@ defmodule Oli.Utils do
     if compare(from_value, to_value, allow_equal) do
       changeset
     else
-      message = "#{to} must be greater than #{from}"
+      message = "#{humanize(to)} must be greater than #{humanize(from)}"
       add_error(changeset, from, message, to_field: to)
     end
   end

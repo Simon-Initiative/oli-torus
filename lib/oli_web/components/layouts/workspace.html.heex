@@ -20,7 +20,7 @@
         />
       </div>
     </div>
-    <div class={"absolute top-0 #{if @disable_sidebar?, do: "w-full"}"}>
+    <div class={"top-0 #{if @disable_sidebar?, do: "w-full", else: "absolute"}"}>
       <Components.Delivery.Layouts.workspace_sidebar_nav
         :if={!@disable_sidebar?}
         ctx={@ctx}
@@ -55,7 +55,7 @@
       if(@disable_sidebar?, do: "md:!w-full md:!ml-0")
     ]}
   >
-    <div class="absolute z-50 top-0 overview" style="width: inherit">
+    <div class="mb-[28px] overview">
       <%= if Phoenix.Flash.get(@flash, :info) do %>
         <div class="alert alert-info flex flex-row" role="alert">
           <div class="flex-1">
@@ -121,5 +121,4 @@
       Map.get(assigns, :has_license) && assigns[:license]
     } />
   </div>
-  <%= react_component("Components.ModalDisplay") %>
 </main>

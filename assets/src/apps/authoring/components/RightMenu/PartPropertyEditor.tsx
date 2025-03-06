@@ -144,19 +144,26 @@ const simplifiedLabels: Record<string, string> = {
   'janus-dropdown': 'Dropdown',
   'janus-slider': 'Slider',
   'janus-multi-line-text': 'Multi line text input',
+  'janus-hub-spoke': 'Hub and Spoke',
+};
+
+const simplifiedDescriptionLabels: Record<string, string> = {
+  'janus-hub-spoke':
+    'Hub and Spoke is a path layout of a main hub and one-screen paths (spokes) from the hub',
 };
 
 const getSimplifiedComponentUISchema = (instance: any) => {
   // ui schema
   const tagName = instance ? String(instance.tagName).toLowerCase() : '';
   const title = simplifiedLabels[tagName] || 'Component Options';
-
+  const componentDescription = simplifiedDescriptionLabels[tagName] || '';
   if (instance && instance.getUiSchema) {
     const customPartUiSchema = instance.getUiSchema('simple');
     const newUiSchema = {
       ...simplifiedPartUiSchema,
       custom: {
         'ui:title': title,
+        'ui:description': componentDescription,
         ...customPartUiSchema,
       },
     };
@@ -354,6 +361,7 @@ export const PartPropertyEditor: React.FC<Props> = ({
               onChange={handleEditComponentJson}
               jsonValue={selectedPartDef}
               existingPartIds={existingIds}
+              onfocusHandler={componentPropertyFocusHandler}
             />
 
             <Button variant="danger" onClick={showConfirmDelete}>

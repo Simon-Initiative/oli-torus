@@ -42,7 +42,7 @@ defmodule OliWeb.Components.Delivery.Student do
     <div class="self-stretch justify-start items-start gap-6 inline-flex relative mb-1">
       <button
         id={"#{@id}-dropdown-button"}
-        class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase no-wrap tracking-wider"
+        class="opacity-80 dark:text-white text-sm font-bold font-['Open Sans'] uppercase whitespace-nowrap tracking-wider"
         phx-click={show_attempts_dropdown("##{@id}-dropdown", @page_revision_slug)}
         phx-value-hide-target={"##{@id}-dropdown"}
       >

@@ -204,21 +204,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       refute Course.get_project!(project.id).allow_transfer_payment_codes
     end
 
-    test "does not display datashop analytics link when author is not admin", %{
-      conn: conn,
-      author: author
-    } do
-      project = create_project_with_author(author)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      refute has_element?(
-               view,
-               "a[href=#{~p"/project/#{project.slug}/datashop"}]",
-               "Datashop Analytics"
-             )
-    end
-
     defp create_project_with_author(author) do
       %{project: project} = base_project_with_curriculum(nil)
       insert(:author_project, project_id: project.id, author_id: author.id)
@@ -248,27 +233,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "label", "Calculate embeddings on publish")
     end
 
-    test "displays datashop analytics link when the project is published", %{
-      conn: conn,
-      admin: admin
-    } do
-      project = create_project_with_author(admin)
-
-      Oli.Publishing.publish_project(
-        project,
-        "Datashop test",
-        admin.id
-      )
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      assert has_element?(
-               view,
-               "a[href=\"/workspaces/course_author/#{project.slug}/datashop\"]",
-               "Datashop Analytics"
-             )
-    end
-
     test "can update calculate_embeddings_on_publish attribute (false by default)", %{
       conn: conn,
       admin: admin
@@ -295,21 +259,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       })
 
       assert Course.get_project!(project.id).attributes.calculate_embeddings_on_publish
-    end
-
-    test "disables datashop analytics link when the project is not published", %{
-      conn: conn,
-      admin: admin
-    } do
-      project = create_project_with_author(admin)
-
-      {:ok, view, _html} = live(conn, live_view_route(project.slug))
-
-      assert has_element?(
-               view,
-               "button[disabled=\"disabled\"]",
-               "Datashop Analytics"
-             )
     end
   end
 end

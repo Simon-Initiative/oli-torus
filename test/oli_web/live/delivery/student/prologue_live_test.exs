@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
   import Ecto.Query, warn: false
 
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess}
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
   alias OliWeb.Delivery.Student.Utils
@@ -28,6 +28,28 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
         lifecycle_state: resource_attempt_data[:lifecycle_state] || :submitted,
         content: resource_attempt_data[:content] || %{model: []}
       })
+
+    activity_attempt =
+      insert(:activity_attempt,
+        resource_attempt: resource_attempt,
+        resource: revision.resource,
+        revision: revision,
+        lifecycle_state: :submitted,
+        score: 5,
+        out_of: 10
+      )
+
+    insert(:part_attempt, %{
+      activity_attempt_id: activity_attempt.id,
+      activity_attempt: activity_attempt,
+      attempt_guid: UUID.uuid4(),
+      part_id: "1",
+      grading_approach: :manual,
+      datashop_session_id: "1234abcd",
+      score: 5,
+      out_of: 10,
+      lifecycle_state: :submitted
+    })
 
     resource_attempt
   end
@@ -430,7 +452,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
       {:error, {:redirect, %{to: redirect_path, flash: _flash_msg}}} =
         live(conn, Utils.prologue_live_path(section.slug, page_1.slug))
 
-      assert redirect_path == "/unauthorized"
+      assert redirect_path == "/sections/#{section.slug}/enroll"
     end
 
     test "can access when enrolled to course", %{
@@ -1131,7 +1153,7 @@ defmodule OliWeb.Delivery.Student.PrologueLiveTest do
 
       enroll_and_mark_visited(user, section)
 
-      params = %{late_submit: :allow}
+      params = %{late_submit: :allow, time_limit: 10}
 
       get_and_update_section_resource(section.id, page_2.resource_id, params)
 

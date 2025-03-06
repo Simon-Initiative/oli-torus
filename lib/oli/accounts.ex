@@ -26,6 +26,7 @@ defmodule Oli.Accounts do
   alias Oli.Institutions.Institution
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.{Section, Enrollment}
   alias Lti_1p3.DataProviders.EctoProvider
@@ -409,11 +410,10 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Preloads the user's LTI params.
+  Preloads the user's linked author.
   """
-  def load_lti_params(user) do
-    user
-    |> Repo.preload(:lti_params)
+  def preload_author(%User{} = user) do
+    Repo.preload(user, :author)
   end
 
   @doc """
@@ -485,16 +485,6 @@ defmodule Oli.Accounts do
       iex> update_user(user, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def link_user_author_account(nil, _author),
-    do:
-      throw(
-        "No current_user to link to author. This function should only be called in an LTI context"
-      )
-
-  def link_user_author_account(_user, nil),
-    do:
-      throw("No author to link. This function should only be called after an author is logged in")
-
   def link_user_author_account(user, author) do
     update_user(user, %{author_id: author.id})
   end
@@ -502,6 +492,22 @@ defmodule Oli.Accounts do
   def unlink_user_author_account(user) do
     update_user(user, %{author_id: nil})
   end
+
+  @doc """
+  Returns true if a user is entitled to link and manage a linked author account.
+  """
+  def can_manage_linked_account?(user) do
+    Sections.is_independent_instructor?(user) || Sections.is_institution_instructor?(user) ||
+      Sections.is_institution_admin?(user)
+  end
+
+  @doc """
+  Returns a user's linked author account.
+
+  If no author account is linked, returns nil.
+  """
+  def linked_author_account(%User{author: author = %Author{}}), do: author
+  def linked_author_account(_), do: nil
 
   @doc """
   Returns true if a user belongs to an LMS.
@@ -1457,6 +1463,22 @@ defmodule Oli.Accounts do
     else
       _ -> nil
     end
+  end
+
+  @doc """
+  Deletes all the enrollment invitation tokens for a list of emails in a given section.
+  """
+
+  def delete_enrollment_invitation_tokens(section_slug, emails) do
+    from(
+      ut in UserToken,
+      join: u in User,
+      on: ut.user_id == u.id,
+      where:
+        ut.context == ^"enrollment_invitation:#{section_slug}" and
+          u.email in ^emails
+    )
+    |> Repo.delete_all()
   end
 
   @doc """

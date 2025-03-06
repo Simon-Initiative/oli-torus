@@ -56,7 +56,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.ActivityBankLiveTest do
       refute has_element?(view, "#eventIntercept [role='status']")
 
       assert has_element?(view, ~s(div[data-live-react-class='Components.ActivityBank']))
-      assert has_element?(view, ~s(div[data-live-react-class='Components.ModalDisplay']))
     end
 
     test "renders error message when failed to load scripts", %{conn: conn, project: project} do

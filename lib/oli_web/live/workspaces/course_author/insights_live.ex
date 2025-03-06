@@ -5,16 +5,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
   import OliWeb.Common.Params
   import OliWeb.DelegatedEvents
 
-  alias Oli.{Accounts, Activities, Publishing}
+  alias Oli.{Activities, Publishing}
   alias Oli.Analytics.Summary.{BrowseInsights, BrowseInsightsOptions}
-  alias Oli.Authoring.{Broadcaster, Course}
-  alias Oli.Authoring.Broadcaster.Subscriber
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Resources.ResourceType
-  alias OliWeb.Components.Project.AsyncExporter
   alias OliWeb.Common.MultiSelect.Option
   alias OliWeb.Common.MultiSelectInput
   alias OliWeb.Common.{PagedTable, TextSearch}
@@ -70,16 +67,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
     {:ok, table_model} =
       ActivityTableModel.new(insights, activity_types_map, parent_pages, project.slug, ctx)
 
-    {analytics_export_status, analytics_export_url, analytics_export_timestamp} =
-      case Course.analytics_export_status(project) do
-        {:available, url, timestamp} -> {:available, url, timestamp}
-        {:expired, _, _} -> {:expired, nil, nil}
-        {status} -> {status, nil, nil}
-      end
-
-    # Subscribe to any raw analytics snapshot progress updates for this project
-    Subscriber.subscribe_to_analytics_export_status(project.slug)
-
     {:ok,
      assign(socket,
        resource_slug: project.slug,
@@ -91,9 +78,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
        parent_pages: parent_pages,
        selected: :by_activity,
        latest_publication: latest_publication,
-       analytics_export_status: analytics_export_status,
-       analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp,
        products: products,
        sections: sections,
        is_product: false,
@@ -147,17 +131,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
         Insights can help you improve your course by providing a statistical analysis of
         the skills covered by each question to find areas where students are struggling.
       </p>
-      <%= if Accounts.has_admin_role?(@ctx.author, :content_admin) do %>
-        <div class="d-flex align-items-center my-3">
-          <AsyncExporter.raw_analytics
-            ctx={@ctx}
-            latest_publication={@latest_publication}
-            analytics_export_status={@analytics_export_status}
-            analytics_export_url={@analytics_export_url}
-            analytics_export_timestamp={@analytics_export_timestamp}
-          />
-        </div>
-      <% end %>
     </div>
     <ul class="nav nav-pills mb-4">
       <li class="nav-item my-2 mr-2">
@@ -291,24 +264,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
     )
   end
 
-  def handle_event("generate_analytics_snapshot", _params, socket) do
-    project = socket.assigns.project
-
-    case Course.generate_analytics_snapshot(project) do
-      {:ok, _job} ->
-        Broadcaster.broadcast_analytics_export_status(project.slug, {:in_progress})
-
-        {:noreply, socket}
-
-      {:error, _changeset} ->
-        socket =
-          socket
-          |> put_flash(:error, "Raw analytics snapshot could not be generated.")
-
-        {:noreply, socket}
-    end
-  end
-
   def handle_event(event, params, socket) do
     delegate_to(
       {event, params, socket, &patch_with/2},
@@ -347,33 +302,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.InsightsLive do
       |> Enum.to_list()
 
     change_section_ids(socket, section_ids)
-  end
-
-  def handle_info(
-        {:analytics_export_status,
-         {:available, analytics_export_url, analytics_export_timestamp}},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       analytics_export_status: :available,
-       analytics_export_url: analytics_export_url,
-       analytics_export_timestamp: analytics_export_timestamp
-     )}
-  end
-
-  def handle_info(
-        {:analytics_export_status, {:error, _e}},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       analytics_export_status: :error
-     )}
-  end
-
-  def handle_info({:analytics_export_status, {status}}, socket) do
-    {:noreply, assign(socket, analytics_export_status: status)}
   end
 
   # Runs a query to find all sections for this project which have a

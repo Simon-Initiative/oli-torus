@@ -20,6 +20,7 @@ import { InputRef } from 'data/content/model/elements/types';
 import { configureStore } from 'state/store';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { ExplanationTab } from './sections/ExplanationTab';
@@ -27,7 +28,8 @@ import { ExplanationTab } from './sections/ExplanationTab';
 const store = configureStore();
 
 export const MultiInputComponent = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<MultiInputSchema>();
+  const { dispatch, model, editMode, authoringContext } =
+    useAuthoringElementContext<MultiInputSchema>();
   const [editor, setEditor] = React.useState<(ReactEditor & Editor) | undefined>();
   const [selectedInputRef, setSelectedInputRef] = React.useState<InputRef | undefined>(undefined);
 
@@ -81,6 +83,13 @@ export const MultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
+
+          {authoringContext?.optionalContentTypes?.triggers && (
+            <TabbedNavigation.Tab label={TriggerLabel()}>
+              <TriggerAuthoring partId={input.partId} />
+            </TabbedNavigation.Tab>
+          )}
+
           <ActivitySettings settings={settings} />
         </TabbedNavigation.Tabs>
       ) : (

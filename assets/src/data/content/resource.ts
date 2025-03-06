@@ -160,6 +160,7 @@ export const groupOrDescendantHasPurpose = (c: ResourceContent): boolean => {
 
 export type OptionalContentTypes = {
   ecl: boolean;
+  triggers: boolean;
 };
 
 // The full context necessary to operate a resource editing session

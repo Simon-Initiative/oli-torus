@@ -324,6 +324,13 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
         session: %{"project_slug" => @project.slug}
       ) %>
 
+      <Overview.section
+        title="AI Triggers"
+        description="Enable AI triggers for your project to include in your curriculum."
+      >
+        <%= render_ai_triggers(assigns) %>
+      </Overview.section>
+
       <%= live_render(@socket, OliWeb.CollaborationLive.CollabSpaceConfigView,
         id: "project_collab_space_config",
         session: %{
@@ -394,30 +401,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           />
         </div>
 
-        <div :if={@is_admin} class="flex items-center">
-          <%= case @latest_publication do %>
-            <% nil -> %>
-              <.button
-                variant={:link}
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
-                disabled
-              >
-                Datashop Analytics
-              </.button>
-              <span>
-                Project must be published to create a <.datashop_link /> snapshot for download
-              </span>
-            <% _pub -> %>
-              <.link
-                class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2"
-                navigate={~p"/workspaces/course_author/#{@project.slug}/datashop"}
-              >
-                Datashop Analytics
-              </.link>
-              <span>Create a <.datashop_link /> snapshot for download</span>
-          <% end %>
-        </div>
-
         <div class="flex items-center mt-8">
           <button
             type="button"
@@ -483,6 +466,53 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
     <script>
       OLI.onReady(() => OLI.enableSubmitWhenTitleMatches('#delete-confirm-title', '#delete-modal-submit', '<%= Base.encode64(@project.title) %>'));
     </script>
+    """
+  end
+
+  defp render_ai_triggers(%{project: %{allow_triggers: false}} = assigns) do
+    ~H"""
+    <div class="flex items-center">
+      <div>
+        <p class="mt-3">
+          When AI Trigger Points are enabled as an authoring feature, authors can insert a trigger point at the page level, group level, paragraph level, or question level.
+        </p>
+
+        <p class="mt-3">
+          AI Trigger Points are currently <strong>disabled</strong> for this project.
+        </p>
+
+        <%= button("Enable AI Triggers",
+          to: Routes.project_path(@socket, :enable_triggers, @project),
+          method: :post,
+          class:
+            "text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline pr-3 py-2",
+          data_confirm:
+            "The AI Trigger Points authoring feature cannot be disabled once it is enabled. Do you want to proceed with enabling AI Trigger Points??"
+        ) %>
+
+        <p class="mt-3">
+          Note: AI Trigger Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  defp render_ai_triggers(%{project: %{allow_triggers: true}} = assigns) do
+    ~H"""
+    <div class="flex items-center">
+      <div>
+        <p class="mt-3">
+          When AI Trigger Points are enabled as an authoring feature, authors can insert a trigger point at the page level, group level, paragraph level, or question level.
+        </p>
+
+        <p class="mt-3">AI Trigger Points are currently <strong>enabled</strong> for this project.</p>
+
+        <p class="mt-3">
+          Note: AI Trigger Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.
+        </p>
+      </div>
+    </div>
     """
   end
 
@@ -726,16 +756,4 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
 
   defp decode_welcome_title(project_params),
     do: Map.update(project_params, "welcome_title", nil, &Poison.decode!(&1))
-
-  defp datashop_link(assigns) do
-    ~H"""
-    <a
-      class="text-[#006CD9] hover:text-[#1B67B2] dark:text-[#4CA6FF] dark:hover:text-[#99CCFF] hover:underline py-2 external"
-      href="https://pslcdatashop.web.cmu.edu/"
-      target="_blank"
-    >
-      datashop
-    </a>
-    """
-  end
 end

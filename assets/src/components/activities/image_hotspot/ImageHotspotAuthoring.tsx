@@ -22,6 +22,7 @@ import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
+import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest, makeChoice } from '../types';
 import { CircleEditor } from './Sections/CircleEditor';
@@ -32,7 +33,8 @@ import { ImageHotspotActions } from './actions';
 import { Hotspot, ImageHotspotModelSchema, getShape, makeHotspot, shapeType } from './schema';
 
 const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => {
-  const { dispatch, model, projectSlug } = useAuthoringElementContext<ImageHotspotModelSchema>();
+  const { dispatch, model, projectSlug, authoringContext } =
+    useAuthoringElementContext<ImageHotspotModelSchema>();
 
   const selectedPartId = model.authoring.parts[0].id;
   const writerContext = defaultWriterContext({
@@ -289,6 +291,12 @@ const ImageHotspot = (props: AuthoringElementProps<ImageHotspotModelSchema>) => 
         <TabbedNavigation.Tab label="Explanation">
           <Explanation partId={selectedPartId} />
         </TabbedNavigation.Tab>
+
+        {authoringContext?.optionalContentTypes?.triggers && (
+          <TabbedNavigation.Tab label={TriggerLabel()}>
+            <TriggerAuthoring partId={model.authoring.parts[0].id} />
+          </TabbedNavigation.Tab>
+        )}
       </TabbedNavigation.Tabs>
     </React.Fragment>
   );

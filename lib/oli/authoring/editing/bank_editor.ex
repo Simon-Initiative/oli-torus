@@ -43,6 +43,7 @@ defmodule Oli.Authoring.Editing.BankEditor do
              %Paging{limit: 1, offset: 0}
            ) do
       editor_map = Activities.create_registered_activity_map(project_slug)
+      project = Oli.Authoring.Course.get_project_by_slug(project_slug)
 
       {:ok,
        %Oli.Authoring.Editing.BankContext{
@@ -51,7 +52,8 @@ defmodule Oli.Authoring.Editing.BankEditor do
          editorMap: editor_map,
          allObjectives: objectives_with_parent_reference,
          allTags: Enum.map(tags, fn t -> %{id: t.resource_id, title: t.title} end),
-         totalCount: totalCount
+         totalCount: totalCount,
+         allowTriggers: project.allow_triggers
        }}
     else
       _ -> {:error, :not_found}
