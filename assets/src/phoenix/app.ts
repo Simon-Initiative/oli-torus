@@ -82,11 +82,21 @@ function mount(Component: any, element: HTMLElement, context: any = {}) {
   ReactDOM.render(React.createElement(Component, context), element);
 }
 
+function openModal(id: string) {
+  document.getElementById(id)?.classList.remove('hidden');
+}
+
+function closeModal(id: string) {
+  document.getElementById(id)?.classList.add('hidden');
+}
+
 // Global functions and objects:
 window.OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
   showModal,
+  openModal,
+  closeModal,
   enableSubmitWhenTitleMatches,
   selectCookieConsent,
   selectCookiePreferences,
@@ -190,6 +200,8 @@ declare global {
       initActivityBridge: typeof initActivityBridge;
       initPreviewActivityBridge: typeof initPreviewActivityBridge;
       showModal: typeof showModal;
+      openModal: typeof openModal;
+      closeModal: typeof closeModal;
       enableSubmitWhenTitleMatches: typeof enableSubmitWhenTitleMatches;
       selectCookieConsent: typeof selectCookieConsent;
       selectCookiePreferences: typeof selectCookiePreferences;

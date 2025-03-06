@@ -94,7 +94,7 @@ defmodule Oli.Activities.State.ActivityState do
       hasMoreAttempts: has_more_attempts,
       parts: parts,
       groupId: attempt.group_id
-    }
+    } |> IO.inspect()
   end
 
   def create_preview_state(transformed_model, group_id \\ nil) do

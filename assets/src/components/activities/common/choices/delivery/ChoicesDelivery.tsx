@@ -25,6 +25,9 @@ export const ChoicesDelivery: React.FC<Props> = ({
 }) => {
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
 
+  console.log("ChoicesDelivery: ");
+  console.log(selected);
+
   const onClicked = useCallback(
     (choiceId: ChoiceId) => (event: React.MouseEvent) => {
       if (event.isDefaultPrevented()) {

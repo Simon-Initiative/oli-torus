@@ -27,7 +27,8 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import { castPartId } from '../common/utils';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
-import { BatchSubmitReset } from '../common/BatchSubmitReset';
+import { ScoreAsYouGoSubmitReset } from '../common/ScoreAsYouGoSubmitReset';
+import { ScoreAsYouGoHeader } from '../common/ScoreAsYouGoHeader';
 
 // Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
 // about to submit that state with a submission. This saves a network call that isn't necessary and avoids
@@ -50,7 +51,9 @@ export const MultipleChoiceComponent: React.FC = () => {
   const dispatch = useDispatch();
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
+  console.log("HERLKJERE");
 
+  console.log(uiState);
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
@@ -99,6 +102,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
+        <ScoreAsYouGoHeader />
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDelivery
@@ -118,7 +122,7 @@ export const MultipleChoiceComponent: React.FC = () => {
           isEvaluated={isEvaluated(uiState) && context.graded}
           context={writerContext}
         />
-        <BatchSubmitReset onSubmit={() => dispatch(submit(onSubmitActivity))} onReset={() => onResetActivity(uiState.attemptState.attemptGuid)} />
+        <ScoreAsYouGoSubmitReset onSubmit={() => dispatch(submit(onSubmitActivity))} onReset={() => onResetActivity(uiState.attemptState.attemptGuid)} />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
