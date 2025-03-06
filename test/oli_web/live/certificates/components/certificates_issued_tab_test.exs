@@ -35,7 +35,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       sorting = %Sorting{field: sort_by, direction: direction}
 
       granted_certificates =
-        Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
+        Certificates.browse_granted_certificates(paging, sorting, text_search, section)
 
       table_model =
         CertificatesIssuedTableModel.new(session_context, granted_certificates, section_slug)
@@ -44,6 +44,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
         id: id,
         params: params,
         section_slug: section_slug,
+        section_id: section_id,
         table_model: table_model,
         ctx: session_context,
         route_name: route_name,
@@ -119,7 +120,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
       sorting = %Sorting{field: sort_by, direction: direction}
 
       granted_certificates =
-        Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
+        Certificates.browse_granted_certificates(paging, sorting, text_search, section)
 
       table_model =
         CertificatesIssuedTableModel.new(session_context, granted_certificates, section_slug)
@@ -128,6 +129,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
         id: id,
         params: params,
         section_slug: section_slug,
+        section_id: section_id,
         table_model: table_model,
         ctx: session_context,
         route_name: route_name,
