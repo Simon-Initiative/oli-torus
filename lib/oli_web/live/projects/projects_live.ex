@@ -25,10 +25,10 @@ defmodule OliWeb.Projects.ProjectsLive do
   def mount(_, _session, socket) do
     author = socket.assigns.current_author
     ctx = socket.assigns.ctx
-    is_admin = Accounts.has_admin_role?(author, :content_admin)
+    is_content_admin = Accounts.has_admin_role?(author, :content_admin)
 
     show_all =
-      if is_admin,
+      if is_content_admin,
         do: Accounts.get_author_preference(author, :admin_show_all_projects, true),
         else: true
 
@@ -54,7 +54,7 @@ defmodule OliWeb.Projects.ProjectsLive do
        projects: projects,
        table_model: table_model,
        total_count: total_count,
-       is_admin: is_admin,
+       is_content_admin: is_content_admin,
        show_all: show_all,
        show_deleted: show_deleted,
        title: "Projects"
@@ -69,7 +69,12 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def handle_params(params, _, socket) do
-    %{is_admin: is_admin, show_all: show_all, show_deleted: show_deleted, author: author} =
+    %{
+      is_content_admin: is_content_admin,
+      show_all: show_all,
+      show_deleted: show_deleted,
+      author: author
+    } =
       socket.assigns
 
     table_model =
@@ -84,7 +89,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     # if author is an admin, get the show_all value and update if its changed
     {show_all, author} =
       case get_boolean_param(params, "show_all", show_all) do
-        new_value when new_value != show_all and is_admin ->
+        new_value when new_value != show_all and is_content_admin ->
           {:ok, author} =
             Accounts.set_author_preference(author, :admin_show_all_projects, new_value)
 
@@ -146,7 +151,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   attr(:text_search, :string, default: "")
 
   attr(:author, :any)
-  attr(:is_admin, :boolean, default: false)
+  attr(:is_content_admin, :boolean, default: false)
 
   def render(assigns) do
     ~H"""
@@ -156,7 +161,7 @@ defmodule OliWeb.Projects.ProjectsLive do
       <div class="projects-title-row mb-4">
         <div class="d-flex justify-content-between align-items-baseline">
           <div>
-            <%= if @is_admin do %>
+            <%= if @is_content_admin do %>
               <div class="form-check" style="display: inline;">
                 <input
                   type="checkbox"
@@ -168,7 +173,10 @@ defmodule OliWeb.Projects.ProjectsLive do
                 <label class="form-check-label" for="allCheck">Show all projects</label>
               </div>
             <% end %>
-            <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
+            <div
+              class={"form-check #{if @is_content_admin, do: "ml-4", else: ""}"}
+              style="display: inline;"
+            >
               <input
                 type="checkbox"
                 class="form-check-input"
