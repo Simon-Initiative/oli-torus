@@ -170,6 +170,7 @@ defmodule Oli.Rendering.Activity.Html do
          bib_params,
          model_json
        ) do
+
     activity_context =
       %{
         graded: graded,

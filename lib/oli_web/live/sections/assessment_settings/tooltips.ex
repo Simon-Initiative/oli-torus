@@ -40,4 +40,7 @@ defmodule OliWeb.Sections.AssessmentSettings.Tooltips do
 
   def for(:exceptions_count),
     do: "The number of student specific exceptions defined for this assessment"
+
+  def for(:batch_scoring),
+    do: "Whether questions are scored when they are answered or when the assessment is submitted"
 end
