@@ -5,35 +5,20 @@ export const FlowchartIcon: React.FC<{ fill?: string; stroke?: string }> = ({
   stroke = '#222439',
 }) => {
   return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect width="24" height="24" rx="3" fill={fill} />
-
-      <circle cx="5.5" cy="12" r="2" stroke={stroke} strokeWidth="1" fill="none" />
-
-      <circle cx="16" cy="5.5" r="2.2" stroke={stroke} strokeWidth="1" fill="none" />
-      <line
-        x1="7"
-        y1="11"
-        x2="14.1"
-        y2="6.7"
-        stroke={stroke}
-        strokeWidth="1"
-        strokeLinecap="butt"
-      />
-
-      <circle cx="18" cy="12" r="2.2" stroke={stroke} strokeWidth="1" fill="none" />
-      <line x1="7.5" y1="12" x2="16" y2="12" stroke={stroke} strokeWidth="1" strokeLinecap="butt" />
-
-      <circle cx="16" cy="18.5" r="2.2" stroke={stroke} strokeWidth="1" fill="none" />
-      <line
-        x1="7"
-        y1="13"
-        x2="14.1"
-        y2="17.3"
-        stroke={stroke}
-        strokeWidth="1"
-        strokeLinecap="butt"
-      />
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g
+        clipPath="url(#clip0_304_15587)"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M21.25 3h-4.5a.75.75 0 00-.75.75v4.5c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75v-4.5a.75.75 0 00-.75-.75zM7.25 9h-4.5a.75.75 0 00-.75.75v4.5c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75v-4.5A.75.75 0 007.25 9zM21.25 14h-4.5a.75.75 0 00-.75.75v4.5c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75v-4.5a.75.75 0 00-.75-.75zM8 12h4M16 6h-2a2 2 0 00-2 2v7a2 2 0 002 2h2" />
+      </g>
+      <defs>
+        <clipPath id="clip0_304_15587">
+          <path fill={fill} d="M0 0H24V24H0z" />
+        </clipPath>
+      </defs>
     </svg>
   );
 };
