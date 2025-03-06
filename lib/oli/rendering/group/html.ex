@@ -28,7 +28,7 @@ defmodule Oli.Rendering.Group.Html do
       end
 
     [
-      ~s|<div id="#{id}" class="group content-purpose #{purpose}"><div class="flex justify-between"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div><div>#{trigger_button}</div></div><div class="content-purpose-content content">|,
+      ~s|<div id="#{id}" class="group content-purpose #{purpose}"><div class="flex content-purpose-label"><div class="flex-grow-1">#{Purposes.label_for(purpose)}</div><div>#{trigger_button}</div></div><div class="content-purpose-content content">|,
       next.(),
       "</div></div>\n"
     ]

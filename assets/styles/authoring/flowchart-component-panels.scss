@@ -100,3 +100,7 @@
     }
   }
 }
+
+.form-group:has(#root_custom_layoutType):nth-last-of-type(1) {
+  margin-bottom: 0px !important;
+}
