@@ -124,6 +124,7 @@ defmodule Oli.Delivery.Certificates do
         on: a.id == gc.issued_by and gc.issued_by_type == :author
       )
       |> where(^filter_by_section_or_blueprint)
+      |> where([gc, c, s, u, u1, a], gc.state == :earned)
       |> offset(^offset)
       |> limit(^limit)
       |> select(
