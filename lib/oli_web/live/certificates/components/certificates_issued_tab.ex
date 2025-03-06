@@ -134,6 +134,10 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
     ~p"/workspaces/course_author/#{project.slug}/products/#{section_slug}/certificate_settings?#{params}"
   end
 
+  def select_path(:delivery, _project, section_slug, params) do
+    ~p"/sections/#{section_slug}/certificate_settings?#{params}"
+  end
+
   def decode_params(params) do
     text_search = Params.get_param(params, "text_search", @default_values.text_search)
     limit = Params.get_int_param(params, "limit", @default_values.paging.limit)

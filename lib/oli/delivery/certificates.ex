@@ -101,7 +101,6 @@ defmodule Oli.Delivery.Certificates do
         text_search,
         %Section{id: section_id, type: type}
       ) do
-
     # if the section is blueprint (a product) we search for the granted certificates
     # in all the courses created based on that product
     filter_by_section_or_blueprint =
@@ -110,7 +109,6 @@ defmodule Oli.Delivery.Certificates do
       else
         dynamic([gc, c, s, u, u1, a], s.id == ^section_id)
       end
-
 
     query =
       GrantedCertificate
