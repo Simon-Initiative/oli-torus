@@ -301,8 +301,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   def handle_event("remove_logo", %{"id" => logo_field}, socket) do
     logo_field = String.to_existing_atom(logo_field)
 
-    socket.assigns.certificate
-    |> certificate_changeset()
+    socket.assigns.certificate_changeset
     |> Ecto.Changeset.put_change(logo_field, nil)
     |> Repo.update()
     |> case do
@@ -401,9 +400,9 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     """
   end
 
-  defp certificate_changeset(nil), do: Certificate.changeset()
-
   defp certificate_changeset(cert_or_changeset, params \\ %{})
+
+  defp certificate_changeset(nil, _), do: Certificate.changeset()
 
   defp certificate_changeset(%Certificate{} = cert, params),
     do: Certificate.changeset(cert, params)
