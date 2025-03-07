@@ -15,17 +15,9 @@ defmodule OliWeb.Workspaces.Student do
     sidebar_expanded: true
   }
 
-  @platform_student_roles [
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student),
-    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner)
-  ]
-
   @context_student_roles [
     Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
   ]
-
-  on_mount {OliWeb.UserAuth, :ensure_authenticated}
-  on_mount OliWeb.LiveSessionPlugs.SetCtx
 
   def mount(_params, _session, %{assigns: %{is_admin: true}} = socket) do
     # admin case...
@@ -33,7 +25,7 @@ defmodule OliWeb.Workspaces.Student do
   end
 
   @impl Phoenix.LiveView
-  def mount(params, _session, %{assigns: %{current_user: current_user, ctx: ctx}} = socket)
+  def mount(params, _session, %{assigns: %{current_user: current_user}} = socket)
       when not is_nil(current_user) do
     sections =
       current_user.id
@@ -45,7 +37,6 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        sections: sections,
        params: params,
-       disable_sidebar?: user_is_only_a_student?(ctx),
        filtered_sections: sections,
        active_workspace: :student
      )}
@@ -323,25 +314,6 @@ defmodule OliWeb.Workspaces.Student do
       sidebar_expanded:
         Params.get_boolean_param(params, "sidebar_expanded", @default_params.sidebar_expanded)
     }
-  end
-
-  defp user_is_only_a_student?(%{author: author}) when not is_nil(author), do: false
-  defp user_is_only_a_student?(%{user: %{can_create_sections: true}}), do: false
-
-  defp user_is_only_a_student?(%{user: %{id: user_id}}) do
-    user_roles =
-      user_id
-      |> Oli.Accounts.user_roles()
-      |> Enum.map(& &1.uri)
-      |> MapSet.new()
-
-    student_roles =
-      (@context_student_roles ++ @platform_student_roles)
-      |> Enum.map(& &1.uri)
-      |> MapSet.new()
-
-    roles_other_than_student = MapSet.difference(user_roles, student_roles)
-    MapSet.size(roles_other_than_student) == 0
   end
 
   defp sections_where_user_is_student(user_id) do

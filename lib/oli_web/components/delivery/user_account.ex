@@ -13,7 +13,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
-  alias Oli.Delivery.ResearchConsent
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)

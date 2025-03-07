@@ -7,7 +7,7 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Accounts.{User}
   alias Oli.Analytics.DataTables.DataTable
   alias Oli.Delivery
-  alias Oli.Delivery.{ResearchConsent, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Institutions
   alias Oli.Institutions.Institution
