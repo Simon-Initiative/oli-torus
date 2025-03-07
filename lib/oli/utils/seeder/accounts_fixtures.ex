@@ -20,7 +20,8 @@ defmodule Oli.Utils.Seeder.AccountsFixtures do
       given_name: "Andrew",
       family_name: "Carnegie",
       email_verified: true,
-      email_confirmed_at: now
+      email_confirmed_at: now,
+      research_opt_out: false
     })
   end
 
