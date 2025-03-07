@@ -145,9 +145,20 @@ defmodule OliWeb.Certificates.Components.DesignTab do
             <.live_file_input upload={@uploads.logo} />
             <section class="flex gap-4 flex-wrap mt-4">
               <!-- Display existing logos -->
-              <%= for logo <- saved_logos(@certificate_changeset) do %>
+              <%= for {logo_id, logo_src} <- saved_logos(@certificate_changeset), not is_nil(logo_src) do %>
                 <div class="relative w-24 h-24 flex-shrink-0">
-                  <img src={logo} class="object-cover w-full h-full rounded border border-gray-300" />
+                  <img
+                    src={logo_src}
+                    class="object-cover w-full h-full rounded border border-gray-300"
+                  />
+                  <button
+                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                    phx-click="remove_logo"
+                    phx-target={@myself}
+                    phx-value-id={logo_id}
+                  >
+                    ✖
+                  </button>
                 </div>
               <% end %>
               <!-- Display uploaded previews -->
@@ -172,53 +183,25 @@ defmodule OliWeb.Certificates.Components.DesignTab do
           </div>
           <!-- Preview -->
           <%= if @show_preview do %>
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900">
-              <div class="relative w-11/12 max-w-4xl bg-white rounded shadow-lg p-6">
-                <!-- Modal Header -->
-                <div class="flex justify-between items-center border-b pb-4 mb-4">
-                  <h2 class="text-xl font-bold">Certificate Preview</h2>
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 dark:bg-gray-950">
+              <div class="relative w-11/12 max-w-4xl bg-white dark:bg-gray-800 rounded shadow-lg p-6">
+                <div class="flex justify-between items-center border-b border-gray-300 dark:border-gray-600 pb-4 mb-4">
+                  <h2 class="text-xl font-bold text-gray-900 dark:text-white">Certificate Preview</h2>
                   <button
                     type="button"
                     phx-click="close_preview"
                     phx-target={@myself}
-                    class="text-gray-500 hover:text-gray-800"
+                    class="text-gray-500 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
                   >
                     ✖
                   </button>
                 </div>
-                <!-- Modal Content -->
-                <div class="overflow-y-auto max-h-[90vh] bg-gray-100">
-                  <iframe
-                    srcdoc={elem(@certificate_html, @preview_page)}
-                    class="w-full h-auto border-0"
-                    style="height: 80vh;"
-                  >
-                  </iframe>
-                </div>
-                <!-- Modal Footer -->
-                <div class="flex justify-between mt-4">
-                  <!-- Previous Button -->
-                  <%= if @preview_page > 0 do %>
-                    <button
-                      type="button"
-                      phx-click="prev_preview_page"
-                      phx-target={@myself}
-                      class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-700"
-                    >
-                      Previous
-                    </button>
-                  <% end %>
-                  <!-- Next Button -->
-                  <%= if @preview_page < 1 do %>
-                    <button
-                      type="button"
-                      phx-click="next_preview_page"
-                      phx-target={@myself}
-                      class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-                    >
-                      Next
-                    </button>
-                  <% end %>
+                <div>
+                  <.preview_certificate
+                    certificate_html={@certificate_html}
+                    preview_page={@preview_page}
+                    target={@myself}
+                  />
                 </div>
               </div>
             </div>
@@ -241,7 +224,96 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     """
   end
 
-  def preview_certificate(assigns) do
+  @impl true
+  def mount(socket) do
+    {:ok,
+     socket
+     |> allow_upload(:logo, max_entries: 3, accept: ~w(.jpg .jpeg .png), max_file_size: 1_000_000)}
+  end
+
+  @impl true
+  def update(%{read_only: true} = assigns, socket) do
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(certificate_html: generate_previews(assigns.certificate), preview_page: 0)}
+  end
+
+  def update(assigns, socket) do
+    certificate_changeset =
+      assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(
+       certificate_html: generate_previews(certificate_changeset, socket),
+       show_preview: false,
+       preview_page: 0
+     )
+     |> assign_new(:certificate_changeset, fn -> certificate_changeset end)}
+  end
+
+  @impl true
+  def handle_event("validate", %{"certificate" => params}, socket) do
+    changeset = Certificate.changeset(socket.assigns.certificate, params)
+    {:noreply, assign(socket, certificate_changeset: changeset)}
+  end
+
+  def handle_event("cancel", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :logo, ref)}
+  end
+
+  def handle_event("save", _params, %{assigns: assigns} = socket) do
+    {completion_cert, distinction_cert, logos} =
+      generate_previews(assigns.certificate_changeset, socket)
+
+    attrs =
+      assigns.certificate_changeset.changes
+      |> Map.put(:logo1, Enum.at(logos, 0))
+      |> Map.put(:logo2, Enum.at(logos, 1))
+      |> Map.put(:logo3, Enum.at(logos, 2))
+
+    socket.assigns.certificate
+    |> Certificate.changeset(attrs)
+    |> Repo.insert_or_update()
+    |> case do
+      {:ok, _certificate} ->
+        {:noreply,
+         assign(socket,
+           show_preview: true,
+           certificate_html: {completion_cert, distinction_cert}
+         )}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, certificate_changeset: changeset)}
+    end
+  end
+
+  def handle_event("remove_logo", %{"id" => logo_field}, socket) do
+    logo_field = String.to_existing_atom(logo_field)
+
+    changeset =
+      socket.assigns.certificate
+      |> certificate_changeset()
+      |> Ecto.Changeset.put_change(logo_field, nil)
+
+    {:noreply, assign(socket, certificate_changeset: changeset)}
+  end
+
+  def handle_event("close_preview", _params, socket) do
+    {:noreply, assign(socket, show_preview: false, certificate_html: nil)}
+  end
+
+  def handle_event("next_preview_page", _params, socket) do
+    {:noreply, assign(socket, preview_page: 1)}
+  end
+
+  def handle_event("prev_preview_page", _params, socket) do
+    {:noreply, assign(socket, preview_page: 0)}
+  end
+
+  defp preview_certificate(assigns) do
     ~H"""
     <div class="flex flex-col">
       <div class="flex flex-row justify-center overflow-hidden">
@@ -295,76 +367,47 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     """
   end
 
-  @impl true
-  def mount(socket) do
-    {:ok,
-     socket
-     |> allow_upload(:logo, max_entries: 3, accept: ~w(.jpg .jpeg .png), max_file_size: 1_000_000)}
+  defp carousel_dot(%{active: true} = assigns) do
+    ~H"""
+    <div class="w-3 h-3 bg-[#383A44] rounded-full"></div>
+    """
   end
 
-  @impl true
-  def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(
-       show_preview: false,
-       preview_page: 0,
-       certificate_html: maybe_generate_previews(assigns.read_only, assigns.certificate)
-     )
-     |> assign_new(:certificate_changeset, fn -> certificate_changeset(assigns.certificate) end)}
+  defp carousel_dot(%{active: false} = assigns) do
+    ~H"""
+    <div class="w-3 h-3 bg-[#A3A3A3] rounded-full"></div>
+    """
   end
 
-  @impl true
-  def handle_event("validate", %{"certificate" => params}, socket) do
-    changeset = Certificate.changeset(socket.assigns.certificate, params)
-    {:noreply, assign(socket, certificate_changeset: changeset)}
+  defp certificate_changeset(nil), do: Certificate.changeset()
+  defp certificate_changeset(%Certificate{} = cert), do: Certificate.changeset(cert, %{})
+
+  defp saved_logos(changeset), do: Map.take(changeset.data, [:logo1, :logo2, :logo3])
+
+  defp generate_previews(%Certificate{} = certificate) do
+    admins =
+      [
+        {certificate.admin_name1, certificate.admin_title1},
+        {certificate.admin_name2, certificate.admin_title2},
+        {certificate.admin_name3, certificate.admin_title3}
+      ]
+      |> Enum.reject(fn {name, _} -> name == "" || !name end)
+
+    logos =
+      [certificate.logo1, certificate.logo2, certificate.logo3]
+      |> Enum.reject(&is_nil/1)
+
+    attrs = %{
+      course_name: certificate.title,
+      course_description: certificate.description,
+      administrators: admins,
+      logos: logos
+    }
+
+    render_sample_certificates(attrs)
   end
 
-  def handle_event("cancel", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :logo, ref)}
-  end
-
-  def handle_event("save", _params, %{assigns: assigns} = socket) do
-    {completion_cert, distinction_cert, logos} = generate_previews(socket)
-
-    attrs =
-      assigns.certificate_changeset.changes
-      |> Map.put(:logo1, Enum.at(logos, 0))
-      |> Map.put(:logo2, Enum.at(logos, 1))
-      |> Map.put(:logo3, Enum.at(logos, 2))
-
-    socket.assigns.certificate
-    |> Certificate.changeset(attrs)
-    |> Repo.insert_or_update()
-    |> case do
-      {:ok, _certificate} ->
-        {:noreply,
-         assign(socket,
-           show_preview: true,
-           certificate_html: {completion_cert, distinction_cert}
-         )}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, certificate_changeset: changeset)}
-    end
-  end
-
-  def handle_event("close_preview", _params, socket) do
-    {:noreply, assign(socket, show_preview: false, certificate_html: nil)}
-  end
-
-  def handle_event("next_preview_page", _params, socket) do
-    {:noreply, assign(socket, preview_page: 1)}
-  end
-
-  def handle_event("prev_preview_page", _params, socket) do
-    {:noreply, assign(socket, preview_page: 0)}
-  end
-
-  defp generate_previews(%{assigns: assigns} = socket) do
-    changeset = assigns.certificate_changeset
-
+  defp generate_previews(%Ecto.Changeset{} = changeset, socket) do
     admins =
       [
         {changeset.changes[:admin_name1] || changeset.data.admin_name1,
@@ -383,78 +426,34 @@ defmodule OliWeb.Certificates.Components.DesignTab do
         {:ok, "data:#{entry.client_type};base64, #{b64}"}
       end)
       |> case do
-        [] -> saved_logos(changeset)
+        [] -> changeset |> saved_logos() |> Map.values() |> Enum.reject(&is_nil/1)
         new_logos -> new_logos
       end
 
     attrs = %{
-      certificate_type: "Certificate of Completion",
-      student_name: "Student Name",
-      completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
-      certificate_id: "00000000-0000-0000-0000-000000000000",
       course_name: changeset.changes[:title] || changeset.data.title,
       course_description: changeset.changes[:description] || changeset.data.description,
       administrators: admins,
       logos: logos
     }
 
-    completion_cert = CertificateRenderer.render(attrs)
-
-    distinction_cert =
-      CertificateRenderer.render(%{attrs | certificate_type: "Certificate with Distinction"})
-
+    {completion_cert, distinction_cert} = render_sample_certificates(attrs)
     {completion_cert, distinction_cert, logos}
   end
 
-  defp certificate_changeset(nil), do: Certificate.changeset()
-  defp certificate_changeset(%Certificate{} = cert), do: Certificate.changeset(cert, %{})
+  defp render_sample_certificates(attrs) do
+    certificate_guid = "00000000-0000-0000-0000-000000000000"
 
-  defp saved_logos(changeset) do
-    [changeset.data.logo1, changeset.data.logo2, changeset.data.logo3]
-    |> Enum.reject(&is_nil/1)
-  end
-
-  defp carousel_dot(%{active: true} = assigns) do
-    ~H"""
-    <div class="w-3 h-3 bg-[#383A44] rounded-full"></div>
-    """
-  end
-
-  defp carousel_dot(%{active: false} = assigns) do
-    ~H"""
-    <div class="w-3 h-3 bg-[#A3A3A3] rounded-full"></div>
-    """
-  end
-
-  defp maybe_generate_previews(false, _), do: {nil, nil}
-
-  defp maybe_generate_previews(true, certificate) do
-    admins =
-      [
-        {certificate.admin_name1, certificate.admin_title1},
-        {certificate.admin_name2, certificate.admin_title2},
-        {certificate.admin_name3, certificate.admin_title3}
-      ]
-      |> Enum.reject(fn {name, _} -> name == "" || !name end)
-
-    logos =
-      [certificate.logo1, certificate.logo2, certificate.logo3]
-      |> Enum.reject(&is_nil/1)
-
-    granted_certificate_guid = "00000000-0000-0000-0000-000000000000"
-
-    attrs = %{
+    sample_attrs = %{
       certificate_type: "Certificate of Completion",
       certificate_verification_url:
-        url(OliWeb.Endpoint, ~p"/certificates?cert_guid=#{granted_certificate_guid}"),
+        url(OliWeb.Endpoint, ~p"/certificates?cert_guid=#{certificate_guid}"),
       student_name: "Student Name",
       completion_date: Date.utc_today() |> Calendar.strftime("%B %d, %Y"),
-      certificate_id: granted_certificate_guid,
-      course_name: certificate.title,
-      course_description: certificate.description,
-      administrators: admins,
-      logos: logos
+      certificate_id: certificate_guid
     }
+
+    attrs = Map.merge(sample_attrs, attrs)
 
     completion_cert = CertificateRenderer.render(attrs)
 
