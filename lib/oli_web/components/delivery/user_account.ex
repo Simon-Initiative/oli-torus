@@ -209,7 +209,13 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def user_menu_items(assigns) do
     ~H"""
-    <.menu_item_edit_account :if={is_independent_learner?(@ctx.user)} href={~p"/users/settings"} />
+    <.menu_item_edit_account
+      :if={is_independent_learner?(@ctx.user) && !Accounts.user_confirmation_pending?(@ctx.user)}
+      href={~p"/users/settings"}
+    />
+    <.menu_item_confirm_user_account :if={
+      is_independent_learner?(@ctx.user) && Accounts.user_confirmation_pending?(@ctx.user)
+    } />
     <.maybe_my_courses_menu_item_link user={@ctx.user} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
@@ -335,9 +341,23 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_edit_account(assigns) do
     ~H"""
-    <.menu_item_link href={@href}>
-      Edit Account
-    </.menu_item_link>
+    <.menu_item>
+      <.menu_item_link href={@href}>
+        Edit Account
+      </.menu_item_link>
+    </.menu_item>
+
+    <.menu_divider />
+    """
+  end
+
+  def menu_item_confirm_user_account(assigns) do
+    ~H"""
+    <.menu_item>
+      <.menu_item_link href={~p"/users/confirm"}>
+        Confirm Account
+      </.menu_item_link>
+    </.menu_item>
 
     <.menu_divider />
     """
@@ -348,9 +368,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def maybe_my_courses_menu_item_link(assigns) do
     ~H"""
     <%= if is_independent_learner?(@user) do %>
-      <.menu_item_link href={~p"/workspaces/student"}>
-        My Courses
-      </.menu_item_link>
+      <.menu_item>
+        <.menu_item_link href={~p"/workspaces/student"}>
+          My Courses
+        </.menu_item_link>
+      </.menu_item>
 
       <.menu_divider />
     <% end %>

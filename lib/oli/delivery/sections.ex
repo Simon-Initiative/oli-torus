@@ -5387,4 +5387,16 @@ defmodule Oli.Delivery.Sections do
     )
     |> Repo.all()
   end
+
+  @doc """
+  Returns true if the user is enrolled in any sections that do not require email confirmation
+  """
+  def user_enrolled_in_section_that_skips_email_confirmation?(user) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      where: e.user_id == ^user.id,
+      where: e.status == :enrolled and s.skip_email_verification == true
+    )
+    |> Repo.exists?()
+  end
 end
