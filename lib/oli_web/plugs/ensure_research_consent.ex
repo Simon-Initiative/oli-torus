@@ -15,9 +15,6 @@ defmodule Oli.Plugs.EnsureResearchConsent do
     user = conn.assigns[:current_user]
     is_admin = conn.assigns[:is_admin]
 
-    dbg("EnsureResearchConsent: user: #{inspect(user)}, is_admin: #{inspect(is_admin)}")
-    dbg({is_admin, user.research_opt_out, Delivery.user_research_consent_required?(user)})
-
     with false <- is_admin,
          nil <- user.research_opt_out,
          true <- Delivery.user_research_consent_required?(user) do
