@@ -5395,7 +5395,7 @@ defmodule Oli.Delivery.Sections do
     from(e in Enrollment,
       join: s in assoc(e, :section),
       where: e.user_id == ^user.id,
-      where: s.skip_email_verification == true
+      where: e.status == :enrolled and s.skip_email_verification == true
     )
     |> Repo.exists?()
   end
