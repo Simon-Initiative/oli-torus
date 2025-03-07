@@ -34,7 +34,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
           <a
             :if={!@read_only}
             role="export"
-            href={~p"/authoring/products/#{assigns.section_slug}/downloads/granted_certificates"}
+            href={~p"/authoring/products/#{@section_id}/downloads/granted_certificates"}
             class="flex items-center justify-center gap-x-2"
           >
             <Icons.download /> Download CSV
@@ -132,6 +132,10 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTab do
 
   def select_path(:workspaces, project, section_slug, params) do
     ~p"/workspaces/course_author/#{project.slug}/products/#{section_slug}/certificate_settings?#{params}"
+  end
+
+  def select_path(:delivery, _project, section_slug, params) do
+    ~p"/sections/#{section_slug}/certificate_settings?#{params}"
   end
 
   def decode_params(params) do

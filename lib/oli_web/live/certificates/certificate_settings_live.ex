@@ -108,10 +108,13 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     sorting = %Sorting{direction: params["direction"], field: params["sort_by"]}
     text_search = params["text_search"]
 
-    section_id = socket.assigns.section.id
-
     granted_certificates =
-      Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
+      Certificates.browse_granted_certificates(
+        paging,
+        sorting,
+        text_search,
+        socket.assigns.section
+      )
 
     table_model = socket.assigns[:table_model]
     table_model = %{table_model | rows: granted_certificates, sort_order: params["direction"]}
@@ -178,6 +181,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       module={CertificatesIssuedTab}
       id="certificates_issued_component"
       params={@params}
+      section_id={@section.id}
       section_slug={@section.slug}
       table_model={@table_model}
       ctx={@ctx}
