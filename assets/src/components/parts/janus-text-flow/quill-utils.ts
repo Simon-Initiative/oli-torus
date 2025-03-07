@@ -27,6 +27,22 @@ const convertFontName = (fontCode: string) => {
   return result;
 };
 
+const convertFontSize = (fontSize: string, conversionType: 'px' | 'rem'): string => {
+  const numericValue = parseFloat(fontSize);
+  if (
+    typeof fontSize !== 'string' ||
+    isNaN(numericValue) ||
+    (!fontSize.endsWith('px') && !fontSize.endsWith('rem'))
+  ) {
+    return `${fontSize}px`;
+  }
+
+  const baseFontSize = 16;
+  const convertedValue =
+    conversionType === 'px' ? numericValue * baseFontSize : numericValue / baseFontSize;
+  return conversionType === 'px' ? `${convertedValue}px` : `${convertedValue}rem`;
+};
+
 export const convertQuillToJanus = (delta: Delta) => {
   const doc = new Delta().compose(delta);
   const nodes: JanusMarkupNode[] = [];
@@ -41,7 +57,11 @@ export const convertQuillToJanus = (delta: Delta) => {
     };
 
     if (attrs.fontSize) {
-      nodeStyle.fontSize = attrs.fontSize;
+      let size = attrs.fontSize;
+      if (typeof size === 'number' || size.endsWith('px')) {
+        size = `${convertFontSize(size.toString(), 'rem')}`;
+      }
+      nodeStyle.fontSize = size;
     }
 
     if (attrs.indent) {
@@ -105,7 +125,11 @@ export const convertQuillToJanus = (delta: Delta) => {
             style.fontStyle = 'italic';
           }
           if (op.attributes.size) {
-            style.fontSize = op.attributes.size;
+            let size = op.attributes.size;
+            if (typeof op.attributes.size === 'number' || op.attributes.size.endsWith('px')) {
+              size = `${convertFontSize(op.attributes.size.toString(), 'rem')}`;
+            }
+            style.fontSize = size;
           }
           if (op.attributes.underline) {
             style.textDecoration = appendToStringProperty('underline', style.textDecoration);
@@ -173,8 +197,10 @@ const processJanusChildren = (node: JanusMarkupNode, doc: Delta, parentAttrs: an
   }
   if (node.style?.fontSize) {
     let size = node.style.fontSize;
-    if (typeof size === 'number' || !size.endsWith('px')) {
+    if (typeof size === 'number' || (!size.endsWith('px') && !size.endsWith('rem'))) {
       size = `${size}px`;
+    } else if (typeof size === 'string' && size.endsWith('rem')) {
+      size = `${convertFontSize(size, 'px')}`;
     }
     attrs.size = size;
   }
