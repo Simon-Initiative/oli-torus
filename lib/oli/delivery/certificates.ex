@@ -243,7 +243,8 @@ defmodule Oli.Delivery.Certificates do
           completed: required_assignment_ids_count,
           total: required_assignment_ids_count
         },
-        granted_certificate_guid: certificate.granted_certificate_guid
+        granted_certificate_guid: certificate.granted_certificate_guid,
+        granted_certificate_state: certificate.granted_certificate_state
       }
     else
       %{
@@ -266,7 +267,8 @@ defmodule Oli.Delivery.Certificates do
             required_assignment_ids,
             certificate.min_percentage_for_completion
           ),
-        granted_certificate_guid: certificate.granted_certificate_guid
+        granted_certificate_guid: certificate.granted_certificate_guid,
+        granted_certificate_state: certificate.granted_certificate_state
       }
     end
   end
