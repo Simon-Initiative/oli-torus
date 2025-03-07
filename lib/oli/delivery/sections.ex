@@ -5397,10 +5397,6 @@ defmodule Oli.Delivery.Sections do
       where: e.user_id == ^user.id,
       where: s.skip_email_verification == true
     )
-    |> Repo.all()
-    |> case do
-      [] -> false
-      _ -> true
-    end
+    |> Repo.exists?()
   end
 end

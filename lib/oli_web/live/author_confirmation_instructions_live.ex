@@ -19,7 +19,7 @@ defmodule OliWeb.AuthorConfirmationInstructionsLive do
             </:title>
             <:subtitle>
               <p>
-                You must confirm your email address before you can sign in. Check your inbox for a confirmation link.
+                Please check your inbox for a confirmation link.
               </p>
 
               <p class="mt-4">
