@@ -152,10 +152,11 @@ defmodule OliWeb.Certificates.Components.DesignTab do
                     class="object-cover w-full h-full rounded border border-gray-300"
                   />
                   <button
-                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                    type="button"
                     phx-click="remove_logo"
                     phx-target={@myself}
                     phx-value-id={logo_id}
+                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
                   >
                     ✖
                   </button>
@@ -240,23 +241,22 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   end
 
   def update(assigns, socket) do
-    certificate_changeset =
-      assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
-
     {:ok,
      socket
      |> assign(assigns)
      |> assign(
-       certificate_html: generate_previews(certificate_changeset, socket),
        show_preview: false,
        preview_page: 0
      )
-     |> assign_new(:certificate_changeset, fn -> certificate_changeset end)}
+     |> assign_new(:certificate_changeset, fn ->
+       assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
+     end)}
   end
 
   @impl true
   def handle_event("validate", %{"certificate" => params}, socket) do
-    changeset = Certificate.changeset(socket.assigns.certificate, params)
+    changes = for {key, value} <- params, into: %{}, do: {String.to_existing_atom(key), value}
+    changeset = certificate_changeset(socket.assigns.certificate_changeset, changes)
     {:noreply, assign(socket, certificate_changeset: changeset)}
   end
 
@@ -264,25 +264,33 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     {:noreply, cancel_upload(socket, :logo, ref)}
   end
 
-  def handle_event("save", _params, %{assigns: assigns} = socket) do
-    {completion_cert, distinction_cert, logos} =
-      generate_previews(assigns.certificate_changeset, socket)
+  def handle_event("save", _params, socket) do
+    new_logos = consume_uploaded_logos(socket)
+    existing_logos = saved_logos(socket.assigns.certificate_changeset)
+
+    {updated_logos, _} =
+      Enum.map_reduce(existing_logos, new_logos, fn
+        {key, nil}, [next_value | rest] -> {{key, next_value}, rest}
+        {key, value}, remaining -> {{key, value}, remaining}
+      end)
 
     attrs =
-      assigns.certificate_changeset.changes
-      |> Map.put(:logo1, Enum.at(logos, 0))
-      |> Map.put(:logo2, Enum.at(logos, 1))
-      |> Map.put(:logo3, Enum.at(logos, 2))
+      socket.assigns.certificate_changeset.changes
+      |> Map.put(:logo1, updated_logos[:logo1])
+      |> Map.put(:logo2, updated_logos[:logo2])
+      |> Map.put(:logo3, updated_logos[:logo3])
 
     socket.assigns.certificate
-    |> Certificate.changeset(attrs)
+    |> certificate_changeset(attrs)
     |> Repo.insert_or_update()
     |> case do
-      {:ok, _certificate} ->
+      {:ok, certificate} ->
         {:noreply,
          assign(socket,
+           certificate: certificate,
+           certificate_changeset: certificate_changeset(certificate),
            show_preview: true,
-           certificate_html: {completion_cert, distinction_cert}
+           certificate_html: generate_previews(socket, Keyword.values(updated_logos))
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -293,12 +301,22 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   def handle_event("remove_logo", %{"id" => logo_field}, socket) do
     logo_field = String.to_existing_atom(logo_field)
 
-    changeset =
-      socket.assigns.certificate
-      |> certificate_changeset()
-      |> Ecto.Changeset.put_change(logo_field, nil)
+    socket.assigns.certificate
+    |> certificate_changeset()
+    |> Ecto.Changeset.put_change(logo_field, nil)
+    |> Repo.update()
+    |> case do
+      {:ok, certificate} ->
+        {:noreply,
+         assign(socket,
+           show_preview: false,
+           certificate: certificate,
+           certificate_changeset: certificate_changeset(certificate)
+         )}
 
-    {:noreply, assign(socket, certificate_changeset: changeset)}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, show_preview: false, certificate_changeset: changeset)}
+    end
   end
 
   def handle_event("close_preview", _params, socket) do
@@ -318,6 +336,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     <div class="flex flex-col">
       <div class="flex flex-row justify-center overflow-hidden">
         <button
+          type="button"
           role="prev button"
           phx-click="prev_preview_page"
           phx-target={@target}
@@ -334,6 +353,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
         >
         </iframe>
         <button
+          type="button"
           role="next button"
           phx-click="next_preview_page"
           phx-target={@target}
@@ -345,6 +365,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       </div>
       <div class="flex gap-4 justify-center">
         <button
+          type="button"
           role="carousel prev button"
           phx-click="prev_preview_page"
           phx-target={@target}
@@ -354,6 +375,7 @@ defmodule OliWeb.Certificates.Components.DesignTab do
           <.carousel_dot active={@preview_page == 0} />
         </button>
         <button
+          type="button"
           role="carousel next button"
           phx-click="next_preview_page"
           phx-target={@target}
@@ -380,7 +402,14 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   end
 
   defp certificate_changeset(nil), do: Certificate.changeset()
-  defp certificate_changeset(%Certificate{} = cert), do: Certificate.changeset(cert, %{})
+
+  defp certificate_changeset(cert_or_changeset, params \\ %{})
+
+  defp certificate_changeset(%Certificate{} = cert, params),
+    do: Certificate.changeset(cert, params)
+
+  defp certificate_changeset(%Ecto.Changeset{} = changeset, params),
+    do: Ecto.Changeset.change(changeset, params)
 
   defp saved_logos(changeset), do: Map.take(changeset.data, [:logo1, :logo2, :logo3])
 
@@ -407,7 +436,9 @@ defmodule OliWeb.Certificates.Components.DesignTab do
     render_sample_certificates(attrs)
   end
 
-  defp generate_previews(%Ecto.Changeset{} = changeset, socket) do
+  defp generate_previews(%Phoenix.LiveView.Socket{} = socket, logos) do
+    changeset = socket.assigns.certificate_changeset
+
     admins =
       [
         {changeset.changes[:admin_name1] || changeset.data.admin_name1,
@@ -419,17 +450,6 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       ]
       |> Enum.reject(fn {name, _} -> name == "" || !name end)
 
-    logos =
-      socket
-      |> consume_uploaded_entries(:logo, fn %{path: path}, entry ->
-        b64 = path |> File.read!() |> Base.encode64()
-        {:ok, "data:#{entry.client_type};base64, #{b64}"}
-      end)
-      |> case do
-        [] -> changeset |> saved_logos() |> Map.values() |> Enum.reject(&is_nil/1)
-        new_logos -> new_logos
-      end
-
     attrs = %{
       course_name: changeset.changes[:title] || changeset.data.title,
       course_description: changeset.changes[:description] || changeset.data.description,
@@ -437,8 +457,15 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       logos: logos
     }
 
-    {completion_cert, distinction_cert} = render_sample_certificates(attrs)
-    {completion_cert, distinction_cert, logos}
+    render_sample_certificates(attrs)
+  end
+
+  defp consume_uploaded_logos(socket) do
+    socket
+    |> consume_uploaded_entries(:logo, fn %{path: path}, entry ->
+      b64 = path |> File.read!() |> Base.encode64()
+      {:ok, "data:#{entry.client_type};base64, #{b64}"}
+    end)
   end
 
   defp render_sample_certificates(attrs) do
