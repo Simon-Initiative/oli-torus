@@ -30,6 +30,7 @@ import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
+import { hide } from '@popperjs/core';
 
 (window as any).Alert = Alert;
 (window as any).Button = Button;
@@ -90,13 +91,38 @@ function closeModal(id: string) {
   document.getElementById(id)?.classList.add('hidden');
 }
 
+const confirmAction = (title: string, message: string, okCallback: () => void, cancelCallback: () => void, okLabel = 'Ok') => {
+
+  const modalTitle = document.getElementById('modalTitle')
+  const modalBody = document.getElementById('modalMessage')
+  const modalOkButton = document.getElementById('modalOk')
+  const modalCancelButton = document.getElementById('modalCancel')
+
+  if (modalTitle && modalBody && modalOkButton && modalCancelButton) {
+
+    modalTitle.innerHTML = title;
+    modalBody.innerHTML = message;
+    modalOkButton.innerHTML = okLabel;
+    modalOkButton.onclick = () => {
+      closeModal('modalConfirm');
+      okCallback();
+    };
+    modalCancelButton.onclick = () => {
+      closeModal('modalConfirm');
+      cancelCallback();
+    };
+
+    openModal('modalConfirm');
+  }
+
+}
+
 // Global functions and objects:
 window.OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
   showModal,
-  openModal,
-  closeModal,
+  confirmAction,
   enableSubmitWhenTitleMatches,
   selectCookieConsent,
   selectCookiePreferences,
@@ -192,6 +218,7 @@ window.addEventListener('mouseout', (e: any) => {
   }
 });
 
+
 declare global {
   interface Window {
     liveSocket: typeof liveSocket;
@@ -200,8 +227,7 @@ declare global {
       initActivityBridge: typeof initActivityBridge;
       initPreviewActivityBridge: typeof initPreviewActivityBridge;
       showModal: typeof showModal;
-      openModal: typeof openModal;
-      closeModal: typeof closeModal;
+      confirmAction: typeof confirmAction;
       enableSubmitWhenTitleMatches: typeof enableSubmitWhenTitleMatches;
       selectCookieConsent: typeof selectCookieConsent;
       selectCookiePreferences: typeof selectCookiePreferences;

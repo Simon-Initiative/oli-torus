@@ -148,18 +148,4 @@ __ACTIVITY_ATTEMPTS__<%= encode_activity_attempts(@activity_type_slug_mapping, @
 -->
   <% end %>
 
-  <div id="actvityReset" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 hidden">
-    <!-- Modal Content -->
-    <div class="bg-white rounded-lg shadow-lg p-6 w-96">
-      <h2 class="text-lg font-semibold">Confirm Action</h2>
-      <p class="text-gray-600 mt-2">Are you sure you want to proceed?</p>
-
-      <!-- Buttons -->
-      <div class="flex justify-end space-x-2 mt-4">
-        <button onclick="closeModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">Cancel</button>
-        <button onclick="confirmAction()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">OK</button>
-      </div>
-    </div>
-  </div>
-
 </div>
