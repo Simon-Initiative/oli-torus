@@ -100,6 +100,15 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     |> assign(graded_pages: section_graded_pages(section_slug))
   end
 
+  defp assigns_for(socket, :design) do
+    certificate =
+      socket.assigns.certificate ||
+        Certificates.get_certificate_by(%{section_id: socket.assigns.section.id})
+
+    socket
+    |> assign(certificate: certificate)
+  end
+
   defp assigns_for(socket, :credentials_issued) do
     params = socket.assigns.params
     params = CertificatesIssuedTab.decode_params(params)
@@ -132,7 +141,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
     case active_tab do
       :thresholds -> assigns_for(socket, :thresholds)
-      :design -> socket
+      :design -> assigns_for(socket, :design)
       :credentials_issued -> assigns_for(socket, :credentials_issued)
     end
   end
