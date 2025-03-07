@@ -32,6 +32,7 @@ const convertFontSize = (fontSize: string, conversionType: 'px' | 'rem'): string
   if (
     typeof fontSize !== 'string' ||
     isNaN(numericValue) ||
+    numericValue > 20 ||
     (!fontSize.endsWith('px') && !fontSize.endsWith('rem'))
   ) {
     return `${fontSize}px`;
