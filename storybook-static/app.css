@@ -5420,10 +5420,6 @@ table.table-striped tbody tr:nth-child(even) {
   max-height: 80vh;
 }
 
-.max-h-\[90vh\] {
-  max-height: 90vh;
-}
-
 .max-h-\[calc\(100vh-96px\)\] {
   max-height: calc(100vh - 96px);
 }
@@ -16067,6 +16063,11 @@ Not supports in Firefox and IE */
 .dark .dark\:hover\:text-delivery-primary-dark-hover:hover {
   --tw-text-opacity: 1;
   color: rgb(105 176 251 / var(--tw-text-opacity));
+}
+
+.dark .dark\:hover\:text-gray-100:hover {
+  --tw-text-opacity: 1;
+  color: rgb(245 245 245 / var(--tw-text-opacity));
 }
 
 .dark .dark\:hover\:text-gray-500:hover {
