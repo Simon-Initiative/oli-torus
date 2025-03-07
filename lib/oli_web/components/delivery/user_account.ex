@@ -74,8 +74,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_picture_icon user={@ctx.author} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <.account_label :if={Accounts.is_admin?(@ctx.author)} label="Author" class="text-[#EC8CFF]" />
-        <.account_label :if={!Accounts.is_admin?(@ctx.author)} label="Admin" class="text-[#F68E2E]" />
+        <.account_label :if={!Accounts.is_admin?(@ctx.author)} label="Author" class="text-[#EC8CFF]" />
+        <.account_label :if={Accounts.is_admin?(@ctx.author)} label="Admin" class="text-[#F68E2E]" />
         <.author_menu_items
           ctx={@ctx}
           id={@id}
