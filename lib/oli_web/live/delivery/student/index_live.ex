@@ -647,8 +647,23 @@ defmodule OliWeb.Delivery.Student.IndexLive do
               </div>
             </div>
           </div>
+          <div
+            :if={certificate_progress.granted_certificate_state == :denied}
+            class="text-base font-bold"
+          >
+            Certificate was denied by instructor
+          </div>
+          <div
+            :if={certificate_progress.granted_certificate_state == :pending}
+            class="text-base font-bold"
+          >
+            Your certificate is pending instructor approval…
+          </div>
           <.link
-            :if={all_certificate_requirements_met?(certificate_progress)}
+            :if={
+              all_certificate_requirements_met?(certificate_progress) and
+                certificate_progress.granted_certificate_state == :earned
+            }
             navigate={
               ~p"/sections/#{@section_slug}/certificate/#{certificate_progress.granted_certificate_guid}"
             }
@@ -677,7 +692,7 @@ defmodule OliWeb.Delivery.Student.IndexLive do
 
   defp all_certificate_requirements_met?(certificate_progress),
     do:
-      Map.drop(certificate_progress, [:granted_certificate_guid])
+      Map.drop(certificate_progress, [:granted_certificate_guid, :granted_certificate_state])
       |> Enum.all?(fn {_criteria, result} ->
         result.completed >= result.total
       end)

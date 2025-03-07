@@ -6,6 +6,7 @@ defmodule OliWeb.UserAuth do
 
   alias Oli.Accounts
   alias Oli.Accounts.{User}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias OliWeb.AuthorAuth
 
@@ -399,13 +400,20 @@ defmodule OliWeb.UserAuth do
         # The section is independent and specifies to skip email verification
         conn
 
-      {%Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil}, _} ->
-        conn
-        |> renew_session()
-        |> delete_resp_cookie(@remember_me_cookie)
-        |> put_flash(:info, "You must confirm your email to continue.")
-        |> redirect(to: ~p"/users/confirm")
-        |> halt()
+      {%Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil} = user, _} ->
+        # If the request path is student workspace and the user is enrolled in at least one section
+        # where email confirmation is not required, allow the user to access the workspace.
+        if conn.request_path == ~p"/workspaces/student" and
+             Sections.user_enrolled_in_section_that_skips_email_confirmation?(user) do
+          conn
+        else
+          conn
+          |> renew_session()
+          |> delete_resp_cookie(@remember_me_cookie)
+          |> put_flash(:info, "You must confirm your email to continue.")
+          |> redirect(to: ~p"/users/confirm")
+          |> halt()
+        end
 
       _ ->
         conn
