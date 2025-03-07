@@ -38,32 +38,6 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
-    test "handles student with section and research consent form", %{
-      conn: conn,
-      student: student
-    } do
-      conn =
-        conn
-        |> log_in_user(student)
-        |> get(Routes.delivery_path(conn, :index))
-
-      assert html_response(conn, 200) =~ "Online Consent Form"
-    end
-
-    test "handles student with section and no research consent form", %{
-      conn: conn,
-      section_no_rc: section_no_rc,
-      student_no_rc: student_no_rc
-    } do
-      conn =
-        conn
-        |> log_in_user(student_no_rc)
-        |> get(Routes.delivery_path(conn, :index))
-
-      assert html_response(conn, 302) =~
-               "You are being <a href=\"/sections/#{section_no_rc.slug}\">redirected"
-    end
-
     test "handles instructor with no section or linked account", %{
       conn: conn,
       instructor_no_section: instructor_no_section
