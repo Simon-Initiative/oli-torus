@@ -229,7 +229,7 @@ defmodule OliWeb.Workspaces.StudentTest do
 
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+      {:ok, _view, _html} = live(conn, ~p"/workspaces/student")
     end
   end
 
