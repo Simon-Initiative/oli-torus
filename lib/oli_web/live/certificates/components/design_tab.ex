@@ -186,6 +186,9 @@ defmodule OliWeb.Certificates.Components.DesignTab do
                   </a>
                 </div>
               <% end %>
+              <%= for error <- @logo_upload_errors do %>
+                <p class="text-red-500 text-sm"><%= error %></p>
+              <% end %>
             </section>
           </div>
           <!-- Preview -->
@@ -252,7 +255,8 @@ defmodule OliWeb.Certificates.Components.DesignTab do
      |> assign(assigns)
      |> assign(
        show_preview: false,
-       preview_page: 0
+       preview_page: 0,
+       logo_upload_errors: []
      )
      |> assign_new(:certificate_changeset, fn ->
        assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
@@ -263,11 +267,19 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   def handle_event("validate", %{"certificate" => params}, socket) do
     changes = for {key, value} <- params, into: %{}, do: {String.to_existing_atom(key), value}
     changeset = certificate_changeset(socket.assigns.certificate_changeset, changes)
-    {:noreply, assign(socket, certificate_changeset: changeset)}
+
+    {:noreply,
+     assign(socket,
+       logo_upload_errors: formatted_upload_errors(socket.assigns.uploads.logo),
+       certificate_changeset: changeset
+     )}
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :logo, ref)}
+    {:noreply,
+     socket
+     |> cancel_upload(:logo, ref)
+     |> assign(logo_upload_errors: formatted_upload_errors(socket.assigns.uploads.logo, ref))}
   end
 
   def handle_event("save", _params, socket) do
@@ -493,5 +505,28 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       CertificateRenderer.render(%{attrs | certificate_type: "Certificate with Distinction"})
 
     {completion_cert, distinction_cert}
+  end
+
+  defp formatted_upload_errors(uploads, except_ref \\ nil) do
+    uploads.entries
+    |> Enum.reject(&(&1.ref == except_ref))
+    |> Enum.map(fn entry ->
+      uploads
+      |> upload_errors(entry)
+      |> format_upload_error(entry.client_name)
+    end)
+    |> Enum.filter(& &1)
+  end
+
+  defp format_upload_error([], _file_name), do: nil
+
+  defp format_upload_error(errors, file_name) do
+    errors
+    |> Enum.map(fn
+      :too_large -> "\"#{file_name}\" exceeds the maximum allowed size."
+      :not_accepted -> "\"#{file_name}\" type is not accepted."
+      _ -> "\"#{file_name}\" upload failed."
+    end)
+    |> Enum.join(" ")
   end
 end
