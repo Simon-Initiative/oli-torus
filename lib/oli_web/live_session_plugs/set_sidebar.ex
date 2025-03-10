@@ -26,7 +26,6 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
           end
       )
       |> assign(disable_sidebar?: false)
-      |> assign(header_enabled?: true)
       |> assign(footer_enabled?: true)
 
     if connected?(socket) do

@@ -61,7 +61,6 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        current_user: nil,
        active_workspace: :student,
-       header_enabled?: false,
        footer_enabled?: false,
        authentication_providers: authentication_providers
      )}
