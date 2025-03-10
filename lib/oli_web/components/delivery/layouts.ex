@@ -36,6 +36,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:ctx, SessionContext)
   attr(:is_admin, :boolean, required: true)
+  attr(:active_workspace, :atom, default: nil)
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
@@ -72,13 +73,22 @@ defmodule OliWeb.Components.Delivery.Layouts do
             "justify-center items-center",
             if(@sidebar_enabled, do: "hidden md:flex", else: "")
           ]}>
-            <UserAccount.menu
-              id="user-account-menu"
-              ctx={@ctx}
-              is_admin={@is_admin}
-              section={@section}
-              show_support_link={!@sidebar_enabled}
-            />
+            <%= if @active_workspace do %>
+              <UserAccount.workspace_menu
+                id="workspace-user-menu"
+                ctx={@ctx}
+                is_admin={@is_admin}
+                active_workspace={@active_workspace}
+              />
+            <% else %>
+              <UserAccount.menu
+                id="user-account-menu"
+                ctx={@ctx}
+                is_admin={@is_admin}
+                section={@section}
+                show_support_link={!@sidebar_enabled}
+              />
+            <% end %>
           </div>
         </div>
         <div class="flex items-center p-2">

@@ -3,6 +3,7 @@
     <Components.Delivery.Layouts.header
       ctx={@ctx}
       is_admin={@is_admin}
+      active_workspace={assigns[:active_workspace] || :student}
       preview_mode={@preview_mode}
       sidebar_expanded={@sidebar_expanded}
       sidebar_enabled={!@disable_sidebar?}
