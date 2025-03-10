@@ -24,9 +24,7 @@ defmodule Oli.Delivery.Sections do
     EnrollmentBrowseOptions,
     EnrollmentContextRole,
     Scheduling,
-    MinimalHierarchy,
-    Certificate,
-    SectionResourceDepot
+    MinimalHierarchy
   }
 
   alias Lti_1p3.Tool.ContextRole
