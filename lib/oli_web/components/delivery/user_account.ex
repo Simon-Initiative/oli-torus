@@ -13,6 +13,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
+  alias OliWeb.Icons
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
@@ -141,6 +142,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:is_admin, :boolean, required: true)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
+  attr(:show_support_link, :boolean, default: false)
 
   def menu(assigns) do
     ~H"""
@@ -158,15 +160,34 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <%= if @is_admin do %>
-          <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+          <.author_menu_items
+            id={"#{@id}-menu-items-admin"}
+            ctx={@ctx}
+            is_admin={@is_admin}
+            show_support_link={@show_support_link}
+          />
         <% else %>
           <%= case assigns.ctx do %>
             <% %SessionContext{user: %User{guest: true}} -> %>
-              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} section={@section} />
+              <.guest_menu_items
+                id={"#{@id}-menu-items-admin"}
+                ctx={@ctx}
+                section={@section}
+                show_support_link={@show_support_link}
+              />
             <% %SessionContext{user: %User{}} -> %>
-              <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+              <.user_menu_items
+                id={"#{@id}-menu-items-admin"}
+                ctx={@ctx}
+                show_support_link={@show_support_link}
+              />
             <% %SessionContext{author: %Author{}} -> %>
-              <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+              <.author_menu_items
+                id={"#{@id}-menu-items-admin"}
+                ctx={@ctx}
+                is_admin={@is_admin}
+                show_support_link={@show_support_link}
+              />
             <% _ -> %>
           <% end %>
         <% end %>
@@ -188,6 +209,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:ctx, SessionContext, required: true)
   attr(:is_admin, :boolean, required: true)
   attr(:target_signout_path, :string, default: "")
+  attr(:show_support_link, :boolean, default: false)
 
   def author_menu_items(assigns) do
     ~H"""
@@ -197,6 +219,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
+    <.menu_item_support_button :if={@show_support_link} />
     <.menu_item_link href={~p"/authors/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -206,6 +229,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
   attr(:target_signout_path, :string, default: "")
+  attr(:show_support_link, :boolean, default: false)
 
   def user_menu_items(assigns) do
     ~H"""
@@ -226,6 +250,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       :if={Accounts.can_manage_linked_account?(@ctx.user)}
       user={@ctx.user}
     />
+    <.menu_item_support_button :if={@show_support_link} />
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -235,6 +260,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
   attr(:section, Section, default: nil)
+  attr(:show_support_link, :boolean, default: false)
 
   def guest_menu_items(assigns) do
     ~H"""
@@ -247,6 +273,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
+    <.menu_item_support_button :if={@show_support_link} />
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
     </.menu_item_link>
@@ -310,6 +337,20 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <% end %>
         """
     end
+  end
+
+  attr(:rest, :global, include: ~w"onclick")
+  slot(:inner_block, required: true)
+
+  def menu_item_button(assigns) do
+    ~H"""
+    <button
+      {@rest}
+      class="w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer"
+    >
+      <%= render_slot(@inner_block) %>
+    </button>
+    """
   end
 
   attr(:user, User, required: true)
@@ -445,6 +486,17 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </.menu_item_link>
       <.menu_divider />
     <% end %>
+    """
+  end
+
+  defp menu_item_support_button(assigns) do
+    ~H"""
+    <.menu_item>
+      <.menu_item_button onclick="window.showHelpModal();">
+        <Icons.support />
+        <span class="ml-2 text-sm font-medium tracking-tight">Support</span>
+      </.menu_item_button>
+    </.menu_item>
     """
   end
 

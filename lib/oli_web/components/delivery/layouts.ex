@@ -40,9 +40,10 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
 
-  attr(:force_show_user_menu, :boolean,
+  attr(:sidebar_enabled, :boolean,
     default: false,
-    doc: "Forces the user menu to be shown on the header and does not show the mobile menu button"
+    doc:
+      "Shows a mobile menu button on small form factors to trigger the sidebar navigation menu if the sidebar is enabled. Otherwise, only show the user account menu."
   )
 
   attr(:sidebar_expanded, :boolean, default: true)
@@ -69,13 +70,14 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="justify-end items-center flex shrink-0">
           <div class={[
             "justify-center items-center",
-            if(@force_show_user_menu, do: "block", else: "hidden md:flex")
+            if(@sidebar_enabled, do: "hidden md:flex", else: "")
           ]}>
             <UserAccount.menu
               id="user-account-menu"
               ctx={@ctx}
               is_admin={@is_admin}
               section={@section}
+              show_support_link={!@sidebar_enabled}
             />
           </div>
         </div>
@@ -83,7 +85,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
           <button
             class={[
               "py-1.5 px-3 rounded border border-transparent hover:border-gray-300 active:bg-gray-100",
-              if(@force_show_user_menu, do: "hidden", else: "md:hidden")
+              if(@sidebar_enabled, do: "md:hidden", else: "hidden")
             ]}
             phx-click={JS.toggle(to: "#mobile-nav-menu", display: "flex")}
           >

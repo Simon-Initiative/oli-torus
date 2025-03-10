@@ -27,6 +27,7 @@ defmodule OliWeb.Delivery.StudentDashboard.Components.Helpers do
         section={@section}
         preview_mode={@preview_mode}
         is_admin={@is_admin}
+        include_logo
       />
       <Header.delivery_breadcrumb {assigns} />
 

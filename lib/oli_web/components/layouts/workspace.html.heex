@@ -5,7 +5,7 @@
       is_admin={@is_admin}
       preview_mode={@preview_mode}
       sidebar_expanded={@sidebar_expanded}
-      force_show_user_menu={@disable_sidebar?}
+      sidebar_enabled={!@disable_sidebar?}
       include_logo
     />
     <div class={"top-0 #{if @disable_sidebar?, do: "w-full", else: "absolute"}"}>
