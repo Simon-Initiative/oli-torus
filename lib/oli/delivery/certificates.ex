@@ -382,9 +382,9 @@ defmodule Oli.Delivery.Certificates do
       purged_required_assessment_ids =
         Enum.filter(certificate.custom_assessments, &(&1 in all_assessment_ids))
 
-      update_certificate(certificate, %{
-        custom_assessments: purged_required_assessment_ids
-      })
+      update_certificate(certificate, %{custom_assessments: purged_required_assessment_ids})
+    else
+      _ -> {:ok, :no_purge_needed}
     end
   end
 
