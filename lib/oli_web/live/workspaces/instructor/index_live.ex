@@ -197,25 +197,21 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             </button>
           </div>
         </div>
-        <div class="flex flex-col md:flex-row md:items-center md:w-full md:justify-between gap-3">
+        <div class="flex flex-col md:flex-row md:items-center w-full md:justify-between gap-3">
           <.link
             href={if(is_independent_instructor?(@current_user), do: ~p"/sections/independent/create")}
             class={[
-              "h-12 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
+              "px-4 py-2 max-w-[220px] hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
+              "text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap",
               if(is_independent_instructor?(@current_user),
                 do: "bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]",
                 else: "bg-zinc-600 cursor-not-allowed"
               )
             ]}
           >
-            <div class="w-3 h-5 relative">
-              <Icons.plus class="w-5 h-5 left-[-8px] top-0 absolute" path_class="stroke-white" />
-            </div>
-            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
-              Create New Section
-            </div>
+            <Icons.plus class="w-5 h-5" path_class="stroke-white" /> Create New Section
           </.link>
-          <.form for={%{}} phx-change="search_section" class="w-[330px]">
+          <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
               name="text_search"
