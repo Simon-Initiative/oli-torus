@@ -230,6 +230,8 @@ defmodule OliWeb.Workspaces.StudentTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      assert has_element?(view, "h3", "Courses available")
     end
   end
 
