@@ -412,7 +412,7 @@ defmodule OliWeb.Components.Auth do
     <.link
       href={@navigate}
       aria-label="Sign in with Google"
-      class="flex items-center bg-white hover:bg-gray-100 border border-button-border-light rounded-md p-0.5 pr-3 hover:no-underline"
+      class="p-0.5 pr-3 max-w-md flex items-center bg-white hover:bg-gray-100 border border-button-border-light rounded-md hover:no-underline"
       {@rest}
     >
       <div class="flex items-center justify-center bg-white w-9 h-9 rounded-l mr-[10px]">

@@ -47,7 +47,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      assign(socket,
        current_user: nil,
        active_workspace: :instructor,
-       header_enabled?: false,
        footer_enabled?: false,
        authentication_providers: authentication_providers
      )}

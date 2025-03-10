@@ -62,14 +62,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
       >
         <.logo_img section={@section} />
       </.link>
-      <div class="flex flex-row flex-1 justify-between">
+      <div class="flex flex-row flex-1 justify-end md:justify-between">
         <div class="flex hidden md:flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
           <.title section={@section} project={@project} preview_mode={@preview_mode} />
         </div>
-        <div class="justify-end items-center flex">
-          <div class={
-            if @force_show_user_menu, do: "block", else: "hidden md:flex justify-center items-center"
-          }>
+        <div class="justify-end items-center flex shrink-0">
+          <div class={[
+            "justify-center items-center",
+            if(@force_show_user_menu, do: "block", else: "hidden md:flex")
+          ]}>
             <UserAccount.menu
               id="user-account-menu"
               ctx={@ctx}
@@ -204,14 +205,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       "
         phx-click-away={JS.hide()}
       >
-        <.sidebar_links
-          active_tab={@active_tab}
-          section={@section}
-          preview_mode={@preview_mode}
-          notes_enabled={@notes_enabled}
-          discussions_enabled={@discussions_enabled}
-        />
-        <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
+        <div class="px-4 py-2 flex flex-row items-center align-center justify-between border-b border-gray-300 dark:border-gray-800">
           <div class="flex items-center">
             <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
           </div>
@@ -220,9 +214,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
             ctx={@ctx}
             is_admin={@is_admin}
             section={@section}
-            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
+            dropdown_class="absolute right-0 border"
           />
         </div>
+        <.sidebar_links
+          active_tab={@active_tab}
+          section={@section}
+          preview_mode={@preview_mode}
+          notes_enabled={@notes_enabled}
+          discussions_enabled={@discussions_enabled}
+        />
       </nav>
     </div>
     """
@@ -379,7 +380,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
         </div>
       </nav>
       <nav
-        id="mobile-workspace-nav-menu"
+        id="mobile-nav-menu"
         class="
         fixed
         z-50
@@ -394,13 +395,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
       "
         phx-click-away={JS.hide()}
       >
-        <.workspace_sidebar_links
-          preview_mode={@preview_mode}
-          sidebar_expanded={@sidebar_expanded}
-          active_workspace={@active_workspace}
-          platform="mobile"
-        />
-        <div class="px-4 py-2 flex flex-row align-center justify-between border-t border-gray-300 dark:border-gray-800">
+        <div class="px-4 py-2 flex flex-row items-center align-center justify-between border-b border-gray-300 dark:border-gray-800">
           <div class="flex items-center">
             <.tech_support_button id="mobile-tech-support" ctx={@ctx} />
           </div>
@@ -408,9 +403,15 @@ defmodule OliWeb.Components.Delivery.Layouts do
             id="mobile-user-account-menu-workspace-sidebar"
             ctx={@ctx}
             is_admin={@is_admin}
-            dropdown_class="absolute -translate-y-[calc(100%+58px)] right-0 border"
+            dropdown_class="absolute right-0 border"
           />
         </div>
+        <.workspace_sidebar_links
+          preview_mode={@preview_mode}
+          sidebar_expanded={@sidebar_expanded}
+          active_workspace={@active_workspace}
+          platform="mobile"
+        />
       </nav>
     </div>
     """
