@@ -1,8 +1,6 @@
 defmodule OliWeb.UserAuthTest do
   use OliWeb.ConnCase, async: true
 
-  import Oli.Factory
-
   alias Phoenix.LiveView
   alias Oli.Accounts
   alias OliWeb.UserAuth
@@ -308,18 +306,16 @@ defmodule OliWeb.UserAuthTest do
       refute conn.status
     end
 
-    test "does not required user to confirm email when accesssing independent section has omit email verification set",
+    test "does not required user to confirm email when skip_email_verification set",
          %{conn: conn, user: user} do
       {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
-
-      section = insert(:section, open_and_free: true, skip_email_verification: true)
 
       conn =
         conn
         |> fetch_flash()
         |> UserAuth.create_session(user)
         |> assign(:current_user, user)
-        |> assign(:section, section)
+        |> assign(:skip_email_verification, true)
         |> UserAuth.require_authenticated_user([])
 
       refute conn.halted
