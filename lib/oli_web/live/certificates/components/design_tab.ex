@@ -142,7 +142,13 @@ defmodule OliWeb.Certificates.Components.DesignTab do
               Upload up to three logos for your certificate (Max size: 1MB each).
             </div>
             <!-- File Input -->
-            <.live_file_input upload={@uploads.logo} />
+            <.live_file_input upload={@uploads.logo} class="hidden" />
+            <label
+              for={@uploads.logo.ref}
+              class="inline-block px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600"
+            >
+              Choose files
+            </label>
             <section class="flex gap-4 flex-wrap mt-4">
               <!-- Display existing logos -->
               <%= for {logo_id, logo_src} <- saved_logos(@certificate_changeset), not is_nil(logo_src) do %>
