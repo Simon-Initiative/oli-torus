@@ -52,6 +52,22 @@ defmodule Oli.Delivery.Certificates do
   def get_certificate_by(params), do: Repo.get_by(Certificate, params)
 
   @doc """
+  Updates a certificate.
+
+  ## Examples
+  iex> update_certificate(%Certificate{}, %{field: value})
+  {:ok, %Certificate{}}
+
+  iex> update_certificate(%Certificate{}, %{field: bad_value})
+  {:error, %Ecto.Changeset{}}
+  """
+  def update_certificate(certificate, attrs) do
+    certificate
+    |> Certificate.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Retrieves all granted certificates by section id.
   In case the section is a blueprint, it will return all granted certificates by all courses created based on that product.
 
@@ -348,6 +364,48 @@ defmodule Oli.Delivery.Certificates do
     |> case do
       nil -> 0
       count -> count
+    end
+  end
+
+  @doc """
+  Purges deleted assessments from the certificate by checking all defined required assessments in the certificate
+  still belong to the section. If not, the assessment is removed from the certificate.
+  """
+  def purge_deleted_assessments_from_certificate(section) do
+    with true <- section.certificate_enabled,
+         %Certificate{assessments_apply_to: :custom} = certificate <-
+           get_certificate_by(%{section_id: section.id}) do
+      all_assessment_ids =
+        SectionResourceDepot.graded_pages(section.id, hidden: false)
+        |> Enum.map(& &1.resource_id)
+
+      purged_required_assessment_ids =
+        Enum.filter(certificate.custom_assessments, &(&1 in all_assessment_ids))
+
+      update_certificate(certificate, %{custom_assessments: purged_required_assessment_ids})
+    else
+      _ -> {:ok, :no_purge_needed}
+    end
+  end
+
+  @doc """
+  Switches the certificate to require ':custom' assessments if the certificate is set to require ':all' assessments
+  by setting the custom assessments list to the list of all graded pages in the section.
+  """
+  def switch_certificate_to_custom_assessments(section) do
+    with true <- section.certificate_enabled,
+         %Certificate{assessments_apply_to: :all} = certificate <-
+           get_certificate_by(%{section_id: section.id}) do
+      original_required_assessment_ids =
+        SectionResourceDepot.graded_pages(section.id, hidden: false)
+        |> Enum.map(& &1.resource_id)
+
+      update_certificate(certificate, %{
+        assessments_apply_to: :custom,
+        custom_assessments: original_required_assessment_ids
+      })
+    else
+      _ -> {:ok, :no_switch_needed}
     end
   end
 
