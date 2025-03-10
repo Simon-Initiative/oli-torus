@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Utils.Database
 
+  alias Oli.Delivery.Certificates
   alias Oli.Delivery.Sections
 
   alias Oli.Delivery.Sections.{
@@ -23,7 +24,9 @@ defmodule Oli.Delivery.Sections do
     EnrollmentBrowseOptions,
     EnrollmentContextRole,
     Scheduling,
-    MinimalHierarchy
+    MinimalHierarchy,
+    Certificate,
+    SectionResourceDepot
   }
 
   alias Lti_1p3.Tool.ContextRole
@@ -2957,6 +2960,10 @@ defmodule Oli.Delivery.Sections do
       ) do
     if Hierarchy.finalized?(hierarchy) do
       Multi.new()
+      |> Multi.run(:keep_original_required_assessments_for_certificate, fn _repo, _ ->
+        # guarantee no added assessments are required for gaining a certificate
+        Certificates.switch_certificate_to_custom_assessments(section)
+      end)
       |> Multi.run(:rebuild_section_resources, fn _repo, _ ->
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
@@ -2984,6 +2991,9 @@ defmodule Oli.Delivery.Sections do
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
       )
+
+      # guarantee a deleted assessment is not required for gaining a certificate
+      Certificates.purge_deleted_assessments_from_certificate(section)
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
