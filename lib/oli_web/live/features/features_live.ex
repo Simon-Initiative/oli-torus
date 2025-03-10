@@ -20,7 +20,8 @@ defmodule OliWeb.Features.FeaturesLive do
   end
 
   def mount(_, _, socket) do
-    research_consent_form_setting = Delivery.get_research_consent_form_setting()
+    research_consent_form_setting =
+      Delivery.get_system_research_consent_form_setting()
 
     {:ok,
      assign(socket,
@@ -206,7 +207,7 @@ defmodule OliWeb.Features.FeaturesLive do
       ) do
     research_consent_form_selection = String.to_existing_atom(research_consent_form)
 
-    Delivery.update_research_consent_form_setting(research_consent_form_selection)
+    Delivery.update_system_research_consent_form_setting(research_consent_form_selection)
 
     {:noreply, assign(socket, research_consent_form_setting: research_consent_form_selection)}
   end

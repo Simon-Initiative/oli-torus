@@ -111,6 +111,10 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.EnsureDatashopId)
   end
 
+  pipeline :ensure_research_consent do
+    plug(Oli.Plugs.EnsureResearchConsent)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -1076,6 +1080,7 @@ defmodule OliWeb.Router do
       :student,
       :enforce_paywall,
       :require_enrollment,
+      :ensure_research_consent,
       :ensure_user_section_visit,
       :force_required_survey
     ])

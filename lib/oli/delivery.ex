@@ -6,12 +6,14 @@ defmodule Oli.Delivery do
   alias Oli.Delivery.Settings.StudentException
   alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications}
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Publishing.{DeliveryResolver, PublishedResource}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ActivityAttempt, ResourceAccess}
   alias Oli.Delivery.ResearchConsent
+  alias Oli.Accounts.User
 
   import Ecto.Query, warn: false
   import Oli.Utils
@@ -177,6 +179,27 @@ defmodule Oli.Delivery do
     lti_roles = lti_params[@roles_claims]
     context_roles = ContextRoles.get_roles_by_uris(lti_roles)
     Sections.enroll(user_id, section_id, context_roles)
+  end
+
+  @doc """
+  Returns true if the user is required to provide research consent
+  """
+  def user_research_consent_required?(user) do
+    case user do
+      # Direct delivery users
+      %User{independent_learner: true} ->
+        case get_system_research_consent_form_setting() do
+          :oli_form -> true
+          _ -> false
+        end
+
+      # LTI users
+      user ->
+        case Institutions.get_institution_by_lti_user(user) do
+          %Institution{research_consent: :oli_form} -> true
+          _ -> false
+        end
+    end
   end
 
   # ------------------------------------------------------------
@@ -440,7 +463,7 @@ defmodule Oli.Delivery do
 
   This record is created during migration so a single record is always expected to exist.
   """
-  def get_research_consent_form_setting() do
+  def get_system_research_consent_form_setting() do
     Repo.one(ResearchConsent)
     |> Map.get(:research_consent)
   end
@@ -448,7 +471,7 @@ defmodule Oli.Delivery do
   @doc """
   Updates the research consent form setting.
   """
-  def update_research_consent_form_setting(research_consent) do
+  def update_system_research_consent_form_setting(research_consent) do
     case Repo.one(ResearchConsent) do
       nil ->
         Repo.insert!(%ResearchConsent{research_consent: research_consent})
