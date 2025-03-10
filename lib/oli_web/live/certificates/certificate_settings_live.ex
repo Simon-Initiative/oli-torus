@@ -21,7 +21,6 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   def mount(params, session, socket) do
     slug = params["product_id"] || params["section_slug"]
-    IO.inspect(slug)
     socket = assigns_for(socket, :page)
 
     case Mount.for(slug, session) do
@@ -65,8 +64,6 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
   defp assigns_for(socket, :breadcrumbs) do
     %{assigns: %{route_name: route_name, section: section}} = socket
-
-    IO.inspect(route_name)
 
     case route_name do
       :workspaces ->
