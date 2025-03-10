@@ -91,6 +91,7 @@ defmodule Oli.Analytics.Datasets.Utils do
            'activities', (
                SELECT jsonb_object_agg(r.resource_id::text, jsonb_build_object(
                           'choices', r.content->'choices',
+                          'items', r.content->'items',
                           'type', a.slug,
                           'parts', (
                               SELECT jsonb_agg(

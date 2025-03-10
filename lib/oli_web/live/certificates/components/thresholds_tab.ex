@@ -267,7 +267,10 @@ defmodule OliWeb.Certificates.Components.ThresholdsTab do
         {:ok, certificate} ->
           send(self(), {:put_flash, [:info, "Certificate settings saved successfully"]})
 
-          assign(socket, certificate_changeset: certificate_changeset(certificate))
+          assign(socket,
+            certificate: certificate,
+            certificate_changeset: certificate_changeset(certificate)
+          )
 
         {:error, %Ecto.Changeset{} = changeset} ->
           send(self(), {:put_flash, [:error, "Failed to save certificate settings"]})
