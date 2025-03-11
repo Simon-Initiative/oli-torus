@@ -36,9 +36,11 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
      assign(socket,
        active_tab: :assignments,
        assignments: get_assignments(section, current_user_id),
-       certificate: if(section.certificate_enabled, do: certificate, else: nil)
+       certificate: if(section.certificate_enabled, do: certificate, else: nil),
+       filter: :all,
+       filter_expanded: false
      )
-     |> slim_assigns(), temporary_assigns: [assignments: []]}
+     |> slim_assigns()}
   end
 
   defp slim_assigns(socket) do
@@ -62,18 +64,35 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     {:noreply, socket}
   end
 
+  def handle_event("toggle_filter_open", _, socket) do
+    {:noreply, assign(socket, filter_expanded: !socket.assigns.filter_expanded)}
+  end
+
+  def handle_event("collapse_select", _, socket) do
+    {:noreply, assign(socket, filter_expanded: false)}
+  end
+
+  def handle_event("select_filter", params, socket) do
+    case params["filter"] do
+      "all" -> {:noreply, assign(socket, filter: :all, filter_expanded: false)}
+      "required" -> {:noreply, assign(socket, filter: :required, filter_expanded: false)}
+      _ -> socket
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <.top_hero_banner />
-
-    <div class="flex flex-col justify-center py-9 px-20 w-full gap-24">
+    <div class="flex flex-col justify-center py-9 px-20 w-full gap-12">
       <.certificate_requirements certificate={@certificate} />
+      <.filter_dropdown filter={@filter} filter_expanded={@filter_expanded} />
 
       <.assignments_agenda
         assignments={@assignments}
         ctx={@ctx}
         section_slug={@section.slug}
         certificate={@certificate}
+        filter={@filter}
       />
     </div>
     """
@@ -104,10 +123,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def certificate_requirements(assigns) do
     ~H"""
-    <div class="w-full h-[81px] justify-center items-center inline-flex">
+    <div class="w-full h-[81px] justify-center items-center inline-flex mb-20 sm:mb-0">
       <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-[5px] inline-flex">
-        <div class="flex-col justify-center items-start gap-[15px] flex">
-          <div class="w-full h-5">
+        <div class="flex-col justify-center items-start gap-[8px] flex">
+          <div class="w-full h-fit">
             <span class="text-[#e6e9f2] font-bold">
               This is a Certificate Course.
             </span>
@@ -117,8 +136,8 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
             <span class="text-[#ff8787] text-xl font-normal">*</span>
             <span class="text-[#e6e9f2] font-normal"> ) and follow these scoring guidelines:</span>
           </div>
-          <div class="w-full grow shrink basis-0 relative">
-            <div class="w-full h-4 left-0 top-0 absolute">
+          <div class="w-full grow shrink basis-0">
+            <div class="w-full h-fit">
               <span class="text-[#e6e9f2] text-sm font-bold">
                 Certificate of Completion:
               </span>
@@ -127,7 +146,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               </span>
               <span class="text-[#39e581] text-sm font-normal"></span><span class="text-white text-sm font-normal">or above on all required assignments</span>
             </div>
-            <div class="w-full h-4 left-0 top-[26px] absolute">
+            <div class="w-full h-fit">
               <span class="text-[#e6e9f2] text-sm font-bold">
                 Certificate with Distinction:
               </span>
@@ -147,6 +166,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   attr :ctx, SessionContext, required: true
   attr :section_slug, :string, required: true
   attr :certificate, :map, required: true
+  attr :filter, :atom, required: true
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -172,6 +192,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <.assignment
           :for={assignment <- @assignments}
           :if={@assignments != []}
+          filter={@filter}
           assignment={assignment}
           ctx={@ctx}
           target={
@@ -195,9 +216,12 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     default: false,
     doc: "Whether the assignment is required for the certificate"
 
+  attr :filter, :atom, required: true
+
   def assignment(assigns) do
     ~H"""
     <div
+      :if={@filter == :all or (@filter == :required and @required)}
       role="assignment detail"
       id={"assignment_#{@assignment.id}"}
       data-completed={"#{!is_nil(@assignment.raw_avg_score)}"}
@@ -314,15 +338,101 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     """
   end
 
+  attr :class, :string, default: "fill-[#FF8787]"
+
   defp asterisk_icon(assigns) do
     ~H"""
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 13 13"
+      fill="currentColor"
+      class={@class}
+      xmlns="http://www.w3.org/2000/svg"
+    >
       <path
         opacity="0.9"
         d="M8.20654 0.0561523L7.69385 4.95239L12.6157 3.5553L13.0002 6.2854L8.3988 6.69556L11.3853 10.6818L8.89868 12.0276L6.73254 7.73376L4.79712 12.0148L2.20801 10.6818L5.16882 6.69556L0.593018 6.27258L1.02881 3.5553L5.86096 4.95239L5.34827 0.0561523H8.20654Z"
-        fill="#FF8787"
       />
     </svg>
+    """
+  end
+
+  attr :filter, :atom, required: true
+  attr :filter_expanded, :boolean, default: false
+
+  defp filter_dropdown(assigns) do
+    ~H"""
+    <div class="flex relative justify-end mb-6 z-99" phx-click-away="collapse_select">
+      <button
+        class={[
+          "h-6 px-2 py-[3px] bg-white/10 rounded-xl justify-start items-center gap-2 overflow-hidden hover:cursor-pointer hover:bg-white/20",
+          if(@filter == :all, do: "w-[180px]", else: "w-[210px]")
+        ]}
+        phx-click="toggle_filter_open"
+      >
+        <div class="pl-1 justify-start items-center gap-2.5 flex">
+          <%= case @filter do %>
+            <% :all -> %>
+              <Icons.transparent_flag class="dark:stroke-white" />
+              <div class="text-white text-[13px] font-semibold">
+                All Assignments
+              </div>
+            <% :required -> %>
+              <.asterisk_icon class="fill-white" />
+              <div class="text-white text-[13px] font-semibold">
+                Required Assignments
+              </div>
+          <% end %>
+
+          <Icons.chevron_down
+            width="16"
+            height="16"
+            class={if @filter_expanded, do: "-rotate-180 ml-auto", else: "ml-auto"}
+          />
+        </div>
+      </button>
+      <div
+        :if={@filter_expanded}
+        class={[
+          "h-13 absolute top-8 flex flex-col rounded-lg border border-[#3B3740] justify-start items-center overflow-hidden divide-y divide-[#3B3740] dark:divide-white/20",
+          if(@filter == :all, do: "w-[180px]", else: "w-[210px]")
+        ]}
+      >
+        <% opts = if @filter == :all, do: [:required, :all], else: [:all, :required] %>
+        <.filter_option :for={opt <- opts} option={opt} />
+      </div>
+    </div>
+    """
+  end
+
+  def filter_option(%{option: :all} = assigns) do
+    ~H"""
+    <button
+      class="w-full h-6 p-3 justify-start items-center gap-2.5 flex hover:cursor-pointer bg-[#0D0C0F] hover:bg-white/20"
+      phx-click="select_filter"
+      phx-value-filter="all"
+    >
+      <Icons.transparent_flag class="dark:stroke-white" />
+      <div class="text-white text-[13px] font-semibold">
+        All
+      </div>
+    </button>
+    """
+  end
+
+  def filter_option(%{option: :required} = assigns) do
+    ~H"""
+    <button
+      class="w-full h-6 p-3 justify-start items-center gap-2.5 flex hover:cursor-pointer bg-[#0D0C0F] hover:bg-white/20"
+      phx-click="select_filter"
+      phx-value-filter="required"
+    >
+      <.asterisk_icon class="fill-white" />
+      <div class="text-white text-[13px] font-semibold pl-1.5">
+        Required
+      </div>
+    </button>
     """
   end
 
