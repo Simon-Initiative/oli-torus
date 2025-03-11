@@ -17,6 +17,7 @@ import {
   listenForParentSurveySubmit,
   listenForReviewAttemptChange,
   resetAndSubmitActivity,
+  resetAction,
   setSelection,
   submit,
 } from 'data/activities/DeliveryState';
@@ -51,9 +52,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   const dispatch = useDispatch();
   const { surveyId } = context;
   const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
-  console.log("HERLKJERE");
 
-  console.log(uiState);
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
@@ -99,6 +98,9 @@ export const MultipleChoiceComponent: React.FC = () => {
           }
         };
 
+  console.log("rendered")
+  console.log(uiState)
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
@@ -122,7 +124,7 @@ export const MultipleChoiceComponent: React.FC = () => {
           isEvaluated={isEvaluated(uiState) && context.graded}
           context={writerContext}
         />
-        <ScoreAsYouGoSubmitReset onSubmit={() => dispatch(submit(onSubmitActivity))} onReset={() => onResetActivity(uiState.attemptState.attemptGuid)} />
+        <ScoreAsYouGoSubmitReset onSubmit={() => dispatch(submit(onSubmitActivity))} onReset={() => dispatch(resetAction(onResetActivity, undefined))} />
         <HintsDeliveryConnected
           partId={castPartId(activityState.parts[0].partId)}
           resetPartInputs={{ [activityState.parts[0].partId]: [] }}
