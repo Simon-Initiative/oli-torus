@@ -44,7 +44,7 @@ defmodule Oli.Plugs.RequireSection do
   end
 
   defp skip_email_verification?(%Section{skip_email_verification: true}), do: true
-  defp skip_email_verification?(_section), do: true
+  defp skip_email_verification?(_section), do: false
 
   defp section_not_found(conn) do
     conn

@@ -184,21 +184,21 @@ defmodule Oli.Delivery do
   @doc """
   Returns true if the user is required to provide research consent
   """
-  def user_research_consent_required?(user) do
-    case user do
-      # Direct delivery users
-      %User{independent_learner: true} ->
-        case get_system_research_consent_form_setting() do
-          :oli_form -> true
-          _ -> false
-        end
+  def user_research_consent_required?(nil), do: false
 
-      # LTI users
-      user ->
-        case Institutions.get_institution_by_lti_user(user) do
-          %Institution{research_consent: :oli_form} -> true
-          _ -> false
-        end
+  def user_research_consent_required?(%User{independent_learner: true}) do
+    # Direct delivery users
+    case get_system_research_consent_form_setting() do
+      :oli_form -> true
+      _ -> false
+    end
+  end
+
+  def user_research_consent_required?(user) do
+    # LTI users
+    case Institutions.get_institution_by_lti_user(user) do
+      %Institution{research_consent: :oli_form} -> true
+      _ -> false
     end
   end
 
