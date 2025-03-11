@@ -5,8 +5,7 @@ defmodule Oli.Plugs.RequireSection do
   import Plug.Conn
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.SectionInvite
-  alias Oli.Delivery.Sections.SectionInvites
+  alias Oli.Delivery.Sections.{Section, SectionInvite, SectionInvites}
   alias Oli.Repo
 
   def init(opts), do: opts
@@ -18,7 +17,7 @@ defmodule Oli.Plugs.RequireSection do
 
       section ->
         conn
-        |> assign_section_and_brand(section)
+        |> section_assigns(section)
         |> put_session(:section_slug, section_slug)
     end
   end
@@ -28,20 +27,24 @@ defmodule Oli.Plugs.RequireSection do
          false <- SectionInvites.link_expired?(sec_inv) do
       case SectionInvites.get_section_by_invite_slug(section_invite_slug) do
         nil -> section_not_found(conn)
-        section -> assign_section_and_brand(conn, section)
+        section -> section_assigns(conn, section)
       end
     else
       _ -> redirect(conn, to: ~p"/sections/join/invalid") |> halt()
     end
   end
 
-  defp assign_section_and_brand(conn, section) do
+  defp section_assigns(conn, section) do
     section = Repo.preload(section, [:brand, lti_1p3_deployment: [institution: [:default_brand]]])
 
     conn
     |> assign(:section, section)
+    |> assign(:skip_email_verification, skip_email_verification?(section))
     |> assign(:brand, Oli.Branding.get_section_brand(section))
   end
+
+  defp skip_email_verification?(%Section{skip_email_verification: true}), do: true
+  defp skip_email_verification?(_section), do: false
 
   defp section_not_found(conn) do
     conn

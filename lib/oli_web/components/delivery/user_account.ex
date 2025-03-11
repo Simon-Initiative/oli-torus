@@ -6,8 +6,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias Phoenix.LiveView.JS
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
-  alias Oli.Institutions
-  alias Oli.Institutions.Institution
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
@@ -439,7 +437,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   defp maybe_research_consent_link(assigns) do
     ~H"""
-    <%= if show_research_consent_link?(@ctx.user) do %>
+    <%= if Delivery.user_research_consent_required?(@ctx.user) do %>
       <.menu_item_link href={~p"/research_consent"}>
         Research Consent
       </.menu_item_link>
@@ -541,36 +539,4 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   defp to_initials(_), do: "?"
-
-  defp show_research_consent_link?(user) do
-    case user do
-      nil ->
-        false
-
-      # Direct delivery user
-      %User{independent_learner: true} ->
-        case Delivery.get_system_research_consent_form_setting() do
-          :oli_form ->
-            true
-
-          _ ->
-            false
-        end
-
-      # LTI user
-      user ->
-        # check institution research consent setting
-        institution = Institutions.get_institution_by_lti_user(user)
-
-        case institution do
-          %Institution{research_consent: :oli_form} ->
-            true
-
-          # if research consent is set to anything else or institution was
-          # not found for LTI user, do not show the link
-          _ ->
-            false
-        end
-    end
-  end
 end

@@ -162,6 +162,10 @@ defmodule OliWeb.Router do
     plug(:require_system_admin)
   end
 
+  pipeline :maybe_skip_email_verification do
+    plug(OliWeb.Plugs.MaybeSkipEmailVerification)
+  end
+
   # parse url encoded forms
   pipeline :www_url_form do
     plug(Plug.Parsers, parsers: [:urlencoded])
@@ -938,7 +942,27 @@ defmodule OliWeb.Router do
         live("/:section_slug/:view", DashboardLive)
         live("/:section_slug/:view/:active_tab", DashboardLive)
       end
+    end
+  end
 
+  scope "/workspaces", OliWeb.Workspaces do
+    pipe_through([
+      :browser,
+      :maybe_skip_email_verification,
+      :delivery_protected
+    ])
+
+    live_session :student_delivery_workspace,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection
+      ] do
       scope "/student" do
         live("/", Student)
       end
