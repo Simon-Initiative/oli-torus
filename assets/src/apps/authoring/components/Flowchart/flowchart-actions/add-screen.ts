@@ -32,7 +32,9 @@ import {
   createAlwaysGoToPath,
   createEndOfActivityPath,
   createExitPath,
+  createSpokeCorrectPath,
 } from '../paths/path-factories';
+import { QuestionTypeMapping } from '../paths/path-options';
 import { AuthoringFlowchartScreenData } from '../paths/path-types';
 import {
   hasDestinationPath,
@@ -79,7 +81,7 @@ export const addFlowchartScreen = createAsyncThunk(
       const { title: requestedTitle = 'New Screen', screenType = 'blank_screen' } = payload;
 
       const title = clearTitle(requestedTitle, otherActivityNames);
-
+      const isHubSpokeScreen = screenType === QuestionTypeMapping.HUB_SPOKE;
       const activity: IActivityTemplate = {
         ...createActivityTemplate(),
         title,
@@ -90,6 +92,7 @@ export const addFlowchartScreen = createAsyncThunk(
 
       activity.model.custom.maxAttempt = 3;
 
+      const sourceScreenId = payload.fromScreenId;
       const flowchartData: AuthoringFlowchartScreenData = {
         paths: [],
         screenType,
@@ -102,6 +105,17 @@ export const addFlowchartScreen = createAsyncThunk(
       } else {
         if (screenType === 'end_screen') {
           flowchartData.paths.push(createExitPath());
+        } else if (sourceScreenId && !isHubSpokeScreen) {
+          const sourceScreen = cloneT(selectActivityById(rootState, sourceScreenId));
+          // if this new screen get added after the hub_spoke screen, we need to add the path to return to the source screen
+          if (
+            sourceScreen &&
+            sourceScreen.authoring?.flowchart?.screenType === QuestionTypeMapping.HUB_SPOKE
+          ) {
+            flowchartData.paths.push(createAlwaysGoToPath(sourceScreenId));
+          }
+        } else if (isHubSpokeScreen) {
+          flowchartData.paths.push(createSpokeCorrectPath('', 0));
         } else {
           flowchartData.paths.push(createEndOfActivityPath());
         }

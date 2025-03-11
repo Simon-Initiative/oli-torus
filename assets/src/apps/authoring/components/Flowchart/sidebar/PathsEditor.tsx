@@ -11,6 +11,7 @@ interface Props {
   screenId: EntityId;
   questionId: string | null;
   screens: Record<string, string>;
+  screenType?: string;
 }
 
 export const PathsEditor: React.FC<Props> = ({
@@ -20,6 +21,7 @@ export const PathsEditor: React.FC<Props> = ({
   availablePaths,
   paths,
   screens,
+  screenType,
 }) => {
   const sortedPath = [...paths].sort(sortByPriority);
   const usedPathIds = paths.map((p) => p.id);
@@ -35,6 +37,7 @@ export const PathsEditor: React.FC<Props> = ({
           availablePaths={availablePaths}
           usedPathIds={usedPathIds}
           path={path}
+          screenType={screenType}
         />
       ))}
     </div>
