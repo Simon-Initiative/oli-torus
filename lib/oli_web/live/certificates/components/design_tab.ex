@@ -282,18 +282,8 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   def handle_event("cancel", %{"ref" => ref}, socket) do
     socket = cancel_upload(socket, :logo, ref)
 
-    uploads = socket.assigns.uploads.logo
-
-    updated_uploads = %{
-      uploads
-      | errors:
-          if(length(uploads.entries) <= uploads.max_entries,
-            do: Enum.reject(uploads.errors, fn {_key, error} -> error == :too_many_files end),
-            else: uploads.errors
-          )
-    }
-
-    {:noreply, assign(socket, logo_upload_errors: formatted_upload_errors(updated_uploads, ref))}
+    {:noreply,
+     assign(socket, logo_upload_errors: formatted_upload_errors(socket.assigns.uploads.logo, ref))}
   end
 
   def handle_event("save", _params, socket) do
@@ -532,13 +522,9 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       end)
       |> Enum.filter(& &1)
 
-    # verify if there is a :too_many_files error in the uploads
-    too_many_files_error =
-      if Enum.any?(uploads.errors, fn {_key, error} -> error == :too_many_files end),
-        do: ["You can upload up to #{uploads.max_entries} files only."],
-        else: []
-
-    too_many_files_error ++ entry_errors
+    if length(uploads.entries) > uploads.max_entries,
+      do: ["You can upload up to #{uploads.max_entries} files only." | entry_errors],
+      else: entry_errors
   end
 
   defp format_upload_error([], _file_name), do: nil
