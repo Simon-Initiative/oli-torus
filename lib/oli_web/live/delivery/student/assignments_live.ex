@@ -123,7 +123,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def certificate_requirements(assigns) do
     ~H"""
-    <div class="w-full h-[81px] justify-center items-center inline-flex mb-20 sm:mb-0">
+    <div
+      id="certificate_requirements"
+      class="w-full h-[81px] justify-center items-center inline-flex mb-20 sm:mb-0"
+    >
       <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-[5px] inline-flex">
         <div class="flex-col justify-center items-start gap-[8px] flex">
           <div class="w-full h-fit dark:text-[#e6e9f2]">
@@ -353,6 +356,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       fill="currentColor"
       class={@class}
       xmlns="http://www.w3.org/2000/svg"
+      role="asterisk icon"
     >
       <path
         opacity="0.9"
@@ -413,6 +417,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def filter_option(%{option: :all} = assigns) do
     ~H"""
     <button
+      id="select_all_option"
       class="w-full h-6 p-3 justify-start items-center gap-2.5 flex hover:cursor-pointer bg-black/10 dark:bg-white/10 hover:bg-black/20 hover:dark:bg-white/20"
       phx-click="select_filter"
       phx-value-filter="all"
@@ -428,6 +433,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def filter_option(%{option: :required} = assigns) do
     ~H"""
     <button
+      id="select_required_option"
       class="w-full h-6 p-3 justify-start items-center gap-2.5 flex hover:cursor-pointer bg-black/10 dark:bg-white/10 hover:bg-black/20 hover:dark:bg-white/20"
       phx-click="select_filter"
       phx-value-filter="required"
