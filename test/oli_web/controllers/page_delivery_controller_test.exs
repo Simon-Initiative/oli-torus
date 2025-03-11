@@ -8,6 +8,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
   alias Oli.Authoring.Course
   alias Oli.Seeder
+  alias Oli.Accounts
   alias Oli.Delivery.{Sections, Settings}
   alias Oli.Delivery.Attempts.{Core, PageLifecycle}
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
@@ -1477,6 +1478,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       user = conn.assigns[:current_user]
 
       ensure_user_visit(user, section)
+
+      {:ok, user} = Accounts.update_user(user, %{research_opt_out: true})
 
       # make the same request with a user logged in
       conn =

@@ -601,7 +601,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
       # Direct delivery user
       %User{independent_learner: true} ->
-        case Delivery.get_research_consent_form_setting() do
+        case Delivery.get_system_research_consent_form_setting() do
           :oli_form ->
             true
 

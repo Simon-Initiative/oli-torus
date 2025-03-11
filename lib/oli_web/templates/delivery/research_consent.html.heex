@@ -1,0 +1,76 @@
+<div class="container my-5 mx-auto">
+  <h5 class="text-center">Carnegie Mellon University</h5>
+  <h5 class="text-center">Open Learning Initiative</h5>
+  <h5 class="text-center">Online Consent Form</h5>
+
+  <p>
+    I agree to participate in the on-line course research conducted by Norman Bier and his colleagues under
+    the supervision of Norman Bier. I understand that the proposed research has been reviewed by the University&apos;s
+    Institutional Review Board. I understand that my participation is completely voluntary, and I will not receive
+    course credit or any other compensation from Carnegie Mellon for my participation in this research. I understand
+    that I have the right to terminate my participation at any time I wish without penalty by selecting
+    &quot;opt out from research&quot; on &quot;my OLI home&quot; page.
+  </p>
+
+  <p>
+    <strong>Purpose of the Study:</strong>
+    I know that the researchers are studying how students learn in an online
+    educational environment and that the study is directed at improving the course material, not judging my behaviors.
+    As a result of this research, the researchers will produce design recommendations to improve future versions of
+    the courses. I understand that my interactions with the on-line course will be logged in a data file and that these
+    logs and the scores that I receive on exams will be used as data for this study. The only difference between
+    agreeing to participate in the study and not agreeing to participate in the study is that if I agree to participate,
+    my log file will be retained as data for this study, if I do not agree, my log file will not be retained.
+  </p>
+
+  <p>
+    <strong>Privacy:</strong>
+    I understand that the following procedure will be used to maintain my anonymity in
+    analysis and publication / presentation of any results. Each participant will be assigned an ID; names will not be
+    logged with the study data. The researchers will save the data using this participant ID. Only registered OLI researchers
+    will have access to the logged data for analysis purposes. The servers containing the log files are in locked secure
+    room. No other researchers will have access to these files.
+  </p>
+
+  <p>
+    I understand the nature of this Study. I am at least 18 years of age and agree to participate. I can view of copy of
+    this consent form at any time by selecting the &quot;Research Consent Form&quot; link on the &quot;my OLI home&quot;
+    page. I give Mr. Bier and his colleagues permission to present this work in written and/or oral form for teaching
+    or presentations to advance the knowledge of science and/or academia, without further permission from me provided
+    that my image or identity is not disclosed.
+  </p>
+</div>
+
+<%= form_for @conn, Routes.delivery_path(@conn, :research_consent), fn _f -> %>
+  <input :if={@user_return_to} type="hidden" name="user_return_to" value={@user_return_to} />
+  <div class="text-center">
+    <div class="form-check form-check-inline">
+      <label class="form-check-label">
+        <input
+          class="form-check-input"
+          type="radio"
+          name="consent"
+          id="consentRadio1"
+          value="true"
+          checked={!@research_opt_out}
+        /> I Agree
+      </label>
+    </div>
+    <div class="form-check form-check-inline">
+      <label class="form-check-label">
+        <input
+          class="form-check-input"
+          type="radio"
+          name="consent"
+          id="consentRadio2"
+          value="false"
+          checked={@research_opt_out}
+        /> I Disagree
+      </label>
+    </div>
+  </div>
+
+  <div class="mt-2 text-center">
+    <%= submit("Submit", id: "select-submit", class: "btn btn-primary") %>
+  </div>
+<% end %>

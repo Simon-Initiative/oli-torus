@@ -14,6 +14,7 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.GrantedCertificates
   alias Oli.Repo
+  alias Oli.Accounts
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.XAPI.Events.Context
@@ -713,6 +714,49 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         live(conn, ~p"/sections/#{section.slug}")
 
       assert redirect_path == "/sections/#{section.slug}/enroll"
+    end
+
+    test "redirected to research consent form when student has not set research consent",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context)
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      section = insert(:section)
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, ~p"/sections/#{section.slug}")
+
+      assert redirect_path ==
+               "/research_consent?user_return_to=%2Fsections%2F#{section.slug}"
+    end
+
+    test "redirected to section welcome view when student has opted in or out of research consent",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context)
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      section = insert(:section)
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        post(conn, ~p"/research_consent",
+          consent: "true",
+          user_return_to: "/sections/#{section.slug}"
+        )
+
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+
+      # follow redirect
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, ~p"/sections/#{section.slug}")
+
+      assert redirect_path ==
+               "/sections/#{section.slug}/welcome"
     end
   end
 
