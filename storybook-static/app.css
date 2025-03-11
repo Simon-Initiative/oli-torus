@@ -4727,10 +4727,6 @@ table.table-striped tbody tr:nth-child(even) {
   margin-left: 1.5rem;
 }
 
-.ml-60 {
-  margin-left: 15rem;
-}
-
 .ml-8 {
   margin-left: 2rem;
 }
@@ -5768,10 +5764,6 @@ table.table-striped tbody tr:nth-child(even) {
   width: 32px;
 }
 
-.w-\[330px\] {
-  width: 330px;
-}
-
 .w-\[341px\] {
   width: 341px;
 }
@@ -5956,6 +5948,10 @@ table.table-striped tbody tr:nth-child(even) {
   max-width: 1040px;
 }
 
+.max-w-\[220px\] {
+  max-width: 220px;
+}
+
 .max-w-\[240px\] {
   max-width: 240px;
 }
@@ -6104,11 +6100,6 @@ table.table-striped tbody tr:nth-child(even) {
 
 .-translate-y-\[73px\] {
   --tw-translate-y: -73px;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-
-.-translate-y-\[calc\(100\%\+58px\)\] {
-  --tw-translate-y: calc(calc(100% + 58px) * -1);
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
@@ -15572,11 +15563,6 @@ Not supports in Firefox and IE */
   color: rgb(221 221 221 / var(--tw-text-opacity));
 }
 
-.dark .dark\:text-\[\#FFF\] {
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
-}
-
 .dark .dark\:text-\[\#bab8bf\] {
   --tw-text-opacity: 1;
   color: rgb(186 184 191 / var(--tw-text-opacity));
@@ -16665,6 +16651,10 @@ Not supports in Firefox and IE */
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 
+  .md\:grid-cols-12 {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
   .md\:flex-row {
     flex-direction: row;
   }
@@ -16679,6 +16669,10 @@ Not supports in Firefox and IE */
 
   .md\:justify-end {
     justify-content: flex-end;
+  }
+
+  .md\:justify-between {
+    justify-content: space-between;
   }
 
   .md\:gap-0 {
@@ -16786,6 +16780,11 @@ Not supports in Firefox and IE */
   .md\:px-\[50px\] {
     padding-left: 50px;
     padding-right: 50px;
+  }
+
+  .md\:px-\[63px\] {
+    padding-left: 63px;
+    padding-right: 63px;
   }
 
   .md\:py-0 {
