@@ -6,8 +6,6 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias Phoenix.LiveView.JS
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
-  alias Oli.Institutions
-  alias Oli.Institutions.Institution
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
