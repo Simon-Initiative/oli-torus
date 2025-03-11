@@ -187,7 +187,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
             {Map.put(m, e["activity_id"], ordinal), ordinal + 1}
 
           "selection" ->
-            {m, ordinal + m["count"]}
+            {m, ordinal + e["count"]}
         end
       end)
 
