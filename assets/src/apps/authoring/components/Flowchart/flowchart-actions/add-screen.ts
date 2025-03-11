@@ -32,7 +32,6 @@ import {
   createAlwaysGoToPath,
   createEndOfActivityPath,
   createExitPath,
-  createSpokeCorrectPath,
 } from '../paths/path-factories';
 import { QuestionTypeMapping } from '../paths/path-options';
 import { AuthoringFlowchartScreenData } from '../paths/path-types';
@@ -114,8 +113,6 @@ export const addFlowchartScreen = createAsyncThunk(
           ) {
             flowchartData.paths.push(createAlwaysGoToPath(sourceScreenId));
           }
-        } else if (isHubSpokeScreen) {
-          flowchartData.paths.push(createSpokeCorrectPath('', 0));
         } else {
           flowchartData.paths.push(createEndOfActivityPath());
         }
