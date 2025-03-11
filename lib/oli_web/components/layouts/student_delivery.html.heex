@@ -6,7 +6,8 @@
       section={@section}
       preview_mode={@preview_mode}
       sidebar_expanded={@sidebar_expanded}
-      include_logo={true}
+      sidebar_enabled={!@disable_sidebar?}
+      include_logo
     />
     <div class="absolute top-0 z-50">
       <Components.Delivery.Layouts.sidebar_nav
