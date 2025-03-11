@@ -2,7 +2,7 @@ defmodule OliWeb.LtiControllerTest do
   use OliWeb.ConnCase
 
   alias Lti_1p3.Platform.{LoginHint, LoginHints, PlatformInstance}
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Institutions
   alias Oli.Delivery.Sections
   alias Oli.Accounts.User

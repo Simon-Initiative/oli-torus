@@ -7,7 +7,7 @@ defmodule OliWeb.Sections.InviteViewTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.SectionInvites
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias OliWeb.Common.Utils
 
   defp live_view_invite_route(section_slug) do

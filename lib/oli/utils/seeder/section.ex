@@ -135,7 +135,7 @@ defmodule Oli.Utils.Seeder.Section do
 
     {:ok, %Enrollment{}} =
       Sections.enroll(user.id, section.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
       ])
 
     seeds
@@ -146,7 +146,7 @@ defmodule Oli.Utils.Seeder.Section do
 
     {:ok, %Enrollment{}} =
       Sections.enroll(user.id, section.id, [
-        Lti_1p3.Tool.ContextRoles.get_role(:context_instructor)
+        Lti_1p3.Roles.ContextRoles.get_role(:context_instructor)
       ])
 
     seeds

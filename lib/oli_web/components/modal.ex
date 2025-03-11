@@ -1,8 +1,9 @@
 defmodule OliWeb.Components.Modal do
   use Phoenix.Component
 
+  use Gettext, backend: OliWeb.Gettext
+
   import OliWeb.Components.Common
-  import OliWeb.Gettext
 
   alias Phoenix.LiveView.JS
 

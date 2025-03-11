@@ -16,7 +16,7 @@ defmodule OliWeb.Workspaces.Student do
   }
 
   @context_student_roles [
-    Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+    Lti_1p3.Roles.ContextRoles.get_role(:context_learner)
   ]
 
   def mount(_params, _session, %{assigns: %{is_admin: true}} = socket) do

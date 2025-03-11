@@ -1,5 +1,4 @@
 defmodule OliWeb.LtiController do
-  alias Oli.Lti
   use OliWeb, :controller
   use OliWeb, :verified_routes
 
@@ -15,8 +14,8 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.Utils
   alias OliWeb.UserAuth
   alias Oli.Lti.LtiParams
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Roles.ContextRoles
+  alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
 
@@ -102,9 +101,9 @@ defmodule OliWeb.LtiController do
             "author" ->
               # stub a user for the author
               roles = [
-                Lti_1p3.Tool.PlatformRoles.get_role(:system_administrator),
-                Lti_1p3.Tool.PlatformRoles.get_role(:institution_administrator),
-                Lti_1p3.Tool.ContextRoles.get_role(:context_content_developer)
+                Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
+                Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
+                Lti_1p3.Roles.ContextRoles.get_role(:context_content_developer)
               ]
 
               {%Accounts.User{
@@ -135,7 +134,7 @@ defmodule OliWeb.LtiController do
 
               # TODO: also include context roles when being called from a section
               roles =
-                Lti_1p3.Tool.Lti_1p3_User.get_platform_roles(user)
+                Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
               {user, roles}
           end
@@ -149,13 +148,19 @@ defmodule OliWeb.LtiController do
           id: "12345"
         }
 
+        claims = %{
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_id,
+          "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiResourceLinkRequest",
+          "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
+          "https://purl.imsglobal.org/spec/lti/claim/resource_link" => resource_link,
+          "https://purl.imsglobal.org/spec/lti/claim/roles" => roles
+        }
+
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,
                current_user,
                issuer,
-               deployment_id,
-               resource_link,
-               roles
+               claims
              ) do
           {:ok, redirect_uri, state, id_token} ->
             conn
@@ -269,7 +274,7 @@ defmodule OliWeb.LtiController do
     |> json(Lti_1p3.get_all_public_keys())
   end
 
-  def auth_token(conn, params) do
+  def auth_token(conn, _params) do
     conn
     |> put_status(:not_implemented)
     |> json(%{

@@ -1422,6 +1422,16 @@ defmodule OliWeb.Router do
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
   end
 
+  scope "/api/v1/lti", OliWeb, as: :api do
+    pipe_through([:api, :authoring_protected])
+
+    post(
+      "/platforms/generate_launch_params/:client_id",
+      Api.PlatformInstanceController,
+      :generate_launch_params
+    )
+  end
+
   ### Invitations (to sections or projects)
 
   scope "/", OliWeb do

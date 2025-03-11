@@ -19,7 +19,7 @@ defmodule Oli.Delivery.Metrics do
   }
 
   alias Oli.Accounts.User
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
 
   def progress_datatable_for(section_id, container_id) do
     learner_id = ContextRoles.get_role(:context_learner).id

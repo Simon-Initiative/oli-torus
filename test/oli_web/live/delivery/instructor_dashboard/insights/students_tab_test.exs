@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.StudentsTabTest do
   import Oli.Factory
   import Ecto.Query
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.GrantedCertificates

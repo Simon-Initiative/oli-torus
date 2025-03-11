@@ -3,7 +3,7 @@ defmodule OliWeb.Components.Delivery.Students do
 
   import OliWeb.Components.Delivery.Buttons, only: [toggle_chevron: 1]
 
-  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Roles.ContextRoles
   alias Oli.Accounts.{Author, User}
   alias Oli.Delivery.Metrics
   alias OliWeb.Common.{SearchInput, Params, Utils}
