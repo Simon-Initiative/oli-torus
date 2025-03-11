@@ -233,7 +233,7 @@ defmodule OliWeb.Sections.OverviewView do
       >
         <div class="flex flex-col md:col-span-8 gap-2">
           <div>
-            This product <b>does <%= unless @section.certificate_enabled, do: "not" %></b>
+            This section <b>does <%= unless @section.certificate_enabled, do: "not" %></b>
             currently produce a certificate.
           </div>
           <div :if={@section.certificate_enabled}>

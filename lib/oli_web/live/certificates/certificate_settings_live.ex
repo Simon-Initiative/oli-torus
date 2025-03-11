@@ -68,10 +68,13 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     case route_name do
       :workspaces ->
         project = socket.assigns.project
-        socket |> assign(breadcrumbs: breadcrumbs(:workspaces, project.slug, section.slug))
+        socket |> assign(breadcrumbs: breadcrumbs(:workspaces, project.slug, section))
 
-      route_name when route_name in [:authoring, :delivery] ->
-        socket |> assign(breadcrumbs: breadcrumbs(:authoring, nil, section.slug))
+      :delivery ->
+        socket |> assign(breadcrumbs: breadcrumbs(:delivery, nil, section))
+
+      :authoring ->
+        socket |> assign(breadcrumbs: breadcrumbs(:authoring, nil, section))
     end
   end
 
@@ -306,21 +309,31 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
      |> put_flash(type, message)}
   end
 
-  defp breadcrumbs(:authoring, _project_slug, section_slug) do
+  defp breadcrumbs(:delivery, _project_slug, section) do
     [
       Breadcrumb.new(%{
-        full_title: "Manage Section",
-        link: ~p"/authoring/products/#{section_slug}"
+        full_title: section.title,
+        link: ~p"/sections/#{section.slug}/manage"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]
   end
 
-  defp breadcrumbs(:workspaces, project_slug, section_slug) do
+  defp breadcrumbs(:authoring, _project_slug, section) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Manage Section",
+        link: ~p"/authoring/products/#{section.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
+    ]
+  end
+
+  defp breadcrumbs(:workspaces, project_slug, section) do
     [
       Breadcrumb.new(%{
         full_title: "Product Overview",
-        link: ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+        link: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]

@@ -4,6 +4,7 @@ defmodule Oli.Delivery.CertificatesTest do
   import Oli.Factory
 
   alias Oli.Delivery.Certificates
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Certificate
   alias Oli.Repo.Paging
   alias Oli.Repo.Sorting
@@ -569,6 +570,111 @@ defmodule Oli.Delivery.CertificatesTest do
 
       assert raw_progress.required_assignments.total == 3
       assert raw_progress.required_assignments.completed == 3
+    end
+  end
+
+  describe "purge_deleted_assessments_from_certificate/1" do
+    setup [:create_elixir_project]
+
+    test "does nothing when the certificate is configured to apply to all assessments", %{
+      section: section
+    } do
+      _certificate = insert(:certificate, section: section, assessments_apply_to: :all)
+
+      assert {:ok, :no_purge_needed} =
+               Certificates.purge_deleted_assessments_from_certificate(section)
+    end
+
+    test "does nothing when section has no certificate enabled", %{
+      section: section
+    } do
+      {:ok, updated_section} = Sections.update_section(section, %{certificate_enabled: false})
+
+      assert {:ok, :no_purge_needed} =
+               Certificates.purge_deleted_assessments_from_certificate(updated_section)
+    end
+
+    test "purges non existing graded pages from custom assessment list", %{
+      section: section,
+      page_1: page_1
+    } do
+      a_non_existing_assessment_id = -1
+
+      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+
+      _certificate =
+        insert(:certificate,
+          section: section,
+          assessments_apply_to: :custom,
+          custom_assessments: [page_1.resource_id, a_non_existing_assessment_id]
+        )
+
+      {:ok, updated_certificate} =
+        Certificates.purge_deleted_assessments_from_certificate(section)
+
+      assert updated_certificate.custom_assessments == [page_1.resource_id]
+    end
+  end
+
+  describe "switch_certificate_to_custom_assessments/1" do
+    setup [:create_elixir_project]
+
+    test "does nothing when the certificate is configured to apply to custom assessments", %{
+      section: section
+    } do
+      _certificate = insert(:certificate, section: section, assessments_apply_to: :custom)
+
+      assert {:ok, :no_switch_needed} =
+               Certificates.switch_certificate_to_custom_assessments(section)
+    end
+
+    test "does nothing when section has no certificate enabled", %{
+      section: section
+    } do
+      {:ok, updated_section} = Sections.update_section(section, %{certificate_enabled: false})
+
+      assert {:ok, :no_switch_needed} =
+               Certificates.switch_certificate_to_custom_assessments(updated_section)
+    end
+
+    test "switches to custom setting", %{
+      section: section,
+      page_1: page_1,
+      page_2: page_2,
+      page_3: page_3
+    } do
+      {:ok, section} = Sections.update_section(section, %{certificate_enabled: true})
+
+      _certificate =
+        insert(:certificate, section: section, assessments_apply_to: :all)
+
+      {:ok, updated_certificate} =
+        Certificates.switch_certificate_to_custom_assessments(section)
+
+      assert updated_certificate.assessments_apply_to == :custom
+
+      expected_custom_assessments =
+        [page_1.resource_id, page_2.resource_id, page_3.resource_id] |> Enum.sort()
+
+      assert Enum.sort(updated_certificate.custom_assessments) == expected_custom_assessments
+    end
+  end
+
+  describe "update_certificate/2" do
+    test "updates the certificate with the given attributes" do
+      certificate = insert(:certificate)
+
+      assert {:ok, updated_certificate} =
+               Certificates.update_certificate(certificate, %{title: "New Title"})
+
+      assert updated_certificate.title == "New Title"
+    end
+
+    test "returns error changeset with invalid attributes" do
+      certificate = insert(:certificate)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Certificates.update_certificate(certificate, %{title: nil})
     end
   end
 
