@@ -149,46 +149,50 @@ defmodule OliWeb.Certificates.Components.DesignTab do
             >
               Choose files
             </label>
-            <section class="flex gap-4 flex-wrap mt-4">
-              <!-- Display existing logos -->
-              <%= for {logo_id, logo_src} <- saved_logos(@certificate_changeset), not is_nil(logo_src) do %>
-                <div class="relative w-24 h-24 flex-shrink-0">
-                  <img
-                    src={logo_src}
-                    class="object-cover w-full h-full rounded border border-gray-300"
-                  />
-                  <button
-                    type="button"
-                    phx-click="remove_logo"
-                    phx-target={@myself}
-                    phx-value-id={logo_id}
-                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
-                  >
-                    ✖
-                  </button>
-                </div>
-              <% end %>
-              <!-- Display uploaded previews -->
-              <%= for entry <- @uploads.logo.entries do %>
-                <div class="relative w-24 h-24 flex-shrink-0">
-                  <.live_img_preview
-                    entry={entry}
-                    class="object-cover w-full h-full rounded border border-gray-300"
-                  />
-                  <a
-                    href="#"
-                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
-                    phx-click="cancel"
-                    phx-target={@myself}
-                    phx-value-ref={entry.ref}
-                  >
-                    ✖
-                  </a>
-                </div>
-              <% end %>
-              <%= for error <- @logo_upload_errors do %>
-                <p class="text-red-500 text-sm"><%= error %></p>
-              <% end %>
+            <section class="flex flex-col gap-4 mt-4">
+              <div class="flex gap-4 flex-wrap">
+                <!-- Display existing logos -->
+                <%= for {logo_id, logo_src} <- saved_logos(@certificate_changeset), not is_nil(logo_src) do %>
+                  <div class="relative w-24 h-24 flex-shrink-0">
+                    <img
+                      src={logo_src}
+                      class="object-cover w-full h-full rounded border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      phx-click="remove_logo"
+                      phx-target={@myself}
+                      phx-value-id={logo_id}
+                      class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                    >
+                      ✖
+                    </button>
+                  </div>
+                <% end %>
+                <!-- Display uploaded previews -->
+                <%= for entry <- @uploads.logo.entries do %>
+                  <div class="relative w-24 h-24 flex-shrink-0">
+                    <.live_img_preview
+                      entry={entry}
+                      class="object-cover w-full h-full rounded border border-gray-300"
+                    />
+                    <a
+                      href="#"
+                      class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                      phx-click="cancel"
+                      phx-target={@myself}
+                      phx-value-ref={entry.ref}
+                    >
+                      ✖
+                    </a>
+                  </div>
+                <% end %>
+              </div>
+              <div class="flex flex-col gap-1">
+                <%= for error <- @logo_upload_errors do %>
+                  <p class="text-red-500 text-sm"><%= error %></p>
+                <% end %>
+              </div>
             </section>
           </div>
           <!-- Preview -->
@@ -276,10 +280,20 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
-    {:noreply,
-     socket
-     |> cancel_upload(:logo, ref)
-     |> assign(logo_upload_errors: formatted_upload_errors(socket.assigns.uploads.logo, ref))}
+    socket = cancel_upload(socket, :logo, ref)
+
+    uploads = socket.assigns.uploads.logo
+
+    updated_uploads = %{
+      uploads
+      | errors:
+          if(length(uploads.entries) <= uploads.max_entries,
+            do: Enum.reject(uploads.errors, fn {_key, error} -> error == :too_many_files end),
+            else: uploads.errors
+          )
+    }
+
+    {:noreply, assign(socket, logo_upload_errors: formatted_upload_errors(updated_uploads, ref))}
   end
 
   def handle_event("save", _params, socket) do
@@ -508,14 +522,23 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   end
 
   defp formatted_upload_errors(uploads, except_ref \\ nil) do
-    uploads.entries
-    |> Enum.reject(&(&1.ref == except_ref))
-    |> Enum.map(fn entry ->
-      uploads
-      |> upload_errors(entry)
-      |> format_upload_error(entry.client_name)
-    end)
-    |> Enum.filter(& &1)
+    entry_errors =
+      uploads.entries
+      |> Enum.reject(&(&1.ref == except_ref))
+      |> Enum.map(fn entry ->
+        uploads
+        |> upload_errors(entry)
+        |> format_upload_error(entry.client_name)
+      end)
+      |> Enum.filter(& &1)
+
+    # verify if there is a :too_many_files error in the uploads
+    too_many_files_error =
+      if Enum.any?(uploads.errors, fn {_key, error} -> error == :too_many_files end),
+        do: ["You can upload up to #{uploads.max_entries} files only."],
+        else: []
+
+    too_many_files_error ++ entry_errors
   end
 
   defp format_upload_error([], _file_name), do: nil
