@@ -44,7 +44,7 @@ export const SpokeCompletedOption: React.FC<Props> = ({ id, value, onChange }) =
             onChange(Number(e.target.value));
           }}
         >
-          {Object.keys(screens).map((screenId, index) => (
+          {Object.keys(screens).map((screenId) => (
             <option key={screenId} value={screenId}>
               {screens[screenId]}
             </option>
