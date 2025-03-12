@@ -346,7 +346,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through([:browser, :delivery_protected])
+    pipe_through([:browser, :maybe_skip_email_verification, :delivery_protected])
 
     get("/research_consent", DeliveryController, :show_research_consent)
     post("/research_consent", DeliveryController, :research_consent)
