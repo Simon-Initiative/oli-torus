@@ -151,18 +151,18 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert Oli.Repo.get(Section, section.id).has_grace_period == true
       assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
 
+      # Handle event "validate" shouldn't change has_grace_period
       view
       |> element("form[phx-change=\"validate\"")
       |> render_change(section: %{title: "New title"})
 
       assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
 
-      # Handle event "validate" shouldn't change has_grace_period
+      # Handle event "save" shouldn't change has_grace_period
       view
       |> element("form[phx-submit=\"save\"")
       |> render_submit(section: %{title: "New title"})
 
-      # Handle event "save" shouldn't change has_grace_period
       assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
       assert Oli.Repo.get(Section, section.id).has_grace_period == true
     end
