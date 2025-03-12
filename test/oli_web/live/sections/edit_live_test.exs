@@ -105,7 +105,7 @@ defmodule OliWeb.Sections.EditLiveTest do
   describe "instructor cannot modify payment data" do
     setup [:instructor_conn]
 
-    test "when working on the edit form", %{conn: conn, instructor: instructor} do
+    test "when working on the edit form - LTI case", %{conn: conn, instructor: instructor} do
       section = insert(:section, requires_payment: true, type: :enrollable)
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
@@ -129,6 +129,42 @@ defmodule OliWeb.Sections.EditLiveTest do
       # Save event shouldn't change section_requires_payment
       assert has_element?(view, "#section_requires_payment[checked=\"checked\"]")
       assert Oli.Repo.get(Section, section.id).requires_payment == true
+    end
+
+    test "when working on the edit form - Open and Free case", %{
+      conn: conn,
+      instructor: instructor
+    } do
+      section =
+        insert(:section,
+          requires_payment: true,
+          type: :enrollable,
+          open_and_free: true,
+          requires_payment: false,
+          has_grace_period: true
+        )
+
+      Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert Oli.Repo.get(Section, section.id).has_grace_period == true
+      assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
+
+      view
+      |> element("form[phx-change=\"validate\"")
+      |> render_change(section: %{title: "New title"})
+
+      assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
+
+      # Handle event "validate" shouldn't change has_grace_period
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(section: %{title: "New title"})
+
+      # Handle event "save" shouldn't change has_grace_period
+      assert has_element?(view, "#section_has_grace_period[checked=\"checked\"]")
+      assert Oli.Repo.get(Section, section.id).has_grace_period == true
     end
   end
 
