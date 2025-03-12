@@ -254,7 +254,6 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
 
       assert Enum.all?([id1, id2], &(&1 in page_sr_ids))
 
-      IO.inspect("--------------------")
       assert Enum.empty?(SectionResourceDepot.get_pages(section_id, []))
 
       # Test Depot
