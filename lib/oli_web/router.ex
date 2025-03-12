@@ -1485,7 +1485,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/admin", OliWeb do
-    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin])
+    pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])
 
     resources("/platform_instances", PlatformInstanceController)
   end
