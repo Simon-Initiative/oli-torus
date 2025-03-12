@@ -237,6 +237,29 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       # Test Depot
       test_depot(section_id)
     end
+
+    test "returns a list of SectionResource pages from page ids", ctx do
+      %{
+        section: %{id: section_id} = _section,
+        page_1_revision: page_1_revision,
+        page_2_revision: page_2_revision
+      } = ctx
+
+      revision_ids = [page_1_revision.id, page_2_revision.id]
+      page_sr_ids = get_section_resource_ids(revision_ids)
+      resource_ids = [page_1_revision.resource_id, page_2_revision.resource_id]
+
+      [%SectionResource{id: id1}, %SectionResource{id: id2}] =
+        SectionResourceDepot.get_pages(section_id, resource_ids)
+
+      assert Enum.all?([id1, id2], &(&1 in page_sr_ids))
+
+      IO.inspect("--------------------")
+      assert Enum.empty?(SectionResourceDepot.get_pages(section_id, []))
+
+      # Test Depot
+      test_depot(section_id)
+    end
   end
 
   describe "get_section_resources_by_type_ids/2" do

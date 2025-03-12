@@ -112,22 +112,16 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   Return the SectionResource records for a given section and a list of page ids.
   """
   def get_pages(section_id, page_ids) do
-    case Enum.empty?(page_ids) do
-      true ->
-        []
+    depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
 
-      false ->
-        depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
+    query_conditions = {:resource_id, {:in, page_ids}}
 
-        query_conditions = {:resource_id, {:in, page_ids}}
-
-        Depot.query(
-          @depot_desc,
-          section_id,
-          query_conditions
-        )
-        |> Enum.sort_by(& &1.numbering_index)
-    end
+    Depot.query(
+      @depot_desc,
+      section_id,
+      query_conditions
+    )
+    |> Enum.sort_by(& &1.numbering_index)
   end
 
   @doc """
