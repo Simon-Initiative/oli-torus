@@ -37,6 +37,7 @@ export interface hubSpokeModel extends JanusAbsolutePositioned, JanusCustomCss {
   spokeItems: Item[];
   spokeFeedback?: string;
   requiredSpoke?: number;
+  hubCompletedDestination?: number;
 }
 
 export const schema: JSONSchema7Object = {
@@ -64,6 +65,12 @@ export const schema: JSONSchema7Object = {
     title: 'Show progress bar',
     type: 'boolean',
     default: true,
+  },
+  hubCompletionDestination: {
+    title: 'Complete Feedback',
+    description: 'Feedback shown when all the required spokes are completed',
+    type: 'number',
+    default: 0,
   },
   correctFeedback: {
     title: 'Complete Feedback',
@@ -139,6 +146,12 @@ export const simpleSchema: JSONSchema7Object = {
     type: 'boolean',
     default: true,
   },
+  hubCompletionDestination: {
+    title: 'Complete Feedback',
+    description: 'Feedback shown when all the required spokes are completed',
+    type: 'number',
+    default: 0,
+  },
   correctFeedback: {
     title: 'Complete Feedback',
     description: 'Feedback shown when all the required spokes are completed',
@@ -194,6 +207,7 @@ export const simpleUiSchema = {
     'requiredSpoke',
     'anyCorrectAnswer',
     'showProgressBar',
+    'hubCompletionDestination',
     'correctFeedback',
     'incorrectFeedback',
     'spokeFeedback',
@@ -201,6 +215,7 @@ export const simpleUiSchema = {
   ],
   layoutType: { classNames: 'col-span-12 spokeItem' },
   spokeItems: { 'ui:widget': 'SpokeOptionsEditor', classNames: 'col-span-12 spokeItem' },
+  hubCompletionDestination: { 'ui:widget': 'SpokeCompletedOption' },
   commonErrorFeedback: {
     'ui:widget': 'SpokeCustomErrorFeedbackAuthoring',
   },
@@ -213,6 +228,7 @@ export const adaptivitySchema = {
   spokeCompleted: CapiVariableTypes.NUMBER,
   selectedSpoke: CapiVariableTypes.NUMBER,
   spokeFeedback: CapiVariableTypes.STRING,
+  hubCompletionDestination: CapiVariableTypes.NUMBER,
 };
 
 export const uiSchema = {};
@@ -241,6 +257,7 @@ export const createSchema = (): Partial<hubSpokeModel> => {
     requiredSpoke: 3,
     requireManualGrading: false,
     showProgressBar: true,
+    hubCompletedDestination: 0,
     enabled: true,
     spokeItems: [1, 2, 3].map(createSimpleOption),
     correctAnswer: [true, true, true],
