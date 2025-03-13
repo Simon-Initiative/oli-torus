@@ -95,10 +95,12 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context} ->
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} = lti_hint ->
         {current_user, roles} =
           case context do
             "author" ->
+              author = Accounts.get_author!(session_user_id)
+
               # stub a user for the author
               roles = [
                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
@@ -107,18 +109,18 @@ defmodule OliWeb.LtiController do
               ]
 
               {%Accounts.User{
-                 id: conn.assigns[:current_author].id,
+                 id: author.id,
                  sub: "admin",
-                 email: conn.assigns[:current_author].email,
+                 email: author.email,
                  email_verified: true,
-                 name: conn.assigns[:current_author].name,
-                 given_name: conn.assigns[:current_author].given_name,
-                 family_name: conn.assigns[:current_author].family_name,
+                 name: author.name,
+                 given_name: author.given_name,
+                 family_name: author.family_name,
                  middle_name: "",
                  nickname: "",
                  preferred_username: "",
                  profile: "",
-                 picture: conn.assigns[:current_author].picture,
+                 picture: author.picture,
                  website: "",
                  gender: "",
                  birthdate: "",
@@ -148,13 +150,16 @@ defmodule OliWeb.LtiController do
           id: "12345"
         }
 
-        claims = %{
-          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_id,
-          "https://purl.imsglobal.org/spec/lti/claim/message_type" => "LtiResourceLinkRequest",
-          "https://purl.imsglobal.org/spec/lti/claim/version" => "1.3.0",
-          "https://purl.imsglobal.org/spec/lti/claim/resource_link" => resource_link,
-          "https://purl.imsglobal.org/spec/lti/claim/roles" => roles
-        }
+        target_link_uri = "http://localhost:3000/"
+
+        claims = [
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment_id),
+          Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
+          Lti_1p3.Claims.Version.version("1.3.0"),
+          Lti_1p3.Claims.ResourceLink.resource_link(resource_link),
+          Lti_1p3.Claims.TargetLinkUri.target_link_uri(target_link_uri),
+          Lti_1p3.Claims.Roles.roles(roles)
+        ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,

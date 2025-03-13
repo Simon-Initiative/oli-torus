@@ -1476,12 +1476,6 @@ defmodule OliWeb.Router do
     pipe_through([:api, :require_authenticated_system_admin])
 
     resources("/platforms", Api.PlatformInstanceController)
-
-    post(
-      "/platforms/generate_launch_params/:client_id",
-      Api.PlatformInstanceController,
-      :generate_launch_params
-    )
   end
 
   scope "/admin", OliWeb do

@@ -66,30 +66,15 @@ config :oli, :cashnet_provider,
   cashnet_client: System.get_env("CASHNET_CLIENT"),
   cashnet_gl_number: System.get_env("CASHNET_GL_NUMBER")
 
-# Configurable http/https protocol options for cowboy
-# https://ninenines.eu/docs/en/cowboy/2.5/manual/cowboy_http/
-http_max_header_name_length =
-  System.get_env("HTTP_MAX_HEADER_NAME_LENGTH", "64") |> String.to_integer()
-
-http_max_header_value_length =
-  System.get_env("HTTP_MAX_HEADER_VALUE_LENGTH", "4096") |> String.to_integer()
-
-http_max_headers = System.get_env("HTTP_MAX_HEADERS", "100") |> String.to_integer()
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
 # The watchers configuration can be used to run external
-# watchers to your application. For example, we use it
-# with webpack to recompile .js and .css sources.
+# watchers to your application. For example, we can use it
+# to bundle .js and .css sources.
 config :oli, OliWeb.Endpoint,
   http: [
-    port: String.to_integer(System.get_env("HTTP_PORT", "80")),
-    protocol_options: [
-      max_header_name_length: http_max_header_name_length,
-      max_header_value_length: http_max_header_value_length,
-      max_headers: http_max_headers
-    ]
+    port: String.to_integer(System.get_env("HTTP_PORT", "80"))
   ],
   url: [
     scheme: System.get_env("SCHEME", "https"),
@@ -100,16 +85,12 @@ config :oli, OliWeb.Endpoint,
     port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
     otp_app: :oli,
     keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
-    certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt"),
-    protocol_options: [
-      max_header_name_length: http_max_header_name_length,
-      max_header_value_length: http_max_header_value_length,
-      max_headers: http_max_headers
-    ]
+    certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
   ],
-  debug_errors: true,
-  code_reloader: true,
   check_origin: false,
+  code_reloader: true,
+  debug_errors: true,
+  secret_key_base: "7xBZ6iTMM2Y3Q6x9Gdr5VXYFxX1HCw5y2O+fr5jN8ZBhm5LH/alqyEtd/TjIRmV+",
   watchers: [
     node: [
       "node_modules/webpack/bin/webpack.js",
