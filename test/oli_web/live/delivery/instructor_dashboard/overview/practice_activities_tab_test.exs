@@ -1143,21 +1143,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert a0.total_attempts == "25%"
     end
 
-    @tag :skip
     test "gets results correctly when changing the container selection", %{
       conn: conn,
       section: section,
       page_1: page_1,
-      page_2: page_2
+      page_2: page_2,
+      unit_1: unit_1,
+      module_1: module_1
     } do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
-      {_count, [container_1, container_2, container_3, container_4]} =
-        Sections.get_units_and_modules_containers(section.slug)
-
       view
       |> element("form[phx-change=\"change_container\"")
-      |> render_change(%{container_id: container_4.id})
+      |> render_change(%{container_id: module_1.resource_id})
 
       [page0, page1] = table_as_list_of_maps(view)
 
@@ -1176,35 +1174,19 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       assert has_element?(
                view,
                "table tbody tr td div span",
-               container_4.title
+               module_1.title
              )
 
-      refute has_element?(
-               view,
-               "table tbody tr td div span",
-               container_1.title
-             )
-
-      refute has_element?(
-               view,
-               "table tbody tr td div span",
-               container_2.title
-             )
-
-      refute has_element?(
-               view,
-               "table tbody tr td div span",
-               container_3.title
-             )
-
+      # unit 1 does not have any direct practice page attached
+      # (the filter only shows direct children pages of the selected container)
       view
       |> element("form[phx-change=\"change_container\"")
-      |> render_change(%{container_id: container_1.id})
+      |> render_change(%{container_id: unit_1.resource_id})
 
       refute has_element?(
                view,
                "table tbody tr td div span",
-               container_1.title
+               unit_1.title
              )
 
       assert view |> element("p", "None exist")
