@@ -7,7 +7,7 @@ RUN yum install ncurses-devel openssl11-devel -y
 RUN yum groupinstall "Development Tools" -y
 
 WORKDIR /tmp
-RUN wget "http://erlang.org/download/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz
+RUN wget --tries=1 --timeout=30 "http://erlang.org/download/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz || wget "https://github.com/erlang/otp/releases/download/OTP-26.1/otp_src_26.1.tar.gz" -O otp_src_26.1.tar.gz
 RUN tar xfz otp_src_26.1.tar.gz
 WORKDIR /tmp/otp_src_26.1/
 RUN ./configure
