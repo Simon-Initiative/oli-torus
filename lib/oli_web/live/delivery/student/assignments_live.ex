@@ -28,7 +28,9 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   def mount(_params, _session, socket) do
     %{section: section, current_user: %{id: current_user_id}} = socket.assigns
-    certificate = Certificates.get_certificate_by(section_id: section.id)
+
+    certificate =
+      if section.certificate_enabled, do: Certificates.get_certificate_by(section_id: section.id)
 
     send(self(), :gc)
 
@@ -36,7 +38,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
      assign(socket,
        active_tab: :assignments,
        assignments: get_assignments(section, current_user_id),
-       certificate: if(section.certificate_enabled, do: certificate, else: nil),
+       certificate: certificate,
        filter: :all,
        filter_expanded: false
      )
@@ -85,7 +87,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     <.top_hero_banner />
     <div class="flex flex-col justify-center py-9 px-20 w-full gap-12">
       <.certificate_requirements certificate={@certificate} />
-      <.filter_dropdown filter={@filter} filter_expanded={@filter_expanded} />
+      <.filter_dropdown :if={@certificate} filter={@filter} filter_expanded={@filter_expanded} />
 
       <.assignments_agenda
         assignments={@assignments}
@@ -185,8 +187,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <div class="justify-end items-center gap-2 flex">
           <div class="w-5 h-5 relative"><Icons.check /></div>
           <span>
-            <%= Enum.count(@assignments, &(!is_nil(&1.raw_avg_score))) %> of <%= Enum.count(
-              @assignments
+            <%= completed_assignments_count(@assignments, @certificate, @filter) %> of <%= total_assignments_count(
+              @assignments,
+              @certificate,
+              @filter
             ) %> Assignments
           </span>
         </div>
@@ -214,6 +218,24 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     </div>
     """
   end
+
+  defp total_assignments_count(assignments, certificate, filter)
+       when is_nil(certificate) or filter == :all,
+       do: Enum.count(assignments)
+
+  defp total_assignments_count(assignments, certificate, :required),
+    do: Enum.count(assignments, &assignment_required_for_certificate(&1, certificate))
+
+  defp completed_assignments_count(assignments, certificate, filter)
+       when is_nil(certificate) or filter == :all,
+       do: Enum.count(assignments, &(!is_nil(&1.raw_avg_score)))
+
+  defp completed_assignments_count(assignments, certificate, :required),
+    do:
+      Enum.count(
+        assignments,
+        &(!is_nil(&1.raw_avg_score) and assignment_required_for_certificate(&1, certificate))
+      )
 
   attr :assignment, :map, required: true
   attr :ctx, SessionContext, required: true
@@ -338,31 +360,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       <% @completed -> %>
         <Icons.square_checked class="fill-[#218358] dark:fill-[#39e581]" />
       <% @required -> %>
-        <.asterisk_icon />
+        <Icons.asterisk />
       <% true -> %>
         <Icons.flag fill_class="fill-[#fa8d3e] dark:fill-[#ff9040]" />
     <% end %>
-    """
-  end
-
-  attr :class, :string, default: "fill-[#FF8787]"
-
-  defp asterisk_icon(assigns) do
-    ~H"""
-    <svg
-      width="13"
-      height="13"
-      viewBox="0 0 13 13"
-      fill="currentColor"
-      class={@class}
-      xmlns="http://www.w3.org/2000/svg"
-      role="asterisk icon"
-    >
-      <path
-        opacity="0.9"
-        d="M8.20654 0.0561523L7.69385 4.95239L12.6157 3.5553L13.0002 6.2854L8.3988 6.69556L11.3853 10.6818L8.89868 12.0276L6.73254 7.73376L4.79712 12.0148L2.20801 10.6818L5.16882 6.69556L0.593018 6.27258L1.02881 3.5553L5.86096 4.95239L5.34827 0.0561523H8.20654Z"
-      />
-    </svg>
     """
   end
 
@@ -387,7 +388,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
                 All Assignments
               </div>
             <% :required -> %>
-              <.asterisk_icon class="dark:fill-white" />
+              <Icons.asterisk class="dark:fill-white" />
               <div class="text-[13px] font-semibold">
                 Required Assignments
               </div>
@@ -438,7 +439,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
       phx-click="select_filter"
       phx-value-filter="required"
     >
-      <.asterisk_icon class="dark:fill-white" />
+      <Icons.asterisk class="dark:fill-white" />
       <div class="text-[13px] font-semibold pl-1.5">
         Required
       </div>
