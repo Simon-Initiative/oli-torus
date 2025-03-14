@@ -326,6 +326,39 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
     end
   end
 
+  describe "containers/1 and /2" do
+    setup [:create_project]
+
+    test "returns all containers for a given section", ctx do
+      %{
+        section: %{id: section_id} = _section,
+        container_revision: container_revision,
+        module_1_revision: module_1_revision
+      } = ctx
+
+      revision_ids = [container_revision.id, module_1_revision.id]
+      container_sr_ids = get_section_resource_ids(revision_ids)
+
+      assert [%SectionResource{id: sr_1}, %SectionResource{id: sr_2}] =
+               SectionResourceDepot.containers(section_id)
+
+      assert Enum.all?([sr_1, sr_2], &(&1 in container_sr_ids))
+    end
+
+    test "returns all containers for a given section with a specific list of numbering levels",
+         ctx do
+      %{
+        section: %{id: section_id} = _section,
+        module_1_revision: module_1_revision
+      } = ctx
+
+      assert [%SectionResource{revision_id: revision_id}] =
+               SectionResourceDepot.containers(section_id, numbering_level: {:in, [1, 2]})
+
+      assert revision_id == module_1_revision.id
+    end
+  end
+
   defp setup_depot_warmer_max_number_of_entries_env(max_entries) do
     Application.put_env(:oli, :depot_warmer_max_number_of_entries, max_entries)
   end
