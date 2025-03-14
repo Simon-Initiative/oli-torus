@@ -56,7 +56,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
        scripts: assigns.scripts,
        activity_types_map: assigns.activity_types_map,
        preview_rendered: nil,
-       units_and_modules: build_units_and_modules(assigns.section.id),
+       units_and_modules_options: assigns.units_and_modules_options,
        table_model: table_model,
        total_count: total_count
      )}
@@ -89,14 +89,17 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                 phx-change="change_container"
                 phx-target={@myself}
               >
-                <div :if={length(@units_and_modules) > 0} class="inline-flex flex-col gap-1 mr-2">
+                <div
+                  :if={length(@units_and_modules_options) > 0}
+                  class="inline-flex flex-col gap-1 mr-2"
+                >
                   <small class="torus-small uppercase">
                     Container
                   </small>
                   <select class="torus-select" name="container_id">
                     <option value={nil}>All</option>
                     <option
-                      :for={container <- @units_and_modules}
+                      :for={container <- @units_and_modules_options}
                       selected={assigns.params.container_id == container.resource_id}
                       value={container.resource_id}
                     >
@@ -499,15 +502,5 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
       })
 
     assign(socket, table_model: table_model)
-  end
-
-  defp build_units_and_modules(section_id) do
-    Oli.Delivery.Sections.SectionResourceDepot.containers(section_id,
-      numbering_level: {:in, [1, 2]}
-    )
-    |> Enum.map(fn sr ->
-      Map.take(sr, [:resource_id, :numbering_level, :numbering_index, :title, :id])
-    end)
-    |> Enum.sort_by(& &1.numbering_index)
   end
 end

@@ -196,6 +196,92 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
     end
   end
 
+  @doc """
+  Builds a list of units and modules for a given section id, used as options to filter pages by container.
+  The containers are sorted as they appear in the curriculum.
+  Example:
+  [
+    %{
+      id: 140217,
+      title: "Introduction",
+      resource_id: 10462,
+      numbering_index: 1,
+      numbering_level: 1
+    },
+    %{
+      id: 140216,
+      title: "Enum",
+      resource_id: 10465,
+      numbering_index: 1,
+      numbering_level: 2
+    },
+    %{
+      id: 140215,
+      title: "Basics",
+      resource_id: 10464,
+      numbering_index: 2,
+      numbering_level: 2
+    },
+    %{
+      id: 140218,
+      title: "Building a Phoenix App",
+      resource_id: 10463,
+      numbering_index: 2,
+      numbering_level: 1
+    }
+  ]
+  """
+  def build_units_and_modules_options(section_id) do
+    units =
+      Oli.Delivery.Sections.SectionResourceDepot.containers(section_id,
+        numbering_level: {:in, [1]}
+      )
+      |> Enum.map(fn sr ->
+        Map.take(sr, [:resource_id, :numbering_level, :numbering_index, :title, :id, :children])
+      end)
+      |> Enum.sort_by(& &1.numbering_index)
+
+    modules_mapper =
+      Oli.Delivery.Sections.SectionResourceDepot.containers(section_id,
+        numbering_level: {:in, [2]}
+      )
+      |> Enum.map(fn sr ->
+        Map.take(sr, [:resource_id, :numbering_level, :numbering_index, :title, :id])
+      end)
+      |> Enum.into(%{}, fn module -> {module.id, module} end)
+
+    sort_containers(units, modules_mapper)
+  end
+
+  defp sort_containers(units, modules_mapper) do
+    # Sorts container units and modules as they appear in the curriculum
+    # Example:
+    # Given the following curriculum structure:
+    # - Unit 1
+    #   - Module 1
+    #   - Module 2
+    # - Unit 2
+    #   - Module 3
+    #   - Module 4
+
+    # Will be sorted as:
+    # [Unit_1_data, Module_1_data, Module_2_data, Unit_2_data, Module_3_data, Module_4_data]
+
+    Enum.reduce(units, [], fn unit, acum ->
+      modules_contained_by_unit =
+        Map.get(unit, :children, [])
+        |> Enum.map(fn child_id -> Map.get(modules_mapper, child_id) end)
+        |> Enum.reject(&is_nil/1)
+        |> Enum.sort_by(& &1.numbering_index, :desc)
+
+      unit_with_contained_modules = [modules_contained_by_unit | [Map.drop(unit, [:children])]]
+
+      [unit_with_contained_modules | acum]
+    end)
+    |> List.flatten()
+    |> Enum.reverse()
+  end
+
   defp add_students_progress(students, section_id, container_id) do
     students_progress =
       Metrics.progress_for(section_id, Enum.map(students, & &1.id), container_id)
