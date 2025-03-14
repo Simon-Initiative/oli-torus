@@ -64,7 +64,7 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
       Map.merge(assigns, %{
         title: assessment.title,
         container_label: assessment.container_label,
-        id: assessment.id
+        id: assessment.revision_id
       })
 
     ~H"""

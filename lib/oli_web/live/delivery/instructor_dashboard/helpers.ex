@@ -121,7 +121,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.Helpers do
               section.customizations
             )
 
-          Map.put(acc, sr_id, {container.id, "#{label}: #{container.title}"})
+          Map.put(acc, sr_id, {container.resource_id, "#{label}: #{container.title}"})
         end)
       end)
 

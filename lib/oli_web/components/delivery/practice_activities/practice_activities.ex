@@ -346,7 +346,8 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          route_to(
            socket,
            update_params(socket.assigns.params, %{
-             container_id: container_id
+             container_id: container_id,
+             offset: 0
            })
          )
      )}
@@ -355,7 +356,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   defp apply_filters(assessments, params) do
     assessments =
       assessments
-      |> maybe_filter_by_container_id(params.container_id)
+      |> maybe_filter_by_container_resource_id(params.container_id)
       |> maybe_filter_by_text(params.text_search)
       |> sort_by(params.sort_by, params.sort_order)
 
@@ -374,10 +375,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     end)
   end
 
-  defp maybe_filter_by_container_id(assessments, nil), do: assessments
-  defp maybe_filter_by_container_id(assessments, ""), do: assessments
+  defp maybe_filter_by_container_resource_id(assessments, nil), do: assessments
+  defp maybe_filter_by_container_resource_id(assessments, ""), do: assessments
 
-  defp maybe_filter_by_container_id(assessments, container_id) do
+  defp maybe_filter_by_container_resource_id(assessments, container_id) do
     Enum.filter(assessments, fn assessment ->
       assessment.container_id == container_id
     end)
