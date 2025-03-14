@@ -3,7 +3,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   alias OliWeb.Common.InstructorDashboardPagedTable
 
-  alias Oli.Delivery.Sections
   alias OliWeb.Common.{Params, SearchInput}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Delivery.ActivityHelpers
@@ -33,9 +32,6 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
   def update(assigns, socket) do
     params = decode_params(assigns.params)
 
-    {container_count, units_and_modules} =
-      Sections.get_units_and_modules_containers(assigns.section.slug)
-
     {total_count, rows} = apply_filters(assigns.assessments, params)
 
     {:ok, table_model} =
@@ -60,7 +56,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
        scripts: assigns.scripts,
        activity_types_map: assigns.activity_types_map,
        preview_rendered: nil,
-       units_and_modules: build_units_and_modules(container_count, units_and_modules),
+       units_and_modules: build_units_and_modules(assigns.section.id),
        table_model: table_model,
        total_count: total_count
      )}
@@ -101,10 +97,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
                     <option value={nil}>All</option>
                     <option
                       :for={container <- @units_and_modules}
-                      selected={assigns.params.container_id == container.id}
-                      value={container.id}
+                      selected={assigns.params.container_id == container.resource_id}
+                      value={container.resource_id}
                     >
-                      <%= container.type %> <%= container.numbering_index %>: <%= container.title %>
+                      <%= if(container.numbering_level == 1, do: "Unit", else: "Module") %> <%= container.numbering_index %>: <%= container.title %>
                     </option>
                   </select>
                 </div>
@@ -223,7 +219,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       current_assessment =
         Enum.find(socket.assigns.assessments, fn assessment ->
-          assessment.id == String.to_integer(selected_assessment_id)
+          assessment.revision_id == String.to_integer(selected_assessment_id)
         end)
 
       page_revision =
@@ -504,20 +500,13 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     assign(socket, table_model: table_model)
   end
 
-  defp build_units_and_modules(container_count, modules_and_units) do
-    if container_count == 0 do
-      []
-    else
-      Enum.map(modules_and_units, fn container ->
-        type =
-          case container.numbering_level do
-            1 -> "Unit"
-            2 -> "Module"
-            3 -> "Section"
-          end
-
-        Map.merge(container, %{type: type})
-      end)
-    end
+  defp build_units_and_modules(section_id) do
+    Oli.Delivery.Sections.SectionResourceDepot.containers(section_id,
+      numbering_level: {:in, [1, 2]}
+    )
+    |> Enum.map(fn sr ->
+      Map.take(sr, [:resource_id, :numbering_level, :numbering_index, :title, :id])
+    end)
+    |> Enum.sort_by(& &1.numbering_index)
   end
 end
