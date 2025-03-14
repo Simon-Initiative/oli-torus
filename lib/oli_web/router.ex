@@ -583,7 +583,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/storage/course/:section_slug/resource", OliWeb do
-    pipe_through([:api, :delivery_protected])
+    pipe_through([:api, :require_section, :delivery_protected])
 
     get("/:resource", Api.ActivityController, :retrieve_delivery)
     post("/", Api.ActivityController, :bulk_retrieve_delivery)
@@ -701,7 +701,7 @@ defmodule OliWeb.Router do
 
   # Endpoints for client-side scheduling UI
   scope "/api/v1/scheduling/:section_slug", OliWeb.Api do
-    pipe_through([:api, :delivery_protected, :require_section])
+    pipe_through([:api, :require_section, :delivery_protected])
 
     put("/", SchedulingController, :update)
     get("/", SchedulingController, :index)
@@ -710,14 +710,14 @@ defmodule OliWeb.Router do
 
   # AI trigger point endpoints
   scope "/api/v1/triggers/:section_slug", OliWeb.Api do
-    pipe_through([:api, :delivery_protected])
+    pipe_through([:api, :require_section, :delivery_protected])
 
     post("/", TriggerPointController, :invoke)
   end
 
   # User State Service, instrinsic state
   scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
-    pipe_through([:api, :delivery_protected])
+    pipe_through([:api, :require_section, :delivery_protected])
 
     post("/", Api.AttemptController, :bulk_retrieve)
 
@@ -767,7 +767,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/discussion/:section_slug/:resource_id", OliWeb do
-    pipe_through([:api, :delivery_protected])
+    pipe_through([:api, :require_section, :delivery_protected])
 
     get("/", Api.DirectedDiscussionController, :get_discussion)
     post("/", Api.DirectedDiscussionController, :create_post)
@@ -790,30 +790,34 @@ defmodule OliWeb.Router do
 
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
-    pipe_through([:api, :delivery_protected])
+    pipe_through([:api, :maybe_skip_email_verification, :delivery_protected])
 
     get("/", Api.GlobalStateController, :read)
     put("/", Api.GlobalStateController, :upsert)
     delete("/", Api.GlobalStateController, :delete)
+  end
 
-    get("/course/:section_slug", Api.SectionStateController, :read)
-    put("/course/:section_slug", Api.SectionStateController, :upsert)
-    delete("/course/:section_slug", Api.SectionStateController, :delete)
+  scope "/api/v1/state/course/:section_slug", OliWeb do
+    pipe_through([:api, :require_section, :delivery_protected])
+
+    get("/", Api.SectionStateController, :read)
+    put("/", Api.SectionStateController, :upsert)
+    delete("/", Api.SectionStateController, :delete)
 
     get(
-      "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+      "/resource_attempt/:resource_attempt_guid",
       Api.ResourceAttemptStateController,
       :read
     )
 
     put(
-      "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+      "/resource_attempt/:resource_attempt_guid",
       Api.ResourceAttemptStateController,
       :upsert
     )
 
     delete(
-      "/course/:section_slug/resource_attempt/:resource_attempt_guid",
+      "/resource_attempt/:resource_attempt_guid",
       Api.ResourceAttemptStateController,
       :delete
     )
@@ -1002,13 +1006,13 @@ defmodule OliWeb.Router do
   end
 
   ### Sections - Payments
-  scope "/sections", OliWeb do
+  scope "/sections/:section_slug", OliWeb do
     pipe_through([:browser, :require_section, :delivery_protected])
 
-    get("/:section_slug/payment", PaymentController, :guard)
-    get("/:section_slug/payment/new", PaymentController, :make_payment)
-    get("/:section_slug/payment/code", PaymentController, :use_code)
-    post("/:section_slug/payment/code", PaymentController, :apply_code)
+    get("/payment", PaymentController, :guard)
+    get("/payment/new", PaymentController, :make_payment)
+    get("/payment/code", PaymentController, :use_code)
+    post("/payment/code", PaymentController, :apply_code)
   end
 
   ### Sections - Student Dashboard
