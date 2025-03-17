@@ -266,7 +266,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
         socket
       ) do
     {:noreply,
-     push_patch(socket,
+     socket
+     |> assign(activities: nil, current_assessment: nil)
+     |> push_patch(
        to:
          route_to(
            socket,
@@ -344,7 +346,9 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   def handle_event("change_container", %{"container_id" => container_id} = _params, socket) do
     {:noreply,
-     push_patch(socket,
+     socket
+     |> assign(activities: nil, current_assessment: nil)
+     |> push_patch(
        to:
          route_to(
            socket,
