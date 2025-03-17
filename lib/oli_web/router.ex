@@ -123,6 +123,8 @@ defmodule OliWeb.Router do
   pipeline :delivery_protected do
     plug(:delivery)
 
+    plug(OliWeb.Plugs.MaybeSkipEmailVerification)
+
     plug(:require_authenticated_user)
 
     plug(Oli.Plugs.RemoveXFrameOptions)
@@ -160,10 +162,6 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
 
     plug(:require_system_admin)
-  end
-
-  pipeline :maybe_skip_email_verification do
-    plug(OliWeb.Plugs.MaybeSkipEmailVerification)
   end
 
   # parse url encoded forms
@@ -346,7 +344,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through([:browser, :maybe_skip_email_verification, :delivery_protected])
+    pipe_through([:browser, :delivery_protected])
 
     get("/research_consent", DeliveryController, :show_research_consent)
     post("/research_consent", DeliveryController, :research_consent)
@@ -790,7 +788,7 @@ defmodule OliWeb.Router do
 
   # User State Service, extrinsic state
   scope "/api/v1/state", OliWeb do
-    pipe_through([:api, :maybe_skip_email_verification, :delivery_protected])
+    pipe_through([:api, :delivery_protected])
 
     get("/", Api.GlobalStateController, :read)
     put("/", Api.GlobalStateController, :upsert)
@@ -952,7 +950,6 @@ defmodule OliWeb.Router do
   scope "/workspaces", OliWeb.Workspaces do
     pipe_through([
       :browser,
-      :maybe_skip_email_verification,
       :delivery_protected
     ])
 

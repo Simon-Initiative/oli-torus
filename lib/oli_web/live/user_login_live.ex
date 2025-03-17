@@ -69,7 +69,7 @@ defmodule OliWeb.UserLoginLive do
           <Components.Auth.login_form
             title="Sign In"
             form={@form}
-            action={~p"/users/log_in?#{[request_path: ~p"/workspaces/instructor"]}"}
+            action={~p"/users/log_in"}
             registration_link={~p"/users/register"}
             reset_password_link={~p"/users/reset_password"}
             authentication_providers={@authentication_providers}
