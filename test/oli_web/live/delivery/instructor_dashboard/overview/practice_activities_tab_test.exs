@@ -1161,7 +1161,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
 
       assert element(
                view,
-               "table tbody tr td div[phx-value-id=\"#{page_1.id}\"]",
+               "table tbody tr[id=#{page_1.resource_id}]",
                page0.title
              )
 
@@ -1204,7 +1204,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_5.id}\"]")
+      |> element("table tbody tr[id=#{page_5.resource_id}]")
       |> render_click()
 
       assert has_element?(view, "p", "No attempt registered for this question")
@@ -1233,7 +1233,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert element(
@@ -1314,7 +1314,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert element(
@@ -1365,7 +1365,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       # check that the multi input details render correctly
@@ -1408,7 +1408,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       # check that the likert VegaLite visualization renders correctly
@@ -1438,7 +1438,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert has_element?(view, "p", "No attempt registered for this question")
@@ -1467,7 +1467,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert view
@@ -1527,7 +1527,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert view
@@ -1621,7 +1621,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert view
@@ -1672,7 +1672,7 @@ defmodule OliWeb.Delivery.InstructorDashboard.PracticeActivitiesTabTest do
       {:ok, view, _html} = live(conn, live_view_practice_activities_route(section.slug))
 
       view
-      |> element("table tbody tr td div[phx-value-id=\"#{page_1.id}\"]")
+      |> element("table tbody tr[id=#{page_1.resource_id}]")
       |> render_click()
 
       assert view
