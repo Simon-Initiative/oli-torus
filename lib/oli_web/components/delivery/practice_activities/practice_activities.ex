@@ -222,7 +222,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       current_assessment =
         Enum.find(socket.assigns.assessments, fn assessment ->
-          assessment.revision_id == String.to_integer(selected_assessment_id)
+          assessment.id == String.to_integer(selected_assessment_id)
         end)
 
       page_revision =
