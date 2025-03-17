@@ -248,115 +248,32 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     graded = activity_attempt.graded
     resource_attempt_guid = activity_attempt.resource_attempt_guid
 
-    Oli.Repo.transaction(fn _ ->
-      with {:ok, finalized_part_attempts} <-
-             finalize_part_attempts(activity_attempt, score_feedbacks_map),
-           {:ok, _} <-
-             Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid),
-           :ok <-
-             finalized_part_attempts
-             |> to_attempt_guid()
-             |> queue_or_create_snapshot(section_slug),
-           {:ok, _} <- maybe_finalize_resource_attempt(section, graded, resource_attempt_guid) do
-        finalized_part_attempts
-      else
-        e ->
-          Repo.rollback(e)
-      end
-    end)
-  end
-
-  defp finalize_part_attempts(activity_attempt, score_feedbacks_map) do
     part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+    datashop_session_id = hd(part_attempts).datashop_session_id
 
-    now = DateTime.utc_now()
-
-    Enum.filter(part_attempts, fn pa ->
-      pa.grading_approach == :manual and pa.lifecycle_state == :submitted
-    end)
-    |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
+    client_evaluations = Enum.filter(part_attempts, fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :submitted end)
+    |> Enum.map(fn pa ->
       case Map.get(score_feedbacks_map, pa.attempt_guid) do
         %{score: score, out_of: out_of, feedback: feedback} ->
-          case Core.update_part_attempt(pa, %{
-                 lifecycle_state: :evaluated,
-                 date_evaluated: now,
-                 score: score,
-                 out_of: out_of,
-                 feedback: %{content: wrap_in_paragraphs(feedback)}
-               }) do
-            {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
-            e -> {:halt, e}
-          end
-
+          %Oli.Delivery.Attempts.Core.ClientEvaluation{
+            input: pa.input,
+            feedback: %{content: wrap_in_paragraphs(feedback)},
+            score: score,
+            out_of: out_of
+          }
         _ ->
-          {:halt, {:error, "scoring feedback not found for attempt #{pa.attempt_guid}"}}
+          nil
       end
     end)
-  end
+    |> Enum.filter(fn client_eval -> client_eval != nil end)
 
-  defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid),
-    do: {:ok, resource_attempt_guid}
-
-  defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
-    resource_attempt =
-      Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: resource_attempt_guid)
-      |> Oli.Repo.preload(:revision)
-
-    resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
-
-    effective_settings =
-      Oli.Delivery.Settings.get_combined_settings(
-        resource_attempt.revision,
-        section.id,
-        resource_access.user_id
-      )
-
-    case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(
-           resource_attempt,
-           effective_settings
-         ) do
-      {:ok,
-       %ResourceAttempt{
-         lifecycle_state: :evaluated,
-         revision: revision,
-         resource_access_id: resource_access_id,
-         was_late: was_late
-       }} ->
-        resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
-
-        effective_settings =
-          Oli.Delivery.Settings.get_combined_settings(
-            revision,
-            section.id,
-            resource_access.user_id
-          )
-
-        Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_resource_attempts_to_access(
-          effective_settings,
-          section.slug,
-          resource_access_id,
-          was_late
-        )
-        |> maybe_initiate_grade_passback(section)
-
-      e ->
-        e
-    end
-  end
-
-  defp maybe_initiate_grade_passback({:ok, %ResourceAccess{id: resource_access_id}}, %Section{
-         id: section_id,
-         grade_passback_enabled: true
-       }) do
-    Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
-      section_id,
-      resource_access_id,
-      :inline
+    Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
+      section_slug,
+      activity_attempt.attempt_guid,
+      client_evaluations,
+      datashop_session_id
     )
-  end
 
-  defp maybe_initiate_grade_passback(other, _) do
-    other
   end
 
   defp to_attempt_guid(part_attempts) do
@@ -370,10 +287,4 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     end)
   end
 
-  defp queue_or_create_snapshot(part_attempt_guids, section_slug) do
-    case Oli.Delivery.Snapshots.queue_or_create_snapshot(part_attempt_guids, section_slug) do
-      {:ok, _job} -> :ok
-      other -> other
-    end
-  end
 end

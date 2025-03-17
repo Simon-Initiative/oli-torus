@@ -1,8 +1,11 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
+
   import Oli.Delivery.Attempts.Core
   import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
 
   require Logger
+
+  import Ecto.Query, warn: false
 
   alias Oli.Repo
   alias Oli.Delivery.Evaluation.{Result, EvaluationContext, Standard}
@@ -14,6 +17,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Delivery.Evaluation.Explanation
   alias Oli.Delivery.Evaluation.ExplanationContext
   alias Oli.Delivery.Experiments.LogWorker
+  alias Oli.Resources.ScoringStrategy
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
@@ -34,7 +38,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           section_slug,
           activity_attempt_guid,
           part_inputs,
-          datashop_session_id
+          datashop_session_id,
+          part_attempts
         )
 
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
@@ -177,8 +182,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                  activity_attempt_guid,
                  client_evaluations,
                  datashop_session_id,
-                 part_attempts,
-                 {score, out_of}
+                 [part_attempts: part_attempts, use_fixed_score: {score, out_of}]
                ) do
             {:ok, _} ->
               Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_attempt_updated(
@@ -345,9 +349,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   """
   @spec evaluate_from_input(String.t(), String.t(), [map()], String.t()) ::
           {:ok, [map()]} | {:error, any}
-  def evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
+  def evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id, part_attempts \\ nil) do
     Repo.transaction(fn ->
-      part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+      part_attempts = case part_attempts do
+        nil -> get_latest_part_attempts(activity_attempt_guid)
+        _ -> part_attempts
+      end
+
       part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
       roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
@@ -484,7 +493,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     )
   end
 
-  def update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
+  defp update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
     part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
     part_inputs =
@@ -532,9 +541,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activity_attempt_guid,
         client_evaluations,
         datashop_session_id,
-        part_attempts_input \\ nil,
-        use_fixed_score \\ nil
+        opts \\ []
       ) do
+
+    part_attempts_input = Keyword.get(opts, :part_attempts_input, nil)
+    use_fixed_score = Keyword.get(opts, :use_fixed_score, nil)
+    no_roll_up = Keyword.get(opts, :no_roll_up, false)
+    enforce_client_side_eval = Keyword.get(opts, :enforce_client_side_eval, true)
+
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     activity_registration_slug = activity_attempt.revision.activity_type.slug
@@ -547,98 +561,51 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         %{attempt_guid: attempt_guid, input: input}
       end)
 
-    case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
-      %Oli.Activities.ActivityRegistration{allow_client_evaluation: true} ->
-        Repo.transaction(fn ->
-          part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
-          part_inputs = filter_already_evaluated(part_inputs, part_attempts)
+    %Oli.Activities.ActivityRegistration{allow_client_evaluation: allow_client_evaluation} = Oli.Activities.get_registration_by_slug(activity_registration_slug)
 
-          roll_up_fn =
-            case use_fixed_score do
-              nil ->
-                determine_activity_rollup_fn(
-                  activity_attempt_guid,
-                  part_inputs,
-                  part_attempts
-                )
+    if not enforce_client_side_eval or allow_client_evaluation do
 
-              {score, out_of} ->
-                fn result ->
-                  evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
-                  result
-                end
-            end
+      Repo.transaction(fn ->
+        part_attempts = part_attempts_input || get_latest_part_attempts(activity_attempt_guid)
+        part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-          result =
-            persist_client_evaluations(
-              part_inputs,
-              client_evaluations,
-              roll_up_fn,
-              false,
-              datashop_session_id
-            )
+        roll_up_fn =
+          case use_fixed_score do
+            nil ->
+              determine_activity_rollup_fn(
+                activity_attempt_guid,
+                part_inputs,
+                part_attempts
+              )
 
-          Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+            {score, out_of} ->
+              fn result ->
+                evaluate_with_rule_engine_score(activity_attempt_guid, score, out_of)
+                result
+              end
+          end
 
-          result
-        end)
-        |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
-        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
+        # Override the rollup function if no_roll_up is set
+        roll_up_fn = if no_roll_up do fn result -> result end else roll_up_fn end
 
-      _ ->
-        {:error, "Activity type does not allow client evaluation"}
-    end
-  end
-
-  @doc """
-  Processes a set of client evaluations for some number of parts for the given
-  activity attempt guid.  Does not rollup part evaluation up to activity attempt record.
-
-  On success returns an `{:ok, results}` tuple where results in an array of maps. Each
-  map instance contains the result of one of the evaluations in the form:
-
-  `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
-
-  On failure returns `{:error, error}`
-  """
-  @spec apply_super_activity_evaluation(String.t(), String.t(), [map()], String.t()) ::
-          {:ok, [map()]} | {:error, any}
-  def apply_super_activity_evaluation(
-        section_slug,
-        activity_attempt_guid,
-        client_evaluations,
-        datashop_session_id
-      ) do
-    # verify this activity type allows client evaluation
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-    activity_registration_slug = activity_attempt.revision.activity_type.slug
-
-    part_inputs =
-      Enum.map(client_evaluations, fn %{
-                                        attempt_guid: attempt_guid,
-                                        client_evaluation: %ClientEvaluation{input: input}
-                                      } ->
-        %{attempt_guid: attempt_guid, input: input}
-      end)
-
-    case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
-      %Oli.Activities.ActivityRegistration{allow_client_evaluation: true} ->
-        Repo.transaction(fn ->
-          no_roll_up = fn result -> result end
-
+        result =
           persist_client_evaluations(
             part_inputs,
             client_evaluations,
-            no_roll_up,
-            true,
+            roll_up_fn,
+            false,
             datashop_session_id
           )
-        end)
-        |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
-        |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
 
-      _ ->
-        {:error, "Activity type does not allow client evaluation"}
+        Oli.Delivery.Metrics.update_page_progress(activity_attempt_guid)
+
+        result
+      end)
+      |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+      |> LogWorker.maybe_schedule(activity_attempt_guid, section_slug)
+
+    else
+      {:error, "Activity type does not allow client evaluation"}
     end
   end
 
@@ -685,19 +652,26 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     # find the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
-    # apply the scoring strategy and set the evaluation on the activity
-    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    # Retrieve the activity attempt, and it's cross attempt information
+    {activity_attempt, scoring_strategy_id, other_attempts} = retrieve_rollup_context(activity_attempt_guid)
 
+    # Calculate the score for this activity attempt - derived strictly from its part attempts
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
 
-    Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
-
+    # Include this activity attempt in the aggregate scoring across all of its attempts
     now = DateTime.utc_now()
+    all_attempts = [%{score: score, out_of: out_of, date_evaluated: now} | other_attempts]
+
+    %Result{score: aggregate_score, out_of: aggregate_out_of} = Scoring.calculate_score(scoring_strategy_id, all_attempts)
+
+    Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
 
     update_activity_attempt(activity_attempt, %{
       score: score,
       out_of: out_of,
+      aggregate_score: aggregate_score,
+      aggregate_out_of: aggregate_out_of,
       lifecycle_state: :evaluated,
       date_evaluated: now,
       date_submitted: now
@@ -926,4 +900,5 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       !MapSet.member?(already_evaluated, attempt_guid)
     end)
   end
+
 end

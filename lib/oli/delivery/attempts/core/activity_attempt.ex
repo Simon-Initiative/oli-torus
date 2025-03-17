@@ -16,6 +16,8 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:scoreable, :boolean, default: true)
     field(:score, :float)
     field(:out_of, :float)
+    field(:aggregate_score, :float, default: nil)
+    field(:aggregate_out_of, :float, default: nil)
     field(:custom_scores, :map)
     field(:transformed_model, :map, default: nil)
     field(:group_id, :string, default: nil)
@@ -50,6 +52,8 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :attempt_number,
       :score,
       :out_of,
+      :aggregate_score,
+      :aggregate_out_of,
       :custom_scores,
       :lifecycle_state,
       :date_evaluated,

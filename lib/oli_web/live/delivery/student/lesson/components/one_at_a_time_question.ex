@@ -310,13 +310,28 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
       ) do
     ## evaluate the activity attempt
 
-    Oli.Repo.get_by(Oli.Delivery.Attempts.Core.ActivityAttempt,
-      attempt_guid: attempt_guid
-    )
-    |> Oli.Repo.preload([:resource_attempt, :part_attempts, :revision])
-    |> Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.update_part_attempts_for_activity(
+    part_attempts = Oli.Delivery.Attempts.Core.get_latest_part_attempts(attempt_guid)
+
+    part_inputs =
+      part_attempts
+      |> Enum.map(fn pa ->
+        {input, files} =
+          if pa.response,
+            do: {Map.get(pa.response, "input"), Map.get(pa.response, "files", [])},
+            else: {nil, nil}
+
+        %{
+          attempt_guid: pa.attempt_guid,
+          input: %StudentInput{input: input, files: files}
+        }
+      end)
+
+    Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.evaluate_from_input(
+      socket.assigns.section_slug,
+      attempt_guid,
+      part_inputs,
       socket.assigns.datashop_session_id,
-      socket.assigns.effective_settings
+      part_attempts
     )
 
     ## and update it's state in the assigns (to render the feedback in the UI)
