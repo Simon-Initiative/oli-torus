@@ -207,7 +207,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
   def handle_event(
         "paged_table_selection_change",
-        %{"id" => selected_assessment_id},
+        %{"id" => selected_assessment_resource_id},
         socket
       ) do
     details_enabled = Application.get_env(:oli, :instructor_dashboard_details, true)
@@ -222,7 +222,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
 
       current_assessment =
         Enum.find(socket.assigns.assessments, fn assessment ->
-          assessment.id == String.to_integer(selected_assessment_id)
+          assessment.resource_id == String.to_integer(selected_assessment_resource_id)
         end)
 
       page_revision =
@@ -245,7 +245,7 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
          current_assessment: current_assessment,
          activities: activities
        )
-       |> assign_selected_assessment(current_assessment.id)
+       |> assign_selected_assessment(current_assessment.resource_id)
        |> case do
          %{assigns: %{scripts_loaded: true}} = socket ->
            socket
@@ -488,8 +488,8 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     )
   end
 
-  defp assign_selected_assessment(socket, selected_assessment_id)
-       when selected_assessment_id in ["", nil] do
+  defp assign_selected_assessment(socket, selected_assessment_resource_id)
+       when selected_assessment_resource_id in ["", nil] do
     case socket.assigns.table_model.rows do
       [] ->
         socket
@@ -499,10 +499,10 @@ defmodule OliWeb.Components.Delivery.PracticeActivities do
     end
   end
 
-  defp assign_selected_assessment(socket, selected_assessment_id) do
+  defp assign_selected_assessment(socket, selected_assessment_resource_id) do
     table_model =
       Map.merge(socket.assigns.table_model, %{
-        selected: "#{selected_assessment_id}"
+        selected: "#{selected_assessment_resource_id}"
       })
 
     assign(socket, table_model: table_model)
