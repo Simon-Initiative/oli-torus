@@ -88,6 +88,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLiveTest do
       assert has_element?(view, "div.alert-info", "Project updated successfully.")
       assert has_element?(view, "input[name=\"project[title]\"][value=\"updated title\"]")
       assert has_element?(view, "textarea[name=\"project[description]\"]", "updated description")
+      assert has_element?(view, "#header", "updated title")
 
       assert has_element?(
                view,
