@@ -6,7 +6,6 @@ defmodule Oli.Application do
   use Application
 
   def start(_type, _args) do
-
     # Install the logger truncator
     Oli.LoggerTruncator.init()
 

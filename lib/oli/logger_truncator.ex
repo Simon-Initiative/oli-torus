@@ -1,5 +1,4 @@
 defmodule Oli.LoggerTruncator do
-
   @moduledoc """
   A Logger filter to prevent excessive memory usage by truncating large log messages and
   metadata.
@@ -41,12 +40,15 @@ defmodule Oli.LoggerTruncator do
   def init() do
     if Application.get_env(:oli, :logger_truncation_enabled) do
       max_length = Application.get_env(:oli, :logger_truncation_length)
-      :logger.add_primary_filter(:logger_truncator, {&Oli.LoggerTruncator.filter/2, [max_length: max_length]})
+
+      :logger.add_primary_filter(
+        :logger_truncator,
+        {&Oli.LoggerTruncator.filter/2, [max_length: max_length]}
+      )
     end
   end
 
   def filter(%{msg: {format, msg}} = log_event, opts) do
-
     max_length = Keyword.get(opts, :max_length, 5000)
 
     new_msg = sanitize_msg(msg, max_length)
@@ -54,7 +56,6 @@ defmodule Oli.LoggerTruncator do
   end
 
   def filter(%{msg: {format, mod, msg}} = log_event, opts) do
-
     max_length = Keyword.get(opts, :max_length, 5000)
 
     new_msg = sanitize_msg(msg, max_length)
@@ -76,7 +77,8 @@ defmodule Oli.LoggerTruncator do
 
   defp sanitize_msg(msg, max_length) when is_map(msg) do
     msg
-    |> Enum.take(50) # truncate to first 50 keys if needed
+    # truncate to first 50 keys if needed
+    |> Enum.take(50)
     |> Enum.map(fn {k, v} ->
       {k, sanitize_msg(v, max_length)}
     end)
@@ -94,5 +96,4 @@ defmodule Oli.LoggerTruncator do
       msg
     end
   end
-
 end
