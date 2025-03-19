@@ -27,7 +27,18 @@ FontAttributor.whitelist = supportedFonts.map(getFontName);
 Quill.register(FontAttributor, true);
 
 const FontSizeAttributor = Quill.import('attributors/style/size');
-FontSizeAttributor.whitelist = ['12px', '14px', '16px', '18px', '20px'];
+FontSizeAttributor.whitelist = [
+  '10px',
+  '12px',
+  '14px',
+  '16px',
+  '18px',
+  '20px',
+  '24px',
+  '32px',
+  '48px',
+  '72px',
+];
 Quill.register(FontSizeAttributor, true);
 
 const getCssForFonts = (fonts: string[]) => {
