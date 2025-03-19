@@ -28,7 +28,6 @@ Quill.register(FontAttributor, true);
 
 const FontSizeAttributor = Quill.import('attributors/style/size');
 // Expanding the font-size whitelist to include sizes above 20px, ensuring that migrated lessons with larger font sizes render correctly.
-// Updating content will no longer affect font size higher than 20px.
 // This also resolves an issue where editing a text field with a larger font size previously caused the editor to remove the font size, making the text smaller.
 FontSizeAttributor.whitelist = [
   '10px',
