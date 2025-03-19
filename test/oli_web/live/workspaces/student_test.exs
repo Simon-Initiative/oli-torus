@@ -221,6 +221,19 @@ defmodule OliWeb.Workspaces.StudentTest do
       assert render(view) =~ "desktop-workspace-nav-menu"
     end
 
+    test "can not access student workspace when user has not confirmed email", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
+
+      section = insert(:section, open_and_free: true, skip_email_verification: false)
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:error, {:redirect, %{to: "/users/confirm"}}} = live(conn, ~p"/workspaces/student")
+    end
+
     test "can access student workspace when user is enrolled in any section that omits email verification",
          %{conn: conn, user: user} do
       {:ok, user} = Accounts.update_user(user, %{email_confirmed_at: nil})
@@ -230,6 +243,8 @@ defmodule OliWeb.Workspaces.StudentTest do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       {:ok, view, _html} = live(conn, ~p"/workspaces/student")
+
+      assert has_element?(view, "h3", "Courses available")
     end
   end
 

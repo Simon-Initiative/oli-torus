@@ -142,44 +142,57 @@ defmodule OliWeb.Certificates.Components.DesignTab do
               Upload up to three logos for your certificate (Max size: 1MB each).
             </div>
             <!-- File Input -->
-            <.live_file_input upload={@uploads.logo} />
-            <section class="flex gap-4 flex-wrap mt-4">
-              <!-- Display existing logos -->
-              <%= for {logo_id, logo_src} <- saved_logos(@certificate_changeset), not is_nil(logo_src) do %>
-                <div class="relative w-24 h-24 flex-shrink-0">
-                  <img
-                    src={logo_src}
-                    class="object-cover w-full h-full rounded border border-gray-300"
-                  />
-                  <button
-                    type="button"
-                    phx-click="remove_logo"
-                    phx-target={@myself}
-                    phx-value-id={logo_id}
-                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
-                  >
-                    ✖
-                  </button>
-                </div>
-              <% end %>
-              <!-- Display uploaded previews -->
-              <%= for entry <- @uploads.logo.entries do %>
-                <div class="relative w-24 h-24 flex-shrink-0">
-                  <.live_img_preview
-                    entry={entry}
-                    class="object-cover w-full h-full rounded border border-gray-300"
-                  />
-                  <a
-                    href="#"
-                    class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
-                    phx-click="cancel"
-                    phx-target={@myself}
-                    phx-value-ref={entry.ref}
-                  >
-                    ✖
-                  </a>
-                </div>
-              <% end %>
+            <.live_file_input upload={@uploads.logo} class="hidden" />
+            <label
+              for={@uploads.logo.ref}
+              class="inline-block px-4 py-2 bg-gray-500 text-white rounded cursor-pointer hover:bg-gray-600"
+            >
+              Choose files
+            </label>
+            <section class="flex flex-col gap-4 mt-4">
+              <div class="flex gap-4 flex-wrap">
+                <!-- Display existing logos -->
+                <%= for {logo_id, logo_src} <- saved_logos(@certificate_changeset), not is_nil(logo_src) do %>
+                  <div class="relative w-24 h-24 flex-shrink-0">
+                    <img
+                      src={logo_src}
+                      class="object-cover w-full h-full rounded border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      phx-click="remove_logo"
+                      phx-target={@myself}
+                      phx-value-id={logo_id}
+                      class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                    >
+                      ✖
+                    </button>
+                  </div>
+                <% end %>
+                <!-- Display uploaded previews -->
+                <%= for entry <- @uploads.logo.entries do %>
+                  <div class="relative w-24 h-24 flex-shrink-0">
+                    <.live_img_preview
+                      entry={entry}
+                      class="object-cover w-full h-full rounded border border-gray-300"
+                    />
+                    <a
+                      href="#"
+                      class="absolute top-1 right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-red-500 shadow hover:bg-red-100"
+                      phx-click="cancel"
+                      phx-target={@myself}
+                      phx-value-ref={entry.ref}
+                    >
+                      ✖
+                    </a>
+                  </div>
+                <% end %>
+              </div>
+              <div class="flex flex-col gap-1">
+                <%= for error <- @logo_upload_errors do %>
+                  <p class="text-red-500 text-sm"><%= error %></p>
+                <% end %>
+              </div>
             </section>
           </div>
           <!-- Preview -->
@@ -246,7 +259,8 @@ defmodule OliWeb.Certificates.Components.DesignTab do
      |> assign(assigns)
      |> assign(
        show_preview: false,
-       preview_page: 0
+       preview_page: 0,
+       logo_upload_errors: []
      )
      |> assign_new(:certificate_changeset, fn ->
        assigns[:certificate_changeset] || certificate_changeset(assigns.certificate)
@@ -257,11 +271,19 @@ defmodule OliWeb.Certificates.Components.DesignTab do
   def handle_event("validate", %{"certificate" => params}, socket) do
     changes = for {key, value} <- params, into: %{}, do: {String.to_existing_atom(key), value}
     changeset = certificate_changeset(socket.assigns.certificate_changeset, changes)
-    {:noreply, assign(socket, certificate_changeset: changeset)}
+
+    {:noreply,
+     assign(socket,
+       logo_upload_errors: formatted_upload_errors(socket.assigns.uploads.logo),
+       certificate_changeset: changeset
+     )}
   end
 
   def handle_event("cancel", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :logo, ref)}
+    socket = cancel_upload(socket, :logo, ref)
+
+    {:noreply,
+     assign(socket, logo_upload_errors: formatted_upload_errors(socket.assigns.uploads.logo, ref))}
   end
 
   def handle_event("save", _params, socket) do
@@ -487,5 +509,33 @@ defmodule OliWeb.Certificates.Components.DesignTab do
       CertificateRenderer.render(%{attrs | certificate_type: "Certificate with Distinction"})
 
     {completion_cert, distinction_cert}
+  end
+
+  defp formatted_upload_errors(uploads, except_ref \\ nil) do
+    entry_errors =
+      uploads.entries
+      |> Enum.reject(&(&1.ref == except_ref))
+      |> Enum.map(fn entry ->
+        uploads
+        |> upload_errors(entry)
+        |> format_upload_error(entry.client_name)
+      end)
+      |> Enum.filter(& &1)
+
+    if length(uploads.entries) > uploads.max_entries,
+      do: ["You can upload up to #{uploads.max_entries} files only." | entry_errors],
+      else: entry_errors
+  end
+
+  defp format_upload_error([], _file_name), do: nil
+
+  defp format_upload_error(errors, file_name) do
+    errors
+    |> Enum.map(fn
+      :too_large -> "\"#{file_name}\" exceeds the maximum allowed size."
+      :not_accepted -> "\"#{file_name}\" type is not accepted."
+      _ -> "\"#{file_name}\" upload failed."
+    end)
+    |> Enum.join(" ")
   end
 end

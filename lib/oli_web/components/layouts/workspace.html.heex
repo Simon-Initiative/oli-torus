@@ -1,25 +1,14 @@
 <main role="main" class="relative flex flex-col">
   <div class="sticky top-0 z-50">
-    <div
-      :if={assigns[:header_enabled?] && !@disable_sidebar? && assigns[:active_workspace]}
-      class="w-full py-2.5 h-14 flex flex-row bg-delivery-header dark:bg-black border-b border-[#0F0D0F]/5 dark:border-[#0F0D0F]"
-    >
-      <% header_title = assigns[:header_title] || assigns[:resource_title] %>
-      <div class={"mr-3 my-auto #{if header_title, do: "flex items-center justify-between w-full", else: "ml-auto"}"}>
-        <div
-          :if={header_title}
-          class={"text-[#757682] dark:text-[#FFF] font-medium #{if @sidebar_expanded, do: "ml-60", else: "ml-20"}"}
-        >
-          <%= header_title %>
-        </div>
-        <Components.Delivery.UserAccount.workspace_menu
-          id="workspace-user-menu"
-          ctx={@ctx}
-          is_admin={@is_admin}
-          active_workspace={@active_workspace}
-        />
-      </div>
-    </div>
+    <Components.Delivery.Layouts.header
+      ctx={@ctx}
+      is_admin={@is_admin}
+      active_workspace={assigns[:active_workspace] || :student}
+      preview_mode={@preview_mode}
+      sidebar_expanded={@sidebar_expanded}
+      sidebar_enabled={!@disable_sidebar?}
+      include_logo
+    />
     <div class={"top-0 #{if @disable_sidebar?, do: "w-full", else: "absolute"}"}>
       <Components.Delivery.Layouts.workspace_sidebar_nav
         :if={!@disable_sidebar?}
@@ -33,14 +22,6 @@
         resource_slug={assigns[:resource_slug]}
         active_tab={assigns[:active_tab]}
         uri={assigns[:uri] || ""}
-      />
-      <Components.Delivery.Layouts.header
-        :if={@disable_sidebar?}
-        ctx={@ctx}
-        include_logo
-        is_admin={@is_admin}
-        preview_mode={@preview_mode}
-        sidebar_expanded={@sidebar_expanded}
       />
     </div>
   </div>

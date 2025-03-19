@@ -111,6 +111,10 @@ defmodule OliWeb.Router do
     plug(OliWeb.Plugs.EnsureDatashopId)
   end
 
+  pipeline :ensure_research_consent do
+    plug(Oli.Plugs.EnsureResearchConsent)
+  end
+
   pipeline :authorize_section_preview do
     plug(Oli.Plugs.AuthorizeSectionPreview)
   end
@@ -156,6 +160,10 @@ defmodule OliWeb.Router do
     plug(:require_authenticated_author)
 
     plug(:require_system_admin)
+  end
+
+  pipeline :maybe_skip_email_verification do
+    plug(OliWeb.Plugs.MaybeSkipEmailVerification)
   end
 
   # parse url encoded forms
@@ -934,7 +942,27 @@ defmodule OliWeb.Router do
         live("/:section_slug/:view", DashboardLive)
         live("/:section_slug/:view/:active_tab", DashboardLive)
       end
+    end
+  end
 
+  scope "/workspaces", OliWeb.Workspaces do
+    pipe_through([
+      :browser,
+      :maybe_skip_email_verification,
+      :delivery_protected
+    ])
+
+    live_session :student_delivery_workspace,
+      root_layout: {OliWeb.LayoutView, :delivery},
+      layout: {OliWeb.Layouts, :workspace},
+      on_mount: [
+        {OliWeb.UserAuth, :ensure_authenticated},
+        OliWeb.LiveSessionPlugs.SetCtx,
+        OliWeb.LiveSessionPlugs.AssignActiveMenu,
+        OliWeb.LiveSessionPlugs.SetSidebar,
+        OliWeb.LiveSessionPlugs.SetPreviewMode,
+        OliWeb.LiveSessionPlugs.SetProjectOrSection
+      ] do
       scope "/student" do
         live("/", Student)
       end
@@ -1076,6 +1104,7 @@ defmodule OliWeb.Router do
       :student,
       :enforce_paywall,
       :require_enrollment,
+      :ensure_research_consent,
       :ensure_user_section_visit,
       :force_required_survey
     ])

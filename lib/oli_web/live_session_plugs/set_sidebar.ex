@@ -8,6 +8,17 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
   import Phoenix.LiveView, only: [attach_hook: 4, connected?: 1]
   import Oli.Utils, only: [string_to_boolean: 1]
 
+  alias OliWeb.Common.SessionContext
+
+  @platform_student_roles [
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_student),
+    Lti_1p3.Tool.PlatformRoles.get_role(:institution_learner)
+  ]
+
+  @context_student_roles [
+    Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+  ]
+
   def on_mount(:default, :not_mounted_at_router, _session, socket) do
     # this case will handle the liveview cases rendered directly in the template
     # for example:
@@ -25,8 +36,7 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
             _ -> true
           end
       )
-      |> assign(disable_sidebar?: false)
-      |> assign(header_enabled?: true)
+      |> assign(disable_sidebar?: user_is_only_a_student?(socket.assigns.ctx))
       |> assign(footer_enabled?: true)
 
     if connected?(socket) do
@@ -79,5 +89,24 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
       _ ->
         nil
     end
+  end
+
+  defp user_is_only_a_student?(%SessionContext{author: author}) when not is_nil(author), do: false
+  defp user_is_only_a_student?(%SessionContext{user: %{can_create_sections: true}}), do: false
+
+  defp user_is_only_a_student?(%SessionContext{user: %{id: user_id}}) do
+    user_roles =
+      user_id
+      |> Oli.Accounts.user_roles()
+      |> Enum.map(& &1.uri)
+      |> MapSet.new()
+
+    student_roles =
+      (@context_student_roles ++ @platform_student_roles)
+      |> Enum.map(& &1.uri)
+      |> MapSet.new()
+
+    roles_other_than_student = MapSet.difference(user_roles, student_roles)
+    MapSet.size(roles_other_than_student) == 0
   end
 end
