@@ -8,28 +8,6 @@ defmodule OliWeb.Common.AssentAuthWebTest do
   alias OliWeb.{AuthorAuth, UserAuth}
   alias OliWeb.Common.AssentAuthWeb
 
-  defp author_test_config(),
-    do: %AssentAuthWeb.Config{
-      authentication_providers: [
-        google: [
-          client_id: "some_client_id",
-          client_secret: "some_secret",
-          strategy: Assent.Strategy.Google
-        ]
-      ],
-      redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
-      current_user_assigns_key: :current_author,
-      get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
-      create_session: &AuthorAuth.create_session(&1, &2),
-      deliver_user_confirmation_instructions: fn user ->
-        Accounts.deliver_author_confirmation_instructions(
-          user,
-          &url(~p"/authors/confirm/#{&1}")
-        )
-      end,
-      assent_auth_module: AuthorAssentAuth
-    }
-
   describe "author assent" do
     setup %{conn: conn} do
       conn = conn |> Phoenix.ConnTest.init_test_session(%{}) |> fetch_session()
@@ -163,28 +141,6 @@ defmodule OliWeb.Common.AssentAuthWebTest do
     end
   end
 
-  defp user_test_config(),
-    do: %AssentAuthWeb.Config{
-      authentication_providers: [
-        google: [
-          client_id: "some_client_id",
-          client_secret: "some_secret",
-          strategy: Assent.Strategy.Google
-        ]
-      ],
-      redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
-      current_user_assigns_key: :current_author,
-      get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
-      create_session: &UserAuth.create_session(&1, &2),
-      deliver_user_confirmation_instructions: fn user ->
-        Accounts.deliver_user_confirmation_instructions(
-          user,
-          &url(~p"/users/confirm/#{&1}")
-        )
-      end,
-      assent_auth_module: UserAssentAuth
-    }
-
   describe "user assent" do
     setup %{conn: conn} do
       conn = conn |> Phoenix.ConnTest.init_test_session(%{}) |> fetch_session()
@@ -234,4 +190,48 @@ defmodule OliWeb.Common.AssentAuthWebTest do
       Swoosh.TestAssertions.assert_no_email_sent()
     end
   end
+
+  defp author_test_config(),
+    do: %AssentAuthWeb.Config{
+      authentication_providers: [
+        google: [
+          client_id: "some_client_id",
+          client_secret: "some_secret",
+          strategy: Assent.Strategy.Google
+        ]
+      ],
+      redirect_uri: fn provider -> ~p"/authors/auth/#{provider}/callback" end,
+      current_user_assigns_key: :current_author,
+      get_user_by_provider_uid: &AuthorAssentAuth.get_user_by_provider_uid(&1, &2),
+      create_session: &AuthorAuth.create_session(&1, &2),
+      deliver_user_confirmation_instructions: fn user ->
+        Accounts.deliver_author_confirmation_instructions(
+          user,
+          &url(~p"/authors/confirm/#{&1}")
+        )
+      end,
+      assent_auth_module: AuthorAssentAuth
+    }
+
+  defp user_test_config(),
+    do: %AssentAuthWeb.Config{
+      authentication_providers: [
+        google: [
+          client_id: "some_client_id",
+          client_secret: "some_secret",
+          strategy: Assent.Strategy.Google
+        ]
+      ],
+      redirect_uri: fn provider -> ~p"/users/auth/#{provider}/callback" end,
+      current_user_assigns_key: :current_author,
+      get_user_by_provider_uid: &UserAssentAuth.get_user_by_provider_uid(&1, &2),
+      create_session: &UserAuth.create_session(&1, &2),
+      deliver_user_confirmation_instructions: fn user ->
+        Accounts.deliver_user_confirmation_instructions(
+          user,
+          &url(~p"/users/confirm/#{&1}")
+        )
+      end,
+      assent_auth_module: UserAssentAuth
+    }
 end

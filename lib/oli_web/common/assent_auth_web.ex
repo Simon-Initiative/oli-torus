@@ -1,8 +1,6 @@
 defmodule OliWeb.Common.AssentAuthWeb do
   use OliWeb, :verified_routes
 
-  require Logger
-
   alias OliWeb.Common.AssentAuthWeb
 
   defmodule Config do
