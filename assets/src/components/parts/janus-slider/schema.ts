@@ -74,6 +74,18 @@ export const simpleUISchema = {
   snapInterval: {
     classNames: 'col-span-12',
   },
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 3,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 3,
+    },
+  },
   advancedFeedback: numericAdvancedFeedback.uiSchema,
 };
 

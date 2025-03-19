@@ -24,6 +24,18 @@ export const simpleUiSchema = {
   maxValue: {
     classNames: 'col-span-6',
   },
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 3,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 3,
+    },
+  },
   answer: correctOrRange.uiSchema,
   advancedFeedback: numericAdvancedFeedback.uiSchema,
 };

@@ -199,6 +199,18 @@ export const simpleUiSchema = {
     'spokeFeedback',
     'commonErrorFeedback',
   ],
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 3,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 3,
+    },
+  },
   layoutType: { classNames: 'col-span-12 spokeItem' },
   spokeItems: { 'ui:widget': 'SpokeOptionsEditor', classNames: 'col-span-12 spokeItem' },
   commonErrorFeedback: {
