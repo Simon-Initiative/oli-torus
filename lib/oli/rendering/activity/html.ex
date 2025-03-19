@@ -213,14 +213,8 @@ defmodule Oli.Rendering.Activity.Html do
     ]
   end
 
-  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: nil}),
+  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: _}),
     do: activity_html
-
-  defp possibly_wrap_with_numbering(activity_html, %ActivitySummary{ordinal: ordinal}) do
-    [
-      activity_html
-    ]
-  end
 
   defp possibly_wrap_in_purpose(activity_html, activity) do
     case activity["purpose"] do

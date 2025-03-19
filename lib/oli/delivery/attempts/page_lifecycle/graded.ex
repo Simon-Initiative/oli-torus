@@ -16,7 +16,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Settings
   alias Oli.Delivery.Settings.Combined
   alias Oli.Delivery.Attempts.Scoring
-  alias Oli.Delivery.Attempts.ActivityLifecycle.{Evaluate, Persistence}
+  alias Oli.Delivery.Attempts.ActivityLifecycle.{Persistence}
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
@@ -217,7 +217,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
       _ ->
         with {_, activity_attempt_values, activity_attempt_params, part_attempt_guids} <-
-               Evaluate.update_part_attempts_and_get_activity_attempts(
+               Oli.Delivery.Attempts.ActivityLifecycle.RollUp.rollup_all(
                  resource_attempt,
                  datashop_session_id,
                  effective_settings

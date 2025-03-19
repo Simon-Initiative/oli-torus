@@ -10,7 +10,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Resources.Revision
-  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Attempts.Core.{
@@ -241,12 +240,10 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   section has gradepassback enabled)
   """
   def apply_manual_scoring(
-        %Section{slug: section_slug} = section,
+        %Section{slug: section_slug},
         activity_attempt,
         score_feedbacks_map
       ) do
-    graded = activity_attempt.graded
-    resource_attempt_guid = activity_attempt.resource_attempt_guid
 
     part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
     datashop_session_id = hd(part_attempts).datashop_session_id
@@ -274,10 +271,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       datashop_session_id
     )
 
-  end
-
-  defp to_attempt_guid(part_attempts) do
-    Enum.map(part_attempts, fn pa -> pa.attempt_guid end)
   end
 
   defp wrap_in_paragraphs(text) do

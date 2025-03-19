@@ -9,6 +9,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Components.OneAtATimeQuestion do
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Attempts.Core.StudentInput
 
   alias OliWeb.Components.Common
   alias OliWeb.Components.Modal
