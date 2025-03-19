@@ -77,7 +77,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       refute has_element?(
                view,
                "li",
-               "A 5 minute survey to help shape your learning experience and let your instructor get to know yous"
+               "A short survey to help shape your learning experience and let your instructor get to know yous"
              )
 
       refute has_element?(
@@ -120,7 +120,7 @@ defmodule OliWeb.Deliver.StudentOnboarding.WizardTest do
       assert has_element?(
                view,
                "li",
-               "A 5 minute survey to help shape your learning experience and let your instructor get to know you"
+               "A short survey to help shape your learning experience and let your instructor get to know you"
              )
 
       assert has_element?(view, "button", "Start Survey")
