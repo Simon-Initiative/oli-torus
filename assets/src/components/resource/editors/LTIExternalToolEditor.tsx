@@ -3,7 +3,7 @@ import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import { LoaderStatus, useLoader } from 'components/hooks/useLoader';
 import { Alert } from 'components/misc/Alert';
 import { LTIExternalTool } from 'data/content/resource';
-import { generateLTILaunchParams } from 'data/persistence/lti_platform';
+import { getLtiExternalToolDetails } from 'data/persistence/lti_platform';
 import { EditorProps } from './createEditor';
 
 interface LTIExternalToolEditorProps extends EditorProps {
@@ -13,8 +13,8 @@ interface LTIExternalToolEditorProps extends EditorProps {
 export const LTIExternalToolEditor = (props: LTIExternalToolEditorProps) => {
   const { contentItem } = props;
 
-  const [launchParamsLoader, _] = useLoader(() =>
-    generateLTILaunchParams(contentItem.clientId).then((result) => {
+  const [ltiToolDetailsLoader, _] = useLoader(() =>
+    getLtiExternalToolDetails(contentItem.clientId).then((result) => {
       if (result.type === 'Ok') {
         return result.result;
       } else {
@@ -23,22 +23,22 @@ export const LTIExternalToolEditor = (props: LTIExternalToolEditorProps) => {
     }),
   );
 
-  if (launchParamsLoader.status === LoaderStatus.LOADING) {
+  if (ltiToolDetailsLoader.status === LoaderStatus.LOADING) {
     return <LoadingSpinner />;
   }
 
-  if (launchParamsLoader.status === LoaderStatus.FAILURE) {
+  if (ltiToolDetailsLoader.status === LoaderStatus.FAILURE) {
     return <Alert variant="error">Error loading LTI details</Alert>;
   }
 
-  const launchParams = launchParamsLoader.result;
+  const ltiToolDetails = ltiToolDetailsLoader.result;
 
   return (
     <div className="flex flex-col">
-      <div className="m-[20px] p-[20px]">LTI Tool: {contentItem.clientId}</div>
+      <div className="m-[20px] p-[20px]">LTI Tool: {ltiToolDetails.name}</div>
 
       <div>
-        <LTIExternalToolWindow launchParams={launchParams} />
+        <LTIExternalToolWindow launchParams={ltiToolDetails.launch_params} />
       </div>
     </div>
   );
@@ -49,8 +49,6 @@ type LTIExternalToolWindowProps = {
 };
 
 const LTIExternalToolWindow = ({ launchParams }: LTIExternalToolWindowProps) => {
-  console.log('launchParams', launchParams);
-
   return (
     <div className="mt-3" style={{ height: 600 }}>
       <form action={launchParams.login_url} className="hide" method="POST" target="tool_content">

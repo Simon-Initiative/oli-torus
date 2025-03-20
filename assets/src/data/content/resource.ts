@@ -290,7 +290,6 @@ export const createLtiExternalTool = (clientId: string): LTIExternalTool => ({
   type: 'lti-external-tool',
   id: guid(),
   clientId,
-  children: [],
 });
 
 export type EditorType = 'slate' | 'markdown';
@@ -324,7 +323,6 @@ export interface LTIExternalTool {
   type: 'lti-external-tool';
   id: string;
   clientId: string;
-  children: [];
 }
 
 export type GroupLayout = 'vertical' | 'deck';

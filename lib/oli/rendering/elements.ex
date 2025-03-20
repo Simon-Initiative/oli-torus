@@ -56,6 +56,9 @@ defmodule Oli.Rendering.Elements do
         %{"type" => "break"} ->
           {output ++ writer.break(context, element), br_count + 1}
 
+        %{"type" => "lti-external-tool"} ->
+          {output ++ writer.lti_external_tool(context, element), br_count}
+
         _ ->
           {error_id, error_msg} =
             log_error("Element type '#{element["type"]}' is not supported", element)

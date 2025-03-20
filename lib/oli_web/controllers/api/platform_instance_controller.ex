@@ -31,7 +31,7 @@ defmodule OliWeb.Api.PlatformInstanceController do
     render(conn, "show.json", platform_instance: platform_instance)
   end
 
-  def generate_launch_params(conn, %{"client_id" => client_id}) do
+  def details(conn, %{"client_id" => client_id}) do
     case PlatformInstances.get_platform_instance_by_client_id(client_id) do
       nil ->
         conn
@@ -47,11 +47,14 @@ defmodule OliWeb.Api.PlatformInstanceController do
           status: 200,
           statusText: "OK",
           result: %{
-            iss: Oli.Utils.get_base_url(),
-            login_hint: login_hint,
-            client_id: platform_instance.client_id,
-            target_link_uri: platform_instance.target_link_uri,
-            login_url: platform_instance.login_url
+            name: platform_instance.name,
+            launch_params: %{
+              iss: Oli.Utils.get_base_url(),
+              login_hint: login_hint,
+              client_id: platform_instance.client_id,
+              target_link_uri: platform_instance.target_link_uri,
+              login_url: platform_instance.login_url
+            }
           }
         })
     end

@@ -12,6 +12,7 @@ defmodule Oli.Rendering.Elements.Html do
   alias Oli.Rendering.Report
   alias Oli.Rendering.Alternatives
   alias Oli.Rendering.Break
+  alias Oli.Rendering.LTIExternalTool
   alias Oli.Rendering.Error
 
   def content(%Context{} = context, element) do
@@ -40,6 +41,10 @@ defmodule Oli.Rendering.Elements.Html do
 
   def break(%Context{} = context, element) do
     Break.render(context, element, Break.Html)
+  end
+
+  def lti_external_tool(%Context{} = context, element) do
+    LTIExternalTool.render(context, element, LTIExternalTool.Html)
   end
 
   def error(%Context{} = context, element, error) do

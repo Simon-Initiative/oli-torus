@@ -74,12 +74,12 @@ config :oli, :cashnet_provider,
 # to bundle .js and .css sources.
 config :oli, OliWeb.Endpoint,
   http: [
-    port: String.to_integer(System.get_env("HTTP_PORT", "80"))
+    port: String.to_integer(System.get_env("HTTP_PORT", System.get_env("PORT", "80")))
   ],
   url: [
-    scheme: System.get_env("SCHEME", "https"),
+    scheme: System.get_env("SCHEME", "http"),
     host: System.get_env("HOST", "localhost"),
-    port: String.to_integer(System.get_env("PORT", "443"))
+    port: String.to_integer(System.get_env("PORT", "80"))
   ],
   https: [
     port: String.to_integer(System.get_env("HTTPS_PORT", "443")),

@@ -1426,9 +1426,9 @@ defmodule OliWeb.Router do
     pipe_through([:api, :authoring_protected])
 
     post(
-      "/platforms/generate_launch_params/:client_id",
+      "/platforms/details/:client_id",
       Api.PlatformInstanceController,
-      :generate_launch_params
+      :details
     )
   end
 
