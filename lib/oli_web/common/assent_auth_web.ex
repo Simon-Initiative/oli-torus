@@ -84,9 +84,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
     else
       {:error, error} ->
         {:error, error, conn}
-
-      {:error, error, conn} ->
-        {:error, error, conn}
     end
   end
 
