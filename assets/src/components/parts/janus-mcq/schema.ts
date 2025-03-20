@@ -168,6 +168,14 @@ export const simpleUiSchema = {
   incorrectFeedback: {
     'ui:widget': 'MCQCustomErrorFeedbackAuthoring',
   },
+  commonErrorFeedback: {
+    items: {
+      'ui:widget': 'textarea',
+      'ui:options': {
+        rows: 2,
+      },
+    },
+  },
 };
 
 export const adaptivitySchema = {
