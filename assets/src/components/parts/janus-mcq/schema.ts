@@ -162,7 +162,7 @@ export const simpleUiSchema = {
   correctFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
-      rows: 5,
+      rows: 2,
     },
   },
   incorrectFeedback: {

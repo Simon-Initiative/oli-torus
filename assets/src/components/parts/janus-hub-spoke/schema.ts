@@ -202,13 +202,19 @@ export const simpleUiSchema = {
   correctFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
-      rows: 3,
+      rows: 2,
     },
   },
   incorrectFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
-      rows: 3,
+      rows: 2,
+    },
+  },
+  spokeFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
     },
   },
   layoutType: { classNames: 'col-span-12 spokeItem' },

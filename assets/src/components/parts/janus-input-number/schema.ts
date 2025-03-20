@@ -27,13 +27,13 @@ export const simpleUiSchema = {
   correctFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
-      rows: 3,
+      rows: 2,
     },
   },
   incorrectFeedback: {
     'ui:widget': 'textarea',
     'ui:options': {
-      rows: 3,
+      rows: 2,
     },
   },
   answer: correctOrRange.uiSchema,
