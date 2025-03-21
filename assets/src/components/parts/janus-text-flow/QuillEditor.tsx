@@ -38,6 +38,7 @@ FontSizeAttributor.whitelist = [
   '20px',
   '24px',
   '32px',
+  '36px',
   '48px',
   '72px',
 ];
