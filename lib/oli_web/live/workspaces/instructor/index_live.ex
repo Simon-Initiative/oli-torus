@@ -317,20 +317,18 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
   defp maybe_filter_by_text(sections, nil), do: sections
   defp maybe_filter_by_text(sections, ""), do: sections
 
+  # Filters sections by section title or instructor name
   defp maybe_filter_by_text(sections, text_search) do
     normalized_text_search = String.downcase(text_search)
 
     sections
     |> Enum.filter(fn section ->
-      # searchs by course name or instructor name
+      instructor_names = Enum.map(section.instructors, &to_string/1)
 
-      String.contains?(String.downcase(section.title), normalized_text_search) ||
-        Enum.find(section.instructors, false, fn name ->
-          String.contains?(
-            String.downcase(name),
-            normalized_text_search
-          )
-        end)
+      searchable_text =
+        [section.title, instructor_names] |> IO.iodata_to_binary() |> String.downcase()
+
+      String.contains?(searchable_text, normalized_text_search)
     end)
   end
 
