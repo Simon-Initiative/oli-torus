@@ -488,6 +488,113 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
                )
     end
 
+    test "create a practice page works correctly", %{conn: conn, project: project, admin: admin} do
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      ## Create a new practice page
+      view
+      |> element(
+        "button[phx-click=\"create_page\"][phx-value-scored=\"Unscored\"][phx-value-type=\"Basic\"",
+        "Practice Page"
+      )
+      |> render_click()
+
+      ## Get created practice page
+      new_practice_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      conn = recycle_author_session(conn, admin)
+
+      ## Go to the new practice page edit view
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/workspaces/course_author/#{project.slug}/curriculum/#{new_practice_page.slug}/edit"
+        )
+
+      assert view
+             |> element("li[aria-current=\"page\"]")
+             |> render() =~ new_practice_page.title
+    end
+
+    test "create a scored page works correctly", %{conn: conn, project: project, admin: admin} do
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      ## Create a new scored page
+      view
+      |> element(
+        "button[phx-click=\"create_page\"][phx-value-scored=\"Scored\"][phx-value-type=\"Basic\"",
+        "Scored Assessment"
+      )
+      |> render_click()
+
+      ## Get created scored page
+      new_scored_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      conn = recycle_author_session(conn, admin)
+
+      ## Go to the new scored page edit view
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/workspaces/course_author/#{project.slug}/curriculum/#{new_scored_page.slug}/edit"
+        )
+
+      assert view
+             |> element("li[aria-current=\"page\"]")
+             |> render() =~ new_scored_page.title
+    end
+
+    test "create an adaptive page works correctly", %{conn: conn, project: project, admin: admin} do
+      Oli.Features.change_state("adaptivity", :enabled)
+
+      {:ok, view, _html} =
+        live(conn, live_view_all_pages_route(project.slug))
+
+      ## Create a new adaptive page
+      view
+      |> element(
+        "button[phx-click=\"create_page\"][phx-value-scored=\"Unscored\"][phx-value-type=\"Adaptive\"",
+        "Adaptive Page"
+      )
+      |> render_click()
+
+      ## Get created adaptive page
+      new_adaptive_page =
+        project.id
+        |> Course.list_project_resources()
+        |> Enum.max_by(& &1.resource_id)
+        |> Map.get(:resource_id)
+        |> then(&Resources.get_revisions_by_resource_id([&1]))
+        |> List.first()
+
+      conn = recycle_author_session(conn, admin)
+
+      ## Go to the new adaptive page edit view
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/workspaces/course_author/#{project.slug}/curriculum/#{new_adaptive_page.slug}/edit"
+        )
+
+      assert view
+             |> element("li[aria-current=\"page\"]")
+             |> render() =~ new_adaptive_page.title
+    end
+
     test "create a page and back to the all pages view works correctly", %{
       conn: conn,
       project: project,
@@ -499,7 +606,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLiveTest do
       ## Create a new page
       view
       |> element(
-        "button[phx-click=\"create_page\"][phx-value-type=\"Unscored\"]",
+        "button[phx-click=\"create_page\"][phx-value-scored=\"Unscored\"]",
         "Practice Page"
       )
       |> render_click()
