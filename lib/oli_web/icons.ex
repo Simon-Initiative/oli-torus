@@ -1547,6 +1547,48 @@ defmodule OliWeb.Icons do
     """
   end
 
+  def expand(assigns) do
+    ~H"""
+    <svg width="9" height="19" viewBox="0 0 9 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M1 4.49996L4.49996 1L7.99992 4.49996"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M8 14L4.50004 17.5L1.00008 14"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
+  def collapse(assigns) do
+    ~H"""
+    <svg width="9" height="19" viewBox="0 0 9 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M8 1.00004L4.50004 4.5L1.00008 1.00004"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <path
+        d="M1 17.6411L4.49996 14.1411L7.99991 17.6411"
+        stroke="#0062F2"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+    </svg>
+    """
+  end
+
   ########## Student Delivery Icons (end) ##########
 
   ########## Instructor Navigation Bar Icons (start) ##########

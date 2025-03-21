@@ -766,6 +766,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
         />
 
+        <DeliveryUtils.toggle_expand_button />
+
         <.live_component
           id="view_selector"
           module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}

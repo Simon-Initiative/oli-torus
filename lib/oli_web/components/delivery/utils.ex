@@ -152,6 +152,36 @@ defmodule OliWeb.Components.Delivery.Utils do
     end
   end
 
+  attr :on_expand, Phoenix.LiveView.JS,
+    default: JS.dispatch("click", to: "button[aria-expanded='false'][data-bs-toggle='collapse']")
+
+  attr :on_collapse, Phoenix.LiveView.JS,
+    default: JS.dispatch("click", to: "button[aria-expanded='true'][data-bs-toggle='collapse']")
+
+  def toggle_expand_button(assigns) do
+    ~H"""
+    <div class="flex items-center justify-start w-32 px-2 text-sm font-bold text-[#0080FF] dark:text-[#0062F2]">
+      <button
+        id="expand_all_button"
+        phx-click={@on_expand |> JS.hide() |> JS.show(to: "#collapse_all_button", display: "flex")}
+        class="flex space-x-3"
+      >
+        <Icons.expand />
+        <span>Expand All</span>
+      </button>
+
+      <button
+        id="collapse_all_button"
+        phx-click={@on_collapse |> JS.hide() |> JS.show(to: "#expand_all_button", display: "flex")}
+        class="hidden space-x-3"
+      >
+        <Icons.collapse />
+        <span>Collapse All</span>
+      </button>
+    </div>
+    """
+  end
+
   attr(:current_user, User)
 
   def user_icon(%{current_user: _} = assigns) do
