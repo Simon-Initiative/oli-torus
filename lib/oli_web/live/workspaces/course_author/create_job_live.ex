@@ -17,7 +17,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
   @max_selected 5
 
-  @limit 25
+  @limit 5
   @default_options %BrowseOptions{
     institution_id: nil,
     blueprint_id: nil,
@@ -162,6 +162,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
           type="text"
           id="emails"
           name="emails"
+          value={Enum.join(@emails, ",")}
           class="form-control mb-2"
           form="job_form"
           phx-hook="TextInputListener"
