@@ -32,6 +32,18 @@ export const simpleUISchema = {
     classNames: 'dropdown-options-field',
     'ui:emptyValue': '',
   },
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
 };
 
 export const simpleSchema: JSONSchema7Object = {
