@@ -16,6 +16,19 @@ export const screenTypes = [
   'dropdown',
 ];
 
+export const screenType = {
+  BLANK_SCREEN: 'blank_screen',
+  WELCOME_SCREEN: 'welcome_screen',
+  MULTIPLE_CHOICE_SCREEN: 'multiple_choice',
+  MULTILINE_SCREEN: 'multiline_text',
+  SLIDER_SCREEN: 'slider',
+  HUB_SPOKE_SCREEN: 'hub_spoke',
+  END_SCREEN: 'end_screen',
+  NUMBER_INPUT_SCREEN: 'number_input',
+  TEXT_INPUT_SCREEN: 'text_input',
+  DROPDOWN_SCREEN: 'dropdown',
+};
+
 export const screenTypeToTitle: Record<string, string> = {
   blank_screen: 'Instructional Screen',
   welcome_screen: 'Welcome Screen',
