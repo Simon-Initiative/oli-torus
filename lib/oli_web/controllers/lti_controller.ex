@@ -80,7 +80,7 @@ defmodule OliWeb.LtiController do
     session_state = Plug.Conn.get_session(conn, "state")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params, _cache_key} ->
+      {:ok, lti_params} ->
         render(conn, "lti_test.html", lti_params: lti_params)
 
       {:error, %{reason: _reason, msg: msg}} ->
@@ -95,7 +95,7 @@ defmodule OliWeb.LtiController do
           reason: "The current user must be the same user initiating the LTI request"
         )
 
-      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} = lti_hint ->
+      %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
         {current_user, roles} =
           case context do
             "author" ->
@@ -131,14 +131,18 @@ defmodule OliWeb.LtiController do
                  address: ""
                }, roles}
 
-            _ ->
+            "section:" <> section_slug ->
               user = conn.assigns[:current_user]
 
-              # TODO: also include context roles when being called from a section
-              roles =
+              context_roles = Lti_1p3.Roles.Lti_1p3_User.get_context_roles(user, section_slug)
+
+              platform_roles =
                 Lti_1p3.Roles.Lti_1p3_User.get_platform_roles(user)
 
-              {user, roles}
+              {user, context_roles ++ platform_roles}
+
+            _ ->
+              throw("Invalid context")
           end
 
         issuer = Oli.Utils.get_base_url()
