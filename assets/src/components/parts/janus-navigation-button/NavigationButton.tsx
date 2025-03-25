@@ -25,6 +25,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonTransparent, setButtonTransparent] = useState('');
   const [buttonEnabled, setButtonEnabled] = useState(true);
   const [buttonTitle, setButtonTitle] = useState('');
+  const [buttonImageSrc, setButtonImageSrc] = useState('');
   const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
@@ -40,6 +41,9 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
     const dTitle = pModel.title || '';
     setButtonTitle(dTitle);
+
+    const dSrc = pModel.src || '';
+    setButtonImageSrc(dSrc);
 
     const dAccessibilityText = pModel.ariaLabel || accessibilityText;
     setAccessibilityText(dAccessibilityText);
@@ -125,6 +129,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     const sVisible = currentStateSnapshot[`stage.${id}.visible`];
     if (sVisible !== undefined) {
       setButtonVisible(sVisible);
+    }
+
+    const src = currentStateSnapshot[`stage.${id}.src`];
+    if (src?.length) {
+      setButtonImageSrc(src);
     }
 
     const sTitle = currentStateSnapshot[`stage.${id}.title`];
@@ -244,6 +253,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonTitle(sTitle);
               }
 
+              const src = changes[`stage.${id}.src`];
+              if (src?.length) {
+                setButtonImageSrc(src);
+              }
+
               const sTitles = changes[`stage.${id}.buttonTitles`];
               if (sTitles !== undefined) {
                 setButtonTitle(sTitles[0]);
@@ -294,6 +308,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
               const sTitle = changes[`stage.${id}.title`];
               if (sTitle !== undefined) {
                 setButtonTitle(sTitle);
+              }
+
+              const src = changes[`stage.${id}.src`];
+              if (src?.length) {
+                setButtonImageSrc(src);
               }
 
               const sTitles = changes[`stage.${id}.buttonTitles`];
@@ -429,8 +448,28 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   };
 
   return ready && buttonVisible ? (
-    <button data-janus-type={tagName} {...buttonProps} style={styles}>
-      {buttonTitle}
+    <button
+      data-janus-type={tagName}
+      {...buttonProps}
+      style={{
+        ...styles,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+      }}
+    >
+      {buttonImageSrc?.length && (
+        <img
+          draggable="false"
+          src={buttonImageSrc}
+          style={{
+            height: '100%',
+            width: 'auto',
+            objectFit: 'contain',
+          }}
+        />
+      )}
+      <span>{buttonTitle}</span>
     </button>
   ) : null;
 };

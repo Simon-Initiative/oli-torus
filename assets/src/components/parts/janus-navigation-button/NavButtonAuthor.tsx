@@ -15,6 +15,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     enabled = true,
     ariaLabel,
     transparent,
+    src,
   } = model;
 
   const styles: CSSProperties = {
@@ -59,8 +60,28 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
 
   return (
     <div className={`navigation-button`}>
-      <button data-janus-type={tagName} {...buttonProps} style={styles}>
-        {title}
+      <button
+        data-janus-type={tagName}
+        {...buttonProps}
+        style={{
+          ...styles,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+        }}
+      >
+        {src && (
+          <img
+            draggable="false"
+            src={src}
+            style={{
+              height: '100%',
+              width: 'auto',
+              objectFit: 'contain',
+            }}
+          />
+        )}
+        <span>{title}</span>
       </button>
     </div>
   );

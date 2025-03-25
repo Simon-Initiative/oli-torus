@@ -17,6 +17,10 @@ export const schema: JSONSchema7Object = {
   title: {
     type: 'string',
   },
+  src: {
+    title: 'Source',
+    type: 'string',
+  },
   ariaLabel: {
     type: 'string',
   },
@@ -59,6 +63,9 @@ export const uiSchema = {
   buttonColor: {
     'ui:widget': 'ColorPicker',
   },
+  src: {
+    'ui:widget': 'TorusImageBrowser',
+  },
 };
 
 export const adaptivitySchema = {
@@ -71,6 +78,7 @@ export const adaptivitySchema = {
   transparent: CapiVariableTypes.BOOLEAN,
   accessibilityText: CapiVariableTypes.STRING,
   customCssClass: CapiVariableTypes.STRING,
+  src: CapiVariableTypes.STRING,
 };
 
 export const createSchema = (): Partial<NavButtonModel> => ({
@@ -82,4 +90,5 @@ export const createSchema = (): Partial<NavButtonModel> => ({
   height: 30,
   title: 'Nav Button',
   ariaLabel: 'Nav Button',
+  src: '',
 });
