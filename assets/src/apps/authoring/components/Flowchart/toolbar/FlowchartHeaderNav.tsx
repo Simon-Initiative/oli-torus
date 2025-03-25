@@ -41,6 +41,7 @@ import { InvalidScreenWarning } from './InvalidScreenWarning';
 import PasteIcon from './PasteIcon';
 import { PreviewIcon } from './PreviewIcon';
 import { RedoIcon } from './RedoIcon';
+import { ReorderingIcon } from './ReorderingIcon';
 import { ScoringIcon } from './ScoringIcon';
 import { UndoIcon } from './UndoIcon';
 import { toolbarIcons, toolbarTooltips } from './toolbar-icons';
@@ -353,6 +354,19 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
             >
               <button onClick={handleScoringOverviewClick} className="component-button">
                 <ScoringIcon />
+              </button>
+            </OverlayTrigger>
+            <OverlayTrigger
+              placement="bottom"
+              delay={{ show: 150, hide: 150 }}
+              overlay={
+                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                  Reorder components to set the reading order for screen readers.
+                </Tooltip>
+              }
+            >
+              <button onClick={handleScoringOverviewClick} className="component-button">
+                <ReorderingIcon />
               </button>
             </OverlayTrigger>
             {copiedPart && (
