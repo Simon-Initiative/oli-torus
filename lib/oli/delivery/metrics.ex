@@ -1211,7 +1211,7 @@ defmodule Oli.Delivery.Metrics do
             GREATEST(
               (
                 SELECT
-                  completed_count / (total_count * ((COALESCE(rev.full_progress_pct, 100) / 100) + 0.0001))
+                  completed_count / (total_count * ((COALESCE(rev.full_progress_pct, 100) / 100)))
                 FROM (
                   SELECT
                     COUNT(aa2.id) FILTER (WHERE aa2.lifecycle_state = 'evaluated' OR aa2.lifecycle_state = 'submitted')::float AS completed_count,
