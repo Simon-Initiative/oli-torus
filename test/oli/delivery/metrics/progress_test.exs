@@ -263,6 +263,9 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       # because it can never go lower
       ra = Oli.Repo.get(ResourceAccess, map.attempt2.resource_access_id)
       assert_in_delta 0.75, ra.progress, 0.0001
+
+      # TODO: test the case where we submit all the 4 scorable activities
+      # and assert the progress is 1.0
     end
 
     test "progress_for_page/3 calculates correctly", %{

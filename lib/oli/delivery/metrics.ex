@@ -1176,7 +1176,7 @@ defmodule Oli.Delivery.Metrics do
 
   Can return one of:
   {:ok, :updated} -> Progress calculated and set
-  {:ok, :noop} -> Noting needed to be done, since the attempt number was greater than 1
+  {:ok, :noop} -> Nothing needed to be done, since the attempt number was greater than 1
   {:error, :unexpected_update_count} -> 0 or more than 1 record would have been updated, rolled back
   {:error, e} -> An other error occurred, rolled back
   """
