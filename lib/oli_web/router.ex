@@ -76,6 +76,7 @@ defmodule OliWeb.Router do
 
   pipeline :delivery do
     plug(Oli.Plugs.SetVrAgentValue)
+    plug(OliWeb.Plugs.AllowIframe)
   end
 
   # set the layout to be workspace
@@ -275,7 +276,12 @@ defmodule OliWeb.Router do
   end
 
   scope "/", OliWeb do
-    pipe_through [:browser, :require_authenticated_user, :fetch_current_author]
+    pipe_through [
+      :browser,
+      :delivery,
+      :require_authenticated_user,
+      :fetch_current_author
+    ]
 
     live "/users/link_account", LinkAccountLive, :link_account
   end
@@ -975,7 +981,7 @@ defmodule OliWeb.Router do
   ###
 
   scope "/sections", OliWeb do
-    pipe_through([:browser])
+    pipe_through([:browser, :delivery, :delivery_layout])
 
     # Resolve root /sections route using the DeliveryController index action
     get("/", DeliveryController, :index)
