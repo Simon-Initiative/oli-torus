@@ -36,7 +36,7 @@ import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
 import { getScreenQuestionType } from '../paths/path-options';
-import { screenType } from '../screens/screen-factories';
+import { isEndScreen } from '../screens/screen-utils';
 import { validateScreen } from '../screens/screen-validation';
 import { InvalidScreenWarning } from './InvalidScreenWarning';
 import PasteIcon from './PasteIcon';
@@ -150,8 +150,7 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
 
   const questionType = getScreenQuestionType(currentActivity);
   const hasQuestion = questionType !== 'none';
-  const isLessonEndScreen =
-    currentActivity?.authoring?.flowchart?.screenType == screenType.END_SCREEN;
+  const isLessonEndScreen = currentActivity ? isEndScreen(currentActivity) : false;
   const url = `/authoring/project/${projectSlug}/preview/${revisionSlug}`;
   const windowName = `preview-${projectSlug}`;
 
