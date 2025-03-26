@@ -17,7 +17,7 @@ export const schema: JSONSchema7Object = {
   title: {
     type: 'string',
   },
-  src: {
+  imageSource: {
     title: 'Source',
     type: 'string',
   },
@@ -63,7 +63,7 @@ export const uiSchema = {
   buttonColor: {
     'ui:widget': 'ColorPicker',
   },
-  src: {
+  imageSource: {
     'ui:widget': 'TorusImageBrowser',
   },
 };
@@ -78,7 +78,7 @@ export const adaptivitySchema = {
   transparent: CapiVariableTypes.BOOLEAN,
   accessibilityText: CapiVariableTypes.STRING,
   customCssClass: CapiVariableTypes.STRING,
-  src: CapiVariableTypes.STRING,
+  imageSource: CapiVariableTypes.STRING,
 };
 
 export const createSchema = (): Partial<NavButtonModel> => ({
@@ -90,5 +90,5 @@ export const createSchema = (): Partial<NavButtonModel> => ({
   height: 30,
   title: 'Nav Button',
   ariaLabel: 'Nav Button',
-  src: '',
+  imageSource: '',
 });

@@ -42,7 +42,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     const dTitle = pModel.title || '';
     setButtonTitle(dTitle);
 
-    const dSrc = pModel.src || '';
+    const dSrc = pModel.imageSource || '';
     setButtonImageSrc(dSrc);
 
     const dAccessibilityText = pModel.ariaLabel || accessibilityText;
@@ -131,9 +131,9 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       setButtonVisible(sVisible);
     }
 
-    const src = currentStateSnapshot[`stage.${id}.src`];
-    if (src?.length) {
-      setButtonImageSrc(src);
+    const imageSource = currentStateSnapshot[`stage.${id}.imageSource`];
+    if (imageSource?.length) {
+      setButtonImageSrc(imageSource);
     }
 
     const sTitle = currentStateSnapshot[`stage.${id}.title`];
@@ -253,9 +253,9 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonTitle(sTitle);
               }
 
-              const src = changes[`stage.${id}.src`];
-              if (src?.length) {
-                setButtonImageSrc(src);
+              const imageSource = changes[`stage.${id}.imageSource`];
+              if (imageSource?.length) {
+                setButtonImageSrc(imageSource);
               }
 
               const sTitles = changes[`stage.${id}.buttonTitles`];
@@ -310,9 +310,9 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonTitle(sTitle);
               }
 
-              const src = changes[`stage.${id}.src`];
-              if (src?.length) {
-                setButtonImageSrc(src);
+              const imageSource = changes[`stage.${id}.imageSource`];
+              if (imageSource?.length) {
+                setButtonImageSrc(imageSource);
               }
 
               const sTitles = changes[`stage.${id}.buttonTitles`];

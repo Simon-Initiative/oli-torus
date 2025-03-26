@@ -15,7 +15,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     enabled = true,
     ariaLabel,
     transparent,
-    src,
+    imageSource,
   } = model;
 
   const styles: CSSProperties = {
@@ -70,10 +70,10 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
           gap: '6px',
         }}
       >
-        {src && (
+        {imageSource && (
           <img
             draggable="false"
-            src={src}
+            src={imageSource}
             style={{
               height: '100%',
               width: 'auto',
