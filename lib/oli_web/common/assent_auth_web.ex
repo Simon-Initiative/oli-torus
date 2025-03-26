@@ -201,7 +201,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
   defp provider_config!(provider, config) do
     provider = ensure_atom_key(provider)
 
-    config.authentication_providers()
+    config.authentication_providers
     |> Keyword.get(provider)
     |> Assent.Config.put(
       :redirect_uri,
