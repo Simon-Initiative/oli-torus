@@ -55,7 +55,7 @@ export const sortScreens = (screens: IActivity[], firstScreen?: IActivity): IAct
 const isWelcomeScreen = (screen: IActivity): boolean =>
   screen.authoring?.flowchart?.screenType === 'welcome_screen';
 
-const isEndScreen = (screen: IActivity): boolean =>
+export const isEndScreen = (screen: IActivity): boolean =>
   screen.authoring?.flowchart?.screenType === 'end_screen';
 
 const isScreen = (screen: IActivity | undefined): screen is IActivity => !!screen;
