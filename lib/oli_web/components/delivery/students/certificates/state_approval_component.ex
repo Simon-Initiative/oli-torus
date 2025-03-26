@@ -195,6 +195,9 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       ) do
     required_state = String.to_existing_atom(required_state)
 
+    current_gc =
+      GrantedCertificates.get_granted_certificate_by_id(socket.assigns.granted_certificate_id)
+
     # we set the url to nil and change the guid to invalidate any previous .pdf (if any)
     # and mark email as not sent
     case GrantedCertificates.update_granted_certificate(
@@ -204,7 +207,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
              url: nil,
              student_email_sent: false,
              guid: UUID.uuid4(),
-             with_distinction: false
+             with_distinction: current_gc.with_distinction
            }
          ) do
       {:ok, gc} ->
