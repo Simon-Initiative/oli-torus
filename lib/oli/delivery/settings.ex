@@ -240,6 +240,8 @@ defmodule Oli.Delivery.Settings do
 
   def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
 
+  def was_late?(%ResourceAttempt{}, %Combined{scheduling_type: :read_by}, _now), do: false
+
   def was_late?(
         %ResourceAttempt{} = resource_attempt,
         %Combined{late_submit: :allow} = effective_settings,
