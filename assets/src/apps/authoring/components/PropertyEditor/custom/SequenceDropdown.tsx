@@ -15,6 +15,7 @@ interface SeqDropdownProps {
     item: null | SequenceHierarchyItem<SequenceEntryChild>,
     e?: React.MouseEvent,
     isNextButton?: boolean,
+    isLessonEnd?: boolean,
   ) => void;
   value?: string;
   showNextBtn: boolean;
@@ -62,19 +63,34 @@ export const SequenceDropdown: React.FC<SeqDropdownProps> = (props) => {
     <div className="aa-sequence-editor">
       <ListGroup as="ol" className="aa-sequence">
         {showNextBtn ? (
-          <ListGroup.Item
-            as="li"
-            className={`aa-sequence-item`}
-            key="next"
-            onClick={(e) => onChange(null, e, true)}
-            tabIndex={0}
-          >
-            <div className="aa-sequence-details-wrapper">
-              <div className="details">
-                <span className="title">Next Screen</span>
+          <>
+            <ListGroup.Item
+              as="li"
+              className={`aa-sequence-item`}
+              key="next"
+              onClick={(e) => onChange(null, e, true)}
+              tabIndex={0}
+            >
+              <div className="aa-sequence-details-wrapper">
+                <div className="details">
+                  <span className="title">Next Screen</span>
+                </div>
               </div>
-            </div>
-          </ListGroup.Item>
+            </ListGroup.Item>
+            <ListGroup.Item
+              as="li"
+              className={`aa-sequence-item`}
+              key="endOfLesson"
+              onClick={(e) => onChange(null, e, false, true)}
+              tabIndex={0}
+            >
+              <div className="aa-sequence-details-wrapper">
+                <div className="details">
+                  <span className="title">End of lesson</span>
+                </div>
+              </div>
+            </ListGroup.Item>
+          </>
         ) : null}
         {sequenceDropDownItems(items)}
       </ListGroup>

@@ -32,6 +32,7 @@ import {
   setNextActivityId,
 } from '../../store/features/adaptivity/slice';
 import {
+  finalizeLesson,
   navigateToActivity,
   navigateToFirstActivity,
   navigateToLastActivity,
@@ -513,6 +514,9 @@ const DeckLayoutFooter: React.FC = () => {
             break;
           case 'last':
             dispatch(navigateToLastActivity());
+            break;
+          case 'endOfLesson':
+            dispatch(finalizeLesson());
             break;
           default:
             if (doesFirstEventHasNavigation && combineFeedback && navTarget === currentActivityId) {

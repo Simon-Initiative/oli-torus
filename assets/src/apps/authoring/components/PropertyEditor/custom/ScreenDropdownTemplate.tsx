@@ -32,6 +32,10 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
       setButtonLabel('Next Screen');
       return;
     }
+    if (value === 'endOfLesson') {
+      setButtonLabel('End of lesson');
+      return;
+    }
     if (sequence) {
       setHierarchy(getHierarchy(sequence));
       const entry = findInSequence(sequence, value);
@@ -48,8 +52,9 @@ const ScreenDropdownTemplate: React.FC<ScreenDropdownProps> = (props) => {
     item: SequenceEntry<SequenceEntryChild> | null,
     e: React.MouseEvent,
     isNext: boolean,
+    isLessonEnd?: boolean,
   ) => {
-    const itemId = isNext ? 'next' : item?.custom.sequenceId;
+    const itemId = isNext ? 'next' : isLessonEnd ? 'endOfLesson' : item?.custom.sequenceId;
     onChange(itemId);
   };
 

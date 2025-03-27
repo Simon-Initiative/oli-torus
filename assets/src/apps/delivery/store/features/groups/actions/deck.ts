@@ -436,6 +436,13 @@ export const navigateToActivity = createAsyncThunk(
   },
 );
 
+export const finalizeLesson = createAsyncThunk(
+  `${GroupsSlice}/deck/finalizeLesson`,
+  async (_, thunkApi) => {
+    thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
+  },
+);
+
 interface ActivityAttemptMapping {
   attemptGuid: string;
   id: ResourceId;
