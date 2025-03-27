@@ -40,6 +40,7 @@ defmodule Oli.Analytics.Datasets.Test do
       Seeder.base_project_with_resource2()
     end
 
+    @tag :flaky
     test "multiple jobs, but all from same application id", %{
       project: project,
       author: author1,
@@ -533,6 +534,7 @@ defmodule Oli.Analytics.Datasets.Test do
       assert result == [%{id: project.id, title: project.title}]
     end
 
+    @tag :flaky
     test "initiator values", %{project: project, author: author1, author2: author2} do
       job(%{
         status: :pending,

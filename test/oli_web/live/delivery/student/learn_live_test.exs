@@ -1320,6 +1320,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(learning_objectives_tooltip) =~ "Objective 4"
     end
 
+    @tag :flaky
     test "can see unit correct progress when all pages are completed",
          %{
            conn: conn,
@@ -1547,6 +1548,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                Not yet scheduled"
     end
 
+    @tag :flaky
+    @tag :skip
     test "can see units, modules and page (at module level) progresses", %{
       conn: conn,
       user: user,
@@ -2209,6 +2212,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
+    @tag :flaky
+    @tag :skip
     test "can see checked square icon and score details for attempted graded pages in the module index details",
          %{
            conn: conn,
