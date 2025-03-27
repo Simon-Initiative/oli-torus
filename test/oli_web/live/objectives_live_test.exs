@@ -154,7 +154,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
-    @tag :flaky
     @tag :skip
     test "applies searching", %{conn: conn, project: project, publication: publication} do
       {:ok, first_obj} = create_objective(project, publication, "first_obj", "First Objective")
@@ -244,7 +243,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
-    @tag :flaky
     @tag :skip
     test "show objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
@@ -292,7 +290,6 @@ defmodule OliWeb.ObjectivesLiveTest do
     end
 
     @tag :flaky
-    @tag :skip
     test "new objective", %{conn: conn, project: project} do
       title = "New Objective"
 
@@ -522,7 +519,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
-    @tag :skip
     test "new sub objective", %{conn: conn, project: project, publication: publication} do
       title = "Sub Objective"
       {:ok, obj} = create_objective(project, publication, "obj", "Objective")
@@ -590,7 +586,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert_receive {:DOWN, _ref, :process, _pid, :normal}
     end
 
-    @tag :flaky
     @tag :skip
     test "remove sub objective with one parent", %{
       conn: conn,
@@ -628,7 +623,6 @@ defmodule OliWeb.ObjectivesLiveTest do
     end
 
     @tag :flaky
-    @tag :skip
     test "remove sub objective with more than one parent", %{
       conn: conn,
       project: project,

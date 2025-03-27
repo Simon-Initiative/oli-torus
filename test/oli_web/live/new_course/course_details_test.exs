@@ -1,3 +1,4 @@
+@moduletag :skip
 defmodule OliWeb.NewCourse.CourseDetailsTest do
   use ExUnit.Case, async: true
   alias Oli.Delivery.Sections
@@ -16,7 +17,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
   describe "Admin - Course Details" do
     setup [:admin_conn]
 
-    @tag :skip
     test "renders the \"course details\" form", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_admin_route)
@@ -37,7 +37,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
-    @tag :skip
     test "doesn't render the class days if class never meets", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_admin_route)
@@ -58,7 +57,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
-    @tag :skip
     test "can't go to next step unless all required fields are filled and valid",
          %{conn: conn} = context do
       %{section: section} = create_source(context)
@@ -92,7 +90,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
              )
     end
 
-    @tag :skip
     test "successfully creates a section from a project publication", %{conn: conn} = context do
       %{publication: publication} = create_source(context, %{type: :enrollable})
       {:ok, view, _html} = live(conn, @live_view_admin_route)
@@ -118,7 +115,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
                assert_redirect(view, ~p"/sections/new_admin_course")
     end
 
-    @tag :skip
     test "successfully creates a section from a product", %{conn: conn} = context do
       %{section: section} = create_source(context, %{type: :blueprint})
       {:ok, view, _html} = live(conn, @live_view_admin_route)
@@ -148,7 +144,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
   describe "Instructor - Course Details" do
     setup [:instructor_conn]
 
-    @tag :skip
     test "renders the \"course details\" form", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -169,7 +164,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
-    @tag :skip
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -184,7 +178,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, ".alert-danger", "Some fields require your attention")
     end
 
-    @tag :skip
     test "successfully creates a section from a project publication", %{conn: conn} = context do
       %{publication: publication} = create_source(context, %{type: :enrollable})
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -210,7 +203,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
                assert_redirect(view, ~p"/sections/new_instructor_course")
     end
 
-    @tag :skip
     test "successfully creates a section from a product", %{conn: conn} = context do
       %{section: section} = create_source(context, %{type: :blueprint})
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -240,7 +232,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
   describe "LMS - Course Details" do
     setup [:lms_instructor_conn]
 
-    @tag :skip
     test "renders the \"course details\" form", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
@@ -261,7 +252,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, "input[type=\"time\"]#section_preferred_scheduling_time")
     end
 
-    @tag :skip
     test "can't go to next step unless all required fields are filled", %{conn: conn} = context do
       %{section: section} = create_source(context)
       {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
@@ -276,7 +266,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert has_element?(view, ".alert-danger", "Some fields require your attention")
     end
 
-    @tag :skip
     test "successfully creates a section from a project publication", %{conn: conn} = context do
       %{publication: publication} = create_source(context, %{type: :enrollable})
       {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
@@ -300,7 +289,6 @@ defmodule OliWeb.NewCourse.CourseDetailsTest do
       assert %{"info" => "Section successfully created."} == assert_redirect(view, ~p"/sections")
     end
 
-    @tag :skip
     test "successfully creates a section from a product", %{conn: conn} = context do
       %{section: section} =
         create_source(context, %{type: :blueprint, contains_explorations: true})

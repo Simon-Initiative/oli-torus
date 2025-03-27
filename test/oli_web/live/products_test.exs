@@ -138,7 +138,6 @@ defmodule OliWeb.ProductsLiveTest do
       assert has_element?(view, "a", product_2.base_project.title)
     end
 
-    @tag :skip
     @tag :flaky
     test "search product by amount", %{conn: conn, product: product} do
       [{_, product_2} | _] = create_product(conn)

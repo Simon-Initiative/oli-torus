@@ -1744,7 +1744,6 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       )
     end
 
-    @tag :skip
     test "posts a note", %{
       conn: conn,
       section: section,

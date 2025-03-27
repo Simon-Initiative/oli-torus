@@ -1276,8 +1276,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    @tag :skip
     # This feature was disabled in ticket NG-201 but will be reactivated with NG23-199
+    @tag :skip
     test "can see module learning objectives (if any) in the tooltip", %{
       conn: conn,
       section: section
@@ -1427,7 +1427,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     # TODO: finish this test when the handle event for the "Let's discuss" button is implemented
-    @tag :skip
     test "can click on let's discuss button to open DOT AI Bot interface", %{
       conn: conn,
       section: section
@@ -1549,7 +1548,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     @tag :flaky
-    @tag :skip
     test "can see units, modules and page (at module level) progresses", %{
       conn: conn,
       user: user,
@@ -2213,7 +2211,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     @tag :flaky
-    @tag :skip
     test "can see checked square icon and score details for attempted graded pages in the module index details",
          %{
            conn: conn,
