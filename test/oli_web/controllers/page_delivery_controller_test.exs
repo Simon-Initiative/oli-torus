@@ -1,6 +1,7 @@
-@moduletag :skip
 defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
+
+  @moduletag :skip
 
   import Mox
   import Oli.Factory
