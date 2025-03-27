@@ -70,15 +70,13 @@ defmodule Oli.Delivery.SettingsTest do
     settings_with_grace_period = %Combined{
       end_date: nil,
       time_limit: 30,
-      grace_period: 5,
-      scheduling_type: :due_by
+      grace_period: 5
     }
 
     settings_with_no_grace_period = %Combined{
       end_date: nil,
       time_limit: 30,
-      grace_period: 0,
-      scheduling_type: :due_by
+      grace_period: 0
     }
 
     refute Settings.was_late?(
@@ -135,14 +133,12 @@ defmodule Oli.Delivery.SettingsTest do
 
     settings_with_grace_period = %Combined{
       end_date: ~U[2020-01-01 02:00:00Z],
-      grace_period: 5,
-      scheduling_type: :due_by
+      grace_period: 5
     }
 
     settings_with_no_grace_period = %Combined{
       end_date: ~U[2020-01-01 02:00:00Z],
-      grace_period: 0,
-      scheduling_type: :due_by
+      grace_period: 0
     }
 
     refute Settings.was_late?(
@@ -182,7 +178,6 @@ defmodule Oli.Delivery.SettingsTest do
     }
 
     settings = %Combined{
-      scheduling_type: :due_by,
       end_date: ~U[2020-01-01 02:00:00Z],
       time_limit: 30
     }

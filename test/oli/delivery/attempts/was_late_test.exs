@@ -66,17 +66,11 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
       Oli.Delivery.Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
       datashop_session_id_user1 = UUID.uuid4()
 
-      effective_settings = %Oli.Delivery.Settings.Combined{
-        time_limit: 5,
-        scheduling_type: :due_by
-      }
+      effective_settings = %Oli.Delivery.Settings.Combined{time_limit: 5}
 
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
-      Oli.Delivery.Sections.update_section_resource(sr, %{
-        time_limit: 5,
-        scheduling_type: :due_by
-      })
+      Oli.Delivery.Sections.update_section_resource(sr, %{time_limit: 5})
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
@@ -151,51 +145,6 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
     end
 
     @tag isolation: "serializable"
-    test "finalization after end date doesn't set was_late if read_by", %{
-      section: section,
-      graded_page1: page,
-      user1: user
-    } do
-      Oli.Delivery.Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
-      datashop_session_id_user1 = UUID.uuid4()
-
-      yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
-
-      effective_settings = %Oli.Delivery.Settings.Combined{
-        end_date: yesterday,
-        scheduling_type: :read_by
-      }
-
-      sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
-
-      Oli.Delivery.Sections.update_section_resource(sr, %{
-        end_date: yesterday,
-        scheduling_type: :read_by
-      })
-
-      Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
-
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/6
-
-      {:ok, %AttemptState{resource_attempt: ra}} =
-        PageLifecycle.start(
-          page.revision.slug,
-          section.slug,
-          datashop_session_id_user1,
-          user,
-          effective_settings,
-          activity_provider
-        )
-
-      {:ok, %FinalizationSummary{resource_access: resource_access}} =
-        PageLifecycle.finalize(section.slug, ra.attempt_guid, datashop_session_id_user1)
-
-      ra1 = Core.get_resource_attempt_by(attempt_guid: ra.attempt_guid)
-      refute ra1.was_late
-      refute resource_access.was_late
-    end
-
-    @tag isolation: "serializable"
     test "finalization after end date sets was_late", %{
       section: section,
       graded_page1: page,
@@ -206,17 +155,11 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
 
       yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
 
-      effective_settings = %Oli.Delivery.Settings.Combined{
-        end_date: yesterday,
-        scheduling_type: :due_by
-      }
+      effective_settings = %Oli.Delivery.Settings.Combined{end_date: yesterday}
 
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
 
-      Oli.Delivery.Sections.update_section_resource(sr, %{
-        end_date: yesterday,
-        scheduling_type: :due_by
-      })
+      Oli.Delivery.Sections.update_section_resource(sr, %{end_date: yesterday})
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
 
