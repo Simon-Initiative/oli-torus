@@ -238,9 +238,7 @@ defmodule Oli.Delivery.Settings do
     |> Repo.update()
   end
 
-  def was_late?(%ResourceAttempt{}, %Combined{late_submit: :disallow}, _now), do: false
-
-  def was_late?(%ResourceAttempt{}, %Combined{scheduling_type: :read_by}, _now), do: false
+  def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
 
   def was_late?(
         %ResourceAttempt{} = resource_attempt,
