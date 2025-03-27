@@ -56,10 +56,18 @@ defmodule Oli.Delivery.SettingsTest do
 
     settings = %Combined{
       late_submit: :disallow,
-      time_limit: 1
+      time_limit: 1,
+      scheduling_type: :due_by
+    }
+
+    read_by_settings = %Combined{
+      late_submit: :disallow,
+      time_limit: 1,
+      scheduling_type: :read_by
     }
 
     refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+    refute Settings.was_late?(ra, read_by_settings, DateTime.add(ra.inserted_at, 20, :minute))
   end
 
   test "was_late/2 determines lateness correctly when only a time limit" do
@@ -81,6 +89,20 @@ defmodule Oli.Delivery.SettingsTest do
       scheduling_type: :due_by
     }
 
+    suggested_by_settings_with_grace_period = %Combined{
+      end_date: nil,
+      time_limit: 30,
+      grace_period: 5,
+      scheduling_type: :read_by
+    }
+
+    suggested_by_settings_with_no_grace_period = %Combined{
+      end_date: nil,
+      time_limit: 30,
+      grace_period: 0,
+      scheduling_type: :read_by
+    }
+
     refute Settings.was_late?(
              ra,
              settings_with_grace_period,
@@ -90,6 +112,18 @@ defmodule Oli.Delivery.SettingsTest do
     refute Settings.was_late?(
              ra,
              settings_with_grace_period,
+             DateTime.add(ra.inserted_at, 31, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             suggested_by_settings_with_grace_period,
+             DateTime.add(ra.inserted_at, 20, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             suggested_by_settings_with_grace_period,
              DateTime.add(ra.inserted_at, 31, :minute)
            )
 
@@ -99,9 +133,21 @@ defmodule Oli.Delivery.SettingsTest do
              DateTime.add(ra.inserted_at, 36, :minute)
            )
 
+    assert Settings.was_late?(
+             ra,
+             suggested_by_settings_with_grace_period,
+             DateTime.add(ra.inserted_at, 36, :minute)
+           )
+
     refute Settings.was_late?(
              ra,
              settings_with_no_grace_period,
+             DateTime.add(ra.inserted_at, 20, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             suggested_by_settings_with_no_grace_period,
              DateTime.add(ra.inserted_at, 20, :minute)
            )
 
@@ -110,15 +156,27 @@ defmodule Oli.Delivery.SettingsTest do
              settings_with_no_grace_period,
              DateTime.add(ra.inserted_at, 31, :minute)
            )
+
+    assert Settings.was_late?(
+             ra,
+             suggested_by_settings_with_no_grace_period,
+             DateTime.add(ra.inserted_at, 31, :minute)
+           )
   end
 
-  test "was_late/2 determines lateness correctly when no effective due date" do
+  test "was_late/2 determines lateness correctly when no effective due date or suggested by date" do
     ra = %ResourceAttempt{
       inserted_at: ~U[2020-01-01 01:00:00Z]
     }
 
     settings_with_no_end_date = %Combined{
-      end_date: nil
+      end_date: nil,
+      scheduling_type: :due_by
+    }
+
+    read_by_settings_with_no_end_date = %Combined{
+      end_date: nil,
+      scheduling_type: :read_by
     }
 
     refute Settings.was_late?(
@@ -126,9 +184,15 @@ defmodule Oli.Delivery.SettingsTest do
              settings_with_no_end_date,
              DateTime.add(ra.inserted_at, 1, :minute)
            )
+
+    refute Settings.was_late?(
+             ra,
+             read_by_settings_with_no_end_date,
+             DateTime.add(ra.inserted_at, 1, :minute)
+           )
   end
 
-  test "was_late/2 determines lateness correctly when only a due date" do
+  test "was_late/2 determines lateness correctly when only a due date or a suggested by date" do
     ra = %ResourceAttempt{
       inserted_at: ~U[2020-01-01 01:00:00Z]
     }
@@ -169,14 +233,56 @@ defmodule Oli.Delivery.SettingsTest do
              DateTime.add(ra.inserted_at, 59, :minute)
            )
 
-    assert Settings.was_late?(
+    read_by_settings_with_grace_period = %Combined{
+      end_date: ~U[2020-01-01 02:00:00Z],
+      grace_period: 5,
+      scheduling_type: :read_by
+    }
+
+    read_by_settings_with_no_grace_period = %Combined{
+      end_date: ~U[2020-01-01 02:00:00Z],
+      grace_period: 0,
+      scheduling_type: :read_by
+    }
+
+    refute Settings.was_late?(
              ra,
-             settings_with_no_grace_period,
+             read_by_settings_with_no_grace_period,
+             DateTime.add(ra.inserted_at, 61, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             read_by_settings_with_grace_period,
+             DateTime.add(ra.inserted_at, 59, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             read_by_settings_with_grace_period,
+             DateTime.add(ra.inserted_at, 64, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             read_by_settings_with_grace_period,
+             DateTime.add(ra.inserted_at, 66, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             read_by_settings_with_no_grace_period,
+             DateTime.add(ra.inserted_at, 59, :minute)
+           )
+
+    refute Settings.was_late?(
+             ra,
+             read_by_settings_with_no_grace_period,
              DateTime.add(ra.inserted_at, 61, :minute)
            )
   end
 
-  test "was_late/2 determines lateness correctly with both due date and time limit" do
+  test "was_late/2 determines lateness correctly with both due date (or suggested by date) and time limit" do
     ra1 = %ResourceAttempt{
       inserted_at: ~U[2020-01-01 01:00:00Z]
     }
@@ -187,8 +293,17 @@ defmodule Oli.Delivery.SettingsTest do
       time_limit: 30
     }
 
+    read_by_settings = %Combined{
+      scheduling_type: :read_by,
+      end_date: ~U[2020-01-01 02:00:00Z],
+      time_limit: 30
+    }
+
     refute Settings.was_late?(ra1, settings, DateTime.add(ra1.inserted_at, 29, :minute))
     assert Settings.was_late?(ra1, settings, DateTime.add(ra1.inserted_at, 31, :minute))
+
+    refute Settings.was_late?(ra1, read_by_settings, DateTime.add(ra1.inserted_at, 29, :minute))
+    assert Settings.was_late?(ra1, read_by_settings, DateTime.add(ra1.inserted_at, 31, :minute))
 
     ra2 = %ResourceAttempt{
       inserted_at: ~U[2020-01-01 01:45:00Z]
@@ -196,6 +311,10 @@ defmodule Oli.Delivery.SettingsTest do
 
     refute Settings.was_late?(ra2, settings, DateTime.add(ra2.inserted_at, 14, :minute))
     assert Settings.was_late?(ra2, settings, DateTime.add(ra2.inserted_at, 16, :minute))
+
+    refute Settings.was_late?(ra2, read_by_settings, DateTime.add(ra2.inserted_at, 14, :minute))
+    refute Settings.was_late?(ra2, read_by_settings, DateTime.add(ra2.inserted_at, 16, :minute))
+    assert Settings.was_late?(ra2, read_by_settings, DateTime.add(ra2.inserted_at, 31, :minute))
   end
 
   test "combine/3 honors the inline -1 for max_attempts" do

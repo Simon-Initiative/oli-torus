@@ -238,9 +238,7 @@ defmodule Oli.Delivery.Settings do
     |> Repo.update()
   end
 
-  def was_late?(%ResourceAttempt{}, %Combined{late_submit: :disallow}, _now), do: false
-
-  def was_late?(%ResourceAttempt{}, %Combined{scheduling_type: :read_by}, _now), do: false
+  def was_late?(_, %Combined{late_submit: :disallow}, _now), do: false
 
   def was_late?(
         %ResourceAttempt{} = resource_attempt,
@@ -311,24 +309,39 @@ defmodule Oli.Delivery.Settings do
         %Combined{} = effective_settings
       ) do
     deadline =
-      case {effective_settings.end_date, effective_settings.time_limit} do
-        # no end date or time limit, no deadline
-        {nil, nil} ->
+      case {effective_settings.end_date, effective_settings.scheduling_type,
+            effective_settings.time_limit} do
+        # no end date or time limit, no deadline (regardless of scheduling type)
+        {nil, _, nil} ->
           nil
 
-        {nil, 0} ->
+        {nil, _, 0} ->
           nil
 
         # only a time limit, just add the minutes to the start
-        {nil, time_limit} ->
+        {nil, _, time_limit} ->
           DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
 
-        # only an end date, use that
-        {end_date, 0} ->
+        # suggested by with no time limit
+        {end_date, :read_by, nil} when not is_nil(end_date) ->
+          nil
+
+        {end_date, :read_by, 0} when not is_nil(end_date) ->
+          nil
+
+        # suggested by with time limit
+        {end_date, :read_by, time_limit} when not is_nil(end_date) ->
+          DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+
+        # due by with no time limit
+        {end_date, :due_by, nil} when not is_nil(end_date) ->
           end_date
 
-        # both an end date and a time limit, use the earlier of the two
-        {end_date, time_limit} ->
+        {end_date, :due_by, 0} when not is_nil(end_date) ->
+          end_date
+
+        # both a due by and a time limit, use the earlier of the two
+        {end_date, :due_by, time_limit} when not is_nil(end_date) ->
           if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute),
             do: end_date,
             else: DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
