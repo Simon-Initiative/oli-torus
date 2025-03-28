@@ -215,7 +215,6 @@ defmodule OliWeb.PaymentsLiveTest do
       assert has_element?(view, "div", product.title)
     end
 
-    @tag :skip
     test "applies sorting", %{conn: conn, product: product} do
       {_, _product, payment1} = create_payment_code(product)
       {_, _product, payment2} = create_payment_code(product)

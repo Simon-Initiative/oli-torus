@@ -15,6 +15,7 @@ defmodule OliWeb.Certificates.Components.CertificatesIssuedTabTest do
   describe "certificates issued component" do
     setup [:setup_data]
 
+    @tag :flaky
     test "renders table", ctx do
       %{conn: conn, session_context: session_context, section: section} = ctx
       id = "certificates_issued_component"
