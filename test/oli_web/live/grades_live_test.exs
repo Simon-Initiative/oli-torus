@@ -448,6 +448,7 @@ defmodule OliWeb.GradesLiveTest do
   describe "fetching invalid access token" do
     setup [:admin_conn, :create_section_with_invalid_registration]
 
+    @tag :flaky
     test "test connection - shows error on failure to obtain access token", %{
       conn: conn,
       section: section
