@@ -854,6 +854,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             )
           }
           ctx={@ctx}
+          search_term={@search_term}
         />
       </div>
     </div>
@@ -1297,6 +1298,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
   attr :contained_scheduling_types, :map
   attr :ctx, :map
+  attr :search_term, :string
   attr :page_metrics, :map
   attr :progress, :integer
   attr :row, :map
@@ -1324,8 +1326,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center mt-3 mb-1">
-              <div class="grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
-                <%= @row["title"] %>
+              <div class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
+                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </div>
               <div class="flex flex-row gap-x-2">
                 <%= if @progress == 100 do %>
@@ -1397,6 +1399,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                   ctx={@ctx}
                   page_metrics={@page_metrics}
                   contained_scheduling_types={@contained_scheduling_types}
+                  search_term={@search_term}
                 />
               </div>
             </div>
@@ -1443,8 +1446,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         left_indentation(@row["numbering"]["level"], :outline),
         "w-full pl-16 py-2.5 justify-start items-center gap-5 flex rounded-lg"
       ]}>
-        <span class="opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
-          <%= @row["title"] %>
+        <span class="search-result opacity-60 dark:text-white text-base font-semibold font-['Open Sans']">
+          <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
         </span>
       </div>
       <.outline_row
@@ -1492,8 +1495,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center h-8 mt-3 mb-1">
-              <div class="grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
-                <%= @row["title"] %>
+              <div class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
+                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </div>
             </div>
             <div class="flex justify-between items-center h-6 mb-3">
@@ -1615,6 +1618,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                     student_end_date_exceptions_per_resource_id={
                       @student_end_date_exceptions_per_resource_id
                     }
+                    search_term={@search_term}
                     ctx={@ctx}
                   />
                 </div>
@@ -1698,13 +1702,13 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 role="page title"
                 class={
                   [
-                    "text-left dark:text-white opacity-90 text-base",
+                    "search-result text-left dark:text-white opacity-90 text-base",
                     # Opacity is set if the item is visited, but not necessarily completed
                     if(@row["visited"], do: "opacity-60")
                   ]
                 }
               >
-                <%= "#{@row["title"]}" %>
+                <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </span>
 
               <Student.duration_in_minutes
@@ -2029,7 +2033,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
                 if(@was_visited, do: "opacity-60")
               ]
             }>
-              <%= "#{@title}" %>
+              <%= Phoenix.HTML.raw(highlight_search_term(@title, @search_term)) %>
             </span>
 
             <Student.duration_in_minutes duration_minutes={@duration_minutes} graded={@graded} />
@@ -3170,4 +3174,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
          total_pages_count: total_pages_count
        }),
        do: completed_pages_count == total_pages_count
+
+  # Helper to highlight search term in resource title
+  defp highlight_search_term(title, nil), do: escape_html(title)
+  defp highlight_search_term(title, ""), do: escape_html(title)
+
+  defp highlight_search_term(title, search_term) do
+    pattern = Regex.escape(search_term)
+    # case insensitive match
+    regex = ~r/#{pattern}/i
+
+    title
+    |> escape_html()
+    |> String.replace(regex, "<em>\\0</em>")
+  end
+
+  defp escape_html(text) do
+    text
+    |> Phoenix.HTML.html_escape()
+    |> Phoenix.HTML.safe_to_string()
+  end
 end
