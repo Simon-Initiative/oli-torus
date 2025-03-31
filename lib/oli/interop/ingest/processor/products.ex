@@ -148,6 +148,9 @@ defmodule Oli.Interop.Ingest.Processor.Products do
               attrs = %{
                 tags: [],
                 title: Map.get(item, "title"),
+                intro_content: Map.get(item, "intro_content", %{}),
+                intro_video: Map.get(item, "intro_video"),
+                poster_image: Map.get(item, "poster_image"),
                 children: [],
                 author_id: as_author.id,
                 content: %{"model" => []},

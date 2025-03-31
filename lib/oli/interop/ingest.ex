@@ -297,6 +297,9 @@ defmodule Oli.Interop.Ingest do
               attrs = %{
                 tags: [],
                 title: Map.get(item, "title"),
+                intro_content: Map.get(item, "intro_content", %{}),
+                intro_video: Map.get(item, "intro_video"),
+                poster_image: Map.get(item, "poster_image"),
                 children: [],
                 author_id: as_author.id,
                 content: %{"model" => []},
@@ -926,6 +929,9 @@ defmodule Oli.Interop.Ingest do
     attrs = %{
       tags: transform_tags(container, tag_map),
       title: Map.get(container, "title"),
+      intro_content: Map.get(container, "intro_content", %{}),
+      intro_video: Map.get(container, "intro_video"),
+      poster_image: Map.get(container, "poster_image"),
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},

@@ -452,6 +452,8 @@ defmodule Oli.Interop.Export do
 
     certificate = Jason.encode!(product.certificate)
 
+    IO.inspect("product.id: #{inspect(product.id)}")
+
     %{
       type: "Product",
       id: Integer.to_string(product.id, 10),
@@ -467,7 +469,7 @@ defmodule Oli.Interop.Export do
       certificate: certificate,
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_resource_id, id) end)
     }
-    |> entry("#{product.id}.json")
+    |> entry("_product-#{product.id}.json")
   end
 
   # helper to create a zip entry tuple
@@ -486,6 +488,9 @@ defmodule Oli.Interop.Export do
             type: "container",
             id: "#{resource_id}",
             title: revision.title,
+            intro_content: revision.intro_content,
+            intro_video: revision.intro_video,
+            poster_image: revision.poster_image,
             tags: transform_tags(revision),
             children:
               Enum.map(revision.children, fn id -> full_hierarchy(revisions_by_id, id) end)
