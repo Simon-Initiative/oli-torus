@@ -5,6 +5,5 @@ if [ ! -f oli.env ]; then
   sed -i '' 's/DB_HOST=/# DB_HOST=/g' oli.env
   printf "\n\nDB_HOST=postgres" >> oli.env
 else
-  echo "## oli.env config already exists. Skipping config setup."
-  echo "##"
+  echo "Config file oli.env already exists. Skipping configuration."
 fi
