@@ -203,7 +203,7 @@ defmodule OliWeb.Components.Delivery.Utils do
           phx-debounce="500"
         />
         <button
-          :if={@search_term != ""}
+          :if={@search_term not in ["", nil]}
           type="button"
           class="absolute right-0 top-0 bottom-0 py-3 px-4"
           phx-click={@on_clear_search}
