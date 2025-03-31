@@ -102,6 +102,34 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   end
 
   def handle_params(
+        %{"search_term" => search_term} = params,
+        _uri,
+        socket
+      ) do
+    filtered_hierarchy =
+      socket.assigns.section
+      |> get_or_compute_full_hierarchy()
+      |> Hierarchy.filter_hierarchy_by_search_term(search_term)
+
+    units =
+      filtered_hierarchy["children"]
+      |> Enum.map(fn unit ->
+        unit
+        |> mark_visited_and_completed_pages(
+          socket.assigns.student_visited_pages,
+          socket.assigns.student_raw_avg_score_per_page_id,
+          socket.assigns.student_progress_per_resource_id
+        )
+      end)
+
+    {:noreply,
+     socket
+     |> assign(params: params)
+     |> assign(search_term: search_term)
+     |> stream(:units, units, reset: true)}
+  end
+
+  def handle_params(
         params,
         _uri,
         socket
@@ -129,6 +157,8 @@ defmodule OliWeb.Delivery.Student.LearnLive do
        |> maybe_assign_selected_view(selected_view)
        |> stream(:units, units, reset: true)
        |> maybe_scroll_to_target_resource(resource_id, full_hierarchy, selected_view)
+       |> assign(params: params)
+       |> assign(search_term: nil)
        |> enable_gallery_slider_buttons(units)}
     end
   end
@@ -302,6 +332,28 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       _ ->
         socket
     end
+  end
+
+  def handle_event("search", %{"search_term" => search_term}, socket) do
+    params =
+      if search_term not in ["", nil] do
+        Map.merge(socket.assigns.params, %{"search_term" => search_term})
+      else
+        Map.drop(socket.assigns.params, ["search_term"])
+      end
+
+    {:noreply,
+     push_patch(socket,
+       to: ~p"/sections/#{socket.assigns.section.slug}/learn?#{params}"
+     )}
+  end
+
+  def handle_event("clear_search", _params, socket) do
+    {:noreply,
+     push_patch(socket,
+       to:
+         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term"])}"
+     )}
   end
 
   def handle_event(
@@ -768,6 +820,14 @@ defmodule OliWeb.Delivery.Student.LearnLive do
 
         <DeliveryUtils.toggle_expand_button />
 
+        <DeliveryUtils.search_box
+          search_term={@search_term}
+          on_search="search"
+          on_change="search"
+          on_clear_search="clear_search"
+          class="w-64"
+        />
+
         <.live_component
           id="view_selector"
           module={OliWeb.Delivery.Student.Learn.Components.ViewSelector}
@@ -775,7 +835,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
       </div>
 
-      <div id="outline_rows" phx-update="stream" class="flex flex-col">
+      <div id="outline_rows" phx-update="replace" class="flex flex-col">
         <.outline_row
           :for={{_, row} <- @streams.units}
           row={row}
@@ -1363,6 +1423,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             student_progress_per_resource_id={@student_progress_per_resource_id}
             student_raw_avg_score_per_page_id={@student_raw_avg_score_per_page_id}
             student_id={@student_id}
+            search_term={@search_term}
             ctx={@ctx}
           />
         </div>
