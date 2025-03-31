@@ -13,7 +13,7 @@
   // "features": {},
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [80, 443],
+  // "forwardPorts": [80, 443]
 
   // Configure tool-specific properties.
   "customizations": {
