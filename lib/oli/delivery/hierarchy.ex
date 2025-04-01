@@ -909,7 +909,7 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   @doc """
-  Filters a hierarchy by search term.
+  Filters a hierarchy by search term and flags containers that contain a child that matches the search term.
 
   ## Parameters
 
@@ -982,10 +982,13 @@ defmodule Oli.Delivery.Hierarchy do
 
     iex> Oli.Delivery.Hierarchy.filter_hierarchy_by_search_term(hierarchy, "another module")
         %{
+          "child_matches_search_term" => true,
           "children" => [
             %{
+              "child_matches_search_term" => true,
               "children" => [
                 %{
+                  "child_matches_search_term" => false,
                   "children" => [
                     %{
                       "children" => [],
@@ -1004,28 +1007,32 @@ defmodule Oli.Delivery.Hierarchy do
           "title" => "Root"
         }
     iex> Oli.Delivery.Hierarchy.filter_hierarchy_by_search_term(hierarchy, "enum.filter/2")
-      %{
-        "children" => [
-          %{
-            "children" => [
-              %{
-                "children" => [
-                  %{
-                    "children" => [],
-                    "resource_type_id" => 1,
-                    "title" => "Enum.filter/2"
-                  }
-                ],
-                "resource_type_id" => 2,
-                "title" => "Enum module"
-              }
-            ],
-            "resource_type_id" => 2,
-            "title" => "Introduction"
-          }
-        ],
-        "title" => "Root"
-      }
+        %{
+          "child_matches_search_term" => true,
+          "children" => [
+            %{
+              "child_matches_search_term" => true,
+              "children" => [
+                %{
+                  "child_matches_search_term" => true,
+                  "children" => [
+                    %{
+                      "child_matches_search_term" => false,
+                      "children" => [],
+                      "resource_type_id" => 1,
+                      "title" => "Enum.filter/2"
+                    }
+                  ],
+                  "resource_type_id" => 2,
+                  "title" => "Enum module"
+                }
+              ],
+              "resource_type_id" => 2,
+              "title" => "Introduction"
+            }
+          ],
+          "title" => "Root"
+        }
   """
 
   def filter_hierarchy_by_search_term(hierarchy, search_term) when search_term in [nil, ""],
@@ -1049,21 +1056,30 @@ defmodule Oli.Delivery.Hierarchy do
         |> Enum.any?(&check_fn.(&1, check_fn))
     end
 
-    # Recursively filter hierarchy
+    # Recursively filter hierarchy and add child_matches_search_term
+    # to flag containers that contain a matching descendant
     filter_node = fn node, filter_fn ->
-      # If it's a container that matches the search, keep all children
-      if is_container.(node) and title_matches_search.(node) do
-        node
-      else
-        children =
-          (node["children"] || [])
-          |> Enum.map(&filter_fn.(&1, filter_fn))
-          |> Enum.filter(fn child ->
-            matches_or_has_matching_descendant.(child, matches_or_has_matching_descendant)
-          end)
+      children =
+        (node["children"] || [])
+        |> Enum.map(&filter_fn.(&1, filter_fn))
+        |> Enum.filter(fn child ->
+          matches_or_has_matching_descendant.(child, matches_or_has_matching_descendant)
+        end)
 
-        Map.put(node, "children", children)
-      end
+      node =
+        if is_container.(node) and title_matches_search.(node) do
+          # If it's a container that matches the search, we want to keep all children
+          node
+        else
+          Map.put(node, "children", children)
+        end
+
+      child_matches =
+        Enum.any?(children, fn child ->
+          title_matches_search.(child) or child["child_matches_search_term"]
+        end)
+
+      Map.put(node, "child_matches_search_term", child_matches)
     end
 
     filter_node.(hierarchy, filter_node)
