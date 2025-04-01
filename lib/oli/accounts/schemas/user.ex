@@ -520,6 +520,7 @@ defmodule Oli.Accounts.User do
     |> cast(attrs, [:email])
     |> validate_required([:email])
     |> validate_email(opts)
+    |> maybe_generate_unique_sub()
   end
 
   def invite_changeset(user, attrs, opts) do
