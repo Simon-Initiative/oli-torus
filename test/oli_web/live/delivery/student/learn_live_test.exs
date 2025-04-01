@@ -2946,4 +2946,227 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       :deliberate_practice
     ])
   end
+
+  describe "search functionality" do
+    setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
+
+    test "shows all content when no search term is provided", %{conn: conn, section: section} do
+      search_term = ""
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/learn?search_term=#{search_term}&selected_view=outline"
+        )
+
+      all_units_titles = [
+        "Introduction",
+        "Building a Phoenix app",
+        "Implementing LiveView",
+        "Learning OTP",
+        "Learning Macros",
+        "What did you learn?"
+      ]
+
+      all_page_titles = [
+        "Page 1",
+        "Page 2",
+        "Page 3",
+        "Page 4",
+        "Page 5",
+        "Page 6",
+        "Page 7",
+        "Page 8",
+        "Page 9",
+        "Page 10",
+        "Page 11",
+        "Page 12",
+        "Page 13",
+        "Page 14",
+        "Page 15",
+        "Page 16",
+        "Page 17",
+        "Page 18",
+        "Exploration 1",
+        "Top Level Page"
+      ]
+
+      Enum.each(all_units_titles, fn title ->
+        assert has_element?(view, "div[role='unit title']", title)
+      end)
+
+      Enum.each(all_page_titles, fn title ->
+        assert has_element?(view, "span[role='page title']", title)
+      end)
+    end
+
+    test "filters content when searching for a page title", %{conn: conn, section: section} do
+      search_term = "Page 1"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/learn?search_term=#{search_term}&selected_view=outline"
+        )
+
+      # Should only show the matching page and its parent structure
+      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("div[role='module title']", "How to use this course")
+      assert view |> has_element?("span[role='page title']", "Page 1")
+
+      refute view |> has_element?("div[role='unit title']", "Building a Phoenix app")
+      refute view |> has_element?("div[role='module title']", "Configure your setup")
+      refute view |> has_element?("span[role='page title']", "Page 2")
+      refute view |> has_element?("span[role='page title']", "Page 3")
+      refute view |> has_element?("span[role='page title']", "Page 4")
+    end
+
+    test "filters content when searching for a container title", %{conn: conn, section: section} do
+      search_term = "Introduction"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/learn?search_term=#{search_term}&selected_view=outline"
+        )
+
+      # Should show the Introduction unit and its children
+      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("span[role='page title']", "Page 2")
+      assert view |> has_element?("span[role='page title']", "Page 3")
+
+      # Should not show unrelated content
+      refute view |> has_element?("div[role='unit title']", "OTP")
+
+      refute view
+             |> has_element?("div[role='module title']", "Installing Elixir, OTP and Phoenix")
+    end
+
+    test "handles case-insensitive search", %{conn: conn, section: section} do
+      search_term = "INTRODUCTION"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/learn?search_term=#{search_term}&selected_view=outline"
+        )
+
+      # Should show the same results as case-sensitive search
+      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("span[role='page title']", "Page 2")
+      assert view |> has_element?("span[role='page title']", "Page 3")
+
+      # Should not show unrelated content
+      refute view |> has_element?("div[role='unit title']", "OTP")
+
+      refute view
+             |> has_element?("div[role='module title']", "Installing Elixir, OTP and Phoenix")
+    end
+
+    test "shows empty state when no results match", %{conn: conn, section: section} do
+      search_term = "nonexistent_content_xyz"
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/learn?search_term=#{search_term}&selected_view=outline"
+        )
+
+      # Should show empty state message
+      assert view
+             |> has_element?(
+               "div[role='no search results warning']",
+               "There are no results for the search term"
+             )
+
+      # Should not show any content
+      refute view |> has_element?("div[role='unit title']", "Introduction")
+      refute view |> has_element?("div[role='unit title']", "OTP")
+    end
+
+    test "updates results when search term changes", %{conn: conn, section: section} do
+      initial_search_term = ""
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          "/sections/#{section.slug}/learn?search_term=#{initial_search_term}&selected_view=outline"
+        )
+
+      all_units_titles = [
+        "Introduction",
+        "Building a Phoenix app",
+        "Implementing LiveView",
+        "Learning OTP",
+        "Learning Macros",
+        "What did you learn?"
+      ]
+
+      all_page_titles = [
+        "Page 1",
+        "Page 2",
+        "Page 3",
+        "Page 4",
+        "Page 5",
+        "Page 6",
+        "Page 7",
+        "Page 8",
+        "Page 9",
+        "Page 10",
+        "Page 11",
+        "Page 12",
+        "Page 13",
+        "Page 14",
+        "Page 15",
+        "Page 16",
+        "Page 17",
+        "Page 18",
+        "Exploration 1",
+        "Top Level Page"
+      ]
+
+      # Initial state shows all units
+      Enum.each(all_units_titles, fn title ->
+        assert view |> has_element?("div[role='unit title']", title)
+      end)
+
+      # and all pages
+      Enum.each(all_page_titles, fn title ->
+        assert view |> has_element?("span[role='page title']", title)
+      end)
+
+      # Update the search term
+      new_search_term = "Page 1"
+
+      view
+      |> element("form[phx-submit=search]")
+      |> render_change(%{"search_term" => new_search_term})
+
+      # Should now only show matching content
+      assert view |> has_element?("div[role='unit title']", "Introduction")
+      assert view |> has_element?("span[role='page title']", "Page 1")
+
+      # Learning Macros unit contains a page called "Page 10" that partially matches the search term
+      assert view |> has_element?("div[role='unit title']", "Learning Macros")
+      assert view |> has_element?("span[role='page title']", "Page 10")
+
+      Enum.each(
+        [
+          "Building a Phoenix app",
+          "Implementing LiveView",
+          "Learning OTP",
+          "What did you learn?"
+        ],
+        fn unit_title ->
+          refute view |> has_element?("div[role='unit title']", unit_title)
+        end
+      )
+
+      all_page_titles
+      |> Enum.reject(&String.contains?(&1, "Page 1"))
+      |> Enum.each(fn title ->
+        refute view |> has_element?("span[role='page title']", title)
+      end)
+    end
+  end
 end

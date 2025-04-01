@@ -190,7 +190,7 @@ defmodule OliWeb.Components.Delivery.Utils do
 
   def search_box(assigns) do
     ~H"""
-    <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search}>
+    <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search} phx-change={@on_change}>
       <div class="flex-1 relative">
         <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
         </i>
@@ -199,7 +199,6 @@ defmodule OliWeb.Components.Delivery.Utils do
           name="search_term"
           value={@search_term}
           class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
-          phx-change={@on_change}
           phx-debounce="500"
         />
         <button

@@ -1370,7 +1370,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(1, @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center mt-3 mb-1">
-              <div class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
+              <div
+                role="unit title"
+                class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
+              >
                 <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </div>
               <div class="flex flex-row gap-x-2">
@@ -1551,7 +1554,10 @@ defmodule OliWeb.Delivery.Student.LearnLive do
               <%= "#{String.upcase(Sections.get_container_label_and_numbering(@row["numbering"]["level"], @row["numbering"]["index"], @section.customizations))}" %>
             </h6>
             <div class="flex justify-between items-center h-8 mt-3 mb-1">
-              <div class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose">
+              <div
+                role="module title"
+                class="search-result grow shrink basis-0 dark:text-white md:text-2xl font-semibold font-['Open Sans'] md:leading-loose"
+              >
                 <%= Phoenix.HTML.raw(highlight_search_term(@row["title"], @search_term)) %>
               </div>
             </div>
