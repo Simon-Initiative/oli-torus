@@ -37,7 +37,6 @@ defmodule OliWeb.LiveSessionPlugs.SetSidebar do
           end
       )
       |> assign(disable_sidebar?: user_is_only_a_student?(socket.assigns.ctx))
-      |> assign(header_enabled?: true)
       |> assign(footer_enabled?: true)
 
     if connected?(socket) do

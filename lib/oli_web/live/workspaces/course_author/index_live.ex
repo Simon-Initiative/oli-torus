@@ -38,7 +38,6 @@ defmodule OliWeb.Workspaces.CourseAuthor.IndexLive do
      assign(socket,
        current_author: nil,
        active_workspace: :course_author,
-       header_enabled?: false,
        footer_enabled?: false,
        form: form,
        authentication_providers: authentication_providers

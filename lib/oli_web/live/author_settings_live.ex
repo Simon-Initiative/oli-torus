@@ -104,7 +104,10 @@ defmodule OliWeb.AuthorSettingsLive do
               </div>
             </.form>
 
-            <div :if={!Enum.empty?(@login_providers)} class="col-span-4 flex flex-col gap-3 mb-10">
+            <div
+              :if={!Enum.empty?(@login_providers)}
+              class="col-span-12 lg:col-span-6 flex flex-col gap-3 mb-10"
+            >
               <h4 class="mt-3">Third Party Login Providers</h4>
 
               <%= for {provider, managed?} <- @login_providers do %>

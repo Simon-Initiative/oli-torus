@@ -108,7 +108,13 @@ defmodule OliWeb.Delivery.NewCourse do
     <%= case @live_action do %>
       <% :admin -> %>
       <% _ -> %>
-        <.header ctx={@ctx} section={@section} preview_mode={@preview_mode} is_admin={@is_admin} />
+        <.header
+          ctx={@ctx}
+          section={@section}
+          preview_mode={@preview_mode}
+          is_admin={@is_admin}
+          include_logo
+        />
     <% end %>
     <div id={@form_id} phx-hook="SubmitForm" class="mt-14 h-[calc(100vh-56px)]">
       <.live_component

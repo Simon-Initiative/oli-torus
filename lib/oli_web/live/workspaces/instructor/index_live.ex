@@ -47,7 +47,6 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
      assign(socket,
        current_user: nil,
        active_workspace: :instructor,
-       header_enabled?: false,
        footer_enabled?: false,
        authentication_providers: authentication_providers
      )}
@@ -77,7 +76,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <div class="absolute top-0 h-full w-full">
           <Backgrounds.instructor_dashboard_header />
         </div>
-        <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
+        <div class="flex-col justify-start items-start gap-[15px] z-10 px-6 md:px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
             <Icons.growing_bars
               stroke_class="stroke-[#353740] dark:stroke-white"
@@ -111,7 +110,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
       <div class="absolute h-full w-full top-0 left-0">
         <Backgrounds.instructor_workspace_sign_in />
       </div>
-      <div class="z-20 flex justify-center gap-2 lg:gap-12 xl:gap-32 px-6 sm:px-0">
+      <div class="z-20 flex justify-center gap-2 lg:gap-12 xl:gap-32 px-6 md:px-[63px]">
         <div class="w-1/4 lg:w-1/2 flex items-start justify-center">
           <div class="w-96 flex-col justify-start items-start gap-0 lg:gap-3.5 inline-flex">
             <div class="text-left lg:text-3xl xl:text-4xl">
@@ -163,7 +162,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         <div class="absolute top-0 h-[291px] w-full overflow-x-hidden">
           <Backgrounds.instructor_dashboard_header />
         </div>
-        <div class="flex-col justify-start items-start gap-[15px] z-10 px-[63px] font-['Open Sans']">
+        <div class="flex-col justify-start items-start gap-[15px] z-10 px-6 md:px-[63px] font-['Open Sans']">
           <div class="flex flex-row items-center gap-3">
             <Icons.growing_bars
               stroke_class="stroke-[#353740] dark:stroke-white"
@@ -179,7 +178,7 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
         </div>
       </div>
 
-      <div class="flex flex-col items-start mt-[40px] gap-9 py-[60px] px-[63px]">
+      <div class="flex flex-col items-start mt-[40px] gap-9 py-[60px] px-6 md:px-[63px]">
         <div class="flex flex-col gap-4">
           <h3 class="dark:text-violet-100 text-xl font-bold font-['Open Sans'] leading-normal whitespace-nowrap">
             My courses
@@ -198,25 +197,21 @@ defmodule OliWeb.Workspaces.Instructor.IndexLive do
             </button>
           </div>
         </div>
-        <div class="flex items-center w-full gap-3">
+        <div class="flex flex-col md:flex-row md:items-center w-full md:justify-between gap-3">
           <.link
             href={if(is_independent_instructor?(@current_user), do: ~p"/sections/independent/create")}
             class={[
-              "h-12 px-5 py-3 hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
+              "px-4 py-2 max-w-[220px] hover:no-underline rounded-md justify-center items-center gap-2 inline-flex",
+              "text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap",
               if(is_independent_instructor?(@current_user),
                 do: "bg-[#0080FF] hover:bg-[#0075EB] dark:bg-[#0062F2] dark:hover:bg-[#0D70FF]",
                 else: "bg-zinc-600 cursor-not-allowed"
               )
             ]}
           >
-            <div class="w-3 h-5 relative">
-              <Icons.plus class="w-5 h-5 left-[-8px] top-0 absolute" path_class="stroke-white" />
-            </div>
-            <div class="text-white text-base font-normal font-['Inter'] leading-normal whitespace-nowrap">
-              Create New Section
-            </div>
+            <Icons.plus class="w-5 h-5" path_class="stroke-white" /> Create New Section
           </.link>
-          <.form for={%{}} phx-change="search_section" class="w-[330px]">
+          <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
               name="text_search"

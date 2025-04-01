@@ -103,7 +103,20 @@ export const simpleSchema: JSONSchema7Object = {
     default: '',
   },
 };
-export const simpleUiSchema = {};
+export const simpleUiSchema = {
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+};
 
 export const uiSchema = {};
 

@@ -109,7 +109,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Wizard do
       is_admin={@is_admin}
       section={@section}
       preview_mode={@preview_mode}
-      include_logo={true}
+      include_logo
     />
     <div id="content" class="h-[calc(100vh-56px)] transition-all duration-100">
       <.live_component

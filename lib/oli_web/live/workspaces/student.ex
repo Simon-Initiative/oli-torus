@@ -52,7 +52,6 @@ defmodule OliWeb.Workspaces.Student do
      assign(socket,
        current_user: nil,
        active_workspace: :student,
-       header_enabled?: false,
        footer_enabled?: false,
        authentication_providers: authentication_providers
      )}
@@ -164,7 +163,7 @@ defmodule OliWeb.Workspaces.Student do
           Courses available
         </h3>
         <div class="ml-auto flex items-center w-full justify-start md:justify-end gap-3">
-          <.form for={%{}} phx-change="search_section" class="w-[330px]">
+          <.form for={%{}} phx-change="search_section" class="w-full max-w-[400px]">
             <SearchInput.render
               id="section_search_input"
               name="text_search"
