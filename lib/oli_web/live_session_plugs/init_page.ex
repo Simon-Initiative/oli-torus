@@ -3,7 +3,7 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
 
   import Phoenix.Component, only: [assign: 2, update: 3]
 
-  alias Oli.Delivery.{PreviousNextIndex, Settings}
+  alias Oli.Delivery.{Metrics, PreviousNextIndex, Settings}
   alias Oli.Delivery.Page.{PageContext, PrologueContext}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -82,11 +82,19 @@ defmodule OliWeb.LiveSessionPlugs.InitPage do
             socket
         end
 
+      pages_progress =
+        Metrics.progress_for_pages(
+          assigns.section.id,
+          assigns.ctx.user.id,
+          [previous["id"], next["id"]]
+        )
+
       {:cont,
        assign(socket,
          previous_page: previous,
          next_page: next,
-         current_page: current
+         current_page: current,
+         pages_progress: pages_progress
        )}
     else
       {:cont, socket}
