@@ -832,8 +832,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     <div
       id="student_learn"
       data-show-matches-with-search-term={
-        JS.dispatch("click", to: "#collapse_all_button")
-        |> JS.dispatch("click", to: "#show_completed_button")
+        reset_toggle_buttons()
         |> JS.dispatch("click",
           to:
             "button[aria-expanded='false'][data-bs-toggle='collapse'][data-child_matches_search_term]"
@@ -853,11 +852,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
             search_term={@params["search_term"]}
             on_search="search"
             on_change="search"
-            on_clear_search={
-              JS.push("clear_search")
-              |> JS.dispatch("click", to: "#collapse_all_button")
-              |> JS.dispatch("click", to: "#show_completed_button")
-            }
+            on_clear_search={JS.push("clear_search") |> reset_toggle_buttons()}
             class="w-64"
           />
 
@@ -3273,5 +3268,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     text
     |> Phoenix.HTML.html_escape()
     |> Phoenix.HTML.safe_to_string()
+  end
+
+  _docp = """
+  This function resets the toggle buttons to their default state ('Hide Completed' and 'Expand All')
+  """
+
+  defp reset_toggle_buttons(js \\ %JS{}) do
+    js
+    |> JS.dispatch("click", to: "#collapse_all_button")
+    |> JS.dispatch("click", to: "#show_completed_button")
   end
 end
