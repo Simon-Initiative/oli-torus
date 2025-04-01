@@ -167,28 +167,49 @@ defmodule OliWeb.Delivery.Student.LearnLive do
   The target can be a unit, a module, a page contained at a unit level, at a module level, or a page contained in a module.
   """
 
-  defp scroll_to_target_resource(socket, resource_id, _full_hierarchy, :outline) do
-    case Sections.get_section_resource_with_resource_type(
-           socket.assigns.section.slug,
-           resource_id
-         ) do
-      %{resource_type_id: resource_type_id, numbering_level: numbering_level} ->
-        resource_type =
-          case {resource_type_id, numbering_level} do
-            {@container_resource_type_id, 1} -> "unit"
-            {@container_resource_type_id, 2} -> "module"
-            {@container_resource_type_id, 3} -> "section"
-            {@page_resource_type_id, 1} -> "top_level_page"
-            {@page_resource_type_id, _} -> "page"
-          end
+  defp scroll_to_target_resource(socket, resource_id, full_hierarchy, :outline) do
+    section_slug = socket.assigns.section.slug
 
-        push_event(socket, "scroll-y-to-target", %{
-          id: "#{resource_type}_#{resource_id}",
-          offset: 25,
-          pulse: true,
-          pulse_delay: 500
-        })
+    %{resource_type_id: resource_type_id, numbering_level: numbering_level} =
+      Sections.get_section_resource_with_resource_type(section_slug, resource_id)
 
+    case {resource_type_id, numbering_level} do
+      # Case: Top Level Page
+      {@page_resource_type_id, 1} ->
+        push_scroll_event_for_outline(socket, "top_level_page_#{resource_id}")
+
+      # Case: Unit > Page
+      {@page_resource_type_id, 2} ->
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == String.to_integer(resource_id) end
+          )["resource_id"]
+
+        socket
+        |> push_event("expand-containers", %{ids: [unit_resource_id]})
+        |> push_scroll_event_for_outline("page_#{resource_id}")
+
+      # Case: Unit > Module > << Any Nested Page >>
+      {@page_resource_type_id, numbering_level} when numbering_level > 2 ->
+        module_resource_id =
+          Hierarchy.find_module_ancestor(
+            full_hierarchy,
+            String.to_integer(resource_id),
+            @container_resource_type_id
+          )["resource_id"]
+
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == module_resource_id end
+          )["resource_id"]
+
+        socket
+        |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
+        |> push_scroll_event_for_outline("page_#{resource_id}")
+
+      # This clause shouldn't be reached, but let's not break the page
       _ ->
         socket
     end
@@ -324,6 +345,15 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       _ ->
         socket
     end
+  end
+
+  defp push_scroll_event_for_outline(socket, identifier) do
+    push_event(socket, "scroll-y-to-target", %{
+      role: identifier,
+      offset: 125,
+      pulse: true,
+      pulse_delay: 500
+    })
   end
 
   def handle_event("search", %{"search_term" => search_term}, socket) do
@@ -866,7 +896,12 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         />
       </div>
 
-      <div id={"outline_rows-#{@outline_view_id}"} phx-update="replace" class="flex flex-col">
+      <div
+        id={"outline_rows-#{@outline_view_id}"}
+        phx-update="replace"
+        class="flex flex-col"
+        phx-hook="ExpandContainers"
+      >
         <div
           :if={@streams.units.inserts == [] and @params["search_term"] not in ["", nil]}
           class="p-6"
