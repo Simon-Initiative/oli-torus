@@ -40,6 +40,7 @@ defmodule OliWeb.Api.PlatformInstanceController do
 
       platform_instance ->
         author = conn.assigns[:current_author]
+
         {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
 
         json(conn, %{

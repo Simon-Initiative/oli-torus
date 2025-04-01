@@ -18,6 +18,7 @@ defmodule OliWeb.LtiController do
   alias Lti_1p3.Roles.PlatformRoles
   alias Lti_1p3.Tool.Services.AGS
   alias Lti_1p3.Tool.Services.NRPS
+  alias Oli.Lti.PlatformInstances
 
   require Logger
 
@@ -96,12 +97,12 @@ defmodule OliWeb.LtiController do
         )
 
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
-        {current_user, roles} =
+        {user, roles} =
           case context do
             "author" ->
               author = Accounts.get_author!(session_user_id)
 
-              # stub a user for the author
+              # TODO: stub a user for the author
               roles = [
                 Lti_1p3.Roles.PlatformRoles.get_role(:system_administrator),
                 Lti_1p3.Roles.PlatformRoles.get_role(:institution_administrator),
@@ -146,28 +147,34 @@ defmodule OliWeb.LtiController do
           end
 
         issuer = Oli.Utils.get_base_url()
-        # TODO: add multiple deployment support
-        # for now, just use a single deployment with a static deployment_id
-        deployment_id = "1"
 
+        client_id = params["client_id"]
+
+        platform_instance =
+          PlatformInstances.get_platform_instance_by_client_id(client_id)
+
+        deployment =
+          Oli.Lti.PlatformExternalTools.get_lti_external_tool_deployment_by(
+            platform_instance_id: platform_instance.id
+          )
+
+        # TODO use the actual resource link of the resource being launched
         resource_link = %{
           id: "12345"
         }
 
-        target_link_uri = "http://localhost:3000/"
-
         claims = [
-          Lti_1p3.Claims.DeploymentId.deployment_id(deployment_id),
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.id),
           Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
           Lti_1p3.Claims.Version.version("1.3.0"),
           Lti_1p3.Claims.ResourceLink.resource_link(resource_link),
-          Lti_1p3.Claims.TargetLinkUri.target_link_uri(target_link_uri),
+          Lti_1p3.Claims.TargetLinkUri.target_link_uri(platform_instance.target_link_uri),
           Lti_1p3.Claims.Roles.roles(roles)
         ]
 
         case Lti_1p3.Platform.AuthorizationRedirect.authorize_redirect(
                params,
-               current_user,
+               user,
                issuer,
                claims
              ) do
