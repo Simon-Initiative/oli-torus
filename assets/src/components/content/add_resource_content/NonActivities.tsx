@@ -21,6 +21,7 @@ import {
   createDefaultSelection,
   createSurvey,
 } from 'data/content/resource';
+import { listAvailableExternalTools } from 'data/persistence/lti_platform';
 import * as Persistence from 'data/persistence/resource';
 import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
@@ -265,6 +266,29 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
 };
 
 const addLTIExternalTool = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
-  onAddItem(createLtiExternalTool('10000000001'), index);
   document.body.click();
+
+  // TODO Replace this with a project-specific enabled LTI tool options
+  window.oliDispatch(
+    modalActions.display(
+      <SelectModal
+        title="Select External Tool"
+        description="Select an external tool to insert..."
+        onFetchOptions={() =>
+          listAvailableExternalTools()
+            .then((result) => result.data.map((a) => ({ value: a.client_id, title: a.name })))
+            .catch((error) => {
+              console.error('Error fetching external tools:', error);
+              throw new Error('Failed to fetch external tools');
+            })
+        }
+        onDone={(clientId: string) => {
+          window.oliDispatch(modalActions.dismiss());
+
+          onAddItem(createLtiExternalTool(clientId), index);
+        }}
+        onCancel={() => window.oliDispatch(modalActions.dismiss())}
+      />,
+    ),
+  );
 };

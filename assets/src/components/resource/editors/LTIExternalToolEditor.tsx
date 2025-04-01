@@ -14,13 +14,7 @@ export const LTIExternalToolEditor = (props: LTIExternalToolEditorProps) => {
   const { contentItem } = props;
 
   const [ltiToolDetailsLoader, _] = useLoader(() =>
-    getLtiExternalToolDetails(contentItem.clientId).then((result) => {
-      if (result.type === 'Ok') {
-        return result.result;
-      } else {
-        throw new Error(result.message);
-      }
-    }),
+    getLtiExternalToolDetails(contentItem.clientId),
   );
 
   if (ltiToolDetailsLoader.status === LoaderStatus.LOADING) {
@@ -33,12 +27,17 @@ export const LTIExternalToolEditor = (props: LTIExternalToolEditorProps) => {
 
   const ltiToolDetails = ltiToolDetailsLoader.result;
 
+  console.log(ltiToolDetailsLoader);
+
   return (
     <div className="flex flex-col">
       <div className="m-[20px] p-[20px]">LTI Tool: {ltiToolDetails.name}</div>
 
       <div>
-        <LTIExternalToolWindow launchParams={ltiToolDetails.launch_params} />
+        <LTIExternalToolWindow
+          launchParams={ltiToolDetails.launch_params}
+          resourceId={contentItem.id}
+        />
       </div>
     </div>
   );
@@ -46,12 +45,18 @@ export const LTIExternalToolEditor = (props: LTIExternalToolEditorProps) => {
 
 type LTIExternalToolWindowProps = {
   launchParams: Record<string, string>;
+  resourceId: string;
 };
 
-const LTIExternalToolWindow = ({ launchParams }: LTIExternalToolWindowProps) => {
+const LTIExternalToolWindow = ({ launchParams, resourceId }: LTIExternalToolWindowProps) => {
   return (
     <div className="mt-3" style={{ height: 600 }}>
-      <form action={launchParams.login_url} className="hide" method="POST" target="tool_content">
+      <form
+        action={launchParams.login_url}
+        className="hide"
+        method="POST"
+        target={`tool-content-${resourceId}`}
+      >
         {Object.keys(launchParams)
           .filter((param) => param != 'login_url')
           .map((param) => (
@@ -72,7 +77,7 @@ const LTIExternalToolWindow = ({ launchParams }: LTIExternalToolWindowProps) => 
       </form>
       <iframe
         src="about:blank"
-        name="tool_content"
+        name={`tool-content-${resourceId}`}
         className="tool_launch w-full h-full"
         allowFullScreen={true}
         tabIndex={0}

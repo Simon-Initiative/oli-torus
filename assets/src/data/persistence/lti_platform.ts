@@ -1,7 +1,5 @@
 import { Ok, ServerError, makeRequest } from './common';
 
-export type LTIExternalToolDetailsResult = Ok<LTIExternalToolDetails> | ServerError;
-
 export type LTIExternalToolDetails = {
   name: string;
   launch_params: {
@@ -13,11 +11,34 @@ export type LTIExternalToolDetails = {
   };
 };
 
-export function getLtiExternalToolDetails(clientId: string): Promise<LTIExternalToolDetailsResult> {
-  const params = {
-    url: `/lti/platforms/details/${clientId}`,
-    method: 'POST',
-  };
+export function getLtiExternalToolDetails(clientId: string): Promise<LTIExternalToolDetails> {
+  return fetch(`/api/v1/lti/platforms/details/${clientId}`, { method: 'POST' }).then((response) => {
+    if (!response.ok) return Promise.reject(new Error('Failed to fetch external tool details'));
 
-  return makeRequest<Ok<LTIExternalToolDetails>>(params);
+    return response.json();
+  });
+}
+
+export type PlatformInstance = {
+  id: string;
+  client_id: string;
+  custom_params: any;
+  description: string;
+  keyset_url: string;
+  login_url: string;
+  name: string;
+  redirect_uris: string;
+  target_link_uri: string;
+};
+
+export type AvailableExternalTools = {
+  data: PlatformInstance[];
+};
+
+export function listAvailableExternalTools(): Promise<AvailableExternalTools> {
+  return fetch('/api/v1/lti/platforms').then((response) => {
+    if (!response.ok) return Promise.reject(new Error('Failed to fetch external tools'));
+
+    return response.json();
+  });
 }

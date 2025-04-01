@@ -1425,6 +1425,8 @@ defmodule OliWeb.Router do
   scope "/api/v1/lti", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
+    resources("/platforms", Api.PlatformInstanceController)
+
     post(
       "/platforms/details/:client_id",
       Api.PlatformInstanceController,
@@ -1471,12 +1473,6 @@ defmodule OliWeb.Router do
   end
 
   ### Admin Dashboard / LTI Platform Management
-
-  scope "/api/v1/lti", OliWeb, as: :api do
-    pipe_through([:api, :require_authenticated_system_admin])
-
-    resources("/platforms", Api.PlatformInstanceController)
-  end
 
   scope "/admin", OliWeb do
     pipe_through([:browser, :authoring_protected, :require_authenticated_system_admin, :workspace])

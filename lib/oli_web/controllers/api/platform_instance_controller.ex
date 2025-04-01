@@ -10,6 +10,7 @@ defmodule OliWeb.Api.PlatformInstanceController do
 
   def index(conn, _params) do
     lti_1p3_platform_instances = PlatformInstances.list_lti_1p3_platform_instances()
+
     render(conn, "index.json", lti_1p3_platform_instances: lti_1p3_platform_instances)
   end
 
@@ -44,18 +45,13 @@ defmodule OliWeb.Api.PlatformInstanceController do
         {:ok, %LoginHint{value: login_hint}} = LoginHints.create_login_hint(author.id, "author")
 
         json(conn, %{
-          type: "Ok",
-          status: 200,
-          statusText: "OK",
-          result: %{
-            name: platform_instance.name,
-            launch_params: %{
-              iss: Oli.Utils.get_base_url(),
-              login_hint: login_hint,
-              client_id: platform_instance.client_id,
-              target_link_uri: platform_instance.target_link_uri,
-              login_url: platform_instance.login_url
-            }
+          name: platform_instance.name,
+          launch_params: %{
+            iss: Oli.Utils.get_base_url(),
+            login_hint: login_hint,
+            client_id: platform_instance.client_id,
+            target_link_uri: platform_instance.target_link_uri,
+            login_url: platform_instance.login_url
           }
         })
     end

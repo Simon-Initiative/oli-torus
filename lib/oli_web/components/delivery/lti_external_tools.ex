@@ -1,6 +1,7 @@
 defmodule OliWeb.Components.Delivery.LTIExternalTools do
   use Phoenix.Component
 
+  attr :id, :string, required: true
   attr :name, :string, required: true
   attr :login_url, :string, required: true
   attr :launch_params, :map, required: true
@@ -8,7 +9,7 @@ defmodule OliWeb.Components.Delivery.LTIExternalTools do
   def lti_external_tool(assigns) do
     ~H"""
     <div class="mt-3" style="height: 600px">
-      <form action={@login_url} class="hide" method="POST" target="tool-content">
+      <form action={@login_url} class="hide" method="POST" target={"tool-content=#{@id}"}>
         <%= for key <- @launch_params |> Map.keys do %>
           <input type="hidden" name={key} value={@launch_params[key]} />
         <% end %>
@@ -21,7 +22,7 @@ defmodule OliWeb.Components.Delivery.LTIExternalTools do
       </form>
       <iframe
         src="about:blank"
-        name="tool-content"
+        name={"tool-content=#{@id}"}
         class="tool_launch"
         allowfullscreen="allowfullscreen"
         webkitallowfullscreen="true"
