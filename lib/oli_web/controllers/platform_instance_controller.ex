@@ -1,7 +1,8 @@
 defmodule OliWeb.PlatformInstanceController do
   use OliWeb, :controller
 
-  alias Oli.Lti.PlatformInstances
+  alias Oli.Repo
+  alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
@@ -17,13 +18,25 @@ defmodule OliWeb.PlatformInstanceController do
   end
 
   def create(conn, %{"platform_instance" => platform_instance_params}) do
-    case PlatformInstances.create_platform_instance(platform_instance_params) do
-      {:ok, platform_instance} ->
+    Repo.transaction(fn ->
+      with {:ok, platform_instance} <-
+             PlatformInstances.create_platform_instance(platform_instance_params),
+           {:ok, deployment} <-
+             PlatformExternalTools.create_lti_external_tool_deployment(%{
+               platform_instance_id: platform_instance.id
+             }) do
+        {platform_instance, deployment}
+      else
+        error -> error
+      end
+    end)
+    |> case do
+      {:ok, {platform_instance, _deployment}} ->
         conn
         |> put_flash(:info, "Platform instance created successfully.")
         |> redirect(to: Routes.platform_instance_path(conn, :show, platform_instance))
 
-      {:error, %Ecto.Changeset{} = changeset} ->
+      {:error, {:error, %Ecto.Changeset{} = changeset}} ->
         render(conn, "new.html", changeset: changeset)
     end
   end
@@ -42,7 +55,16 @@ defmodule OliWeb.PlatformInstanceController do
       oidc_login_url: platform_instance.login_url
     }
 
-    render(conn, "show.html", platform_instance: platform_instance, launch_params: launch_params)
+    deployment =
+      PlatformExternalTools.get_lti_external_tool_deployment_by(
+        platform_instance_id: platform_instance.id
+      )
+
+    render(conn, "show.html",
+      platform_instance: platform_instance,
+      deployment: deployment,
+      launch_params: launch_params
+    )
   end
 
   def edit(conn, %{"id" => id}) do
@@ -67,6 +89,8 @@ defmodule OliWeb.PlatformInstanceController do
 
   def delete(conn, %{"id" => id}) do
     platform_instance = PlatformInstances.get_platform_instance!(id)
+
+    # This delete will cascade to any associated deployment
     {:ok, _platform_instance} = PlatformInstances.delete_platform_instance(platform_instance)
 
     conn
