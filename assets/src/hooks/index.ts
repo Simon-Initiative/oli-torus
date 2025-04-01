@@ -15,6 +15,7 @@ import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
+import { FixedNavigationBar } from './fixed_navigation_bar';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
 import { InputAutoSelect } from './input_auto_select';
@@ -99,4 +100,5 @@ export const Hooks = {
   DisableSubmitted,
   Recaptcha,
   OnMountAndUpdate,
+  FixedNavigationBar,
 };
