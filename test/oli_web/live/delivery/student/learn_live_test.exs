@@ -2332,7 +2332,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
         live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
 
       assert view
-             |> element(~s{div[id="page_#{top_level_page.resource_id}"] span[role="page title"]})
+             |> element(
+               ~s{div[role="page_#{top_level_page.resource_id}"] span[role="page title"]}
+             )
              |> render() =~ "Top Level Page"
     end
 
@@ -2526,13 +2528,13 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       section_1_element =
         element(
           view,
-          "#section_#{section_1.resource_id}_outline"
+          "div[role=section_#{section_1.resource_id}_outline]"
         )
 
       subsection_1_element =
         element(
           view,
-          "#section_#{subsection_1.resource_id}_outline"
+          "div[role=section_#{subsection_1.resource_id}_outline]"
         )
 
       assert render(section_1_element) =~ "Why Elixir?"
