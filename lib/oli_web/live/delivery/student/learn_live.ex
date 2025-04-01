@@ -869,7 +869,17 @@ defmodule OliWeb.Delivery.Student.LearnLive do
           selected_view={@selected_view}
         />
       </div>
+
       <div id={"outline_rows-#{@outline_view_id}"} phx-update="replace" class="flex flex-col">
+        <div
+          :if={@streams.units.inserts == [] and @params["search_term"] not in ["", nil]}
+          class="p-6"
+          role="no search results warning"
+        >
+          There are no results for the search term
+          <span class="font-bold italic"><%= @params["search_term"] %></span>
+        </div>
+
         <.outline_row
           :for={{node_id, row} <- @streams.units}
           id={node_id}
