@@ -843,25 +843,26 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       phx-hook="Scroller"
     >
       <.video_player />
-      <div class="flex justify-between p-3 md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           target_selector="div[data-completed='true']"
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
         />
+        <div class="flex items-center gap-2 px-3">
+          <DeliveryUtils.search_box
+            search_term={@params["search_term"]}
+            on_search="search"
+            on_change="search"
+            on_clear_search={
+              JS.push("clear_search")
+              |> JS.dispatch("click", to: "#collapse_all_button")
+              |> JS.dispatch("click", to: "#show_completed_button")
+            }
+            class="w-64"
+          />
 
-        <DeliveryUtils.toggle_expand_button />
-
-        <DeliveryUtils.search_box
-          search_term={@params["search_term"]}
-          on_search="search"
-          on_change="search"
-          on_clear_search={
-            JS.push("clear_search")
-            |> JS.dispatch("click", to: "#collapse_all_button")
-            |> JS.dispatch("click", to: "#show_completed_button")
-          }
-          class="w-64"
-        />
+          <DeliveryUtils.toggle_expand_button />
+        </div>
 
         <.live_component
           id="view_selector"
@@ -910,7 +911,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     ~H"""
     <div id="student_learn" class="lg:container lg:mx-auto p-3 md:p-[25px]" phx-hook="Scroller">
       <.video_player />
-      <div class="flex justify-between p-3 md:p-[25px] sticky top-12 z-40 bg-delivery-body dark:bg-delivery-body-dark">
+      <div class="flex justify-between items-center h-16 p-3 md:p-[25px] sticky top-14 z-40 bg-delivery-body dark:bg-delivery-body-dark">
         <DeliveryUtils.toggle_visibility_button
           class="dark:text-[#bab8bf] text-sm font-medium hover:text-black dark:hover:text-white"
           target_selector={completed_resources_css_selector()}
