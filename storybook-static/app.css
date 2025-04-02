@@ -9395,6 +9395,11 @@ table.table-striped tbody tr:nth-child(even) {
   color: rgb(0 128 143 / var(--tw-text-opacity));
 }
 
+.text-\[\#0080FF\] {
+  --tw-text-opacity: 1;
+  color: rgb(0 128 255 / var(--tw-text-opacity));
+}
+
 .text-\[\#0080ff\] {
   --tw-text-opacity: 1;
   color: rgb(0 128 255 / var(--tw-text-opacity));
@@ -13315,8 +13320,13 @@ https://tailwindcss.com/docs/utility-first
 
 .search-result em {
   --tw-bg-opacity: 1;
-  background-color: rgb(254 244 227 / var(--tw-bg-opacity));
+  background-color: rgb(253 236 207 / var(--tw-bg-opacity));
   font-style: normal;
+}
+
+.dark .search-result em {
+  --tw-bg-opacity: 1;
+  background-color: rgb(124 80 5 / var(--tw-bg-opacity));
 }
 
 .progress-options {
@@ -15506,6 +15516,11 @@ Not supports in Firefox and IE */
 .dark .dark\:\!text-white {
   --tw-text-opacity: 1 !important;
   color: rgb(255 255 255 / var(--tw-text-opacity)) !important;
+}
+
+.dark .dark\:text-\[\#0062F2\] {
+  --tw-text-opacity: 1;
+  color: rgb(0 98 242 / var(--tw-text-opacity));
 }
 
 .dark .dark\:text-\[\#12E56A\] {
