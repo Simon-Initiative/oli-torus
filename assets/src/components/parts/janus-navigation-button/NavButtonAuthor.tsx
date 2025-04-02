@@ -16,6 +16,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     ariaLabel,
     transparent,
     imageSource,
+    imagePosition,
   } = model;
 
   const styles: CSSProperties = {
@@ -57,7 +58,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
     'aria-label': ariaLabel,
     disabled: false,
   };
-
+  const isVertical = imagePosition === 'Top' || imagePosition === 'Bottom';
   return (
     <div className={`navigation-button`}>
       <button
@@ -66,22 +67,28 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
         style={{
           ...styles,
           display: 'flex',
+          flexDirection: isVertical
+            ? imagePosition === 'Top'
+              ? 'column'
+              : 'column-reverse'
+            : imagePosition === 'Left'
+            ? 'row'
+            : 'row-reverse',
           alignItems: 'center',
-          gap: '6px',
+          gap: isVertical ? '1px' : '8px',
         }}
       >
-        {imageSource && (
+        {imageSource?.length > 0 && (
           <img
             draggable="false"
             src={imageSource}
             style={{
-              height: '100%',
-              width: 'auto',
-              objectFit: 'contain',
+              height: isVertical && title ? '60%' : '100%',
+              width: isVertical && title ? '90%' : 'auto',
             }}
           />
         )}
-        <span>{title}</span>
+        {title && <span>{title}</span>}
       </button>
     </div>
   );
