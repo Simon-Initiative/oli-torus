@@ -32,6 +32,7 @@ import { redo } from '../../../store/history/actions/redo';
 import { undo } from '../../../store/history/actions/undo';
 import { selectHasRedo, selectHasUndo } from '../../../store/history/slice';
 import { addPart } from '../../../store/parts/actions/addPart';
+import ComponentSearchContextMenu from '../../ComponentToolbar/ComponentSearchContextMenu';
 import ShowInformationModal from '../../Modal/ShowInformationModal';
 import { RightPanelTabs } from '../../RightMenu/RightMenu';
 import { verifyFlowchartLesson } from '../flowchart-actions/verify-flowchart-lesson';
@@ -288,10 +289,10 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
     },
     [availablePartComponents, currentActivityTree, dispatch, newPartAddOffset],
   );
-
+  const authoringContainer = useRef<HTMLDivElement>(null);
   return (
     paths && (
-      <div className="component-toolbar">
+      <div className="component-toolbar" ref={authoringContainer}>
         <div className="toolbar-column" style={{ flexBasis: '10%', maxWidth: 50 }}>
           <label>Undo</label>
           <button className="undo-redo-button" onClick={handleUndo} disabled={!hasUndo}>
@@ -363,6 +364,11 @@ export const FlowchartHeaderNav: React.FC<HeaderNavProps> = () => {
                 <ScoringIcon />
               </button>
             </OverlayTrigger>
+            <ComponentSearchContextMenu
+              basicAuthoring={true}
+              authoringContainer={authoringContainer}
+            />
+
             {copiedPart && (
               <OverlayTrigger
                 placement="bottom"
