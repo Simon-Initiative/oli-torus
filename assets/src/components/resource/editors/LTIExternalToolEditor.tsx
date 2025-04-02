@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import { useLoader } from 'components/hooks/useLoader';
 import { Alert } from 'components/misc/Alert';
 import { LTIExternalTool } from 'data/content/resource';
 import { getLtiExternalToolDetails } from 'data/persistence/lti_platform';
+import { Description, Icon, OutlineItem, OutlineItemProps } from './OutlineItem';
 import { EditorProps } from './createEditor';
 
 interface LTIExternalToolEditorProps extends EditorProps {
@@ -76,5 +77,19 @@ const LTIExternalToolWindow = ({ launchParams, resourceId }: LTIExternalToolWind
         data-lti-launch="true"
       ></iframe>
     </div>
+  );
+};
+
+interface LTIExternalToolOutlineItemProps extends OutlineItemProps {
+  contentItem: LTIExternalTool;
+}
+
+export const LTIExternalToolOutlineItem = (props: LTIExternalToolOutlineItemProps) => {
+  const { contentItem } = props;
+  return (
+    <OutlineItem {...props}>
+      <Icon iconName="fas fa-plug" />
+      <Description title="LTI External Tool">{contentItem.clientId}</Description>
+    </OutlineItem>
   );
 };
