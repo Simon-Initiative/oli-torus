@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 
-export enum LoaderStatus {
+enum LoaderStatus {
   LOADING,
   SUCCESS,
   FAILURE,
 }
 
-export type Loader<T> =
+export type LoaderState<T> =
   | { status: LoaderStatus.LOADING }
   | {
       status: LoaderStatus.SUCCESS;
@@ -14,6 +14,17 @@ export type Loader<T> =
     }
   | { status: LoaderStatus.FAILURE; error: string };
 
+type StateCallbacks<T, R> = {
+  loading: () => R;
+  success: (result: T) => R;
+  failure: (error: string) => R;
+};
+
+export type Loader<T> = {
+  state: LoaderState<T>;
+  reload: () => void;
+  caseOf: <R>(callbacks: StateCallbacks<T, R>) => R;
+};
 
 /**
  * Custom hook that loads data using persistence and returns the current state of the loader.
@@ -21,8 +32,8 @@ export type Loader<T> =
  * @param load Function that loads data and returns a persistence result of type Ok<T> or ServerError
  * @returns Loader<T> that represents one of three states: LOADING, SUCCESS, FAILURE
  */
-export const useLoader = <T,>(load: () => Promise<T>): [Loader<T>, reload: () => void] => {
-  const [loader, setLoader] = useState<Loader<T>>({
+export const useLoader = <T,>(load: () => Promise<T>): Loader<T> => {
+  const [loader, setLoader] = useState<LoaderState<T>>({
     status: LoaderStatus.LOADING,
   });
 
@@ -33,10 +44,10 @@ export const useLoader = <T,>(load: () => Promise<T>): [Loader<T>, reload: () =>
 
     load()
       .then((result) => {
-          setLoader({
-            status: LoaderStatus.SUCCESS,
-            result,
-          });
+        setLoader({
+          status: LoaderStatus.SUCCESS,
+          result,
+        });
       })
       .catch(({ message }) =>
         setLoader({
@@ -49,5 +60,18 @@ export const useLoader = <T,>(load: () => Promise<T>): [Loader<T>, reload: () =>
   // Load data on initial mount. Any subsequent reloads are triggered by the calling the reload function
   useEffect(() => reload(), []);
 
-  return [loader, reload];
+  return {
+    state: loader,
+    reload: reload,
+    caseOf: ({ loading, success, failure }) => {
+      switch (loader.status) {
+        case LoaderStatus.LOADING:
+          return loading();
+        case LoaderStatus.SUCCESS:
+          return success(loader.result);
+        case LoaderStatus.FAILURE:
+          return failure(loader.error);
+      }
+    },
+  };
 };

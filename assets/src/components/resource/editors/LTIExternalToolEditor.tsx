@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
-import { LoaderStatus, useLoader } from 'components/hooks/useLoader';
+import { useLoader } from 'components/hooks/useLoader';
 import { Alert } from 'components/misc/Alert';
 import { LTIExternalTool } from 'data/content/resource';
 import { getLtiExternalToolDetails } from 'data/persistence/lti_platform';
@@ -13,34 +13,24 @@ interface LTIExternalToolEditorProps extends EditorProps {
 export const LTIExternalToolEditor = (props: LTIExternalToolEditorProps) => {
   const { contentItem } = props;
 
-  const [ltiToolDetailsLoader, _] = useLoader(() =>
-    getLtiExternalToolDetails(contentItem.clientId),
-  );
+  const ltiToolDetailsLoader = useLoader(() => getLtiExternalToolDetails(contentItem.clientId));
 
-  if (ltiToolDetailsLoader.status === LoaderStatus.LOADING) {
-    return <LoadingSpinner />;
-  }
+  return ltiToolDetailsLoader.caseOf({
+    loading: () => <LoadingSpinner />,
+    failure: (error) => <Alert variant="error">{error}</Alert>,
+    success: (ltiToolDetails) => (
+      <div className="flex flex-col">
+        <div className="m-[20px] p-[20px]">LTI Tool: {ltiToolDetails.name}</div>
 
-  if (ltiToolDetailsLoader.status === LoaderStatus.FAILURE) {
-    return <Alert variant="error">Error loading LTI details</Alert>;
-  }
-
-  const ltiToolDetails = ltiToolDetailsLoader.result;
-
-  console.log(ltiToolDetailsLoader);
-
-  return (
-    <div className="flex flex-col">
-      <div className="m-[20px] p-[20px]">LTI Tool: {ltiToolDetails.name}</div>
-
-      <div>
-        <LTIExternalToolWindow
-          launchParams={ltiToolDetails.launch_params}
-          resourceId={contentItem.id}
-        />
+        <div>
+          <LTIExternalToolWindow
+            launchParams={ltiToolDetails.launch_params}
+            resourceId={contentItem.id}
+          />
+        </div>
       </div>
-    </div>
-  );
+    ),
+  });
 };
 
 type LTIExternalToolWindowProps = {
