@@ -29,8 +29,8 @@ export type Loader<T> = {
 /**
  * Custom hook that loads data using persistence and returns the current state of the loader.
  *
- * @param load Function that loads data and returns a persistence result of type Ok<T> or ServerError
- * @returns Loader<T> that represents one of three states: LOADING, SUCCESS, FAILURE
+ * @param load Function that loads data and returns a promise
+ * @returns Loader<T> loader that can execute any of the three state callbacks, access the current state, and reload the data
  */
 export const useLoader = <T,>(load: () => Promise<T>): Loader<T> => {
   const [loader, setLoader] = useState<LoaderState<T>>({
