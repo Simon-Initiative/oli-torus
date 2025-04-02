@@ -7,6 +7,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
   alias Oli.Publishing.DeliveryResolver
   alias OliWeb.Components.Modal
   alias OliWeb.Components.Delivery.Buttons
+  alias OliWeb.Components.Delivery.Utils
   alias OliWeb.Delivery.Student.Lesson.Annotations
   alias OliWeb.Icons
 
@@ -825,10 +826,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     ~H"""
     <div role="posts actions" class="w-full flex">
       <div class="flex flex-1 gap-6">
-        <Annotations.search_box
+        <Utils.search_box
           class="flex-1 max-w-[600px]"
           search_term={@posts_search_term}
           on_search="search_posts"
+          on_change="search_posts"
           on_clear_search="clear_search_posts"
         />
 
@@ -894,10 +896,11 @@ defmodule OliWeb.Delivery.Student.DiscussionsLive do
     ~H"""
     <div role="notes actions" class="w-full flex">
       <div class="flex flex-1 gap-6">
-        <Annotations.search_box
+        <Utils.search_box
           class="flex-1 max-w-[600px]"
           search_term={@notes_search_term}
           on_search="search_notes"
+          on_change="search_notes"
           on_clear_search="clear_search_notes"
         />
 

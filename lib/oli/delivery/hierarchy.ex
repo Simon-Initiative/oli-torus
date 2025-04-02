@@ -19,6 +19,8 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Authoring.Course.Project
   alias Oli.Repo
 
+  @container_resource_type_id Oli.Resources.ResourceType.get_id_by_type("container")
+
   @doc """
   This method should be called after any hierarchy-changing operation
   in this module is used to ensure that numberings remain up to date. Because a lot of the operations
@@ -904,6 +906,183 @@ defmodule Oli.Delivery.Hierarchy do
     hierarchy
     |> Enum.map(fn node -> thin_hierarchy(node, fields_to_keep, filter_fn) end)
     |> Enum.reject(&is_nil/1)
+  end
+
+  @doc """
+  Filters a hierarchy by search term and flags containers that contain a child that matches the search term.
+
+  ## Parameters
+
+    - `hierarchy`: The hierarchy to filter.
+    - `search_term`: The search term to filter by.
+
+  ## Search logic
+
+  If the search term is an empty string or nil, the hierarchy is returned unchanged.
+  The search term (case insensitive) is used to filter the hierarchy by matching the search term in the title of each node.
+  Containers are included when:
+  - The container title matches the search term. In this case, all children are included.
+    or
+  - The container has a descendant that matches the search term. In this case, only the matching descendant are included.
+
+  Pages are included when:
+  - The page title matches the search term.
+    and/or
+  - The page is a descendant of a container that matches the search term.
+
+  ## Examples
+
+  iex> hierarchy = %{
+        "children" => [
+          %{
+            "children" => [
+              %{
+                "children" => [
+                  %{
+                    "children" => [],
+                    "resource_type_id" => 1,
+                    "title" => "Enum.map/2"
+                  },
+                  %{
+                    "children" => [],
+                    "resource_type_id" => 1,
+                    "title" => "Enum.filter/2"
+                  }
+                ],
+                "resource_type_id" => 2,
+                "title" => "Enum module"
+              }
+            ],
+            "resource_type_id" => 2,
+            "title" => "Introduction"
+          },
+          %{
+            "children" => [
+              %{
+                "children" => [
+                  %{"children" => [], "resource_type_id" => 1, "title" => "Map.get/2"}
+                ],
+                "resource_type_id" => 2,
+                "title" => "Map module"
+              },
+              %{
+                "children" => [
+                  %{"children" => [], "resource_type_id" => 1, "title" => "another page"}
+                ],
+                "resource_type_id" => 2,
+                "title" => "Another module"
+              }
+            ],
+            "resource_type_id" => 2,
+            "title" => "Basics"
+          }
+        ],
+        "title" => "Root"
+        }
+
+    iex> Oli.Delivery.Hierarchy.filter_hierarchy_by_search_term(hierarchy, "another module")
+        %{
+          "child_matches_search_term" => true,
+          "children" => [
+            %{
+              "child_matches_search_term" => true,
+              "children" => [
+                %{
+                  "child_matches_search_term" => false,
+                  "children" => [
+                    %{
+                      "children" => [],
+                      "resource_type_id" => 1,
+                      "title" => "another page"
+                    }
+                  ],
+                  "resource_type_id" => 2,
+                  "title" => "Another module"
+                }
+              ],
+              "resource_type_id" => 2,
+              "title" => "Basics"
+            }
+          ],
+          "title" => "Root"
+        }
+    iex> Oli.Delivery.Hierarchy.filter_hierarchy_by_search_term(hierarchy, "enum.filter/2")
+        %{
+          "child_matches_search_term" => true,
+          "children" => [
+            %{
+              "child_matches_search_term" => true,
+              "children" => [
+                %{
+                  "child_matches_search_term" => true,
+                  "children" => [
+                    %{
+                      "child_matches_search_term" => false,
+                      "children" => [],
+                      "resource_type_id" => 1,
+                      "title" => "Enum.filter/2"
+                    }
+                  ],
+                  "resource_type_id" => 2,
+                  "title" => "Enum module"
+                }
+              ],
+              "resource_type_id" => 2,
+              "title" => "Introduction"
+            }
+          ],
+          "title" => "Root"
+        }
+  """
+
+  def filter_hierarchy_by_search_term(hierarchy, search_term) when search_term in [nil, ""],
+    do: hierarchy
+
+  def filter_hierarchy_by_search_term(hierarchy, search_term) do
+    search_term = String.downcase(search_term)
+
+    is_container = fn resource ->
+      Map.get(resource, "resource_type_id") == @container_resource_type_id
+    end
+
+    title_matches_search = fn resource ->
+      title = Map.get(resource, "title", "")
+      String.contains?(String.downcase(title), search_term)
+    end
+
+    matches_or_has_matching_descendant = fn node, check_fn ->
+      title_matches_search.(node) or
+        (node["children"] || [])
+        |> Enum.any?(&check_fn.(&1, check_fn))
+    end
+
+    # Recursively filter hierarchy and add child_matches_search_term
+    # to flag containers that contain a matching descendant
+    filter_node = fn node, filter_fn ->
+      children =
+        (node["children"] || [])
+        |> Enum.map(&filter_fn.(&1, filter_fn))
+        |> Enum.filter(fn child ->
+          matches_or_has_matching_descendant.(child, matches_or_has_matching_descendant)
+        end)
+
+      node =
+        if is_container.(node) and title_matches_search.(node) do
+          # If it's a container that matches the search, we want to keep all children
+          node
+        else
+          Map.put(node, "children", children)
+        end
+
+      child_matches =
+        Enum.any?(children, fn child ->
+          title_matches_search.(child) or child["child_matches_search_term"]
+        end)
+
+      Map.put(node, "child_matches_search_term", child_matches)
+    end
+
+    filter_node.(hierarchy, filter_node)
   end
 
   @container_resource_type_id Oli.Resources.ResourceType.id_for_container()
