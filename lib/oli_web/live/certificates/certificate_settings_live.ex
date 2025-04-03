@@ -68,10 +68,13 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     case route_name do
       :workspaces ->
         project = socket.assigns.project
-        socket |> assign(breadcrumbs: breadcrumbs(:workspaces, project.slug, section.slug))
+        socket |> assign(breadcrumbs: breadcrumbs(:workspaces, project.slug, section))
 
-      route_name when route_name in [:authoring, :delivery] ->
-        socket |> assign(breadcrumbs: breadcrumbs(:authoring, nil, section.slug))
+      :delivery ->
+        socket |> assign(breadcrumbs: breadcrumbs(:delivery, nil, section))
+
+      :authoring ->
+        socket |> assign(breadcrumbs: breadcrumbs(:authoring, nil, section))
     end
   end
 
@@ -100,6 +103,15 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     |> assign(graded_pages: section_graded_pages(section_slug))
   end
 
+  defp assigns_for(socket, :design) do
+    certificate =
+      socket.assigns.certificate ||
+        Certificates.get_certificate_by(%{section_id: socket.assigns.section.id})
+
+    socket
+    |> assign(certificate: certificate)
+  end
+
   defp assigns_for(socket, :credentials_issued) do
     params = socket.assigns.params
     params = CertificatesIssuedTab.decode_params(params)
@@ -108,10 +120,13 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
     sorting = %Sorting{direction: params["direction"], field: params["sort_by"]}
     text_search = params["text_search"]
 
-    section_id = socket.assigns.section.id
-
     granted_certificates =
-      Certificates.browse_granted_certificates(paging, sorting, text_search, section_id)
+      Certificates.browse_granted_certificates(
+        paging,
+        sorting,
+        text_search,
+        socket.assigns.section
+      )
 
     table_model = socket.assigns[:table_model]
     table_model = %{table_model | rows: granted_certificates, sort_order: params["direction"]}
@@ -129,7 +144,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
 
     case active_tab do
       :thresholds -> assigns_for(socket, :thresholds)
-      :design -> socket
+      :design -> assigns_for(socket, :design)
       :credentials_issued -> assigns_for(socket, :credentials_issued)
     end
   end
@@ -178,6 +193,7 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
       module={CertificatesIssuedTab}
       id="certificates_issued_component"
       params={@params}
+      section_id={@section.id}
       section_slug={@section.slug}
       table_model={@table_model}
       ctx={@ctx}
@@ -293,21 +309,31 @@ defmodule OliWeb.Certificates.CertificatesSettingsLive do
      |> put_flash(type, message)}
   end
 
-  defp breadcrumbs(:authoring, _project_slug, section_slug) do
+  defp breadcrumbs(:delivery, _project_slug, section) do
     [
       Breadcrumb.new(%{
-        full_title: "Manage Section",
-        link: ~p"/authoring/products/#{section_slug}"
+        full_title: section.title,
+        link: ~p"/sections/#{section.slug}/manage"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]
   end
 
-  defp breadcrumbs(:workspaces, project_slug, section_slug) do
+  defp breadcrumbs(:authoring, _project_slug, section) do
+    [
+      Breadcrumb.new(%{
+        full_title: "Manage Section",
+        link: ~p"/authoring/products/#{section.slug}"
+      }),
+      Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
+    ]
+  end
+
+  defp breadcrumbs(:workspaces, project_slug, section) do
     [
       Breadcrumb.new(%{
         full_title: "Product Overview",
-        link: ~p"/workspaces/course_author/#{project_slug}/products/#{section_slug}"
+        link: ~p"/workspaces/course_author/#{project_slug}/products/#{section.slug}"
       }),
       Breadcrumb.new(%{full_title: "Manage Certificate Settings"})
     ]

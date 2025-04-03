@@ -6,13 +6,12 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   alias Phoenix.LiveView.JS
   alias Oli.Accounts
   alias Oli.Accounts.{User, Author}
-  alias Oli.Institutions
-  alias Oli.Institutions.Institution
   alias Oli.Delivery
   alias Oli.Delivery.Sections.Section
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.React
   alias OliWeb.Components.Timezone
+  alias OliWeb.Icons
 
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext)
@@ -39,7 +38,8 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
 
-  def workspace_menu(%{is_admin: true} = assigns) do
+  def workspace_menu(%{ctx: %{author: %{system_role_id: system_role_id}}} = assigns)
+      when system_role_id in [2, 3, 4] do
     ~H"""
     <div class="relative">
       <button
@@ -73,12 +73,13 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         <.user_picture_icon user={@ctx.author} />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
-        <.account_label label="Author" class="text-[#EC8CFF]" />
+        <.account_label :if={!Accounts.is_admin?(@ctx.author)} label="Author" class="text-[#EC8CFF]" />
+        <.account_label :if={Accounts.is_admin?(@ctx.author)} label="Admin" class="text-[#F68E2E]" />
         <.author_menu_items
           ctx={@ctx}
           id={@id}
           target_signout_path={target_signout_path(@active_workspace)}
-          is_admin={false}
+          is_admin={Accounts.is_admin?(@ctx.author)}
         />
       </.dropdown_menu>
     </div>
@@ -94,7 +95,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
         class={"flex flex-row items-center justify-center rounded-full outline outline-2 outline-neutral-300 dark:outline-neutral-700 hover:outline-4 hover:dark:outline-zinc-600 focus:outline-4 focus:outline-primary-300 dark:focus:outline-zinc-600 #{@class}"}
         phx-click={toggle_menu("##{@id}-dropdown")}
       >
-        <.user_picture_icon user={@ctx.user} />
+        <.user_picture_icon :if={Accounts.is_admin?(@ctx.author)} user={@ctx.author} />
+        <.user_picture_icon
+          :if={@ctx.author == nil or !Accounts.is_admin?(@ctx.author)}
+          user={@ctx.user}
+        />
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <.account_label
@@ -135,6 +140,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:is_admin, :boolean, required: true)
   attr(:class, :string, default: "")
   attr(:dropdown_class, :string, default: "")
+  attr(:show_support_link, :boolean, default: false)
 
   def menu(assigns) do
     ~H"""
@@ -152,15 +158,34 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       </button>
       <.dropdown_menu id={"#{@id}-dropdown"} class={@dropdown_class}>
         <%= if @is_admin do %>
-          <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+          <.author_menu_items
+            id={"#{@id}-menu-items-admin"}
+            ctx={@ctx}
+            is_admin={@is_admin}
+            show_support_link={@show_support_link}
+          />
         <% else %>
           <%= case assigns.ctx do %>
             <% %SessionContext{user: %User{guest: true}} -> %>
-              <.guest_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} section={@section} />
+              <.guest_menu_items
+                id={"#{@id}-menu-items-admin"}
+                ctx={@ctx}
+                section={@section}
+                show_support_link={@show_support_link}
+              />
             <% %SessionContext{user: %User{}} -> %>
-              <.user_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} />
+              <.user_menu_items
+                id={"#{@id}-menu-items-admin"}
+                ctx={@ctx}
+                show_support_link={@show_support_link}
+              />
             <% %SessionContext{author: %Author{}} -> %>
-              <.author_menu_items id={"#{@id}-menu-items-admin"} ctx={@ctx} is_admin={@is_admin} />
+              <.author_menu_items
+                id={"#{@id}-menu-items-admin"}
+                ctx={@ctx}
+                is_admin={@is_admin}
+                show_support_link={@show_support_link}
+              />
             <% _ -> %>
           <% end %>
         <% end %>
@@ -182,6 +207,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:ctx, SessionContext, required: true)
   attr(:is_admin, :boolean, required: true)
   attr(:target_signout_path, :string, default: "")
+  attr(:show_support_link, :boolean, default: false)
 
   def author_menu_items(assigns) do
     ~H"""
@@ -191,6 +217,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     <.menu_divider />
     <.menu_item_timezone_selector id={"#{@id}-tz-selector"} ctx={@ctx} />
     <.menu_divider />
+    <.menu_item_support_button :if={@show_support_link} />
     <.menu_item_link href={~p"/authors/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -200,10 +227,17 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
   attr(:target_signout_path, :string, default: "")
+  attr(:show_support_link, :boolean, default: false)
 
   def user_menu_items(assigns) do
     ~H"""
-    <.menu_item_edit_account :if={is_independent_learner?(@ctx.user)} href={~p"/users/settings"} />
+    <.menu_item_edit_account
+      :if={is_independent_learner?(@ctx.user) && !Accounts.user_confirmation_pending?(@ctx.user)}
+      href={~p"/users/settings"}
+    />
+    <.menu_item_confirm_user_account :if={
+      is_independent_learner?(@ctx.user) && Accounts.user_confirmation_pending?(@ctx.user)
+    } />
     <.maybe_my_courses_menu_item_link user={@ctx.user} />
     <.menu_item_dark_mode_selector id={"#{@id}-dark-mode-selector"} ctx={@ctx} />
     <.menu_divider />
@@ -214,6 +248,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
       :if={Accounts.can_manage_linked_account?(@ctx.user)}
       user={@ctx.user}
     />
+    <.menu_item_support_button :if={@show_support_link} />
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Sign out
     </.menu_item_link>
@@ -223,6 +258,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   attr(:id, :string, required: true)
   attr(:ctx, SessionContext, required: true)
   attr(:section, Section, default: nil)
+  attr(:show_support_link, :boolean, default: false)
 
   def guest_menu_items(assigns) do
     ~H"""
@@ -235,6 +271,7 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     </.menu_item_link>
     <.menu_divider />
     <.maybe_research_consent_link ctx={@ctx} />
+    <.menu_item_support_button :if={@show_support_link} />
     <.menu_item_link href={~p"/users/log_out"} method={:delete}>
       Leave Guest account
     </.menu_item_link>
@@ -300,6 +337,20 @@ defmodule OliWeb.Components.Delivery.UserAccount do
     end
   end
 
+  attr(:rest, :global, include: ~w"onclick")
+  slot(:inner_block, required: true)
+
+  def menu_item_button(assigns) do
+    ~H"""
+    <button
+      {@rest}
+      class="w-full text-gray-800 hover:text-gray-800 dark:text-white hover:text-white text-sm font-normal font-['Roboto'] h-[26px] p-[5px] rounded-md justify-start items-center inline-flex block hover:no-underline dark:hover:bg-white/5 hover:bg-gray-100 cursor-pointer"
+    >
+      <%= render_slot(@inner_block) %>
+    </button>
+    """
+  end
+
   attr(:user, User, required: true)
 
   def menu_item_maybe_linked_account(assigns) do
@@ -329,9 +380,23 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   def menu_item_edit_account(assigns) do
     ~H"""
-    <.menu_item_link href={@href}>
-      Edit Account
-    </.menu_item_link>
+    <.menu_item>
+      <.menu_item_link href={@href}>
+        Edit Account
+      </.menu_item_link>
+    </.menu_item>
+
+    <.menu_divider />
+    """
+  end
+
+  def menu_item_confirm_user_account(assigns) do
+    ~H"""
+    <.menu_item>
+      <.menu_item_link href={~p"/users/confirm"}>
+        Confirm Account
+      </.menu_item_link>
+    </.menu_item>
 
     <.menu_divider />
     """
@@ -342,9 +407,11 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   def maybe_my_courses_menu_item_link(assigns) do
     ~H"""
     <%= if is_independent_learner?(@user) do %>
-      <.menu_item_link href={~p"/workspaces/student"}>
-        My Courses
-      </.menu_item_link>
+      <.menu_item>
+        <.menu_item_link href={~p"/workspaces/student"}>
+          My Courses
+        </.menu_item_link>
+      </.menu_item>
 
       <.menu_divider />
     <% end %>
@@ -411,12 +478,23 @@ defmodule OliWeb.Components.Delivery.UserAccount do
 
   defp maybe_research_consent_link(assigns) do
     ~H"""
-    <%= if show_research_consent_link?(@ctx.user) do %>
+    <%= if Delivery.user_research_consent_required?(@ctx.user) do %>
       <.menu_item_link href={~p"/research_consent"}>
         Research Consent
       </.menu_item_link>
       <.menu_divider />
     <% end %>
+    """
+  end
+
+  defp menu_item_support_button(assigns) do
+    ~H"""
+    <.menu_item>
+      <.menu_item_button onclick="window.showHelpModal();">
+        <Icons.support />
+        <span class="ml-2 text-sm font-medium tracking-tight">Support</span>
+      </.menu_item_button>
+    </.menu_item>
     """
   end
 
@@ -513,36 +591,4 @@ defmodule OliWeb.Components.Delivery.UserAccount do
   end
 
   defp to_initials(_), do: "?"
-
-  defp show_research_consent_link?(user) do
-    case user do
-      nil ->
-        false
-
-      # Direct delivery user
-      %User{independent_learner: true} ->
-        case Delivery.get_research_consent_form_setting() do
-          :oli_form ->
-            true
-
-          _ ->
-            false
-        end
-
-      # LTI user
-      user ->
-        # check institution research consent setting
-        institution = Institutions.get_institution_by_lti_user(user)
-
-        case institution do
-          %Institution{research_consent: :oli_form} ->
-            true
-
-          # if research consent is set to anything else or institution was
-          # not found for LTI user, do not show the link
-          _ ->
-            false
-        end
-    end
-  end
 end

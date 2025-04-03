@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
   alias Oli.Accounts.User
   alias OliWeb.Components.Common
   alias OliWeb.Components.Modal
+  alias OliWeb.Components.Delivery.Utils
 
   attr :section_slug, :string, required: true
   attr :collab_space_config, :map, required: true
@@ -40,7 +41,7 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
               <.users_icon class="mr-2" /> Class Notes
             </.tab>
           </.tab_group>
-          <.search_box class="mt-2" search_term={@search_term} />
+          <Utils.search_box class="mt-2" search_term={@search_term} />
           <hr class="m-6 border-b border-b-gray-200" />
           <%= case @search_results do %>
             <% nil -> %>
@@ -383,38 +384,6 @@ defmodule OliWeb.Delivery.Student.Lesson.Annotations do
         </clipPath>
       </defs>
     </svg>
-    """
-  end
-
-  attr :search_term, :string, default: ""
-  attr :on_search, :string, default: "search"
-  attr :on_clear_search, :string, default: "clear_search"
-  attr :rest, :global, include: ~w(class)
-
-  def search_box(assigns) do
-    ~H"""
-    <form class={["flex flex-row", @rest[:class]]} phx-submit={@on_search}>
-      <div class="flex-1 relative">
-        <i class="fa-solid fa-search absolute left-4 top-4 text-gray-400 pointer-events-none text-lg">
-        </i>
-        <input
-          type="text"
-          name="search_term"
-          value={@search_term}
-          class="w-full border border-gray-400 dark:border-gray-700 rounded-lg px-12 py-3"
-          phx-change={@on_search}
-          phx-debounce="500"
-        />
-        <button
-          :if={@search_term != ""}
-          type="button"
-          class="absolute right-0 top-0 bottom-0 py-3 px-4"
-          phx-click={@on_clear_search}
-        >
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-    </form>
     """
   end
 

@@ -266,8 +266,11 @@ defmodule OliWeb.Workspaces.InstructorTest do
     end
 
     test "can see expanded/collapsed sidebar nav", %{
-      conn: conn
+      conn: conn,
+      user: user
     } do
+      Accounts.update_user(user, %{can_create_sections: true})
+
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
 
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=true]})
@@ -292,8 +295,11 @@ defmodule OliWeb.Workspaces.InstructorTest do
     end
 
     test "navbar expanded or collapsed state is kept after navigating to other menu link", %{
-      conn: conn
+      conn: conn,
+      user: user
     } do
+      Accounts.update_user(user, %{can_create_sections: true})
+
       {:ok, view, _html} = live(conn, ~p"/workspaces/instructor?sidebar_expanded=true")
 
       assert has_element?(view, ~s{nav[id=desktop-workspace-nav-menu][aria-expanded=true]})
@@ -357,20 +363,6 @@ defmodule OliWeb.Workspaces.InstructorTest do
                view,
                "div[id='workspace-user-menu-dropdown'] div[role='linked authoring account email']",
                author.email
-             )
-    end
-  end
-
-  describe "admin" do
-    setup [:admin_conn]
-
-    test "can access instructor workspace when logged in", %{conn: conn} do
-      {:ok, view, _html} = live(conn, ~p"/workspaces/instructor")
-
-      assert has_element?(
-               view,
-               "h3",
-               "Instructor workspace with an admin account has not yet been developed."
              )
     end
   end

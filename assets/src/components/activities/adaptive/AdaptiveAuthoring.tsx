@@ -76,10 +76,20 @@ const Adaptive = (
   }, [props.authoringContext]);
 
   const handleLayoutChange = useCallback(
-    async (parts: AnyPartComponent[]) => {
+    async (parts: AnyPartComponent[], selectedPartId, isDeleted = false) => {
       /* console.log('Layout Change!', { parts }); */
       const modelClone = clone(props.model);
       modelClone.content.partsLayout = parts;
+      if (modelClone?.authoring?.flowchart?.paths?.length) {
+        //When a component gets deleted from the authoring, it's respective rules should also get deleted in basic authoring.
+        //Advance authoring does not have flowchart attribute so it won't get executed for Advance authoring
+        modelClone.authoring.flowchart.paths =
+          isDeleted && selectedPartId?.length
+            ? modelClone.authoring.flowchart.paths.filter(
+                (part: any) => part.componentId !== selectedPartId,
+              )
+            : modelClone.authoring.flowchart.paths;
+      }
       // lets check if CAPI - configData has any variable that contains any expression.
       const conditionWithExpression: string[] = [];
       const iFrameParts = parts.filter((part) => part.type === 'janus-capi-iframe');

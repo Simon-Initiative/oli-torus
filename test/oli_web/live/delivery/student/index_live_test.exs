@@ -12,7 +12,9 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
   alias Oli.Resources.ResourceType
   alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.GrantedCertificates
   alias Oli.Repo
+  alias Oli.Accounts
   alias Oli.Analytics.Summary
   alias Oli.Analytics.Common.Pipeline
   alias Oli.Analytics.XAPI.Events.Context
@@ -712,6 +714,49 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
         live(conn, ~p"/sections/#{section.slug}")
 
       assert redirect_path == "/sections/#{section.slug}/enroll"
+    end
+
+    test "redirected to research consent form when student has not set research consent",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context)
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      section = insert(:section)
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, ~p"/sections/#{section.slug}")
+
+      assert redirect_path ==
+               "/research_consent?user_return_to=%2Fsections%2F#{section.slug}"
+    end
+
+    test "redirected to section welcome view when student has opted in or out of research consent",
+         context do
+      {:ok, conn: conn, user: student} = user_conn(context)
+
+      {:ok, _user} = Accounts.update_user(student, %{research_opt_out: nil})
+
+      section = insert(:section)
+
+      Sections.enroll(student.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        post(conn, ~p"/research_consent",
+          consent: "true",
+          user_return_to: "/sections/#{section.slug}"
+        )
+
+      assert redirected_to(conn) == "/sections/#{section.slug}"
+
+      # follow redirect
+      {:error, {:redirect, %{to: redirect_path}}} =
+        live(conn, ~p"/sections/#{section.slug}")
+
+      assert redirect_path ==
+               "/sections/#{section.slug}/welcome"
     end
   end
 
@@ -1766,6 +1811,83 @@ defmodule OliWeb.Delivery.Student.IndexLiveTest do
       assert render(view) =~ "0 of 5 Discussion Posts"
       assert render(view) =~ "0 of 10 Class Notes"
       assert render(view) =~ "0 of 3 Required Assignments"
+    end
+
+    test "when thresholds are met student sees a link or a label depending on the granted certificate state (when instructor approval required)",
+         %{
+           conn: conn,
+           section: section,
+           user: user,
+           page_4: page_4
+         } do
+      stub_current_time(~U[2023-11-03 00:00:00Z])
+
+      certificate =
+        insert(:certificate,
+          section: section,
+          required_discussion_posts: 1,
+          required_class_notes: 1,
+          min_percentage_for_completion: 70,
+          min_percentage_for_distinction: 90,
+          assessments_apply_to: :custom,
+          custom_assessments: [page_4.resource_id],
+          requires_instructor_approval: true
+        )
+
+      Sections.update_section(section, %{
+        certificate_enabled: true
+      })
+
+      ## class note
+      insert(:post, user: user, section: section, annotated_resource_id: page_4.resource_id)
+      ## course discussion
+      insert(:post, user: user, section: section, annotated_resource_id: nil)
+      ## required assessment
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_4.resource,
+        score: 3.0,
+        out_of: 4.0
+      )
+
+      ## When certificate is pending approval...
+      granted_certificate =
+        insert(:granted_certificate, %{
+          user: user,
+          certificate: certificate,
+          state: :pending
+        })
+
+      {:ok, view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "Loading progress..."
+      assert render_async(view) =~ "certificate_discussion_posts_progress"
+      assert render(view) =~ "Your certificate is pending instructor approval…"
+      refute render(view) =~ "Certificate was denied by instructor"
+      refute render(view) =~ "Access my certificate"
+
+      ## When certificate was denied...
+      GrantedCertificates.update_granted_certificate(granted_certificate.id, %{state: :denied})
+
+      {:ok, view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "Loading progress..."
+      assert render_async(view) =~ "certificate_discussion_posts_progress"
+      refute render(view) =~ "Your certificate is pending instructor approval…"
+      assert render(view) =~ "Certificate was denied by instructor"
+      refute render(view) =~ "Access my certificate"
+
+      ## When certificate was approved...
+      GrantedCertificates.update_granted_certificate(granted_certificate.id, %{state: :earned})
+
+      {:ok, view, html} = live(conn, ~p"/sections/#{section.slug}")
+
+      assert html =~ "Loading progress..."
+      assert render_async(view) =~ "certificate_discussion_posts_progress"
+      refute render(view) =~ "Your certificate is pending instructor approval…"
+      refute render(view) =~ "Certificate was denied by instructor"
+      assert render(view) =~ "Access my certificate"
     end
   end
 end

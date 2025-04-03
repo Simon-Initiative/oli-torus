@@ -21,6 +21,7 @@ export const createCopy = (
         description: editorDesc.description,
         friendlyName: editorDesc.friendlyName,
         typeSlug: editorDesc.slug,
+        optionalContentTypes: original.optionalContentTypes,
         activitySlug: result.revisionSlug,
         activityId: result.resourceId,
         title,

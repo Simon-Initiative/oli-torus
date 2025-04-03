@@ -17,6 +17,7 @@ import {
   generateAlwaysGoTo,
   getSequenceIdFromScreenResourceId,
 } from './create-generic-rule';
+import { generateHubSpokeRules } from './create-hub-spoke-rules';
 import { generateMultilineTextInputRules } from './create-multiline-text-rules';
 import { generateMultipleChoiceRules } from './create-multiple-choice-rules';
 import { createNavigationAction } from './create-navigation-action';
@@ -158,6 +159,8 @@ export const _generateRules = (
       return generateNumberInputRules(screen, sequence, defaultDestination);
     case 'dropdown':
       return generateDropdownRules(screen, sequence, defaultDestination);
+    case 'hub-spoke':
+      return generateHubSpokeRules(screen, sequence, defaultDestination);
     default:
       return createBlankScreenRules(screen, sequence, defaultDestination);
   }

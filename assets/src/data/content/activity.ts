@@ -23,6 +23,7 @@ export type ActivityEditContext = {
   model: ActivityModelSchema; // Content of the resource
   objectives: ObjectiveMap; // Attached objectives, based on part id
   tags: ResourceId[]; // Attached tags
+  optionalContentTypes: any; // Optional content types
   variables: any;
 };
 

@@ -502,6 +502,161 @@ defmodule Oli.Delivery.HierarchyTest do
     end
   end
 
+  describe "filter_hierarchy_by_search_term/2" do
+    setup do
+      hierarchy = %{
+        "children" => [
+          %{
+            "children" => [
+              %{
+                "children" => [
+                  %{
+                    "children" => [],
+                    "resource_type_id" => 1,
+                    "title" => "Enum.map/2"
+                  },
+                  %{
+                    "children" => [],
+                    "resource_type_id" => 1,
+                    "title" => "Enum.filter/2"
+                  }
+                ],
+                "resource_type_id" => 2,
+                "title" => "Enum module"
+              }
+            ],
+            "resource_type_id" => 2,
+            "title" => "Introduction"
+          },
+          %{
+            "children" => [
+              %{
+                "children" => [
+                  %{"children" => [], "resource_type_id" => 1, "title" => "Map.get/2"}
+                ],
+                "resource_type_id" => 2,
+                "title" => "Map module"
+              },
+              %{
+                "children" => [
+                  %{"children" => [], "resource_type_id" => 1, "title" => "another page"}
+                ],
+                "resource_type_id" => 2,
+                "title" => "Another module"
+              }
+            ],
+            "resource_type_id" => 2,
+            "title" => "Basics"
+          }
+        ],
+        "title" => "Root"
+      }
+
+      %{hierarchy: hierarchy}
+    end
+
+    test "returns unchanged hierarchy when search term is empty string", %{hierarchy: hierarchy} do
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, "")
+      assert result == hierarchy
+    end
+
+    test "returns unchanged hierarchy when search term is nil", %{hierarchy: hierarchy} do
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, nil)
+      assert result == hierarchy
+    end
+
+    test "filters hierarchy when searching for a container title", %{hierarchy: hierarchy} do
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, "another module")
+      [unit] = result["children"]
+      [module] = unit["children"]
+
+      assert result["child_matches_search_term"]
+      assert length(result["children"]) == 1
+
+      assert unit["title"] == "Basics"
+      assert unit["child_matches_search_term"]
+      assert unit["children"] |> length() == 1
+
+      assert module["title"] == "Another module"
+      refute module["child_matches_search_term"]
+      assert module["children"] |> length() == 1
+    end
+
+    test "filters hierarchy when searching for a page title", %{hierarchy: hierarchy} do
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, "enum.filter/2")
+      [unit] = result["children"]
+      [module] = unit["children"]
+      [page] = module["children"]
+
+      assert result["child_matches_search_term"]
+      assert length(result["children"]) == 1
+
+      assert unit["title"] == "Introduction"
+      assert unit["child_matches_search_term"]
+      assert unit["children"] |> length() == 1
+
+      assert module["title"] == "Enum module"
+      assert module["child_matches_search_term"]
+      assert module["children"] |> length() == 1
+
+      assert page["title"] == "Enum.filter/2"
+      refute page["child_matches_search_term"]
+      assert page["children"] == []
+    end
+
+    test "filters hierarchy when searching for a partial match", %{hierarchy: hierarchy} do
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, "enum")
+      [unit] = result["children"]
+      [module] = unit["children"]
+      [page_1, page_2] = module["children"]
+
+      assert result["child_matches_search_term"]
+      assert length(result["children"]) == 1
+
+      assert unit["title"] == "Introduction"
+      assert unit["child_matches_search_term"]
+      assert unit["children"] |> length() == 1
+
+      assert module["title"] == "Enum module"
+      assert module["child_matches_search_term"]
+      assert module["children"] |> length() == 2
+
+      assert page_1["title"] == "Enum.map/2"
+      refute page_1["child_matches_search_term"]
+      assert page_1["children"] == []
+
+      assert page_2["title"] == "Enum.filter/2"
+      refute page_2["child_matches_search_term"]
+      assert page_2["children"] == []
+    end
+
+    test "filters hierarchy when searching is case insensitive", %{hierarchy: hierarchy} do
+      result = Hierarchy.filter_hierarchy_by_search_term(hierarchy, "ENUM")
+      [unit] = result["children"]
+      [module] = unit["children"]
+      [page_1, page_2] = module["children"]
+
+      assert result["child_matches_search_term"]
+      assert length(result["children"]) == 1
+
+      assert unit["title"] == "Introduction"
+      assert unit["child_matches_search_term"]
+      assert unit["children"] |> length() == 1
+
+      assert module["title"] == "Enum module"
+      assert module["child_matches_search_term"]
+      assert module["children"] |> length() == 2
+
+      assert page_1["title"] == "Enum.map/2"
+      refute page_1["child_matches_search_term"]
+      assert page_1["children"] == []
+
+      assert page_2["title"] == "Enum.filter/2"
+      refute page_2["child_matches_search_term"]
+      assert page_2["children"] == []
+    end
+  end
+
   defp create_elixir_project(_) do
     author = insert(:author)
     project = insert(:project, authors: [author])

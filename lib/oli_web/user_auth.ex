@@ -390,16 +390,12 @@ defmodule OliWeb.UserAuth do
     end
   end
 
+  # If skip_email_verification is set in the assigns from an earlier plug, skip the email verification check.
+  defp require_confirmed_email(%{assigns: %{skip_email_verification: true}} = conn), do: conn
+
   defp require_confirmed_email(conn) do
-    case {conn.assigns[:current_user], conn.assigns[:section]} do
-      {nil, _} ->
-        conn
-
-      {_user, %Section{open_and_free: true, skip_email_verification: true}} ->
-        # The section is independent and specifies to skip email verification
-        conn
-
-      {%Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil}, _} ->
+    case conn.assigns[:current_user] do
+      %Accounts.User{independent_learner: true, guest: false, email_confirmed_at: nil} ->
         conn
         |> renew_session()
         |> delete_resp_cookie(@remember_me_cookie)

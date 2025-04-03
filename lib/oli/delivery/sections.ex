@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Utils.Database
 
+  alias Oli.Delivery.Certificates
   alias Oli.Delivery.Sections
 
   alias Oli.Delivery.Sections.{
@@ -2957,6 +2958,10 @@ defmodule Oli.Delivery.Sections do
       ) do
     if Hierarchy.finalized?(hierarchy) do
       Multi.new()
+      |> Multi.run(:keep_original_required_assessments_for_certificate, fn _repo, _ ->
+        # guarantee no added assessments are required for gaining a certificate
+        Certificates.switch_certificate_to_custom_assessments(section)
+      end)
       |> Multi.run(:rebuild_section_resources, fn _repo, _ ->
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
@@ -2984,6 +2989,9 @@ defmodule Oli.Delivery.Sections do
         Oli.Delivery.Sections.SectionResourceDepot.depot_desc(),
         section_id
       )
+
+      # guarantee a deleted assessment is not required for gaining a certificate
+      Certificates.purge_deleted_assessments_from_certificate(section)
     else
       throw(
         "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
@@ -5386,5 +5394,17 @@ defmodule Oli.Delivery.Sections do
       where: ecr.context_role_id in ^context_role_ids
     )
     |> Repo.all()
+  end
+
+  @doc """
+  Returns true if the user is enrolled in any sections that do not require email confirmation
+  """
+  def user_enrolled_in_section_that_skips_email_confirmation?(user) do
+    from(e in Enrollment,
+      join: s in assoc(e, :section),
+      where: e.user_id == ^user.id,
+      where: e.status == :enrolled and s.skip_email_verification == true
+    )
+    |> Repo.exists?()
   end
 end
