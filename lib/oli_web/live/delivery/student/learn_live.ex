@@ -363,6 +363,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
       else
         Map.drop(socket.assigns.params, ["search_term"])
       end
+      |> Map.drop(["target_resource_id"])
 
     {:noreply,
      push_patch(socket,
@@ -379,7 +380,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
     {:noreply,
      push_patch(socket,
        to:
-         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term"])}"
+         ~p"/sections/#{socket.assigns.section.slug}/learn?#{Map.drop(socket.assigns.params, ["search_term", "target_resource_id"])}"
      )}
   end
 
