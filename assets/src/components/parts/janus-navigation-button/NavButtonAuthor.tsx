@@ -84,7 +84,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
             src={imageSource}
             style={{
               height: isVertical && title ? '60%' : '100%',
-              width: isVertical && title ? '90%' : 'auto',
+              width: title ? '90%' : 'auto',
             }}
           />
         )}
