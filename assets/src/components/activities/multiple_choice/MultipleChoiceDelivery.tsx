@@ -98,9 +98,6 @@ export const MultipleChoiceComponent: React.FC = () => {
           }
         };
 
-  console.log("rendered")
-  console.log(uiState)
-
   return (
     <div className="activity mc-activity">
       <div className="activity-content">

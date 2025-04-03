@@ -54,14 +54,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
   import Ecto.Query, warn: false
   import Oli.Delivery.Attempts.Core
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt, ResourceAccess}
   import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
   import Oli.Delivery.Attempts.ActivityLifecycle.Utils
 
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ResourceAttempt, ResourceAccess}
   alias Oli.Delivery.Evaluation.{Result}
   alias Oli.Delivery.Attempts.Core.StudentInput
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Scoring
+  alias Oli.Resources.Revision
 
   @doc """
   Returns a function that when executed, will properly roll up the evaluated
@@ -74,7 +75,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
          part_attempts
        ) do
     evaluated_fn = fn result ->
-      rollup_evaluated(activity_attempt_guid, part_attempts)
+      rollup_evaluated(activity_attempt_guid)
       result
     end
 
@@ -100,9 +101,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
   This function makes at most two read queries to the database.
   """
-  def rollup_evaluated(activity_attempt_guid, part_attempts) do
+  def rollup_evaluated(activity_attempt_guid) do
 
-    # First query: retrieve both the activity and resource attempt info, plus key
+    # First query: retrieve the latest part attempts
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
+
+    # Second query: retrieve both the activity and resource attempt info, plus key
     # details about the page they are on
     %{
       activity_attempt_id: activity_attempt_id,
@@ -125,7 +129,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
 
     case score_as_you_go? do
 
-      # Second query: retrieve portions of all of the activity attempts for this
+      # Third query: retrieve portions of all of the activity attempts for this
       # activity on this page - and the latest attempts for other
       # activities on this page
       true ->
@@ -167,6 +171,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         end
 
       false ->
+
         case update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of}, now) do
           {1, _} -> :ok
           _ -> :error

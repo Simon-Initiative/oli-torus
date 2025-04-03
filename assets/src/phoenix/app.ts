@@ -30,7 +30,6 @@ import { finalize } from './finalize';
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
-import { hide } from '@popperjs/core';
 
 (window as any).Alert = Alert;
 (window as any).Button = Button;

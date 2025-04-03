@@ -714,6 +714,8 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
       [assessment_1, assessment_2, assessment_3, assessment_4] =
         table_as_list_of_maps(view, :settings)
 
+      IO.inspect(assessment_1, label: "assessment_1")
+
       assert assessment_1.exceptions_count =~ "4"
       assert assessment_2.exceptions_count =~ "3"
       assert assessment_3.exceptions_count =~ "2"
