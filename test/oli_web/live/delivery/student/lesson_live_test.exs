@@ -803,6 +803,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
       ensure_content_is_visible(view)
       assert has_element?(view, "div[role='page content'] p", "Here's some practice page content")
+
+      # Support link is visible
+      assert has_element?(view, "#tech-support", "Support")
     end
 
     @tag isolation: "serializable"
@@ -876,6 +879,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
                view,
                "div[data-live-react-class='Components.References']"
              )
+
+      # Support link is visible
+      assert has_element?(view, "#tech-support", "Support")
     end
 
     test "does not see prologue but graded page when an attempt is in progress", %{
@@ -974,6 +980,9 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       assert html_response(conn, 200) =~ ~s{<div id=\"delivery_container\">}
       # It loads the adaptive themes
       assert html_response(conn, 200) =~ "/css/delivery_adaptive_themes_default_light.css"
+
+      # Support link is not visible on adaptive pages
+      refute html_response(conn, 200) =~ "Support"
     end
 
     test "back button of an adaptive page (NOT an exploration one) points to the provided url param 'request_path'",
