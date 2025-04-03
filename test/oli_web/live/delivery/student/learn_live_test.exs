@@ -2887,10 +2887,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     ])
   end
 
-  # describe "outline scrolling functionality" do
-
-  # end
-
   describe "search functionality" do
     setup [:user_conn, :create_elixir_project, :enroll_as_student, :mark_section_visited]
 
