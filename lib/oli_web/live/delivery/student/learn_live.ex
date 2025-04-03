@@ -209,7 +209,7 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
         |> push_scroll_event_for_outline("page_#{resource_id}")
 
-      # This clause shouldn't be reached, but let's not break the page
+      # This clause applies when the resource_id belongs to a Unit or a Module.
       _ ->
         socket
     end
