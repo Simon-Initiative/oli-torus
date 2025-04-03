@@ -19,8 +19,8 @@ export const FixedNavigationBar = {
     };
 
     window.addEventListener('scroll', updateBarVisibility);
-    window.addEventListener('resize', updateBarVisibility); // por si cambia el alto
-    requestAnimationFrame(updateBarVisibility); // correr al montar
+    window.addEventListener('resize', updateBarVisibility);
+    requestAnimationFrame(updateBarVisibility);
 
     this.cleanup = () => {
       window.removeEventListener('scroll', updateBarVisibility);

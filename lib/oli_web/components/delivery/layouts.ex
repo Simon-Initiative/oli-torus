@@ -1146,12 +1146,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   defp maybe_add_icon(page, pages_progress) do
     page_id = String.to_integer(page["id"])
-    progress = Map.get(pages_progress, page_id, nil)
+    progress = Map.get(pages_progress, page_id)
 
     case {progress, page["graded"]} do
       {1.0, "false"} -> apply(OliWeb.Icons, :check, [%{}])
       {1.0, "true"} -> apply(OliWeb.Icons, :square_checked, [%{}])
-      {progress, "true"} when progress < 1.0 -> apply(OliWeb.Icons, :flag, [%{}])
+      {_, "true"} -> apply(OliWeb.Icons, :flag, [%{}])
       _ -> nil
     end
   end
