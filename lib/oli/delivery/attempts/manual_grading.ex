@@ -240,7 +240,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   section has gradepassback enabled)
   """
   def apply_manual_scoring(
-        %Section{slug: section_slug},
+        %Section{slug: section_slug} = section,
         activity_attempt,
         score_feedbacks_map
       ) do
@@ -252,11 +252,20 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     |> Enum.map(fn pa ->
       case Map.get(score_feedbacks_map, pa.attempt_guid) do
         %{score: score, out_of: out_of, feedback: feedback} ->
-          %Oli.Delivery.Attempts.Core.ClientEvaluation{
-            input: pa.input,
-            feedback: %{content: wrap_in_paragraphs(feedback)},
-            score: score,
-            out_of: out_of
+
+          input = case Map.get(pa, :response) do
+            %{input: input} -> input
+            nil -> %{}
+          end
+
+          %{
+            attempt_guid: pa.attempt_guid,
+            client_evaluation: %Oli.Delivery.Attempts.Core.ClientEvaluation{
+              input: input,
+              feedback: %{content: wrap_in_paragraphs(feedback)},
+              score: score,
+              out_of: out_of
+            }
           }
         _ ->
           nil
@@ -264,13 +273,99 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     end)
     |> Enum.filter(fn client_eval -> client_eval != nil end)
 
-    Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
-      section_slug,
-      activity_attempt.attempt_guid,
-      client_evaluations,
-      datashop_session_id
-    )
+    # We need to set the grading approach to automatic for all part attempts
+    # so that the rollup will have an opportunity to update the activity attempt
+    # to :evaluated - otherwise it will remain in :submitted
+    mocked_part_attempts =
+      Enum.map(part_attempts, fn part_attempt ->
+        Map.put(part_attempt, :grading_approach, :automatic)
+      end)
 
+    Oli.Repo.transaction(fn ->
+
+      Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
+        section_slug,
+        activity_attempt.attempt_guid,
+        client_evaluations,
+        datashop_session_id,
+        [
+          enforce_client_side_eval: false,
+          part_attempts_input: mocked_part_attempts
+        ]
+      )
+
+      graded = activity_attempt.graded
+      resource_attempt_guid = activity_attempt.resource_attempt_guid
+
+      maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+
+    end)
+
+  end
+
+  defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid),
+    do: {:ok, resource_attempt_guid}
+
+  defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
+    resource_attempt =
+      Oli.Delivery.Attempts.Core.get_resource_attempt(attempt_guid: resource_attempt_guid)
+      |> Oli.Repo.preload(:revision)
+
+    resource_access = Oli.Repo.get(ResourceAccess, resource_attempt.resource_access_id)
+
+    effective_settings =
+      Oli.Delivery.Settings.get_combined_settings(
+        resource_attempt.revision,
+        section.id,
+        resource_access.user_id
+      )
+
+    case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(
+           resource_attempt,
+           effective_settings
+         ) do
+      {:ok,
+       %ResourceAttempt{
+         lifecycle_state: :evaluated,
+         revision: revision,
+         resource_access_id: resource_access_id,
+         was_late: was_late
+       }} ->
+        resource_access = Oli.Repo.get(ResourceAccess, resource_access_id)
+
+        effective_settings =
+          Oli.Delivery.Settings.get_combined_settings(
+            revision,
+            section.id,
+            resource_access.user_id
+          )
+
+        Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_resource_attempts_to_access(
+          effective_settings,
+          section.slug,
+          resource_access_id,
+          was_late
+        )
+        |> maybe_initiate_grade_passback(section)
+
+      e ->
+        e
+    end
+  end
+
+  defp maybe_initiate_grade_passback({:ok, %ResourceAccess{id: resource_access_id}}, %Section{
+         id: section_id,
+         grade_passback_enabled: true
+       }) do
+    Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
+      section_id,
+      resource_access_id,
+      :inline
+    )
+  end
+
+  defp maybe_initiate_grade_passback(other, _) do
+    other
   end
 
   defp wrap_in_paragraphs(text) do

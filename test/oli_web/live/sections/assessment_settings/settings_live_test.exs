@@ -432,6 +432,7 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
             :grace_period,
             :retake_mode,
             :assessment_mode,
+            :batch_scoring,
             :feedback_mode,
             :review_submission,
             :password,
@@ -713,8 +714,6 @@ defmodule OliWeb.Sections.AssessmentSettings.SettingsLiveTest do
 
       [assessment_1, assessment_2, assessment_3, assessment_4] =
         table_as_list_of_maps(view, :settings)
-
-      IO.inspect(assessment_1, label: "assessment_1")
 
       assert assessment_1.exceptions_count =~ "4"
       assert assessment_2.exceptions_count =~ "3"

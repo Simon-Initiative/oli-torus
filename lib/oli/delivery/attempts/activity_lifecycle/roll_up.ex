@@ -87,9 +87,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     no_op_fn = fn result -> result end
 
     case determine_activity_rollup_state(part_inputs, part_attempts) do
-      :evaluated -> evaluated_fn
-      :submitted -> submitted_fn
-      :no_op -> no_op_fn
+      :evaluated ->
+        evaluated_fn
+      :submitted ->
+        submitted_fn
+      :no_op ->
+        no_op_fn
     end
   end
 
