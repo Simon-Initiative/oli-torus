@@ -1,7 +1,7 @@
 
 ARG ELIXIR_VERSION=1.17.2
 ARG OTP_VERSION=27.0.1
-ARG DEBIAN_VERSION=bullseye-20240722-slim
+ARG DEBIAN_VERSION=bullseye-20250113-slim
 
 ARG IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 
@@ -23,15 +23,15 @@ RUN apt-get update -qq && \
   libssh-dev \
   inotify-tools
 
-RUN useradd -ms $(which bash) asdf
+RUN useradd -ms $(which bash) dev
 
-USER asdf
+USER dev
 
 RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.8.1 && \
   echo '. $HOME/.asdf/asdf.sh' >> $HOME/.bashrc && \
   echo '. $HOME/.asdf/asdf.sh' >> $HOME/.profile
 
-ENV PATH /home/asdf/.asdf/bin:/home/asdf/.asdf/shims:$PATH
+ENV PATH /home/dev/.asdf/bin:/home/dev/.asdf/shims:$PATH
 
 RUN /bin/bash -c "\
   asdf plugin-add nodejs && \
