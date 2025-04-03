@@ -341,5 +341,53 @@ defmodule Oli.Delivery.Metrics.ProgressTest do
       assert progress_2[p1.resource.id] == 0.75
       assert progress_2[p2.resource.id] == 0.5
     end
+
+    test "progress_for_pages/3 calculates correctly", %{
+      mod1_pages: mod1_pages,
+      this_user: this_user,
+      section: section
+    } do
+      [p1, p2, p3] = mod1_pages
+
+      Sections.enroll(this_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      ## set progress for the user in p1
+      set_progress(
+        section.id,
+        p1.resource.id,
+        this_user.id,
+        0.0,
+        p1.revision
+      )
+
+      ## set progress for the user in p2
+      set_progress(
+        section.id,
+        p2.resource.id,
+        this_user.id,
+        0.5,
+        p2.revision
+      )
+
+      ## set progress for the user in p3
+      set_progress(
+        section.id,
+        p3.resource.id,
+        this_user.id,
+        1.0,
+        p3.revision
+      )
+
+      progress =
+        Metrics.progress_for_pages(section.id, this_user.id, [
+          p1.resource.id,
+          p2.resource.id,
+          p3.resource.id
+        ])
+
+      assert progress[p1.resource.id] == 0.0
+      assert progress[p2.resource.id] == 0.5
+      assert progress[p3.resource.id] == 1.0
+    end
   end
 end

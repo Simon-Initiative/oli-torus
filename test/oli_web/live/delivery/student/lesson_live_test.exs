@@ -8,6 +8,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
   import Ecto.Query, warn: false
 
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
   alias Oli.Resources.ResourceType
@@ -235,6 +236,17 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         }
       )
 
+    page_6_revision =
+      insert(:revision,
+        resource_type_id: ResourceType.get_id_by_type("page"),
+        title: "Page 6",
+        duration_minutes: 5,
+        max_attempts: 5,
+        content: %{
+          model: []
+        }
+      )
+
     ## activities...
     mcq_reg = Oli.Activities.get_registration_by_slug("oli_multiple_choice")
 
@@ -313,7 +325,11 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     section_1_revision =
       insert(:revision, %{
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [subsection_1_revision.resource_id, page_5_revision.resource_id],
+        children: [
+          subsection_1_revision.resource_id,
+          page_5_revision.resource_id,
+          page_6_revision.resource_id
+        ],
         title: "Why Elixir?"
       })
 
@@ -402,6 +418,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
         page_3_revision,
         page_4_revision,
         page_5_revision,
+        page_6_revision,
         mcq_activity_1_revision,
         one_at_a_time_question_page_revision,
         empty_one_at_a_time_question_page_revision,
@@ -511,6 +528,7 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       page_3: page_3_revision,
       page_4: page_4_revision,
       page_5: page_5_revision,
+      page_6: page_6_revision,
       section_1: section_1_revision,
       subsection_1: subsection_1_revision,
       module_1: module_1_revision,
@@ -1460,6 +1478,80 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute has_element?(view, "div[id='dialogue-window']")
       refute has_element?(view, "div[id=ai_bot_collapsed]")
     end
+
+    test "show check icon when page is not graded and is completed", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      set_progress(section.id, page_2.resource_id, user.id, 1.0, page_2)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
+
+      assert has_element?(view, ~s{div[role="check icon"]})
+    end
+
+    test "show square checked icon when page is graded and is completed", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_5: page_5,
+      page_6: page_6
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      set_progress(section.id, page_5.resource_id, user.id, 1.0, page_5)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_6.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
+
+      assert has_element?(view, ~s{svg[role="square checked icon"]})
+    end
+
+    test "show orange flag icon when page is graded and is not completed", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_5: page_5,
+      page_6: page_6
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      set_progress(section.id, page_5.resource_id, user.id, 0.5, page_5)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_6.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, ~s{div[role="prev_page"]}, page_5.title)
+
+      assert has_element?(view, ~s{svg[role="flag icon"]})
+    end
+
+    test "does not show any icon when page is not graded and is not completed", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_1: page_1,
+      page_2: page_2
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_1.slug))
+      ensure_content_is_visible(view)
+
+      assert has_element?(view, ~s{div[role="next_page"]}, page_2.title)
+
+      refute has_element?(view, ~s{div[role="check icon"]})
+      refute has_element?(view, ~s{svg[role="square checked icon"]})
+      refute has_element?(view, ~s{svg[role="flag icon"]})
+    end
   end
 
   describe "annotations toggle" do
@@ -2107,5 +2199,47 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
     view
     |> element("#eventIntercept")
     |> render_hook("survey_scripts_loaded", %{"loaded" => true})
+  end
+
+  defp set_progress(
+         section_id,
+         resource_id,
+         user_id,
+         progress,
+         revision,
+         opts \\ [attempt_state: :evaluated]
+       ) do
+    {:ok, resource_access} =
+      Core.track_access(resource_id, section_id, user_id)
+      |> Core.update_resource_access(%{progress: progress, score: 5.0, out_of: 10.0})
+
+    attempt_attrs =
+      case opts[:updated_at] do
+        nil ->
+          %{}
+
+        updated_at ->
+          Ecto.Changeset.change(resource_access, updated_at: updated_at)
+          |> Oli.Repo.update()
+
+          %{updated_at: updated_at}
+      end
+
+    insert(
+      :resource_attempt,
+      Map.merge(attempt_attrs, %{
+        resource_access: resource_access,
+        revision: revision,
+        lifecycle_state: opts[:attempt_state],
+        date_submitted:
+          if(opts[:attempt_state] == :evaluated, do: ~U[2024-05-16 20:00:00Z], else: nil)
+      })
+    )
+
+    insert(:resource_summary, %{
+      resource_id: resource_id,
+      section_id: section_id,
+      user_id: user_id
+    })
   end
 end
