@@ -96,17 +96,30 @@ export const Scroller = {
     };
 
     window.addEventListener('phx:scroll-y-to-target', (e: Event) => {
-      const el = document.getElementById((e as CustomEvent).detail.id);
-      const scrollBehavior = (e as CustomEvent).detail.scroll_behavior || 'smooth';
-      const offset = (e as CustomEvent).detail.offset || 0;
-      if (el) {
-        window.scrollTo({ top: el.offsetTop - offset, behavior: scrollBehavior });
+      const detail = (e as CustomEvent).detail;
+      const getElement = () =>
+        document.getElementById(detail.id) || document.querySelector(`[role=${detail.role}]`);
 
-        if ((e as CustomEvent).detail.pulse == true) {
-          setTimeout(() => {
-            el.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
-          }, (e as CustomEvent).detail.pulse_delay || 300);
+      let el = getElement() as HTMLDivElement;
+      if (!el) return;
+
+      const scrollBehavior = detail.scroll_behavior || 'smooth';
+      const offset = detail.offset || 0;
+
+      setTimeout(() => {
+        el = getElement() as HTMLDivElement;
+        if (el) {
+          window.scrollTo({ top: el.offsetTop - offset, behavior: scrollBehavior });
         }
+      }, 400);
+
+      if (detail.pulse) {
+        setTimeout(() => {
+          el = getElement() as HTMLDivElement;
+          if (el) {
+            el.classList.add('animate-[pulse_0.7s_cubic-bezier(0.4,0,0.6,1)2]');
+          }
+        }, detail.pulse_delay || 300);
       }
     });
 
