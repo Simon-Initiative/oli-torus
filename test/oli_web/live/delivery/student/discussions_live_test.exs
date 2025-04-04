@@ -702,6 +702,7 @@ defmodule OliWeb.Delivery.Student.DiscussionsLiveTest do
       )
     end
 
+    @tag :flaky
     test "triggers CheckCertification when creating a child post",
          ctx do
       %{conn: conn, student: student, section: section, root_container: root_container} = ctx

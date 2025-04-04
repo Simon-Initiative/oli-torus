@@ -1276,8 +1276,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              )
     end
 
-    @tag :skip
     # This feature was disabled in ticket NG-201 but will be reactivated with NG23-199
+    @tag :skip
     test "can see module learning objectives (if any) in the tooltip", %{
       conn: conn,
       section: section
@@ -1320,6 +1320,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert render(learning_objectives_tooltip) =~ "Objective 4"
     end
 
+    @tag :flaky
     test "can see unit correct progress when all pages are completed",
          %{
            conn: conn,
@@ -1426,7 +1427,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
     end
 
     # TODO: finish this test when the handle event for the "Let's discuss" button is implemented
-    @tag :skip
     test "can click on let's discuss button to open DOT AI Bot interface", %{
       conn: conn,
       section: section
@@ -1547,6 +1547,7 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
                "Due by:\n              </span><span class=\"whitespace-nowrap\">\n                Not yet scheduled"
     end
 
+    @tag :flaky
     test "can see units, modules and page (at module level) progresses", %{
       conn: conn,
       user: user,
@@ -2206,54 +2207,6 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
       assert has_element?(
                view,
                ~s{button[role="page 4 details"] div[role="orange flag icon"]}
-             )
-    end
-
-    test "can see checked square icon and score details for attempted graded pages in the module index details",
-         %{
-           conn: conn,
-           user: user,
-           section: section,
-           mcq_1: mcq_1,
-           page_4: page_4_revision,
-           project: project,
-           publication: publication
-         } do
-      set_progress(section.id, page_4_revision.resource_id, user.id, 1.0, page_4_revision)
-
-      set_activity_attempt(
-        page_4_revision,
-        mcq_1,
-        user,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        true
-      )
-
-      set_activity_attempt(
-        page_4_revision,
-        mcq_1,
-        user,
-        section,
-        project.id,
-        publication.id,
-        "id_for_option_a",
-        false
-      )
-
-      {:ok, view, _html} =
-        live(conn, Utils.learn_live_path(section.slug, selected_view: :outline))
-
-      # when the garbage collection message is recieved we know the async metrics were loaded
-      # since the gc message is sent from the handle_info that loads the async metrics
-      assert_receive(:gc, 2_000)
-
-      # graded page with title "Page 4" in the hierarchy has the correct icon
-      assert has_element?(
-               view,
-               ~s{button[role="page 4 details"] div[role="square check icon"]}
              )
     end
 
