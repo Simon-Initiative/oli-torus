@@ -233,9 +233,22 @@ defmodule Oli.Interop.Ingest do
       "amount" => Map.get(product, "amount")
     }
 
-    # '|| "null"' ensures a valid value is applied when a certificate is
-    # NOT present in the project's bundle.
-    certificate_params = Jason.decode!(Map.get(product, "certificate") || "null")
+    {certificate_params, new_product_attrs} =
+      case Map.get(product, "certificate") do
+        nil ->
+          {nil, new_product_attrs}
+
+        cert ->
+          assessments =
+            Map.get(cert, "custom_assessments", [])
+            |> Enum.map(fn v ->
+              Map.get(page_map, Integer.to_string(v)).resource_id
+            end)
+
+          cert_params = Map.put(cert, "custom_assessments", assessments)
+          product_attrs = Map.put(new_product_attrs, "certificate_enabled", true)
+          {cert_params, product_attrs}
+      end
 
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
@@ -297,9 +310,9 @@ defmodule Oli.Interop.Ingest do
               attrs = %{
                 tags: [],
                 title: Map.get(item, "title"),
-                intro_content: Map.get(item, "intro_content", %{}),
-                intro_video: Map.get(item, "intro_video"),
-                poster_image: Map.get(item, "poster_image"),
+                intro_content: Map.get(item, "introContent", %{}),
+                intro_video: Map.get(item, "introVideo"),
+                poster_image: Map.get(item, "posterImage"),
                 children: [],
                 author_id: as_author.id,
                 content: %{"model" => []},
@@ -704,6 +717,67 @@ defmodule Oli.Interop.Ingest do
       legacy_id = Map.get(page, "legacyId", nil)
       legacy_path = Map.get(page, "legacyPath", nil)
 
+      scoring_strategy_id =
+        case Map.get(page, "scoringStrategyId") do
+          nil -> Oli.Resources.ScoringStrategy.get_id_by_type("best")
+          strategy_id -> strategy_id
+        end
+
+      explanation_strategy =
+        case Map.get(page, "explanationStrategy") do
+          nil -> get_explanation_strategy(graded)
+          explanation_strategy -> explanation_strategy
+        end
+
+      max_attempts =
+        case Map.get(page, "maxAttempts") do
+          nil ->
+            if graded do
+              5
+            else
+              0
+            end
+
+          max_attempts ->
+            max_attempts
+        end
+
+      recommended_attempts =
+        case Map.get(page, "recommendedAttempts") do
+          nil ->
+            5
+
+          recommended_attempts ->
+            recommended_attempts
+        end
+
+      full_progress_pct =
+        case Map.get(page, "fullProgressPct") do
+          nil ->
+            100
+
+          full_progress_pct ->
+            full_progress_pct
+        end
+
+      retake_mode =
+        case Map.get(page, "retakeMode") do
+          nil ->
+            :normal
+
+          retake_mode ->
+            retake_mode
+        end
+
+      assessment_mode =
+        case Map.get(page, "assessmentMode") do
+          nil ->
+            :traditional
+
+          assessment_mode ->
+            assessment_mode
+        end
+
       %{
         legacy: %{id: legacy_id, path: legacy_path},
         tags: transform_tags(page, tag_map),
@@ -721,14 +795,20 @@ defmodule Oli.Interop.Ingest do
             |> Enum.filter(fn f -> !is_nil(f) end)
         },
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        scoring_strategy_id: scoring_strategy_id,
         graded: graded,
-        max_attempts:
-          if graded do
-            5
-          else
-            0
-          end
+        relates_to:
+          Map.get(page, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
+        max_attempts: max_attempts,
+        explanation_strategy: explanation_strategy,
+        intro_content: Map.get(page, "introContent", %{}),
+        intro_video: Map.get(page, "introVideo"),
+        poster_image: Map.get(page, "posterImage"),
+        recommended_attempts: recommended_attempts,
+        duration_minutes: Map.get(page, "durationMinutes"),
+        full_progress_pct: full_progress_pct,
+        retake_mode: retake_mode,
+        assessment_mode: assessment_mode
       }
       |> create_resource(project)
     end
@@ -929,9 +1009,9 @@ defmodule Oli.Interop.Ingest do
     attrs = %{
       tags: transform_tags(container, tag_map),
       title: Map.get(container, "title"),
-      intro_content: Map.get(container, "intro_content", %{}),
-      intro_video: Map.get(container, "intro_video"),
-      poster_image: Map.get(container, "poster_image"),
+      intro_content: Map.get(container, "introContent", %{}),
+      intro_video: Map.get(container, "introVideo"),
+      poster_image: Map.get(container, "posterImage"),
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},
@@ -1038,6 +1118,16 @@ defmodule Oli.Interop.Ingest do
           Map.put(m, e, objectives)
         end)
     end
+  end
+
+  defp get_explanation_strategy(graded)
+  
+  defp get_explanation_strategy(true) do
+    %Oli.Resources.ExplanationStrategy{type: :after_max_resource_attempts_exhausted}
+  end
+
+  defp get_explanation_strategy(false) do
+    %Oli.Resources.ExplanationStrategy{type: :after_set_num_attempts, set_num_attempts: 2}
   end
 
   def prettify_error({:error, :invalid_archive}) do

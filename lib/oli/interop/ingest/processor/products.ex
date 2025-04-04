@@ -102,6 +102,23 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       "amount" => Map.get(product, "amount")
     }
 
+    {certificate_params, new_product_attrs} =
+      case Map.get(product, "certificate") do
+        nil ->
+          {nil, new_product_attrs}
+
+        cert ->
+          assessments =
+            Map.get(cert, "custom_assessments", [])
+            |> Enum.map(fn v ->
+              Map.get(legacy_to_resource_id_map, Integer.to_string(v))
+            end)
+
+          cert_params = Map.put(cert, "custom_assessments", assessments)
+          product_attrs = Map.put(new_product_attrs, "certificate_enabled", true)
+          {cert_params, product_attrs}
+      end
+
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
     case Oli.Delivery.Sections.Blueprint.create_blueprint(
@@ -111,7 +128,24 @@ defmodule Oli.Interop.Ingest.Processor.Products do
            hierarchy_definition,
            new_product_attrs
          ) do
-      {:ok, _} -> {:ok, %{state | container_id_map: container_id_map}}
+      {:ok, blueprint} ->
+        maybe_add_certificate(certificate_params, blueprint, %{
+          state
+          | container_id_map: container_id_map
+        })
+
+      e ->
+        e
+    end
+  end
+
+  defp maybe_add_certificate(nil, _blueprint, state), do: {:ok, state}
+
+  defp maybe_add_certificate(certificate_params, blueprint, state) do
+    certificate_params = Map.put(certificate_params, "section_id", blueprint.id)
+
+    case Oli.Delivery.Certificates.create(certificate_params) do
+      {:ok, _certificate} -> {:ok, state}
       e -> e
     end
   end
@@ -148,9 +182,9 @@ defmodule Oli.Interop.Ingest.Processor.Products do
               attrs = %{
                 tags: [],
                 title: Map.get(item, "title"),
-                intro_content: Map.get(item, "intro_content", %{}),
-                intro_video: Map.get(item, "intro_video"),
-                poster_image: Map.get(item, "poster_image"),
+                intro_content: Map.get(item, "introContent", %{}),
+                intro_video: Map.get(item, "introVideo"),
+                poster_image: Map.get(item, "posterImage"),
                 children: [],
                 author_id: as_author.id,
                 content: %{"model" => []},

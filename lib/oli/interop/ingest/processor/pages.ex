@@ -75,6 +75,67 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
       |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
 
+    scoring_strategy_id =
+      case Map.get(resource, "scoringStrategyId") do
+        nil -> Oli.Resources.ScoringStrategy.get_id_by_type("best")
+        strategy_id -> strategy_id
+      end
+
+    explanation_strategy =
+      case Map.get(resource, "explanationStrategy") do
+        nil -> get_explanation_strategy(graded)
+        explanation_strategy -> explanation_strategy
+      end
+
+    max_attempts =
+      case Map.get(resource, "maxAttempts") do
+        nil ->
+          if graded do
+            5
+          else
+            0
+          end
+
+        max_attempts ->
+          max_attempts
+      end
+
+    recommended_attempts =
+      case Map.get(resource, "recommendedAttempts") do
+        nil ->
+          5
+
+        recommended_attempts ->
+          recommended_attempts
+      end
+
+    full_progress_pct =
+      case Map.get(resource, "fullProgressPct") do
+        nil ->
+          100
+
+        full_progress_pct ->
+          full_progress_pct
+      end
+
+    retake_mode =
+      case Map.get(resource, "retakeMode") do
+        nil ->
+          :normal
+
+        retake_mode ->
+          retake_mode
+      end
+
+    assessment_mode =
+      case Map.get(resource, "assessmentMode") do
+        nil ->
+          :traditional
+
+        assessment_mode ->
+          assessment_mode
+      end
+
     %{
       slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
       legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
@@ -96,19 +157,22 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       children: {:placeholder, :children},
       resource_type_id: {:placeholder, :resource_type_id},
       activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-      explanation_strategy: get_explanation_strategy(graded),
+      scoring_strategy_id: scoring_strategy_id,
+      explanation_strategy: explanation_strategy,
       collab_space_config: read_collab_space(resource),
       purpose: Map.get(resource, "purpose", "foundation") |> String.to_existing_atom(),
       relates_to:
         Map.get(resource, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
       graded: graded,
-      max_attempts:
-        if graded do
-          5
-        else
-          0
-        end,
+      max_attempts: max_attempts,
+      intro_content: Map.get(resource, "introContent", %{}),
+      intro_video: Map.get(resource, "introVideo"),
+      poster_image: Map.get(resource, "posterImage"),
+      recommended_attempts: recommended_attempts,
+      duration_minutes: Map.get(resource, "durationMinutes"),
+      full_progress_pct: full_progress_pct,
+      retake_mode: retake_mode,
+      assessment_mode: assessment_mode,
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }

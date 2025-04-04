@@ -170,7 +170,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "customizations" => custom_labels,
             "welcome_title" => attrs["welcome_title"] || project.welcome_title,
             "encouraging_subtitle" =>
-              attrs["encouraging_subtitle"] || project.encouraging_subtitle
+              attrs["encouraging_subtitle"] || project.encouraging_subtitle,
+            "certificate_enabled" => attrs["certificate_enabled"] || false
           }
 
           case Sections.create_section(new_blueprint) do
