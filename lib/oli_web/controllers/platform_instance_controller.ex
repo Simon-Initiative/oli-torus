@@ -4,6 +4,8 @@ defmodule OliWeb.PlatformInstanceController do
   alias Oli.Repo
   alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
+  alias Oli.Activities
+  alias Oli.Utils.Slug
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
 
@@ -17,14 +19,24 @@ defmodule OliWeb.PlatformInstanceController do
     render(conn, "new.html", changeset: changeset)
   end
 
-  def create(conn, %{"platform_instance" => platform_instance_params}) do
+  def create(conn, %{
+        "platform_instance" => platform_instance_params
+      }) do
     Repo.transaction(fn ->
       with {:ok, platform_instance} <-
              PlatformInstances.create_platform_instance(platform_instance_params),
+           {:ok, activity_registration} <-
+             Activities.register_lti_external_tool_activity(
+               platform_instance_params["name"],
+               platform_instance_params["name"],
+               platform_instance_params["description"]
+             ),
            {:ok, deployment} <-
-             PlatformExternalTools.create_lti_external_tool_deployment(%{
-               platform_instance_id: platform_instance.id
-             }) do
+             PlatformExternalTools.create_lti_external_tool_activity_deployment(%{
+               platform_instance_id: platform_instance.id,
+               activity_registration_id: activity_registration.id
+             })
+             |> dbg do
         {platform_instance, deployment}
       else
         error -> error
@@ -56,7 +68,7 @@ defmodule OliWeb.PlatformInstanceController do
     }
 
     deployment =
-      PlatformExternalTools.get_lti_external_tool_deployment_by(
+      PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
         platform_instance_id: platform_instance.id
       )
 

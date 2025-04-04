@@ -154,7 +154,7 @@ defmodule OliWeb.LtiController do
           PlatformInstances.get_platform_instance_by_client_id(client_id)
 
         deployment =
-          Oli.Lti.PlatformExternalTools.get_lti_external_tool_deployment_by(
+          Oli.Lti.PlatformExternalTools.get_lti_external_tool_activity_deployment_by(
             platform_instance_id: platform_instance.id
           )
 
@@ -164,7 +164,7 @@ defmodule OliWeb.LtiController do
         }
 
         claims = [
-          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.id),
+          Lti_1p3.Claims.DeploymentId.deployment_id(deployment.deployment_id),
           Lti_1p3.Claims.MessageType.message_type(:lti_resource_link_request),
           Lti_1p3.Claims.Version.version("1.3.0"),
           Lti_1p3.Claims.ResourceLink.resource_link(resource_link),

@@ -27,6 +27,8 @@ export function invokeCreationFunc(
   id: string,
   context: ResourceContext,
 ): Promise<ActivityModelSchema> {
+  console.log(window.oliCreationFuncs);
+
   if (window.oliCreationFuncs !== undefined) {
     const fn = window.oliCreationFuncs[id];
     if (typeof fn === 'function') {
