@@ -12,11 +12,13 @@ import {
 import { selectCurrentSelection, setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { IPartLayout } from '../../../delivery/store/features/activities/slice';
+import { ReorderingIcon } from '../Flowchart/toolbar/ReorderingIcon';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
 const ComponentSearchContextMenu: React.FC<{
   authoringContainer: React.RefObject<HTMLElement>;
-}> = ({ authoringContainer }) => {
+  basicAuthoring?: boolean;
+}> = ({ authoringContainer, basicAuthoring }) => {
   const [show, setShow] = useState(false);
   const [target, setTarget] = useState(null);
   const paths = useSelector(selectPaths);
@@ -98,15 +100,23 @@ const ComponentSearchContextMenu: React.FC<{
           delay={{ show: 150, hide: 150 }}
           overlay={
             <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-              Find Components
+              {basicAuthoring
+                ? 'Reorder components to set the reading order for screen readers.'
+                : 'Find Components'}
             </Tooltip>
           }
         >
-          <span>
-            <button className="px-2 btn btn-link" onClick={handleClick}>
-              <img src={`${paths.images}/icons/icon-findComponents.svg`}></img>
-            </button>
-          </span>
+          {basicAuthoring ? (
+            <span style={{ cursor: 'pointer' }} onClick={handleClick}>
+              <ReorderingIcon></ReorderingIcon>
+            </span>
+          ) : (
+            <span>
+              <button className="px-2 btn btn-link" onClick={handleClick}>
+                <img src={`${paths.images}/icons/icon-findComponents.svg`}></img>
+              </button>
+            </span>
+          )}
         </OverlayTrigger>
 
         <Overlay
