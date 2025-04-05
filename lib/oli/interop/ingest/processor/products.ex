@@ -99,7 +99,8 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       "payment_options" => Map.get(product, "paymentOptions"),
       "pay_by_institution" => Map.get(product, "payByInstitution"),
       "grace_period_days" => Map.get(product, "gracePeriodDays"),
-      "amount" => Map.get(product, "amount")
+      "amount" => Map.get(product, "amount"),
+      "certificate_enabled" => Map.get(product, "certificateEnabled", false)
     }
 
     {certificate_params, new_product_attrs} =

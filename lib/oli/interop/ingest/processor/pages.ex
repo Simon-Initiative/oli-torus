@@ -13,7 +13,12 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     )
   end
 
-  defp get_explanation_strategy(graded)
+  defp get_explanation_strategy(%{"type" => type, "set_num_attempts" => set_num_attempts}) do
+    %Oli.Resources.ExplanationStrategy{
+      type: String.to_atom(type),
+      set_num_attempts: set_num_attempts
+    }
+  end
 
   defp get_explanation_strategy(true) do
     %Oli.Resources.ExplanationStrategy{type: :after_max_resource_attempts_exhausted}
@@ -84,7 +89,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     explanation_strategy =
       case Map.get(resource, "explanationStrategy") do
         nil -> get_explanation_strategy(graded)
-        explanation_strategy -> explanation_strategy
+        explanation_strategy -> get_explanation_strategy(explanation_strategy)
       end
 
     max_attempts =
@@ -124,7 +129,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
           :normal
 
         retake_mode ->
-          retake_mode
+          String.to_atom(retake_mode)
       end
 
     assessment_mode =
@@ -133,7 +138,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
           :traditional
 
         assessment_mode ->
-          assessment_mode
+          String.to_atom(assessment_mode)
       end
 
     %{

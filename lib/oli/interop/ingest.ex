@@ -230,7 +230,8 @@ defmodule Oli.Interop.Ingest do
       "payment_options" => Map.get(product, "paymentOptions"),
       "pay_by_institution" => Map.get(product, "payByInstitution"),
       "grace_period_days" => Map.get(product, "gracePeriodDays"),
-      "amount" => Map.get(product, "amount")
+      "amount" => Map.get(product, "amount"),
+      "certificate_enabled" => Map.get(product, "certificateEnabled", false)
     }
 
     {certificate_params, new_product_attrs} =
@@ -726,7 +727,7 @@ defmodule Oli.Interop.Ingest do
       explanation_strategy =
         case Map.get(page, "explanationStrategy") do
           nil -> get_explanation_strategy(graded)
-          explanation_strategy -> explanation_strategy
+          explanation_strategy -> get_explanation_strategy(explanation_strategy)
         end
 
       max_attempts =
@@ -766,7 +767,7 @@ defmodule Oli.Interop.Ingest do
             :normal
 
           retake_mode ->
-            retake_mode
+            String.to_atom(retake_mode)
         end
 
       assessment_mode =
@@ -775,7 +776,7 @@ defmodule Oli.Interop.Ingest do
             :traditional
 
           assessment_mode ->
-            assessment_mode
+            String.to_atom(assessment_mode)
         end
 
       %{
@@ -1120,8 +1121,13 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp get_explanation_strategy(graded)
-  
+  defp get_explanation_strategy(%{"type" => type, "set_num_attempts" => set_num_attempts}) do
+    %Oli.Resources.ExplanationStrategy{
+      type: String.to_atom(type),
+      set_num_attempts: set_num_attempts
+    }
+  end
+
   defp get_explanation_strategy(true) do
     %Oli.Resources.ExplanationStrategy{type: :after_max_resource_attempts_exhausted}
   end

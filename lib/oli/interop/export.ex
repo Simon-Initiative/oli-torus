@@ -492,6 +492,7 @@ defmodule Oli.Interop.Export do
       payByInstitution: product.pay_by_institution,
       gracePeriodDays: product.grace_period_days,
       amount: product.amount,
+      certificateEnabled: product.certificate_enabled,
       certificate: certificate,
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_resource_id, id) end)
     }
