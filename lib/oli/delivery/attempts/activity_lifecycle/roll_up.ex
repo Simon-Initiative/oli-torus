@@ -119,7 +119,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       activity_scoring_strategy_id: activity_scoring_strategy_id,
       page_scoring_strategy_id: page_scoring_strategy_id,
       graded: graded,
-      batch_scoring: batch_scoring
+      batch_scoring: batch_scoring,
+      grade_passback_enabled: grade_passback_enabled,
+      section_id: section_id
     } = get_attempts_and_page_details(activity_attempt_guid)
 
     score_as_you_go? = graded and !batch_scoring
@@ -168,7 +170,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         with {1, _} <- update_resource_access(resource_access_id, %{score: page_score, out_of: page_out_of}, now),
           {1, _} <- update_resource_attempt(resource_attempt_id, %{score: page_score, out_of: page_score}, now),
           {1, _} <- update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of, aggregate_score: aggregate_score, aggregate_out_of: aggregate_out_of}, now) do
+
+          if grade_passback_enabled and graded do
+            initiate_grade_passback(resource_access_id)
+          end
+
           :ok
+
         else
           _ -> :error
         end
@@ -271,6 +279,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
     )
   end
 
+  defp initiate_grade_passback(section_id, resource_access_id) do
+    Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
+      section_id,
+      resource_access_id,
+      :inline
+    )
+  end
+
   defp update_part_attempts_for_activity(activity_attempt, datashop_session_id, effective_settings) do
     part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
 
@@ -344,6 +360,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
       join: ra in ResourceAttempt, on: a.resource_attempt_id == ra.id,
       join: rev in Revision, on: rev.id == a.revision_id,
       join: rev2 in Revision, on: rev2.id == ra.revision_id,
+      join: r in ResourceAccess, on: r.id == ra.resource_access_id,
+      join: s in Section, on: s.id == r.section_id,
       where: a.attempt_guid == ^activity_attempt_guid,
       select: %{
         activity_attempt_id: a.id,
@@ -353,7 +371,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
         activity_scoring_strategy_id: rev.scoring_strategy_id,
         graded: rev2.graded,
         page_scoring_strategy_id: rev2.scoring_strategy_id,
-        batch_scoring: rev2.batch_scoring
+        batch_scoring: rev2.batch_scoring,
+        grade_passback_enabled: s.grade_passback_enabled,
+        section_id: s.id
       }
     )
     |> Repo.one()

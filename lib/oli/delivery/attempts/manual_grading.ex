@@ -247,8 +247,48 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
     part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
     datashop_session_id = hd(part_attempts).datashop_session_id
+    client_evaluations = to_client_evaluations(part_attempts, score_feedbacks_map)
 
-    client_evaluations = Enum.filter(part_attempts, fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :submitted end)
+    graded = activity_attempt.graded
+    resource_attempt_guid = activity_attempt.resource_attempt_guid
+
+    # We need to set the grading approach to automatic for all part attempts
+    # so that the rollup will have an opportunity to update the activity attempt
+    # to :evaluated - otherwise it will remain in :submitted
+    mocked_part_attempts =
+      Enum.map(part_attempts, fn part_attempt ->
+        Map.put(part_attempt, :grading_approach, :automatic)
+      end)
+
+    Oli.Repo.transaction(fn ->
+
+      case Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
+        section_slug,
+        activity_attempt.attempt_guid,
+        client_evaluations,
+        datashop_session_id,
+        [
+          enforce_client_side_eval: false,
+          part_attempts_input: mocked_part_attempts
+        ]
+      ) do
+
+        {:ok, _} ->
+          maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
+
+        {:error, error} ->
+          Repo.rollback(error)
+
+      end
+    end)
+
+  end
+
+  # This function takes a list of part attempts and a map of score feedbacks from the UI
+  # and converts them to a list of client evaluations that can be used to
+  # to evaluate these part attempts via Evaluate.apply_client_evaluation/5
+  defp to_client_evaluations(part_attempts, score_feedbacks_map) do
+    Enum.filter(part_attempts, fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :submitted end)
     |> Enum.map(fn pa ->
       case Map.get(score_feedbacks_map, pa.attempt_guid) do
         %{score: score, out_of: out_of, feedback: feedback} ->
@@ -272,35 +312,6 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       end
     end)
     |> Enum.filter(fn client_eval -> client_eval != nil end)
-
-    # We need to set the grading approach to automatic for all part attempts
-    # so that the rollup will have an opportunity to update the activity attempt
-    # to :evaluated - otherwise it will remain in :submitted
-    mocked_part_attempts =
-      Enum.map(part_attempts, fn part_attempt ->
-        Map.put(part_attempt, :grading_approach, :automatic)
-      end)
-
-    Oli.Repo.transaction(fn ->
-
-      Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.apply_client_evaluation(
-        section_slug,
-        activity_attempt.attempt_guid,
-        client_evaluations,
-        datashop_session_id,
-        [
-          enforce_client_side_eval: false,
-          part_attempts_input: mocked_part_attempts
-        ]
-      )
-
-      graded = activity_attempt.graded
-      resource_attempt_guid = activity_attempt.resource_attempt_guid
-
-      maybe_finalize_resource_attempt(section, graded, resource_attempt_guid)
-
-    end)
-
   end
 
   defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid),
