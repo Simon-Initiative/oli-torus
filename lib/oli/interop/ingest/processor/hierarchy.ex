@@ -99,7 +99,7 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
       title: Map.get(container, "title"),
       intro_content: Map.get(container, "introContent", %{}),
       intro_video: Map.get(container, "introVideo"),
-      poster_image: Map.get(container, "posterVmage"),
+      poster_image: Map.get(container, "posterImage"),
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},
