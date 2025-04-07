@@ -136,7 +136,7 @@ https://tailwindcss.com/docs/utility-first
 }
 
 .search-result em {
-  @apply not-italic bg-yellow-50;
+  @apply not-italic bg-yellow-100 dark:bg-yellow-800;
 }
 
 .progress-options {

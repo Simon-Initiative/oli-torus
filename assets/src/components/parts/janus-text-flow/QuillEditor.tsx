@@ -27,7 +27,21 @@ FontAttributor.whitelist = supportedFonts.map(getFontName);
 Quill.register(FontAttributor, true);
 
 const FontSizeAttributor = Quill.import('attributors/style/size');
-FontSizeAttributor.whitelist = ['10px', '12px', '14px', '16px', '18px'];
+// Expanding the font-size whitelist to include sizes above 20px, ensuring that migrated lessons with larger font sizes render correctly.
+// This also resolves an issue where editing a text field with a larger font size previously caused the editor to remove the font size, making the text smaller.
+FontSizeAttributor.whitelist = [
+  '10px',
+  '12px',
+  '14px',
+  '16px',
+  '18px',
+  '20px',
+  '24px',
+  '32px',
+  '36px',
+  '48px',
+  '72px',
+];
 Quill.register(FontSizeAttributor, true);
 
 const getCssForFonts = (fonts: string[]) => {
@@ -51,30 +65,44 @@ const getCssForFonts = (fonts: string[]) => {
 const fontStyles = `${getCssForFonts(supportedFonts)}
 /* default normal size */
 .ql-container {
-  font-size: 14px !important;
-}
-.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before {
-  content: 'Smaller (10px)';
-  font-size: 10px !important;
+  font-size: 20px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
-  content: 'Small (12px)';
+  content: '12px';
   font-size: 12px !important;
 }
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before {
-  content: 'Normal (14px)';
+  content: '14px';
   font-size: 14px !important;
 }
-
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
-  content: 'Large (16px)';
+  content: '16px';
   font-size: 16px !important;
 }
-
 .ql-snow .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
-  content: 'Larger (18px)';
+  content: '18px';
   font-size: 18px !important;
 }
+.ql-snow .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before {
+  content: '20px';
+  font-size: 20px !important;
+}
+  .ql-snow .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before {
+  content: '12px';
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before {
+  content: '14px';
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before {
+  content: '16px';
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before {
+  content: '18px';
+}
+.ql-snow .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before {
+  content: '20px';
+}
+
 `;
 export const QuillEditor: React.FC<QuillEditorProps> = ({
   tree,
@@ -208,7 +236,7 @@ export const QuillEditor: React.FC<QuillEditorProps> = ({
             },
             { background: [] },
           ], // dropdown with defaults from theme
-          [{ font: FontAttributor.whitelist }, { size: ['10px', '12px', '14px', '16px', '18px'] }],
+          [{ font: FontAttributor.whitelist }, { size: ['12px', '14px', '16px', '18px', '20px'] }],
           [{ align: [] }],
           ['link', 'adaptivity'],
           ['clean'], // remove formatting button

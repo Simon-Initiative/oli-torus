@@ -115,7 +115,7 @@ const OptionFeedback: React.FC<OptionFeedbackProps> = ({
   return (
     <div className="form-group">
       <label>{labelOption}</label>
-      <input
+      <textarea
         onBlur={onBlur}
         className="form-control"
         value={feedback}

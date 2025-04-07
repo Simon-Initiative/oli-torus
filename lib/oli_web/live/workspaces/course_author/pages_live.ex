@@ -398,7 +398,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
     {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
-  def handle_event("create_page", %{"type" => type}, socket) do
+  def handle_event("create_page", %{"type" => type, "scored" => scored}, socket) do
     %{
       project: project,
       author: author
@@ -406,8 +406,8 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
 
     case ContainerEditor.add_new(
            nil,
-           "Basic",
            type,
+           scored,
            author,
            project
          ) do
@@ -596,11 +596,18 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
             type="button"
             class="dropdown-item"
             phx-click="create_page"
-            phx-value-type="Unscored"
+            phx-value-type="Basic"
+            phx-value-scored="Unscored"
           >
             Practice Page
           </button>
-          <button type="button" class="dropdown-item" phx-click="create_page" phx-value-type="Scored">
+          <button
+            type="button"
+            class="dropdown-item"
+            phx-click="create_page"
+            phx-value-type="Basic"
+            phx-value-scored="Scored"
+          >
             Scored Assessment
           </button>
           <%= if Oli.Features.enabled?("adaptivity") do %>
@@ -609,6 +616,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.PagesLive do
               class="dropdown-item"
               phx-click="create_page"
               phx-value-type="Adaptive"
+              phx-value-scored="Unscored"
             >
               Adaptive Page
             </button>
