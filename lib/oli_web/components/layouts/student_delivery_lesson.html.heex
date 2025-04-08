@@ -119,7 +119,16 @@
           </div>
           <OliWeb.Components.Delivery.Layouts.tech_support_button
             id="tech-support"
-            class="z-[999] fixed bottom-20 left-4 lg:bottom-2 lg:left-[70px]"
+            class="z-[999] fixed hidden lg:block lg:bottom-2 lg:left-[70px]"
+          />
+          <%!--
+          this is the mobile version of the tech support button,
+          to avoid showing the "Support" text that overlaps with the page text content
+          --%>
+          <OliWeb.Components.Delivery.Layouts.tech_support_button
+            id="tech-support-2"
+            class="z-[999] fixed bottom-20 left-4 lg:hidden"
+            sidebar_expanded={false}
           />
         </div>
 

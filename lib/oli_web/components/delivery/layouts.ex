@@ -789,7 +789,9 @@ defmodule OliWeb.Components.Delivery.Layouts do
         <div class="w-5 h-5 flex items-center justify-center">
           <Icons.support class="" />
         </div>
-        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">Support</div>
+        <div :if={@sidebar_expanded} class="text-sm font-medium tracking-tight">
+          Support
+        </div>
       </div>
     </button>
     """
