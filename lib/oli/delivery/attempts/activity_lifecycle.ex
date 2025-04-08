@@ -141,7 +141,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
             # parse and transform
             with {:ok, model} <- Model.parse(revision.content),
                  {:ok, model_to_store, working_model} <-
-                   maybe_transform_model(activity_attempt, revision, model),
+                   maybe_transform_model(activity_attempt, revision, model, effective_settings),
                  {:ok, new_activity_attempt} <-
                    create_activity_attempt(%{
                      attempt_guid: UUID.uuid4(),
@@ -234,7 +234,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   defp maybe_transform_model(
          %ActivityAttempt{revision: previous_revision, transformed_model: transformed_model},
          %Revision{} = current_revision,
-         %Model{} = parsed_model
+         %Model{} = parsed_model,
+         effective_settings
        ) do
     transform = fn revision ->
       case Transformers.apply_transforms([revision]) do
@@ -244,7 +245,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       end
     end
 
+    contains_dynamic_transform? =
+      Enum.any?(parsed_model.transformations, fn t -> t.operation == :variable_substitution end)
+
     cond do
+
+       # The replacement strategy is dynamic and this is a dynamic question
+      effective_settings.replacement_strategy == :dynamic and contains_dynamic_transform? ->
+        transform.(current_revision)
+
       # The revisions have changed, we must attempt a transform
       previous_revision.id != current_revision.id ->
         transform.(current_revision)

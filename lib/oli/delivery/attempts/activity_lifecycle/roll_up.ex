@@ -63,6 +63,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
   alias Oli.Repo
   alias Oli.Delivery.Attempts.Scoring
   alias Oli.Resources.Revision
+  alias Oli.Delivery.Sections.Section
 
   @doc """
   Returns a function that when executed, will properly roll up the evaluated
@@ -172,7 +173,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
           {1, _} <- update_activity_attempt(activity_attempt_id, %{score: score, out_of: out_of, aggregate_score: aggregate_score, aggregate_out_of: aggregate_out_of}, now) do
 
           if grade_passback_enabled and graded do
-            initiate_grade_passback(resource_access_id)
+            initiate_grade_passback(section_id, resource_access_id)
           end
 
           :ok
@@ -389,6 +390,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.RollUp do
             aa.id < aa2.id,
         where: aa.resource_attempt_id == ^resource_attempt_id and (is_nil(aa2) or aa.resource_id == ^current_activity_id),
         select: %{
+          attempt_guid: aa.attempt_guid,
           resource_id: aa.resource_id,
           score: aa.score,
           out_of: aa.out_of,
