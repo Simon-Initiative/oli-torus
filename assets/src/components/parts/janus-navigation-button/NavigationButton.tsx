@@ -415,7 +415,21 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     styles.backgroundColor = backgroundColor;
     janusButtonStyle.backgroundColor = backgroundColor;
   }
+  const isVertical = imagePosition === 'Top' || imagePosition === 'Bottom';
+  //Apply these style only if button have image
+  if (buttonImageSrc?.length) {
+    styles.display = 'flex';
+    styles.flexDirection = isVertical
+      ? imagePosition === 'Top'
+        ? 'column'
+        : 'column-reverse'
+      : imagePosition === 'Left'
+      ? 'row'
+      : 'row-reverse';
 
+    styles.alignItems = 'center';
+    styles.gap = isVertical ? '1px' : '4px';
+  }
   const handleButtonPress = () => {
     props.onSubmit({
       id: `${id}`,
@@ -465,25 +479,8 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
   };
-  const isVertical = imagePosition === 'Top' || imagePosition === 'Bottom';
   return ready && buttonVisible ? (
-    <button
-      data-janus-type={tagName}
-      {...buttonProps}
-      style={{
-        ...styles,
-        display: 'flex',
-        flexDirection: isVertical
-          ? imagePosition === 'Top'
-            ? 'column'
-            : 'column-reverse'
-          : imagePosition === 'Left'
-          ? 'row'
-          : 'row-reverse',
-        alignItems: 'center',
-        gap: isVertical ? '1px' : '4px',
-      }}
-    >
+    <button data-janus-type={tagName} {...buttonProps} style={styles}>
       {buttonImageSrc?.length > 0 && (
         <img
           draggable="false"
