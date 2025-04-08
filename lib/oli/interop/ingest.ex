@@ -718,24 +718,6 @@ defmodule Oli.Interop.Ingest do
       legacy_id = Map.get(page, "legacyId", nil)
       legacy_path = Map.get(page, "legacyPath", nil)
 
-      scoring_strategy_id =
-        Map.get(page, "scoringStrategyId", Oli.Resources.ScoringStrategy.get_id_by_type("best"))
-
-      explanation_strategy =
-        Map.get(page, "explanationStrategy", graded)
-        |> get_explanation_strategy()
-
-      max_attempts =
-        Map.get(page, "maxAttempts", if(graded, do: 5, else: 0))
-
-      recommended_attempts = Map.get(page, "recommendedAttempts", 5)
-      full_progress_pct = Map.get(page, "fullProgressPct", 100)
-
-      retake_mode = Map.get(page, "retakeMode", "normal") |> String.to_atom()
-
-      assessment_mode =
-        Map.get(page, "assessmentMode", "traditional") |> String.to_atom()
-
       %{
         legacy: %{id: legacy_id, path: legacy_path},
         tags: transform_tags(page, tag_map),
@@ -753,20 +735,23 @@ defmodule Oli.Interop.Ingest do
             |> Enum.filter(fn f -> !is_nil(f) end)
         },
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        scoring_strategy_id: scoring_strategy_id,
+        scoring_strategy_id:
+          Map.get(page, "scoringStrategyId", Oli.Resources.ScoringStrategy.get_id_by_type("best")),
         graded: graded,
         relates_to:
           Map.get(page, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
-        max_attempts: max_attempts,
-        explanation_strategy: explanation_strategy,
+        max_attempts: Map.get(page, "maxAttempts", if(graded, do: 5, else: 0)),
+        explanation_strategy:
+          Map.get(page, "explanationStrategy", graded)
+          |> get_explanation_strategy(),
         intro_content: Map.get(page, "introContent", %{}),
         intro_video: Map.get(page, "introVideo"),
         poster_image: Map.get(page, "posterImage"),
-        recommended_attempts: recommended_attempts,
+        recommended_attempts: Map.get(page, "recommendedAttempts", 5),
         duration_minutes: Map.get(page, "durationMinutes"),
-        full_progress_pct: full_progress_pct,
-        retake_mode: retake_mode,
-        assessment_mode: assessment_mode
+        full_progress_pct: Map.get(page, "fullProgressPct", 100),
+        retake_mode: Map.get(page, "retakeMode", "normal") |> String.to_atom(),
+        assessment_mode: Map.get(page, "assessmentMode", "traditional") |> String.to_atom()
       }
       |> create_resource(project)
     end

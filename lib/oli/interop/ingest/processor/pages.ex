@@ -80,24 +80,6 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
       |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
 
-    scoring_strategy_id =
-      Map.get(resource, "scoringStrategyId", Oli.Resources.ScoringStrategy.get_id_by_type("best"))
-
-    explanation_strategy =
-      resource
-      |> Map.get("explanationStrategy", graded)
-      |> get_explanation_strategy()
-
-    max_attempts = Map.get(resource, "maxAttempts", if(graded, do: 5, else: 0))
-
-    recommended_attempts = Map.get(resource, "recommendedAttempts", 5)
-
-    full_progress_pct = Map.get(resource, "fullProgressPct", 100)
-
-    retake_mode = Map.get(resource, "retakeMode", "normal") |> String.to_atom()
-
-    assessment_mode = Map.get(resource, "assessmentMode", "traditional") |> String.to_atom()
-
     %{
       slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
       legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
@@ -119,22 +101,29 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       children: {:placeholder, :children},
       resource_type_id: {:placeholder, :resource_type_id},
       activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
-      scoring_strategy_id: scoring_strategy_id,
-      explanation_strategy: explanation_strategy,
+      scoring_strategy_id:
+        Map.get(
+          resource,
+          "scoringStrategyId",
+          Oli.Resources.ScoringStrategy.get_id_by_type("best")
+        ),
+      explanation_strategy:
+        Map.get(resource, "explanationStrategy", graded)
+        |> get_explanation_strategy(),
       collab_space_config: read_collab_space(resource),
       purpose: Map.get(resource, "purpose", "foundation") |> String.to_existing_atom(),
       relates_to:
         Map.get(resource, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
       graded: graded,
-      max_attempts: max_attempts,
+      max_attempts: Map.get(resource, "maxAttempts", if(graded, do: 5, else: 0)),
       intro_content: Map.get(resource, "introContent", %{}),
       intro_video: Map.get(resource, "introVideo"),
       poster_image: Map.get(resource, "posterImage"),
-      recommended_attempts: recommended_attempts,
+      recommended_attempts: Map.get(resource, "recommendedAttempts", 5),
       duration_minutes: Map.get(resource, "durationMinutes"),
-      full_progress_pct: full_progress_pct,
-      retake_mode: retake_mode,
-      assessment_mode: assessment_mode,
+      full_progress_pct: Map.get(resource, "fullProgressPct", 100),
+      retake_mode: Map.get(resource, "retakeMode", "normal") |> String.to_atom(),
+      assessment_mode: Map.get(resource, "assessmentMode", "traditional") |> String.to_atom(),
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }
