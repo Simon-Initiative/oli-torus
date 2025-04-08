@@ -122,8 +122,9 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       recommended_attempts: Map.get(resource, "recommendedAttempts", 5),
       duration_minutes: Map.get(resource, "durationMinutes"),
       full_progress_pct: Map.get(resource, "fullProgressPct", 100),
-      retake_mode: Map.get(resource, "retakeMode", "normal") |> String.to_atom(),
-      assessment_mode: Map.get(resource, "assessmentMode", "traditional") |> String.to_atom(),
+      retake_mode: Map.get(resource, "retakeMode", "normal") |> String.to_existing_atom(),
+      assessment_mode:
+        Map.get(resource, "assessmentMode", "traditional") |> String.to_existing_atom(),
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }

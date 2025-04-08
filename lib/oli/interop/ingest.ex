@@ -750,8 +750,9 @@ defmodule Oli.Interop.Ingest do
         recommended_attempts: Map.get(page, "recommendedAttempts", 5),
         duration_minutes: Map.get(page, "durationMinutes"),
         full_progress_pct: Map.get(page, "fullProgressPct", 100),
-        retake_mode: Map.get(page, "retakeMode", "normal") |> String.to_atom(),
-        assessment_mode: Map.get(page, "assessmentMode", "traditional") |> String.to_atom()
+        retake_mode: Map.get(page, "retakeMode", "normal") |> String.to_existing_atom(),
+        assessment_mode:
+          Map.get(page, "assessmentMode", "traditional") |> String.to_existing_atom()
       }
       |> create_resource(project)
     end
@@ -1062,6 +1063,8 @@ defmodule Oli.Interop.Ingest do
         end)
     end
   end
+
+  defp get_explanation_strategy(nil), do: nil
 
   defp get_explanation_strategy(%{"type" => type, "set_num_attempts" => set_num_attempts}) do
     %Oli.Resources.ExplanationStrategy{
