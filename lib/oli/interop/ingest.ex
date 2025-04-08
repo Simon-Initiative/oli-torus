@@ -719,65 +719,22 @@ defmodule Oli.Interop.Ingest do
       legacy_path = Map.get(page, "legacyPath", nil)
 
       scoring_strategy_id =
-        case Map.get(page, "scoringStrategyId") do
-          nil -> Oli.Resources.ScoringStrategy.get_id_by_type("best")
-          strategy_id -> strategy_id
-        end
+        Map.get(page, "scoringStrategyId", Oli.Resources.ScoringStrategy.get_id_by_type("best"))
 
       explanation_strategy =
-        case Map.get(page, "explanationStrategy") do
-          nil -> get_explanation_strategy(graded)
-          explanation_strategy -> get_explanation_strategy(explanation_strategy)
-        end
+        Map.get(page, "explanationStrategy", graded)
+        |> get_explanation_strategy()
 
       max_attempts =
-        case Map.get(page, "maxAttempts") do
-          nil ->
-            if graded do
-              5
-            else
-              0
-            end
+        Map.get(page, "maxAttempts", if(graded, do: 5, else: 0))
 
-          max_attempts ->
-            max_attempts
-        end
+      recommended_attempts = Map.get(page, "recommendedAttempts", 5)
+      full_progress_pct = Map.get(page, "fullProgressPct", 100)
 
-      recommended_attempts =
-        case Map.get(page, "recommendedAttempts") do
-          nil ->
-            5
-
-          recommended_attempts ->
-            recommended_attempts
-        end
-
-      full_progress_pct =
-        case Map.get(page, "fullProgressPct") do
-          nil ->
-            100
-
-          full_progress_pct ->
-            full_progress_pct
-        end
-
-      retake_mode =
-        case Map.get(page, "retakeMode") do
-          nil ->
-            :normal
-
-          retake_mode ->
-            String.to_atom(retake_mode)
-        end
+      retake_mode = Map.get(page, "retakeMode", "normal") |> String.to_atom()
 
       assessment_mode =
-        case Map.get(page, "assessmentMode") do
-          nil ->
-            :traditional
-
-          assessment_mode ->
-            String.to_atom(assessment_mode)
-        end
+        Map.get(page, "assessmentMode", "traditional") |> String.to_atom()
 
       %{
         legacy: %{id: legacy_id, path: legacy_path},

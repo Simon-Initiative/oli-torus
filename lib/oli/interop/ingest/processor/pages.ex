@@ -81,65 +81,22 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       |> Rewiring.rewire_alternatives_groups(state.legacy_to_resource_id_map)
 
     scoring_strategy_id =
-      case Map.get(resource, "scoringStrategyId") do
-        nil -> Oli.Resources.ScoringStrategy.get_id_by_type("best")
-        strategy_id -> strategy_id
-      end
+      Map.get(resource, "scoringStrategyId", Oli.Resources.ScoringStrategy.get_id_by_type("best"))
 
     explanation_strategy =
-      case Map.get(resource, "explanationStrategy") do
-        nil -> get_explanation_strategy(graded)
-        explanation_strategy -> get_explanation_strategy(explanation_strategy)
-      end
+      resource
+      |> Map.get("explanationStrategy", graded)
+      |> get_explanation_strategy()
 
-    max_attempts =
-      case Map.get(resource, "maxAttempts") do
-        nil ->
-          if graded do
-            5
-          else
-            0
-          end
+    max_attempts = Map.get(resource, "maxAttempts", if(graded, do: 5, else: 0))
 
-        max_attempts ->
-          max_attempts
-      end
+    recommended_attempts = Map.get(resource, "recommendedAttempts", 5)
 
-    recommended_attempts =
-      case Map.get(resource, "recommendedAttempts") do
-        nil ->
-          5
+    full_progress_pct = Map.get(resource, "fullProgressPct", 100)
 
-        recommended_attempts ->
-          recommended_attempts
-      end
+    retake_mode = Map.get(resource, "retakeMode", "normal") |> String.to_atom()
 
-    full_progress_pct =
-      case Map.get(resource, "fullProgressPct") do
-        nil ->
-          100
-
-        full_progress_pct ->
-          full_progress_pct
-      end
-
-    retake_mode =
-      case Map.get(resource, "retakeMode") do
-        nil ->
-          :normal
-
-        retake_mode ->
-          String.to_atom(retake_mode)
-      end
-
-    assessment_mode =
-      case Map.get(resource, "assessmentMode") do
-        nil ->
-          :traditional
-
-        assessment_mode ->
-          String.to_atom(assessment_mode)
-      end
+    assessment_mode = Map.get(resource, "assessmentMode", "traditional") |> String.to_atom()
 
     %{
       slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
