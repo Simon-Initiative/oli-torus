@@ -39,7 +39,7 @@ defmodule OliWeb.PlatformInstanceController do
              |> dbg do
         {platform_instance, deployment}
       else
-        error -> error
+        error -> Repo.rollback(error)
       end
     end)
     |> case do
