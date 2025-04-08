@@ -75,7 +75,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
             ? 'row'
             : 'row-reverse',
           alignItems: 'center',
-          gap: isVertical ? '1px' : '8px',
+          gap: isVertical ? '1px' : '4px',
         }}
       >
         {imageSource?.length > 0 && (
@@ -84,7 +84,7 @@ const NavButtonAuthor: React.FC<AuthorPartComponentProps<NavButtonModel>> = (pro
             src={imageSource}
             style={{
               height: isVertical && title ? '60%' : '100%',
-              width: title ? 'auto' : '90%',
+              width: title ? '50%' : '100%',
             }}
           />
         )}

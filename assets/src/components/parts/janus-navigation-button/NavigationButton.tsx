@@ -26,6 +26,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
   const [buttonEnabled, setButtonEnabled] = useState(true);
   const [buttonTitle, setButtonTitle] = useState('');
   const [buttonImageSrc, setButtonImageSrc] = useState('');
+  const [imagePosition, setImagePosition] = useState('');
   const [_cssClass, setCssClass] = useState('');
 
   const initialize = useCallback(async (pModel) => {
@@ -44,6 +45,9 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
 
     const dSrc = pModel.imageSource || '';
     setButtonImageSrc(dSrc);
+
+    const dImagePosition = pModel.imagePosition || 'Left';
+    setImagePosition(dImagePosition);
 
     const dAccessibilityText = pModel.ariaLabel || accessibilityText;
     setAccessibilityText(dAccessibilityText);
@@ -134,6 +138,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     const imageSource = currentStateSnapshot[`stage.${id}.imageSource`];
     if (imageSource?.length) {
       setButtonImageSrc(imageSource);
+    }
+
+    const imagePosition = currentStateSnapshot[`stage.${id}.imagePosition`];
+    if (imagePosition?.length) {
+      setImagePosition(imagePosition);
     }
 
     const sTitle = currentStateSnapshot[`stage.${id}.title`];
@@ -258,6 +267,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
                 setButtonImageSrc(imageSource);
               }
 
+              const imagePosition = changes[`stage.${id}.imagePosition`];
+              if (imagePosition?.length) {
+                setImagePosition(imagePosition);
+              }
+
               const sTitles = changes[`stage.${id}.buttonTitles`];
               if (sTitles !== undefined) {
                 setButtonTitle(sTitles[0]);
@@ -313,6 +327,11 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
               const imageSource = changes[`stage.${id}.imageSource`];
               if (imageSource?.length) {
                 setButtonImageSrc(imageSource);
+              }
+
+              const imagePosition = changes[`stage.${id}.imagePosition`];
+              if (imagePosition?.length) {
+                setImagePosition(imagePosition);
               }
 
               const sTitles = changes[`stage.${id}.buttonTitles`];
@@ -446,7 +465,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     'aria-label': ariaLabel,
     disabled: !buttonEnabled,
   };
-
+  const isVertical = imagePosition === 'Top' || imagePosition === 'Bottom';
   return ready && buttonVisible ? (
     <button
       data-janus-type={tagName}
@@ -454,22 +473,28 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
       style={{
         ...styles,
         display: 'flex',
+        flexDirection: isVertical
+          ? imagePosition === 'Top'
+            ? 'column'
+            : 'column-reverse'
+          : imagePosition === 'Left'
+          ? 'row'
+          : 'row-reverse',
         alignItems: 'center',
-        gap: '6px',
+        gap: isVertical ? '1px' : '4px',
       }}
     >
-      {buttonImageSrc?.length && (
+      {buttonImageSrc?.length > 0 && (
         <img
           draggable="false"
           src={buttonImageSrc}
           style={{
-            height: '100%',
-            width: 'auto',
-            objectFit: 'contain',
+            height: isVertical && buttonTitle ? '60%' : '100%',
+            width: buttonTitle ? '50%' : '100%',
           }}
         />
       )}
-      <span>{buttonTitle}</span>
+      {buttonTitle && <span>{buttonTitle}</span>}
     </button>
   ) : null;
 };
