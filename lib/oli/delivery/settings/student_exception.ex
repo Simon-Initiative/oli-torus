@@ -21,7 +21,7 @@ defmodule Oli.Delivery.Settings.StudentException do
     field(:retake_mode, Ecto.Enum, values: [:normal, :targeted])
     field(:assessment_mode, Ecto.Enum, values: [:traditional, :one_at_a_time])
     field :batch_scoring, :boolean
-    field :replacement_strategy, Ecto.Enum, values: [:none, :selections, :dynamic, :both]
+    field :replacement_strategy, Ecto.Enum, values: [:none, :dynamic]
 
     field(:late_submit, Ecto.Enum, values: [:allow, :disallow])
     field(:late_start, Ecto.Enum, values: [:allow, :disallow])

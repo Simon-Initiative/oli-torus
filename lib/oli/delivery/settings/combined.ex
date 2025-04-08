@@ -30,7 +30,7 @@ defmodule Oli.Delivery.Settings.Combined do
           retake_mode: :normal | :targeted,
           assessment_mode: :traditional | :one_at_a_time,
           batch_scoring: boolean(),
-          replacement_strategy: :none | :selections | :dynamic | :both,
+          replacement_strategy: :none | :dynamic,
           late_submit: :allow | :disallow,
           late_start: :allow | :disallow,
           time_limit: integer(),

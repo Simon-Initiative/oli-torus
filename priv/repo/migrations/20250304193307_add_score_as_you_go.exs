@@ -21,6 +21,7 @@ defmodule Oli.Repo.Migrations.AddScoreAsYouGo do
     alter table(:activity_attempts) do
       add :aggregate_out_of, :float
       add :aggregate_score, :float
+      remove :cleanup
     end
 
   end
@@ -44,6 +45,7 @@ defmodule Oli.Repo.Migrations.AddScoreAsYouGo do
     alter table(:activity_attempts) do
       remove :aggregate_out_of
       remove :aggregate_score
+      add :cleanup, :integer, default: -1
     end
 
   end

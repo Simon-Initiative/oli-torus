@@ -86,7 +86,7 @@ defmodule Oli.Delivery.Sections.SectionResource do
       default: :foundation
 
     field :batch_scoring, :boolean, default: true
-    field :replacement_strategy, Ecto.Enum, values: [:none, :selections, :dynamic, :both], default: :none
+    field :replacement_strategy, Ecto.Enum, values: [:none, :dynamic], default: :none
     field :duration_minutes, :integer
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil

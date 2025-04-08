@@ -393,12 +393,8 @@ defmodule OliWeb.Curriculum.OptionsModalContent do
                   field={@form[:replacement_strategy]}
                   options={[
                     {"None: All questions remain the same for all attempts", :none},
-                    {"Bank selections only: Activity bank selections draw new quesetions",
-                    :selections},
                     {"Dynamic only: Dynamic questions regenerate a new question",
-                    :dynamic},
-                    {"Both: Activity bank selections and dynamic questions yields new quesetions",
-                    :both}
+                    :dynamic}
                   ]}
                 />
                 <small id="replacement_policy_description" class="form-text text-muted">

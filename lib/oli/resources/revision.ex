@@ -50,7 +50,7 @@ defmodule Oli.Resources.Revision do
     field :objectives, :map, default: %{}
     field :graded, :boolean, default: false
     field :batch_scoring, :boolean, default: true
-    field :replacement_strategy, Ecto.Enum, values: [:none, :selections, :dynamic, :both], default: :none
+    field :replacement_strategy, Ecto.Enum, values: [:none, :dynamic], default: :none
     field :duration_minutes, :integer, default: nil
     field :intro_content, :map, default: %{}
     field :intro_video, :string, default: nil
