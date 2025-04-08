@@ -209,7 +209,24 @@ defmodule OliWeb.Delivery.Student.LearnLive do
         |> push_event("expand-containers", %{ids: [unit_resource_id, module_resource_id]})
         |> push_scroll_event_for_outline("page_#{resource_id}")
 
-      # This clause applies when the resource_id belongs to a Unit or a Module.
+      # Case: Unit
+      {@container_resource_type_id, 1} ->
+        socket
+        |> push_scroll_event_for_outline("unit_#{resource_id}_outline")
+
+      # Case: Module
+      {@container_resource_type_id, 2} ->
+        unit_resource_id =
+          Hierarchy.find_parent_in_hierarchy(
+            full_hierarchy,
+            fn node -> node["resource_id"] == String.to_integer(resource_id) end
+          )["resource_id"]
+
+        socket
+        |> push_event("expand-containers", %{ids: [unit_resource_id]})
+        |> push_scroll_event_for_outline("module_#{resource_id}_outline")
+
+      # Case: Catch-all
       _ ->
         socket
     end
