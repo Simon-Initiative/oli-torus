@@ -12,7 +12,6 @@ defmodule Oli.Rendering.Elements.Markdown do
   alias Oli.Rendering.Report
   alias Oli.Rendering.Alternatives
   alias Oli.Rendering.Break
-  alias Oli.Rendering.LTIExternalTool
   alias Oli.Rendering.Error
 
   def content(%Context{} = context, element) do
@@ -41,10 +40,6 @@ defmodule Oli.Rendering.Elements.Markdown do
 
   def break(%Context{} = context, element) do
     Break.render(context, element, Break.Markdown)
-  end
-
-  def lti_external_tool(%Context{} = context, element) do
-    LTIExternalTool.render(context, element, LTIExternalTool.Markdown)
   end
 
   def error(%Context{} = context, element, error) do

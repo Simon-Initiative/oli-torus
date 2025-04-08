@@ -29,9 +29,6 @@
       },
       {
         "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
-      },
-      {
-        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/lti-external-tool.schema.json"
       }
     ]
   }

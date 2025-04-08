@@ -12,7 +12,6 @@ import {
   createAlternatives,
   createDefaultStructuredContent,
   createGroup,
-  createLtiExternalTool,
   createReport,
 } from 'data/content/resource';
 import {
@@ -21,7 +20,6 @@ import {
   createDefaultSelection,
   createSurvey,
 } from 'data/content/resource';
-import { listAvailableExternalTools } from 'data/persistence/lti_platform';
 import * as Persistence from 'data/persistence/resource';
 import { ActivityWithReportOption } from 'data/persistence/resource';
 import { ResourceChoice } from './ResourceChoice';
@@ -139,15 +137,6 @@ export const NonActivities: React.FC<Props> = ({
           disabled={ABTestDisabled}
           onClick={() => addExperiment(onAddItem, index, resourceContext.projectSlug)}
         />
-        <ResourceChoice
-          icon="plug"
-          label="LTI 1.3 External Tool"
-          onHoverStart={() => onSetTip('Connect to external learning tools and content')}
-          onHoverEnd={() => onResetTip()}
-          key={'external-tool'}
-          disabled={false}
-          onClick={() => addLTIExternalTool(onAddItem, index, resourceContext.projectSlug)}
-        />
       </div>
     </div>
   );
@@ -263,32 +252,4 @@ const addExperiment = (onAddItem: AddCallback, index: number[], projectSlug: str
       }
     }
   });
-};
-
-const addLTIExternalTool = (onAddItem: AddCallback, index: number[], projectSlug: string) => {
-  document.body.click();
-
-  // TODO Replace this with a project-specific enabled LTI tool options
-  window.oliDispatch(
-    modalActions.display(
-      <SelectModal
-        title="Select External Tool"
-        description="Select an external tool to insert..."
-        onFetchOptions={() =>
-          listAvailableExternalTools()
-            .then((result) => result.data.map((a) => ({ value: a.client_id, title: a.name })))
-            .catch((error) => {
-              console.error('Error fetching external tools:', error);
-              throw new Error('Failed to fetch external tools');
-            })
-        }
-        onDone={(clientId: string) => {
-          window.oliDispatch(modalActions.dismiss());
-
-          onAddItem(createLtiExternalTool(clientId), index);
-        }}
-        onCancel={() => window.oliDispatch(modalActions.dismiss())}
-      />,
-    ),
-  );
 };

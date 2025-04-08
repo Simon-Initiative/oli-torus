@@ -45,7 +45,7 @@
 
     <li>
       <strong>Deployment ID:</strong>
-      <%= @deployment.id %>
+      <%= @deployment.deployment_id %>
     </li>
   </ul>
 

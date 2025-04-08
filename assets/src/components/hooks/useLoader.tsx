@@ -32,7 +32,10 @@ export type Loader<T> = {
  * @param load Function that loads data and returns a promise
  * @returns Loader<T> loader that can execute any of the three state callbacks, access the current state, and reload the data
  */
-export const useLoader = <T,>(load: () => Promise<T>): Loader<T> => {
+export const useLoader = <T,>(
+  load: () => Promise<T>,
+  deps: React.DependencyList = [],
+): Loader<T> => {
   const [loader, setLoader] = useState<LoaderState<T>>({
     status: LoaderStatus.LOADING,
   });
@@ -58,7 +61,7 @@ export const useLoader = <T,>(load: () => Promise<T>): Loader<T> => {
   };
 
   // Load data on initial mount. Any subsequent reloads are triggered by the calling the reload function
-  useEffect(() => reload(), []);
+  useEffect(() => reload(), deps);
 
   return {
     state: loader,
