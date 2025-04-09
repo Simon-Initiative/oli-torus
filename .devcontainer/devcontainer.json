@@ -7,13 +7,13 @@
   "dockerComposeFile": ["docker-compose.yml"],
   "workspaceFolder": "/workspace/oli-torus",
   "service": "app",
-  "initializeCommand": "cp oli.example.env oli.env",
+  "initializeCommand": "sh .devcontainer/scripts/init.sh",
 
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [80, 443],
+  // "forwardPorts": [80, 443]
 
   // Configure tool-specific properties.
   "customizations": {

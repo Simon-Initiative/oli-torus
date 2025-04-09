@@ -323,7 +323,7 @@ defmodule OliWeb.Components.Common do
     ~H"""
     <div class="contents" phx-feedback-for={@name}>
       <label class={"flex gap-2 items-center #{@label_class}"}>
-        <input type="hidden" name={@name} value={if @checked, do: "true", else: "false"} />
+        <input type="hidden" name={@name} value="false" disabled={@rest[:disabled]} />
         <input
           type="checkbox"
           id={@id}

@@ -166,15 +166,13 @@ export const simpleUiSchema = {
     },
   },
   incorrectFeedback: {
-    'ui:widget': 'MCQCustomErrorFeedbackAuthoring',
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
   },
   commonErrorFeedback: {
-    items: {
-      'ui:widget': 'textarea',
-      'ui:options': {
-        rows: 2,
-      },
-    },
+    'ui:widget': 'MCQCustomErrorFeedbackAuthoring',
   },
 };
 
