@@ -11,6 +11,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
   const [_state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(typeof props.model === 'object' ? props.model : {});
   const [ready, setReady] = useState<boolean>(false);
+  const [imgSrc, setImgSrc] = useState<string>('');
   const id: string = props.id;
   const initialize = useCallback(async (pModel) => {
     const initResult = await props.onInit({
@@ -97,7 +98,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const { width, height, src, alt } = model;
+  const { width, height, src, imageSrc, alt } = model;
   const imageStyles: CSSProperties = {
     width,
     height,
@@ -115,9 +116,13 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
 
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
-
+  useEffect(() => {
+    //Image Source will take precedence ( if there is an image link present in it). If Image Sorce is blank then it will display image link from src.
+    const imageSource = imageSrc?.length ? imageSrc : src;
+    setImgSrc(imageSource);
+  }, [model]);
   return ready ? (
-    <img data-janus-type={tagName} draggable="false" alt={alt} src={src} style={imageStyles} />
+    <img data-janus-type={tagName} draggable="false" alt={alt} src={imgSrc} style={imageStyles} />
   ) : null;
 };
 
