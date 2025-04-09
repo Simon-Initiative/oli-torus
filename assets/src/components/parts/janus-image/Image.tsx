@@ -117,6 +117,7 @@ const Image: React.FC<PartComponentProps<ImageModel>> = (props) => {
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
   useEffect(() => {
+    //Image Source will take precedence ( if there is an image link present in it). If Image Sorce is blank then it will display image link from src.
     const imageSource = imageSrc?.length ? imageSrc : src;
     setImgSrc(imageSource);
   }, [model]);

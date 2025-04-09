@@ -37,6 +37,7 @@ const ImageAuthor: React.FC<AuthorPartComponentProps<ImageModel>> = (props) => {
   );
 
   useEffect(() => {
+    //Image Source will take precedence ( if there is an image link present in it). If Image Sorce is blank then it will display image link from src.
     const imageSource = imageSrc?.length && imageSrc != defaultSrc ? imageSrc : src;
     setImgSrc(imageSource);
     if (imageSource != defaultSrc && model?.lockAspectRatio) {
