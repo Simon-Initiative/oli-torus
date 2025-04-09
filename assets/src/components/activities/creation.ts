@@ -20,15 +20,13 @@ export function registerCreationFunc(manifest: Manifest, fn: creationFn) {
     window.oliCreationFuncs = {};
   }
 
-  window.oliCreationFuncs[manifest.id] = fn;
+  window.oliCreationFuncs[manifest.authoring.element] = fn;
 }
 
 export function invokeCreationFunc(
   id: string,
   context: ResourceContext,
 ): Promise<ActivityModelSchema> {
-  console.log(window.oliCreationFuncs);
-
   if (window.oliCreationFuncs !== undefined) {
     const fn = window.oliCreationFuncs[id];
     if (typeof fn === 'function') {
