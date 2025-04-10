@@ -32,10 +32,14 @@ defmodule Oli.Conversation.Triggers do
     do: "Clicked a button next to a content group id (id: #{data["ref_id"]})"
 
   def description(:content_block, data), do: "Viewed a content block (id: #{data["ref_id"]})"
-  def description(:correct_answer, data), do: "Answered correctly question: #{data["question"]}"
+
+  def description(:correct_answer, data),
+    do:
+      "Answered correctly question: #{data["question"]}. The student's response was #{data["response"]}"
 
   def description(:incorrect_answer, data),
-    do: "Answered incorrectly question: #{data["question"]}"
+    do:
+      "Answered incorrectly question: #{data["question"]}. The student's response was #{data["response"]}"
 
   def description(:hint, data),
     do: "Requested a hint (id: #{data["ref_id"]}) from question: #{data["question"]}"
@@ -44,7 +48,8 @@ defmodule Oli.Conversation.Triggers do
     do: "Received the explanation (id: #{data["ref_id"]}) from question: #{data["question"]}"
 
   def description(:targeted_feedback, data),
-    do: "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}"
+    do:
+      "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}. The student's response was #{data["response"]}"
 
   @doc """
   Verify that the user is enrolled in a section with
@@ -242,7 +247,8 @@ defmodule Oli.Conversation.Triggers do
 
         data = %{
           "activity_attempt_guid" => context.activity_attempt_guid,
-          "ref_id" => trigger.ref_id
+          "ref_id" => trigger.ref_id,
+          "response" => response
         }
 
         %{payload | section_id: nil, user_id: nil, resource_id: context.page_id, data: data}
