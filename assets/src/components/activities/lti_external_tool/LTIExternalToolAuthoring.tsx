@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { Maybe } from 'tsmonad';
 import { LoadingSpinner } from 'components/common/LoadingSpinner';
 import { useLoader } from 'components/hooks/useLoader';
 import { LTIExternalToolFrame } from 'components/lti/LTIExternalToolFrame';

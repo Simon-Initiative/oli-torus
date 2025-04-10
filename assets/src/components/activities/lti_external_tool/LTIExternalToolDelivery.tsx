@@ -13,7 +13,7 @@ import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryE
 import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
-export const MultipleChoiceComponent: React.FC = () => {
+const LTIExternalTool: React.FC = () => {
   const { model } = useDeliveryElementContext<LTIExternalToolSchema>();
 
   const ltiToolDetailsLoader = useLoader(
@@ -52,7 +52,7 @@ export class LTIExternalToolDelivery extends DeliveryElement<LTIExternalToolSche
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <MultipleChoiceComponent />
+          <LTIExternalTool />
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,
