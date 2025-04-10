@@ -48,7 +48,8 @@ defmodule Oli.Conversation.Triggers do
     do: "Received the explanation (id: #{data["ref_id"]}) from question: #{data["question"]}"
 
   def description(:targeted_feedback, data),
-    do: "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}. The student's response was #{data["response"]}"
+    do:
+      "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}. The student's response was #{data["response"]}"
 
   @doc """
   Verify that the user is enrolled in a section with
