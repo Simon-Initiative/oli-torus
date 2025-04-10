@@ -28,7 +28,7 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
   // When the 'Navigate to' Option is changed
   useEffect(() => {
     const sequenceId =
-      action?.params?.target === 'next'
+      action?.params?.target === 'next' || action?.params?.target === 'endOfLesson'
         ? action.params.target
         : selectedSequence?.custom.sequenceId;
     setTarget(sequenceId || 'invalid');

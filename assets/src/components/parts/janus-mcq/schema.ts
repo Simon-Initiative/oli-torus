@@ -159,6 +159,18 @@ export const simpleUiSchema = {
   ],
   correctAnswer: { 'ui:widget': 'MCQCorrectAnswerEditor' },
   mcqItems: { 'ui:widget': 'MCQOptionsEditor' },
+  correctFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
+  incorrectFeedback: {
+    'ui:widget': 'textarea',
+    'ui:options': {
+      rows: 2,
+    },
+  },
   commonErrorFeedback: {
     'ui:widget': 'MCQCustomErrorFeedbackAuthoring',
   },

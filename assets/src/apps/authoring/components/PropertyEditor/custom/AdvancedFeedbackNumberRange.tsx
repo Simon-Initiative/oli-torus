@@ -77,10 +77,6 @@ const FeedbackEditor: React.FC<{
   onRemoveRule: () => void;
   onfocusHandler: (changes: boolean) => void;
 }> = ({ value, onBlur, onChange, onRemoveRule, onfocusHandler }) => {
-  const onFeedbackChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...value, feedback: e.target.value });
-  };
-
   const onAnswerTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({
       ...value,
@@ -189,11 +185,10 @@ const FeedbackEditor: React.FC<{
 
         <div className="col-span-12">
           <label>Feedback</label>
-          <input
+          <textarea
             className="form-control"
-            type="text"
             value={value.feedback}
-            onChange={onFeedbackChange}
+            onChange={(e) => onChange({ ...value, feedback: e.target.value })}
             onBlur={onBlur}
             onFocus={() => onfocusHandler(false)}
           />
