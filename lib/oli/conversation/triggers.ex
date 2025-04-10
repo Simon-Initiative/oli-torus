@@ -35,21 +35,21 @@ defmodule Oli.Conversation.Triggers do
 
   def description(:correct_answer, data),
     do:
-      "Answered correctly question: #{data["question"]}. The student's response was #{data["response"]}"
+      "Answered correctly part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{Jason.encode!(data["part_attempts"])}"
 
   def description(:incorrect_answer, data),
     do:
-      "Answered incorrectly question: #{data["question"]}. The student's response was #{data["response"]}"
+      "Answered incorrectly part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{Jason.encode!(data["part_attempts"])}"
 
   def description(:hint, data),
-    do: "Requested a hint (id: #{data["ref_id"]}) from question: #{data["question"]}"
+    do: "Requested a hint (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}"
 
   def description(:explanation, data),
-    do: "Received the explanation (id: #{data["ref_id"]}) from question: #{data["question"]}"
+    do: "Received the explanation (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}"
 
   def description(:targeted_feedback, data),
     do:
-      "Received targeted feedback (id: #{data["ref_id"]}) from question: #{data["question"]}. The student's response was #{data["response"]}"
+      "Received targeted feedback (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{Jason.encode!(data["part_attempts"])}"
 
   @doc """
   Verify that the user is enrolled in a section with
@@ -111,12 +111,14 @@ defmodule Oli.Conversation.Triggers do
     reason = description(trigger.trigger_type, trigger.data)
 
     """
-    Trigger points are a feature of this platform that allow a course author to instrument
-    various points of student interaction in the course to 'trigger' your (the AI agent)
-    intervention. This is one such trigger point invocation. The author has configured this trigger
-    in response to a student action or event. Do not mention 'trigger points' ever.
+    AI Activation points are a feature of this platform that allow a course author to instrument
+    various points of student interaction in the course to 'activate' your (the AI agent)
+    intervention. This is one such AI activation point invocation. The author has configured this activation
+    point in response to a student action or event. Do not mention 'activation points' ever.
 
-    In this trigger point, the student has just #{reason}
+    Some questions are comprised of multiple parts. You MUST limit your response to only the specified part of the question.
+
+    In this activation point, the student has just #{reason}
 
     Engage by greeting the student.
 
@@ -124,7 +126,7 @@ defmodule Oli.Conversation.Triggers do
     follow these specific instructions while engaging with the student:
 
     #{trigger.prompt}
-    """
+    """ |> IO.inspect()
   end
 
   # Given certain classes of triggers, augment the data context with additional
@@ -138,11 +140,22 @@ defmodule Oli.Conversation.Triggers do
       # For these trigger types, we need to fetch the question model and encode it
       %{data: %{"activity_attempt_guid" => guid}} ->
         activity_attempt = Oli.Delivery.Attempts.Core.get_activity_attempt_by(attempt_guid: guid)
-        model = Oli.Delivery.Attempts.Core.select_model(activity_attempt)
 
+        part_attempts = Oli.Delivery.Attempts.Core.get_latest_part_attempts(guid)
+        |> Enum.map(fn pa ->
+          %{
+            part_id: pa.part_id,
+            student_response: pa.response,
+          }
+        end)
+        |> Jason.encode!()
+
+        model = Oli.Delivery.Attempts.Core.select_model(activity_attempt)
         encoded = Jason.encode!(model)
 
         data = Map.put(trigger.data, "question", encoded)
+        |> Map.put("part_attempts", part_attempts)
+
         %{trigger | data: data}
     end
   end
@@ -234,7 +247,7 @@ defmodule Oli.Conversation.Triggers do
 
   Targeted feedback triggers are given priority over correct/incorrect triggers.
   """
-  def check_for_response_trigger(relevant_triggers_by_type, response, out_of, context) do
+  def check_for_response_trigger(relevant_triggers_by_type, response, part_id, out_of, context) do
     case find_matching_trigger(relevant_triggers_by_type, response, out_of) do
       nil ->
         nil
@@ -248,7 +261,8 @@ defmodule Oli.Conversation.Triggers do
         data = %{
           "activity_attempt_guid" => context.activity_attempt_guid,
           "ref_id" => trigger.ref_id,
-          "response" => response
+          "response" => response,
+          "part_id" => part_id,
         }
 
         %{payload | section_id: nil, user_id: nil, resource_id: context.page_id, data: data}

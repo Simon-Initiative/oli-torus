@@ -1,4 +1,6 @@
 defmodule Oli.Activities.Model.Response do
+
+  @derive Jason.Encoder
   defstruct [:id, :rule, :score, :feedback, :show_page]
 
   def parse(%{"id" => id, "rule" => rule, "score" => score, "feedback" => feedback} = response) do
