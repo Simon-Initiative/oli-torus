@@ -96,6 +96,7 @@ defmodule OliWeb.Dialogue.WindowLive do
          form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
          streaming: false,
          allow_submission?: true,
+         trigger_queue: [],
          active_message: nil,
          function_call: nil,
          teaser_message: nil,
@@ -669,32 +670,46 @@ defmodule OliWeb.Dialogue.WindowLive do
       "Handlng trigger for section #{socket.assigns.section.id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
     )
 
-    prompt = Triggers.assemble_trigger_prompt(trigger)
+    case socket.assigns.streaming do
 
-    dialogue =
-      Dialogue.add_message(
-        socket.assigns.dialogue,
-        Message.new(:system, prompt),
-        trigger.user_id,
-        trigger.resource_id,
-        trigger.section_id
-      )
+      true ->
+        {:noreply,
+          assign(socket,
+            trigger_queue: socket.assigns.trigger_queue ++ [trigger]
+          )}
 
-    pid = self()
+      false ->
 
-    Task.async(fn ->
-      Dialogue.engage(dialogue, :async)
-      send(pid, {:reply_finished})
-    end)
+        prompt = Triggers.assemble_trigger_prompt(trigger)
 
-    # socket = push_event(socket, "show_teaser", %{})
+        dialogue =
+          Dialogue.add_message(
+            socket.assigns.dialogue,
+            Message.new(:system, prompt),
+            trigger.user_id,
+            trigger.resource_id,
+            trigger.section_id
+          )
 
-    {:noreply,
-     assign(socket,
-       dialogue: dialogue,
-       teaser_message: nil,
-       teaser_visible: true
-     )}
+        pid = self()
+
+        Task.async(fn ->
+          Dialogue.engage(dialogue, :async)
+          send(pid, {:reply_finished})
+        end)
+
+        # socket = push_event(socket, "show_teaser", %{})
+
+        {:noreply,
+        assign(socket,
+          dialogue: dialogue,
+          streaming: true,
+          teaser_message: nil,
+          teaser_visible: true
+        )}
+
+    end
+
   end
 
   use Oli.Conversation.DialogueHandler

@@ -80,13 +80,44 @@ defmodule Oli.Conversation.DialogueHandler do
                 true
               end
 
-            {:noreply,
-             assign(socket,
-               dialogue: dialogue,
-               streaming: false,
-               active_message: nil,
-               allow_submission?: allow_submission?
-             )}
+            case socket.assigns.trigger_queue do
+              [] ->
+
+                {:noreply,
+                  assign(socket,
+                    dialogue: dialogue,
+                    streaming: false,
+                    active_message: nil,
+                    allow_submission?: allow_submission?
+                  )}
+
+              [trigger | rest] ->
+
+                prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
+
+                dialogue =
+                  Oli.Conversation.Dialogue.add_message(
+                    socket.assigns.dialogue,
+                    Oli.Conversation.Message.new(:system, prompt),
+                    trigger.user_id,
+                    trigger.resource_id,
+                    trigger.section_id
+                  )
+
+                pid = self()
+
+                Task.async(fn ->
+                  Oli.Conversation.Dialogue.engage(dialogue, :async)
+                  send(pid, {:reply_finished})
+                end)
+
+                {:noreply,
+                  assign(socket,
+                    dialogue: dialogue,
+                    active_message: socket.assigns.active_message <> "\n\n",
+                    trigger_queue: rest
+                  )}
+            end
 
           fc ->
             result = Oli.Conversation.Functions.call(fc["name"], Jason.decode!(fc["arguments"]))
