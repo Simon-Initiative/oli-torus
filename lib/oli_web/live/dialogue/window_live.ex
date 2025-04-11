@@ -670,16 +670,17 @@ defmodule OliWeb.Dialogue.WindowLive do
       "Handlng trigger for section #{socket.assigns.section.id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
     )
 
+    # If there is currently a trigger or direct student interaction
+    # streaming, we must queue the trigger and process it after
+    # the current one is finished
     case socket.assigns.streaming do
-
       true ->
         {:noreply,
-          assign(socket,
-            trigger_queue: socket.assigns.trigger_queue ++ [trigger]
-          )}
+         assign(socket,
+           trigger_queue: socket.assigns.trigger_queue ++ [trigger]
+         )}
 
       false ->
-
         prompt = Triggers.assemble_trigger_prompt(trigger)
 
         dialogue =
@@ -698,18 +699,14 @@ defmodule OliWeb.Dialogue.WindowLive do
           send(pid, {:reply_finished})
         end)
 
-        # socket = push_event(socket, "show_teaser", %{})
-
         {:noreply,
-        assign(socket,
-          dialogue: dialogue,
-          streaming: true,
-          teaser_message: nil,
-          teaser_visible: true
-        )}
-
+         assign(socket,
+           dialogue: dialogue,
+           streaming: true,
+           teaser_message: nil,
+           teaser_visible: true
+         )}
     end
-
   end
 
   use Oli.Conversation.DialogueHandler

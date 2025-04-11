@@ -506,7 +506,9 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           When AI Activation Points are enabled as an authoring feature, authors can insert an activation point at the page level, group level, paragraph level, or question level.
         </p>
 
-        <p class="mt-3">AI Activation Points are currently <strong>enabled</strong> for this project.</p>
+        <p class="mt-3">
+          AI Activation Points are currently <strong>enabled</strong> for this project.
+        </p>
 
         <p class="mt-3">
           Note: AI Activation Points will only work for course sections that have DOT AI enabled.  This must be enabled section by section by a system administrator.

@@ -17,16 +17,15 @@ defmodule Oli.Conversation.Functions do
   @functions [
     %{
       name: "course_sequence",
-      description:
-        """
-        Returns the full sequence of units, modules, sections and learning pages in this course as a
-        list of objects with the following keys: [resource_id, title, url, is_page, graded, level] where
-        resource_id is the unique identifier of the page or container, and
-        title is the title of the page or container, url is the url to the page, is_page is a boolean
-        indicating if the object is a page or a container, graded is a boolean indicating if the
-        page is graded or is practice, and level is the level of the page or container in the hierarchy.
-        The level is a number starting from 1 for the first level of the hierarchy.
-        """,
+      description: """
+      Returns the full sequence of units, modules, sections and learning pages in this course as a
+      list of objects with the following keys: [resource_id, title, url, is_page, graded, level] where
+      resource_id is the unique identifier of the page or container, and
+      title is the title of the page or container, url is the url to the page, is_page is a boolean
+      indicating if the object is a page or a container, graded is a boolean indicating if the
+      page is graded or is practice, and level is the level of the page or container in the hierarchy.
+      The level is a number starting from 1 for the first level of the hierarchy.
+      """,
       parameters: %{
         type: "object",
         properties: %{
@@ -162,7 +161,7 @@ defmodule Oli.Conversation.Functions do
         title: node.revision.title,
         is_page: node.revision.resource_type_id == Oli.Resources.ResourceType.id_for_page(),
         level: node.numbering.level,
-        graded: node.revision.graded,
+        graded: node.revision.graded
       }
     end)
   end

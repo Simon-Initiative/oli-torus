@@ -35,21 +35,23 @@ defmodule Oli.Conversation.Triggers do
 
   def description(:correct_answer, data),
     do:
-      "Answered correctly part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{Jason.encode!(data["part_attempts"])}"
+      "Answered correctly part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{data["student_response"]}"
 
   def description(:incorrect_answer, data),
     do:
-      "Answered incorrectly part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{Jason.encode!(data["part_attempts"])}"
+      "Answered incorrectly part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{data["student_response"]}"
 
   def description(:hint, data),
-    do: "Requested a hint (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}"
+    do:
+      "Requested a hint (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}"
 
   def description(:explanation, data),
-    do: "Received the explanation (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}"
+    do:
+      "Received the explanation (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}"
 
   def description(:targeted_feedback, data),
     do:
-      "Received targeted feedback (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{Jason.encode!(data["part_attempts"])}"
+      "Received targeted feedback (id: #{data["ref_id"]}) for part #{data["part_id"]} of question #{data["question"]}. The student's response is in: #{data["student_response"]}"
 
   @doc """
   Verify that the user is enrolled in a section with
@@ -126,7 +128,8 @@ defmodule Oli.Conversation.Triggers do
     follow these specific instructions while engaging with the student:
 
     #{trigger.prompt}
-    """ |> IO.inspect()
+    """
+    |> IO.inspect()
   end
 
   # Given certain classes of triggers, augment the data context with additional
@@ -141,20 +144,22 @@ defmodule Oli.Conversation.Triggers do
       %{data: %{"activity_attempt_guid" => guid}} ->
         activity_attempt = Oli.Delivery.Attempts.Core.get_activity_attempt_by(attempt_guid: guid)
 
-        part_attempts = Oli.Delivery.Attempts.Core.get_latest_part_attempts(guid)
-        |> Enum.map(fn pa ->
-          %{
-            part_id: pa.part_id,
-            student_response: pa.response,
-          }
-        end)
-        |> Jason.encode!()
+        student_response =
+          Oli.Delivery.Attempts.Core.get_latest_part_attempts(guid)
+          |> Enum.map(fn pa ->
+            %{
+              part_id: pa.part_id,
+              student_response: pa.response
+            }
+          end)
+          |> Jason.encode!()
 
         model = Oli.Delivery.Attempts.Core.select_model(activity_attempt)
         encoded = Jason.encode!(model)
 
-        data = Map.put(trigger.data, "question", encoded)
-        |> Map.put("part_attempts", part_attempts)
+        data =
+          Map.put(trigger.data, "question", encoded)
+          |> Map.put("student_response", student_response)
 
         %{trigger | data: data}
     end
@@ -262,7 +267,7 @@ defmodule Oli.Conversation.Triggers do
           "activity_attempt_guid" => context.activity_attempt_guid,
           "ref_id" => trigger.ref_id,
           "response" => response,
-          "part_id" => part_id,
+          "part_id" => part_id
         }
 
         %{payload | section_id: nil, user_id: nil, resource_id: context.page_id, data: data}

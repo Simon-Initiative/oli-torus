@@ -80,19 +80,20 @@ defmodule Oli.Conversation.DialogueHandler do
                 true
               end
 
+            # Here we check if there are any triggers in the queue
+            # and if so, we process the first one
+            # and remove it from the queue
             case socket.assigns.trigger_queue do
               [] ->
-
                 {:noreply,
-                  assign(socket,
-                    dialogue: dialogue,
-                    streaming: false,
-                    active_message: nil,
-                    allow_submission?: allow_submission?
-                  )}
+                 assign(socket,
+                   dialogue: dialogue,
+                   streaming: false,
+                   active_message: nil,
+                   allow_submission?: allow_submission?
+                 )}
 
               [trigger | rest] ->
-
                 prompt = Oli.Conversation.Triggers.assemble_trigger_prompt(trigger)
 
                 dialogue =
@@ -112,11 +113,11 @@ defmodule Oli.Conversation.DialogueHandler do
                 end)
 
                 {:noreply,
-                  assign(socket,
-                    dialogue: dialogue,
-                    active_message: socket.assigns.active_message <> "\n\n",
-                    trigger_queue: rest
-                  )}
+                 assign(socket,
+                   dialogue: dialogue,
+                   active_message: socket.assigns.active_message <> "\n\n",
+                   trigger_queue: rest
+                 )}
             end
 
           fc ->

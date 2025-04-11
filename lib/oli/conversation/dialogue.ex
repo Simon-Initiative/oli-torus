@@ -9,7 +9,6 @@ defmodule Oli.Conversation.Dialogue do
   alias Oli.Conversation.Functions
   alias Oli.Conversation.Model
 
-
   defstruct [
     :model,
     :rendered_messages,

@@ -1,5 +1,4 @@
 defmodule Oli.Activities.Model.Response do
-
   @derive Jason.Encoder
   defstruct [:id, :rule, :score, :feedback, :show_page]
 
