@@ -95,7 +95,6 @@ defmodule Oli.Delivery.Sections.Scheduling do
   @doc """
   Clear the scheduling for all section resources for a given course section.
   """
-
   def clear(%Section{id: section_id, slug: section_slug}) do
     res =
       Multi.new()

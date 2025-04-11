@@ -230,12 +230,26 @@ defmodule Oli.Interop.Ingest do
       "payment_options" => Map.get(product, "paymentOptions"),
       "pay_by_institution" => Map.get(product, "payByInstitution"),
       "grace_period_days" => Map.get(product, "gracePeriodDays"),
-      "amount" => Map.get(product, "amount")
+      "amount" => Map.get(product, "amount"),
+      "certificate_enabled" => Map.get(product, "certificateEnabled", false)
     }
 
-    # '|| "null"' ensures a valid value is applied when a certificate is
-    # NOT present in the project's bundle.
-    certificate_params = Jason.decode!(Map.get(product, "certificate") || "null")
+    {certificate_params, new_product_attrs} =
+      case Map.get(product, "certificate") do
+        nil ->
+          {nil, new_product_attrs}
+
+        cert ->
+          assessments =
+            Map.get(cert, "custom_assessments", [])
+            |> Enum.map(fn v ->
+              Map.get(page_map, Integer.to_string(v)).resource_id
+            end)
+
+          cert_params = Map.put(cert, "custom_assessments", assessments)
+          product_attrs = Map.put(new_product_attrs, "certificate_enabled", true)
+          {cert_params, product_attrs}
+      end
 
     # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
     # to mirror the product JSON.
@@ -297,6 +311,9 @@ defmodule Oli.Interop.Ingest do
               attrs = %{
                 tags: [],
                 title: Map.get(item, "title"),
+                intro_content: Map.get(item, "introContent", %{}),
+                intro_video: Map.get(item, "introVideo"),
+                poster_image: Map.get(item, "posterImage"),
                 children: [],
                 author_id: as_author.id,
                 content: %{"model" => []},
@@ -718,14 +735,24 @@ defmodule Oli.Interop.Ingest do
             |> Enum.filter(fn f -> !is_nil(f) end)
         },
         resource_type_id: Oli.Resources.ResourceType.id_for_page(),
-        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        scoring_strategy_id:
+          Map.get(page, "scoringStrategyId", Oli.Resources.ScoringStrategy.get_id_by_type("best")),
         graded: graded,
-        max_attempts:
-          if graded do
-            5
-          else
-            0
-          end
+        relates_to:
+          Map.get(page, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
+        max_attempts: Map.get(page, "maxAttempts", if(graded, do: 5, else: 0)),
+        explanation_strategy:
+          Map.get(page, "explanationStrategy", graded)
+          |> get_explanation_strategy(),
+        intro_content: Map.get(page, "introContent", %{}),
+        intro_video: Map.get(page, "introVideo"),
+        poster_image: Map.get(page, "posterImage"),
+        recommended_attempts: Map.get(page, "recommendedAttempts", 5),
+        duration_minutes: Map.get(page, "durationMinutes"),
+        full_progress_pct: Map.get(page, "fullProgressPct", 100),
+        retake_mode: Map.get(page, "retakeMode", "normal") |> String.to_existing_atom(),
+        assessment_mode:
+          Map.get(page, "assessmentMode", "traditional") |> String.to_existing_atom()
       }
       |> create_resource(project)
     end
@@ -926,6 +953,9 @@ defmodule Oli.Interop.Ingest do
     attrs = %{
       tags: transform_tags(container, tag_map),
       title: Map.get(container, "title"),
+      intro_content: Map.get(container, "introContent", %{}),
+      intro_video: Map.get(container, "introVideo"),
+      poster_image: Map.get(container, "posterImage"),
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},
@@ -1032,6 +1062,23 @@ defmodule Oli.Interop.Ingest do
           Map.put(m, e, objectives)
         end)
     end
+  end
+
+  defp get_explanation_strategy(nil), do: nil
+
+  defp get_explanation_strategy(%{"type" => type, "set_num_attempts" => set_num_attempts}) do
+    %Oli.Resources.ExplanationStrategy{
+      type: String.to_atom(type),
+      set_num_attempts: set_num_attempts
+    }
+  end
+
+  defp get_explanation_strategy(true) do
+    %Oli.Resources.ExplanationStrategy{type: :after_max_resource_attempts_exhausted}
+  end
+
+  defp get_explanation_strategy(false) do
+    %Oli.Resources.ExplanationStrategy{type: :after_set_num_attempts, set_num_attempts: 2}
   end
 
   def prettify_error({:error, :invalid_archive}) do

@@ -19,7 +19,7 @@ defmodule Oli.Interop.IngestTest do
   def verify_export(entries) do
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
-    assert length(entries) == 31
+    assert length(entries) == 32
     assert Map.has_key?(m, ~c"_hierarchy.json")
     assert Map.has_key?(m, ~c"_media-manifest.json")
     assert Map.has_key?(m, ~c"_project.json")
@@ -31,7 +31,7 @@ defmodule Oli.Interop.IngestTest do
     assert length(Map.get(hierarchy, "children")) == 2
     unit = Map.get(hierarchy, "children") |> hd
     assert Map.get(unit, "title") == "Unit 1"
-    assert length(Map.get(unit, "children")) == 6
+    assert length(Map.get(unit, "children")) == 7
   end
 
   # This mimics the result of unzipping a digest file, but instead reads the individual
@@ -170,12 +170,15 @@ defmodule Oli.Interop.IngestTest do
       # check an internal hierarchy node, one that contains references to only
       # other hierarchy nodes
       c = by_title(project, "Unit 1")
-      assert length(c.children) == 6
+      assert length(c.children) == 7
       children = AuthoringResolver.from_resource_id(project.slug, c.children)
       assert Enum.at(children, 0).title == "Introduction"
       assert Enum.at(children, 1).title == "Food and Drink of Galicia"
-      assert Enum.at(children, 2).title == "Cuisine of Asturias"
-      assert Enum.at(children, 4).title == "Final Quiz"
+      assert Enum.at(children, 2).title == "Quiz 1"
+      assert Enum.at(children, 2).max_attempts == 4
+      assert Enum.at(children, 2).assessment_mode == :one_at_a_time
+      assert Enum.at(children, 3).title == "Cuisine of Asturias"
+      assert Enum.at(children, 5).title == "Final Quiz"
 
       # verify that all the activities were created correctly
       activities = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "activity")
@@ -190,10 +193,15 @@ defmodule Oli.Interop.IngestTest do
       assert tagged_activity.tags == [tag.resource_id]
 
       # verify that the product was created
-      product = Oli.Repo.get_by!(Oli.Delivery.Sections.Section, base_project_id: project.id)
+      product =
+        Oli.Repo.get_by!(Oli.Delivery.Sections.Section, base_project_id: project.id)
+        |> Repo.preload(:certificate)
+
       refute is_nil(product)
       assert product.type == :blueprint
       assert product.title == "This is a product"
+      assert product.payment_options == :direct_and_deferred
+      assert product.certificate.title == "Product 2"
 
       product_root =
         Oli.Repo.get!(Oli.Delivery.Sections.SectionResource, product.root_section_resource_id)

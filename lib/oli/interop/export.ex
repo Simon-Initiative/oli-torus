@@ -273,7 +273,18 @@ defmodule Oli.Interop.Export do
         isGraded: r.graded,
         purpose: r.purpose,
         relatesTo: r.relates_to |> Enum.map(fn id -> "#{id}" end),
-        collabSpace: r.collab_space_config
+        collabSpace: r.collab_space_config,
+        introContent: r.intro_content,
+        introVideo: r.intro_video,
+        posterImage: r.poster_image,
+        scoringStrategyId: r.scoring_strategy_id,
+        explanationStrategy: r.explanation_strategy,
+        maxAttempts: r.max_attempts,
+        recommendedAttempts: r.recommended_attempts,
+        durationMinutes: r.duration_minutes,
+        fullProgressPct: r.full_progress_pct,
+        retakeMode: r.retake_mode,
+        assessmentMode: r.assessment_mode
       }
       |> entry("#{r.resource_id}.json")
     end)
@@ -450,11 +461,28 @@ defmodule Oli.Interop.Export do
 
     Enum.map(root.children, fn id -> full_hierarchy(revisions_by_resource_id, id) end)
 
-    certificate = Jason.encode!(product.certificate)
+    certificate =
+      case product.certificate do
+        nil ->
+          nil
+
+        cert ->
+          cert
+          |> Map.from_struct()
+          |> Map.drop([
+            :__meta__,
+            :__struct__,
+            :id,
+            :inserted_at,
+            :updated_at,
+            :section,
+            :granted_certificate
+          ])
+      end
 
     %{
       type: "Product",
-      id: Integer.to_string(product.id, 10),
+      id: "_product-#{product.id}",
       originalFile: "",
       title: product.title,
       welcomeTitle: product.welcome_title,
@@ -464,10 +492,11 @@ defmodule Oli.Interop.Export do
       payByInstitution: product.pay_by_institution,
       gracePeriodDays: product.grace_period_days,
       amount: product.amount,
+      certificateEnabled: product.certificate_enabled,
       certificate: certificate,
       children: Enum.map(root.children, fn id -> full_hierarchy(revisions_by_resource_id, id) end)
     }
-    |> entry("#{product.id}.json")
+    |> entry("_product-#{product.id}.json")
   end
 
   # helper to create a zip entry tuple
@@ -486,6 +515,9 @@ defmodule Oli.Interop.Export do
             type: "container",
             id: "#{resource_id}",
             title: revision.title,
+            introContent: revision.intro_content,
+            introVideo: revision.intro_video,
+            posterImage: revision.poster_image,
             tags: transform_tags(revision),
             children:
               Enum.map(revision.children, fn id -> full_hierarchy(revisions_by_id, id) end)
