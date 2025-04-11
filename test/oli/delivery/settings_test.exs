@@ -62,6 +62,21 @@ defmodule Oli.Delivery.SettingsTest do
     refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
   end
 
+  test "was_late/2 never returns true when scheduling type is :read_by" do
+    ra = %ResourceAttempt{
+      inserted_at: ~U[2020-01-15 00:00:00Z]
+    }
+
+    settings = %Combined{
+      late_submit: :allow,
+      time_limit: 1,
+      scheduling_type: :read_by,
+      end_date: ~U[2020-01-12 00:00:00Z]
+    }
+
+    refute Settings.was_late?(ra, settings, DateTime.add(ra.inserted_at, 20, :minute))
+  end
+
   #   iex(12)> today = DateTime.utc_now
   # ~U[2025-03-27 18:52:09.691707Z]
   # iex(13)> next_week = DateTime.add(today, 7, :day)
