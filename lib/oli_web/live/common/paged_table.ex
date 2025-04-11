@@ -103,7 +103,8 @@ defmodule OliWeb.Common.PagedTable do
     delegate_handle_event(event, params, socket, patch_fn, model_key)
   end
 
-  def delegate_handle_event("paged_table_page_change", %{"offset" => offset}, socket, patch_fn, _) do
+  def delegate_handle_event("paged_table_page_change", params, socket, patch_fn, _) do
+    offset = OliWeb.Common.Params.get_int_param(params, "offset", 0)
     patch_fn.(socket, %{offset: offset})
   end
 

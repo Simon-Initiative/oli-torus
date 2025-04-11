@@ -4,7 +4,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResourceDepot
-  alias Oli.Delivery.{Metrics, Settings}
+  alias Oli.Delivery.{Certificates, Metrics, Settings}
   alias OliWeb.Common.{FormatDateTime, SessionContext}
   alias OliWeb.Components.Delivery.Utils, as: DeliveryUtils
   alias OliWeb.Delivery.Student.Utils
@@ -29,14 +29,20 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
   def mount(_params, _session, socket) do
     %{section: section, current_user: %{id: current_user_id}} = socket.assigns
 
+    certificate =
+      if section.certificate_enabled, do: Certificates.get_certificate_by(section_id: section.id)
+
     send(self(), :gc)
 
     {:ok,
      assign(socket,
        active_tab: :assignments,
-       assignments: get_assignments(section, current_user_id)
+       assignments: get_assignments(section, current_user_id),
+       certificate: certificate,
+       filter: :all,
+       filter_expanded: false
      )
-     |> slim_assigns(), temporary_assigns: [assignments: []]}
+     |> slim_assigns()}
   end
 
   defp slim_assigns(socket) do
@@ -60,11 +66,36 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     {:noreply, socket}
   end
 
+  def handle_event("toggle_filter_open", _, socket) do
+    {:noreply, assign(socket, filter_expanded: !socket.assigns.filter_expanded)}
+  end
+
+  def handle_event("collapse_select", _, socket) do
+    {:noreply, assign(socket, filter_expanded: false)}
+  end
+
+  def handle_event("select_filter", params, socket) do
+    case params["filter"] do
+      "all" -> {:noreply, assign(socket, filter: :all, filter_expanded: false)}
+      "required" -> {:noreply, assign(socket, filter: :required, filter_expanded: false)}
+      _ -> socket
+    end
+  end
+
   def render(assigns) do
     ~H"""
     <.top_hero_banner />
-    <div class="flex justify-center py-9 px-3 md:px-20 w-full">
-      <.assignments_agenda assignments={@assignments} ctx={@ctx} section_slug={@section.slug} />
+    <div class="flex flex-col justify-center py-9 px-20 w-full gap-12">
+      <.certificate_requirements certificate={@certificate} />
+      <.filter_dropdown :if={@certificate} filter={@filter} filter_expanded={@filter_expanded} />
+
+      <.assignments_agenda
+        assignments={@assignments}
+        ctx={@ctx}
+        section_slug={@section.slug}
+        certificate={@certificate}
+        filter={@filter}
+      />
     </div>
     """
   end
@@ -85,9 +116,66 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     """
   end
 
+  attr :certificate, :map, default: nil
+
+  def certificate_requirements(%{certificate: nil} = assigns) do
+    ~H"""
+    """
+  end
+
+  def certificate_requirements(assigns) do
+    ~H"""
+    <div
+      id="certificate_requirements"
+      class="w-full h-[81px] justify-center items-center inline-flex mb-20 sm:mb-0"
+    >
+      <div class="grow shrink basis-0 self-stretch flex-col justify-start items-start gap-[5px] inline-flex">
+        <div class="flex-col justify-center items-start gap-[8px] flex">
+          <div class="w-full h-fit dark:text-[#e6e9f2]">
+            <span class="font-bold">
+              This is a Certificate Course.
+            </span>
+            <span class="dark:text-[#e6e9f2] font-normal">
+              Complete all required assignments (
+            </span>
+            <span class="text-[#ff8787] text-xl font-normal">*</span>
+            <span class="dark:text-[#e6e9f2] font-normal">
+              ) and follow these scoring guidelines:
+            </span>
+          </div>
+          <div class="w-full grow shrink basis-0">
+            <div class="w-full h-fit">
+              <span class="text-sm font-bold">
+                Certificate of Completion:
+              </span>
+              <span class="text-sm font-normal"> Earn </span>
+              <span class="text-[#2db767] dark:text-[#39e581] text-sm font-bold">
+                <%= format_percentage(@certificate.min_percentage_for_completion) %>
+              </span>
+              <span class="text-sm font-normal">or above on all required assignments</span>
+            </div>
+            <div class="w-full h-fit">
+              <span class="text-sm font-bold">
+                Certificate with Distinction:
+              </span>
+              <span class="text-sm font-bold"></span><span class="text-sm font-normal">Earn</span>
+              <span class="text-[#2db767] dark:text-[#39e581] text-sm font-bold">
+                <%= format_percentage(@certificate.min_percentage_for_distinction) %>
+              </span>
+              <span class="text-sm font-normal"></span><span class="text-sm font-normal">or above on all required assignments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   attr :assignments, :list, required: true
   attr :ctx, SessionContext, required: true
   attr :section_slug, :string, required: true
+  attr :certificate, :map, required: true
+  attr :filter, :atom, required: true
 
   def assignments_agenda(assigns) do
     ~H"""
@@ -99,8 +187,10 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <div class="justify-end items-center gap-2 flex">
           <div class="w-5 h-5 relative"><Icons.check /></div>
           <span>
-            <%= Enum.count(@assignments, &(!is_nil(&1.raw_avg_score))) %> of <%= Enum.count(
-              @assignments
+            <%= completed_assignments_count(@assignments, @certificate, @filter) %> of <%= total_assignments_count(
+              @assignments,
+              @certificate,
+              @filter
             ) %> Assignments
           </span>
         </div>
@@ -113,6 +203,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <.assignment
           :for={assignment <- @assignments}
           :if={@assignments != []}
+          filter={@filter}
           assignment={assignment}
           ctx={@ctx}
           target={
@@ -120,6 +211,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
               request_path: ~p"/sections/#{@section_slug}/assignments"
             )
           }
+          required={assignment_required_for_certificate(assignment, @certificate)}
         />
         <span :if={@assignments == []}>There are no assignments</span>
       </div>
@@ -127,22 +219,51 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
     """
   end
 
+  defp total_assignments_count(assignments, certificate, filter)
+       when is_nil(certificate) or filter == :all,
+       do: Enum.count(assignments)
+
+  defp total_assignments_count(assignments, certificate, :required),
+    do: Enum.count(assignments, &assignment_required_for_certificate(&1, certificate))
+
+  defp completed_assignments_count(assignments, certificate, filter)
+       when is_nil(certificate) or filter == :all,
+       do: Enum.count(assignments, &(!is_nil(&1.raw_avg_score)))
+
+  defp completed_assignments_count(assignments, certificate, :required),
+    do:
+      Enum.count(
+        assignments,
+        &(!is_nil(&1.raw_avg_score) and assignment_required_for_certificate(&1, certificate))
+      )
+
   attr :assignment, :map, required: true
   attr :ctx, SessionContext, required: true
   attr :target, :string, required: true, doc: "The target URL for the assignment"
 
+  attr :required, :boolean,
+    default: false,
+    doc: "Whether the assignment is required for the certificate"
+
+  attr :filter, :atom, required: true
+
   def assignment(assigns) do
     ~H"""
     <div
+      :if={@filter == :all or (@filter == :required and @required)}
       role="assignment detail"
       id={"assignment_#{@assignment.id}"}
       data-completed={"#{!is_nil(@assignment.raw_avg_score)}"}
       class="h-12 flex"
     >
       <div role="page icon" class="w-6 h-6 flex justify-center items-center">
-        <.page_icon purpose={@assignment.purpose} completed={!is_nil(@assignment.raw_avg_score)} />
+        <.page_icon
+          purpose={@assignment.purpose}
+          completed={!is_nil(@assignment.raw_avg_score)}
+          required={@required}
+        />
       </div>
-      <div class="ml-2 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
+      <div class="ml-6 mt-0.5 h-6 w-10 flex items-center text-left text-[#757682] dark:text-[#eeebf5]/75 text-sm font-semibold leading-none">
         <%= @assignment.numbering_index %>
       </div>
       <div class="h-12 flex flex-col justify-between mr-6 flex-1 min-w-0">
@@ -229,6 +350,7 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
 
   attr :completed, :boolean, required: true
   attr :purpose, :atom, required: true
+  attr :required, :boolean, required: true
 
   defp page_icon(assigns) do
     ~H"""
@@ -237,9 +359,102 @@ defmodule OliWeb.Delivery.Student.AssignmentsLive do
         <span class="text-[#9a40a8] dark:text-[#ebaaf2]"><Icons.world /></span>
       <% @completed -> %>
         <Icons.square_checked class="fill-[#218358] dark:fill-[#39e581]" />
+      <% @required -> %>
+        <Icons.asterisk />
       <% true -> %>
         <Icons.flag fill_class="fill-[#fa8d3e] dark:fill-[#ff9040]" />
     <% end %>
     """
   end
+
+  attr :filter, :atom, required: true
+  attr :filter_expanded, :boolean, default: false
+
+  defp filter_dropdown(assigns) do
+    ~H"""
+    <div class="flex relative justify-end mb-6" phx-click-away="collapse_select">
+      <button
+        class={[
+          "h-6 px-2 py-[3px] bg-black/10 dark:bg-white/10 rounded-xl justify-start items-center gap-2 overflow-hidden hover:cursor-pointer hover:bg-black/20 hover:dark:bg-white/20",
+          if(@filter == :all, do: "w-[180px]", else: "w-[210px]")
+        ]}
+        phx-click="toggle_filter_open"
+      >
+        <div class="pl-1 justify-start items-center gap-2.5 flex">
+          <%= case @filter do %>
+            <% :all -> %>
+              <Icons.transparent_flag class="dark:stroke-white" />
+              <div class="text-[13px] font-semibold">
+                All Assignments
+              </div>
+            <% :required -> %>
+              <Icons.asterisk class="dark:fill-white" />
+              <div class="text-[13px] font-semibold">
+                Required Assignments
+              </div>
+          <% end %>
+
+          <Icons.chevron_down
+            width="16"
+            height="16"
+            class={if @filter_expanded, do: "-rotate-180 ml-auto", else: "ml-auto"}
+          />
+        </div>
+      </button>
+      <div
+        :if={@filter_expanded}
+        class={[
+          "h-13 absolute top-8 flex flex-col rounded-lg border border-black/20 dark:border-[#3B3740] justify-start items-center overflow-hidden divide-y divide-black/20 dark:divide-white/20",
+          if(@filter == :all, do: "w-[180px]", else: "w-[210px]")
+        ]}
+      >
+        <% opts = if @filter == :all, do: [:required, :all], else: [:all, :required] %>
+        <.filter_option :for={opt <- opts} option={opt} />
+      </div>
+    </div>
+    """
+  end
+
+  def filter_option(%{option: :all} = assigns) do
+    ~H"""
+    <button
+      id="select_all_option"
+      class="w-full h-6 p-3 justify-start items-center gap-2.5 flex hover:cursor-pointer bg-black/10 dark:bg-white/10 hover:bg-black/20 hover:dark:bg-white/20"
+      phx-click="select_filter"
+      phx-value-filter="all"
+    >
+      <Icons.transparent_flag class="dark:stroke-white" />
+      <div class="text-[13px] font-semibold">
+        All
+      </div>
+    </button>
+    """
+  end
+
+  def filter_option(%{option: :required} = assigns) do
+    ~H"""
+    <button
+      id="select_required_option"
+      class="w-full h-6 p-3 justify-start items-center gap-2.5 flex hover:cursor-pointer bg-black/10 dark:bg-white/10 hover:bg-black/20 hover:dark:bg-white/20"
+      phx-click="select_filter"
+      phx-value-filter="required"
+    >
+      <Icons.asterisk class="dark:fill-white" />
+      <div class="text-[13px] font-semibold pl-1.5">
+        Required
+      </div>
+    </button>
+    """
+  end
+
+  defp format_percentage(percentage) do
+    "#{trunc(percentage)}%"
+  end
+
+  defp assignment_required_for_certificate(_assignment, nil), do: false
+
+  defp assignment_required_for_certificate(assignment, certificate),
+    do:
+      certificate.assessments_apply_to == :all or
+        assignment.id in certificate.custom_assessments
 end

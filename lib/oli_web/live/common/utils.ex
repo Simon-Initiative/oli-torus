@@ -4,6 +4,8 @@ defmodule OliWeb.Common.Utils do
   alias Oli.Accounts.{User, Author}
   alias OliWeb.Common.SessionContext
 
+  require Logger
+
   def name(%User{guest: true}) do
     "Guest Student"
   end
@@ -239,12 +241,13 @@ defmodule OliWeb.Common.Utils do
   """
   def extract_feedback_text(activity_attempts) do
     activity_attempts
-    |> Enum.flat_map(&extract_from_activity_attempt/1)
+    |> Enum.map(&extract_from_activity_attempt/1)
+    |> List.flatten()
   end
 
   defp extract_from_activity_attempt(%{part_attempts: part_attempts}) do
     part_attempts
-    |> Enum.flat_map(&extract_from_part_attempt/1)
+    |> Enum.map(&extract_from_part_attempt/1)
   end
 
   defp extract_from_part_attempt(%{feedback: %{"content" => content}}) do
@@ -258,5 +261,14 @@ defmodule OliWeb.Common.Utils do
     children
     |> Enum.map(& &1["text"])
     |> Enum.join(" ")
+  end
+
+  defp extract_text({"model", model}) do
+    Enum.map(model, &extract_text/1)
+  end
+
+  defp extract_text(_other_case = other) do
+    Logger.error("Could not parse feedback text from #{inspect(other)}")
+    []
   end
 end

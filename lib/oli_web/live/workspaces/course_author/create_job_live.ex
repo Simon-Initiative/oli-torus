@@ -162,6 +162,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
           type="text"
           id="emails"
           name="emails"
+          value={Enum.join(@emails, ",")}
           class="form-control mb-2"
           form="job_form"
           phx-hook="TextInputListener"
@@ -240,7 +241,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.CreateJobLive do
 
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, changes)
 
-    offset = get_int_param(changes, "offset", "0")
+    offset = get_int_param(changes, "offset", 0)
 
     sections =
       Browse.browse_sections(

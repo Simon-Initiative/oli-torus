@@ -1552,6 +1552,35 @@ defmodule OliWeb.Delivery.Student.LessonLiveTest do
       refute has_element?(view, ~s{svg[role="square checked icon"]})
       refute has_element?(view, ~s{svg[role="flag icon"]})
     end
+
+    test "no auto-submit when late disallowed and read_by is past due", %{
+      conn: conn,
+      user: user,
+      section: section,
+      page_3: page_3
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+      Sections.mark_section_visited_for_student(section, user)
+
+      attempt_in_progress =
+        create_attempt(user, section, page_3, %{lifecycle_state: :active})
+
+      ## update the section resource needed for the test
+      Sections.get_section_resource(section.id, attempt_in_progress.resource_access.resource_id)
+      |> Sections.update_section_resource(%{
+        end_date: yesterday(),
+        late_submit: :disallow,
+        late_start: :disallow,
+        scheduling_type: :read_by
+      })
+
+      {:ok, view, _html} = live(conn, Utils.lesson_live_path(section.slug, page_3.slug))
+      ensure_content_is_visible(view)
+
+      ## assert that redirect is not happening and the submit button and title are present
+      assert has_element?(view, "div[role='page title']", page_3.title)
+      assert has_element?(view, "button[id='submit_answers']", "Submit Answers")
+    end
   end
 
   describe "annotations toggle" do

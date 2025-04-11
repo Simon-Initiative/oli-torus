@@ -67,7 +67,9 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
       datashop_session_id_user1 = UUID.uuid4()
 
       effective_settings = %Oli.Delivery.Settings.Combined{time_limit: 5}
+
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
+
       Oli.Delivery.Sections.update_section_resource(sr, %{time_limit: 5})
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)
@@ -152,8 +154,11 @@ defmodule Oli.Delivery.Attempts.WasLateTest do
       datashop_session_id_user1 = UUID.uuid4()
 
       yesterday = DateTime.utc_now() |> DateTime.add(-1, :day)
+
       effective_settings = %Oli.Delivery.Settings.Combined{end_date: yesterday}
+
       sr = Oli.Delivery.Sections.get_section_resource(section.id, page.resource.id)
+
       Oli.Delivery.Sections.update_section_resource(sr, %{end_date: yesterday})
 
       Oli.Delivery.Attempts.Core.track_access(page.resource.id, section.id, user.id)

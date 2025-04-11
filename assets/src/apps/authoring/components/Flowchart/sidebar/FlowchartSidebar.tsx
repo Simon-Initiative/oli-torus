@@ -12,6 +12,7 @@ import { addPath } from '../flowchart-actions/add-path';
 import { changeTitle } from '../flowchart-actions/change-title';
 import {
   QuestionType,
+  QuestionTypeMapping,
   getAvailablePaths,
   getScreenPrimaryQuestion,
   getScreenQuestionType,
@@ -76,7 +77,9 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
   };
 
   const paths = screen.authoring?.flowchart?.paths || [];
-  const addPathDisabled = questionType === 'none' && paths.length > 0;
+  const screenType = screen.authoring?.flowchart?.screenType || 'none';
+  const addPathDisabled =
+    screenType === QuestionTypeMapping.HUB_SPOKE || (questionType === 'none' && paths.length > 0);
 
   return (
     <>
@@ -103,6 +106,7 @@ const SelectedScreen: React.FC<{ screen: IActivity }> = ({ screen }) => {
             screens={screens}
             questionId={primaryQuestion?.id || ''}
             screenId={screen.id}
+            screenType={screen.authoring?.flowchart?.screenType}
             questionType={questionTypeLabel}
             availablePaths={getAvailablePaths(screen)}
             paths={paths}

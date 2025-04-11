@@ -35,6 +35,13 @@ defmodule Oli.Delivery.GrantedCertificates do
   end
 
   @doc """
+  Returns the granted certificate with the given id.
+  """
+  def get_granted_certificate_by_id(id) do
+    Repo.get(GrantedCertificate, id)
+  end
+
+  @doc """
   Returns the granted certificate with the given guid.
   """
   def get_granted_certificate_by_guid(guid) do
