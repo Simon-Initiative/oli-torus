@@ -154,7 +154,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
     <>
       <h4>
         <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-        DOT AI Activity Point
+        DOT AI Activation Point
       </h4>
       <p className="mt-2">
         Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
