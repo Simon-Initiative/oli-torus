@@ -44,6 +44,7 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
     .signature {
       margin: 0;
       font-family: 'Alex Brush', 'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive;
+      font-weight: bold;
       font-size: 20px;
     }
   </style>
