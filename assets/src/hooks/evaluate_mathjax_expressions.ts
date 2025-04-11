@@ -3,11 +3,10 @@
 
 export const EvaluateMathJaxExpressions = {
   mounted() {
-
     const chatMessages = document.querySelectorAll('.chat-message');
-    const elements : any = [];
+    const elements: any = [];
 
-    chatMessages.forEach(el => {
+    chatMessages.forEach((el) => {
       elements.push(el);
     });
 
@@ -16,7 +15,6 @@ export const EvaluateMathJaxExpressions = {
       let lastPromise = window?.MathJax?.startup?.promise;
       /* istanbul ignore next */
       if (!lastPromise) {
-
         typeof jest === 'undefined' &&
           console.warn(
             'Load the MathJax script before this one or unpredictable rendering might occur.',

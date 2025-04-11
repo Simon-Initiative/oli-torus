@@ -23,7 +23,7 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const { dispatch, model, onRequestMedia, authoringContext } =
+  const { dispatch, model, onRequestMedia } =
     useAuthoringElementContext<ImageCodingModelSchema>();
 
   const { projectSlug } = props;

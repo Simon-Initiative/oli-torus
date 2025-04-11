@@ -78,8 +78,8 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
         <b>Activation Point</b>
       </p>
       <p>
-        An AI activation point is when our AI assistant, DOT, responds to something a learner does, like
-        giving feedback or extra help based on their actions.
+        An AI activation point is when our AI assistant, DOT, responds to something a learner does,
+        like giving feedback or extra help based on their actions.
       </p>
 
       <select defaultValue="" onChange={onTriggerChange}>
