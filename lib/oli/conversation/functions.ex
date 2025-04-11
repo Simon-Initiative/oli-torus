@@ -10,10 +10,33 @@ defmodule Oli.Conversation.Functions do
   @lookup_table %{
     "avg_score_for" => "Elixir.Oli.Conversation.Functions.avg_score_for",
     "up_next" => "Elixir.Oli.Conversation.Functions.up_next",
-    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content"
+    "relevant_course_content" => "Elixir.Oli.Conversation.Functions.relevant_course_content",
+    "course_sequence" => "Elixir.Oli.Conversation.Functions.course_sequence"
   }
 
   @functions [
+    %{
+      name: "course_sequence",
+      description: """
+      Returns the full sequence of units, modules, sections and learning pages in this course as a
+      list of objects with the following keys: [resource_id, title, url, is_page, graded, level] where
+      resource_id is the unique identifier of the page or container, and
+      title is the title of the page or container, url is the url to the page, is_page is a boolean
+      indicating if the object is a page or a container, graded is a boolean indicating if the
+      page is graded or is practice, and level is the level of the page or container in the hierarchy.
+      The level is a number starting from 1 for the first level of the hierarchy.
+      """,
+      parameters: %{
+        type: "object",
+        properties: %{
+          section_id: %{
+            type: "integer",
+            description: "The current course section's id"
+          }
+        },
+        required: ["section_id"]
+      }
+    },
     %{
       name: "up_next",
       description:
@@ -125,6 +148,22 @@ defmodule Oli.Conversation.Functions do
 
   def up_next(%{"current_user_id" => user_id, "section_id" => section_id}) do
     get_next_activities_for_student(section_id, user_id)
+  end
+
+  def course_sequence(%{"section_id" => section_id}) do
+    section = Oli.Delivery.Sections.get_section!(section_id)
+
+    Oli.Delivery.Sections.SectionResourceDepot.get_delivery_resolver_full_hierarchy(section)
+    |> Oli.Delivery.Hierarchy.flatten_hierarchy()
+    |> Enum.map(fn node ->
+      %{
+        url: Routes.page_delivery_url(OliWeb.Endpoint, :page, section.slug, node.revision.slug),
+        title: node.revision.title,
+        is_page: node.revision.resource_type_id == Oli.Resources.ResourceType.id_for_page(),
+        level: node.numbering.level,
+        graded: node.revision.graded
+      }
+    end)
   end
 
   def relevant_course_content(%{"student_input" => input, "section_id" => section_id}) do

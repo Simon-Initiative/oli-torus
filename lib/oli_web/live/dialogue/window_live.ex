@@ -96,6 +96,7 @@ defmodule OliWeb.Dialogue.WindowLive do
          form: to_form(UserInput.changeset(%UserInput{}, %{content: ""})),
          streaming: false,
          allow_submission?: true,
+         trigger_queue: [],
          active_message: nil,
          function_call: nil,
          teaser_message: nil,
@@ -669,32 +670,43 @@ defmodule OliWeb.Dialogue.WindowLive do
       "Handlng trigger for section #{socket.assigns.section.id}, resource #{socket.assigns.resource_id}, user #{socket.assigns.current_user.id}"
     )
 
-    prompt = Triggers.assemble_trigger_prompt(trigger)
+    # If there is currently a trigger or direct student interaction
+    # streaming, we must queue the trigger and process it after
+    # the current one is finished
+    case socket.assigns.streaming do
+      true ->
+        {:noreply,
+         assign(socket,
+           trigger_queue: socket.assigns.trigger_queue ++ [trigger]
+         )}
 
-    dialogue =
-      Dialogue.add_message(
-        socket.assigns.dialogue,
-        Message.new(:system, prompt),
-        trigger.user_id,
-        trigger.resource_id,
-        trigger.section_id
-      )
+      false ->
+        prompt = Triggers.assemble_trigger_prompt(trigger)
 
-    pid = self()
+        dialogue =
+          Dialogue.add_message(
+            socket.assigns.dialogue,
+            Message.new(:system, prompt),
+            trigger.user_id,
+            trigger.resource_id,
+            trigger.section_id
+          )
 
-    Task.async(fn ->
-      Dialogue.engage(dialogue, :async)
-      send(pid, {:reply_finished})
-    end)
+        pid = self()
 
-    # socket = push_event(socket, "show_teaser", %{})
+        Task.async(fn ->
+          Dialogue.engage(dialogue, :async)
+          send(pid, {:reply_finished})
+        end)
 
-    {:noreply,
-     assign(socket,
-       dialogue: dialogue,
-       teaser_message: nil,
-       teaser_visible: true
-     )}
+        {:noreply,
+         assign(socket,
+           dialogue: dialogue,
+           streaming: true,
+           teaser_message: nil,
+           teaser_visible: true
+         )}
+    end
   end
 
   use Oli.Conversation.DialogueHandler

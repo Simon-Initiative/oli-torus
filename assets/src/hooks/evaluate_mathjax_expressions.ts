@@ -3,14 +3,18 @@
 
 export const EvaluateMathJaxExpressions = {
   mounted() {
-    const elements = document.querySelectorAll('.formula, .formula-inline');
+    const chatMessages = document.querySelectorAll('.chat-message');
+    const elements: any = [];
+
+    chatMessages.forEach((el) => {
+      elements.push(el);
+    });
 
     const getGlobalLastPromise = () => {
       /* istanbul ignore next */
       let lastPromise = window?.MathJax?.startup?.promise;
       /* istanbul ignore next */
       if (!lastPromise) {
-        console.info('NO LAST PROMISE');
         typeof jest === 'undefined' &&
           console.warn(
             'Load the MathJax script before this one or unpredictable rendering might occur.',
