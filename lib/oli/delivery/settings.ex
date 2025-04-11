@@ -327,9 +327,12 @@ defmodule Oli.Delivery.Settings do
 
         # both an end date and a time limit, use the earlier of the two
         {end_date, time_limit} ->
-          if end_date < DateTime.add(resource_attempt.inserted_at, time_limit, :minute),
-            do: end_date,
-            else: DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+          if DateTime.compare(
+               end_date,
+               DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
+             ) == :lt,
+             do: end_date,
+             else: DateTime.add(resource_attempt.inserted_at, time_limit, :minute)
       end
 
     case deadline do

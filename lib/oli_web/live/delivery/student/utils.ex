@@ -215,7 +215,10 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp submit_term(%{effective_settings: %{late_submit: :allow, time_limit: 0}} = assigns) do
+  defp submit_term(
+         %{effective_settings: %{late_submit: :allow, time_limit: 0, scheduling_type: :due_by}} =
+           assigns
+       ) do
     ~H"""
     <li id="page_submit_term">
       If you submit after the due date, it will be marked late.
@@ -223,7 +226,10 @@ defmodule OliWeb.Delivery.Student.Utils do
     """
   end
 
-  defp submit_term(%{effective_settings: %{late_submit: :allow}} = assigns) do
+  defp submit_term(
+         %{effective_settings: %{late_submit: :allow, time_limit: time_limit}} = assigns
+       )
+       when time_limit not in ["nil", 0] do
     ~H"""
     <li id="page_submit_term">
       If you exceed this time, it will be marked late.
