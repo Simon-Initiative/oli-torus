@@ -14,7 +14,6 @@ import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import { TriggerAuthoring, TriggerLabel } from '../common/triggers/TriggerAuthoring';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -24,8 +23,7 @@ import { ImageCodeEditor } from './sections/ImageCodeEditor';
 import { lastPart } from './utils';
 
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
-  const { dispatch, model, onRequestMedia, authoringContext } =
-    useAuthoringElementContext<ImageCodingModelSchema>();
+  const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
 
   const { projectSlug } = props;
 
@@ -214,12 +212,6 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
             <TabbedNavigation.Tab label="Explanation">
               <Explanation partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
-
-            {authoringContext?.optionalContentTypes?.triggers && (
-              <TabbedNavigation.Tab label={TriggerLabel()}>
-                <TriggerAuthoring partId={model.authoring.parts[0].id} />
-              </TabbedNavigation.Tab>
-            )}
           </TabbedNavigation.Tabs>
         </div>
       )}

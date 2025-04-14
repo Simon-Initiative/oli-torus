@@ -35,7 +35,7 @@ export const PageTriggerEditor: React.FC<{
       <div className="flex justify-between">
         <h4>
           <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-          DOT AI Page Trigger Point
+          DOT AI Page Activation Point
         </h4>
         <button onClick={() => onEdit(undefined)} className="btn btn-primary">
           Disable
@@ -77,7 +77,7 @@ export const PageTriggerEditor: React.FC<{
       <div className="flex justify-between">
         <h4>
           <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-          DOT AI Page Trigger Point
+          DOT AI Page Activation Point
         </h4>
         <button
           onClick={() => onEdit({ id: 'page', type: 'trigger', trigger_type: 'page', prompt: '' })}
