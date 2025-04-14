@@ -40,6 +40,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
              Triggers.check_for_response_trigger(
                relevant_triggers_by_type,
                response,
+               part.id,
                out_of,
                context
              )
@@ -71,6 +72,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
              Triggers.check_for_response_trigger(
                relevant_triggers_by_type,
                %Response{score: 0},
+               part.id,
                adjusted_out_of,
                context
              )

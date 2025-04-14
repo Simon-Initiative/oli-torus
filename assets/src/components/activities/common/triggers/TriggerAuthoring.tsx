@@ -75,11 +75,11 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
   const NewTriggerForm = () => (
     <div className="mt-2">
       <p>
-        <b>Trigger</b>
+        <b>Activation Point</b>
       </p>
       <p>
-        An AI trigger is when our AI assistant, DOT, responds to something a learner does, like
-        giving feedback or extra help based on their actions.
+        An AI activation point is when our AI assistant, DOT, responds to something a learner does,
+        like giving feedback or extra help based on their actions.
       </p>
 
       <select defaultValue="" onChange={onTriggerChange}>
@@ -154,7 +154,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
     <>
       <h4>
         <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-        DOT AI Activity Trigger Point
+        DOT AI Activation Point
       </h4>
       <p className="mt-2">
         Customize a prompt for our AI assistant, DOT, to follow based on learner actions within this
@@ -170,7 +170,7 @@ export const TriggerAuthoring: React.FC<Props> = ({ partId }) => {
         <>
           <div className="mt-2 flex justify-center py-4">
             <Button onClick={(_e) => setAddMode(true)} disabled={!editMode}>
-              + Create New Trigger
+              + Create New Activation Point
             </Button>
           </div>
 

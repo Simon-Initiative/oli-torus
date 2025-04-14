@@ -29,7 +29,7 @@ defmodule Oli.Conversation.TriggersTest do
     }
 
     trigger =
-      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, "1", 2.0, context)
 
     assert trigger.prompt == "correct prompt"
     assert trigger.trigger_type == :correct_answer
@@ -66,7 +66,7 @@ defmodule Oli.Conversation.TriggersTest do
     }
 
     trigger =
-      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, "1", 2.0, context)
 
     assert trigger.prompt == "incorrect prompt"
     assert trigger.trigger_type == :incorrect_answer
@@ -103,7 +103,7 @@ defmodule Oli.Conversation.TriggersTest do
     }
 
     trigger =
-      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, 2.0, context)
+      Triggers.check_for_response_trigger(relevant_triggers_by_type, response, "1", 2.0, context)
 
     assert trigger.prompt == "targeted prompt"
     assert trigger.trigger_type == :targeted_feedback
