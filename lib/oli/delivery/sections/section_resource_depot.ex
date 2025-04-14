@@ -93,18 +93,21 @@ defmodule Oli.Delivery.Sections.SectionResourceDepot do
   end
 
   @doc """
-  Returns a list of SectionResource records for all containers
+  Returns a list of SectionResource records for all containers.
+  An optional keyword list can be passed to extend the filtering conditions.
+  For example, SectionResourceDepot.containers(some_section_id, numbering_level: {:in, [1, 2]}) will
+  return all units and moduled for the given section.
   """
-  def containers(section_id) do
+  def containers(section_id, additional_conditions \\ []) do
     depot_coordinator().init_if_necessary(@depot_desc, section_id, __MODULE__)
 
-    container = Oli.Resources.ResourceType.id_for_container()
+    conditions =
+      Keyword.merge(
+        [resource_type_id: Oli.Resources.ResourceType.id_for_container()],
+        additional_conditions
+      )
 
-    Depot.query(
-      @depot_desc,
-      section_id,
-      resource_type_id: container
-    )
+    Depot.query(@depot_desc, section_id, conditions)
     |> Enum.sort_by(& &1.numbering_index)
   end
 

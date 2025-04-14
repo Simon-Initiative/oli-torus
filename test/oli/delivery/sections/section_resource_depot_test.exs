@@ -237,6 +237,28 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       # Test Depot
       test_depot(section_id)
     end
+
+    test "returns a list of SectionResource pages from page ids", ctx do
+      %{
+        section: %{id: section_id} = _section,
+        page_1_revision: page_1_revision,
+        page_2_revision: page_2_revision
+      } = ctx
+
+      revision_ids = [page_1_revision.id, page_2_revision.id]
+      page_sr_ids = get_section_resource_ids(revision_ids)
+      resource_ids = [page_1_revision.resource_id, page_2_revision.resource_id]
+
+      [%SectionResource{id: id1}, %SectionResource{id: id2}] =
+        SectionResourceDepot.get_pages(section_id, resource_ids)
+
+      assert Enum.all?([id1, id2], &(&1 in page_sr_ids))
+
+      assert Enum.empty?(SectionResourceDepot.get_pages(section_id, []))
+
+      # Test Depot
+      test_depot(section_id)
+    end
   end
 
   describe "get_section_resources_by_type_ids/2" do
@@ -301,6 +323,39 @@ defmodule Oli.Delivery.Sections.SectionResourceDepotTest do
       setup_depot_warmer_max_number_of_entries_env("1")
 
       assert [^section_1_id] = SectionResourceDepot.fetch_recently_active_sections()
+    end
+  end
+
+  describe "containers/1 and /2" do
+    setup [:create_project]
+
+    test "returns all containers for a given section", ctx do
+      %{
+        section: %{id: section_id} = _section,
+        container_revision: container_revision,
+        module_1_revision: module_1_revision
+      } = ctx
+
+      revision_ids = [container_revision.id, module_1_revision.id]
+      container_sr_ids = get_section_resource_ids(revision_ids)
+
+      assert [%SectionResource{id: sr_1}, %SectionResource{id: sr_2}] =
+               SectionResourceDepot.containers(section_id)
+
+      assert Enum.all?([sr_1, sr_2], &(&1 in container_sr_ids))
+    end
+
+    test "returns all containers for a given section with a specific list of numbering levels",
+         ctx do
+      %{
+        section: %{id: section_id} = _section,
+        module_1_revision: module_1_revision
+      } = ctx
+
+      assert [%SectionResource{revision_id: revision_id}] =
+               SectionResourceDepot.containers(section_id, numbering_level: {:in, [1, 2]})
+
+      assert revision_id == module_1_revision.id
     end
   end
 

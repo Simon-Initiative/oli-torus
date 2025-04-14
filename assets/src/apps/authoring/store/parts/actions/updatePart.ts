@@ -52,10 +52,7 @@ export const updatePart = createAsyncThunk(
       ) {
         try {
           //for hub & spoke, we need to create flowchart path automatically based on the spoke destinations
-          let paths =
-            activityClone.authoring.flowchart?.paths?.filter(
-              (path: any) => path.type === 'correct',
-            ) || [];
+          let paths: any[] = [];
           const flowchartPaths =
             payload?.changes?.custom?.spokeItems?.map((spoke: any) => {
               return {
@@ -69,10 +66,22 @@ export const updatePart = createAsyncThunk(
                 type: 'option-common-error',
               };
             }) || [];
+          const hubCompletionDestination = payload?.changes?.custom?.hubCompletionDestination;
+          // Generate the hub completed destination
+          const correctflowPath = {
+            id: `spoke-correct-path-${partDef.id}`,
+            completed: true,
+            destinationScreenId: Number(hubCompletionDestination),
+            type: 'correct',
+            componentId: partDef.id,
+            label: 'Hub Completed',
+            priority: 8,
+          };
           if (flowchartPaths?.length) {
             paths = paths.filter((path: any) => path.type === 'correct');
-            paths = [...paths, ...flowchartPaths];
+            paths = [...paths, ...flowchartPaths, correctflowPath];
             activityClone.authoring.flowchart.paths = paths;
+            activityClone.authoring.flowchart.screenType = 'hub_spoke';
           }
         } catch (ex) {
           //Ignore

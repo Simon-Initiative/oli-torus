@@ -184,10 +184,12 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
         update_granted_certificate(granted_certificate, %{
           state: :denied,
           url: "some_initial_url",
-          student_email_sent: true
+          student_email_sent: true,
+          with_distinction: true
         })
 
       previous_gc_guid = granted_certificate.guid
+      original_granted_certificate_distinction = granted_certificate.with_distinction
 
       attrs = %{
         id: "certificate-state-component",
@@ -248,6 +250,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
       refute granted_certificate.student_email_sent
       assert previous_gc_guid != granted_certificate.guid
       assert has_element?(lcd, "div[role='denied status']", "Denied")
+      assert granted_certificate.with_distinction == original_granted_certificate_distinction
     end
 
     test "can edit a non existing granted certificate ('In Progress')", %{
@@ -290,6 +293,8 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
       granted_certificate = user_granted_certificate(certificate.id, student.id)
 
+      original_granted_certificate_distinction = granted_certificate.with_distinction
+
       assert granted_certificate.state == :earned
       assert has_element?(lcd, "div[role='approved status']", "Approved")
       refute granted_certificate.student_email_sent
@@ -312,6 +317,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
 
       assert granted_certificate.state == :denied
       assert has_element?(lcd, "div[role='denied status']", "Denied")
+      assert granted_certificate.with_distinction == original_granted_certificate_distinction
     end
   end
 

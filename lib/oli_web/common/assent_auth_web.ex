@@ -1,8 +1,6 @@
 defmodule OliWeb.Common.AssentAuthWeb do
   use OliWeb, :verified_routes
 
-  require Logger
-
   alias OliWeb.Common.AssentAuthWeb
 
   defmodule Config do
@@ -86,9 +84,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
     else
       {:error, error} ->
         {:error, error, conn}
-
-      {:error, error, conn} ->
-        {:error, error, conn}
     end
   end
 
@@ -107,8 +102,6 @@ defmodule OliWeb.Common.AssentAuthWeb do
   end
 
   defp split_user_identity_params(params, _provider) do
-    Logger.error("No sub found in user params: #{inspect(params)}")
-
     {:error, {:invalid_user_identity_params, {:missing_param, "sub", params}}}
   end
 
@@ -208,7 +201,7 @@ defmodule OliWeb.Common.AssentAuthWeb do
   defp provider_config!(provider, config) do
     provider = ensure_atom_key(provider)
 
-    config.authentication_providers()
+    config.authentication_providers
     |> Keyword.get(provider)
     |> Assent.Config.put(
       :redirect_uri,

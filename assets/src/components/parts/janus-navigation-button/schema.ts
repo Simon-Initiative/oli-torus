@@ -11,11 +11,23 @@ export interface NavButtonModel extends JanusAbsolutePositioned, JanusCustomCss 
   buttonColor: string;
   transparent: boolean;
   selected: boolean;
+  imagePosition: string;
+  imageSource: string;
 }
 
 export const schema: JSONSchema7Object = {
   title: {
     type: 'string',
+  },
+  imageSource: {
+    title: 'Source',
+    type: 'string',
+  },
+  imagePosition: {
+    title: 'Image position',
+    type: 'string',
+    enum: ['Left', 'Right', 'Top', 'Bottom'],
+    default: 'Left',
   },
   ariaLabel: {
     type: 'string',
@@ -59,6 +71,9 @@ export const uiSchema = {
   buttonColor: {
     'ui:widget': 'ColorPicker',
   },
+  imageSource: {
+    'ui:widget': 'TorusImageBrowser',
+  },
 };
 
 export const adaptivitySchema = {
@@ -71,6 +86,8 @@ export const adaptivitySchema = {
   transparent: CapiVariableTypes.BOOLEAN,
   accessibilityText: CapiVariableTypes.STRING,
   customCssClass: CapiVariableTypes.STRING,
+  imageSource: CapiVariableTypes.STRING,
+  imagePosition: CapiVariableTypes.STRING,
 };
 
 export const createSchema = (): Partial<NavButtonModel> => ({
@@ -82,4 +99,6 @@ export const createSchema = (): Partial<NavButtonModel> => ({
   height: 30,
   title: 'Nav Button',
   ariaLabel: 'Nav Button',
+  imageSource: '',
+  imagePosition: 'Left',
 });
