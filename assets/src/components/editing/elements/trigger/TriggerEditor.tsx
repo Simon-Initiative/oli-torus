@@ -55,7 +55,7 @@ export const TriggerEditorCore = ({
       <div className="flex justify-between">
         <h4>
           <img src="/images/icons/icon-AI.svg" className="inline mr-1" />
-          DOT AI Group Activation Point
+          DOT AI Activation Point
         </h4>
         {showDelete ? <DeleteButton onClick={() => onDelete()} editMode={true} /> : null}
       </div>
