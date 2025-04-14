@@ -321,7 +321,9 @@ if config_env() == :prod do
       provider -> Module.concat([Oli, Help, Providers, provider])
     end
 
-  config :oli, :help, dispatcher: help_provider
+  config :oli, :help,
+    dispatcher: help_provider,
+    knowledge_base_link: System.get_env("KNOWLEDGE_BASE_LINK", "")
 
   # Configurable http/https protocol options for cowboy
   # https://ninenines.eu/docs/en/cowboy/2.5/manual/cowboy_http/
@@ -426,6 +428,8 @@ if config_env() == :prod do
 
   config :oli, :student_sign_in,
     background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
+
+  config :oli, knowledge_base_link: System.get_env("KNOWLEDGE_BASE_LINK", "")
 
   config :oli, Oban,
     repo: Oli.Repo,

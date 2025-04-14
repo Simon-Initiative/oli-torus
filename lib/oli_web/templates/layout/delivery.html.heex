@@ -162,6 +162,8 @@
 
     <%= react_component("Components.ModalDisplay") %>
 
-    <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %>
+    <%= live_render(@conn, OliWeb.HelpLive) %>
+
+    <%!-- <%= render(OliWeb.SharedView, "_help.html", conn: @conn) %> --%>
   </body>
 </html>

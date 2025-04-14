@@ -778,7 +778,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   def tech_support_button(assigns) do
     ~H"""
     <button
-      onclick="window.showHelpModal();"
+      phx-click={JS.dispatch("click", to: "button#hidden-support-button")}
       class="w-full h-11 px-3 py-3 flex-col justify-center items-start inline-flex text-black/70 hover:text-black/90 dark:text-gray-400 hover:dark:text-white stroke-black/70 hover:stroke-black/90 dark:stroke-[#B8B4BF] hover:dark:stroke-white"
     >
       <div class="justify-start items-end gap-3 inline-flex">

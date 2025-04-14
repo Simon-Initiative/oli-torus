@@ -36,36 +36,11 @@
           <div id="help-form">
             <%= hidden_input(f, :location, id: "location") %>
             <%= hidden_input(f, :cookies_enabled, id: "cookies_enabled") %>
-            <div class="form-group">
-              <%= label(f, :full_name, "Name", class: "control-label") %>
-              <%= text_input(
-                f,
-                :full_name,
-                class: "form-control" <> error_class(f, :full_name, "is-invalid"),
-                placeholder: "Enter Name",
-                required: true,
-                autofocus: true,
-                value:
-                  (@conn.assigns[:current_user] && @conn.assigns.current_user.name) ||
-                    (@conn.assigns[:author] && @conn.assigns.author.name) ||
-                    (@conn.assigns[:current_author] && @conn.assigns.current_author.name)
-              ) %>
-              <%= error_tag(f, :full_name) %>
-            </div>
-            <div class="form-group">
-              <%= label(f, :email, "Email Address", class: "control-label") %>
-              <%= email_input(
-                f,
-                :email,
-                class: "form-control" <> error_class(f, :email, "is-invalid"),
-                placeholder: "Enter Email",
-                required: true,
-                value:
-                  (@conn.assigns[:current_user] && @conn.assigns.current_user.email) ||
-                    (@conn.assigns[:author] && @conn.assigns.author.email) ||
-                    (@conn.assigns[:current_author] && @conn.assigns.current_author.email)
-              ) %>
-              <%= error_tag(f, :email) %>
+            <div class="mb-6">
+              <% knowledge_base_link = Application.fetch_env!(:oli, :help)[:knowledge_base_link] %>
+              <.link href={knowledge_base_link}>
+                Find answers quickly in the Torus knowledge base
+              </.link>
             </div>
             <div class="form-group mb-3">
               <%= label(f, :subject, "Subject:", class: "control-label") %>

@@ -238,7 +238,9 @@ help_provider =
     provider -> Module.concat([Oli, Help, Providers, provider])
   end
 
-config :oli, :help, dispatcher: help_provider
+config :oli, :help,
+  dispatcher: help_provider,
+  knowledge_base_link: System.get_env("KNOWLEDGE_BASE_LINK", "")
 
 config :oli,
   ecl_username: System.get_env("ECL_USERNAME", ""),
@@ -332,6 +334,8 @@ config :oli, :datashop,
 
 config :oli, :student_sign_in,
   background_color: System.get_env("STUDENT_SIGNIN_BACKGROUND_COLOR", "#FF82E4")
+
+# config :oli, knowledge_base_link: System.get_env("KNOWLEDGE_BASE_LINK", "")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
