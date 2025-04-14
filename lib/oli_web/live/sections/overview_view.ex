@@ -668,7 +668,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     socket =
       socket
-      |> put_flash(:info, "Assistant settings updated successfully")
+      |> put_flash(:info, "AI assistant settings updated successfully")
 
     {:noreply, assign(socket, section: section)}
   end
@@ -682,7 +682,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     socket =
       socket
-      |> put_flash(:info, "Assistant trigger settings updated successfully")
+      |> put_flash(:info, "AI assistant activation settings updated successfully")
 
     {:noreply, assign(socket, section: section)}
   end
