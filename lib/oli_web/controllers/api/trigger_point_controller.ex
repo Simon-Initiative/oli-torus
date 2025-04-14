@@ -1,6 +1,6 @@
 defmodule OliWeb.Api.TriggerPointController do
   @moduledoc """
-  Endpoints to invoke AI trigger points from the client.
+  Endpoints to invoke AI activation points from the client.
   """
 
   use OliWeb, :controller
