@@ -210,17 +210,28 @@ defmodule Oli.Delivery.GrantedCertificates do
           where: s.slug == ^section_slug,
           where: gc.state in [:earned, :denied],
           where: gc.student_email_sent == false,
-          select: {gc.guid, gc.state, student, s}
+          preload: [
+            user: student,
+            certificate:
+              {cert, section: {s, [:brand, lti_1p3_deployment: [institution: [:default_brand]]]}}
+          ],
+          select: {gc, student}
       )
 
     granted_certificates
-    |> Enum.map(fn {guid, state, student, section} ->
+    |> Enum.map(fn {gc, student} ->
       Mailer.new(%{
-        granted_certificate_guid: guid,
+        granted_certificate_guid: gc.guid,
         to: student.email,
-        template: if(state == :earned, do: "student_approval", else: "student_denial"),
+        template: if(gc.state == :earned, do: "student_approval", else: "student_denial"),
         template_assigns:
-          certificate_email_template_assigns(state, student, section, guid, instructor_email)
+          certificate_email_template_assigns(
+            gc.state,
+            student,
+            gc.certificate.section,
+            gc.guid,
+            instructor_email
+          )
       })
     end)
     |> Oban.insert_all()
