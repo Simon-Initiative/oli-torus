@@ -1,0 +1,110 @@
+.text-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+}
+.text-slider-title {
+  font-size: 1.3em;
+  font-weight: 600;
+}
+.slider-wrapper {
+  position: relative;
+  width: 100%;
+}
+.slider-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #03a9f4 transparent transparent transparent; /* updated */
+}
+.slider-track {
+  width: 100%;
+  appearance: none;
+  height: 6px;
+  border-radius: 4px;
+  background: #e0e0e0;
+  outline: none;
+  margin-bottom: 40px;
+}
+.tick-container {
+  position: absolute;
+  top: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+}
+.tick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+.tick-mark {
+  width: 1px;
+  height: 10px;
+  background: #333;
+}
+.tick-label {
+  margin-top: 8px;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+.slider-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background-color: #03a9f4 !important; /* updated */
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+  margin-top: -8px;
+}
+.slider-track::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background-color: #03a9f4 !important; /* updated */
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+/* Tooltip styles */
+.slider-tooltip {
+  position: absolute;
+  transform: translateX(-50%);
+  bottom: 35px;
+  background-color: #03a9f4 !important; /* updated */
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: bold;
+}
+.slider-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #03a9f4 transparent transparent transparent; /* updated */
+}
+.slider-track::-ms-thumb {
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background-color: #03a9f4 !important;
+  border: none;
+  cursor: pointer;
+}

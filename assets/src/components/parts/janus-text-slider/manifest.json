@@ -1,0 +1,16 @@
+{
+  "id": "janus_text_slider",
+  "friendlyName": "Slider (Text)",
+  "description": "A Slider (Text) element from min and max.",
+  "icon": "icon-part-slider.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-text-slider",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-text-slider",
+    "entry": "./authoring-entry.ts"
+  }
+}
