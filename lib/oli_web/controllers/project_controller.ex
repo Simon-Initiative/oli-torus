@@ -53,7 +53,7 @@ defmodule OliWeb.ProjectController do
     case Oli.Authoring.Course.update_project(conn.assigns.project, %{allow_triggers: true}) do
       {:ok, project} ->
         conn
-        |> put_flash(:info, "AI Triggers enabled.")
+        |> put_flash(:info, "AI Activation Points enabled.")
         |> redirect(to: ~p"/workspaces/course_author/#{project.slug}/overview")
 
       {:error, message} ->
