@@ -203,8 +203,7 @@ defmodule OliWeb.Components.Delivery.Students.Certificates.StateApprovalComponen
              state: required_state,
              url: nil,
              student_email_sent: false,
-             guid: UUID.uuid4(),
-             with_distinction: false
+             guid: UUID.uuid4()
            }
          ) do
       {:ok, gc} ->

@@ -2338,13 +2338,9 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
              |> render() =~ "Top Level Page"
     end
 
-    test "can navigate to a unit through url params",
-         %{
-           conn: conn,
-           section: section,
-           unit_2: unit_2
-         } do
-      unit_id = "unit_#{unit_2.resource_id}"
+    test "can navigate to a unit through url params", ctx do
+      %{conn: conn, section: section, unit_2: unit_2} = ctx
+      unit_id = "unit_#{unit_2.resource_id}_outline"
 
       {:ok, view, _html} =
         live(
@@ -2357,20 +2353,16 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        id: ^unit_id,
-        offset: 25,
+        role: ^unit_id,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
     end
 
-    test "can navigate to a module through url params",
-         %{
-           conn: conn,
-           section: section,
-           module_3: module_3
-         } do
-      module_id = "module_#{module_3.resource_id}"
+    test "can navigate to a module through url params", ctx do
+      %{conn: conn, section: section, module_3: module_3} = ctx
+      module_id = "module_#{module_3.resource_id}_outline"
 
       {:ok, view, _html} =
         live(
@@ -2383,19 +2375,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        id: ^module_id,
-        offset: 25,
+        role: ^module_id,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
     end
 
-    test "can navigate to a page at top level (at unit level) through url params",
-         %{
-           conn: conn,
-           section: section,
-           top_level_page: top_level_page
-         } do
+    test "can navigate to a page at top level (at unit level) through url params", ctx do
+      %{conn: conn, section: section, top_level_page: top_level_page} = ctx
       top_level_page_id = "top_level_page_#{top_level_page.resource_id}"
 
       {:ok, view, _html} =
@@ -2409,8 +2397,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        id: ^top_level_page_id,
-        offset: 25,
+        role: ^top_level_page_id,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
@@ -2435,8 +2423,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        id: ^page_id,
-        offset: 25,
+        role: ^page_id,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
@@ -2461,19 +2449,15 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        id: ^page_id,
-        offset: 25,
+        role: ^page_id,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })
     end
 
-    test "can navigate to a page at section level through url params",
-         %{
-           conn: conn,
-           section: section,
-           page_11: page_11
-         } do
+    test "can navigate to a page at section level through url params", ctx do
+      %{conn: conn, section: section, page_11: page_11} = ctx
       page_id = "page_#{page_11.resource_id}"
 
       {:ok, view, _html} =
@@ -2487,8 +2471,8 @@ defmodule OliWeb.Delivery.Student.ContentLiveTest do
 
       # scrolling and pulse animation are triggered
       assert_push_event(view, "scroll-y-to-target", %{
-        id: ^page_id,
-        offset: 25,
+        role: ^page_id,
+        offset: 125,
         pulse: true,
         pulse_delay: 500
       })

@@ -533,10 +533,10 @@ defmodule OliWeb.Delivery.ActivityHelpers do
     updater.(activity_attempt, choices)
   end
 
-  defp add_likert_details(activity_attempt, response_summaries) do
+  defp add_likert_details(activity, response_summaries) do
     %{questions: questions, question_mapper: question_mapper} =
       Enum.reduce(
-        activity_attempt.revision.content["items"],
+        activity.revision.content["items"],
         %{questions: [], question_mapper: %{}, question_number: 1},
         fn q, acc ->
           question = %{
@@ -559,7 +559,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     {ordered_choices, choice_mapper} =
       Enum.reduce(
-        activity_attempt.revision.content["choices"],
+        activity.revision.content["choices"],
         %{ordered_choices: [], choice_mapper: %{}, aux_points: 1},
         fn ch, acc ->
           choice = %{
@@ -582,7 +582,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     responses =
       Enum.reduce(response_summaries, [], fn response_summary, acc ->
-        if response_summary.activity_id == activity_attempt.resource_id do
+        if response_summary.activity_id == activity.resource_id do
           [
             %{
               count: response_summary.count,
@@ -613,7 +613,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
          Map.put(
            responses_acc,
            response.question_id,
-           Map.get(responses_acc, response.question_id, 0) + 1
+           Map.get(responses_acc, response.question_id, 0) + response.count
          )}
       end)
       |> then(fn {points_per_question_id, responses_per_question_id} ->
@@ -649,15 +649,19 @@ defmodule OliWeb.Delivery.ActivityHelpers do
 
     values =
       Enum.map(responses, fn r ->
-        %{
-          value: r.selected_choice_points,
-          choice: r.selected_choice_text,
-          question: r.question,
-          out_of: Map.get(responses_per_question_id, r.question_id, 0)
-        }
+        List.duplicate(
+          %{
+            value: r.selected_choice_points,
+            choice: r.selected_choice_text,
+            question: r.question,
+            out_of: Map.get(responses_per_question_id, r.question_id, 0)
+          },
+          r.count
+        )
       end)
+      |> List.flatten()
 
-    Map.merge(activity_attempt, %{
+    Map.merge(activity, %{
       datasets: %{
         medians: medians,
         values: values,
@@ -665,7 +669,7 @@ defmodule OliWeb.Delivery.ActivityHelpers do
         axis_values: Enum.map(ordered_choices, fn c -> c.points end),
         first_choice_text: first_choice_text,
         last_choice_text: last_choice_text,
-        title: activity_attempt.revision.title
+        title: activity.revision.title
       }
     })
   end

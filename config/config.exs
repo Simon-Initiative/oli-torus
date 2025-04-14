@@ -35,7 +35,14 @@ get_env_as_boolean = fn key, default ->
   end
 end
 
+get_env_as_integer = fn key, default ->
+  System.get_env(key, default)
+  |> String.to_integer()
+end
+
 config :oli,
+  logger_truncation_enabled: get_env_as_boolean.("LOGGER_TRUNCATION_ENABLED", "true"),
+  logger_truncation_length: get_env_as_integer.("LOGGER_TRUNCATION_LENGTH", "5000"),
   instructor_dashboard_details: get_env_as_boolean.("INSTRUCTOR_DASHBOARD_DETAILS", "true"),
   depot_coordinator: Oli.Delivery.DistributedDepotCoordinator,
   depot_warmer_days_lookback: System.get_env("DEPOT_WARMER_DAYS_LOOKBACK", "5"),

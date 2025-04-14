@@ -1196,7 +1196,7 @@ defmodule Oli.Delivery.Metrics do
 
   Can return one of:
   {:ok, :updated} -> Progress calculated and set
-  {:ok, :noop} -> Noting needed to be done, since the attempt number was greater than 1
+  {:ok, :noop} -> Nothing needed to be done, since the attempt number was greater than 1
   {:error, :unexpected_update_count} -> 0 or more than 1 record would have been updated, rolled back
   {:error, e} -> An other error occurred, rolled back
   """
@@ -1231,7 +1231,7 @@ defmodule Oli.Delivery.Metrics do
             GREATEST(
               (
                 SELECT
-                  completed_count / (total_count * ((COALESCE(rev.full_progress_pct, 100) / 100) + 0.0001))
+                  completed_count / (total_count * ((COALESCE(rev.full_progress_pct, 100) / 100.0)))
                 FROM (
                   SELECT
                     COUNT(aa2.id) FILTER (WHERE aa2.lifecycle_state = 'evaluated' OR aa2.lifecycle_state = 'submitted')::float AS completed_count,

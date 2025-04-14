@@ -30,6 +30,7 @@ interface Props {
   questionId: string | null;
   screens: Record<string, string>;
   usedPathIds: string[];
+  screenType?: string;
 }
 
 export const PathEditBox: React.FC<Props> = ({
@@ -40,6 +41,7 @@ export const PathEditBox: React.FC<Props> = ({
   usedPathIds,
   path,
   screens,
+  screenType,
 }) => {
   const autoOpen = useSelector(selectAutoOpenPath);
   const [editMode, toggleEditMode] = useToggle(false);
@@ -56,8 +58,7 @@ export const PathEditBox: React.FC<Props> = ({
     );
   };
   const effectiveEditMode = editMode || autoOpen === path.id;
-  const disablePathEdit =
-    (questionType === QuestionTypeMapping.HUB_SPOKE && path.type !== 'correct') || false;
+  const disablePathEdit = screenType === QuestionTypeMapping.HUB_SPOKE || false;
   return effectiveEditMode ? (
     <PathEditor
       questionType={questionType}
@@ -251,8 +252,8 @@ const ReadOnlyPath: React.FC<ROParams> = ({
         <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
           {disablePathEdit ? (
             <div>
-              You cannot edit the flowchart logic for this screen here. Please update the part
-              component in Authoring to regenerate the updated flowchart logic.
+              To update the logic, please go to this page in Screen Panel view and update the Hub
+              and Spoke component.
             </div>
           ) : (
             'Click to update the flowchart logic'

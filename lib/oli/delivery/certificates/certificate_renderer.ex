@@ -65,9 +65,9 @@ defmodule Oli.Delivery.Certificates.CertificateRenderer do
             </div>
           </div>
 
-          <div style="margin-top: 20px; display: flex; justify-content: center;">
-            <%= for logo <- @logos do %>
-              <img src="<%= logo %>" style="max-height: 50px; margin-right: 50px;" />
+          <div style="margin-top: 20px; margin-bottom: 10px; display: flex; justify-content: center;">
+            <%= for logo <- @logos, logo not in ["", nil] do %>
+              <img src="<%= logo %>" style="max-height: 50px; margin-right: 25px; margin-left: 25px;" />
             <% end %>
           </div>
           <a href="<%= @certificate_verification_url %>" style="margin-top: 20px; font-size: small; text-decoration-line: none; color: black">Certificate ID: <%= @certificate_id %></a>

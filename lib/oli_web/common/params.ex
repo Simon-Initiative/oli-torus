@@ -4,6 +4,9 @@ defmodule OliWeb.Common.Params do
       nil ->
         default_value
 
+      value when is_integer(value) ->
+        value
+
       value ->
         case Integer.parse(value) do
           {num, _} -> num

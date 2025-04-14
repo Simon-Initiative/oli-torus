@@ -15,6 +15,7 @@ import { DragSource, DropTarget } from './dragdrop';
 import { EmailList } from './email_list';
 import { EndDateTimer } from './end_date_timer';
 import { EvaluateMathJaxExpressions } from './evaluate_mathjax_expressions';
+import { ExpandContainers } from './expand_containers';
 import { FixedNavigationBar } from './fixed_navigation_bar';
 import { GraphNavigation } from './graph';
 import { HierarchySelector } from './hierarchy_selector';
@@ -48,6 +49,7 @@ import { VideoPlayer } from './video_player';
 import { PauseOthersOnSelected, VideoPreview } from './video_preview';
 
 export const Hooks = {
+  ExpandContainers,
   ShowTeaser,
   FirePageTrigger,
   DelayedSubmit,
