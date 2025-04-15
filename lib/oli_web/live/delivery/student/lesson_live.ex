@@ -131,6 +131,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
         |> to_epoch()
 
       auto_submit = page_context.effective_settings.late_submit == :disallow
+      batch_scoring = page_context.effective_settings.batch_scoring
 
       now = DateTime.utc_now() |> to_epoch
 
@@ -156,6 +157,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
           attempt_guid: hd(page_context.resource_attempts).attempt_guid,
           effective_end_time: effective_end_time,
           auto_submit: auto_submit,
+          batch_scoring: batch_scoring,
           time_limit: page_context.effective_settings.time_limit,
           grace_period: page_context.effective_settings.grace_period,
           attempt_start_time: resource_attempt.inserted_at |> to_epoch,
@@ -972,40 +974,7 @@ defmodule OliWeb.Delivery.Student.LessonLive do
 
           <div id="page_content" class="content w-full" phx-update="ignore" role="page content">
             <%= raw(@html) %>
-            <div class="flex w-full justify-center">
-              <button
-                id="submit_answers"
-                phx-hook="DelayedSubmit"
-                class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
-              >
-                <span class="button-text">Submit Answers</span>
-                <span class="spinner hidden ml-2 animate-spin">
-                  <svg
-                    class="w-5 h-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    >
-                    </circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    >
-                    </path>
-                  </svg>
-                </span>
-              </button>
-            </div>
+            <.submit_button batch_scoring={@batch_scoring} />
             <.references ctx={@ctx} bib_app_params={@bib_app_params} />
           </div>
         </div>
@@ -1037,6 +1006,49 @@ defmodule OliWeb.Delivery.Student.LessonLive do
   def render(assigns) do
     ~H"""
     <div></div>
+    """
+  end
+
+  attr :batch_scoring, :boolean, default: false
+
+  def submit_button(%{batch_scoring: false}), do: nil
+
+  def submit_button(assigns) do
+    ~H"""
+    <div class="flex w-full justify-center">
+      <button
+        id="submit_answers"
+        phx-hook="DelayedSubmit"
+        class="cursor-pointer px-5 py-2.5 hover:bg-opacity-40 bg-blue-600 rounded-[3px] shadow justify-center items-center gap-2.5 inline-flex text-white text-sm font-normal font-['Open Sans'] leading-tight"
+      >
+        <span class="button-text">Submit Answers</span>
+        <span class="spinner hidden ml-2 animate-spin">
+          <svg
+            class="w-5 h-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            >
+            </circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            >
+            </path>
+          </svg>
+        </span>
+      </button>
+    </div>
     """
   end
 
