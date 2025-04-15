@@ -85,7 +85,8 @@ defmodule Oli.LoggerTruncator do
       end)
       |> Enum.into(%{})
     rescue
-      _error -> %{msg: "[TRUNCATED]"} # Log an error message if something goes wrong
+      # Log an error message if something goes wrong
+      _error -> %{msg: "[TRUNCATED]"}
     end
   end
 
@@ -101,7 +102,8 @@ defmodule Oli.LoggerTruncator do
         msg
       end
     rescue
-      _error -> "[TRUNCATED]" # If an error occurs during truncation, return a truncated message.
+      # If an error occurs during truncation, return a truncated message.
+      _error -> "[TRUNCATED]"
     end
   end
 end
