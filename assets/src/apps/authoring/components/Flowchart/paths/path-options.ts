@@ -17,7 +17,6 @@ import {
   createInputNumberCommonErrorPath,
   createMCQCommonErrorPath,
   createMCQSpecificPath,
-  createSpokeCommonPath,
   createSpokeCorrectPath,
   createUnknownPathWithDestination,
 } from './path-factories';
@@ -131,10 +130,7 @@ const createMultipleChoicePathOptions = (mcq: IMCQPartLayout | undefined) => {
 
 const createHubAndSpokePathOptions = (spoke: IHubSpokePartLayout | undefined) => {
   if (spoke) {
-    const commonErrorOptions = (spoke.custom?.spokeItems || [])
-      .map((_, index) => index)
-      .map((index) => createSpokeCommonPath(spoke, index));
-    return [...commonErrorOptions, createSpokeCorrectPath(spoke.id)];
+    return [createSpokeCorrectPath(spoke.id)];
   }
   return [];
 };
@@ -163,11 +159,10 @@ const questionMapping: Record<string, QuestionType> = {
 const availableQuestionTypes = ['janus-mcq', ...Object.keys(questionMapping)];
 
 export enum QuestionTypeMapping {
-  MULTIPLE_CHOICE = 'Multiple Choice',
-  MULTILINE_TEXT = 'Multi-line Text',
-  JANUS_TEXT = 'Text Input',
-  INPUT_NUMBER = 'Number Input',
-  HUB_SPOKE = 'Hub and Spoke',
+  MULTILINE_TEXT = 'multi-line-text',
+  JANUS_TEXT = 'input-text',
+  INPUT_NUMBER = 'input-number',
+  HUB_SPOKE = 'hub_spoke',
   DROPDOWN = 'Dropdown',
   SLIDER = 'Slider',
 }

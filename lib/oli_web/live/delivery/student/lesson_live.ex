@@ -135,7 +135,15 @@ defmodule OliWeb.Delivery.Student.LessonLive do
       now = DateTime.utc_now() |> to_epoch
 
       attempt_expired_auto_submit =
-        now > effective_end_time and auto_submit and !page_context.review_mode
+        with true <- now > effective_end_time,
+             true <- auto_submit,
+             false <- page_context.review_mode,
+             :due_by <- page_context.effective_settings.scheduling_type do
+          true
+        else
+          _ ->
+            false
+        end
 
       socket =
         socket

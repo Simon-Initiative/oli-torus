@@ -1,6 +1,8 @@
 defmodule OliWeb.UserSessionControllerTest do
   use OliWeb.ConnCase, async: true
 
+  import Oli.Factory
+
   setup do
     %{user: user_fixture()}
   end
@@ -88,6 +90,28 @@ defmodule OliWeb.UserSessionControllerTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
       assert redirected_to(conn) == ~p"/users/log_in"
+    end
+
+    test "user can login even if there is an LTI account registered with the same email", %{
+      conn: conn,
+      user: user
+    } do
+      # Create an LTI account with the same email as the independent user
+      lti_user = insert(:user, %{independent_learner: false, email: user.email})
+      insert(:lti_params, user_id: lti_user.id)
+
+      # Log in the independent user and assert that the user is logged in
+      conn =
+        conn
+        |> post(~p"/users/log_in", %{
+          "user" => %{
+            "email" => user.email,
+            "password" => valid_user_password()
+          }
+        })
+
+      assert redirected_to(conn) == ~p"/workspaces/student"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
     end
   end
 

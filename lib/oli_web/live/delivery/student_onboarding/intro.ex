@@ -23,7 +23,7 @@ defmodule OliWeb.Delivery.StudentOnboarding.Intro do
         <ul class="font-normal list-disc ml-6">
           <%= if has_required_survey(@section) do %>
             <li>
-              A 5 minute survey to help shape learning your experience and let your instructor get to know you
+              A short survey to help shape your learning experience and let your instructor get to know you
             </li>
           <% end %>
           <%= if has_explorations(@section) do %>

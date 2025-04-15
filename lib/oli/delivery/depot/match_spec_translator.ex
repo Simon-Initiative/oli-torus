@@ -131,11 +131,9 @@ defmodule Oli.Delivery.Depot.MatchSpecTranslator do
   # The :in operator is a special case as we map the values of the list to multiple
   # :orelse equality conditions
   defp handle_cond(type, {_f, {:in, value}}, _, {m, c, v}) do
-    {:orelse, {:==, :"$1", 1}, {:orelse, {:==, :"$1", 2}, {:==, :"$1", 3}}}
-
     case Enum.count(value) do
       0 ->
-        {m, c, v}
+        {m, [{:==, 1, 2}], v}
 
       1 ->
         {m, [{:==, field(v), encode(Enum.at(value, 0), type)} | c], v}

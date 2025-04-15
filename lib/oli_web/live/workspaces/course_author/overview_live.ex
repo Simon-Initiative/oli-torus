@@ -558,6 +558,7 @@ defmodule OliWeb.Workspaces.CourseAuthor.OverviewLive do
           socket
           |> assign(:project, project)
           |> assign(:changeset, Project.changeset(project))
+          |> assign(:resource_title, project.title)
           |> put_flash(:info, "Project updated successfully.")
 
         {:error, %Ecto.Changeset{} = changeset} ->

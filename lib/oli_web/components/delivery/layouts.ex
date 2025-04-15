@@ -40,6 +40,7 @@ defmodule OliWeb.Components.Delivery.Layouts do
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
   attr(:preview_mode, :boolean)
+  attr(:resource_title, :string, default: nil)
 
   attr(:sidebar_enabled, :boolean,
     default: false,
@@ -66,7 +67,12 @@ defmodule OliWeb.Components.Delivery.Layouts do
       </.link>
       <div class="flex flex-row flex-1 justify-end md:justify-between">
         <div class="flex hidden md:flex items-center flex-grow-1 dark:text-[#BAB8BF] text-base font-medium font-['Roboto']">
-          <.title section={@section} project={@project} preview_mode={@preview_mode} />
+          <.title
+            resource_title={@resource_title}
+            section={@section}
+            project={@project}
+            preview_mode={@preview_mode}
+          />
         </div>
         <div class="justify-end items-center flex shrink-0">
           <div class={[
@@ -109,12 +115,16 @@ defmodule OliWeb.Components.Delivery.Layouts do
 
   attr(:section, Section, default: nil)
   attr(:project, Project, default: nil)
+  attr(:resource_title, :string, default: nil)
   attr(:preview_mode, :boolean)
 
   attr :rest, :global, include: ~w(class)
 
   def title(assigns) do
     ~H"""
+    <span :if={@resource_title} class={["text-2xl text-bold", @rest[:class]]}>
+      <%= @resource_title %>
+    </span>
     <span :if={@section} class={["text-2xl text-bold", @rest[:class]]}>
       <%= @section.title %><%= if @preview_mode, do: " (Preview Mode)" %>
     </span>

@@ -2,7 +2,6 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
   use Phoenix.Component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias Phoenix.LiveView.JS
 
   def new(assessments, ctx, target) do
     column_specs = [
@@ -41,7 +40,7 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
       rows: assessments,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id],
+      id_field: [:resource_id],
       data: %{
         ctx: ctx,
         target: target
@@ -63,16 +62,11 @@ defmodule OliWeb.Delivery.PracticeActivities.PracticeAssessmentsTableModel do
     assigns =
       Map.merge(assigns, %{
         title: assessment.title,
-        container_label: assessment.container_label,
-        id: assessment.id
+        container_label: assessment.container_label
       })
 
     ~H"""
-    <div
-      class="pl-9 pr-4 flex flex-col"
-      phx-click={JS.push("paged_table_selection_change", target: @target)}
-      phx-value-id={@id}
-    >
+    <div class="pl-9 pr-4 flex flex-col">
       <%= if @container_label do %>
         <span class="text-gray-600 font-bold text-sm"><%= @container_label %></span>
       <% end %>

@@ -29,7 +29,7 @@ defmodule OliWeb.UserSessionController do
         user_params
       end
 
-    if user = Accounts.get_user_by_email_and_password(email, password) do
+    if user = Accounts.get_independent_user_by_email_and_password(email, password) do
       conn
       |> maybe_add_flash_message(opts[:flash_message])
       |> UserAuth.log_in_user(user, user_params)

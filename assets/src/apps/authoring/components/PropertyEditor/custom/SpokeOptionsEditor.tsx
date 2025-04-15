@@ -94,7 +94,10 @@ const OptionsEditor: React.FC<{
   const [currentSpokeDestination, setCurrentSpokeDestination] = useState('');
   const [currentSpokeDestinationActivityId, setCurrentSpokeDestinationActivityId] = useState('');
   const screens: Record<string, string> = useMemo(() => {
-    return activities.reduce((acc, activity) => {
+    return activities.reduce((acc, activity, index) => {
+      if (index == 0) {
+        acc['0'] = '--select spoke destination--';
+      }
       const filterhubSpokeScreens = activity.content?.partsLayout.find(
         (parts) => parts.type === 'janus-hub-spoke',
       );
