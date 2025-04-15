@@ -129,7 +129,6 @@ defmodule Oli.Conversation.Triggers do
 
     #{trigger.prompt}
     """
-    |> IO.inspect()
   end
 
   # Given certain classes of triggers, augment the data context with additional

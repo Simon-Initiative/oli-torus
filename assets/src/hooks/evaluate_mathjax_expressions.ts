@@ -3,12 +3,7 @@
 
 export const EvaluateMathJaxExpressions = {
   mounted() {
-    const chatMessages = document.querySelectorAll('.chat-message');
-    const elements: any = [];
-
-    chatMessages.forEach((el) => {
-      elements.push(el);
-    });
+    const elements = document.querySelectorAll('.formula, .formula-inline, .chat-message');
 
     const getGlobalLastPromise = () => {
       /* istanbul ignore next */
