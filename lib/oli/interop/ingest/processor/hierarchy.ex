@@ -97,6 +97,9 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
     attrs = %{
       tags: transform_tags(container, legacy_to_resource_id_map),
       title: Map.get(container, "title"),
+      intro_content: Map.get(container, "introContent", %{}),
+      intro_video: Map.get(container, "introVideo"),
+      poster_image: Map.get(container, "posterImage"),
       children: children_ids,
       author_id: as_author.id,
       content: %{"model" => []},

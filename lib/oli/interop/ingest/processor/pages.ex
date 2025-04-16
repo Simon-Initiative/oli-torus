@@ -13,7 +13,14 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
     )
   end
 
-  defp get_explanation_strategy(graded)
+  defp get_explanation_strategy(nil), do: nil
+
+  defp get_explanation_strategy(%{"type" => type, "set_num_attempts" => set_num_attempts}) do
+    %Oli.Resources.ExplanationStrategy{
+      type: String.to_atom(type),
+      set_num_attempts: set_num_attempts
+    }
+  end
 
   defp get_explanation_strategy(true) do
     %Oli.Resources.ExplanationStrategy{type: :after_max_resource_attempts_exhausted}
@@ -96,19 +103,30 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       children: {:placeholder, :children},
       resource_type_id: {:placeholder, :resource_type_id},
       activity_type_id: Map.get(state.registration_by_subtype, Map.get(resource, "subType")),
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-      explanation_strategy: get_explanation_strategy(graded),
+      scoring_strategy_id:
+        Map.get(
+          resource,
+          "scoringStrategyId",
+          Oli.Resources.ScoringStrategy.get_id_by_type("best")
+        ),
+      explanation_strategy:
+        Map.get(resource, "explanationStrategy", graded)
+        |> get_explanation_strategy(),
       collab_space_config: read_collab_space(resource),
       purpose: Map.get(resource, "purpose", "foundation") |> String.to_existing_atom(),
       relates_to:
         Map.get(resource, "relatesTo", []) |> Enum.map(fn id -> String.to_integer(id) end),
       graded: graded,
-      max_attempts:
-        if graded do
-          5
-        else
-          0
-        end,
+      max_attempts: Map.get(resource, "maxAttempts", if(graded, do: 5, else: 0)),
+      intro_content: Map.get(resource, "introContent", %{}),
+      intro_video: Map.get(resource, "introVideo"),
+      poster_image: Map.get(resource, "posterImage"),
+      recommended_attempts: Map.get(resource, "recommendedAttempts", 5),
+      duration_minutes: Map.get(resource, "durationMinutes"),
+      full_progress_pct: Map.get(resource, "fullProgressPct", 100),
+      retake_mode: Map.get(resource, "retakeMode", "normal") |> String.to_existing_atom(),
+      assessment_mode:
+        Map.get(resource, "assessmentMode", "traditional") |> String.to_existing_atom(),
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }

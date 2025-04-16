@@ -96,8 +96,8 @@ defmodule OliWeb.ProjectControllerTest do
       assert Map.has_key?(m, ~c"_hierarchy.json")
       assert Map.has_key?(m, ~c"_media-manifest.json")
       assert Map.has_key?(m, ~c"_project.json")
-      assert Map.has_key?(m, ~c"#{product_1.id}.json")
-      assert Map.has_key?(m, ~c"#{product_2.id}.json")
+      assert Map.has_key?(m, ~c"_product-#{product_1.id}.json")
+      assert Map.has_key?(m, ~c"_product-#{product_2.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_1.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_2.id}.json")
     end
@@ -123,7 +123,7 @@ defmodule OliWeb.ProjectControllerTest do
       assert Map.has_key?(m, ~c"_hierarchy.json")
       assert Map.has_key?(m, ~c"_media-manifest.json")
       assert Map.has_key?(m, ~c"_project.json")
-      assert Map.has_key?(m, ~c"#{product_1.id}.json")
+      assert Map.has_key?(m, ~c"_product-#{product_1.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_1.id}.json")
       assert Map.has_key?(m, ~c"#{page_resource_2.id}.json")
     end
