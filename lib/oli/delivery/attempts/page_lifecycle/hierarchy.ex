@@ -94,39 +94,47 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        do: []
 
   defp construct_attempt_prototypes(%VisitContext{
-         effective_settings: %{retake_mode: :targeted},
+         effective_settings: %{retake_mode: retake_mode, batch_scoring: batch_scoring},
          latest_resource_attempt: latest_resource_attempt,
-         page_revision: %Revision{graded: true} = page_revision
+         page_revision: %Revision{graded: graded} = page_revision
        }) do
-    # If the page has changed revisions between attempts, we do not allow previous
-    # correct attempts to manifest as constraining prototypes.  The issue here is that
-    # it is possible that referenced activities or selection counts have changed. We could
-    # make this step more robust by diffing all the referenced activities and selections.
-    if latest_resource_attempt.revision_id == page_revision.id do
-      get_correct_attempts(latest_resource_attempt.id)
-      |> Enum.map(fn attempt ->
-        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
-      end)
-    else
-      []
-    end
-  end
 
-  defp construct_attempt_prototypes(%VisitContext{
-         latest_resource_attempt: latest_resource_attempt,
-         page_revision: %Revision{graded: false} = page_revision
-       }) do
-    # For ungraded pages, when the revision of page has changed, we
-    # construct activity attempt prototypes for all activities to pull forward
-    # their state, but only for those whose own revisions have not changed
-    if latest_resource_attempt.revision_id != page_revision.id do
+    migrate_all_fn = fn ->
       get_migratable_activity_attempts(latest_resource_attempt.id)
       |> Enum.map(fn attempt ->
         Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
       end)
-    else
-      []
     end
+
+    revisions_changed =
+      latest_resource_attempt.revision_id != page_revision.id
+
+    # When the revision of page has changed, there are three cases where
+    # we migrate forward the activity attempts from the previous resource attempt:
+    #
+    # 1. Revisions have changed in a practice page
+    # 2. Page revisions have NOT changed, graded page and targeted retake mode is enabled
+    # 2. Revisions changed in a score as you go graded page
+    case {revisions_changed, graded, retake_mode, batch_scoring} do
+
+      {true, false, _, _} ->
+        migrate_all_fn.()
+
+      {false, true, :targeted, _} ->
+
+        get_correct_attempts(latest_resource_attempt.id)
+        |> Enum.map(fn attempt ->
+          Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
+        end)
+
+      {true, true, _, false} ->
+        migrate_all_fn.()
+
+      _ ->
+        []
+
+    end
+
   end
 
   defp construct_attempt_prototypes(_), do: []
