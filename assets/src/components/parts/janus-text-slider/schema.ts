@@ -15,6 +15,8 @@ export interface SliderModel extends JanusAbsolutePositioned, JanusCustomCss {
   maximum: number;
   snapInterval: number;
   enabled: boolean;
+  sliderOptionLabels: string[];
+  numberOfTextLabels: number;
 }
 
 export const simpleSchema: JSONSchema7Object = {
@@ -35,15 +37,18 @@ export const simpleSchema: JSONSchema7Object = {
   minimum: {
     title: 'Min',
     type: 'number',
+    readOnly: true,
   },
   maximum: {
     title: 'Max',
     type: 'number',
+    readOnly: true,
   },
 
   snapInterval: {
     title: 'Interval',
     type: 'number',
+    readOnly: true,
     description: 'Value cannot be smaller than 1/100 of the range between the min and max values',
   },
 
@@ -66,13 +71,16 @@ export const simpleUISchema = {
   'ui:ObjectFieldTemplate': CustomFieldTemplate,
   answer: correctOrRange.uiSchema,
   minimum: {
-    classNames: 'col-span-6',
+    classNames: 'col-span-6 read-only',
+    readOnly: true,
   },
   maximum: {
-    classNames: 'col-span-6',
+    classNames: 'col-span-6 read-only',
+    readOnly: true,
   },
   snapInterval: {
-    classNames: 'col-span-12',
+    classNames: 'col-span-12 read-only',
+    readOnly: true,
   },
   correctFeedback: {
     'ui:widget': 'textarea',
@@ -105,21 +113,35 @@ export const schema: JSONSchema7Object = {
     type: 'string',
     description: 'text label for the slider',
   },
+  numberOfTextLabels: {
+    title: 'Number of text labels',
+    type: 'number',
+    enum: [2, 3, 4, 5],
+    default: 3,
+  },
+  sliderOptionLabels: {
+    title: 'Text for slider options',
+    type: 'array',
+    items: {
+      type: 'string',
+    },
+    minItems: 2,
+    maxItems: 5, // 👈 Limits to 5 items max
+  },
   minimum: {
     title: 'Min',
     type: 'number',
-    readonly: true,
+    readOnly: true,
   },
   maximum: {
     title: 'Max',
     type: 'number',
-    readonly: true,
+    readOnly: true,
   },
   snapInterval: {
     title: 'Interval',
-    description: 'Value cannot be smaller than 1/100 of the range between the min and max values',
     type: 'number',
-    readonly: true,
+    readOnly: true,
   },
   enabled: {
     title: 'Enabled',
@@ -129,7 +151,21 @@ export const schema: JSONSchema7Object = {
   },
 };
 
-export const uiSchema = {};
+export const uiSchema = {
+  minimum: {
+    classNames: 'col-span-12 read-only',
+  },
+  maximum: {
+    classNames: 'col-span-12 read-only',
+  },
+  snapInterval: {
+    classNames: 'col-span-12 read-only',
+  },
+  sliderOptionLabels: {
+    'ui:widget': 'SliderOptionsTextEditor',
+    classNames: 'col-span-12 SliderOptionsText',
+  },
+};
 
 export const adaptivitySchema = {
   value: CapiVariableTypes.NUMBER,
@@ -147,10 +183,10 @@ export const createSchema = (): Partial<SliderModel> => ({
   showValueLabels: true,
   showTicks: true,
   showThumbByDefault: true,
-  sliderOptions: ['Label 1', 'Label 2', 'Label 3'],
+  sliderOptionLabels: ['Label 1', 'Label 2', 'Label 3'],
   invertScale: false,
   minimum: 0,
   maximum: 3,
   snapInterval: 1,
-  label: 'Slider',
+  label: 'Text Slider',
 });

@@ -13,6 +13,7 @@ import { MCQOptionsEditor } from './custom/MCQOptionsEditor';
 import { OptionsCorrectPicker } from './custom/OptionsCorrectPicker';
 import { OptionsCustomErrorFeedbackAuthoring } from './custom/OptionsCustomErrorFeedbackAuthoring';
 import ScreenDropdownTemplate from './custom/ScreenDropdownTemplate';
+import { SliderOptionsTextEditor } from './custom/SliderOptionsTextEditor';
 import { SpokeCompletedOption } from './custom/SpokeCompletedOption';
 import { SpokeCustomErrorFeedbackAuthoring } from './custom/SpokeCustomErrorFeedbackAuthoring';
 import { SpokeOptionsEditor } from './custom/SpokeOptionsEditor';
@@ -46,6 +47,7 @@ const widgets: any = {
   SpokeCompletedOption: SpokeCompletedOption,
   DropdownOptionsEditor: DropdownOptionsEditor,
   MCQCustomErrorFeedbackAuthoring: MCQCustomErrorFeedbackAuthoring,
+  SliderOptionsTextEditor: SliderOptionsTextEditor,
 };
 
 const PropertyEditor: React.FC<PropertyEditorProps> = ({
