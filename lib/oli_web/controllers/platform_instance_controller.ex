@@ -5,7 +5,6 @@ defmodule OliWeb.PlatformInstanceController do
   alias Oli.Lti.{PlatformInstances, PlatformExternalTools}
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Oli.Activities
-  alias Oli.Utils.Slug
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
 

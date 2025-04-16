@@ -187,9 +187,11 @@ config :oli, :upgrade_experiment_provider,
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
   url: [host: "localhost"],
+  secret_key_base: "GE9cpXBwVXNaplyUCYbIWqERmC/OlcR5iVMwLX9/W7gzQRxkD1ETjda9E0jW/BW1",
   render_errors: [
-    formats: [html: OliWeb.ErrorHTML, json: OliWeb.ErrorJSON],
-    layout: false
+    accepts: ~w(html json),
+    root_layout: {OliWeb.LayoutView, :error},
+    view: OliWeb.ErrorView
   ],
   pubsub_server: Oli.PubSub,
   live_view: [signing_salt: "zsLMAebo"]
