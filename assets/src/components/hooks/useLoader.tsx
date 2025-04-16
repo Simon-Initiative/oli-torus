@@ -27,7 +27,7 @@ export type Loader<T> = {
 };
 
 /**
- * Custom hook that loads data using persistence and returns the current state of the loader.
+ * Custom hook that loads data and returns the current state of the loader.
  *
  * @param load Function that loads data and returns a promise
  * @returns Loader<T> loader that can execute any of the three state callbacks, access the current state, and reload the data

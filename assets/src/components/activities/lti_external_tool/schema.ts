@@ -1,8 +1,9 @@
-import { ActivityModelSchema } from '../types';
+import { ActivityModelSchema, Part } from '../types';
 
 export interface LTIExternalToolSchema extends ActivityModelSchema {
-  clientId?: string;
+  openInNewTab: boolean;
   authoring: {
-    openInNewTab: boolean;
+    version: 2;
+    parts: Part[];
   };
 }

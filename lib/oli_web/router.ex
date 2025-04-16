@@ -1422,15 +1422,23 @@ defmodule OliWeb.Router do
     get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
   end
 
-  scope "/api/v1/lti", OliWeb, as: :api do
+  scope "/api/v1/lti/project/:project_slug", OliWeb, as: :api do
     pipe_through([:api, :authoring_protected])
 
-    resources("/platforms", Api.PlatformInstanceController)
+    post(
+      "/launch_details/:activity_id",
+      Api.PlatformInstanceController,
+      :launch_details
+    )
+  end
+
+  scope "/api/v1/lti/course/:section_slug", OliWeb, as: :api do
+    pipe_through([:api, :require_section, :delivery_protected])
 
     post(
-      "/platforms/details/:client_id",
+      "/launch_details/:activity_id",
       Api.PlatformInstanceController,
-      :details
+      :launch_details
     )
   end
 

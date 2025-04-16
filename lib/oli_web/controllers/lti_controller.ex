@@ -99,7 +99,7 @@ defmodule OliWeb.LtiController do
       %Lti_1p3.Platform.LoginHint{context: context, session_user_id: session_user_id} ->
         {user, roles} =
           case context do
-            "author" ->
+            "project:" <> _ ->
               author = Accounts.get_author!(session_user_id)
 
               # TODO: stub a user for the author

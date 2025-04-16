@@ -14,11 +14,14 @@ import * as ActivityTypes from '../types';
 import { LTIExternalToolSchema } from './schema';
 
 const LTIExternalTool: React.FC = () => {
-  const { model } = useDeliveryElementContext<LTIExternalToolSchema>();
+  const { model, state, context } = useDeliveryElementContext<LTIExternalToolSchema>();
 
   const ltiToolDetailsLoader = useLoader(
-    () => (model.clientId ? getLtiExternalToolDetails(model.clientId) : Promise.resolve(null)),
-    [model.clientId],
+    () =>
+      state.activityId
+        ? getLtiExternalToolDetails('course', context.sectionSlug, `${state.activityId}`)
+        : Promise.resolve(null),
+    [state.activityId],
   );
 
   const resourceId = model.id as string;

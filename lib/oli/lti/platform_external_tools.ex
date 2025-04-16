@@ -30,6 +30,7 @@ defmodule Oli.Lti.PlatformExternalTools do
   def get_lti_external_tool_activity_deployment_by(attrs) do
     LtiExternalToolActivityDeployment
     |> where(^attrs)
+    |> preload(:platform_instance)
     |> Repo.one()
   end
 

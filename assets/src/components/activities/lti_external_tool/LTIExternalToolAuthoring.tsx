@@ -15,11 +15,17 @@ import { LTIExternalToolSchema } from './schema';
 const store = configureStore();
 
 const LTIExternalTool: React.FC = () => {
-  const { model } = useAuthoringElementContext<LTIExternalToolSchema>();
+  const { model, projectSlug, authoringContext, activityId } =
+    useAuthoringElementContext<LTIExternalToolSchema>();
+
+  let activityIdStr = activityId ? `${activityId}` : undefined;
 
   const ltiToolDetailsLoader = useLoader(
-    () => (model.clientId ? getLtiExternalToolDetails(model.clientId) : Promise.resolve(null)),
-    [model.clientId],
+    () =>
+      activityIdStr
+        ? getLtiExternalToolDetails('project', projectSlug, activityIdStr)
+        : Promise.resolve(null),
+    [activityIdStr],
   );
 
   const resourceId = model.id as string;
