@@ -14,7 +14,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
   end
 
   defp get_explanation_strategy(nil), do: nil
-  
+
   defp get_explanation_strategy(%{"type" => type, "set_num_attempts" => set_num_attempts}) do
     %Oli.Resources.ExplanationStrategy{
       type: String.to_atom(type),
